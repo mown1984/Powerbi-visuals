@@ -23,10 +23,13 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+///<reference path="externals.d.ts"/>
+///<reference path="powerbi-visuals.d.ts"/>
+///<reference path="sampledata.ts"/>
 var powerbi;
 (function (powerbi) {
     var visuals;
-    (function (_visuals) {
+    (function (visuals_1) {
         var defaultVisualHostServices = powerbi.visuals.defaultVisualHostServices;
         var dataColors = new powerbi.visuals.DataColorPalette();
         var visualStyle = {
@@ -66,13 +69,11 @@ var powerbi;
                         'padding': '10px',
                         'margin': '5px'
                     });
-                    element['visible'] = function () {
-                        return true;
-                    };
+                    element['visible'] = function () { return true; };
                     this.append(element);
                     // Step 2: Instantiate Power BI visual
                     var host = $('#itemContainer');
-                    var viewport = { height: host.height(), width: host.width() };
+                    var viewport = { height: host.height(), width: host.width() - 100 };
                     var visualElement = plugin.create();
                     visualElement.init({
                         element: element,
@@ -91,29 +92,76 @@ var powerbi;
                     }
                     return this;
                 };
+                var visualByDefault = jsCommon.Utility.getURLParamValue('visual');
+                if (visualByDefault) {
+                    $('.topBar').css({ "display": "none" });
+                    Playground.onVisualTypeSelection(visualByDefault.toString());
+                }
             };
             Playground.populateVisualTypeSelect = function () {
                 var _this = this;
                 var typeSelect = $('#visualTypes');
                 typeSelect.append('<option value="">(none)</option>');
                 var visuals = this.pluginService.getVisuals();
+                visuals.sort(function (a, b) {
+                    if (a.name < b.name)
+                        return -1;
+                    if (a.name > b.name)
+                        return 1;
+                    return 0;
+                });
                 for (var i = 0, len = visuals.length; i < len; i++) {
                     var visual = visuals[i];
                     typeSelect.append('<option value="' + visual.name + '">' + visual.name + '</option>');
                 }
                 typeSelect.change(function () { return _this.onVisualTypeSelection(typeSelect.val()); });
             };
-            Playground.onVisualTypeSelection = function (plauginName) {
-                $('#itemContainer').empty();
-                var plugin = this.pluginService.getPlugin(plauginName);
-                var sampleDataView = _visuals.sampleData.getVisualizationData(plauginName);
+            Playground.createOptionsSelect = function (pluginName, options) {
+                var _this = this;
+                var typeSelect = $('<select>');
+                for (var i = 0; i < options.values.length; i++) {
+                    var item = options.values[i];
+                    typeSelect.append('<option ' + ((item.default) ? 'selected="selected"' : '') + '"value="' + item.value + '">' + item.displayName + '</option>');
+                }
+                typeSelect.change(function () { return _this.createVisualPlugin(pluginName, {
+                    name: options.name,
+                    value: typeSelect.val()
+                }); });
+                return typeSelect;
+            };
+            Playground.populateVisualOptions = function (pluginName, options) {
+                var optionsContainer = $('#optionsContainer');
+                for (var i = 0; i < options.length; i++) {
+                    if (options[i].type === "select") {
+                        var content = this.createOptionsSelect(pluginName, options[i]);
+                        optionsContainer.append($("<span>Choose number of columns:</span>"));
+                        optionsContainer.append(content);
+                    }
+                }
+            };
+            Playground.onVisualTypeSelection = function (pluginName) {
+                $('#itemContainer, #optionsContainer').empty();
+                if (pluginName.length == 0)
+                    return;
+                var sampleOptions = visuals_1.sampleData.getVisualizationOptions(pluginName);
+                if (sampleOptions.length > 0) {
+                    this.populateVisualOptions(pluginName, sampleOptions);
+                }
+                this.createVisualPlugin(pluginName);
+            };
+            Playground.createVisualPlugin = function (pluginName, options) {
+                var plugin = this.pluginService.getPlugin(pluginName);
+                if (!plugin) {
+                    $('#container').html('<div class="wrongVisualWarning">Wrong visual name <span>\'' + pluginName + '\'</span> in parameters</div>');
+                    return;
+                }
+                var sampleDataView = visuals_1.sampleData.getVisualizationData(pluginName, options);
                 $('#itemContainer').visual(plugin, sampleDataView);
             };
             // Represents sample data view used by visualization elements.
             Playground.pluginService = powerbi.visuals.visualPluginFactory.create();
             return Playground;
         })();
-        _visuals.Playground = Playground;
+        visuals_1.Playground = Playground;
     })(visuals = powerbi.visuals || (powerbi.visuals = {}));
 })(powerbi || (powerbi = {}));
-//# sourceMappingURL=app.js.map
