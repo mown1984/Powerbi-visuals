@@ -1283,8 +1283,9 @@ var powerbi;
                 this.animationDurationElement = parent.find('input[name=animation_duration]').first();
                 this.animationDurationElement.on('change', function () { return _this.onChangeDuration(); });
             }
-            HostControls.prototype.setVisual = function (visualElement) {
+            HostControls.prototype.setVisual = function (visualElement, viewport) {
                 this.visualElement = visualElement;
+                this.viewport = viewport;
             };
             HostControls.prototype.randomize = function () {
                 this.sampleDataViews.randomize();
@@ -1299,10 +1300,20 @@ var powerbi;
                 this.onChange();
             };
             HostControls.prototype.onChange = function () {
-                this.visualElement.onDataChanged({
-                    dataViews: this.sampleDataViews.getDataViews(),
-                    suppressAnimations: this.suppressAnimations
-                });
+                if (this.visualElement.update) {
+                    this.visualElement.update({
+                        dataViews: this.sampleDataViews.getDataViews(),
+                        suppressAnimations: this.suppressAnimations,
+                        viewport: this.viewport
+                    });
+                }
+                else {
+                    this.visualElement.onDataChanged({
+                        dataViews: this.sampleDataViews.getDataViews(),
+                        suppressAnimations: this.suppressAnimations
+                    });
+                    this.visualElement.onResizing(this.viewport);
+                }
             };
             HostControls.prototype.onPluginChange = function (pluginName) {
                 var _this = this;
