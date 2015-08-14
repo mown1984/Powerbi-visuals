@@ -1459,7 +1459,7 @@ var powerbi;
             Playground.createVisualElement = function (element, plugin, dataView) {
                 // Step 2: Instantiate Power BI visual
                 var host = this.container;
-                var viewport = { height: host.height(), width: host.width() - 100 };
+                var viewport = { height: host.height() - 100, width: host.width() - 100 };
                 this.visualElement = plugin.create();
                 this.visualElement.init({
                     element: element,
@@ -1470,7 +1470,7 @@ var powerbi;
                     interactivity: { isInteractiveLegend: false, selection: false },
                     animation: { transitionImmediate: true }
                 });
-                this.hostControls.setVisual(this.visualElement);
+                this.hostControls.setVisual(this.visualElement, viewport);
             };
             ;
             Playground.populateVisualTypeSelect = function () {
