@@ -85,7 +85,7 @@
 				<h2 id="documentation">Documentation</h2>
 				<ul>
 					<li><a href="https://github.com/Microsoft/PowerBI-visuals/wiki">Getting started</a></li>
-					<li><a href="http://microsoft.github.io/PowerBI-visuals/docs/interfaces/powerbi.ivisual.html">API specification</a></li>
+					<li><a href="http://microsoft.github.io/PowerBI-visuals/interfaces/powerbi.ivisual.html">API specification</a></li>
 					<li><a href="http://microsoft.github.io/PowerBI-visuals/playground/index.html">Power BI visuals playground (see our visuals live in action)</a></li>
 					<li><a href="https://powerbi.microsoft.com/">Power BI Homepage</a></li>
 				</ul>
@@ -103,12 +103,9 @@
 				</ul>
 				<p>In order to run unit tests you will also need to do the following:</p>
 				<ol>
-					<li><p>Install <a href="http://phantomjs.org/">PhantomJS</a> (PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.)</p>
-						<ul>
+					<li>Install <a href="http://phantomjs.org/">PhantomJS</a> (PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.)<ul>
 							<li>Make sure it&#39;s running from command line typing &#39;phantomjs&#39;. If it&#39;s not then you need to update your system PATH variable and add the path to phantomjs.exe file.</li>
 						</ul>
-					</li>
-					<li><p>Copy the <a href="https://raw.github.com/velesin/jasmine-jquery/master/lib/jasmine-jquery.js">jasmine-jquery.js</a> Jasmine Extension Library file from GitHub into the following folder on your local machine &quot;[PowerBIVisuals folder]\src\Clients\Externals\ThirdPartyIP\JasmineJQuery\&quot; </p>
 					</li>
 				</ol>
 				<h3 id="build-power-bi-visuals">Build Power BI visuals</h3>
@@ -128,6 +125,10 @@
 					<li><p>Open <code>src\PowerBIClients.VS2015.sln</code> in Visual Studio then open src\Clients\PowerBIVisualsPlayground\, right click on index.html file and select &#39;Set As Start Page&#39;.</p>
 					</li>
 					<li><p>Right click on the project root folder then select &#39;Property Pages&#39;. In the window opened select &#39;Build&#39; and then in &#39;Before running startup page&#39; select &#39;No Build&#39;.</p>
+					</li>
+					<li><p>Ensure under task explorer, the bindings for the &#39;build&#39; gulp task is set to Before Build.</p>
+					</li>
+					<li><p>Set PowerBI-visuals\src\Clients\PowerBIVisualsPlayground\index.html as the startup page.</p>
 					</li>
 					<li><p>Run.</p>
 					</li>
