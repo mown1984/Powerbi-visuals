@@ -82,7 +82,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>  This class &quot;listens&quot; to the TouchEventInterpreter  to recieve touch events and sends it to all
+						<p>This class &quot;listens&quot; to the TouchEventInterpreter  to recieve touch events and sends it to all
 							&quot;Touch Delegates&quot; with  TouchRegions that contain the mouse event. Prior to sending off the
 							event, its position is put in respect to the delegate&#39;s TouchRegion and converted to the appropriate
 						unit (see IPixelToItem).</p>
@@ -149,13 +149,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L192">controls/tablix/touchRegionAbstraction.ts:192</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L235">controls/tablix/touchRegionAbstraction.ts:235</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>The default behavior is to enable thresholds and lock to axis.</p>
+									<p>Default constructor.</p>
 								</div>
+								<p>The default behavior is to enable thresholds and lock to axis.</p>
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="powerbi.visuals.controls.touchutils.touchmanager.html" class="tsd-signature-type">TouchManager</a></h4>
 						</li>
@@ -170,12 +171,12 @@
 					<div class="tsd-signature tsd-kind-icon">_last<wbr>Event<span class="tsd-signature-symbol">:</span> <a href="powerbi.visuals.controls.touchutils.touchevent.html" class="tsd-signature-type">TouchEvent</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L192">controls/tablix/touchRegionAbstraction.ts:192</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L235">controls/tablix/touchRegionAbstraction.ts:235</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_lastEvent: the last recieved mouse event</p>
+							<p>The last recieved mouse event.</p>
 						</div>
 					</div>
 				</section>
@@ -185,12 +186,12 @@
 					<div class="tsd-signature tsd-kind-icon">_lock<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L186">controls/tablix/touchRegionAbstraction.ts:186</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L220">controls/tablix/touchRegionAbstraction.ts:220</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_lockThreshold: boolean to enable locking to an axis when gesture is fixed to an axis</p>
+							<p>Boolean to enable locking to an axis when gesture is fixed to an axis.</p>
 						</div>
 					</div>
 				</section>
@@ -200,12 +201,12 @@
 					<div class="tsd-signature tsd-kind-icon">_matching<wbr>Direction<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L190">controls/tablix/touchRegionAbstraction.ts:190</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L230">controls/tablix/touchRegionAbstraction.ts:230</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_matchingDirectionCount: the count of consecutive events match the current swipe direction</p>
+							<p>The count of consecutive events match the current swipe direction.</p>
 						</div>
 					</div>
 				</section>
@@ -215,12 +216,12 @@
 					<div class="tsd-signature tsd-kind-icon">_scroll<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L184">controls/tablix/touchRegionAbstraction.ts:184</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L215">controls/tablix/touchRegionAbstraction.ts:215</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_scrollThreshold: boolean to enable thresholds for fixing to an axis when scrolling</p>
+							<p>Boolean to enable thresholds for fixing to an axis when scrolling.</p>
 						</div>
 					</div>
 				</section>
@@ -230,12 +231,12 @@
 					<div class="tsd-signature tsd-kind-icon">_swipe<wbr>Direction<span class="tsd-signature-symbol">:</span> <a href="../enums/powerbi.visuals.controls.touchutils.swipedirection.html" class="tsd-signature-type">SwipeDirection</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L188">controls/tablix/touchRegionAbstraction.ts:188</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L225">controls/tablix/touchRegionAbstraction.ts:225</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_swipeDirection: the current direction of the swipe</p>
+							<p>The current direction of the swipe.</p>
 						</div>
 					</div>
 				</section>
@@ -245,12 +246,12 @@
 					<div class="tsd-signature tsd-kind-icon">_touch<wbr>List<span class="tsd-signature-symbol">:</span> <a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandlerset.html" class="tsd-signature-type">ITouchHandlerSet</a><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L182">controls/tablix/touchRegionAbstraction.ts:182</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L210">controls/tablix/touchRegionAbstraction.ts:210</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_touchList: list of touch regions and their correlating data memebers</p>
+							<p>List of touch regions and their correlating data memebers.</p>
 						</div>
 					</div>
 				</section>
@@ -267,7 +268,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L207">controls/tablix/touchRegionAbstraction.ts:207</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L252">controls/tablix/touchRegionAbstraction.ts:252</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="powerbi.visuals.controls.touchutils.touchevent.html" class="tsd-signature-type">TouchEvent</a></h4>
@@ -287,7 +288,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L360">controls/tablix/touchRegionAbstraction.ts:360</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L406">controls/tablix/touchRegionAbstraction.ts:406</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -296,10 +297,13 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>e: <a href="powerbi.visuals.controls.touchutils.touchevent.html" class="tsd-signature-type">TouchEvent</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Position of event used to find touched regions</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandlerset.html" class="tsd-signature-type">ITouchHandlerSet</a><span class="tsd-signature-symbol">[]</span></h4>
-							<p>: Returns an array of regions that contain the event point.</p>
+							<p>Array of regions that contain the event point.</p>
 						</li>
 					</ul>
 				</section>
@@ -313,13 +317,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L377">controls/tablix/touchRegionAbstraction.ts:377</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L423">controls/tablix/touchRegionAbstraction.ts:423</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandlerset.html" class="tsd-signature-type">ITouchHandlerSet</a><span class="tsd-signature-symbol">[]</span></h4>
-							<p>: Returns an array of regions that contain a mouse down event. (see ITouchHandlerSet.lastPoint)</p>
+							<p>Array of regions that contain a mouse down event. (see ITouchHandlerSet.lastPoint).</p>
 						</li>
 					</ul>
 				</section>
@@ -333,7 +337,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L217">controls/tablix/touchRegionAbstraction.ts:217</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L263">controls/tablix/touchRegionAbstraction.ts:263</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -342,12 +346,22 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>region: <a href="powerbi.visuals.controls.touchutils.rectangle.html" class="tsd-signature-type">Rectangle</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Rectangle indicating the locations of the touch region.</p>
+									</div>
 								</li>
 								<li>
 									<h5>handler: <a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandler.html" class="tsd-signature-type">ITouchHandler</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Handler for recieved touch events.</p>
+									</div>
 								</li>
 								<li>
 									<h5>converter: <a href="../interfaces/powerbi.visuals.controls.touchutils.ipixeltoitem.html" class="tsd-signature-type">IPixelToItem</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Converts from pixels to the wanted item of measure (rows, columns, etc).</p>
+										<p>EXAMPLE: dx -&gt; from # of pixels to the right to # of columns moved to the right.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -364,7 +378,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L251">controls/tablix/touchRegionAbstraction.ts:251</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L297">controls/tablix/touchRegionAbstraction.ts:297</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -387,7 +401,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L231">controls/tablix/touchRegionAbstraction.ts:231</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/touchRegionAbstraction.ts#L277">controls/tablix/touchRegionAbstraction.ts:277</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

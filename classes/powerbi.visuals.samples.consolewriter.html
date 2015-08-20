@@ -97,8 +97,15 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#canresizeto" class="tsd-kind-icon">can<wbr>Resize<wbr>To</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#destroy" class="tsd-kind-icon">destroy</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#init" class="tsd-kind-icon">init</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#onclearselection" class="tsd-kind-icon">on<wbr>Clear<wbr>Selection</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#ondatachanged" class="tsd-kind-icon">on<wbr>Data<wbr>Changed</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#onresizing" class="tsd-kind-icon">on<wbr>Resizing</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#onselectobject" class="tsd-kind-icon">on<wbr>Select<wbr>Object</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#onstylechanged" class="tsd-kind-icon">on<wbr>Style<wbr>Changed</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#onviewmodechanged" class="tsd-kind-icon">on<wbr>View<wbr>Mode<wbr>Changed</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="powerbi.visuals.samples.consolewriter.html#update" class="tsd-kind-icon">update</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="powerbi.visuals.samples.consolewriter.html#converter" class="tsd-kind-icon">converter</a></li>
 							</ul>
@@ -108,6 +115,48 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="canresizeto" class="tsd-anchor"></a>
+					<h3>can<wbr>Resize<wbr>To</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">can<wbr>Resize<wbr>To<span class="tsd-signature-symbol">(</span>viewport<span class="tsd-signature-symbol">: </span><a href="../interfaces/powerbi.iviewport.html" class="tsd-signature-type">IViewport</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#canresizeto">canResizeTo</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L42">visuals/samples/consoleWriter.ts:42</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>viewport: <a href="../interfaces/powerbi.iviewport.html" class="tsd-signature-type">IViewport</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="destroy" class="tsd-anchor"></a>
+					<h3>destroy</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">destroy<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#destroy">destroy</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L50">visuals/samples/consoleWriter.ts:50</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="init" class="tsd-anchor"></a>
 					<h3>init</h3>
@@ -119,13 +168,55 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#init">init</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L40">visuals/samples/consoleWriter.ts:40</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L56">visuals/samples/consoleWriter.ts:56</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>options: <a href="../interfaces/powerbi.visualinitoptions.html" class="tsd-signature-type">VisualInitOptions</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="onclearselection" class="tsd-anchor"></a>
+					<h3>on<wbr>Clear<wbr>Selection</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Clear<wbr>Selection<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#onclearselection">onClearSelection</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L71">visuals/samples/consoleWriter.ts:71</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="ondatachanged" class="tsd-anchor"></a>
+					<h3>on<wbr>Data<wbr>Changed</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Data<wbr>Changed<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><a href="../interfaces/powerbi.visualdatachangedoptions.html" class="tsd-signature-type">VisualDataChangedOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#ondatachanged">onDataChanged</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L77">visuals/samples/consoleWriter.ts:77</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>options: <a href="../interfaces/powerbi.visualdatachangedoptions.html" class="tsd-signature-type">VisualDataChangedOptions</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -143,13 +234,85 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#onresizing">onResizing</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L53">visuals/samples/consoleWriter.ts:53</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L84">visuals/samples/consoleWriter.ts:84</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>viewport: <a href="../interfaces/powerbi.iviewport.html" class="tsd-signature-type">IViewport</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="onselectobject" class="tsd-anchor"></a>
+					<h3>on<wbr>Select<wbr>Object</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Select<wbr>Object<span class="tsd-signature-symbol">(</span>object<span class="tsd-signature-symbol">: </span><a href="../interfaces/powerbi.visualobjectinstance.html" class="tsd-signature-type">VisualObjectInstance</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#onselectobject">onSelectObject</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L86">visuals/samples/consoleWriter.ts:86</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>object: <a href="../interfaces/powerbi.visualobjectinstance.html" class="tsd-signature-type">VisualObjectInstance</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="onstylechanged" class="tsd-anchor"></a>
+					<h3>on<wbr>Style<wbr>Changed</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>Style<wbr>Changed<span class="tsd-signature-symbol">(</span>newStyle<span class="tsd-signature-symbol">: </span><a href="../interfaces/powerbi.ivisualstyle.html" class="tsd-signature-type">IVisualStyle</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#onstylechanged">onStyleChanged</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L93">visuals/samples/consoleWriter.ts:93</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>newStyle: <a href="../interfaces/powerbi.ivisualstyle.html" class="tsd-signature-type">IVisualStyle</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="onviewmodechanged" class="tsd-anchor"></a>
+					<h3>on<wbr>View<wbr>Mode<wbr>Changed</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">on<wbr>View<wbr>Mode<wbr>Changed<span class="tsd-signature-symbol">(</span>viewMode<span class="tsd-signature-symbol">: </span><a href="../enums/powerbi.viewmode.html" class="tsd-signature-type">ViewMode</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#onviewmodechanged">onViewModeChanged</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L100">visuals/samples/consoleWriter.ts:100</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>viewMode: <a href="../enums/powerbi.viewmode.html" class="tsd-signature-type">ViewMode</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -167,7 +330,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/powerbi.ivisual.html">IVisual</a>.<a href="../interfaces/powerbi.ivisual.html#update">update</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L55">visuals/samples/consoleWriter.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/visuals/samples/consoleWriter.ts#L107">visuals/samples/consoleWriter.ts:107</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -234,10 +397,31 @@
 						<a href="powerbi.visuals.samples.consolewriter.html" class="tsd-kind-icon">Console<wbr>Writer</a>
 						<ul>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#canresizeto" class="tsd-kind-icon">can<wbr>Resize<wbr>To</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#destroy" class="tsd-kind-icon">destroy</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="powerbi.visuals.samples.consolewriter.html#init" class="tsd-kind-icon">init</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#onclearselection" class="tsd-kind-icon">on<wbr>Clear<wbr>Selection</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#ondatachanged" class="tsd-kind-icon">on<wbr>Data<wbr>Changed</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="powerbi.visuals.samples.consolewriter.html#onresizing" class="tsd-kind-icon">on<wbr>Resizing</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#onselectobject" class="tsd-kind-icon">on<wbr>Select<wbr>Object</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#onstylechanged" class="tsd-kind-icon">on<wbr>Style<wbr>Changed</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="powerbi.visuals.samples.consolewriter.html#onviewmodechanged" class="tsd-kind-icon">on<wbr>View<wbr>Mode<wbr>Changed</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="powerbi.visuals.samples.consolewriter.html#update" class="tsd-kind-icon">update</a>

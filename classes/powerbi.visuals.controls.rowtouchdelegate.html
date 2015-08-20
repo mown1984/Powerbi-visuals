@@ -79,10 +79,10 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>  This class represents the touch region of the row headers (left or right side aligned).
+						<p>This class represents the touch region of the row headers (left or right side aligned).
 						This class is reponsible for interpreting gestures in terms of pixels to changes in row position.</p>
 					</div>
-					<p>  Unlike the table body, this can only scroll in one direction.</p>
+					<p>Unlike the table body, this can only scroll in one direction.</p>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -150,15 +150,24 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L135">controls/tablix/tablixTouchDelegate.ts:135</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L156">controls/tablix/tablixTouchDelegate.ts:156</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>constructor</dt>
+									<dd></dd>
+								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>region: <a href="powerbi.visuals.controls.touchutils.rectangle.html" class="tsd-signature-type">Rectangle</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Location and area of the touch region in respect to its HTML element.</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="powerbi.visuals.controls.rowtouchdelegate.html" class="tsd-signature-type">RowTouchDelegate</a></h4>
@@ -174,12 +183,12 @@
 					<div class="tsd-signature tsd-kind-icon">_average<wbr>Size<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L131">controls/tablix/tablixTouchDelegate.ts:131</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L146">controls/tablix/tablixTouchDelegate.ts:146</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_averageSize: average pixel height of rows in table</p>
+							<p>Average pixel height of rows in table.</p>
 						</div>
 					</div>
 				</section>
@@ -189,12 +198,12 @@
 					<div class="tsd-signature tsd-kind-icon">_dimension<span class="tsd-signature-symbol">:</span> <a href="powerbi.visuals.controls.touchutils.rectangle.html" class="tsd-signature-type">Rectangle</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L129">controls/tablix/tablixTouchDelegate.ts:129</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L141">controls/tablix/tablixTouchDelegate.ts:141</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_dimension: used to termine if the touch event is within bounds</p>
+							<p>Used to termine if the touch event is within bounds.</p>
 						</div>
 					</div>
 				</section>
@@ -204,12 +213,12 @@
 					<div class="tsd-signature tsd-kind-icon">_handlers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L135">controls/tablix/tablixTouchDelegate.ts:135</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L156">controls/tablix/tablixTouchDelegate.ts:156</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_handlers: stores the event handler of TablixControl for scroll events</p>
+							<p>Stores the event handler of TablixControl for scroll events.</p>
 						</div>
 					</div>
 				</section>
@@ -219,12 +228,12 @@
 					<div class="tsd-signature tsd-kind-icon">_tablix<wbr>Control<span class="tsd-signature-symbol">:</span> <a href="powerbi.visuals.controls.tablixcontrol.html" class="tsd-signature-type">TablixControl</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L133">controls/tablix/tablixTouchDelegate.ts:133</a></li>
+							<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L151">controls/tablix/tablixTouchDelegate.ts:151</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>_tablixControl: used for &#39;firing&#39; a scroll event following a recieved gesture</p>
+							<p>Used for &#39;firing&#39; a scroll event following a recieved gesture.</p>
 						</div>
 					</div>
 				</section>
@@ -241,7 +250,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L147">controls/tablix/tablixTouchDelegate.ts:147</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L169">controls/tablix/tablixTouchDelegate.ts:169</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="powerbi.visuals.controls.touchutils.rectangle.html" class="tsd-signature-type">Rectangle</a></h4>
@@ -262,7 +271,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/powerbi.visuals.controls.touchutils.ipixeltoitem.html">IPixelToItem</a>.<a href="../interfaces/powerbi.visuals.controls.touchutils.ipixeltoitem.html#getpixeltoitem">getPixelToItem</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L176">controls/tablix/tablixTouchDelegate.ts:176</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L199">controls/tablix/tablixTouchDelegate.ts:199</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -304,24 +313,39 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L166">controls/tablix/tablixTouchDelegate.ts:166</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L189">controls/tablix/tablixTouchDelegate.ts:189</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Resize element.</p>
+								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>x: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>X location from upper left of listened HTML element.</p>
+									</div>
 								</li>
 								<li>
 									<h5>y: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Y location from upper left of listened HTML element.</p>
+									</div>
 								</li>
 								<li>
 									<h5>width: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Width of area to listen for events.</p>
+									</div>
 								</li>
 								<li>
 									<h5>height: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Height of area to listen for events.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -338,7 +362,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L205">controls/tablix/tablixTouchDelegate.ts:205</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L228">controls/tablix/tablixTouchDelegate.ts:228</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -350,9 +374,15 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>tablixObj: <a href="powerbi.visuals.controls.tablixcontrol.html" class="tsd-signature-type">TablixControl</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>TablixControl that&#39;s handling the fired event.</p>
+									</div>
 								</li>
 								<li>
 									<h5>handlerCall: <span class="tsd-signature-type">function</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The call to be made (EXAMPLE: handlerCall = object.method;).</p>
+									</div>
 									<ul class="tsd-parameters">
 										<li class="tsd-parameter-siganture">
 											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
@@ -387,7 +417,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L156">controls/tablix/tablixTouchDelegate.ts:156</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L178">controls/tablix/tablixTouchDelegate.ts:178</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -399,6 +429,9 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>yRatio: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Row to pixel ratio (# rows / # pixels).</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -416,7 +449,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandler.html">ITouchHandler</a>.<a href="../interfaces/powerbi.visuals.controls.touchutils.itouchhandler.html#touchevent">touchEvent</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L187">controls/tablix/tablixTouchDelegate.ts:187</a></li>
+									<li>Defined in <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/src/Clients/Visuals/controls/tablix/tablixTouchDelegate.ts#L210">controls/tablix/tablixTouchDelegate.ts:210</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -428,6 +461,9 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>e: <a href="powerbi.visuals.controls.touchutils.touchevent.html" class="tsd-signature-type">TouchEvent</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Event recieved from touch manager.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
