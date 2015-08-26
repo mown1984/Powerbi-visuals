@@ -75,10 +75,11 @@
 				<h2 id="how-to-engage-contribute-and-provide-feedback">How to Engage, Contribute and Provide Feedback</h2>
 				<p>There are many ways in which you can contribute to Power BI visuals:</p>
 				<ul>
-					<li>Submit bugs by opening a GitHub Issue <a href="https://github.com/Microsoft/PowerBI-visuals/issues">here</a></li>
+					<li>You can contribute fixes and new visuals to this repo, read the <a href="https://github.com/Microsoft/PowerBI-visuals/blob/master/CONTRIBUTING.md">contribution guildelines</a>.</li>
+					<li>Submit bugs by opening a GitHub Issue <a href="https://github.com/Microsoft/PowerBI-visuals/issues">here</a>.</li>
 					<li>Contribute to discussions on <a href="http://stackoverflow.com/questions/tagged/powerbi">StackOverflow</a>.</li>
-					<li>Follow the <a href="http://blogs.msdn.com/powerbidev">Power BI Developer</a> blog for updates</li>
-					<li>Follow Power BI on Twitter <a href="http://twitter.com/mspowerbi">@mspowerbi</a></li>
+					<li>Follow the <a href="http://blogs.msdn.com/powerbidev">Power BI Developer</a> blog for updates.</li>
+					<li>Follow Power BI on Twitter <a href="http://twitter.com/mspowerbi">@mspowerbi</a>.</li>
 				</ul>
 				<h2 id="documentation">Documentation</h2>
 				<ul>
@@ -100,12 +101,10 @@
 					<li><a href="https://nodejs.org/download/">Node.js</a></li>
 				</ul>
 				<p>In order to run unit tests you will also need to do the following:</p>
-				<ol>
-					<li>Install <a href="http://phantomjs.org/">PhantomJS</a> (PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.)<ul>
-							<li>Make sure it&#39;s running from command line typing &#39;phantomjs&#39;. If it&#39;s not then you need to update your system PATH variable and add the path to phantomjs.exe file.</li>
-						</ul>
-					</li>
-				</ol>
+				<p>Install <a href="http://phantomjs.org/">PhantomJS</a> (PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.).</p>
+				<p>For Windows OS you can install PhantomJS using this command:</p>
+				<pre><code><span class="hljs-title">gulp</span> phantomjs-dependency
+</code></pre><p>As result, local version of the PhantomJS will be downloaded and installed into the project. For other OS you have to install PhantomJS manually.</p>
 				<h3 id="build-power-bi-visuals">Build Power BI visuals</h3>
 				<p>In order to build the Power BI visuals, ensure that you have <a href="http://git-scm.com/book/en/v2/Getting-Started-Installing-Git#Installing-on-Windows">Git</a> and <a href="http://nodejs.org/download/">Node.js</a> installed.</p>
 				<p>Clone a copy of the repo:</p>
