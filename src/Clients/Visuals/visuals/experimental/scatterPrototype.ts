@@ -7,6 +7,7 @@
             y: number;
             size: number;
             color: RgbColor;
+            selected: boolean;
             //categoryValue: string;
         }
 
@@ -15,6 +16,8 @@
             y: number;
             radius: number;
             fill: RgbColor;
+            //stroke: RgbColor;   // TODO: We need an RgbaColor structure
+            alpha: number;
         }
 
         export interface ScatterViewModel {
@@ -25,31 +28,71 @@
         export interface ScatterDataModel {
             dataPoints: ScatterDataPointModel[];
             sizeRange: NumberRange;
+            xDomain: Domain;
+            yDomain: Domain;
+            hasSelection: boolean;
         }
 
-        export class ScatterVisual implements IVisual {
-            //private element: JQuery;
-            //private svg: D3.Selection;
+        export class ScatterVisual implements IVisualComponent {
             private initOptions: VisualInitOptions;
+            private legend: Legend;
+            private axes: CartesianAxes;
 
-            private viewport: IViewport;
+            private dataModel: ScatterDataModel;
             
             public init(options: VisualInitOptions) {
                 this.initOptions = options;
 
-                //let element = this.element = options.element;
-
-                //this.svg = d3.select(element.get(0)).append('svg');
+                this.legend = new Legend();
+                this.axes = new CartesianAxes();
             }
 
-            public layout(model: ScatterDataModel, boundingBox: BoundingBox): ScatterViewModel {
+            public layout(boundingBox: BoundingBox, renderer: IVisualRenderer): SceneGraphNode {
+                // ---- Layout ----
+                let layoutManager = new DockLayoutManager(boundingBox);
+
+                let legendPosition = DockPosition.Left;  // TODO: get position from legend?
+                let legendBoundingBox = layoutManager.measure(this.legend, legendPosition);
+                let axesBoundingBox = layoutManager.measure(this.axes, DockPosition.Fill);
+
+                // ---- Build Scene Graph ----
+                let sceneNode = new SceneGraphNode();
+
+                sceneNode.add(this.legend.layout(legendBoundingBox, renderer));
+                sceneNode.add(this.axes.layout(axesBoundingBox, this.dataModel.xDomain, this.dataModel.yDomain, renderer));
+
+                // NOTE: requires axes be laid out first
+                // Another option is to separate out the plot area
+                let viewModel = this.buildViewModel(this.dataModel, boundingBox);
+                sceneNode.render = this.getRenderMethod(viewModel, renderer);
+                
+                return sceneNode;
+            }
+
+            private getRenderMethod(viewModel: ScatterViewModel, renderer: IVisualRenderer) {
+                switch (renderer.type) {
+                    case RendererType.SVG:
+                        return () => new ScatterSvgRenderer(viewModel).render(<SvgRenderer>renderer);
+                    case RendererType.Canvas:
+                        return () => new ScatterCanvasRenderer(viewModel).render(<CanvasRenderer>renderer);
+                }
+
+                return null;
+            }
+
+            public buildViewModel(model: ScatterDataModel, boundingBox: BoundingBox): ScatterViewModel {
                 let dataPoints: ScatterDataPointViewModel[] = [];
+
+                // TODO: may need other axes properties. like what?
+                let xScale = this.axes.xScale;
+                let yScale = this.axes.yScale;
 
                 for (let dataPoint of model.dataPoints) {
                     dataPoints.push(<ScatterDataPointViewModel> {
-                        x: boundingBox.left + dataPoint.x,
-                        y: boundingBox.top + dataPoint.y,
+                        x: boundingBox.left + xScale(dataPoint.x),
+                        y: boundingBox.top + yScale(dataPoint.y),
                         fill: dataPoint.color,
+                        alpha: BubbleHelper.getBubbleOpacity(dataPoint.selected, model.hasSelection),
                         radius: BubbleHelper.getBubbleRadius(dataPoint.size, model.sizeRange, boundingBox),
                     });
                 }
@@ -60,35 +103,15 @@
                 };
             }
 
-            public convert(dataView: DataView, colorPalette: IDataColorPalette, defaultDataPointColor?: string): ScatterDataModel {
-                return new ScatterChartDataConverter(dataView).convert(colorPalette, defaultDataPointColor);
+            public setData(dataView: DataView) {
+                this.buildDataModel(dataView, this.initOptions.style.colorPalette.dataColors);
+
+                this.legend.convert(dataView, this.initOptions.style.colorPalette.dataColors, "", null);
+                this.axes.convert(dataView);
             }
 
-            public render(options: RenderOptions<ScatterViewModel>) {
-                let plot = options.drawingSurface.select('.plot');
-
-                if (plot.size() === 0) {
-                    plot = options.drawingSurface.append('g').classed('plot', true);
-                }
-
-                let bbox = options.viewModel.boundingBox;
-                plot.style('transform', SVGUtil.translate(bbox.left, bbox.top));
-
-                let selection = plot.selectAll('.dataPoint').data(options.viewModel.dataPoints);
-                selection.enter()
-                    .append('circle')
-                    .classed('dataPoint', true);
-
-                selection.attr({
-                    'cx': (d: ScatterDataPointViewModel) => d.x,
-                    'cy': (d: ScatterDataPointViewModel) => d.y,
-                    'fill': (d: ScatterDataPointViewModel) => d.fill,
-                    'r': (d: ScatterDataPointViewModel) => d.radius,
-                });
-
-                selection.exit();
-
-                DebugHelper.drawRect(options.drawingSurface, bbox, "green", "plot");
+            private buildDataModel(dataView: DataView, colorPalette: IDataColorPalette, defaultDataPointColor?: string): void {
+                this.dataModel = new ScatterChartDataConverter(dataView).convert(colorPalette, defaultDataPointColor);
             }
 
             //public update(options: VisualUpdateOptions) {
@@ -112,63 +135,78 @@
             //    //AxesHelper.render(axes[]);
             //    PerfectScatter.render({viewModel: viewModel});
             //}
+        }
 
-            public update(options: VisualUpdateOptions) {
-                let dataView = options.dataViews[0];
+        class ScatterSvgRenderer {
+            private viewModel: ScatterViewModel;
 
-                this.viewport = options.viewport;
-
-                // --- Create data models ---
-                let scatterDataModel = this.convert(dataView, this.initOptions.style.colorPalette.dataColors);
-                //TODO: fix null params
-                let legend = new Legend(dataView, null, "", null);
-                let axes = new CartesianAxes(dataView);
-
-                // --- Layout ---
-                let visualBoundingBox: BoundingBox = {
-                    top: 0,
-                    left: 0,
-                    height: this.viewport.height,
-                    width: this.viewport.width,
-                };
-                let layoutManager = new DockLayoutManager(visualBoundingBox);
-
-                // --- Legend ---
-                let legendPosition = DockPosition.Left;  // TODO: get position from legend?
-                let legendBoundingBox = layoutManager.measure(legend, legendPosition);
-                let axesBoundingBox = layoutManager.measure(axes, DockPosition.Fill);
-
-                // TODO:
-                //let plotBoundingBox = axes.getPlotArea();
-
-                // Get view models
-                let viewModel = this.layout(scatterDataModel, visualBoundingBox);
-                let legendViewModel = legend.layout(legendBoundingBox);
-                let axesViewModels = axes.layout(axesBoundingBox);
-
-                // Render view models
-                //let svg = this.svg;
-                //svg.attr({
-                //    width: this.viewport.width,
-                //    height: this.viewport.height,
-                //});
-
-                //this.render({ viewModel: viewModel, drawingSurface: svg });
-                //legend.render({ viewModel: legendViewModel, drawingSurface: svg });
-                //axes.render({ viewModel: axesViewModels, drawingSurface: svg });
+            constructor(viewModel: ScatterViewModel) {
+                this.viewModel = viewModel;
             }
 
-            public onResizing(viewport: IViewport) { /*NOT NEEDED*/ }
+            public render(renderer: SvgRenderer) {
+                let svg = renderer.getElement();
 
-            public onDataChanged(options: VisualDataChangedOptions) {
-                this.update(<VisualUpdateOptions> {
-                    dataViews: options.dataViews,
-                    suppressAnimations: options.suppressAnimations,
-                    viewport: this.viewport,
+                let plot = svg.select('.plot');
+
+                if (plot.size() === 0) {
+                    plot = svg.append('g').classed('plot', true);
+                }
+
+                let bbox = this.viewModel.boundingBox;
+                plot.style('transform', SVGUtil.translate(bbox.left, bbox.top));
+
+                let selection = plot.selectAll('.dataPoint').data(this.viewModel.dataPoints);
+                selection.enter()
+                    .append('circle')
+                    .classed('dataPoint', true);
+
+                selection.attr({
+                    'cx': (d: ScatterDataPointViewModel) => d.x,
+                    'cy': (d: ScatterDataPointViewModel) => d.y,
+                    'fill': (d: ScatterDataPointViewModel) => jsCommon.color.rgbString(d.fill),
+                    'r': (d: ScatterDataPointViewModel) => d.radius,
                 });
+
+                selection.exit();
+
+                DebugHelper.drawSvgRect(svg, bbox, "green", "plot");
+            }
+        }
+
+        class ScatterCanvasRenderer {
+            private viewModel: ScatterViewModel;
+
+            constructor(viewModel: ScatterViewModel) {
+                this.viewModel = viewModel;
             }
 
-            public destroy() { }
+            public render(renderer: CanvasRenderer) {
+                let canvas = renderer.getCanvasContext();
+                let bbox = this.viewModel.boundingBox;
+                
+                for (let point of this.viewModel.dataPoints) {
+                    canvas.beginPath();
+                    canvas.arc(
+                        point.x,
+                        point.y,
+                        point.radius,
+                        0,
+                        2 * Math.PI,
+                        false);
+                    canvas.closePath();
+
+                    //context.fillStyle = jsCommon.color.rgbWithAlphaString(point.fill, point.alpha);
+                    //context.fill();
+
+                    let color = jsCommon.color.rgbWithAlphaString(point.fill, point.alpha);
+                    canvas.lineWidth = 1;
+                    canvas.strokeStyle = color;
+                    canvas.stroke();
+                }
+
+                DebugHelper.drawCanvasRect(canvas, bbox, "green", "plot");
+            }
         }
 
         class ScatterMetadata {
@@ -241,15 +279,15 @@
                 let scatterMetadata = new ScatterMetadata(seriesColumns);
 
                 let colorHelper = new ColorHelper(colorPalette, scatterChartProps.dataPoint.fill, defaultDataPointColor);
-                let categoryFormatter = categoryValues.length > 0
-                    ? valueFormatter.create({ format: valueFormatter.getFormatString(this.dataViewHelper.categoryColumn.source, scatterChartProps.general.formatString), value: categoryValues[0], value2: categoryValues[categoryValues.length - 1] })
-                    : valueFormatter.createDefaultFormatter(null);
+                //let categoryFormatter = categoryValues.length > 0
+                //    ? valueFormatter.create({ format: valueFormatter.getFormatString(this.dataViewHelper.categoryColumn.source, scatterChartProps.general.formatString), value: categoryValues[0], value2: categoryValues[categoryValues.length - 1] })
+                //    : valueFormatter.createDefaultFormatter(null);
 
                 let sizeRange: NumberRange = this.computeMinMax(seriesColumns, scatterMetadata.sizeIndex);
 
                 let dataPoints: ScatterDataPointModel[] = [];
                 for (let categoryIdx = 0, catLen = categoryValues.length; categoryIdx < catLen; categoryIdx++) {
-                    let categoryValue = categoryValues[categoryIdx];
+                    //let categoryValue = categoryValues[categoryIdx];
 
                     for (let seriesIdx = 0, seriesLen = seriesColumns.length; seriesIdx < seriesLen; seriesIdx++) {
                         let seriesColumn = seriesColumns[seriesIdx];
@@ -269,7 +307,7 @@
 
                         let color: RgbColor;
                         if (this.dataViewHelper.hasDynamicSeries) {
-                            color = jsCommon.color.parseRgb(colorHelper.getColorForSeriesValue(seriesColumn.objects, this.dataViewHelper.seriesIdentity, seriesColumn.name))
+                            color = jsCommon.color.parseRgb(colorHelper.getColorForSeriesValue(seriesColumn.objects, this.dataViewHelper.seriesIdentity, seriesColumn.name));
                         }
                         else {
                             // If we have no Size measure then use a blank query name
@@ -295,6 +333,7 @@
                             color: color,
                             //selected: false,
                             identity: identity,
+                            selected: false,
                             //tooltipInfo: tooltipInfo,
                             //labelFill: labelSettings.labelColor,
                         };
@@ -303,9 +342,15 @@
                     }
                 }
 
+                // TODO: integrate in main loop?
+                let xDomain: Domain = Domain.createFromValues(_.map(dataPoints, d => d.x));
+                let yDomain: Domain = Domain.createFromValues(_.map(dataPoints, d => d.y));
+
                 return <ScatterDataModel> {
                     dataPoints: dataPoints,
                     sizeRange: sizeRange,
+                    xDomain: xDomain,
+                    yDomain: yDomain,
                 };
             }
 
@@ -403,13 +448,19 @@
             function rangeContains(range: DataRange, value: number): boolean {
                 return range.minRange <= value && value <= range.maxRange;
             }
+
+            export function getBubbleOpacity(selected: boolean, hasSelection: boolean): number {
+                if (hasSelection && !selected) {
+                    return ScatterChart.DimmedBubbleOpacity;
+                }
+                return ScatterChart.DefaultBubbleOpacity;
+            }
         }
     }
 
     export module DebugHelper {
-        export function drawRect(drawingSurface: D3.Selection, bbox: BoundingBox, color: string, tag: string): void {
+        export function drawSvgRect(drawingSurface: D3.Selection, bbox: BoundingBox, color: string, tag: string): void {
             let placeholder = drawingSurface.select('.debug' + tag);
-
             if(placeholder.size() === 0) {
                 placeholder = drawingSurface.append('rect').classed('debug' + tag, true);
             }
@@ -422,6 +473,12 @@
                 stroke: color,
                 fill: "none",
             });
+        }
+
+        export function drawCanvasRect(canvas: CanvasRenderingContext2D, bbox: BoundingBox, color: string, tag: string): void {
+            canvas.lineWidth = 1;
+            canvas.strokeStyle = color;
+            canvas.strokeRect(bbox.left, bbox.top, bbox.width, bbox.height);
         }
     }
 }

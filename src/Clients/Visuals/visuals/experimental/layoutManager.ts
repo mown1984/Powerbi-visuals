@@ -1,13 +1,5 @@
 ﻿module powerbi.visuals.experimental {
 
-    export class SceneGraphNode {
-        public children: SceneGraphNode[];
-
-        constructor(children: SceneGraphNode[] = []) {
-            this.children = children;
-        }
-    }
-
     export enum DockPosition {
         Top,
         Left,
@@ -32,7 +24,7 @@
             this.parentBoundingBox = bbox;
         }
 
-        public measure<TDataModel>(component: IVisualComponent, position: DockPosition): BoundingBox {
+        public measure<TDataModel>(component: ILayoutable, position: DockPosition): BoundingBox {
             let bbox = component.getPreferredBoundingBox(this.bbox);
 
             // Calculate remaining space

@@ -15,23 +15,16 @@
     };
 
     export class Domain {
-        private _min: number;
-        public get min(): number {
-            return this._min;
-        }
-
-        private _max: number;
-        public get max(): number {
-            return this._max;
-        }
+        public min: number;
+        public max: number;
         
         constructor(min: number = 0, max: number = 0) {
             this.setDomain(min, max);
         }
 
         public setDomain(min: number = 0, max: number = 0): void {
-            this._min = min;
-            this._max = max;
+            this.min = min;
+            this.max = max;
         }
 
         public static createFromValues(values: number[]): Domain {
@@ -40,7 +33,7 @@
             return new Domain(min, max);
         }
 
-        public static createFromNestedValues<TOuter>(values: TOuter[], unpack: (TOuter) => number[]): Domain {
+        public static createFromNestedValues<TOuter>(values: TOuter[], unpack: (p: TOuter) => number[]): Domain {
             let min = d3.min(values, (v) => d3.min(unpack(v)));
             let max = d3.max(values, (v) => d3.max(unpack(v)));
             return new Domain(min, max);
@@ -51,10 +44,17 @@
         }
     }
 
-    export class CartesianAxes implements IVisualComponent {
+    export class CartesianAxes implements ILayoutable {
         public dataModels: AxisDataModel[];
 
-        constructor(dataView: DataView) {
+        public xScale: D3.Scale.GenericScale<any>;
+        public yScale: D3.Scale.GenericScale<any>;
+
+
+        // TODO: should axes use the data view to compute domain, etc.
+        // Or, should it use the data model for the visual? I think the latter.
+
+        public convert(dataView: DataView): void {
             let dataViewHelper = new DataViewHelper(dataView);
 
             // TODO: using first category value only
@@ -100,7 +100,25 @@
             };
         }
 
-        public layout(boundingBox: BoundingBox): IAxisProperties[] {
+        public layout(bbox: BoundingBox, xDomain: Domain, yDomain: Domain, renderer: IVisualRenderer): SceneGraphNode {
+            let node = new SceneGraphNode();
+
+            node.render = () => { };
+
+            // TODO: padding/margins?
+            // TODO: should range be in absolute pixels or relative? depends on how we use the scale I think.
+            this.xScale = d3.scale.linear()
+                .range([0, bbox.width])
+                .domain([xDomain.min, xDomain.max])
+
+            this.yScale = d3.scale.linear()
+                .range([0, bbox.height])
+                .domain([yDomain.min, yDomain.max])
+
+            return node;
+        }
+
+        public layoutAxes(boundingBox: BoundingBox): IAxisProperties[] {
             let models = this.dataModels;
 
             // TODO: not all optionals are set, e.g. getValuefn
