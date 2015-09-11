@@ -1,5 +1,13 @@
 ﻿module powerbi.visuals.experimental {
-   
+
+    export class SceneGraphNode {
+        public children: SceneGraphNode[];
+
+        constructor(children: SceneGraphNode[] = []) {
+            this.children = children;
+        }
+    }
+
     export enum DockPosition {
         Top,
         Left,

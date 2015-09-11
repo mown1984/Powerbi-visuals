@@ -1,17 +1,20 @@
 ﻿module powerbi.visuals.experimental {
+    import RgbColor = jsCommon.color.RgbColor;
 
     export module ScatterPrototype {
         export interface ScatterDataPointModel {
             x: number;
             y: number;
             size: number;
+            color: RgbColor;
+            //categoryValue: string;
         }
 
         export interface ScatterDataPointViewModel {
             x: number;
             y: number;
             radius: number;
-            fill: string;
+            fill: RgbColor;
         }
 
         export interface ScatterViewModel {
@@ -20,15 +23,13 @@
         }
 
         export interface ScatterDataModel {
-            axes: any[];
-            legend: any;
             dataPoints: ScatterDataPointModel[];
-            //scatterPlotArea: ScatterPlotAreaViewModel;
+            sizeRange: NumberRange;
         }
 
         export class ScatterVisual implements IVisual {
-            private element: JQuery;
-            private svg: D3.Selection;
+            //private element: JQuery;
+            //private svg: D3.Selection;
             private initOptions: VisualInitOptions;
 
             private viewport: IViewport;
@@ -36,48 +37,20 @@
             public init(options: VisualInitOptions) {
                 this.initOptions = options;
 
-                let element = this.element = options.element;
+                //let element = this.element = options.element;
 
-                this.svg = d3.select(element.get(0)).append('svg');
+                //this.svg = d3.select(element.get(0)).append('svg');
             }
 
-            //private static forEachDataPoint(callback: () => void) {
-            //    for (let categoryIdx = 0, ilen = categoryValues.length; categoryIdx < ilen; categoryIdx++) {
-            //        let categoryValue = categoryValues[categoryIdx];
-
-            //        for (let seriesIdx = 0, len = grouped.length; seriesIdx < len; seriesIdx++) {
-            //            let grouping = grouped[seriesIdx];
-            //        }
-            //    }
-            //}
-
             public layout(model: ScatterDataModel, boundingBox: BoundingBox): ScatterViewModel {
-
                 let dataPoints: ScatterDataPointViewModel[] = [];
 
-                for (let i = 0; i < model.dataPoints.length; i++) {
-                    //let dataPoint = model.dataPoints[i];
-
-                    //let colorHelper = new ColorHelper(colorPalette, scatterChartProps.dataPoint.fill, defaultDataPointColor);
-
-                    //let color: string;
-                    //if (hasDynamicSeries) {
-                    //    color = colorHelper.getColorForSeriesValue(grouping.objects, dataValues.identityFields, grouping.name);
-                    //}
-                    //else {
-                    //    // If we have no Size measure then use a blank query name
-                    //    let measureSource = (measureSize != null)
-                    //        ? measureSize.source.queryName
-                    //        : '';
-
-                    //    color = colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIdx], measureSource);
-                    //}
-
+                for (let dataPoint of model.dataPoints) {
                     dataPoints.push(<ScatterDataPointViewModel> {
-                        x: (Math.random() * boundingBox.width) + boundingBox.left,
-                        y: (Math.random() * boundingBox.height) + boundingBox.top,
-                        fill: "red",
-                        radius: (Math.random() * 22.123),
+                        x: boundingBox.left + dataPoint.x,
+                        y: boundingBox.top + dataPoint.y,
+                        fill: dataPoint.color,
+                        radius: BubbleHelper.getBubbleRadius(dataPoint.size, model.sizeRange, boundingBox),
                     });
                 }
 
@@ -174,15 +147,15 @@
                 let axesViewModels = axes.layout(axesBoundingBox);
 
                 // Render view models
-                let svg = this.svg;
-                svg.attr({
-                    width: this.viewport.width,
-                    height: this.viewport.height,
-                });
+                //let svg = this.svg;
+                //svg.attr({
+                //    width: this.viewport.width,
+                //    height: this.viewport.height,
+                //});
 
-                this.render({ viewModel: viewModel, drawingSurface: svg });
-                legend.render({ viewModel: legendViewModel, drawingSurface: svg });
-                axes.render({ viewModel: axesViewModels, drawingSurface: svg });
+                //this.render({ viewModel: viewModel, drawingSurface: svg });
+                //legend.render({ viewModel: legendViewModel, drawingSurface: svg });
+                //axes.render({ viewModel: axesViewModels, drawingSurface: svg });
             }
 
             public onResizing(viewport: IViewport) { /*NOT NEEDED*/ }
@@ -267,14 +240,14 @@
 
                 let scatterMetadata = new ScatterMetadata(seriesColumns);
 
-                let dataPoints: ScatterDataPointModel[] = [];
-
                 let colorHelper = new ColorHelper(colorPalette, scatterChartProps.dataPoint.fill, defaultDataPointColor);
-				
                 let categoryFormatter = categoryValues.length > 0
                     ? valueFormatter.create({ format: valueFormatter.getFormatString(this.dataViewHelper.categoryColumn.source, scatterChartProps.general.formatString), value: categoryValues[0], value2: categoryValues[categoryValues.length - 1] })
                     : valueFormatter.createDefaultFormatter(null);
 
+                let sizeRange: NumberRange = this.computeMinMax(seriesColumns, scatterMetadata.sizeIndex);
+
+                let dataPoints: ScatterDataPointModel[] = [];
                 for (let categoryIdx = 0, catLen = categoryValues.length; categoryIdx < catLen; categoryIdx++) {
                     let categoryValue = categoryValues[categoryIdx];
 
@@ -282,31 +255,31 @@
                         let seriesColumn = seriesColumns[seriesIdx];
                         let seriesValues = seriesColumn.values;
 
-                        let measureX = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.xIndex, seriesValues);
-                        let measureY = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.yIndex, seriesValues);
-                        let measureSize = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.sizeIndex, seriesValues);
+                        let xColumn = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.xIndex, seriesValues);
+                        let yColumn = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.yIndex, seriesValues);
+                        let sizeColumn = ScatterChartDataConverter.getMeasureColumn(scatterMetadata.sizeIndex, seriesValues);
 
-                        let xVal = ScatterChartDataConverter.getMeasureValue(measureX, categoryIdx);
-                        let yVal = ScatterChartDataConverter.getMeasureValue(measureY, categoryIdx, 0);
-                        let size = ScatterChartDataConverter.getMeasureValue(measureSize, categoryIdx);
+                        let xVal = ScatterChartDataConverter.getMeasureValue(xColumn, categoryIdx);
+                        let yVal = ScatterChartDataConverter.getMeasureValue(yColumn, categoryIdx, 0);
+                        let size = ScatterChartDataConverter.getMeasureValue(sizeColumn, categoryIdx);
 
                         let hasNullValue = (xVal == null) || (yVal == null);
                         if (hasNullValue)
                             continue;
 
-                        let color: string;
+                        let color: RgbColor;
                         if (this.dataViewHelper.hasDynamicSeries) {
-                            color = colorHelper.getColorForSeriesValue(seriesColumn.objects, this.dataViewHelper.seriesIdentity, seriesColumn.name);
+                            color = jsCommon.color.parseRgb(colorHelper.getColorForSeriesValue(seriesColumn.objects, this.dataViewHelper.seriesIdentity, seriesColumn.name))
                         }
                         else {
                             // If we have no Size measure then use a blank query name
-                            let measureSource = (measureSize != null)
-                                ? measureSize.source.queryName
+                            let measureSource = (sizeColumn != null)
+                                ? sizeColumn.source.queryName
                                 : '';
 
-                            color = colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIdx], measureSource);
+                            color = jsCommon.color.parseRgb(colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIdx], measureSource));
                         }
-						
+
                         let identity = SelectionIdBuilder.builder()
                             .withCategory(this.dataViewHelper.categoryColumn, categoryIdx)
                             .withSeries(this.dataView.categorical.values, seriesColumn)
@@ -317,11 +290,10 @@
                         let dataPoint: ScatterDataPointModel = {
                             x: xVal,
                             y: yVal,
-                            //radius: { sizeMeasure: measureSize, index: categoryIdx },
                             size: size,
-                            fill: color,
-                            category: categoryFormatter.format(categoryValue),
-                            selected: false,
+                            //category: categoryFormatter.format(categoryValue),
+                            color: color,
+                            //selected: false,
                             identity: identity,
                             //tooltipInfo: tooltipInfo,
                             //labelFill: labelSettings.labelColor,
@@ -333,6 +305,7 @@
 
                 return <ScatterDataModel> {
                     dataPoints: dataPoints,
+                    sizeRange: sizeRange,
                 };
             }
 
@@ -346,14 +319,30 @@
             private static getMeasureValue(measureColumn: DataViewValueColumn, index: number, defaultValue: any = null): any {
                 return measureColumn && measureColumn.values ? measureColumn.values[index] : defaultValue;
             }
+
+            private computeMinMax(seriesColumns: DataViewValueColumnGroup[], sizeColumnIndex: number): NumberRange {
+                let sizeRange: NumberRange = {};
+                for (let seriesColumn of seriesColumns) {
+                    let sizeColumn = ScatterChartDataConverter.getMeasureColumn(sizeColumnIndex, seriesColumn.values);
+                    let currentRange: NumberRange = AxisHelper.getRangeForColumn(sizeColumn);
+                    if (sizeRange.min == null || sizeRange.min > currentRange.min) {
+                        sizeRange.min = currentRange.min;
+                    }
+                    if (sizeRange.max == null || sizeRange.max < currentRange.max) {
+                        sizeRange.max = currentRange.max;
+                    }
+                }
+
+                return sizeRange;
+            }
         }
 
-        module BubbleHelpers {
+        module BubbleHelper {
             let AreaOf300By300Chart = 90000;
             let MinSizeRange = 200;
             let MaxSizeRange = 3000;
 
-            export function getBubbleRadius(value: number, valueRange: NumberRange, viewport: IViewport): number {
+            export function getBubbleRadius(value: number, valueRange: NumberRange, boundingBox: BoundingBox): number {
                 let min = valueRange.min || 0;
                 min = Math.min(min, 0);
 
@@ -368,15 +357,15 @@
                 };
 
                 // TODO: calculate this only once per update
-                let bubblePixelAreaSizeRange = getBubblePixelAreaSizeRange(viewport, MinSizeRange, MaxSizeRange);
+                let bubblePixelAreaSizeRange = getBubblePixelAreaSizeRange(boundingBox, MinSizeRange, MaxSizeRange);
 
                 return projectSizeToPixels(value, valueDataRange, bubblePixelAreaSizeRange) / 2;
             }
 
-            function getBubblePixelAreaSizeRange(viewport: IViewport, minSizeRange: number, maxSizeRange: number): DataRange {
+            function getBubblePixelAreaSizeRange(boundingBox: BoundingBox, minSizeRange: number, maxSizeRange: number): DataRange {
                 let ratio = 1.0;
-                if (viewport.height > 0 && viewport.width > 0) {
-                    let minDimension = Math.min(viewport.height, viewport.width);
+                if (boundingBox.height > 0 && boundingBox.width > 0) {
+                    let minDimension = Math.min(boundingBox.height, boundingBox.width);
                     ratio = (minDimension * minDimension) / AreaOf300By300Chart;
                 }
 
