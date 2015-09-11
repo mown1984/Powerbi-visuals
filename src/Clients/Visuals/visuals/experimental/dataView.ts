@@ -2,7 +2,6 @@
 
     export class DataViewHelper {
         private dataView: DataView;
-        private isCategorical: boolean;
         private _grouped: DataViewValueColumnGroup[];
 
         public get hasDynamicSeries(): boolean {

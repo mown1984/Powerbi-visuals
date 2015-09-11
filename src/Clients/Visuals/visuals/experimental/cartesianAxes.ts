@@ -45,11 +45,12 @@
     }
 
     export class CartesianAxes implements ILayoutable {
-        public dataModels: AxisDataModel[];
+        private dataModels: AxisDataModel[];
+        private isXScalar: boolean;
+        private categoryDomain: Domain;
 
         public xScale: D3.Scale.GenericScale<any>;
         public yScale: D3.Scale.GenericScale<any>;
-
 
         // TODO: should axes use the data view to compute domain, etc.
         // Or, should it use the data model for the visual? I think the latter.
@@ -61,14 +62,14 @@
             let categoryValues = dataViewHelper.categoryValues;
             let categoryType = dataViewHelper.categoryType;
 
-            let isScalar = powerbi.visuals.AxisHelper.isOrdinal(categoryType);
+            this.isXScalar = powerbi.visuals.AxisHelper.isOrdinal(categoryType);
 
             //let categoryMetadata = dataView.categorical.values[0].source;
             // TODO: first series source is not always right (multi-measure case)
             //let values = dataView.categorical.values;
             //let valueMetadata = dataView.categorical.values[0].source;
 
-            let categoryDomain: Domain = isScalar
+            this.categoryDomain = this.isXScalar
                 ? Domain.createFromValues(categoryValues)
                 : Domain.createOrdinal(categoryValues.length);
 
@@ -109,11 +110,11 @@
             // TODO: should range be in absolute pixels or relative? depends on how we use the scale I think.
             this.xScale = d3.scale.linear()
                 .range([0, bbox.width])
-                .domain([xDomain.min, xDomain.max])
+                .domain([xDomain.min, xDomain.max]);
 
             this.yScale = d3.scale.linear()
                 .range([0, bbox.height])
-                .domain([yDomain.min, yDomain.max])
+                .domain([yDomain.min, yDomain.max]);
 
             return node;
         }
