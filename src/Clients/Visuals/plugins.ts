@@ -229,7 +229,7 @@ module powerbi.visuals.plugins {
         name: 'scatterChart',
         watermarkKey: 'scatterplot',
         capabilities: capabilities.scatterChart,
-        create: () => new CartesianChart({ chartType: CartesianChartType.Scatter })
+        create: () => new powerbi.visuals.experimental.ScatterPrototype.ScatterVisual()
     };
 
     export var table: IVisualPlugin = {

@@ -246,6 +246,7 @@ module powerbi.visuals {
             return this;
         }
 
+        // TODO: this should take in DataViewMetadataColumn (seriesColumn.source)
         public withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): SelectionIdBuilder {
             if (seriesColumn && seriesColumn.source && seriesColumn.source.queryName && valueColumn)
                 this.ensureDataMap()[seriesColumn.source.queryName] = valueColumn.identity;
