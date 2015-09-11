@@ -30,6 +30,7 @@
 /// <reference path="sampleDataViews/sampleDataViews.ts"/>
 /// <reference path="sampleDataViews/FileStorageData.ts"/>
 /// <reference path="sampleDataViews/ImageData.ts"/>
+/// <reference path="sampleDataViews/MuchScatterData.ts"/>
 /// <reference path="sampleDataViews/RichtextData.ts"/>
 /// <reference path="sampleDataViews/SalesByCountryData.ts"/>
 /// <reference path="sampleDataViews/SalesByDayOfWeekData.ts"/>
