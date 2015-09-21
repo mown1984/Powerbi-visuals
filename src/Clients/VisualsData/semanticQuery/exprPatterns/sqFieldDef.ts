@@ -53,9 +53,9 @@ module powerbi.data {
         }
 
         function wrapAggr(fieldDef: SQFieldDef): SQExpr {
-            var aggr = fieldDef.aggregate;
+            let aggr = fieldDef.aggregate;
             if (aggr !== undefined) {
-                var expr = wrapColumn(fieldDef) || wrapEntity(fieldDef);
+                let expr = wrapColumn(fieldDef) || wrapEntity(fieldDef);
                 if (expr)
                     return aggregate(expr, aggr);
                
@@ -63,18 +63,18 @@ module powerbi.data {
         }
 
         function wrapColumn(fieldDef: SQFieldDef): SQExpr {
-            var column = fieldDef.column;
+            let column = fieldDef.column;
             if (column) {
-                var entityExpr = wrapEntity(fieldDef);
+                let entityExpr = wrapEntity(fieldDef);
                 if (entityExpr)
                     return columnRef(entityExpr, column);
             }
         }
 
         function wrapMeasure(fieldDef: SQFieldDef): SQExpr {
-            var measure = fieldDef.measure;
+            let measure = fieldDef.measure;
             if (measure) {
-                var entityExpr = wrapEntity(fieldDef);
+                let entityExpr = wrapEntity(fieldDef);
                 if (entityExpr)
                     return measureRef(entityExpr, measure);
             }
@@ -89,7 +89,7 @@ module powerbi.data {
         public static instance: SQFieldDefinitionBuilder = new SQFieldDefinitionBuilder();
 
         public visitColumnRef(expr: SQColumnRefExpr): SQFieldDef {
-            var sourceRef: SQFieldDef = expr.source.accept(this);
+            let sourceRef: SQFieldDef = expr.source.accept(this);
             if (sourceRef) {
                 sourceRef.column = expr.ref;
                 return sourceRef;
@@ -97,7 +97,7 @@ module powerbi.data {
         }
 
         public visitMeasureRef(expr: SQMeasureRefExpr): SQFieldDef {
-            var sourceRef: SQFieldDef = expr.source.accept(this);
+            let sourceRef: SQFieldDef = expr.source.accept(this);
             if (sourceRef) {
                 sourceRef.measure = expr.ref;
                 return sourceRef;
@@ -105,7 +105,7 @@ module powerbi.data {
         }
 
         public visitAggr(expr: SQAggregationExpr): SQFieldDef {
-            var sourceRef: SQFieldDef = expr.arg.accept(this);
+            let sourceRef: SQFieldDef = expr.arg.accept(this);
             if (sourceRef) {
                 sourceRef.aggregate = expr.func;
                 return sourceRef;
@@ -113,7 +113,7 @@ module powerbi.data {
         }
 
         public visitEntity(expr: SQEntityExpr): SQFieldDef {
-            var fieldDef: SQFieldDef = {
+            let fieldDef: SQFieldDef = {
                 schema: expr.schema,
                 entity: expr.entity
             };

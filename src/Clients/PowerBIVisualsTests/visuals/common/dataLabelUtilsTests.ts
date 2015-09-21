@@ -31,6 +31,7 @@ module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
     import DataLabelUtils = powerbi.visuals.dataLabelUtils;
+    import ObjectEnumerationBuilder = powerbi.visuals.ObjectEnumerationBuilder;
 
     powerbitests.mocks.setLocale();
 
@@ -131,9 +132,10 @@ module powerbitests {
             });
 
             it("undefined labelSettings validation", () => {
-                var labelSettings: powerbi.visuals.VisualDataLabelsSettings;
-                var instance = DataLabelUtils.enumerateDataLabels(labelSettings, false);
-                expect(instance).toEqual([]);
+                let labelSettings: powerbi.visuals.VisualDataLabelsSettings;
+                let enumeration = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateDataLabels(enumeration, labelSettings, false);
+                expect(enumeration.complete()).toBeUndefined();
             });
         });
 
@@ -432,9 +434,15 @@ module powerbitests {
 
         describe("Test enumerateCategoryLabels", () => {
             it("test default values", () => {
-                var labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
-                var objectsWithColor = DataLabelUtils.enumerateCategoryLabels(labelSettings, true);
-                var objectsNoColor = DataLabelUtils.enumerateCategoryLabels(labelSettings, false);
+                let labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
+
+                let enumerationWithColor = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationWithColor, labelSettings, true);
+                let objectsWithColor = enumerationWithColor.complete().instances;
+
+                let enumerationNoColor = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationNoColor, labelSettings, false);
+                let objectsNoColor = enumerationNoColor.complete().instances;
 
                 expect(objectsWithColor[0].properties["show"]).toBe(false);
                 expect(objectsNoColor[0].properties["show"]).toBe(false);
@@ -444,29 +452,39 @@ module powerbitests {
             });
 
             it("test custom values", () => {
-                var labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
+                let labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
                 labelSettings.show = true;
                 labelSettings.labelColor = "#FF0000";
 
-                var objectsWithColor = DataLabelUtils.enumerateCategoryLabels(labelSettings, true);
+                let enumerationWithColor = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationWithColor, labelSettings, true);
+                let objectsWithColor = enumerationWithColor.complete().instances;
 
                 expect(objectsWithColor[0].properties["show"]).toBe(true);
                 expect(objectsWithColor[0].properties["color"]).toBe("#FF0000");
             });
 
-            it("test category labels objetcs for donut chart", () => {
-                var labelSettings = DataLabelUtils.getDefaultDonutLabelSettings();
-                var objectsWithColor = DataLabelUtils.enumerateCategoryLabels(labelSettings, false, true);
+            it("test category labels objects for donut chart", () => {
+                let labelSettings = DataLabelUtils.getDefaultDonutLabelSettings();
+
+                let enumerationWithColor = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationWithColor, labelSettings, false, true);
+                let objectsWithColor = enumerationWithColor.complete().instances;
 
                 expect(objectsWithColor[0].properties["show"]).toBe(labelSettings.showCategory);
             });
 
             it("test null values", () => {
-                var labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
-                var donutLabelSettings = DataLabelUtils.getDefaultDonutLabelSettings();
+                let labelSettings = DataLabelUtils.getDefaultPointLabelSettings();
+                let donutLabelSettings = DataLabelUtils.getDefaultDonutLabelSettings();
 
-                var objectsWithColor = DataLabelUtils.enumerateCategoryLabels(null, true);
-                var donutObjectsWithColor = DataLabelUtils.enumerateCategoryLabels(null, false, true);
+                let enumerationWithColor = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationWithColor, null, true);
+                let objectsWithColor = enumerationWithColor.complete().instances;
+
+                let enumerationCategories = new ObjectEnumerationBuilder();
+                DataLabelUtils.enumerateCategoryLabels(enumerationCategories, null, false, true);
+                let donutObjectsWithColor = enumerationCategories.complete().instances;
 
                 expect(objectsWithColor[0].properties["show"]).toBe(labelSettings.show);
                 expect(objectsWithColor[0].properties["color"]).toBe(labelSettings.labelColor);

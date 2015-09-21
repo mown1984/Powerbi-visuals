@@ -52,14 +52,14 @@ module powerbi.visuals {
         }
 
         public animate(options: ColumnChartAnimationOptions): ColumnChartAnimationResult {
-            var result: ColumnChartAnimationResult = {
+            let result: ColumnChartAnimationResult = {
                 failed: true,
                 shapes: null,
                 dataLabels: null,
             };
 
-            var viewModel = options.viewModel;
-            var previousViewModel = this.previousViewModel;
+            let viewModel = options.viewModel;
+            let previousViewModel = this.previousViewModel;
 
             if (!previousViewModel) {
                 // This is the initial drawing of the chart, which has no special animation for now.
@@ -79,11 +79,11 @@ module powerbi.visuals {
         }
 
         private animateNormalToHighlighted(options: ColumnChartAnimationOptions): ColumnChartAnimationResult {
-            var data = options.viewModel;
-            var itemCS = options.itemCS;
-            var shapeSelection = options.series.selectAll(itemCS.selector);
-            var shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
-            var hasHighlights = data.hasHighlights;
+            let data = options.viewModel;
+            let itemCS = options.itemCS;
+            let shapeSelection = options.series.selectAll(itemCS.selector);
+            let shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
+            let hasHighlights = data.hasHighlights;
 
             shapes
                 .enter()
@@ -102,7 +102,7 @@ module powerbi.visuals {
                 .exit()
                 .remove();
 
-            var dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
+            let dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
 
             return {
                 failed: false,
@@ -112,8 +112,8 @@ module powerbi.visuals {
         }
 
         private animateHighlightedToHighlighted(options: ColumnChartAnimationOptions): ColumnChartAnimationResult {
-            var shapes = this.animateDefaultShapes(options.viewModel, options.series, options.layout, options.itemCS);
-            var dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
+            let shapes = this.animateDefaultShapes(options.viewModel, options.series, options.layout, options.itemCS);
+            let dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
 
             return {
                 failed: false,
@@ -123,10 +123,10 @@ module powerbi.visuals {
         }
 
         private animateHighlightedToNormal(options: ColumnChartAnimationOptions): ColumnChartAnimationResult {
-            var itemCS = options.itemCS;
-            var shapeSelection = options.series.selectAll(itemCS.selector);
-            var shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
-            var hasSelection = options.interactivityService && (<WebInteractivityService>options.interactivityService).hasSelection();
+            let itemCS = options.itemCS;
+            let shapeSelection = options.series.selectAll(itemCS.selector);
+            let shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
+            let hasSelection = options.interactivityService && options.interactivityService.hasSelection();
 
             shapes
                 .enter()
@@ -151,7 +151,7 @@ module powerbi.visuals {
                 .attr(hasSelection ? options.layout.zeroShapeLayout : options.layout.shapeLayoutWithoutHighlights)
                 .remove();
 
-            var dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
+            let dataLabels: D3.UpdateSelection = this.animateDefaultDataLabels(options);
 
             return {
                 failed: false,
@@ -161,8 +161,8 @@ module powerbi.visuals {
         }
 
         private animateDefaultShapes(data: ColumnChartData, series: D3.UpdateSelection, layout: IColumnLayout, itemCS: ClassAndSelector): D3.UpdateSelection {
-            var shapeSelection = series.selectAll(itemCS.selector);
-            var shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
+            let shapeSelection = series.selectAll(itemCS.selector);
+            let shapes = shapeSelection.data((d: ColumnChartSeries) => d.data, (d: ColumnChartDataPoint) => d.key);
 
             shapes
                 .enter()
@@ -184,7 +184,7 @@ module powerbi.visuals {
         }
 
         private animateDefaultDataLabels(options: ColumnChartAnimationOptions): D3.UpdateSelection {
-            var dataLabels: D3.UpdateSelection;
+            let dataLabels: D3.UpdateSelection;
 
             if (options.viewModel.labelSettings.show) {
                 dataLabels = ColumnUtil.drawDefaultLabels(options.series, options.mainGraphicsContext, options.labelLayout, options.viewPort, true, this.animationDuration);

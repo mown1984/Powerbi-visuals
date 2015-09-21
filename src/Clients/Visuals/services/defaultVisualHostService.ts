@@ -142,24 +142,25 @@ module powerbi.visuals {
         public canSelect(): boolean { return false; }
         public onSelect(): void { }
         public loadMoreData(): void { }
-        public persistProperties(changes: VisualObjectInstance[]): void { }
+        public persistProperties(changes: VisualObjectInstance[] | VisualObjectInstancesToPersist): void { }
         public onCustomSort(args: CustomSortEventArgs) { }
         public getViewMode(): powerbi.ViewMode { return ViewMode.View; }
         public setWarnings(warnings: IVisualWarning[]): void { }
         public setToolbar($toolbar: JQuery): void { }
+        public shouldRetainSelection(): boolean { return false; }
 
         private static beautify(format: string): string {
-            var key = BeautifiedFormat[format];
+            let key = BeautifiedFormat[format];
             if (key)
                 return defaultLocalizedStrings[key] || format;
             return format;
         }
 
         private static describeUnit(exponent: number): DisplayUnitSystemNames {
-            var exponentLookup = (exponent === -1) ? 'Auto' : exponent.toString();
+            let exponentLookup = (exponent === -1) ? 'Auto' : exponent.toString();
 
-            var title: string = defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_Title"];
-            var format: string = (exponent <= 0) ? '{0}' : defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_LabelFormat"];
+            let title: string = defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_Title"];
+            let format: string = (exponent <= 0) ? '{0}' : defaultLocalizedStrings["DisplayUnitSystem_E" + exponentLookup + "_LabelFormat"];
 
             if (title || format)
                 return { title: title, format: format };

@@ -257,7 +257,12 @@ module powerbitests {
                     expect($toolbar).toBeNull();
                 });
 
-                it("focus should be in the editor", () => expect(document.activeElement).toBe($element.find(".ql-editor").get(0)));
+                it("calling focus() should put focus in the editor", () => {
+                    var editor = getEditor($element).get(0);
+                    expect(document.activeElement).not.toBe(editor);
+                    textbox.focus();
+                    expect(document.activeElement).toBe(editor);
+                });
 
                 it("editor should be full size", () => {
                     var container = $element.find(".ql-container").parent();
@@ -444,27 +449,121 @@ module powerbitests {
                     expect(textAlignmentSelect($toolbar)).toBeDefined();
                 });
 
-                it("clicking insert link should insert default link text", () => {
+                it("mousedown on insert link should set focus to editor", () => {
                     let toolbar = getToolbar();
-                    let tooltip = getToolbarLinkTooltip(toolbar);
-                    let done = getLinkDoneButton(toolbar);
 
-                    let $divs = getEditModeParagraphDivs($element);
-                    expect($divs.text()).toBe("");
-                    expect(tooltip.hasClass("editing")).toBeFalsy();
+                    // Set focus to document body
+                    (<HTMLElement>document.activeElement).blur();
+                    expect(document.activeElement).toBe(document.body);
 
-                    clickLinkButton(toolbar);
+                    mousedownLinkButton(toolbar);
+                    expect(document.activeElement).toBe(getEditor($element).get(0));
+                });
 
-                    $divs = getEditModeParagraphDivs($element);
-                    expect($divs.text()).toBe("Link");
-                    expect(tooltip.hasClass("editing")).toBeTruthy();
+                describe('with empty textbox', () => {
+                    let toolbar;
+                    let tooltip;
+                    let done;
+                    let linkButton;
+                    let linkInput;
+                    let $divs;
 
-                    done[0].click();
+                    beforeEach(() => {
+                        toolbar = getToolbar();
+                        toolbar = toolbar.appendTo($element.parent());
 
-                    $divs = getEditModeParagraphDivs($element);
-                    let anchors = $divs.find("a");
-                    expect(anchors.length).toBe(1);
-                    expect(anchors.eq(0).attr("href")).toBe("http://Link");
+                        tooltip = getToolbarLinkTooltip(toolbar);
+                        done = getLinkDoneButton(toolbar);
+                        linkButton = getLinkButton(toolbar);
+                        linkInput = getLinkInput(toolbar);
+                        $divs = getEditModeParagraphDivs($element);
+
+                        expect($divs.text()).toBe("");
+                        expect(tooltip.hasClass("editing")).toBeFalsy();
+                    });
+
+                    describe('with focus outside editor', () => {
+                        beforeEach(() => {
+                            // Set focus to document body
+                            (<HTMLElement>document.activeElement).blur();
+                            expect(document.activeElement).toBe(document.body);
+                        });
+
+                        it("mousedown on insert link should focus editor", () => {
+
+                            mousedownLinkButton(toolbar);
+                            expect(document.activeElement).toBe(getEditor($element).get(0));
+                        });
+
+                        it("click on insert link should begin default url input", () => {
+                            linkButton.find("div").click();
+
+                            expect(tooltip.hasClass("editing")).toBeTruthy();
+                            expect(document.activeElement).toBe(linkInput.get(0));
+                        });
+                    });
+
+                    describe('clicking insert link', () => {
+                        beforeEach(() => {
+                            linkButton.find("div").click();
+                        });
+
+                        it('should begin editing in url input field', () => {
+                            expect(tooltip.hasClass("editing")).toBeTruthy();
+                        });
+
+                        it('should focus url input field', () => {
+                            expect(document.activeElement).toBe(linkInput.get(0));
+                        });
+
+                        it('should start with default url input value', () => {
+                            expect(linkInput.eq(0).val()).toBe('http://');
+                        });
+
+                        it('blur should exit the link input', () => {
+                            let microsoft = 'http://www.microsoft.com';
+                            linkInput.val(microsoft);
+
+                            linkInput.blur();
+
+                            expect(tooltip.hasClass("editing")).toBeFalsy();
+                            expect(document.activeElement).toBe(document.body);
+
+                            $divs = getEditModeParagraphDivs($element);
+                            let anchors = $divs.find("a");
+                            expect(anchors.length).toBe(0);
+                            expect($divs.text()).toBe('');
+                        });
+
+                        it('mousedown on done should insert input value into editor', () => {
+                            let microsoft = 'http://www.microsoft.com';
+                            linkInput.val(microsoft);
+
+                            done.mousedown();
+
+                            $divs = getEditModeParagraphDivs($element);
+                            let anchors = $divs.find("a");
+                            expect(anchors.length).toBe(1);
+                            expect(anchors.eq(0).attr("href")).toBe(microsoft);
+                            expect(anchors.eq(0).html()).toBe(microsoft);
+                        });
+
+                        it('enter key should insert input value into editor', () => {
+                            let microsoft = 'http://www.microsoft.com';
+                            linkInput.val(microsoft);
+
+                            // Fire enter key
+                            let event = $.Event("keydown");
+                            event.which = event.keyCode = 13;  // Enter key
+                            linkInput.trigger(event);
+
+                            $divs = getEditModeParagraphDivs($element);
+                            let anchors = $divs.find("a");
+                            expect(anchors.length).toBe(1);
+                            expect(anchors.eq(0).attr("href")).toBe(microsoft);
+                            expect(anchors.eq(0).html()).toBe(microsoft);
+                        });
+                    });
                 });
 
                 describe("with cursor inside text", () => {
@@ -848,7 +947,14 @@ module powerbitests {
                     let linkButton = getLinkButton($toolbar);
 
                     linkButton.find("div").mousedown();
+                    linkButton.find("div").click();
                     linkButton.click();
+                }
+
+                function mousedownLinkButton($toolbar: JQuery) {
+                    let linkButton = getLinkButton($toolbar);
+
+                    linkButton.find("div").mousedown();
                 }
 
                 function setSelectValue($select: JQuery, value: any): void {

@@ -33,7 +33,9 @@ module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import SVGUtil = powerbi.visuals.SVGUtil;
     import ColorConverter = powerbitests.utils.ColorUtility.convertFromRGBorHexToHex;
-
+    import valueFormatter = powerbi.visuals.valueFormatter;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+    import waterfallChartProps = powerbi.visuals.waterfallChartProps;
     powerbitests.mocks.setLocale();
 
     describe("WaterfallChart", () => {
@@ -603,7 +605,7 @@ module powerbitests {
                         show: true
                     }
                 };
-
+                dataView.categorical.values[0].source["objects"]["general"]["formatString"] = "$0.00";
                 v.onDataChanged({ dataViews: [dataView] });
                 v.onResizing({ height: 500, width: 200 });
 
@@ -639,8 +641,8 @@ module powerbitests {
                 var dataView = new WaterfallDataBuilder().build();
 
                 v.onDataChanged({ dataViews: [dataView] });
-
-                verifyLabels();
+                var format = valueFormatter.getFormatString(dataView.categorical.values[0].source, waterfallChartProps.general.formatString);
+                verifyLabels(format);
             });
 
             it("should include sentiment colors with empty data", () => {
@@ -658,22 +660,22 @@ module powerbitests {
             });
 
             function verifyColors() {
-                var objects = v.enumerateObjectInstances({ objectName: "sentimentColors" });
+                var objects = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: "sentimentColors" });
 
-                expect(objects.length).toBe(1);
-                expect(objects[0].properties["increaseFill"]).toBeDefined();
-                expect(objects[0].properties["decreaseFill"]).toBeDefined();
-                expect(objects[0].properties["totalFill"]).toBeDefined();
+                expect(objects.instances.length).toBe(1);
+                expect(objects.instances[0].properties["increaseFill"]).toBeDefined();
+                expect(objects.instances[0].properties["decreaseFill"]).toBeDefined();
+                expect(objects.instances[0].properties["totalFill"]).toBeDefined();
             };
-            
-            function verifyLabels() {
-                var objects = v.enumerateObjectInstances({ objectName: "labels" });
-                var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
 
-                expect(objects.length).toBe(1);
-                expect(objects[0].properties).toBeDefined();
+            function verifyLabels(format?: string) {
+                var objects = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: "labels" });
+                var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings(undefined, undefined, undefined, format);
 
-                var properties = objects[0].properties;
+                expect(objects.instances.length).toBe(1);
+                expect(objects.instances[0].properties).toBeDefined();
+
+                var properties = objects.instances[0].properties;
 
                 expect(properties["color"]).toBe(defaultLabelSettings.labelColor);
                 expect(properties["show"]).toBe(false);
@@ -690,7 +692,7 @@ module powerbitests {
             beforeEach(() => {
                 visualBuilder = new WaterfallVisualBuilder();
                 dataBuilder = new WaterfallDataBuilder();
-                v = visualBuilder.build();
+                v = visualBuilder.build(true);
             });
 
             it('should select right data', (done) => {
@@ -735,7 +737,7 @@ module powerbitests {
                     (<any>rects.first()).d3Click(0, 0);
 
                     var clearCatcher = $('.clearCatcher');
-                    (<any>$(clearCatcher[1])).d3Click(0, 0); 
+                    (<any>$(clearCatcher[0])).d3Click(0, 0); 
 
                     expect(visualBuilder.host.onSelect).toHaveBeenCalledWith(
                         {

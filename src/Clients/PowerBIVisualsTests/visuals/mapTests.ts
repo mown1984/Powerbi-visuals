@@ -1231,7 +1231,7 @@ module powerbitests {
         });
 
         it('Map enumerateLegend',() => {
-            var dataView: powerbi.DataView = {
+            let dataView: powerbi.DataView = {
                 metadata: {
                     columns: [],
                     objects: {
@@ -1242,7 +1242,7 @@ module powerbitests {
                 }
             };
 
-            var legend: ILegend = {
+            let legend: ILegend = {
                 changeOrientation: () => { },
                 drawLegend: () => { },
                 getMargins: () => <powerbi.IViewport>{
@@ -1254,13 +1254,15 @@ module powerbitests {
                 reset: () => { },
             };
 
-            var objects = Map.enumerateLegend(dataView, legend, "");
-            expect(objects.length).toBe(1);
-            var firstObject = objects[0];
+            let enumerationBuilder = new powerbi.visuals.ObjectEnumerationBuilder();
+            Map.enumerateLegend(enumerationBuilder, dataView, legend, "");
+            let objects = enumerationBuilder.complete();
+            expect(objects.instances.length).toBe(1);
+            let firstObject = objects.instances[0];
             expect(firstObject.objectName).toBe('legend');
             expect(firstObject.selector).toBeNull();
             expect(firstObject.properties).toBeDefined();
-            var properties = firstObject.properties;
+            let properties = firstObject.properties;
             expect(properties['show']).toBe(true);
             expect(properties['position']).toBe('Top');
         });
@@ -1481,16 +1483,16 @@ module powerbitests {
             expect(Map.shouldEnumerateDataPoints(dataView, /*usesSizeForGradient*/ false)).toBe(true);
         });
 
-        it("Map: enumerate data points with dynamic series",() => {            
+        it("Map: enumerate data points with dynamic series", () => {
 
             var dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', type: ValueType.fromDescriptor({ text: true })},
+                    { displayName: 'col2', queryName: 'col2', type: ValueType.fromDescriptor({ text: true }) },
                     { displayName: 'col3', queryName: 'col3', isMeasure: true, groupName: 'a', type: ValueType.fromDescriptor({ text: true }) },
                     { displayName: 'col3', queryName: 'col3', isMeasure: true, groupName: 'b' },
                 ]
-            };            
+            };
 
             var categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
             var measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
@@ -1531,18 +1533,20 @@ module powerbitests {
                 }
             };
 
-            dataView.categorical.values.source = measureColumn;                      
+            dataView.categorical.values.source = measureColumn;
 
             var groupIndex: number = 0;
             var sizeIndex = 0;
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
-            var legendDataPoints = Map.calculateSeriesLegend(dataView.categorical.values.grouped(), groupIndex, sizeIndex, colors, undefined, [col3Ref]);            
-            var enumeratedDataPoints = Map.enumerateDataPoints(legendDataPoints, colors, true, null, false, []);
+            let enumerationBuilder = new powerbi.visuals.ObjectEnumerationBuilder();
+            var legendDataPoints = Map.calculateSeriesLegend(dataView.categorical.values.grouped(), groupIndex, sizeIndex, colors, undefined, [col3Ref]);
+            Map.enumerateDataPoints(enumerationBuilder, legendDataPoints, colors, true, null, false, []);
+            var enumeratedDataPoints = enumerationBuilder.complete();
 
-            expect(enumeratedDataPoints.length).toBe(legendDataPoints.length);
+            expect(enumeratedDataPoints.instances.length).toBe(legendDataPoints.length);
             // ensure first object is 'fill' and not 'defaultColor'
-            expect(enumeratedDataPoints[0]['properties']['fill']).toBeDefined();
+            expect(enumeratedDataPoints.instances[0]['properties']['fill']).toBeDefined();
         });
     });
 
