@@ -74,6 +74,9 @@ module powerbi {
 
         /** The name of the containing group. */
         groupName?: string;
+
+        /** The name of the statusGraphic to use to convert the numeric Kpi value into the visual representation.*/
+        kpiStatusGraphic?: string;
     }
 
     export interface DataViewSegmentMetadata {

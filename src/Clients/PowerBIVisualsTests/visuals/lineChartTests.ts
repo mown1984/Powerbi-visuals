@@ -39,6 +39,7 @@ module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
     import Helpers = powerbitests.helpers;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     var labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
 
@@ -1529,14 +1530,14 @@ module powerbitests {
                     setTimeout(() => {
                         expect(svgBox.height).toBeCloseTo(405, 0);
                         // 374 for Windows and 385 for Mac OS
-                        expect(Helpers.isInRange(svgBox.width, 384, 388)).toBe(true);
+                        expect(Helpers.isInRange(svgBox.width, 384, 391)).toBe(true);
                         done();
                     }, DefaultWaitForRender);
                 }
                 else {
                     setTimeout(() => {
                         expect(svgBox.height).toBeCloseTo(470, 0);
-                        expect(Helpers.isInRange(svgBox.width, 384, 388)).toBe(true);
+                        expect(Helpers.isInRange(svgBox.width, 384, 391)).toBe(true);
                         done();
                     }, DefaultWaitForRender);
                 }
@@ -1698,7 +1699,8 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    var yTranslate = parseFloat($('.lineChart .axisGraphicsContext .x.axis').attr('transform').split(',')[1].replace('(', ''));
+                    
+                    var yTranslate = SVGUtil.parseTranslateTransform($('.lineChart .axisGraphicsContext .x.axis').attr('transform')).y;
                     var xTranslate = parseFloat($('.lineChart .axisGraphicsContext').attr('transform').split(',')[0].split('(')[1]);
                     v.onDataChanged({
                         dataViews: [{
@@ -2294,7 +2296,9 @@ module powerbitests {
             });
 
             it('line chart validate word breaking axis labels', (done) => {
-                v.onDataChanged({
+                // Word break will only tend to trigger when graphs are wider than they are high
+                v.update({
+                    viewport: { height: 320, width: 640 },
                     dataViews: [{
                         metadata: dataViewMetadata,
                         categorical: {
@@ -2307,8 +2311,9 @@ module powerbitests {
                                 values: [50000, 45000, 49000],
                             }])
                         }
-                    }]
+                    }],
                 });
+                
                 setTimeout(() => {
                     let tickLabels = $('.lineChart .axisGraphicsContext .x.axis .tick text');
                     let tspans = tickLabels.find('tspan');
@@ -3093,7 +3098,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = powerbi.visuals.visualPluginFactory.createMobile().getPlugin('lineChart').create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -3297,12 +3302,12 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(3);
-                expect(points[0].displayName).toEqual('col2');
-                expect(points[0].properties['fill']).toBeDefined();
-                expect(points[1].displayName).toEqual('col3');
-                expect(points[1].properties['fill']).toBeDefined();
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(3);
+                expect(points.instances[0].displayName).toEqual('col2');
+                expect(points.instances[0].properties['fill']).toBeDefined();
+                expect(points.instances[1].displayName).toEqual('col3');
+                expect(points.instances[1].properties['fill']).toBeDefined();
                 done();
             }, DefaultWaitForRender);
         });
@@ -3340,7 +3345,7 @@ module powerbitests {
                     width: element.width()
                 },
                 animation: { transitionImmediate: true },
-                interactivity: { isInteractiveLegend: true },
+                interactivity: { },
             });
 
             v.onDataChanged({
@@ -3366,9 +3371,9 @@ module powerbitests {
                 expect($('.lineChart')).toBeInDOM();
                 expect($('rect.extent').length).toBe(1);
                 var transform = SVGUtil.parseTranslateTransform($('.lineChart .axisGraphicsContext .x.axis .tick').last().attr('transform'));
-                expect(transform.x).toBeLessThan(element.width());
-                expect($('.brush').first().attr('transform').split(',')[0].split('(')[1]).toBe('29');
-                expect($('.brush').first().attr('transform').split(',')[1].split(')')[0]).toBe('75');
+                expect(transform.x).toBeLessThan(element.width()); 
+                expect(SVGUtil.parseTranslateTransform($('.brush').first().attr('transform')).x).toBe('29');
+                expect(SVGUtil.parseTranslateTransform($('.brush').first().attr('transform')).y).toBe('140');
                 expect(parseInt($('.brush .extent')[0].attributes.getNamedItem('width').value, 10)).toBeGreaterThan(1);
                 expect($('.brush .extent')[0].attributes.getNamedItem('x').value).toBe('0');
 
@@ -3441,6 +3446,7 @@ module powerbitests {
 
             function setAxis(xType: any) { //TODO: Change it, to only set Axis values
                 points = [];
+                var labelColor = '#ff0000';
                 dataViewMetadata.objects = {
                     categoryAxis: {
                         show: true,
@@ -3448,7 +3454,8 @@ module powerbitests {
                         end: 25,
                         axisType: xType,
                         showAxisTitle: true,
-                        axisStyle: true
+                        axisStyle: true,
+                        labelColor: { solid: { color: labelColor } }
                     }
                 };
                 var dataChangedOptions = {
@@ -3496,6 +3503,9 @@ module powerbitests {
                 setAxis(AxisType.categorical);
 
                 expect(+points[lastIndex].x - +points[lastIndex - 1].x).toBeCloseTo(gap, 2);
+
+                var labels = $('.x.axis').children('.tick');               
+                expect(labels.find('text').css('fill')).toBe('#ff0000'); 
             });
 
             it('enumerateObjectInstances: Verify instances on ordinal category axis', () => {
@@ -3532,15 +3542,15 @@ module powerbitests {
                         }
                     }]
                 });
-                var points = v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
 
-                expect(points[0].properties['start']).toBeUndefined();
-                expect(points[0].properties['end']).toBeUndefined();
-                expect(points[0].properties['axisType']).toBeUndefined();
+                expect(points.instances[0].properties['start']).toBeUndefined();
+                expect(points.instances[0].properties['end']).toBeUndefined();
+                expect(points.instances[0].properties['axisType']).toBeUndefined();
 
-                expect(points[0].properties['show']).toBeDefined;
-                expect(points[0].properties['showAxisTitle']).toBeDefined;
-                expect(points[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['show']).toBeDefined;
+                expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
+                expect(points.instances[0].properties['axisStyle']).toBeDefined;
             });
 
             it('enumerateObjectInstances: Verify instances on numerical category axis', () => {
@@ -3577,15 +3587,15 @@ module powerbitests {
                         }
                     }]
                 });
-                var points = v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
 
-                expect(points[0].properties['start']).toBeDefined();
-                expect(points[0].properties['end']).toBeDefined();
-                expect(points[0].properties['axisType']).toBeDefined();
+                expect(points.instances[0].properties['start']).toBeDefined();
+                expect(points.instances[0].properties['end']).toBeDefined();
+                expect(points.instances[0].properties['axisType']).toBeDefined();
 
-                expect(points[0].properties['show']).toBeDefined;
-                expect(points[0].properties['showAxisTitle']).toBeDefined;
-                expect(points[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['show']).toBeDefined;
+                expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
+                expect(points.instances[0].properties['axisStyle']).toBeDefined;
             });
         });
     });
@@ -3622,7 +3632,7 @@ module powerbitests {
                     width: element.width()
                 },
                 animation: { transitionImmediate: true },
-                interactivity: { isInteractiveLegend: true },
+                interactivity: { },
             });
 
             v.onDataChanged({
@@ -3649,8 +3659,8 @@ module powerbitests {
                 expect($('rect.extent').length).toBe(1);
                 var transform = SVGUtil.parseTranslateTransform($('.lineChart .axisGraphicsContext .x.axis .tick').last().attr('transform'));
                 expect(transform.x).toBeLessThan(element.width());
-                expect($('.brush').first().attr('transform').split(',')[0].split('(')[1]).toBe('29');
-                expect($('.brush').first().attr('transform').split(',')[1].split(')')[0]).toBe('75');
+                expect(SVGUtil.parseTranslateTransform($('.brush').first().attr('transform')).x).toBe('29');
+                expect(SVGUtil.parseTranslateTransform($('.brush').first().attr('transform')).y).toBe('140');
                 expect(parseInt($('.brush .extent')[0].attributes.getNamedItem('width').value, 10)).toBeGreaterThan(1);
                 expect($('.brush .extent')[0].attributes.getNamedItem('x').value).toBe('0');
                 done();

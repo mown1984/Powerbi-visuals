@@ -35,6 +35,10 @@ module powerbi {
         (textProperties: TextProperties): number;
     }
 
+    export interface ITextTruncator {
+        (properties: TextProperties, maxWidth: number): string;
+    }
+
     export interface TextProperties {
         text?: string;
         fontFamily: string;
@@ -54,6 +58,8 @@ module powerbi {
     }
 
     export module TextMeasurementService {
+        const ellipsis = '...';
+
         var spanElement: JQuery;
         var svgTextElement: D3.Selection;
         var canvasCtx: CanvasContext;
@@ -77,6 +83,17 @@ module powerbi {
                 })
                 .append('text');
             canvasCtx = (<CanvasElement>$('<canvas/>').get(0)).getContext("2d");
+        }
+        
+        /**
+         * Removes spanElement from DOM.
+         */
+        export function removeSpanElement() {
+            if (spanElement && spanElement.remove) {
+                spanElement.remove();
+            }
+            
+            spanElement = null;
         }
 
         /**
@@ -166,7 +183,7 @@ module powerbi {
          * @param svgElement The SVGTextElement to be measured.
          */
         export function getSvgMeasurementProperties(svgElement: SVGTextElement): TextProperties {
-            var style = window.getComputedStyle(svgElement, null);
+            let style = window.getComputedStyle(svgElement, null);
             return {
                 text: svgElement.textContent,
                 fontFamily: style.fontFamily,
@@ -194,17 +211,15 @@ module powerbi {
         export function getTailoredTextOrDefault(properties: TextProperties, maxWidth: number): string {
             ensureDOM();
 
-            var dotsString = '...';
-
             debug.assertValue(properties, 'properties');
             debug.assertValue(properties.text, 'properties.text');
 
-            var strLength = properties.text.length;
+            let strLength = properties.text.length;
 
             if (strLength === 0)
                 return properties.text;
 
-            var width = measureSvgTextWidth(properties);
+            let width = measureSvgTextWidth(properties);
 
             if (width < maxWidth)
                 return properties.text;
@@ -212,11 +227,11 @@ module powerbi {
             // Take the properties and apply them to svgTextElement
             // Then, do the binary search to figure out the substring we want
             // Set the substring on textElement argument
-            var text = properties.text = dotsString + properties.text;
+            let text = properties.text = ellipsis + properties.text;
 
-            var min = 1;
-            var max = text.length;
-            var i = 3;
+            let min = 1;
+            let max = text.length;
+            let i = 3;
             
             while (min <= max) {
                 // num | 0 prefered to Math.floor(num) for performance benefits
@@ -242,7 +257,7 @@ module powerbi {
             if (width > maxWidth)
                 i--;
 
-            return text.substr(3, i - 3) + dotsString;
+            return text.substr(3, i - 3) + ellipsis;
         }
 
         /**
@@ -251,9 +266,9 @@ module powerbi {
          * @param maxWidth The maximum width available for rendering the text.
         */
         export function svgEllipsis(textElement: SVGTextElement, maxWidth: number): void {
-            var properties = getSvgMeasurementProperties(textElement);
-            var originalText = properties.text;
-            var tailoredText = getTailoredTextOrDefault(properties, maxWidth);
+            let properties = getSvgMeasurementProperties(textElement);
+            let originalText = properties.text;
+            let tailoredText = getTailoredTextOrDefault(properties, maxWidth);
 
             if (originalText !== tailoredText) {
                 textElement.textContent = tailoredText;
@@ -269,6 +284,11 @@ module powerbi {
          * @param linePadding - (optional) padding to add to line height
         */
         export function wordBreak(textElement: SVGTextElement, maxWidth: number, maxHeight: number, linePadding: number = 0): void {
+            debug.assertValue(textElement, 'textElement');
+
+            if (!textElement)
+                return;
+
             let properties = getSvgMeasurementProperties(textElement);
             let height = estimateSvgTextHeight(properties) + linePadding;
             let maxNumLines = Math.max(1, Math.floor(maxHeight / height));

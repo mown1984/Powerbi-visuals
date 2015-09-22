@@ -52,7 +52,7 @@ module powerbi.visuals.plugins {
         customizeQuery: ColumnChart.customizeQuery,
         getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
     };
-    
+
     export var basicShape: IVisualPlugin = {
         name: 'basicShape',
         capabilities: basicShapeCapabilities,
@@ -230,6 +230,13 @@ module powerbi.visuals.plugins {
         watermarkKey: 'scatterplot',
         capabilities: capabilities.scatterChart,
         create: () => new CartesianChart({ chartType: CartesianChartType.Scatter })
+    };
+
+    export var playChart: IVisualPlugin = {
+        name: 'playChart',
+        watermarkKey: 'play',
+        capabilities: capabilities.playChart,
+        create: () => new CartesianChart({ chartType: CartesianChartType.Play })
     };
 
     export var table: IVisualPlugin = {

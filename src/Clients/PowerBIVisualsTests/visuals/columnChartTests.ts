@@ -49,6 +49,7 @@ module powerbitests {
     import LegendPosition = powerbi.visuals.LegendPosition;
     import buildSelector = powerbitests.helpers.buildSelectorForColumn;
     import axisScale = powerbi.axisScale;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     var labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
     var defaultInsideLabelColor = '#ffffff';
@@ -3749,6 +3750,8 @@ module powerbitests {
                 expect(attrY2).toBeGreaterThan($(labels[1]).attr('y'));
                 expect(attrY3).toBeGreaterThan($(labels[2]).attr('y'));
                 expect(attrY4).toBeGreaterThan($(labels[3]).attr('y'));
+                expect($(labels[0]).text()).toBe('54.00');
+               
                 done();
             }, DefaultWaitForRender);
         });
@@ -4575,6 +4578,7 @@ module powerbitests {
                 expect($(labels[1]).css('fill-opacity')).toEqual('1');
                 expect($(labels[2]).css('fill-opacity')).toEqual('1');
                 expect($(labels[3]).css('fill-opacity')).toEqual('1');
+                expect($(labels[0]).text()).toBe('54');
                 done();
             }, DefaultWaitForRender);
         });
@@ -5171,6 +5175,7 @@ module powerbitests {
                 expect(labels.length).toBe(2);
                 //opacity of highlighted columns
                 expect($(labels[0]).css('fill-opacity')).toEqual('1');
+                expect($(labels[0]).text()).toBe('50.00%');
                 done();
             }, DefaultWaitForRender);
         });
@@ -5634,6 +5639,7 @@ module powerbitests {
                 expect($(labels[0]).attr('x')).toBeGreaterThan(attrX1);
                 expect($(labels[1]).attr('x')).toBeLessThan(attrX2 + width2);
                 expect($(labels[1]).attr('x')).toBeGreaterThan(attrX2);
+                expect($(labels[0]).text()).toBe('54');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7102,25 +7108,25 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(4);
-                expect(points[0]['properties']['defaultColor']).toBeDefined();
-                expect(points[1]['properties']['showAllDataPoints']).toBeDefined();    
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(3);
+                expect(points.instances[0]['properties']['defaultColor']).toBeDefined();
+                expect(points.instances[0]['properties']['showAllDataPoints']).toBeDefined();    
 
-                var defaultColor = (<powerbi.Fill>(points[0]['properties']['defaultColor'])).solid.color;
-                var color1 = (<powerbi.Fill>(points[2]['properties']['fill'])).solid.color;
+                var defaultColor = (<powerbi.Fill>(points.instances[0]['properties']['defaultColor'])).solid.color;
+                var color1 = (<powerbi.Fill>(points.instances[2]['properties']['fill'])).solid.color;
 
-                expect(points[2].displayName).toBe('red');
-                expect(points[2].selector.data).toEqual([categoryIdentities[0]]);
-                expect(points[2].selector.metadata).toBeUndefined();
-                expect(points[3].displayName).toBe('def');
+                expect(points.instances[1].displayName).toBe('red');
+                expect(points.instances[1].selector.data).toEqual([categoryIdentities[0]]);
+                expect(points.instances[1].selector.metadata).toBeUndefined();
+                expect(points.instances[2].displayName).toBe('def');
                 expect(color1).toEqual(defaultColor);
 
-                var points = v.enumerateObjectInstances({ objectName: 'categoryAxis' });
-                expect(points.length).toBe(2);
-                expect(points[0].displayName).toBeUndefined();
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances.length).toBe(1);
+                expect(points.instances[0].displayName).toBeUndefined();
 
-                var points = v.enumerateObjectInstances({ objectName: 'legend' });                
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'legend' });                
                 expect(points).toBeUndefined();
 
                 done();
@@ -7152,24 +7158,24 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(4);
-                expect(points[2].displayName).toBe('red');
-                expect(points[2].selector.data).toEqual([categoryIdentities[0]]);
-                expect(points[2].selector.metadata).toBeUndefined();
-                expect(points[3].displayName).toBe('def');
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(3);
+                expect(points.instances[1].displayName).toBe('red');
+                expect(points.instances[1].selector.data).toEqual([categoryIdentities[0]]);
+                expect(points.instances[1].selector.metadata).toBeUndefined();
+                expect(points.instances[2].displayName).toBe('def');
 
-                var points = v.enumerateObjectInstances({ objectName: 'categoryAxis' });
-                expect(points.length).toBe(2);
-                expect(points[0].displayName).toBeUndefined();
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances.length).toBe(1);
+                expect(points.instances[0].displayName).toBeUndefined();
 
-                expect(points[0].properties['start']).toBeUndefined();
-                expect(points[0].properties['end']).toBeUndefined();
-                expect(points[0].properties['axisType']).toBeUndefined();
+                expect(points.instances[0].properties['start']).toBeUndefined();
+                expect(points.instances[0].properties['end']).toBeUndefined();
+                expect(points.instances[0].properties['axisType']).toBeUndefined();
 
-                expect(points[0].properties['show']).toBeDefined;
-                expect(points[0].properties['showAxisTitle']).toBeDefined;
-                expect(points[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['show']).toBeDefined;
+                expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
+                expect(points.instances[0].properties['axisStyle']).toBeDefined;
 
                 done();
             }, DefaultWaitForRender);
@@ -7200,23 +7206,23 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(4);
-                expect(points[2].displayName).toBe('$5000');
-                expect(points[2].selector.data).toEqual([categoryIdentities[0]]);
-                expect(points[2].selector.metadata).toBeUndefined();
-                expect(points[3].displayName).toBe('$10000');
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(3);
+                expect(points.instances[1].displayName).toBe('$5000');
+                expect(points.instances[1].selector.data).toEqual([categoryIdentities[0]]);
+                expect(points.instances[1].selector.metadata).toBeUndefined();
+                expect(points.instances[2].displayName).toBe('$10000');
 
-                var points = v.enumerateObjectInstances({ objectName: 'categoryAxis' });
-                expect(points.length).toBe(2);
-                expect(points[0].displayName).toBeUndefined();
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances.length).toBe(1);
+                expect(points.instances[0].displayName).toBeUndefined();
 
-                expect('start' in points[0].properties).toBeTruthy();//better to check if the index key is found
-                expect('end' in points[0].properties).toBeTruthy();
-                expect('axisType' in points[0].properties).toBeTruthy();
-                expect('show' in points[0].properties).toBeTruthy();
-                expect('showAxisTitle' in points[0].properties).toBeTruthy();
-                expect('axisStyle' in points[1].properties).toBeTruthy();               
+                expect('start' in points.instances[0].properties).toBeTruthy();//better to check if the index key is found
+                expect('end' in points.instances[0].properties).toBeTruthy();
+                expect('axisType' in points.instances[0].properties).toBeTruthy();
+                expect('show' in points.instances[0].properties).toBeTruthy();
+                expect('showAxisTitle' in points.instances[0].properties).toBeTruthy();
+                expect('axisStyle' in points.instances[0].properties).toBeTruthy();               
 
                 done();
             }, DefaultWaitForRender);
@@ -7253,12 +7259,12 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(2);                
-                expect(points[0].displayName).toBe(measureColumn.displayName);
-                expect(points[0].selector).toEqual({ metadata: measureColumn.queryName });
-                expect(points[1].displayName).toBe(measure2Column.displayName);
-                expect(points[1].selector).toEqual({ metadata: measure2Column.queryName });
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(2);                
+                expect(points.instances[0].displayName).toBe(measureColumn.displayName);
+                expect(points.instances[0].selector).toEqual({ metadata: measureColumn.queryName });
+                expect(points.instances[1].displayName).toBe(measure2Column.displayName);
+                expect(points.instances[1].selector).toEqual({ metadata: measure2Column.queryName });
 
                 done();
             }, DefaultWaitForRender);
@@ -7276,13 +7282,13 @@ module powerbitests {
                             }])
                     }
                 }]
-    });
+            });
 
             setTimeout(() => {
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(1);
-                expect(points[0].displayName).toBe(measureColumn.displayName);
-                expect(points[0].selector).toEqual({ metadata: measureColumn.queryName });
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(1);
+                expect(points.instances[0].displayName).toBe(measureColumn.displayName);
+                expect(points.instances[0].selector).toEqual({ metadata: measureColumn.queryName });
 
                 done();
             }, DefaultWaitForRender);
@@ -7478,12 +7484,14 @@ module powerbitests {
                 }
             }];
 
-            v.onDataChanged({
-                dataViews: dataViews
+            // Word break will only tend to trigger when graphs are wider than they are high
+            v.update({
+                dataViews: dataViews,
+                viewport: { height: 320, width: 640 },
             });
 
             setTimeout(() => {
-                // Word breaks with 11 tspans (for each word)
+                // Word breaks with tspans present (for each line in word broken label)
                 var texts = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
                 expect(texts.first().text()).toBe(texts.last().text());
                 expect(texts.find('tspan').length).toBeGreaterThan(0);
@@ -7535,7 +7543,7 @@ module powerbitests {
         beforeEach(() => {
 
             element = powerbitests.helpers.testDom('200', '300');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('barChart').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false, devToolsEnabled: false }).getPlugin('barChart').create();
         });
 
         it('Bar chart with dragDataPoint enabled',() => {
@@ -7742,12 +7750,15 @@ module powerbitests {
                     }
                 }]
             });
+            var labels = $('.data-labels');
             //data labels are on
             expect($('.data-labels').length).toBe(2);
+            expect($(labels[0]).text()).toBe('0.50');
         });
 
         it('Bar chart without selection enabled',() => {
             var hostServices = mocks.createVisualHostServices();
+            v = powerbi.visuals.visualPluginFactory.create().getPlugin('barChart').create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -9447,6 +9458,50 @@ module powerbitests {
             expect(labels[0].textContent).toBe('-100');
             expect(labels[labels.length - 1].textContent).toBe('100');
         });
+
+        it('X Axis Customization: Set axis color', () => {
+            var categoryIdentities = [
+                mocks.dataViewScopeIdentity("500"),
+                mocks.dataViewScopeIdentity("20000"),
+                mocks.dataViewScopeIdentity("10000"),
+                mocks.dataViewScopeIdentity("50000"),
+            ];
+
+            var labelColor = '#ff0000';
+
+            dataViewMetadataTwoColumn.objects = {
+                categoryAxis: {
+                    show: true,
+                    start: 0,
+                    end: 200000,
+                    axisType: AxisType.scalar,
+                    showAxisTitle: true,
+                    axisStyle: true,
+                    labelColor: { solid: { color: labelColor } }
+                }
+            };
+            dataChangedOptions = {
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: [50, 20000, 10000, 50000],
+                            identity: categoryIdentities
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            min: 50000,
+                            max: 200000,
+                            subtotal: 500000,
+                            values: [100000, 200000, 150000, 50000]
+                        }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);            
+            expect($('.x.axis').children('.tick').find('text').css('fill')).toBe(labelColor);
+        });
     });
 
     describe("Y Axis Customization: Column Chart",() => {
@@ -9574,6 +9629,44 @@ module powerbitests {
 
             expect(labels[0].textContent).toBe('0K');
             expect(labels[labels.length - 1].textContent).toBe('200K');
+        });
+
+        it('verify Y axis set color', () => {
+            var categoryIdentities = [
+                mocks.dataViewScopeIdentity("500"),
+                mocks.dataViewScopeIdentity("2000"),
+                mocks.dataViewScopeIdentity("5000"),
+                mocks.dataViewScopeIdentity("10000"),
+            ];
+
+            var labelColor = '#ff0000';
+            dataViewMetadataTwoColumn.objects['valueAxis']['labelColor'] = { solid: { color: labelColor } };
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: [500, 2000, 5000, 10000],
+                            identity: categoryIdentities
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            min: 50000,
+                            max: 200000,
+                            subtotal: 500000,
+                            values: [100000, 200000, 150000, 50000]
+                        }])
+                    }
+                }]
+            });
+            bars = $('.column');
+            labels = $('.y.axis').children('.tick');
+
+            expect(labels[0].textContent).toBe('0K');
+            expect(labels[labels.length - 1].textContent).toBe('200K');
+            expect(labels.find('text').css('fill')).toBe(labelColor);
         });
 
         it('verify Y position change: the axis text should be further right than the axis line', () => {
@@ -10162,6 +10255,7 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("Delta Force"),
                 mocks.dataViewScopeIdentity("Mr Bing"),
             ];
+            
             var dataView: powerbi.DataView = {
                 metadata: metadata(dataViewMetadataThreeColumn),
                 categorical: {
@@ -10183,6 +10277,10 @@ module powerbitests {
             if (chartType === 'barChart' || chartType === 'hundredPercentStackedBarChart' || chartType === 'clusteredBarChart') {
                 v.onResizing({ height: 500, width: 85 });
             }
+            //Now we force precision for percentages so we'll need more space for the 100.00% label
+            else if (chartType === 'hundredPercentStackedColumnChart') {
+                v.onResizing({ height: 500, width: 300 });
+            }
             else {
                 v.onResizing({ height: 500, width: 200 });
             }
@@ -10190,7 +10288,6 @@ module powerbitests {
                 var labels = $('.data-labels');
 
                 switch (chartType) {
-                    
                     case 'hundredPercentStackedBarChart':
                     case 'hundredPercentStackedColumnChart':
                         expect(labels.length).toBe(3);
@@ -10416,7 +10513,7 @@ module powerbitests {
                         expect(startBar5 + lengthBar5).toBeLessThan($(labels[4]).attr('x'));
                         break;
                     case 'hundredPercentStackedBarChart':
-                        expect(labels.length).toBe(5);
+                        expect(labels.length).toBe(6);
                         startBar5 = +$(bars[4]).attr('x');
                         lengthBar5 = +$(bars[4]).attr('width');
                         //inside center position
@@ -10845,7 +10942,7 @@ module powerbitests {
                         }
                         break;
                     case 'hundredPercentStackedBarChart':
-                        expect(labels.length).toBe(5);
+                        expect(labels.length).toBe(6);
                         for (var i = 0; i < labels.length; i++) {
                             expect(ColorUtilityConverter(defaultInsideLabelColor)).toEqual(ColorUtilityConverter($(labels[i]).css('fill')));
                         }

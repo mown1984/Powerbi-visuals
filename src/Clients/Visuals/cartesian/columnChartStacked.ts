@@ -68,16 +68,16 @@ module powerbi.visuals {
         }
 
         public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
-            var width = this.width;
+            let width = this.width;
 
-            var forcedXMin, forcedXMax;
+            let forcedXMin, forcedXMax;
 
             if (forcedXDomain && forcedXDomain.length === 2) {
                 forcedXMin = forcedXDomain[0];
                 forcedXMax = forcedXDomain[1];
             }
 
-            var props = this.xProps = ColumnUtil.getCategoryAxis(
+            let props = this.xProps = ColumnUtil.getCategoryAxis(
                 this.data,
                 width,
                 this.categoryLayout,
@@ -90,8 +90,8 @@ module powerbi.visuals {
         }
 
         public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties {
-            var height = this.viewportHeight;
-            var yProps = this.yProps = StackedUtil.getValueAxis(
+            let height = this.viewportHeight;
+            let yProps = this.yProps = StackedUtil.getValueAxis(
                 this.data,
                 is100Pct,
                 height,
@@ -104,28 +104,28 @@ module powerbi.visuals {
         }
 
         public drawColumns(useAnimation: boolean): ColumnChartDrawInfo {
-            var data = this.data;
+            let data = this.data;
             debug.assertValue(data, 'data should not be null or undefined');
 
             this.columnsCenters = null; // invalidate the columnsCenters so that will be calculated again
 
-            var axisOptions: ColumnAxisOptions = {
+            let axisOptions: ColumnAxisOptions = {
                 columnWidth: this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio),
                 xScale: this.xProps.scale,
                 yScale: this.yProps.scale,
                 isScalar: this.categoryLayout.isScalar,
                 margin: this.margin,
             };
-            var stackedColumnLayout = StackedColumnChartStrategy.getLayout(data, axisOptions);
-            var dataLabelSettings = data.labelSettings;
-            var dataLabelLayout = null;
+            let stackedColumnLayout = StackedColumnChartStrategy.getLayout(data, axisOptions);
+            let dataLabelSettings = data.labelSettings;
+            let dataLabelLayout = null;
             if (dataLabelSettings != null) {
                 dataLabelLayout = dataLabelUtils.getColumnChartLabelLayout(data, this.getLabelLayoutXY(axisOptions, dataLabelSettings), true, this.graphicsContext.is100Pct, this.yProps.formatter, axisOptions, this.interactivityService);
             }
 
-            var result: ColumnChartAnimationResult;
-            var shapes: D3.UpdateSelection;
-            var series = ColumnUtil.drawSeries(data, this.graphicsContext.mainGraphicsContext, axisOptions);
+            let result: ColumnChartAnimationResult;
+            let shapes: D3.UpdateSelection;
+            let series = ColumnUtil.drawSeries(data, this.graphicsContext.mainGraphicsContext, axisOptions);
             if (this.animator && useAnimation) {
                 result = this.animator.animate({
                     viewModel: data,
@@ -140,7 +140,7 @@ module powerbi.visuals {
                 shapes = result.shapes;
             }
             if (!this.animator || !useAnimation || result.failed) {
-                shapes = ColumnUtil.drawDefaultShapes(data, series, stackedColumnLayout, StackedColumnChartStrategy.classes.item, !this.animator);
+                shapes = ColumnUtil.drawDefaultShapes(data, series, stackedColumnLayout, StackedColumnChartStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection());
                 if (dataLabelLayout !== null) {
                     if (dataLabelSettings.show) {
                         ColumnUtil.drawDefaultLabels(series, this.graphicsContext.mainGraphicsContext, dataLabelLayout, { height: this.height, width: this.width });
@@ -175,13 +175,13 @@ module powerbi.visuals {
          */
         private getColumnsCenters(): number[] {
             if (!this.columnsCenters) { // lazy creation
-                var categoryWidth: number = this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio);
+                let categoryWidth: number = this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio);
                 // use the axis scale and first series data to get category centers
                 if (this.data.series.length > 0) {
-                    var xScaleOffset = 0;
+                    let xScaleOffset = 0;
                     if (!this.categoryLayout.isScalar)
                         xScaleOffset = categoryWidth / 2;
-                    var firstSeries = this.data.series[0];
+                    let firstSeries = this.data.series[0];
                     this.columnsCenters = firstSeries.data.map(d => this.xProps.scale(this.categoryLayout.isScalar ? d.categoryValue : d.categoryIndex) + xScaleOffset);
                 }
             }
@@ -189,11 +189,11 @@ module powerbi.visuals {
         }
 
         private moveHandle(selectedColumnIndex: number) {
-            var columnCenters = this.getColumnsCenters();
-            var x = columnCenters[selectedColumnIndex];
+            let columnCenters = this.getColumnsCenters();
+            let x = columnCenters[selectedColumnIndex];
 
             if (!this.columnSelectionLineHandle) {
-                var handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
+                let handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({
@@ -212,19 +212,19 @@ module powerbi.visuals {
                     .classed('drag-handle', true);
             }
             else {
-                var handle = this.columnSelectionLineHandle;
+                let handle = this.columnSelectionLineHandle;
                 handle.select('line').attr({ x1: x, x2: x });
                 handle.select('circle').attr({ cx: x });
             }
         }
 
         public static getLayout(data: ColumnChartData, axisOptions: ColumnAxisOptions): IColumnLayout {
-            var columnWidth = axisOptions.columnWidth;
-            var isScalar = axisOptions.isScalar;
-            var xScale = axisOptions.xScale;
-            var yScale = axisOptions.yScale;
-            var scaledY0 = yScale(0);
-            var xScaleOffset = 0;
+            let columnWidth = axisOptions.columnWidth;
+            let isScalar = axisOptions.isScalar;
+            let xScale = axisOptions.xScale;
+            let yScale = axisOptions.yScale;
+            let scaledY0 = yScale(0);
+            let xScaleOffset = 0;
 
             if (isScalar)
                 xScaleOffset = columnWidth / 2;
@@ -252,13 +252,13 @@ module powerbi.visuals {
         }
 
         private getLabelLayoutXY(axisOptions: ColumnAxisOptions, labelSettings: VisualDataLabelsSettings): any {
-            var columnWidth = axisOptions.columnWidth;
-            var halfColumnWidth = 0.5 * columnWidth;
-            var isScalar = axisOptions.isScalar;
-            var xScale = axisOptions.xScale;
-            var xScaleOffset = 0;
-            var is100Pct = this.graphicsContext.is100Pct;
-            var labelLayoutY = this.getLabelLayoutY;
+            let columnWidth = axisOptions.columnWidth;
+            let halfColumnWidth = 0.5 * columnWidth;
+            let isScalar = axisOptions.isScalar;
+            let xScale = axisOptions.xScale;
+            let xScaleOffset = 0;
+            let is100Pct = this.graphicsContext.is100Pct;
+            let labelLayoutY = this.getLabelLayoutY;
 
             if (isScalar)
                 xScaleOffset = halfColumnWidth;
@@ -270,10 +270,10 @@ module powerbi.visuals {
         }
 
         private getLabelLayoutY(d: ColumnChartDataPoint, is100Pct: boolean, axisOptions: ColumnAxisOptions, labelSettings: VisualDataLabelsSettings): number {
-            var yScale = axisOptions.yScale;
-            var scaledY0 = yScale(0);
-            var insidePosition = scaledY0 + AxisHelper.diffScaled(yScale, d.position, 0) + StackedUtil.getSize(yScale, d.valueAbsolute) / 2 + dataLabelUtils.defaultColumnHalfLabelHeight;
-            var outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
+            let yScale = axisOptions.yScale;
+            let scaledY0 = yScale(0);
+            let insidePosition = scaledY0 + AxisHelper.diffScaled(yScale, d.position, 0) + StackedUtil.getSize(yScale, d.valueAbsolute) / 2 + dataLabelUtils.defaultColumnHalfLabelHeight;
+            let outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
                                 
             //Hundrand-percent label position is center by default, and labels on stacked bar that are not last series
             if (is100Pct || !d.lastSeries)
@@ -329,16 +329,16 @@ module powerbi.visuals {
         }
 
         public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties {
-            var height = this.height;
+            let height = this.height;
 
-            var forcedYMin, forcedYMax;
+            let forcedYMin, forcedYMax;
 
             if (forcedYDomain && forcedYDomain.length === 2) {
                 forcedYMin = forcedYDomain[0];
                 forcedYMax = forcedYDomain[1];
             }
 
-            var props = this.yProps = ColumnUtil.getCategoryAxis(
+            let props = this.yProps = ColumnUtil.getCategoryAxis(
                 this.data,
                 height,
                 this.categoryLayout,
@@ -353,9 +353,9 @@ module powerbi.visuals {
         public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
             debug.assert(forcedTickCount === undefined, 'Cannot have stacked bar chart as combo chart.');
 
-            var height = this.viewportHeight;
+            let height = this.viewportHeight;
            
-            var xProps = this.xProps = StackedUtil.getValueAxis(
+            let xProps = this.xProps = StackedUtil.getValueAxis(
                 this.data,
                 is100Pct,
                 this.width,
@@ -370,28 +370,28 @@ module powerbi.visuals {
         }
 
         public drawColumns(useAnimation: boolean): ColumnChartDrawInfo {
-            var data = this.data;
+            let data = this.data;
             debug.assertValue(data, 'data should not be null or undefined');
 
             this.barsCenters = null; // invalidate the barsCenters so that will be calculated again
 
-            var axisOptions: ColumnAxisOptions = {
+            let axisOptions: ColumnAxisOptions = {
                 columnWidth: this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio),
                 xScale: this.xProps.scale,
                 yScale: this.yProps.scale,
                 isScalar: this.categoryLayout.isScalar,
                 margin: this.margin,
             };
-            var stackedBarLayout = StackedBarChartStrategy.getLayout(data, axisOptions);
-            var dataLabelSettings = data.labelSettings;
-            var dataLabelLayout = null;
+            let stackedBarLayout = StackedBarChartStrategy.getLayout(data, axisOptions);
+            let dataLabelSettings = data.labelSettings;
+            let dataLabelLayout = null;
             if (dataLabelSettings != null) {
                 dataLabelLayout = dataLabelUtils.getColumnChartLabelLayout(data, this.getLabelLayoutXY(axisOptions, this.width, dataLabelSettings), false, this.graphicsContext.is100Pct, this.xProps.formatter, axisOptions, this.interactivityService, this.width);
             }
 
-            var result: ColumnChartAnimationResult;
-            var shapes: D3.UpdateSelection;
-            var series = ColumnUtil.drawSeries(data, this.graphicsContext.mainGraphicsContext, axisOptions);
+            let result: ColumnChartAnimationResult;
+            let shapes: D3.UpdateSelection;
+            let series = ColumnUtil.drawSeries(data, this.graphicsContext.mainGraphicsContext, axisOptions);
             if (this.animator && useAnimation) {
                 result = this.animator.animate({
                     viewModel: data,
@@ -406,7 +406,7 @@ module powerbi.visuals {
                 shapes = result.shapes;
             }
             if (!this.animator || !useAnimation || result.failed) {
-                shapes = ColumnUtil.drawDefaultShapes(data, series, stackedBarLayout, StackedBarChartStrategy.classes.item, !this.animator);
+                shapes = ColumnUtil.drawDefaultShapes(data, series, stackedBarLayout, StackedBarChartStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection());
                 if (dataLabelLayout !== null) {
                     if (dataLabelSettings.show) {
                         ColumnUtil.drawDefaultLabels(series, this.graphicsContext.mainGraphicsContext, dataLabelLayout, { height: this.height, width: this.width });
@@ -441,13 +441,13 @@ module powerbi.visuals {
          */
         private getBarsCenters(): number[] {
             if (!this.barsCenters) { // lazy creation
-                var barWidth: number = this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio);
+                let barWidth: number = this.categoryLayout.categoryThickness * (1 - CartesianChart.InnerPaddingRatio);
                 // use the axis scale and first series data to get category centers
                 if (this.data.series.length > 0) {
-                    var yScaleOffset = 0;
+                    let yScaleOffset = 0;
                     if (!this.categoryLayout.isScalar)
                         yScaleOffset = barWidth / 2;
-                    var firstSeries = this.data.series[0];
+                    let firstSeries = this.data.series[0];
                     this.barsCenters = firstSeries.data.map(d => this.yProps.scale(this.categoryLayout.isScalar ? d.categoryValue : d.categoryIndex) + yScaleOffset);
                 }
             }
@@ -455,11 +455,11 @@ module powerbi.visuals {
         }
 
         private moveHandle(selectedColumnIndex: number) {
-            var barCenters = this.getBarsCenters();
-            var y = barCenters[selectedColumnIndex];
+            let barCenters = this.getBarsCenters();
+            let y = barCenters[selectedColumnIndex];
 
             if (!this.columnSelectionLineHandle) {
-                var handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
+                let handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({
@@ -478,19 +478,19 @@ module powerbi.visuals {
 
             }
             else {
-                var handle = this.columnSelectionLineHandle;
+                let handle = this.columnSelectionLineHandle;
                 handle.select('line').attr({ y1: y, y2: y });
                 handle.select('circle').attr({ cy: y });
             }
         }
 
         public static getLayout(data: ColumnChartData, axisOptions: ColumnAxisOptions): IColumnLayout {
-            var columnWidth = axisOptions.columnWidth;
-            var isScalar = axisOptions.isScalar;
-            var xScale = axisOptions.xScale;
-            var yScale = axisOptions.yScale;
-            var scaledX0 = xScale(0);
-            var xScaleOffset = 0;
+            let columnWidth = axisOptions.columnWidth;
+            let isScalar = axisOptions.isScalar;
+            let xScale = axisOptions.xScale;
+            let yScale = axisOptions.yScale;
+            let scaledX0 = xScale(0);
+            let xScaleOffset = 0;
 
             if (isScalar)
                 xScaleOffset = columnWidth / 2;
@@ -518,30 +518,30 @@ module powerbi.visuals {
         }
 
         private getLabelLayoutXY(axisOptions: ColumnAxisOptions, visualWidth: number, labelSettings: VisualDataLabelsSettings): any {
-            var columnWidth = axisOptions.columnWidth;
-            var halfColumnWidth = 0.5 * columnWidth;
-            var isScalar = axisOptions.isScalar;
-            var xScale = axisOptions.xScale;
-            var yScale = axisOptions.yScale;
-            var xScaleOffset = 0;
-            var scaledX0 = xScale(0);
-            var is100Pct = this.graphicsContext.is100Pct;
+            let columnWidth = axisOptions.columnWidth;
+            let halfColumnWidth = 0.5 * columnWidth;
+            let isScalar = axisOptions.isScalar;
+            let xScale = axisOptions.xScale;
+            let yScale = axisOptions.yScale;
+            let xScaleOffset = 0;
+            let scaledX0 = xScale(0);
+            let is100Pct = this.graphicsContext.is100Pct;
 
             if (isScalar)
                 xScaleOffset = halfColumnWidth;
 
             return {
                 x: (d: ColumnChartDataPoint) => {
-                        var properties: TextProperties = {
+                        let properties: TextProperties = {
                             text: d.labeltext,
                             fontFamily: dataLabelUtils.LabelTextProperties.fontFamily,
                             fontSize: dataLabelUtils.LabelTextProperties.fontSize,
                             fontWeight: dataLabelUtils.LabelTextProperties.fontWeight,
                         };
-                        var textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-                        var insidePosition = scaledX0 + AxisHelper.diffScaled(xScale, d.position - d.valueAbsolute, 0) +
+                        let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                        let insidePosition = scaledX0 + AxisHelper.diffScaled(xScale, d.position - d.valueAbsolute, 0) +
                                 Math.abs(StackedUtil.getSize(xScale, d.valueAbsolute)) / 2 - (textWidth / 2);
-                        var outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
+                        let outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
                     //Hundrand-percent label position is center by default, and labels on stacked bar that are not last series
                     if (is100Pct || !d.lastSeries)
                         return insidePosition;

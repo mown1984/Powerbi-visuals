@@ -112,6 +112,10 @@ module powerbi.visuals {
                     axisStyle: {
                         displayName: data.createDisplayNameGetter('Visual_Axis_Style'),
                         type: { formatting: { axisStyle: true } }
+                    },
+                    labelColor: {
+                        displayName: data.createDisplayNameGetter('Visual_Axis_LabelColor'),
+                        type: { fill: { solid: { color: true } } }
                     }
                 }
             },
@@ -145,6 +149,10 @@ module powerbi.visuals {
                     axisStyle: {
                         displayName: data.createDisplayNameGetter('Visual_Axis_Style'),
                         type: { formatting: { axisStyle: true } }
+                    },
+                    labelColor: {
+                        displayName: data.createDisplayNameGetter('Visual_Axis_LabelColor'),
+                        type: { fill: { solid: { color: true } } }
                     }
 
                 }

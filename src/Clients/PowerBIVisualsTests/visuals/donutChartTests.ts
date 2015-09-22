@@ -37,6 +37,7 @@ module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
     import buildSelector = powerbitests.helpers.buildSelectorForColumn;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     var donutColors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -3372,12 +3373,12 @@ module powerbitests {
             };
 
             v.onDataChanged(dataChangedOptions);
-            var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-            expect(points.length).toBe(5);
-            expect(points[2].displayName).toEqual('a');
-            expect(points[2].properties['fill']).toBeDefined();
-            expect(points[3].displayName).toEqual('b');
-            expect(points[3].properties['fill']).toBeDefined();
+            var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+            expect(points.instances.length).toBe(4);
+            expect(points.instances[1].displayName).toEqual('a');
+            expect(points.instances[1].properties['fill']).toBeDefined();
+            expect(points.instances[2].displayName).toEqual('b');
+            expect(points.instances[2].properties['fill']).toBeDefined();
             done();
         });
 
@@ -3415,12 +3416,12 @@ module powerbitests {
 
             v.onDataChanged(dataChangedOptions);
 
-            var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-            expect(points.length).toBe(5);
-            expect(points[2].displayName).toEqual('a');
-            expect(points[2].properties['fill']).toBeDefined();
-            expect(points[3].displayName).toEqual('b');
-            expect(points[3].properties['fill']).toBeDefined();
+            var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+            expect(points.instances.length).toBe(4);
+            expect(points.instances[1].displayName).toEqual('a');
+            expect(points.instances[1].properties['fill']).toBeDefined();
+            expect(points.instances[2].displayName).toEqual('b');
+            expect(points.instances[2].properties['fill']).toBeDefined();
             done();
         });
 
@@ -3450,8 +3451,8 @@ module powerbitests {
             setTimeout(() => {
                 // Check legend is hidden
                 expect($('.legend').attr('orientation')).toBe(LegendPosition.None.toString());
-                var points = v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.length).toBe(5);
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
+                expect(points.instances.length).toBe(4);
                 done();
             }, DefaultWaitForRender);
         });

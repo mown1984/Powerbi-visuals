@@ -34,6 +34,7 @@ module powerbitests {
     import ComboChartDataViewObjects = powerbi.visuals.ComboChartDataViewObjects;
     import ColorConverter = powerbitests.utils.ColorUtility.convertFromRGBorHexToHex;
     import AxisType = powerbi.axisType;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     powerbitests.mocks.setLocale();
 
@@ -720,10 +721,10 @@ module powerbitests {
             dataView1.metadata.objects = null;
 
             visualBuilder.onDataChanged({ dataViews: [dataView1, null] });
-            var points = visualBuilder.visual.enumerateObjectInstances({ objectName: "labels" });
+            var points = <VisualObjectInstanceEnumerationObject>visualBuilder.visual.enumerateObjectInstances({ objectName: "labels" });
 
             setTimeout(() => {
-                expect(points.length).toBeGreaterThan(0);
+                expect(points.instances.length).toBeGreaterThan(0);
                 done();
             }, DefaultWaitForRender);
         });        
@@ -735,10 +736,10 @@ module powerbitests {
            
             visualBuilder.onDataChanged({ dataViews: [dataView1, lineDataView] });
 
-            var points = visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
+            var points = <VisualObjectInstanceEnumerationObject>visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
 
             setTimeout(() => {
-                expect(points).not.toBeDefined();
+                expect(points).toBeUndefined();
                 done();
             }, DefaultWaitForRender);
         });
@@ -750,10 +751,10 @@ module powerbitests {
             
             visualBuilder.onDataChanged({ dataViews: [dynamicSeriesDataView, lineDataView] });
 
-            var points = visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
+            var points = <VisualObjectInstanceEnumerationObject>visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
 
             setTimeout(() => {
-                expect(points.length).toBeGreaterThan(0);
+                expect(points.instances.length).toBeGreaterThan(0);
                 done();
             }, DefaultWaitForRender);
             });
@@ -764,10 +765,10 @@ module powerbitests {
             
             visualBuilder.onDataChanged({ dataViews: [dynamicSeriesDataView, staticSeriesDataView] });
 
-            var points = visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
+            var points = <VisualObjectInstanceEnumerationObject>visualBuilder.visual.enumerateObjectInstances({ objectName: 'legend' });
 
             setTimeout(() => {
-                expect(points.length).toBeGreaterThan(0);
+                expect(points.instances.length).toBeGreaterThan(0);
                 done();
             }, DefaultWaitForRender);
         });

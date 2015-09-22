@@ -33,7 +33,8 @@ module powerbi.data {
         columnAggr?: FieldExprColumnAggrPattern;
         // columnVariation?: FieldExprColumnVariationPattern;  // TODO: Implement this for Time Intelligence.
         entityAggr?: FieldExprEntityAggrPattern;
-        // hierarchyLevel?: FieldExprHierarchyLevelPattern; // TODO: Implement this for hierarchy levels.
+        hierarchyLevel?: FieldExprHierarchyLevelPattern;
+        hierarchy?: FieldExprHierarchyPattern;
         measure?: FieldExprMeasurePattern;
     }
 
@@ -53,6 +54,66 @@ module powerbi.data {
         aggregate: QueryAggregateFunction;
     }
 
+    export module SQExprBuilder {
+        export function fieldExpr(fieldExpr: FieldExprPattern): SQExpr {
+            return wrapColumnAggr(fieldExpr)
+                || wrapColumn(fieldExpr)
+                || wrapMeasure(fieldExpr)
+                || wrapHierarchyLevel(fieldExpr)
+                || wrapHierarchy(fieldExpr)
+                || wrapEntityAggr(fieldExpr)
+                || wrapEntity(fieldExpr);
+        }
+
+        function wrapColumnAggr(fieldExpr: FieldExprPattern): SQExpr {
+            var aggr = fieldExpr.columnAggr;
+            if (aggr) {
+                var entityExpr = wrapEntity(fieldExpr.columnAggr);
+                return aggregate(columnRef(entityExpr, aggr.name), aggr.aggregate);
+            }
+        }
+
+        function wrapHierarchyLevel(fieldExpr: FieldExprPattern): SQExpr {
+            //var aggr = fieldExpr.hierarchyLevel;
+            return null;
+        }
+
+        function wrapHierarchy(fieldExpr: FieldExprPattern): SQExpr {
+            //var aggr = fieldExpr.hierarchy;
+            return null;
+        }
+
+        function wrapColumn(fieldExpr: FieldExprPattern): SQExpr {
+            var column = fieldExpr.column;
+            if (column) {
+                var entityExpr = wrapEntity(fieldExpr.column);
+                return columnRef(entityExpr, column.name);
+            }
+        }
+
+        function wrapMeasure(fieldExpr: FieldExprPattern): SQExpr {
+            var measure = fieldExpr.measure;
+            if (measure) {
+                var entityExpr = wrapEntity(fieldExpr.measure);
+                return measureRef(entityExpr, measure.name);
+            }
+        }
+
+        function wrapEntityAggr(fieldExpr: FieldExprPattern): SQExpr {
+            var entityAggregate = fieldExpr.entityAggr;
+
+            if (entityAggregate) {
+                var entityExpr = wrapEntity(fieldExpr.entityAggr);
+                return aggregate(entityExpr, entityAggregate.aggregate);
+            }
+        }
+
+        function wrapEntity(fieldExpr: FieldExprPattern): SQExpr {
+            let fieldExprEntityItemPattern = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
+            return entity(fieldExprEntityItemPattern.schema, fieldExprEntityItemPattern.entity, fieldExprEntityItemPattern.entityVar);
+        }
+    }
+
     // TODO: Implement this for Time Intelligence.
     //export interface FieldExprColumnVariationPattern extends FieldExprEntityItemPattern {
     //    variationSource: FieldExprColumnPattern;
@@ -61,6 +122,12 @@ module powerbi.data {
 
     export interface FieldExprEntityAggrPattern extends FieldExprEntityItemPattern {
         aggregate: QueryAggregateFunction;
+    }
+
+    export interface FieldExprHierarchyLevelPattern {
+    }
+
+    export interface FieldExprHierarchyPattern {
     }
 
     export type FieldExprMeasurePattern = FieldExprPropertyPattern;
@@ -110,7 +177,10 @@ module powerbi.data {
             if (fieldPattern && fieldPattern.column) {
                 let argAggr = <FieldExprColumnAggrPattern>fieldPattern.column;
                 argAggr.aggregate = expr.func;
-
+                return { columnAggr: argAggr };
+            } else if (fieldPattern && fieldPattern.columnAggr) {
+                let argAggr = <FieldExprColumnAggrPattern>fieldPattern.columnAggr;
+                argAggr.aggregate = expr.func;
                 return { columnAggr: argAggr };
             }
 
@@ -123,7 +193,7 @@ module powerbi.data {
             }
         }
     }
-    
+
     class SourceExprPatternBuilder extends DefaultSQExprVisitor<SourceExprPattern> {
         public static instance: SourceExprPatternBuilder = new SourceExprPatternBuilder();
 
@@ -136,6 +206,49 @@ module powerbi.data {
                 entityRef.entityVar = expr.variable;
 
             return { entity: entityRef };
+        }
+    }
+
+    export module FieldExprPattern {
+        export function hasFieldExprName(fieldExpr: FieldExprPattern): boolean {
+            return (fieldExpr.column ||
+                fieldExpr.columnAggr ||
+                fieldExpr.measure) !== undefined;
+        }
+
+        export function getPropertyName(fieldExpr: FieldExprPattern): string {
+            let column = (fieldExpr.column ||
+                fieldExpr.columnAggr ||
+                fieldExpr.measure);
+
+            if (column)
+                return column.name;
+        }
+
+        export function getFieldExprName(fieldExpr: FieldExprPattern): string {
+            let name = getPropertyName(fieldExpr);
+
+            if (name)
+                return name;
+
+            // In case it is an entity
+            return toFieldExprEntityItemPattern(fieldExpr).entity;
+        }
+
+        export function toFieldExprEntityItemPattern(fieldExpr: FieldExprPattern): FieldExprEntityItemPattern {
+            var field = <FieldExprEntityItemPattern>(fieldExpr.column ||
+                fieldExpr.columnAggr ||
+                fieldExpr.entityAggr ||
+                fieldExpr.hierarchy ||
+                fieldExpr.hierarchyLevel ||
+                fieldExpr.measure ||
+                fieldExpr); // fieldExpr for entity
+
+            return {
+                schema: field.schema,
+                entity: field.entity,
+                entityVar: field.entityVar,
+            };
         }
     }
 }

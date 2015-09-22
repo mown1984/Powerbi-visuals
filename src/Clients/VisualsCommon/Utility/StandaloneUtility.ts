@@ -96,4 +96,23 @@ module jsCommon {
             return JSON.stringify(x) === JSON.stringify(y);
         }
     }
+
+    export module PixelConverter {
+        const PxPtRatio: number = 4 / 3;
+        const PixelString: string = 'px';
+
+        /**
+         * Appends 'px' to the end of number value for use as pixel string in styles
+         */
+        export function toString(px: number): string {
+            return px + PixelString;
+        }
+
+        /**
+         * Converts point value (pt) to pixels
+         */
+        export function fromPoint(pt: number): string {
+            return toString(PxPtRatio * pt);
+        }
+    }
 } 
