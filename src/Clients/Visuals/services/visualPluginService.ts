@@ -374,7 +374,7 @@ module powerbi.visuals {
             public constructor() {
                 super();
 
-                this.visualPlugins = {};
+                this.visualPlugins = <any>powerbi.visuals.plugins;
 
                 createMinervaPlugins(this.visualPlugins);
             }
