@@ -1844,7 +1844,7 @@ body {
   display: inline-block;
   cursor: pointer;
   background-image: url(../images/visuals.sprites.png);
-  background-position: -96px -64px;
+  background-position: -156px -116px;
   width: 13px;
   height: 13px;
   opacity: 0.5;
@@ -1856,23 +1856,19 @@ body {
 }
 .slicerContainer label.slicerCheckbox input:checked + span::before {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -96px -77px;
+  background-position: -156px -129px;
   width: 13px;
   height: 13px;
   opacity: 1;
 }
 .slicerContainer label.slicerCheckbox input.partiallySelected + span::before {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -96px;
+  background-position: -156px -142px;
   width: 13px;
   height: 13px;
   opacity: 1;
 }
 .slicerContainer .slicerHeader {
-  border-bottom-color: #eaeaea;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  padding-bottom: 3px;
   box-sizing: border-box;
 }
 .slicerContainer .headerText {
@@ -1886,7 +1882,7 @@ body {
   float: none;
 }
 .slicerContainer .slicerItemContainer {
-  padding-top: 5px;
+  margin-top: 5px;
   box-sizing: border-box;
 }
 .slicerContainer .slicerText {
@@ -1895,12 +1891,11 @@ body {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
-  line-height: 1.2;
   cursor: pointer;
 }
 .slicerContainer .clear {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -13px -96px;
+  background-position: -136px -120px;
   width: 13px;
   height: 12px;
   margin: 4px 2px;
@@ -2168,6 +2163,78 @@ body {
   fill: none;
   stroke: #777777;
   shape-rendering: crispEdges;
+}
+.playChart .traceLine {
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+.playChart .mainGraphicsContext .notSelected {
+  opacity: 0.6;
+}
+.playChart .mainGraphicsContext .selected {
+  opacity: 1;
+}
+.playChart .axisGraphicsContext {
+  font-family: Tahoma,Verdana,Geneva,sans-serif;
+  font-size: 11px;
+}
+.playChart .axisGraphicsContext text {
+  fill: #777777;
+}
+.playChart .axisGraphicsContext .axis path,
+.playChart .axisGraphicsContext .axis line {
+  fill: none;
+  stroke: #777777;
+  shape-rendering: crispEdges;
+}
+.playChart .button-container {
+  height: 24px;
+  width: 24px;
+  overflow: hidden;
+  -moz-border-radius: 13px;
+  -webkit-border-radius: 13px;
+  border-radius: 13px;
+  border: 1px solid #666666;
+  margin: 10px;
+  display: inline-block;
+  cursor: pointer;
+}
+.playChart .play {
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 11px solid #999999;
+  border-right: 1px solid transparent;
+  padding: 0;
+  margin: 6px 8px;
+  background: transparent;
+  display: block;
+}
+.playChart .pause {
+  width: 4px;
+  height: 12px;
+  border-top: 0px;
+  border-bottom: 0px;
+  border-left: 4px solid #999;
+  border-right: 4px solid #999;
+  padding: 0;
+  margin: 6px 6px;
+  background-color: transparent;
+  display: block;
+}
+.playChart .sliders {
+  display: inline-block;
+  vertical-align: top;
+  margin-top: 18px;
+}
+.playChart .callout {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #888888;
+  opacity: 0.5;
 }
 .tableContainer {
   overflow: auto;
@@ -2535,11 +2602,6 @@ body {
   line-height: 1;
 }
 .visual .imageBackground {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  bottom: 0px;
-  right: 0px;
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -2568,6 +2630,438 @@ body {
 }
 .visual .treemap .labels .minorLabel {
   font-size: 10px;
+}
+.visual div.kpiTrafficLightSingle0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -100px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightSingle1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -120px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightSingle2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -156px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -100px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -60px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -80px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -100px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSigns0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -80px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSigns1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSigns2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLight0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLight1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLight2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapes0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapes1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapes2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBars0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -48px -72px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBars1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -68px -72px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBars2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBars3 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBars4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxes0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -60px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxes1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxes2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxes3 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxes4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGauge0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGauge1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGauge2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGauge3 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGauge4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -60px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightSingleBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -100px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightSingleBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -120px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightSingleBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -156px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsBigColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -100px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsBigColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeFlagsBigColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsBigColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsBigColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -60px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeStarsBigColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -80px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledBigColored0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -136px -100px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledBigColored1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiThreeSymbolsUnCircledBigColored2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSignsBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -80px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSignsBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiRoadSignsBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiTrafficLightBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -136px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapesBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapesBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiShapesBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -116px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBarsBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -48px -72px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBarsBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -68px -72px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBarsBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBarsBig4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBarsBig5 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxesBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -60px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxesBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: 0px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxesBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -20px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxesBig3 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -40px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiFiveBoxesBig4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -60px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGaugeBig0 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -80px -96px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGaugeBig1 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px 0px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGaugeBig2 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -20px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGaugeBig3 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -40px;
+  width: 20px;
+  height: 20px;
+}
+.visual div.kpiGaugeBig4 {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -116px -60px;
+  width: 20px;
+  height: 20px;
 }
 .interactive-legend {
   white-space: nowrap;
@@ -2658,6 +3152,9 @@ body {
 .richtextbox {
   color: #333333;
 }
+.richtextbox a {
+  color: #0000ee;
+}
 .richtextbox .ql-container {
   padding: 0px;
   cursor: auto;
@@ -2725,6 +3222,7 @@ div.ql-toolbar .toolbar-url-input .ql-link-tooltip input {
 div.ql-toolbar .toolbar-url-input .ql-link-tooltip a {
   margin: 0 3px;
   color: #a6a6a6;
+  background: inherit;
 }
 div.ql-toolbar .toolbar-url-input .ql-link-tooltip a:hover {
   color: #be9a27;
@@ -2753,91 +3251,91 @@ div.ql-toolbar .ql-format-button.ql-active {
 }
 div.ql-toolbar .ql-format-button[data-value="left"] {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px -24px;
+  background-position: -48px 0px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="left"].ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -72px;
+  background-position: -24px -72px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="left"]:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -72px;
+  background-position: -24px -72px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="right"] {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -24px -24px;
+  background-position: 0px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="right"].ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px 0px;
+  background-position: -24px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="right"]:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px 0px;
+  background-position: -24px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="center"] {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -72px 0px;
+  background-position: -48px -48px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="center"].ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px -48px;
+  background-position: 0px 0px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button[data-value="center"]:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px -48px;
+  background-position: 0px 0px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-bold {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -24px -48px;
+  background-position: 0px -48px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-bold.ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -48px;
+  background-position: -48px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-bold:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -48px;
+  background-position: -48px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-italic {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -24px -72px;
+  background-position: 0px -72px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-italic.ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px 0px;
+  background-position: -72px -48px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-italic:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px 0px;
+  background-position: -72px -48px;
   width: 24px;
   height: 24px;
 }
@@ -2849,40 +3347,92 @@ div.ql-toolbar .ql-format-button.ql-underline {
 }
 div.ql-toolbar .ql-format-button.ql-underline.ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -24px;
+  background-position: -24px -48px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-underline:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: 0px -24px;
+  background-position: -24px -48px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-link {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -72px -48px;
+  background-position: -72px -24px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-link.ql-active {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -72px -24px;
+  background-position: -72px 0px;
   width: 24px;
   height: 24px;
 }
 div.ql-toolbar .ql-format-button.ql-link:hover {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -72px -24px;
+  background-position: -72px 0px;
   width: 24px;
   height: 24px;
+}
+.multiRowCard .card {
+  box-sizing: border-box;
+  border-left: 3px solid;
+  border-left-color: #a6a6a6;
+  color: #767676;
+  padding-left: 10px;
+  position: relative;
+  width: 100%;
+}
+.multiRowCard .card.mrtile {
+  border-bottom: 1px solid #c8c8c8;
+  border-left: 0px;
+  padding-bottom: 5px;
+  padding-left: 0px;
+  padding-top: 5px;
+}
+.multiRowCard .card.mrtile .cardItemContainer {
+  padding-top: 5px;
+}
+.multiRowCard .card .cardItemContainer {
+  box-sizing: border-box;
+  padding-top: 7px;
+  position: relative;
+  vertical-align: top;
+}
+.multiRowCard .card .cardItemContainer .caption {
+  color: #333333;
+  font-size: 14px;
+  line-height: 20px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multiRowCard .card .cardItemContainer .details {
+  color: #a6a6a6;
+  font-size: 12px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multiRowCard .card .cardItemContainer .imgCon img {
+  display: inline-block;
+  vertical-align: sub;
 }
 .multiRowCard .card .title {
   font-size: 18px;
   font-family: Tahoma,Verdana,Geneva,sans-serif;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: 24px;
+  margin-bottom: 5px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multiRowCard .row:last-child .card.mrtile {
+  border-bottom: 0px;
+  padding-bottom: 0px;
 }
 .clearCatcher {
   fill-opacity: 0;
@@ -2971,4 +3521,14 @@ div.ql-toolbar .ql-format-button.ql-link:hover {
   100% {
     transform: rotate(2deg);
   }
+}
+.streamGraph .axis path,
+.streamGraph .axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+.streamGraph .axis text {
+  font-family: sans-serif;
+  font-size: 11px;
 }
