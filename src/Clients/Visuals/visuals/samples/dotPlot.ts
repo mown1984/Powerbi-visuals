@@ -308,7 +308,6 @@ module powerbi.visuals.samples {
         }          
         
         private drawAxis(values: any[], xScale: D3.Scale.OrdinalScale, height: number) {
-
             let xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
