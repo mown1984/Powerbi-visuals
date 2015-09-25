@@ -31,7 +31,7 @@ module powerbi.data {
     export interface FieldExprPattern {
         column?: FieldExprColumnPattern;
         columnAggr?: FieldExprColumnAggrPattern;
-        // columnVariation?: FieldExprColumnVariationPattern;  // TODO: Implement this for Time Intelligence.
+        columnHierarchyLevelVariation?: FieldExprColumnHierarchyLevelVariation;
         entityAggr?: FieldExprEntityAggrPattern;
         hierarchyLevel?: FieldExprHierarchyLevelPattern;
         hierarchy?: FieldExprHierarchyPattern;
@@ -62,6 +62,7 @@ module powerbi.data {
                 || wrapHierarchyLevel(fieldExpr)
                 || wrapHierarchy(fieldExpr)
                 || wrapEntityAggr(fieldExpr)
+                || wrapPropertyVariationSource(fieldExpr)
                 || wrapEntity(fieldExpr);
         }
 
@@ -74,13 +75,27 @@ module powerbi.data {
         }
 
         function wrapHierarchyLevel(fieldExpr: FieldExprPattern): SQExpr {
-            //var aggr = fieldExpr.hierarchyLevel;
-            return null;
+            let hierarchyLevelPattern = fieldExpr.hierarchyLevel;
+            if (hierarchyLevelPattern) {
+                let hierarchyExpr = hierarchy(wrapEntity(hierarchyLevelPattern), hierarchyLevelPattern.name);
+                return hierarchyLevel(hierarchyExpr, hierarchyLevelPattern.level);
+            }
         }
 
         function wrapHierarchy(fieldExpr: FieldExprPattern): SQExpr {
-            //var aggr = fieldExpr.hierarchy;
-            return null;
+            let hierarchyExprPattern = fieldExpr.hierarchy;
+            if (hierarchyExprPattern) {
+                let entityExpr = wrapEntity(hierarchyExprPattern);
+                return hierarchy(entityExpr, hierarchyExprPattern.name);
+            }
+        }
+
+        function wrapPropertyVariationSource(fieldExpr: FieldExprPattern): SQExpr {
+            let variation = fieldExpr.columnHierarchyLevelVariation;
+            if (variation) {
+                let entitiyExpr = wrapEntity(variation.source);
+                return propertyVariationSource(entitiyExpr, variation.source.name, variation.level.name);
+            }
         }
 
         function wrapColumn(fieldExpr: FieldExprPattern): SQExpr {
@@ -114,32 +129,42 @@ module powerbi.data {
         }
     }
 
-    // TODO: Implement this for Time Intelligence.
-    //export interface FieldExprColumnVariationPattern extends FieldExprEntityItemPattern {
-    //    variationSource: FieldExprColumnPattern;
-    //    name: string;
-    //}
+    export interface FieldExprColumnHierarchyLevelVariation {
+        source: FieldExprColumnPattern;
+        level: FieldExprHierarchyLevelPattern;
+    }
 
     export interface FieldExprEntityAggrPattern extends FieldExprEntityItemPattern {
         aggregate: QueryAggregateFunction;
     }
 
-    export interface FieldExprHierarchyLevelPattern {
+    export interface FieldExprHierarchyLevelPattern extends FieldExprEntityItemPattern {
+        level: string;
+        name: string;
     }
 
-    export interface FieldExprHierarchyPattern {
+    export interface FieldExprHierarchyPattern extends FieldExprEntityItemPattern {
+        name: string;
     }
-
     export type FieldExprMeasurePattern = FieldExprPropertyPattern;
 
     export module SQExprConverter {
         export function asFieldPattern(sqExpr: SQExpr): FieldExprPattern {
+            // TODO: adding entity to the FieldExprPattern
+            if (sqExpr instanceof data.SQEntityExpr) {
+                return {
+                    entity: sqExpr.entity,
+                    schema: sqExpr.schema,
+                };
+            }
+
             return sqExpr.accept(FieldExprPatternBuilder.instance);
         }
     }
 
     interface SourceExprPattern {
         entity?: FieldExprEntityItemPattern;
+        hierarchy?: FieldExprHierarchyPattern;
         //variation?: FieldExprColumnPattern;
     }
 
@@ -192,6 +217,34 @@ module powerbi.data {
                 return { entityAggr: argAggr };
             }
         }
+
+        public visitHierarchy(expr: SQHierarchyExpr): FieldExprPattern {
+            let sourcePattern = expr.arg.accept(SourceExprPatternBuilder.instance);
+
+            if (sourcePattern && sourcePattern.entity) {
+                let hierarchyRef = <FieldExprHierarchyPattern>(sourcePattern.entity);
+                hierarchyRef.name = expr.hierarchy;
+                return { hierarchy: hierarchyRef };
+            }
+        }
+
+        public visitHierarchyLevel(expr: SQHierarchyLevelExpr): FieldExprPattern {
+            let pattern = expr.arg.accept(HierarchyExprPatternBuiler.instance);
+
+            if (!pattern)
+                return;
+
+            if (pattern.hierarchy) {
+                return {
+                    hierarchyLevel: {
+                        entity: pattern.hierarchy.entity,
+                        schema: pattern.hierarchy.schema,
+                        name: pattern.hierarchy.name,
+                        level: expr.level,
+                    }
+                };
+            }
+        }
     }
 
     class SourceExprPatternBuilder extends DefaultSQExprVisitor<SourceExprPattern> {
@@ -209,6 +262,22 @@ module powerbi.data {
         }
     }
 
+    class HierarchyExprPatternBuiler extends DefaultSQExprVisitor<SourceExprPattern> {
+        public static instance: HierarchyExprPatternBuiler = new HierarchyExprPatternBuiler();
+
+        public visitHierarchy(expr: SQHierarchyExpr): SourceExprPattern {
+            let entityExpr = <SQEntityExpr>expr.arg;
+
+            let hierarchyRef: FieldExprHierarchyPattern = {
+                name: expr.hierarchy,
+                schema: entityExpr.schema,
+                entity: entityExpr.entity,
+            };
+
+            return { hierarchy: hierarchyRef };
+        }
+    }
+
     export module FieldExprPattern {
         export function hasFieldExprName(fieldExpr: FieldExprPattern): boolean {
             return (fieldExpr.column ||
@@ -219,10 +288,13 @@ module powerbi.data {
         export function getPropertyName(fieldExpr: FieldExprPattern): string {
             let column = (fieldExpr.column ||
                 fieldExpr.columnAggr ||
-                fieldExpr.measure);
+                fieldExpr.measure ||
+                fieldExpr.hierarchy);
 
             if (column)
                 return column.name;
+            else if (fieldExpr.hierarchyLevel)
+                return fieldExpr.hierarchyLevel.level;
         }
 
         export function getFieldExprName(fieldExpr: FieldExprPattern): string {

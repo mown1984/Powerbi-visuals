@@ -108,6 +108,15 @@ module powerbitests {
             }
         ];
 
+        // text with space surroudned by space for testing special empty word break
+        var paragraphs5: ParagraphContext[] = [
+            {
+                textRuns: [
+                    { value: "foo    bar" }
+                ]
+            }
+        ];
+
         describe("", () => {
             var host: IVisualHostServices;
             var $element: JQuery;
@@ -427,7 +436,7 @@ module powerbitests {
                 });
             });
 
-            describe("", () => {
+            describe("toolbar", () => {
                 beforeEach(() => {
                     getViewModeSpy.and.returnValue(powerbi.ViewMode.Edit);
 
@@ -435,7 +444,7 @@ module powerbitests {
                     textbox.init(initOptions);
                 });
 
-                it("toolbar should exist with formatting options", () => {
+                it("should exist with formatting options", () => {
                     var $toolbar = getToolbar();
                     expect($toolbar).toBeDefined();
 
@@ -562,6 +571,44 @@ module powerbitests {
                             expect(anchors.length).toBe(1);
                             expect(anchors.eq(0).attr("href")).toBe(microsoft);
                             expect(anchors.eq(0).html()).toBe(microsoft);
+                        });
+                    });
+                });
+
+                describe("with cursor in blank space surrounded by blank space", () => {
+                    beforeEach(() => {
+                        textbox.onDataChanged({ dataViews: buildParagraphsDataView(paragraphs5) });
+                        textbox.setSelection(4, 4);
+                    });
+
+                    describe("clicking insert link", () => {
+                        beforeEach(() => {
+                            clickLinkButton(getToolbar());
+                        });
+
+                        it("should enter link insert with no text", () => {
+                            let input = getLinkInput(getToolbar());
+                            let content = getEditModeParagraphDivs($element).eq(0);
+                            let anchors = content.find("a");
+
+                            expect(input.val()).toBe("http://");
+                            expect(content.text()).toEqual("foo    bar");
+                            expect(anchors.length).toBe(0);
+                        });
+
+                        it("and mousedown on done should insert link", () => {
+                            let input = getLinkInput(getToolbar());
+                            input.val('http://another-url.com');
+
+                            getLinkDoneButton(getToolbar()).mousedown();
+
+                            let content = getEditModeParagraphDivs($element).eq(0);
+                            let anchors = content.find("a");
+
+                            expect(content.get(0).innerText).toEqual("foo http://another-url.com bar");
+                            expect(anchors.length).toBe(1);
+                            expect(anchors.eq(0).text()).toBe("http://another-url.com");
+                            expect(anchors.eq(0).attr("href")).toBe("http://another-url.com");
                         });
                     });
                 });

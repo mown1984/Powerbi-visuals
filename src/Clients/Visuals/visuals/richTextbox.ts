@@ -547,6 +547,11 @@ module powerbi.visuals {
                 }
             }
 
+            public addModule(name: any, options: any): any {
+                if (this.editor)
+                    return this.editor.addModule(name, options);
+            }
+
             public getElement(): JQuery {
                 return this.$container;
             }
@@ -637,6 +642,43 @@ module powerbi.visuals {
                 this.editor = null;
             }
 
+            public getSelectionAtCursor(): quill.Range {
+                let text = this.getTextWithoutTrailingBreak();
+
+                // Ensure editor has focus before selection interactions
+                this.editor.focus();
+                
+                let selection = this.getSelection();
+                if (selection && selection.start === selection.end) {
+                    return jsCommon.WordBreaker.find(selection.start, text);
+                }
+
+                return selection;
+            }
+
+            public getWord() {
+                let selection = this.getSelectionAtCursor();
+                return this.getTextWithoutTrailingBreak().slice(selection.start, selection.end);
+            }
+
+            public insertLinkAtCursor(link: string, index: number): number {
+                let endIndex = index + link.length;
+                
+                this.editor.insertText(index, link, 'api');
+                this.editor.formatText(index, endIndex, 'link', link, 'api');
+                this.setSelection(index, endIndex);
+                return endIndex;
+            }
+
+            public getEditorContainer(): JQuery {
+                if (this.editor)
+                    return $(this.editor.container);
+            };
+
+            private getTextWithoutTrailingBreak(): string {
+                return this.editor.getText().slice(0, -1);
+            }
+
             private rebuildQuillEditor(): void {
                 // Preserve contents if we already have an editor.
                 let contents: quill.Delta = null;
@@ -671,7 +713,7 @@ module powerbi.visuals {
                 if (!this.readOnly) {
                     let $toolbarDiv = this.$toolbarDiv;
                     if (!$toolbarDiv) {
-                        this.$toolbarDiv = $toolbarDiv = Toolbar.buildToolbar(this.editor, this.localizationProvider);
+                        this.$toolbarDiv = $toolbarDiv = Toolbar.buildToolbar(this, this.localizationProvider);
                     }
 
                     $toolbarDiv.addClass('unselectable');
@@ -758,17 +800,17 @@ module powerbi.visuals {
                 toolbarUrlInput: createSelector('toolbar-url-input'),
             };
 
-            export function buildToolbar(editor: quill.Quill, localizationProvider: jsCommon.IStringResourceProvider) {
+            export function buildToolbar(quillWrapper: QuillWrapper, localizationProvider: jsCommon.IStringResourceProvider) {
                 // Module for adding custom hyperlinks
                 let linkTooltipTemplate = buildToolbarLinkInputTemplate(localizationProvider);
-                editor.addModule('link-tooltip', { template: linkTooltipTemplate });
+                quillWrapper.addModule('link-tooltip', { template: linkTooltipTemplate });
 
-                let toolbarLinkInput: JQuery = buildToolbarLinkInput(editor, getTooltip('Link', localizationProvider), localizationProvider.get('RichTextbox_Link_DefaultText'));
+                let toolbarLinkInput: JQuery = buildToolbarLinkInput(quillWrapper, getTooltip('Link', localizationProvider), localizationProvider.get('RichTextbox_Link_DefaultText'));
 
                 let fontPicker = picker(getTooltip('Font', localizationProvider), fonts, 'font', defaultFont,
                     // Show the fonts in their own font face.
                     ($option, option) => { $option.css('font-family', option.value); return $option; }
-                    );
+                );
 
                 let $container = div()
                     .addClass('toolbar ql-toolbar')
@@ -927,18 +969,14 @@ module powerbi.visuals {
                 return localizationProvider.get('RichTextbox_' + name + '_ToolTip');
             }
 
-            function getTextWithoutTrailingBreak(editor: quill.Quill): string {
-                return editor.getText().slice(0, -1);
-            }
-
             function clearLinkInput(linkTooltip: JQuery): void {
                 linkTooltip.removeClass('editing');
                 linkTooltip.find('.input').val(DefaultLinkInputValue);
             }
 
-            function buildToolbarLinkInput(editor: quill.Quill, buttonTooltip: string, defaultLinkText: string): JQuery {
+            function buildToolbarLinkInput(quillWrapper: QuillWrapper, buttonTooltip: string, defaultLinkText: string): JQuery {
                 // Pull out link tooltip
-                let linkTooltip = $(editor.container).find(Toolbar.selectors.linkTooltip.selector);
+                let linkTooltip = quillWrapper.getEditorContainer().find(Toolbar.selectors.linkTooltip.selector);
 
                 // Append link tooltip to a new toolbar format group
                 let toolbarLinkInput: JQuery = formatGroup()
@@ -946,16 +984,17 @@ module powerbi.visuals {
                     .append(formatButton(buttonTooltip, 'link').append('<div>'))
                     .append(linkTooltip);
 
-                // Special case for empty textbox when enter key or done button clicked
+                // Special case for blank selection (no text near cursor) when enter key or done button clicked
                 toolbarLinkInput.on('keydown mousedown', (event: JQueryEventObject) => {
                     if (event.keyCode === jsCommon.DOMConstants.enterKeyCode || (<HTMLElement>event.target).classList.contains('done')) {
-                        let text = getTextWithoutTrailingBreak(editor);
-                        if (text.length === 0) {
+                        let link = toolbarLinkInput.find('.input').val();
+                        let selection = quillWrapper.getSelectionAtCursor();
+                        let word = quillWrapper.getWord();
+                        if (!word) {
                             // Insert the input text as a link
-                            let linkText = toolbarLinkInput.find('.input').val();
-                            editor.setText(linkText, 'api');
-                            editor.formatText(0, linkText.length, 'link', linkText, 'api');
+                            let endCursor = quillWrapper.insertLinkAtCursor(link, selection.start);
                             clearLinkInput(linkTooltip);
+                            quillWrapper.setSelection(endCursor, endCursor);
                             return false;
                         }
                     }
@@ -978,9 +1017,9 @@ module powerbi.visuals {
                             return false;
                         }
 
-                        // If editor is empty, special case for link button
-                        let text = getTextWithoutTrailingBreak(editor);
-                        if (text.length === 0) {
+                        // If blank selection (no text near cursor), special case for link button
+                        let word = quillWrapper.getWord();
+                        if (!word) {
                             linkTooltip.addClass('editing');
                             toolbarLinkInput.find('.input')
                                 .val(DefaultLinkInputValue)
@@ -992,16 +1031,8 @@ module powerbi.visuals {
                         // Properly set selection before we handle the click
                         let linkButton = (<HTMLElement>event.target).parentElement;
                         if (linkButton && !linkButton.classList.contains('ql-active')) {
-                            // Ensure editor has focus before selection interactions
-                            editor.focus();
-
-                            // Adding a new link, check for word breaking
-                            let text = getTextWithoutTrailingBreak(editor);
-                            let selection = editor.getSelection();
-                            if (selection && selection.start === selection.end) {
-                                let result = jsCommon.WordBreaker.find(selection.start, text);
-                                editor.setSelection(result.start, result.end);
-                            }
+                            let selection = quillWrapper.getSelectionAtCursor();
+                            quillWrapper.setSelection(selection.start, selection.end);
                         }
                     });
 

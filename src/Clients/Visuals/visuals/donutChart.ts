@@ -390,10 +390,14 @@ module powerbi.visuals {
                     this.enumerateDataPoints(enumeration);
                     break;
                 case 'labels':
-                    if (this.data)
-                        dataLabelUtils.enumerateDataLabels(enumeration, this.data.dataLabelsSettings, /*withPosition:*/ false, /*withPrecision:*/ true, /*withDisplayUnit:*/ true);
-                    else
-                        dataLabelUtils.enumerateDataLabels(enumeration, dataLabelUtils.getDefaultDonutLabelSettings(), /*withPosition:*/ false, /*withPrecision:*/ true, /*withDisplayUnit:*/ true);
+                    let labelSettingOptions: VisualDataLabelsSettingsOptions = {
+                        enumeration: enumeration,
+                        dataLabelsSettings: this.data ? this.data.dataLabelsSettings : dataLabelUtils.getDefaultDonutLabelSettings(),
+                        show: true,
+                        displayUnits: true,
+                        precision: true,
+                    };
+                    dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                 case 'categoryLabels':
                     if (this.data)
                         dataLabelUtils.enumerateCategoryLabels(enumeration, this.data.dataLabelsSettings, false, true);

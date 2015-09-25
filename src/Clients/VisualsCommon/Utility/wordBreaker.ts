@@ -141,7 +141,7 @@ module jsCommon {
             textWidthMeasurer: ITextAsSVGMeasurer,
             maxWidth: number,
             maxNumLines: number,
-            truncator?: ITextTruncator): string[]{
+            truncator?: ITextTruncator): string[] {
             // Default truncator returns string as-is
             truncator = truncator ? truncator : (properties: TextProperties, maxWidth: number) => properties.text;
 

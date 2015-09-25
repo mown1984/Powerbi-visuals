@@ -29,6 +29,20 @@
 module powerbi.data {
     import StringExtensions = jsCommon.StringExtensions;
 
+    module SQExprHierarchyToHierarchyLevelConverter {
+        export function convert(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): SQExpr[] {
+            debug.assertValue(sqExpr, 'sqExpr');
+            debug.assertValue(federatedSchema, 'federatedSchema');
+
+            if (sqExpr instanceof SQHierarchyExpr) {
+                let hierarchyExpr = <SQHierarchyExpr>sqExpr;
+
+                let conceptualHierarcy = SQExprUtils.getConceptualHierarchy(hierarchyExpr, federatedSchema);
+                return _.map(conceptualHierarcy.levels, hierarchyLevel => SQExprBuilder.hierarchyLevel(sqExpr, hierarchyLevel.name));
+            }
+        }
+    }
+
     export module SQExprUtils {
         /** Returns an array of supported aggregates for a given expr and role. */
         export function getSupportedAggregates(
@@ -145,14 +159,19 @@ module powerbi.data {
         }
 
         export function getKpiStatus(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr {
-            let fieldDef = SQExprConverter.asSQFieldDef(expr);
             let kpi = getKpiStatusProperty(expr, schema);
-            if (kpi)
-                return SQExprBuilder.fieldDef({
-                    schema: fieldDef.schema,
-                    measure: kpi.name,
-                    entity: fieldDef.entity,
-                });
+            if (kpi) {
+                let measureExpr = SQExprConverter.asFieldPattern(expr).measure;
+                if (measureExpr) {
+                    return SQExprBuilder.fieldExpr({
+                        measure: {
+                            schema: measureExpr.schema,
+                            entity: measureExpr.entity,
+                            name: kpi.name,
+                        }
+                    });
+                }
+            }
         }
 
         export function getKpiStatusGraphic(expr: SQExpr, schema: FederatedConceptualSchema): string {
@@ -169,7 +188,22 @@ module powerbi.data {
                 return kpi.measure.kpi.statusGraphic;
         }
 
-        function getKpiStatusProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {    
+        export function getConceptualHierarchy(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): ConceptualHierarchy {
+            if (sqExpr instanceof SQHierarchyExpr) {
+                let hierarchy = <SQHierarchyExpr>sqExpr;
+                let entityExpr = <SQEntityExpr>sqExpr.arg;
+                return federatedSchema
+                    .schema(entityExpr.schema)
+                    .findHierarchy(entityExpr.entity, hierarchy.hierarchy);
+            }
+        }
+
+        export function getExpr(schema, expr): SQExpr | SQExpr[] {
+            let exprs = SQExprHierarchyToHierarchyLevelConverter.convert(expr, schema);
+            return exprs || expr;
+        }
+
+        function getKpiStatusProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {
             let property = expr.getConceptualProperty(schema);
             if (!property)
                 return;

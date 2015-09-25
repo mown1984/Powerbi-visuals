@@ -409,7 +409,14 @@ module powerbi.visuals {
                     });
                     break;
                 case 'labels':
-                    dataLabelUtils.enumerateDataLabels(enumeration, formatSettings.labelSettings, /*withPosition:*/ false, /*withPrecision:*/ true, /*withDisplayUnit:*/ true);
+                    let labelSettingOptions: VisualDataLabelsSettingsOptions = {
+                        enumeration: enumeration,
+                        dataLabelsSettings: formatSettings.labelSettings,
+                        show: true,
+                        displayUnits: true,
+                        precision: true,
+                    };
+                    dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                     break;
                 case 'wordWrap':
                     enumeration.pushInstance({

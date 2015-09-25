@@ -42,6 +42,14 @@ module powerbi.data {
             return entity.properties.withName(propertyName);
         }
 
+        public findHierarchy(entityName: string, name: string): ConceptualHierarchy {
+            let entity = this.entities.withName(entityName);
+            if (!entity || _.isEmpty(entity.hierarchies))
+                return;
+
+            return entity.hierarchies.withName(name);
+        }
+
         /**
         * Returns the first property of the entity whose kpi is tied to kpiProperty
         */

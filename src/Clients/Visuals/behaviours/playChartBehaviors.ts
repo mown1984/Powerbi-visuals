@@ -33,7 +33,7 @@ module powerbi.visuals {
         dataViewCat?: powerbi.DataViewCategorical;
         svg?: D3.Selection;
         dataView?: powerbi.DataView;
-        renderTraceLine?: (options: PlayBehaviorOptions, selectedPoint: SelectableDataPoint, shouldAnimate: boolean) => void;
+        renderTraceLine?: (options: PlayBehaviorOptions, selectedPoints: SelectableDataPoint[], shouldAnimate: boolean) => void;
         labelsSelection: D3.Selection;
     }
 
@@ -65,7 +65,7 @@ module powerbi.visuals {
 
                 let selectedPoints = this.bubbles.filter((d: PlayChartDataPoint) => d.selected);
                 if (selectedPoints && selectedPoints.data().length > 0 && this.options.renderTraceLine != null) {
-                    this.options.renderTraceLine(this.options, <PlayChartDataPoint>selectedPoints.datum(), true);
+                    this.options.renderTraceLine(this.options, selectedPoints.data(), true);
                 }
                 else {
                     this.options.svg.selectAll('.traceLine').remove();

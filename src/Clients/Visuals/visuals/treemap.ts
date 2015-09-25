@@ -660,7 +660,15 @@ module powerbi.visuals {
                 case 'legend':
                     return this.enumerateLegend(data);
                 case 'labels':
-                    dataLabelUtils.enumerateDataLabels(enumeration, this.data.dataLabelsSettings, false /*withPosition*/, true /*withPrecision*/, true /*withDisplayUnit*/);
+                    let labelSettingOptions: VisualDataLabelsSettingsOptions = {
+                        enumeration: enumeration,
+                        dataLabelsSettings: this.data.dataLabelsSettings,
+                        show: true,
+                        displayUnits: true,
+                        precision: true,
+                    };
+                    dataLabelUtils.enumerateDataLabels(labelSettingOptions);
+                    break;
                 case 'categoryLabels':
                     if (this.data)
                         dataLabelUtils.enumerateCategoryLabels(enumeration, this.data.dataLabelsSettings, false /*withFill*/, false /*isDonutChart*/, true /*isTreeMap*/);

@@ -55,9 +55,11 @@ module powerbi.visuals {
         showAllDataPoints?: boolean;
         hasDynamicSeries?: boolean;
         fillPoint?: boolean;
+        colorBorder?: boolean;
         frameKeys: any[];
         allDataPoints?: PlayChartDataPoint[][];
         currentFrameIndex?: number;
+        lastRenderedFrameIndex?: number;
         colorByCategory?: boolean;
         currentViewport?: IViewport;
     }
@@ -93,6 +95,7 @@ module powerbi.visuals {
         private static BubbleRadius = 3 * 2;
         public static DefaultBubbleOpacity = 0.85;
         public static DimmedBubbleOpacity = 0.3;
+        public static StrokeDarkenColorValue = 255 * 0.25;
         // Chart Area and size range values as defined by PV charts
         private static AreaOf300By300Chart = 90000;
         private static MinSizeRange = 200;
@@ -137,6 +140,10 @@ module powerbi.visuals {
         private isFrozen: boolean;
         private frameCount: number;
         private isPlaying: boolean;
+        private playAxisContainer: JQuery; //contains the playButton and slider
+        private playButton: JQuery;
+        private slider: JQuery;
+        private callout: JQuery;
 
         // do not call converter() when we call persistProperties and a new update() happens
         // NOTE: calling persistProperties will still cause a render() call to come from cartesianChart
@@ -150,11 +157,6 @@ module powerbi.visuals {
                 this.isFrozen = !!options.isFrozen;
             }
         }
-
-        private playAxisContainer: JQuery; //contains the playButton and slider
-        private playButton: JQuery;
-        private slider: JQuery;
-        private callout: JQuery;
 
         public init(options: CartesianVisualInitOptions) {
             this.options = options;
@@ -462,11 +464,11 @@ module powerbi.visuals {
             dataViewValueGroups: DataViewValueColumnGroup[],
             sizeColumnIndex: number): NumberRange {
 
-            var result: NumberRange = {};
+            let result: NumberRange = {};
             if (dataViewValueGroups) {
                 dataViewValueGroups.forEach((group) => {
-                    var sizeColumn = PlayChart.getMeasureValue(sizeColumnIndex, group.values);
-                    var currentRange: NumberRange = AxisHelper.getRangeForColumn(sizeColumn);
+                    let sizeColumn = PlayChart.getMeasureValue(sizeColumnIndex, group.values);
+                    let currentRange: NumberRange = AxisHelper.getRangeForColumn(sizeColumn);
                     if (result.min == null || result.min > currentRange.min) {
                         result.min = currentRange.min;
                     }
@@ -493,7 +495,7 @@ module powerbi.visuals {
             defaultDataPointColor?: string,
             colorByCategory?: boolean): PlayChartDataPoint[]{
 
-            var dataPoints: PlayChartDataPoint[] = [],
+            let dataPoints: PlayChartDataPoint[] = [],
                 indicies = metadata.idx,
                 formatStringProp = playChartProps.general.formatString,
                 dataValueSource = dataValues.source,
@@ -774,7 +776,7 @@ module powerbi.visuals {
                 case 'dataPoint - butNotWorkingAndLeavingHereForTSLINT':
                     let categoricalDataView: DataViewCategorical = this.dataView && this.dataView.categorical ? this.dataView.categorical : null;
                     if (!GradientUtils.hasGradientRole(categoricalDataView))
-                        this.enumerateDataPoints();
+                        return this.enumerateDataPoints(enumeration);
                     break;
                 case 'categoryAxis':
                     enumeration.pushInstance({
@@ -784,6 +786,7 @@ module powerbi.visuals {
                         },
                         objectName: 'categoryAxis'
                     });
+                    break;
                 case 'valueAxis':
                     enumeration.pushInstance({
                         selector: null,
@@ -800,10 +803,9 @@ module powerbi.visuals {
                         dataLabelUtils.enumerateCategoryLabels(enumeration, null, true);
                     break;
                 case 'fillPoint':
-                    var sizeRange = this.data.sizeRange;
-                    // Check if the card should be shown or not
-                    if (sizeRange && sizeRange.min)
-                        break;
+                    // Check if the card should be shown or not based on the existance of size measure
+                    if (this.hasSizeMeasure())
+                        return;
 
                     enumeration.pushInstance({
                         objectName: 'fillPoint',
@@ -813,16 +815,31 @@ module powerbi.visuals {
                         },
                     });
                     break;
+                case 'colorBorder':
+                    // Check if the card should be shown or not based on the existance of size measure
+                    if (this.hasSizeMeasure())
+                        enumeration.pushInstance({
+                            objectName: 'colorBorder',
+                            selector: null,
+                            properties: {
+                                show: this.data.colorBorder,
+                            },
+                        });
+                    break;
             }
         }
 
-        private enumerateDataPoints(): ObjectEnumerationBuilder {
+        private hasSizeMeasure(): boolean {
+            let sizeRange = this.data.sizeRange;
+            return sizeRange && sizeRange.min !== undefined;
+        }
+
+        private enumerateDataPoints(enumeration: ObjectEnumerationBuilder): void {
             let data = this.data;
             if (!data)
                 return;
 
-            let enumeration = new ObjectEnumerationBuilder(),
-                seriesCount = data.dataPoints.length;
+            let seriesCount = data.dataPoints.length;
 
             if (!data.hasDynamicSeries) {
                 // Add default color and show all slices
@@ -866,7 +883,6 @@ module powerbi.visuals {
                     });
                 }
             }
-            return enumeration;
         }
 
         public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] {
@@ -923,7 +939,8 @@ module powerbi.visuals {
                 isVertical: false,
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
-                isCategoryAxis: true//Play doesn't have a categorical axis, but this is needed for the pane to react correctly to the x-axis toggle one/off
+                isCategoryAxis: true,//Play doesn't have a categorical axis, but this is needed for the pane to react correctly to the x-axis toggle one/off
+                scaleType: options.categoryAxisScaleType,
             });
             this.xAxisProperties.axis.tickSize(-height, 0);
             this.xAxisProperties.axisLabel = this.data.axesLabels.x;
@@ -940,7 +957,8 @@ module powerbi.visuals {
                 isVertical: true,
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
-                isCategoryAxis: false
+                isCategoryAxis: false,
+                scaleType: options.valueAxisScaleType
             });
             this.yAxisProperties.axisLabel = this.data.axesLabels.y;
 
@@ -1027,13 +1045,15 @@ module powerbi.visuals {
         }
 
         private createPipsFilterFn(sliderWidth: number): any {
-            var textProperties: TextProperties = {
+            let textProperties: TextProperties = {
                 fontFamily: 'wf_segoe-ui_normal',
                 fontSize: jsCommon.PixelConverter.toString(14),
             };
-            var maxLabelWidth = 0;
+            let maxLabelWidth = 0;
+            let anyWillWordBreak = false;
             for (var key of this.data.frameKeys) {
                 maxLabelWidth = Math.max(maxLabelWidth, jsCommon.WordBreaker.getMaxWordWidth(key + "", TextMeasurementService.measureSvgTextWidth, textProperties));
+                anyWillWordBreak = anyWillWordBreak || jsCommon.WordBreaker.hasBreakers(key);
             }
 
             var pipSize = 1; //0=hide, 1=large, 2=small
@@ -1045,7 +1065,8 @@ module powerbi.visuals {
                 skipMod = Math.ceil(widthRatio);
                 pipSize = 2;
             }
-            else if (widthRatio > 1.0) {
+            else if (widthRatio > 1.0 || anyWillWordBreak) {
+                // wordbreak line wrapping is automatic, and we don't reserve enough space to show two lines of text with the larger font
                 pipSize = 2;
             }
 
@@ -1064,15 +1085,15 @@ module powerbi.visuals {
             if (!this.data || !this.dataView)
                 return { dataPoints: [], behaviorOptions: null };
 
-            var data = this.data;
-            var dataPoints = this.data.dataPoints;
+            let data = this.data;
+            let dataPoints = this.data.dataPoints;
 
-            var margin = this.margin;
-            var viewport = this.currentViewport;
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
-            var xScale = this.xAxisProperties.scale;
-            var yScale = this.yAxisProperties.scale;
+            let margin = this.margin;
+            let viewport = this.currentViewport;
+            let width = viewport.width - (margin.left + margin.right);
+            let height = viewport.height - (margin.top + margin.bottom);
+            let xScale = this.xAxisProperties.scale;
+            let yScale = this.yAxisProperties.scale;
 
             var hasSelection = false;
             if (this.interactivityService) {
@@ -1084,7 +1105,7 @@ module powerbi.visuals {
                 .attr('width', width)
                 .attr('height', height);
 
-            var sortedData = dataPoints.sort(function (a, b) {
+            let sortedData = dataPoints.sort(function (a, b) {
                 return b.radius.sizeMeasure ? (b.radius.sizeMeasure.values[b.radius.index] - a.radius.sizeMeasure.values[a.radius.index]) : 0;
             });
 
@@ -1177,14 +1198,15 @@ module powerbi.visuals {
                     background: d3.select(this.element.get(0)),
                     clearCatcher: this.clearCatcher,
                     dataViewCat: this.dataView.categorical,
-                    svg: this.svg,
+                    svg: this.mainGraphicsContext,
                     dataView: this.dataView,
                     renderTraceLine: PlayChart.renderTraceLine,
                 };
 
                 if (hasSelection) {
                     let flatAllDataPoints = _.flatten<SelectableDataPoint>(this.data.allDataPoints);
-                    PlayChart.renderTraceLine(behaviorOptions, _.filter(flatAllDataPoints, 'selected')[0], !suppressAnimations);
+                    let uniqueDataPoints = _.uniq(flatAllDataPoints, (d: PlayChartDataPoint) => d.identity.getKey());
+                    PlayChart.renderTraceLine(behaviorOptions, _.filter(uniqueDataPoints, 'selected'), !suppressAnimations);
                 }
             }
 
@@ -1194,23 +1216,30 @@ module powerbi.visuals {
             return { dataPoints: _.flatten<SelectableDataPoint>(this.data.allDataPoints), behaviorOptions: behaviorOptions };
         }
 
-        public static renderTraceLine(options: PlayBehaviorOptions, selectedPoint: SelectableDataPoint, shouldAnimate: boolean): void {
-            var points: PlayChartDataPoint[] = [];
+        public static renderTraceLine(options: PlayBehaviorOptions, selectedPoints: SelectableDataPoint[], shouldAnimate: boolean): void {
+            var seriesPoints: PlayChartDataPoint[][] = [];
 
-            if (selectedPoint) {
+            if (selectedPoints && selectedPoints.length > 0) {
+                let currentFrameIndex = options.data.currentFrameIndex;
+                let lastRenderedFrameIndex = options.data.lastRenderedFrameIndex;
+
                 // filter to the selected identity, only up to and including the current frame. Add frames during play.
-                let hasBubbleAtCurrentFrame = false;
-                for (let frameIndex = 0, frameLen = options.data.allDataPoints.length; frameIndex < frameLen && frameIndex <= options.data.currentFrameIndex; frameIndex++) {
-                    var values = options.data.allDataPoints[frameIndex].filter((value, index) => {
-                        return value.identity.getKey() === selectedPoint.identity.getKey();
-                    });
-                    if (values && values.length > 0) {
-                        points.push(values[0]);
-                        if (frameIndex === options.data.currentFrameIndex)
-                            hasBubbleAtCurrentFrame = true;
+                let hasBubbleAtCurrentFrame = [];
+                for (var selectedIndex = 0, selectedLen = selectedPoints.length; selectedIndex < selectedLen; selectedIndex++) {
+                    seriesPoints[selectedIndex] = [];
+                    hasBubbleAtCurrentFrame[selectedIndex] = false;
+                    for (let frameIndex = 0, frameLen = options.data.allDataPoints.length; frameIndex < frameLen && frameIndex <= currentFrameIndex; frameIndex++) {
+                        let values = options.data.allDataPoints[frameIndex].filter((value, index) => {
+                            return value.identity.getKey() === selectedPoints[selectedIndex].identity.getKey();
+                        });
+                        if (values && values.length > 0) {
+                            seriesPoints[selectedIndex].push(values[0]);
+                            if (frameIndex === currentFrameIndex)
+                                hasBubbleAtCurrentFrame[selectedIndex] = true;
+                        }
                     }
                 }
-                if (points.length > 0) {
+                if (seriesPoints.length > 0) {
                     let xScale = options.xAxisProperties.scale;
                     let yScale = options.yAxisProperties.scale;
 
@@ -1226,71 +1255,89 @@ module powerbi.visuals {
                         });
 
                     // Render Lines
-                    let traceLine = options.svg.selectAll('.traceLine').data([selectedPoint], (sp: PlayChartDataPoint) => sp.identity.getKey());
-                    traceLine.enter()
+                    let traceLines = options.svg.selectAll('.traceLine').data(selectedPoints, (sp: PlayChartDataPoint) => sp.identity.getKey());
+                    traceLines.enter()
                         .append('path')
                         .classed('traceLine', true);
-                    let existingPath = (<SVGPathElement>traceLine.node());
-                    let previousLength = existingPath.hasAttribute('d') ? existingPath.getTotalLength() : 0;
-                    // create offline SVG for path measurement
-                    let tempSvgPath = $('<svg><path></path></svg>');
-                    let tempPath = $('path', tempSvgPath);
-                    tempPath.attr('d', line(points));
-                    let newLength = (<SVGPathElement>tempPath.get()[0]).getTotalLength();
+                    // prepare array of new/previous lengths
+                    // NOTE: can't use lambda because we need the "this" context to be the DOM Element associated with the .each()
+                    let previousLengths = [], newLengths = [];
+                    traceLines.each(function (d, i) {
+                        let existingPath = (<SVGPathElement>this);
+                        let previousLength = existingPath.hasAttribute('d') ? existingPath.getTotalLength() : 0;
+                        previousLengths.push(previousLength);
+                        // create offline SVG for new path measurement
+                        let tempSvgPath = $('<svg><path></path></svg>');
+                        let tempPath = $('path', tempSvgPath);
+                        tempPath.attr('d', line(seriesPoints[i]));
+                        let newLength = (<SVGPathElement>tempPath.get()[0]).getTotalLength();
+                        newLengths.push(newLength);
+                    });
                     // animate using stroke-dash* trick
-                    if (newLength >= previousLength) {
+                    if (lastRenderedFrameIndex == null || currentFrameIndex >= lastRenderedFrameIndex) {
                         // growing line
-                        traceLine
+                        traceLines
                             .style('stroke', (d: PlayChartDataPoint) => PlayChart.getStrokeFill(d, true))
-                            .attr('d', () => {
-                                return line(points);
-                            })
-                            .attr("stroke-dasharray", newLength + " " + newLength)
-                            .attr("stroke-dashoffset", newLength - previousLength);
+                            .attr({
+                                'd': (d, i: number) => {
+                                    return line(seriesPoints[i]);
+                                },
+                                'stroke-dasharray': (d, i) => newLengths[i] + " " + newLengths[i],
+                                'stroke-dashoffset': (d, i) => newLengths[i] - previousLengths[i],
+                            });
                         if (shouldAnimate) {
-                            traceLine
+                            traceLines
                                 .transition()
                                 .duration(PlayChart.FrameDuration - PlayChart.FrameDurationFudge)
-                                .attr("stroke-dashoffset", 0);
+                                .attr('stroke-dashoffset', 0);
                         }
                         else {
-                            traceLine.attr("stroke-dashoffset", 0);
+                            traceLines.attr('stroke-dashoffset', 0);
                         }
                     }
                     else {
                         // shrinking line
                         if (shouldAnimate) {
-                            traceLine
+                            traceLines
                                 .transition()
                                 .duration(PlayChart.FrameDuration - PlayChart.FrameDurationFudge)
-                                .attr("stroke-dashoffset", previousLength - newLength)
-                                .transition() // --
-                                .duration(1) // animate the shrink, then update with new line properties
-                                .delay(PlayChart.FrameDuration - PlayChart.FrameDurationFudge) // --
+                                .attr('stroke-dashoffset', (d, i) => previousLengths[i] - newLengths[i])
+                                .transition()
+                                .duration(1) // animate the shrink first, then update with new line properties
+                                .delay(PlayChart.FrameDuration - PlayChart.FrameDurationFudge)
                                 .style('stroke', (d: PlayChartDataPoint) => PlayChart.getStrokeFill(d, true))
-                                .attr('d', () => {
-                                    return line(points);
-                                })
-                                .attr("stroke-dasharray", newLength + " " + newLength)
-                                .attr("stroke-dashoffset", 0);
+                                .attr({
+                                    'd': (d, i) => {
+                                        return line(seriesPoints[i]);
+                                    },
+                                    'stroke-dasharray': (d, i) => newLengths[i] + " " + newLengths[i],
+                                    'stroke-dashoffset': 0,
+                                });
                         }
                         else {
-                            traceLine
+                            traceLines
                                 .style('stroke', (d: PlayChartDataPoint) => PlayChart.getStrokeFill(d, true))
-                                .attr('d', () => {
-                                    return line(points);
-                                })
-                                .attr("stroke-dasharray", newLength + " " + newLength)
-                                .attr("stroke-dashoffset", 0);
+                                .attr({
+                                    'd': (d, i) => {
+                                        return line(seriesPoints[i]);
+                                    },
+                                    'stroke-dasharray': (d, i) => newLengths[i] + " " + newLengths[i],
+                                    'stroke-dashoffset': 0,
+                                });
                         }
                     }
-                    traceLine.exit()
+                    traceLines.exit()
                         .remove();
 
                     // Render circles
                     // slice to length-1 because we draw lines to the current bubble but we don't need to draw the current frame's bubble
-                    let circlePoints = hasBubbleAtCurrentFrame ? points.slice(0, points.length - 1) : points;
-                    let circles = options.svg.selectAll('.traceBubble').data(circlePoints);
+                    let circlePoints: PlayChartDataPoint[] = [];
+                    for (var selectedIndex = 0; selectedIndex < seriesPoints.length; selectedIndex++) {
+                        let points = seriesPoints[selectedIndex];
+                        let newPoints = hasBubbleAtCurrentFrame[selectedIndex] ? points.slice(0, points.length - 1) : points;
+                        circlePoints = circlePoints.concat(newPoints);
+                    }
+                    let circles = options.svg.selectAll('.traceBubble').data(circlePoints, (d: PlayChartDataPoint) => d.identity.getKey() + d.x + d.y + d.size);
                     circles.enter()
                         .append('circle')
                         .style('opacity', 0) //fade new bubbles into visibility
@@ -1314,6 +1361,11 @@ module powerbi.visuals {
                         .duration(PlayChart.FrameDuration)
                         .style('opacity', 0) //fade exiting bubbles out
                         .remove();
+
+                    TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+
+                    // sort the z-order, smallest size on top
+                    circles.sort((d1: PlayChartDataPoint, d2: PlayChartDataPoint) => { return d2.size - d1.size; });
                 }
                 else {
                     options.svg.selectAll('.traceLine').remove();
@@ -1324,6 +1376,8 @@ module powerbi.visuals {
                 options.svg.selectAll('.traceLine').remove();
                 options.svg.selectAll('.traceBubble').remove();
             }
+
+            options.data.lastRenderedFrameIndex = options.data.currentFrameIndex;
         }
 
         private play(): void {

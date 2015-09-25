@@ -55,7 +55,7 @@ module powerbi.data {
             if (!field)
                 return;
 
-            if (field.column || field.columnAggr || field.measure)
+            if (field.column || field.columnAggr || field.measure || field.hierarchyLevel)
                 return this.getMetadataForProperty(field, federatedSchema);
 
             return SQExpr.getMetadataForEntity(field, federatedSchema);
@@ -142,7 +142,7 @@ module powerbi.data {
             let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(field);
             return federatedSchema
                 .schema(fieldExprItem.schema)
-                .findProperty(fieldExprItem.entity, FieldExprPattern.getFieldExprName(field));
+                .findProperty(fieldExprItem.entity, FieldExprPattern.getPropertyName(field));
         }
 
         private getMetadataForProperty(field: FieldExprPattern, federatedSchema: FederatedConceptualSchema): SQExprMetadata {
@@ -159,16 +159,16 @@ module powerbi.data {
 
             if (columnAggregate) {
                 switch (columnAggregate.aggregate) {
-                case QueryAggregateFunction.Count:
-                case QueryAggregateFunction.CountNonNull:
-                    type = ValueType.fromExtendedType(ExtendedType.Integer);
-                    format = undefined;
-                    break;
-                case QueryAggregateFunction.Avg:
-                    if (type.integer)
-                        type = ValueType.fromExtendedType(ExtendedType.Double);
-                    break;
-            }
+                    case QueryAggregateFunction.Count:
+                    case QueryAggregateFunction.CountNonNull:
+                        type = ValueType.fromExtendedType(ExtendedType.Integer);
+                        format = undefined;
+                        break;
+                    case QueryAggregateFunction.Avg:
+                        if (type.integer)
+                            type = ValueType.fromExtendedType(ExtendedType.Double);
+                        break;
+                }
             }
 
             return {
@@ -195,15 +195,18 @@ module powerbi.data {
                 return;
             
             // We only support count and countnonnull for entity.
-            if (field.entityAggr.aggregate === QueryAggregateFunction.Count ||
-                field.entityAggr.aggregate === QueryAggregateFunction.CountNonNull) {
-                return {
-                    kind: FieldKind.Measure,
-                    type: ValueType.fromExtendedType(ExtendedType.Integer),
-                    format: undefined,
-                    idOnEntityKey: false,
-                    aggregate: field.entityAggr.aggregate
-                };
+            if (field.entityAggr) {
+                switch (field.entityAggr.aggregate) {
+                    case QueryAggregateFunction.Count:
+                    case QueryAggregateFunction.CountNonNull:
+                        return {
+                            kind: FieldKind.Measure,
+                            type: ValueType.fromExtendedType(ExtendedType.Integer),
+                            format: undefined,
+                            idOnEntityKey: false,
+                            aggregate: field.entityAggr.aggregate
+                        };
+                }
             }
         }
     }
@@ -322,6 +325,27 @@ module powerbi.data {
 
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitAggr(this, arg);
+        }
+    }
+
+    export class SQPropertyVariationSourceExpr extends SQExpr {
+        public arg: SQExpr;
+        public name: string;
+        public property: string;
+
+        constructor(arg: SQExpr, name: string, property: string) {
+            debug.assertValue(arg, 'arg');
+            debug.assertValue(name, 'name');
+            debug.assertValue(property, 'property');
+
+            super();
+            this.arg = arg;
+            this.name = name;
+            this.property = property;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitPropertyVariationSource(this, arg);
         }
     }
 
@@ -625,6 +649,10 @@ module powerbi.data {
             return new SQHierarchyExpr(source, hierarchy);
         }
 
+        export function propertyVariationSource(source: SQExpr, name: string, property: string): SQPropertyVariationSourceExpr {
+            return new SQPropertyVariationSourceExpr(source, name, property);
+        }
+
         export function hierarchyLevel(source: SQExpr, level: string): SQHierarchyLevelExpr {
             return new SQHierarchyLevelExpr(source, level);
         }
@@ -843,6 +871,13 @@ module powerbi.data {
                 this.equals(expr.arg, comparand.arg);
         }
 
+        public visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr, comparand: SQPropertyVariationSourceExpr): boolean {
+            return comparand instanceof SQPropertyVariationSourceExpr &&
+                expr.name === comparand.name &&
+                expr.property === comparand.property &&
+                this.equals(expr.arg, comparand.arg);
+        }
+
         public visitBetween(expr: SQBetweenExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQBetweenExpr &&
                 this.equals(expr.arg, (<SQBetweenExpr>comparand).arg) &&
@@ -932,7 +967,7 @@ module powerbi.data {
 
         public visitAnyValue(expr: SQAnyValueExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQAnyValueExpr;
-        } 
+        }
 
         public visitStartsWith(expr: SQStartsWithExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQStartsWithExpr &&
@@ -1001,7 +1036,7 @@ module powerbi.data {
 
             super();
             this.schema = schema;
-            if(errors)
+            if (errors)
                 this.errors = errors;
         }
 
@@ -1107,7 +1142,7 @@ module powerbi.data {
 
         private isQueryable(fieldExpr: FieldExprPattern): boolean {
             let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
-            return this.schema.schema(fieldExprItem.schema).findProperty(fieldExprItem.entity, FieldExprPattern.getFieldExprName(fieldExpr)).queryable !== ConceptualQueryableState.Error;
+            return this.schema.schema(fieldExprItem.schema).findProperty(fieldExprItem.entity, FieldExprPattern.getPropertyName(fieldExpr)).queryable !== ConceptualQueryableState.Error;
         }
     }
 

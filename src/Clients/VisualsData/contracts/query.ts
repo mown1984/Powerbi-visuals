@@ -74,6 +74,7 @@ module powerbi.data {
         Aggregation?: QueryAggregationExpression;
         Hierarchy?: QueryHierarchyExpression;
         HierarchyLevel?: QueryHierarchyLevelExpression;
+        PropertyVariationSource?: QueryPropertyVariationSourceExpression;
 
         // Logical
         And?: QueryBinaryExpression;
@@ -137,6 +138,12 @@ module powerbi.data {
     export interface QueryHierarchyLevelExpression {
         Expression: QueryExpressionContainer;
         Level: string;
+    }
+
+    export interface QueryPropertyVariationSourceExpression {
+        Expression: QueryExpressionContainer;
+        Name: string;
+        Property: string;
     }
 
     export interface QueryBinaryExpression {

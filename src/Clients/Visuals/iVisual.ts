@@ -107,6 +107,9 @@ module powerbi {
         /** The class of the plugin.  At the moment it is only used to have a way to indicate the class name that a custom visual has. */
         class?: string;
 
+        /** Check if a visual is custom */
+        custom?: boolean;
+
         /* Function to get the list of sortable roles */
         getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
     }

@@ -1414,9 +1414,7 @@ module powerbi.visuals {
                         let categoryIdentities = dataView.categorical.categories[0].identity;
                         this.dataPointRenderer.beginDataPointUpdate(this.geocodingCategory, groupValues.length);
                         let objectDefinitions = dataView.categorical.categories[0].objects;
-                        let i_ = undefined;
-                        for (let i = 0, ilen = groupValues.length; i < ilen; i++) {
-                            i_ = i;
+                        for (var i = 0, ilen = groupValues.length; i < ilen; i++) {
                             let group = groupValues[i];
                             let value = groupSizeTotals[i];
                             let seriesInfo = Map.calculateSeriesInfo(grouped, i, sizeIndex, longIndex, latIndex, this.colors, this.defaultDataPointColor, objectDefinitions, seriesSource);
@@ -1445,7 +1443,7 @@ module powerbi.visuals {
                             }
                         }
 
-                        let legendDataPoints = Map.calculateSeriesLegend(grouped, i_, sizeIndex, this.colors, this.defaultDataPointColor, seriesSource);
+                        let legendDataPoints = Map.calculateSeriesLegend(grouped, i, sizeIndex, this.colors, this.defaultDataPointColor, seriesSource);
                         if (legendDataPoints.length === 1)
                             legendDataPoints = [];
 

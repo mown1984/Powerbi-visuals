@@ -45,6 +45,7 @@ module powerbi.visuals {
         dataLabelsSettings: PointDataLabelsSettings;
         axesLabels: ChartAxesLabels;
         hasDynamicSeries?: boolean;
+        defaultSeriesColor?: string;
     }
 
     export interface LineChartSeries extends CartesianSeries, SelectableDataPoint {
@@ -54,6 +55,7 @@ module powerbi.visuals {
         xCol: DataViewMetadataColumn;
         yCol: DataViewMetadataColumn;
         data: LineChartDataPoint[];
+        labelSettings: VisualDataLabelsSettings;
     }
 
     export interface LineChartDataPoint extends CartesianDataPoint, TooltipEnabledDataPoint, SelectableDataPoint, LabelEnabledDataPoint {
@@ -62,6 +64,8 @@ module powerbi.visuals {
         categoryIndex: number;
         seriesIndex: number;
         key: string;
+        labelSettings: VisualDataLabelsSettings;
+        pointColor?: string;
     }
 
     export const enum LineChartType {
@@ -83,6 +87,13 @@ module powerbi.visuals {
             class: 'dot',
             selector: '.dot'
         };
+
+        private static CategoryPointSelector: ClassAndSelector = {
+            class: 'point',
+            selector: '.point'
+        };
+        private static PointRadius = 5;
+
         private static CategoryAreaClassName = 'catArea';
         private static CategoryAreaClassSelector = '.catArea';
         private static HorizontalShift = 0;
@@ -123,6 +134,7 @@ module powerbi.visuals {
 
         private interactivityService: IInteractivityService;
         private animator: IGenericAnimator;
+        private seriesLabelFormattingEnabled: boolean;
 
         public static customizeQuery(options: CustomizeQueryOptions): void {
             let dataViewMapping = options.dataViewMappings[0];
@@ -191,33 +203,23 @@ module powerbi.visuals {
             let hasDynamicSeries = !!(categorical.values && categorical.values.source);
             let values = categorical.values;
             var labelFormatString: string = values && values[0] ? valueFormatter.getFormatString(values[0].source, formatStringProp) : undefined;
-            var dataLabelsSettings: PointDataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings(labelFormatString);
+            var defaultLabelSettings: PointDataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings(labelFormatString);
+            let defaultSeriesColor: string;
 
             if (dataView.metadata && dataView.metadata.objects) {
                 let objects = dataView.metadata.objects;
+                defaultSeriesColor = DataViewObjects.getFillColor(objects, lineChartProps.dataPoint.defaultColor);
 
                 let labelsObj = <DataLabelObject>objects['labels'];
-                if (labelsObj) {
-                    if (labelsObj.show !== undefined)
-                        dataLabelsSettings.show = labelsObj.show;
-                    if (labelsObj.color !== undefined) {
-                        dataLabelsSettings.labelColor = labelsObj.color.solid.color;
-                    }
-                    if (labelsObj.labelDisplayUnits !== undefined) {
-                        dataLabelsSettings.displayUnits = labelsObj.labelDisplayUnits;
-                    }
-                    if (labelsObj.labelPrecision !== undefined) {
-                        dataLabelsSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
-                    }
-                }
+                dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, defaultLabelSettings);
             }
 
-            let colorHelper = new ColorHelper(colors, lineChartProps.dataPoint.fill);
+            let colorHelper = new ColorHelper(colors, lineChartProps.dataPoint.fill, defaultSeriesColor);
 
             let grouped: DataViewValueColumnGroup[];
             if (dataView.categorical.values)
                 grouped = dataView.categorical.values.grouped();
-
+            
             for (let seriesIndex = 0; seriesIndex < seriesLen; seriesIndex++) {
                 let column = categorical.values[seriesIndex];
                 let valuesMetadata = column.source;
@@ -228,6 +230,18 @@ module powerbi.visuals {
                     SelectionId.createWithMeasure(column.source.queryName);
                 let key = identity.getKey();
                 let color = this.getColor(colorHelper, hasDynamicSeries, values, grouped, seriesIndex, groupedIdentity);
+                let seriesLabelSettings: VisualDataLabelsSettings;
+
+                if (!hasDynamicSeries) {
+                    let labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null;
+                    let labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject> labelsSeriesGroup.source.objects['labels'] : null;
+                    if (labelObjects) {
+                        seriesLabelSettings = Prototype.inherit(defaultLabelSettings);
+                        dataLabelUtils.updateLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings);
+                    }
+                }
+
+                let dataPointLabelSettings = (seriesLabelSettings) ? seriesLabelSettings : defaultLabelSettings;
 
                 for (let categoryIndex = 0, len = column.values.length; categoryIndex < len; categoryIndex++) {
                     let categoryValue = categoryValues[categoryIndex];
@@ -239,8 +253,8 @@ module powerbi.visuals {
 
                     let categorical: DataViewCategorical = dataView.categorical;
                     let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex);
-
-                    dataPoints.push({
+                    
+                    let dataPoint: LineChartDataPoint = {
                         categoryValue: isDateTime && categoryValue ? categoryValue.getTime() : categoryValue,
                         value: value,
                         categoryIndex: categoryIndex,
@@ -249,9 +263,16 @@ module powerbi.visuals {
                         selected: false,
                         identity: identity,
                         key: JSON.stringify({ ser: key, catIdx: categoryIndex }),
-                        labelFill: dataLabelsSettings.labelColor,
+                        labelFill: dataPointLabelSettings.labelColor,
                         labelFormatString: valuesMetadata.format,
-                    });
+                        labelSettings: dataPointLabelSettings,
+                    };
+                    
+                    if (category.objects && category.objects[categoryIndex]) {
+                        dataPoint['pointColor'] = DataViewObjects.getFillColor(category.objects[categoryIndex], lineChartProps.dataPoint.fill);
+                    }
+
+                    dataPoints.push(dataPoint);
                 }
 
                 if (interactivityService) {
@@ -268,6 +289,7 @@ module powerbi.visuals {
                         data: dataPoints,
                         identity: identity,
                         selected: false,
+                        labelSettings: seriesLabelSettings,
                     });
                 }
             }
@@ -294,7 +316,7 @@ module powerbi.visuals {
             return {
                 series: series,
                 isScalar: isScalar,
-                dataLabelsSettings: dataLabelsSettings,
+                dataLabelsSettings: defaultLabelSettings,
                 axesLabels: { x: axesLabels.xAxisLabel, y: axesLabels.yAxisLabel },
                 hasDynamicSeries: hasDynamicSeries,
                 categoryMetadata: category.source,
@@ -333,6 +355,7 @@ module powerbi.visuals {
             this.lineType = options.chartType ? options.chartType : LineChartType.default;
             this.interactivityService = options.interactivityService;
             this.animator = options.animator;
+            this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
         }
 
         public init(options: CartesianVisualInitOptions) {
@@ -547,7 +570,7 @@ module powerbi.visuals {
                     this.enumerateDataPoints(enumeration);
                     break;
                 case 'labels':
-                    dataLabelUtils.enumerateDataLabels(enumeration, this.data.dataLabelsSettings, false, true, true);
+                    this.enumerateDataLabels(enumeration);
                     break;
             }
         }
@@ -570,10 +593,45 @@ module powerbi.visuals {
                     displayName: label,
                     selector: selector,
                     properties: {
-                        fill: { solid: { color: singleSeriesData[i].color } }
+                        fill: { solid: { color: data.defaultSeriesColor || singleSeriesData[i].color } }
                     },
                 });
             }
+        }
+
+        private enumerateDataLabels(enumeration: ObjectEnumerationBuilder): void {
+            let data = this.data,
+                labelSettings = this.data.dataLabelsSettings,
+                seriesCount = data.series.length;
+
+            //Draw default settings
+            dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings, false));
+
+            if (seriesCount === 0)
+                return;
+
+            //Draw series settings
+            if (!data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled) {
+                for (let i = 0; i < seriesCount; i++) {
+                    let series = data.series[i],
+                        labelSettings: VisualDataLabelsSettings = (series.labelSettings) ? series.labelSettings : this.data.dataLabelsSettings;
+
+                    //enumeration.pushContainer({ displayName: series.displayName });
+                    dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings, true, series));
+                    //enumeration.popContainer();
+                }
+            }
+        }
+
+        private getLabelSettingsOptions(enumeration: ObjectEnumerationBuilder, labelSettings: VisualDataLabelsSettings, isSeries: boolean, series?: LineChartSeries): VisualDataLabelsSettingsOptions {
+            return {
+                enumeration: enumeration,
+                dataLabelsSettings: labelSettings,
+                show: !isSeries,
+                displayUnits: true,
+                precision: true,
+                selector: series && series.identity ? series.identity.getSelector() : null
+            };
         }
 
         public overrideXScale(xProperties: IAxisProperties): void {
@@ -686,15 +744,15 @@ module powerbi.visuals {
             let interactivityLines;
             if (this.interactivityService) {
                 interactivityLines = this.mainGraphicsContext.selectAll(".interactivity-line").data(data.series, (d: LineChartSeries) => d.identity.getKey());
-            interactivityLines.enter()
-                .append(LineChart.PathElementName)
-                .classed('interactivity-line', true);
-            interactivityLines
-                .attr('d', (d: LineChartSeries) => {
-                    return line(d.data);
-                });
-            interactivityLines.exit()
-                .remove();
+                interactivityLines.enter()
+                    .append(LineChart.PathElementName)
+                    .classed('interactivity-line', true);
+                interactivityLines
+                    .attr('d', (d: LineChartSeries) => {
+                        return line(d.data);
+                    });
+                interactivityLines.exit()
+                    .remove();
             }
 
             // Prepare grouping for dots
@@ -737,6 +795,26 @@ module powerbi.visuals {
             dots.exit()
                 .remove();
 
+            // Render highlights
+            let highlights = dotGroups.selectAll(LineChart.CategoryPointSelector.selector)
+                .data((series: LineChartSeries) => {
+                    return _.filter(series.data, (value: LineChartDataPoint) => { return value.pointColor != null; });
+                }, (d: LineChartDataPoint) => d.key);
+            highlights.enter()
+                .append(LineChart.CircleElementName)
+                .classed(LineChart.CategoryPointSelector.class, true);
+            highlights
+                .style('fill', (d: LineChartDataPoint) => d.pointColor)
+                .transition()
+                .duration(duration)
+                .attr({
+                    cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
+                    cy: (d: LineChartDataPoint) => yScale(d.value),
+                    r: LineChart.PointRadius
+                });
+            highlights.exit()
+                .remove();
+            
             // Add data labels
             if (data.dataLabelsSettings.show) {
                 let layout = dataLabelUtils.getLineChartLabelLayout(xScale, yScale, data.dataLabelsSettings, data.isScalar, this.yAxisProperties.formatter);

@@ -47,7 +47,7 @@ module powerbi.visuals.sampleDataViews {
         
         public getDataViews(): DataView[] {
 
-            let fieldExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: "table1", column: "country" });
+            let fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
 
             let categoryValues = ["FD - 01", "FD - 02", "FD - 03", "FD - 04", "LI - 01", "LI - 02", "LI - 03"];
             let categoryIdentities = categoryValues.map(function (value) {
@@ -111,7 +111,7 @@ module powerbi.visuals.sampleDataViews {
                         
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
  
-            let seriesIdentityField = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'series' });
+            let seriesIdentityField = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'series' } });
             
             return [{
                 metadata: dataViewMetadata,

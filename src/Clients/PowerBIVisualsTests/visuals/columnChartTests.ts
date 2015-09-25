@@ -234,9 +234,10 @@ module powerbitests {
 
             expect(powerbi.visuals.valueFormatter.create).toHaveBeenCalledWith({ format: undefined, value: 2011, value2: 2012, displayUnitSystemType: powerbi.DisplayUnitSystemType.Verbose });
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 100,
@@ -256,7 +257,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }, {
                         categoryValue: 2012,
                         value: 200,
@@ -276,7 +278,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$200" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             }]);
@@ -311,9 +314,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
 
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(true);
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 1,
@@ -333,7 +337,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     },
                     {
                         categoryValue: 2012,
@@ -354,7 +359,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$200" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             }]);
@@ -394,9 +400,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], "selectTax", categoryColumn.queryName)];
 
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(true);
             expect(legendItems.length).toBe(2);
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 0.625,
@@ -416,7 +423,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }, {
                         categoryValue: 2012,
                         value: 0.8,
@@ -436,12 +444,13 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$200" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             },
                 {
-                    key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, data: [
+                    key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 0.375,
@@ -461,7 +470,8 @@ module powerbitests {
                             key: selectionIds[2].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "60" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 2012,
                             value: 0.2,
@@ -481,7 +491,8 @@ module powerbitests {
                             key: selectionIds[3].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "50" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
@@ -514,9 +525,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
 
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 100,
@@ -536,7 +548,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     },
                     {
                         categoryValue: 2012,
@@ -557,7 +570,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "-$200" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }]
             }]);
             expect(AxisHelper.createValueDomain(data.series, true)).toEqual([-200, 100]);
@@ -626,8 +640,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(true);
+
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 1,
@@ -647,7 +663,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }, {
                         categoryValue: 2012,
                         value: -1,
@@ -667,7 +684,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "-$200" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             }]);
@@ -700,8 +718,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 100,
@@ -721,7 +741,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }, {
                         categoryValue: 2012,
                         value: null,
@@ -741,7 +762,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2012" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             }]);
@@ -775,8 +797,10 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual([{
-                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                     {
                         categoryValue: 2011,
                         value: 100,
@@ -796,7 +820,8 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     },
                     {
                         categoryValue: null,
@@ -817,7 +842,8 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "year", value: "(Blank)" }, { displayName: "sales", value: "$175" }],
                         lastSeries: undefined,
-                        chartType: undefined
+                        chartType: undefined,
+                        labelSettings: defaultLabelSettings,
                     }
                 ]
             }]);
@@ -860,9 +886,11 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], "selectTax", categoryColumn.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -882,7 +910,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -903,12 +932,13 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$200" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 },
                     {
-                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 2011,
                                 value: 62,
@@ -928,7 +958,8 @@ module powerbitests {
                                 key: selectionIds[2].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "62" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             },
                             {
                                 categoryValue: 2012,
@@ -949,7 +980,8 @@ module powerbitests {
                                 key: selectionIds[3].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "55" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]
@@ -1007,9 +1039,11 @@ module powerbitests {
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[1], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -1029,7 +1063,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -1050,11 +1085,12 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$200" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, labelSettings: data.series[0].labelSettings, data: [
                             {
                                 categoryValue: 2011,
                                 value: 62,
@@ -1074,7 +1110,8 @@ module powerbitests {
                                 key: selectionIds[2].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$62" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             },
                             {
                                 categoryValue: 2012,
@@ -1095,7 +1132,8 @@ module powerbitests {
                                 key: selectionIds[3].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$55" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]
@@ -1193,9 +1231,11 @@ module powerbitests {
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[1], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -1215,7 +1255,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -1236,11 +1277,12 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$200" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                    key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 2011,
                                 value: 62,
@@ -1260,7 +1302,8 @@ module powerbitests {
                                 key: selectionIds[2].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$62" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             },
                             {
                                 categoryValue: 2012,
@@ -1281,7 +1324,8 @@ module powerbitests {
                                 key: selectionIds[3].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$55" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]
@@ -1341,9 +1385,11 @@ module powerbitests {
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[1], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -1363,7 +1409,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -1384,11 +1431,12 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$200" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                    key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 2011,
                                 value: 62,
@@ -1408,7 +1456,8 @@ module powerbitests {
                                 key: selectionIds[2].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$62" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             },
                             {
                                 categoryValue: 2012,
@@ -1429,7 +1478,8 @@ module powerbitests {
                                 key: selectionIds[3].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$55" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]
@@ -1489,9 +1539,11 @@ module powerbitests {
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[1], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'A', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], measureColumnDynamic1.queryName), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -1511,7 +1563,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -1532,11 +1585,12 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "A" }, { displayName: "sales", value: "$200" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'B', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], measureColumnDynamic2.queryName), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 2011,
                                 value: 62,
@@ -1556,7 +1610,8 @@ module powerbitests {
                                 key: selectionIds[2].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$62" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             },
                             {
                                 categoryValue: 2012,
@@ -1577,7 +1632,8 @@ module powerbitests {
                                 key: selectionIds[3].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "B" }, { displayName: "sales", value: "$55" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]
@@ -1686,10 +1742,12 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[3], "selectTax", categoryColumn.queryName),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(true);
+
             expect(legendItems.length).toBe(2);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2010,
                             value: 0.25,
@@ -1709,7 +1767,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2010" }, { displayName: "sales", value: "$30" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 2011,
                             value: -0.2857142857142857,
@@ -1729,7 +1788,8 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "-$20" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 2012,
                             value: 0.5,
@@ -1749,7 +1809,8 @@ module powerbitests {
                             key: selectionIds[2].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 2013,
                             value: -0.75,
@@ -1769,11 +1830,12 @@ module powerbitests {
                             key: selectionIds[3].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2013" }, { displayName: "sales", value: "-$300" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 2010,
                                 value: 0.75,
@@ -1793,7 +1855,8 @@ module powerbitests {
                                 key: selectionIds[4].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2010" }, { displayName: "tax", value: "90" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }, {
                                 categoryValue: 2011,
                                 value: 0.7142857142857143,
@@ -1813,7 +1876,8 @@ module powerbitests {
                                 key: selectionIds[5].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "50" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }, {
                                 categoryValue: 2012,
                                 value: -0.5,
@@ -1833,7 +1897,8 @@ module powerbitests {
                                 key: selectionIds[6].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "-100" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }, {
                                 categoryValue: 2013,
                                 value: -0.25,
@@ -1853,7 +1918,8 @@ module powerbitests {
                                 key: selectionIds[7].getKey(),
                                 tooltipInfo: [{ displayName: "year", value: "2013" }, { displayName: "tax", value: "-100" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]);
@@ -1875,10 +1941,12 @@ module powerbitests {
             var data = ColumnChart.converter(dataView, colors);
             var selectionId = SelectionId.createWithMeasure(measureColumn.queryName);
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: null,
                             value: 100,
@@ -1898,11 +1966,11 @@ module powerbitests {
                             key: selectionId.getKey(),
                             tooltipInfo: [{ displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
-
             expect(StackedUtil.calcValueDomain(data.series, /*is100Pct*/ false)).toEqual({
                 min: 0,
                 max: 100
@@ -1931,10 +1999,12 @@ module powerbitests {
                 SelectionId.createWithMeasure("selectTax"),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(2);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: null,
                             value: 100,
@@ -1954,11 +2024,12 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: null,
                                 value: 200,
@@ -1978,7 +2049,8 @@ module powerbitests {
                                 key: selectionIds[1].getKey(),
                                 tooltipInfo: [{ displayName: "tax", value: "200" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]);
@@ -2019,10 +2091,12 @@ module powerbitests {
                 SelectionId.createWithMeasure("selectTax"),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(2);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: null,
                             value: 100,
@@ -2042,11 +2116,12 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'tax', identity: SelectionId.createWithMeasure("selectTax"), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: null,
                                 value: 200,
@@ -2066,11 +2141,11 @@ module powerbitests {
                                 key: selectionIds[1].getKey(),
                                 tooltipInfo: [{ displayName: "tax", value: "200" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]);
-
             expect(StackedUtil.calcValueDomain(data.series, /*is100Pct*/ false)).toEqual({
                 min: 0,
                 max: 300
@@ -2105,10 +2180,12 @@ module powerbitests {
                 SelectionId.createWithMeasure("selectSales"),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: 'red', data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: 'red', labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: null,
                             value: 100,
@@ -2128,11 +2205,11 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
-
             expect(legendItems).toEqual([
                 { icon: LegendIcon.Box, color: 'red', label: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), selected: false },
             ]);
@@ -2171,10 +2248,12 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], "selectSales", 'selectProd'),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'sales', identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 'a',
                             value: 100,
@@ -2194,7 +2273,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "prod", value: "a" }, { displayName: "sales", value: "100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 'b',
                             value: 150,
@@ -2214,11 +2294,11 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "prod", value: "b" }, { displayName: "sales", value: "150" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
-
             expect(legendItems).toEqual([
                 { icon: 0, color: '#01B8AA', label: 'sales', identity: SelectionId.createWithMeasure("selectSales"), selected: false }
             ]);
@@ -2335,12 +2415,13 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)
             ];
-
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -2360,7 +2441,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -2381,11 +2463,11 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "$179769313486231600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
-
             expect(StackedUtil.calcValueDomain(data.series, /*is100Pct*/ false)).toEqual({
                 min: 0,
                 max: Number.MAX_VALUE
@@ -2418,12 +2500,13 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)
             ];
-
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
             var legendItems = data.legendData.dataPoints;
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -2443,7 +2526,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -2464,7 +2548,8 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "sales", value: "-$179769313486231600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
@@ -2501,12 +2586,13 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)
             ];
-
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(1);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
                             value: 100,
@@ -2526,7 +2612,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         },
                         {
                             categoryValue: 2012,
@@ -2547,11 +2634,11 @@ module powerbitests {
                             key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "year", value: "2012" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }]);
-
             expect(StackedUtil.calcValueDomain(data.series, /*is100Pct*/ false)).toEqual({
                 min: 0,
                 max: 100
@@ -2635,10 +2722,12 @@ module powerbitests {
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector('select1', seriesIdentities[1]), 'select2'),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(2);
             expect(data.series).toEqual(
                 [{
-                    key: 'series0', index: 0, displayName: 'a', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], 'select2'), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'a', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[0], 'select2'), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: null,
                             value: 100,
@@ -2658,11 +2747,12 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                    key: 'series1', index: 1, displayName: 'b', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], 'select2'), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'b', identity: SelectionId.createWithIdAndMeasure(seriesIdentities[1], 'select2'), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: null,
                                 value: 200,
@@ -2682,7 +2772,8 @@ module powerbitests {
                                 key: selectionIds[1].getKey(),
                                 tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }]);
@@ -2732,13 +2823,15 @@ module powerbitests {
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], 'selectCol2', 'selectCol1'),
             ];
             var legendItems = data.legendData.dataPoints;
+            var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
+
             expect(legendItems.length).toBe(2);
             expect(legendItems.map(l => l.label)).toEqual(['a', 'b']);
 
             // Should get a result shaped like a diagonal matrix
             var item = 
                 [{
-                    key: 'series0', index: 0, displayName: 'a', identity: SelectionId.createWithIdAndMeasure(categoryIdentities[0], 'selectCol2'), color: legendItems[0].color, data: [
+                    key: 'series0', index: 0, displayName: 'a', identity: SelectionId.createWithIdAndMeasure(categoryIdentities[0], 'selectCol2'), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 'a',
                             value: 100,
@@ -2758,7 +2851,8 @@ module powerbitests {
                             key: selectionIds[0].getKey(),
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }, {
                             categoryValue: 'b',
                             value: null,
@@ -2778,11 +2872,12 @@ module powerbitests {
                             key: jasmine.any(String),
                             tooltipInfo: [{ displayName: "col1", value: "b" }],
                             lastSeries: undefined,
-                            chartType: undefined
+                            chartType: undefined,
+                            labelSettings: defaultLabelSettings,
                         }
                     ]
                 }, {
-                        key: 'series1', index: 1, displayName: 'b', identity: SelectionId.createWithIdAndMeasure(categoryIdentities[1], 'selectCol2'), color: legendItems[1].color, data: [
+                        key: 'series1', index: 1, displayName: 'b', identity: SelectionId.createWithIdAndMeasure(categoryIdentities[1], 'selectCol2'), color: legendItems[1].color, labelSettings: data.series[1].labelSettings, data: [
                             {
                                 categoryValue: 'b',
                                 value: 200,
@@ -2802,7 +2897,8 @@ module powerbitests {
                                 key: selectionIds[1].getKey(),
                             tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: 'col2', value: '200' }],
                                 lastSeries: undefined,
-                                chartType: undefined
+                                chartType: undefined,
+                                labelSettings: defaultLabelSettings,
                             }
                         ]
                     }];
@@ -2816,7 +2912,7 @@ module powerbitests {
             ];
             var data: powerbi.visuals.ColumnChartSeries[] =
                 [{
-                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', data: [
+                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', labelSettings: null, data: [
                         {
                             categoryValue: 0,
                             value: -0.75,
@@ -2834,12 +2930,13 @@ module powerbitests {
                             originalValueAbsolute: 0.75,
                             identity: selectionIds[0],
                             key: selectionIds[0].getKey(),
-                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedColumn
+                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedColumn,
+                            labelSettings: null,
                         }
                     ]
                 },
                     {
-                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', data: [
+                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', labelSettings: null, data: [
                             {
                                 categoryValue: 0,
                                 value: -0.25000001,
@@ -2857,7 +2954,8 @@ module powerbitests {
                                 originalValueAbsolute: 0.25000001,
                                 identity: selectionIds[1],
                                 key: selectionIds[1].getKey(),
-                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedColumn
+                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedColumn,
+                                labelSettings: null,
                             }
                         ]
                     }];
@@ -2874,7 +2972,7 @@ module powerbitests {
             ];
             var data: powerbi.visuals.ColumnChartSeries[] =
                 [{
-                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', data: [
+                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', labelSettings: null, data: [
                         {
                             categoryValue: 0,
                             value: 0.25,
@@ -2892,12 +2990,13 @@ module powerbitests {
                             originalValueAbsolute: 0.25,
                             identity: selectionIds[0],
                             key: selectionIds[0].getKey(),
-                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                            labelSettings: null,
                         }
                     ]
                 },
                     {
-                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', data: [
+                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', labelSettings: null, data: [
                             {
                                 categoryValue: 0,
                                 value: 0.7500001,
@@ -2915,7 +3014,8 @@ module powerbitests {
                                 originalValueAbsolute: 0.75000001,
                                 identity: selectionIds[1],
                                 key: selectionIds[1].getKey(),
-                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                                labelSettings: null,
                             }
                         ]
                     }];
@@ -2938,7 +3038,7 @@ module powerbitests {
             ];
             var data: powerbi.visuals.ColumnChartSeries[] =
                 [{
-                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', data: [
+                    key: '1', index: 0, displayName: 'measure0', identity: SelectionId.createNull(), color: 'red', labelSettings: null, data: [
                         {
                             categoryValue: 0,
                             value: -0.75,
@@ -2954,7 +3054,8 @@ module powerbitests {
                             originalValueAbsolute: 0.75,
                             identity: selectionIds[0],
                             key: selectionIds[0].getKey(),
-                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                            labelSettings: null,
                         },
                         {
                             categoryValue: 1,
@@ -2971,12 +3072,13 @@ module powerbitests {
                             originalValueAbsolute: 0.25,
                             identity: selectionIds[1],
                             key: selectionIds[1].getKey(),
-                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                            chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                            labelSettings: null,
                         }
                     ]
                 },
                     {
-                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', data: [
+                        key: '2', index: 1, displayName: 'measure1', identity: SelectionId.createNull(), color: 'blue', labelSettings: null, data: [
                             {
                                 categoryValue: 0,
                                 value: -0.25000001,
@@ -2994,7 +3096,8 @@ module powerbitests {
                                 originalValueAbsolute: 0.25000001,
                                 identity: selectionIds[2],
                                 key: selectionIds[2].getKey(),
-                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                                labelSettings: null,
                             },
                             {
                                 categoryValue: 1,
@@ -3013,7 +3116,8 @@ module powerbitests {
                                 originalValueAbsolute: 0.75000001,
                                 identity: selectionIds[3],
                                 key: selectionIds[3].getKey(),
-                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar
+                                chartType: powerbi.visuals.ColumnChartType.hundredPercentStackedBar,
+                                labelSettings: null,
                             }
                         ]
                     }];
@@ -3076,7 +3180,7 @@ module powerbitests {
         var scalarData: powerbi.visuals.ColumnChartData = {
             categories: [1, 2, 3], //just needs to be more than 1 entry to get past a guard in getCategoryThickness
             categoryFormatter: null,
-            series: [{ key: '1', index: 0, displayName: '1', identity: SelectionId.createNull(), data: [], color: '#01B8AA' }],
+            series: [{ key: '1', index: 0, displayName: '1', identity: SelectionId.createNull(), data: [], labelSettings: null, color: '#01B8AA' }],
             valuesMetadata: [],
             legendData: { dataPoints: [] },
             hasSelection: false,
@@ -3190,7 +3294,8 @@ module powerbitests {
                     originalValueAbsolute: i % 5,
                     identity: identity,
                     key: identity.getKey(),
-                    chartType: powerbi.visuals.ColumnChartType.stackedColumn
+                    chartType: powerbi.visuals.ColumnChartType.stackedColumn,
+                    labelSettings: null,
                 };
                 series.push(dataPoint);
             }
@@ -3231,7 +3336,8 @@ module powerbitests {
                     originalValueAbsolute: i % 5,
                     identity: identity,
                     key: identity.getKey(),
-                    chartType: powerbi.visuals.ColumnChartType.stackedColumn
+                    chartType: powerbi.visuals.ColumnChartType.stackedColumn,
+                    labelSettings: null,
                 };
                 series.push(dataPoint);
             }
@@ -3273,7 +3379,8 @@ module powerbitests {
                     originalValueAbsolute: i % 5,
                     identity: identity,
                     key: identity.getKey(),
-                    chartType: powerbi.visuals.ColumnChartType.stackedColumn
+                    chartType: powerbi.visuals.ColumnChartType.stackedColumn,
+                    labelSettings: null,
                 };
                 series.push(dataPoint);
             }
@@ -3315,7 +3422,8 @@ module powerbitests {
                     originalValueAbsolute: i % 5,
                     identity: identity,
                     key: identity.getKey(),
-                    chartType: powerbi.visuals.ColumnChartType.stackedColumn
+                    chartType: powerbi.visuals.ColumnChartType.stackedColumn,
+                    labelSettings: null,
                 };
                 if (i % 2 !== 0) {
                     dataPoint.highlight = true;
@@ -7293,6 +7401,43 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+
+        it('enumerateObjectInstances: label settings per series', (done) => {
+            var featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
+                seriesLabelFormattingEnabled: true,
+            };
+            v = powerbi.visuals.visualPluginFactory.createMinerva(featureSwitches).getPlugin('columnChart').create();
+            v.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true }
+            });
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: { columns: [categoryColumn, measureColumn] },
+                    categorical: {
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: measureColumn,
+                                values: [100000]
+                            }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'labels' });
+                //2 instances expected - 1 for default, and 1 for the series
+                expect(points.instances.length).toBe(2);
+
+                done();
+            }, DefaultWaitForRender);
+        });
     });
 
     describe("Column chart labels",() => {
@@ -8806,9 +8951,10 @@ module powerbitests {
             SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
             SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], measureColumn.queryName, categoryColumn.queryName)];
         var legendItems = data.legendData.dataPoints;
+        var defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultColumnLabelSettings(false);
 
         var item = [{
-            displayName: 'sales', key: 'series0', index: 0, data: [
+            displayName: 'sales', key: 'series0', index: 0, labelSettings: data.series[0].labelSettings, data: [
                 {
                     categoryValue: new Date(2011, 4, 31).getTime(),
                     value: 100,
@@ -8827,7 +8973,8 @@ module powerbitests {
                     tooltipInfo: [{ displayName: "year", value: "5/31/2011" }, { displayName: "sales", value: "100" }],
                     labelFill: labelColor,
                     labelFormatString: undefined,
-                    lastSeries: undefined, chartType: undefined
+                    lastSeries: undefined, chartType: undefined,
+                    labelSettings: defaultLabelSettings,
                 },
                 {
                     categoryValue: new Date(2012, 6, 30).getTime(),
@@ -8848,7 +8995,8 @@ module powerbitests {
                     labelFill: labelColor,
                     labelFormatString: undefined,
                     lastSeries: undefined,
-                    chartType: undefined
+                    chartType: undefined,
+                    labelSettings: defaultLabelSettings,
                 }], identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color
         }];
 
@@ -10126,7 +10274,7 @@ module powerbitests {
             var metadata: powerbi.DataViewMetadata = {
                 columns: columns,
             };
-     
+
             metadata.objects = {
                 labels: { show: true, color: { solid: { color: '#FF0000' } } }
             };
@@ -10140,7 +10288,7 @@ module powerbitests {
             };
 
             metadata.objects = {
-                labels: { show: true,}
+                labels: { show: true, }
             };
 
             return metadata;
@@ -10249,13 +10397,13 @@ module powerbitests {
 
         //after visual resizing, labels should be inside the shape,
         //labels that bigger then shapes, aren't in the DOM
-        it('Data Labels validation - after resize visual',(done) => {
+        it('Data Labels validation - after resize visual', (done) => {
             var categoryIdentities = [
                 mocks.dataViewScopeIdentity("John Domo"),
                 mocks.dataViewScopeIdentity("Delta Force"),
                 mocks.dataViewScopeIdentity("Mr Bing"),
             ];
-            
+
             var dataView: powerbi.DataView = {
                 metadata: metadata(dataViewMetadataThreeColumn),
                 categorical: {
@@ -10304,7 +10452,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('Data Label Position Validation negative value',(done) => {
+        it('Data Label Position Validation negative value', (done) => {
             var categoryIdentities = [
                 mocks.dataViewScopeIdentity("John Domo"),
                 mocks.dataViewScopeIdentity("Delta Force"),
@@ -10373,7 +10521,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('Value 0 - Data Label Validation',(done) => {
+        it('Value 0 - Data Label Validation', (done) => {
             var categoryIdentities = [
                 mocks.dataViewScopeIdentity("John Domo"),
                 mocks.dataViewScopeIdentity("Delta Force"),
@@ -10414,7 +10562,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('Data Label Position Validation - multi series',(done) => {
+        it('Data Label Position Validation - multi series', (done) => {
             var dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1', queryName: 'col1' },
@@ -10427,7 +10575,7 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("Delta Force"),
                 mocks.dataViewScopeIdentity("Mr Bing"),
             ];
-          
+
             var dataChangedOptions = {
                 dataViews: [{
                     metadata: metadataShowLabels(dataViewMetadataTwoColumn),
@@ -10447,7 +10595,7 @@ module powerbitests {
                                 values: [-300, 300, 30],
                                 subtotal: 630
                             }])
-    }
+                    }
                 }]
             };
 
@@ -11587,4 +11735,198 @@ module powerbitests {
             expect(logLabels.length).toBe(6);
         });
     });
+
+    function columnChartDataLabelsPerSeriesFormatValidation(chartType: string) {
+        var v: powerbi.IVisual, element: JQuery;
+
+        var dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
+            columns: [
+                {
+                    displayName: 'col1',
+                    queryName: 'col1',
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                }, {
+                    displayName: 'col2',
+                    queryName: 'col2',
+                    isMeasure: true,
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                }
+            ],
+        };
+
+        var categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'p' });
+
+        function metadata(columns): powerbi.DataViewMetadata {
+            var metadata: powerbi.DataViewMetadata = {
+                columns: columns,
+            };
+
+            metadata.objects = {
+                labels: { show: true, }
+            };
+
+            return metadata;
+        }
+
+        var hostServices = powerbitests.mocks.createVisualHostServices();
+
+        beforeEach(() => {
+            element = powerbitests.helpers.testDom('500', '500');
+            v = powerbi.visuals.visualPluginFactory.create().getPlugin(chartType).create();
+            v.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+            });
+        });
+
+        it('labels should support precision per series', (done) => {
+            var dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1' },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 2 } } }]
+            };
+
+            var categoryIdentities = [
+                mocks.dataViewScopeIdentity("John Domo"),
+                mocks.dataViewScopeIdentity("Delta Force"),
+                mocks.dataViewScopeIdentity("Mr Bing"),
+            ];
+
+            var dataChangedOptions = {
+                dataViews: [{
+                    metadata: metadata(dataViewMetadataTwoColumn),
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Mr Bing'],
+                            identity: categoryIdentities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata1Category2Measure.columns[1],
+                            values: [-200, 100, 150],
+                            subtotal: 450
+                        }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [-300, 300, 30],
+                                subtotal: 630
+                            }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);
+
+            setTimeout(() => {
+                expect($('.data-labels').first().text()).toEqual('-200.0');
+                expect($('.data-labels').last().text()).toEqual('30.00');
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('labels should support precision per series only when defined', (done) => {
+            var dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1' },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }]
+            };
+
+            var categoryIdentities = [
+                mocks.dataViewScopeIdentity("John Domo"),
+                mocks.dataViewScopeIdentity("Delta Force"),
+                mocks.dataViewScopeIdentity("Mr Bing"),
+            ];
+
+            var metadataWithPrecision3 = metadata(dataViewMetadataTwoColumn);
+            (<any>metadataWithPrecision3.objects).labels.labelPrecision = 3;
+
+            var dataChangedOptions = {
+                dataViews: [{
+                    metadata: metadataWithPrecision3,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Mr Bing'],
+                            identity: categoryIdentities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata1Category2Measure.columns[1],
+                            values: [-200, 100, 150],
+                            subtotal: 450
+                        }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [-300, 300, 30],
+                                subtotal: 630
+                            }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);
+
+            setTimeout(() => {
+                expect($('.data-labels').first().text()).toEqual('-200.0');
+                expect($('.data-labels').last().text()).toEqual('30.000');
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('labels should support color per series', (done) => {
+            var dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1' },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { color: { solid: { color: '#FF0000' } } } } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, objects: { labels: { color: { solid: { color: '#FF0001' } } } } }]
+            };
+
+            var categoryIdentities = [
+                mocks.dataViewScopeIdentity("John Domo"),
+                mocks.dataViewScopeIdentity("Delta Force"),
+                mocks.dataViewScopeIdentity("Mr Bing"),
+            ];
+
+            var dataChangedOptions = {
+                dataViews: [{
+                    metadata: metadata(dataViewMetadataTwoColumn),
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Mr Bing'],
+                            identity: categoryIdentities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata1Category2Measure.columns[1],
+                            values: [-200, 100, 150],
+                            subtotal: 450
+                        }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [-300, 300, 30],
+                                subtotal: 630
+                            }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);
+
+            setTimeout(() => {
+                expect($('.data-labels').first().css('fill')).toEqual('#ff0000');
+                expect($('.data-labels').last().css('fill')).toEqual('#ff0001');
+                done();
+            }, DefaultWaitForRender);
+        });
+
+    } 
+
+    describe("Column chart format per series validation", () => columnChartDataLabelsPerSeriesFormatValidation('columnChart'));
+    describe("Bar chart format per series validation", () => columnChartDataLabelsPerSeriesFormatValidation('barChart'));
+    describe("Clustered Bar chart format per series validation", () => columnChartDataLabelsPerSeriesFormatValidation('clusteredBarChart'));
+    describe("Clustered Column chart format per series validation", () => columnChartDataLabelsPerSeriesFormatValidation('clusteredColumnChart'));
 }
