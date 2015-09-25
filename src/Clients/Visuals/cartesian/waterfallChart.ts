@@ -331,7 +331,14 @@ module powerbi.visuals {
                     this.enumerateSentimentColors(enumeration);
                     break;
                 case 'labels':
-                    dataLabelUtils.enumerateDataLabels(enumeration, this.data.dataLabelsSettings, false, true, true);
+                    let labelSettingOptions: VisualDataLabelsSettingsOptions = {
+                        enumeration: enumeration,
+                        dataLabelsSettings: this.data.dataLabelsSettings,
+                        show: true,
+                        displayUnits: true,
+                        precision: true,
+                    };
+                    dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                     break;
             }
         }

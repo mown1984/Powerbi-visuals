@@ -61,23 +61,20 @@ module powerbi.visuals {
             background: string;
             textSize: number;
         };
-        headerText: {
-            marginLeft: number;
-            marginTop: number;
-        };
         slicerText: {
             color: string;
             hoverColor: string;
             selectionColor: string;
-            marginLeft: number;
             outline: string;
             background: string;
             textSize: number;
         };
-        slicerItemContainer: {
-            marginTop: number;
-            marginLeft: number;
-        };
+    }
+
+    interface CheckboxStyle {
+        transform: string;
+        'transform-origin': string;
+        'font-size': string;
     }
 
     export class Slicer implements IVisual {
@@ -99,6 +96,11 @@ module powerbi.visuals {
             'fontFamily': 'wf_segoe-ui_normal, helvetica, arial, sans-serif',
             'fontSize': '14px',
         };
+
+        // Based on sprite size defined in CSS sprite sheet for slicer-checkbox
+        private static CheckboxSpritePixelSizeMinimum: number = 8;
+        private static CheckboxSpritePixelSize: number = 13;
+        private static CheckboxSpritePixelSizeRange: number = Slicer.CheckboxSpritePixelSize - Slicer.CheckboxSpritePixelSizeMinimum;
 
         private static Container: ClassAndSelector = {
             class: 'slicerContainer',
@@ -147,24 +149,14 @@ module powerbi.visuals {
                     background: '#ffffff',
                     textSize: 10,
                 },
-                headerText: {
-                    marginLeft: 8,
-                    marginTop: 0
-                },
                 slicerText: {
                     color: '#666666',
                     hoverColor: '#212121',
                     selectionColor: '#212121',
-                    marginLeft: 8,
                     outline: 'None',
                     background: '#ffffff',
                     textSize: 10,
                 },
-                slicerItemContainer: {
-                    // The margin is assigned in the less file. This is needed for the height calculations.
-                    marginTop: 5,
-                    marginLeft: 8,
-                }
             };
         }
 
@@ -433,9 +425,9 @@ module powerbi.visuals {
                 .rowHeight(this.getRowHeight())
                 .data(
                     data.slicerDataPoints,
-                (d: SlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
+                    (d: SlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
                     resetScrollbarPosition
-                );
+                    );
         }
 
         private initContainer() {
@@ -451,8 +443,6 @@ module powerbi.visuals {
 
             this.slicerHeader.append('div').classed(Slicer.HeaderText.class, true)
                 .style({
-                    'margin-left': PixelConverter.toString(settings.headerText.marginLeft),
-                    'margin-top': PixelConverter.toString(settings.headerText.marginTop),
                     'border-style': this.getBorderStyle(settings.header.outline),
                     'border-color': settings.general.outlineColor,
                     'border-width': this.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
@@ -467,23 +457,21 @@ module powerbi.visuals {
 
             let rowEnter = (rowSelection: D3.Selection) => {
                 let settings = this.settings;
-                let labelWidth = PixelConverter.toString(this.currentViewport.width - (settings.slicerItemContainer.marginLeft + settings.slicerText.marginLeft + settings.general.outlineWeight * 2));
                 let listItemElement = rowSelection.append('li')
-                    .classed(Slicer.ItemContainer.class, true)
-                    .style({
-                        'margin-left': PixelConverter.toString(settings.slicerItemContainer.marginLeft),
-                    });
+                    .classed(Slicer.ItemContainer.class, true);
 
-                let labelElement = listItemElement.append('label')
+                let labelElement = listItemElement.append('div')
                     .classed(Slicer.Input.class, true);
 
                 labelElement.append('input')
                     .attr('type', 'checkbox');
 
                 labelElement.append('span')
+                    .style(this.buildCheckboxStyle());
+
+                listItemElement.append('span')
                     .classed(Slicer.LabelText.class, true)
                     .style({
-                        'width': labelWidth,
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                     });
             };
@@ -521,6 +509,10 @@ module powerbi.visuals {
                         'border-width': this.getBorderWidth(settings.slicerText.outline, settings.general.outlineWeight),
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                     });
+
+                    let slicerCheckbox = rowSelection.selectAll(Slicer.Input.selector).selectAll('span');
+                    slicerCheckbox.style(this.buildCheckboxStyle());
+
                     if (this.interactivityService && this.slicerBody) {
                         let slicerBody = this.slicerBody.attr('width', this.currentViewport.width);
                         let slicerItemContainers = slicerBody.selectAll(Slicer.ItemContainer.selector);
@@ -598,13 +590,30 @@ module powerbi.visuals {
         private getHeaderHeight(): number {
             return TextMeasurementService.estimateSvgTextHeight(
                 this.getTextProperties(this.settings.header.textSize)
-            );
+                );
         }
 
         private getRowHeight(): number {
             return TextMeasurementService.estimateSvgTextHeight(
                 this.getTextProperties(this.settings.slicerText.textSize)
-            );
+                );
+        }
+
+        private getCheckboxScale(): string {
+            let scale = jsCommon.TextSizeDefaults.getScale(this.settings.slicerText.textSize);
+            let size = (Slicer.CheckboxSpritePixelSizeMinimum + (Slicer.CheckboxSpritePixelSizeRange * scale));
+            let relativeZoom = size / Slicer.CheckboxSpritePixelSize;
+            return SVGUtil.scale(relativeZoom);
+        }
+
+        private buildCheckboxStyle(): CheckboxStyle {
+            let checkboxScale = this.getCheckboxScale();
+            let checkboxTransformOrigin = SVGUtil.transformOrigin('left', 'center');
+            return {
+                'transform': checkboxScale,
+                'transform-origin': checkboxTransformOrigin,
+                'font-size': PixelConverter.fromPoint(this.settings.slicerText.textSize),
+            };
         }
 
         private getBorderStyle(outlineElement: string): string {

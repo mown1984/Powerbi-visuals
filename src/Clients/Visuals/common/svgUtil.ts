@@ -80,6 +80,25 @@ module powerbi.visuals {
         }
 
         /**
+         * Creates a scale string for use in a CSS transform property.
+         */
+        export function scale(scale: number): string {
+            debug.assertValue(scale, 'scale');
+
+            return `scale(${scale})`;
+        }
+
+        /**
+         * Creates a transform origin string for use in a CSS transform-origin property.
+         */
+        export function transformOrigin(xOffset: string, yOffset: string): string {
+            debug.assertValue(xOffset, 'xOffset');
+            debug.assertValue(yOffset, 'yOffset');
+
+            return `${xOffset} ${yOffset}`;
+        }
+
+        /**
          * Forces all D3 transitions to complete.
          * Normally, zero-delay transitions are executed after an instantaneous delay (<10ms). 
          * This can cause a brief flicker if the browser renders the page twice: once at the end of the first event loop, 

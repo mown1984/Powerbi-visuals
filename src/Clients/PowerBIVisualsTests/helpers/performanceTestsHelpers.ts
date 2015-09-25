@@ -365,7 +365,7 @@ module powerbitests.performanceTestsHelpers {
                 };
 
             default:
-                var fieldExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: "s", entity: "table1", column: "country" });
+                var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table1", name: "country" } });
 
                 var categoryIdentities = getYears().map((value) => {
                     return powerbi.data.createDataViewScopeIdentity(powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(String(value))));

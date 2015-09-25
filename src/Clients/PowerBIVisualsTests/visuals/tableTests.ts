@@ -65,7 +65,7 @@ module powerbitests {
             },
         },
     };
-  
+
     var measureSource1: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } } };
     var measureSource2: DataViewMetadataColumn = { displayName: "measure2", queryName: "measure2", type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00" } } };
     var measureSource3: DataViewMetadataColumn = { displayName: "measure3", queryName: "measure3", type: dataTypeNumber, isMeasure: true, index: 5, objects: { general: { formatString: "#" } } };
@@ -706,7 +706,7 @@ module powerbitests {
                         let propertyValue = result[i][j] = navigator.getIntersection(rows[i], columns[j])[property];
                         if (propertyValue instanceof jQuery)
                             result[i][j] = propertyValue[0].outerHTML;
-                        }
+                    }
                 }
 
                 return result;
@@ -1136,8 +1136,11 @@ module powerbitests {
                 v.onDataChanged({ dataViews: [dataView] });
                 setTimeout(() => {
                     let tableVisual = <Table>v;
-                    tableVisual.columnWidthChanged(2, 45);
                     let colWidthManager = tableVisual.getColumnWidthManager();
+                    expect(colWidthManager.suppressOnDataChangedNotification).toBe(true);
+                    // Resize
+                    tableVisual.columnWidthChanged(2, 45);
+                    expect(colWidthManager.suppressOnDataChangedNotification).toBe(true);
                     let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                     expect(persistedColWidths.length).toBe(3);
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
@@ -1146,6 +1149,46 @@ module powerbitests {
                     expect(persistedColWidths[1].width).toBe(45);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
                     expect(persistedColWidths[2].width).toBe(71);
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+
+        xit("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
+            let dataViewObjects: TableDataViewObjects = {
+                general: {
+                    totals: true,
+                    autoSizeColumnWidth: false,
+                }
+            };
+            let newMeasureSource2: DataViewMetadataColumn = { displayName: "", queryName: undefined, type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
+            let dataView0: DataView = {
+                metadata: {
+                    columns: [measureSource1, newMeasureSource2, measureSource3],
+                    objects: dataViewObjects
+                },
+                table: {
+                    columns: [measureSource1, newMeasureSource2, measureSource3],
+                    rows: [
+                        [100, 10100, 102000],
+                        [103, 104000, 1050000],
+                        [106, 1070000, 10800000]
+                    ]
+                }
+            };
+            v.onDataChanged({ dataViews: [dataView0] });
+            setTimeout(() => {
+                v.onDataChanged({ dataViews: [dataView0] });
+                setTimeout(() => {
+                    let tableVisual = <Table>v;
+                    let colWidthManager = tableVisual.getColumnWidthManager();
+                    let objectInstances: powerbi.VisualObjectInstance[] = colWidthManager.getVisualObjectInstancesToPersist();
+                    expect(objectInstances.length).toBe(3);
+                    expect(objectInstances[0].properties["autoSizeColumnWidth"]["value"]).toBe(false);
+                    expect(objectInstances[1].selector.metadata).toBe(measureSource1.queryName);
+                    expect(objectInstances[1].properties["columnWidth"]["value"]).toBe(68);
+                    expect(objectInstances[2].selector.metadata).toBe(measureSource3.queryName);
+                    expect(objectInstances[2].properties["columnWidth"]["value"]).toBe(71);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);

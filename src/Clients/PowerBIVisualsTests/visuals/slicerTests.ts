@@ -259,22 +259,13 @@ module powerbitests {
                     background: '#ffffff',
                     textSize: 10,
                 },
-                headerText: {
-                    marginLeft: 8,
-                    marginTop: 0
-                },
                 slicerText: {
                     color: '#666666',
                     hoverColor: '#212121',
                     selectionColor: '#212121',
-                    marginLeft: 8,
                     outline: 'None',
                     background: '#ffffff',
                     textSize: 10,
-                },
-                slicerItemContainer: {
-                    marginTop: 5,
-                    marginLeft: 8
                 },
             };
 
@@ -364,7 +355,7 @@ module powerbitests {
             jasmine.clock().tick(0);
             slicers = $(".slicerText");
 
-            slicerCheckboxInput = $("label.slicerCheckbox").find("input");
+            slicerCheckboxInput = $(".slicerCheckbox").find("input");
             spyOn(hostServices, "onSelect").and.callThrough();
         });
 

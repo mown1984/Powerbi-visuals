@@ -3313,8 +3313,8 @@ module powerbitests {
                     columnSubtotals: true,
                     autoSizeColumnWidth: true
                 }
-            }]);  
-            
+            }]);
+
             it("RefreshControl invisible parent", () => {
                 var control = { refresh() { } };
                 var controlSpy = spyOn(control, "refresh");
@@ -3364,7 +3364,7 @@ module powerbitests {
                     expect(refreshSpy).toHaveBeenCalledWith(true);
                     done();
                 }, DefaultWaitForRender);
-            });         
+            });
         });
 
         it("enumerateObjectInstances general autoSizeColumnWidth off", () => {
@@ -3472,11 +3472,13 @@ module powerbitests {
             };
             let dataView = getMatrixColumnWidthDataView(matrix, objects);
             v["isInteractive"] = true;
-            v.onDataChanged({dataViews: [dataView]});
+            v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
                 let matrixVisual = <Matrix>v;
                 let colWidthManager = matrixVisual.getColumnWidthManager();
+                // Resize
                 colWidthManager.columnWidthChanged(2, 45);
+                expect(colWidthManager.suppressOnDataChangedNotification).toBe(false);
                 let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                 expect(persistedColWidths.length).toBe(1);
                 expect(persistedColWidths[0].queryName).toBe('Measure1');
@@ -3529,18 +3531,18 @@ module powerbitests {
 
         function validateClassNames(expectedValues: string[][]): void {
             tablixHelper.validateClassNames(expectedValues, ".bi-tablix tr", NoMarginClass);
-        }        
+        }
 
         it("resize with autoSizeColumnwidth on", (done) => {
-            let selector = ".bi-tablix tr";            
+            let selector = ".bi-tablix tr";
             var matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
             let objects = {
                 general: {
                     rowSubtotals: true,
                     columnSubtotals: true,
-                    autoSizeColumnWidth: true,                    
+                    autoSizeColumnWidth: true,
                 }
-            };    
+            };
 
             let newMeasureSource1: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 7, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
             let columns = [
@@ -3551,15 +3553,15 @@ module powerbitests {
                 newMeasureSource1,
                 measureSource2
             ];
-            let dataView = getMatrixColumnWidthDataView2(columns, matrix, objects);           
+            let dataView = getMatrixColumnWidthDataView2(columns, matrix, objects);
             v["isInteractive"] = true;
             v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(2).find('td');
                 expect(rowCells.length).toBe(16);
-                expect(rowCells.eq(3).width()).toEqual(46); 
-                expect(rowCells.eq(5).width()).toEqual(46); 
+                expect(rowCells.eq(3).width()).toEqual(46);
+                expect(rowCells.eq(5).width()).toEqual(46);
                 expect(rowCells.eq(7).width()).toEqual(46);
                 expect(rowCells.eq(9).width()).toEqual(46);
                 done();
@@ -3577,21 +3579,21 @@ module powerbitests {
                 }
             };
             let dataView = getMatrixColumnWidthDataView(matrix, objects);
-            v["isInteractive"] = true;            
+            v["isInteractive"] = true;
             v.onDataChanged({
                 dataViews: [dataView]
             });
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(2).find('td');
-                expect(rowCells.eq(0).width()).toEqual(93);
-                expect(rowCells.eq(1).width()).toEqual(84);
-                expect(rowCells.eq(2).width()).toEqual(61);
-                expect(rowCells.eq(3).width()).toEqual(62);    
-                expect(rowCells.eq(4).width()).toEqual(60);
-                expect(rowCells.eq(5).width()).toEqual(62);
-                expect(rowCells.eq(6).width()).toEqual(64);
-                
+                expect(rowCells.eq(0).width()).toBeCloseTo(93, -1);
+                expect(rowCells.eq(1).width()).toBeCloseTo(84, -1);
+                expect(rowCells.eq(2).width()).toBeCloseTo(61, -1);
+                expect(rowCells.eq(3).width()).toBeCloseTo(62, -1);
+                expect(rowCells.eq(4).width()).toBeCloseTo(60, -1);
+                expect(rowCells.eq(5).width()).toBeCloseTo(62, -1);
+                expect(rowCells.eq(6).width()).toBeCloseTo(64, -1);
+
                 let newMeasureSource1: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 7, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
                 let columns = [
                     rowGroupSource1,
@@ -3611,20 +3613,20 @@ module powerbitests {
                 setTimeout(() => {
                     let rows1 = $(selector);
                     let rowCells1 = rows1.eq(2).find('td');
-                    expect(rowCells1.eq(0).width()).toEqual(93);
-                    expect(rowCells1.eq(1).width()).toEqual(84);
-                    expect(rowCells1.eq(2).width()).toEqual(61);
-                    expect(rowCells1.eq(3).width()).toEqual(46);
-                    expect(rowCells1.eq(4).width()).toEqual(60);
-                    expect(rowCells1.eq(5).width()).toEqual(46);
-                    expect(rowCells1.eq(6).width()).toEqual(64);
+                    expect(rowCells1.eq(0).width()).toBeCloseTo(93, -1);
+                    expect(rowCells1.eq(1).width()).toBeCloseTo(84, -1);
+                    expect(rowCells1.eq(2).width()).toBeCloseTo(61, -1);
+                    expect(rowCells1.eq(3).width()).toBeCloseTo(46, -1);
+                    expect(rowCells1.eq(4).width()).toBeCloseTo(60, -1);
+                    expect(rowCells1.eq(5).width()).toBeCloseTo(46, -1);
+                    expect(rowCells1.eq(6).width()).toBeCloseTo(64, -1);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
         xit("autoSizeColumnwidth off to on", (done) => {
-            let selector = ".bi-tablix tr";            
+            let selector = ".bi-tablix tr";
             var matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
             let objects = {
                 general: {

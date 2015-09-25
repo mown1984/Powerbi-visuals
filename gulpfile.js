@@ -325,7 +325,6 @@ gulp.task("build:visuals", function (callback) {
 
 gulp.task("build:projects", function (callback) {
     runSequence(
-        "install:jquery-ui",
         "build:visuals_common",
         "build:visuals_data",
         "build:visuals",
@@ -427,7 +426,6 @@ gulp.task('build:package_unminified', function (callback) {
 
 gulp.task("build:package_projects", function (callback) {
     runSequence(
-        "install:jquery-ui",
         "build:visuals_common",
         "build:visuals_data",
         "build:visuals",
@@ -583,29 +581,6 @@ function installExternalDependency(path, fileName, url, callback) {
         }
     });
 } 
-
-/** -------------------------- Download 'jquery-ui.min.js' --------------------------------*/
-gulp.task("install:jquery-ui:js", function(callback) {
-    installExternalDependency(
-        "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4",
-        "jquery-ui.min.js",
-        "https://code.jquery.com/ui/1.11.4/jquery-ui.min.js",
-        callback);
-});
-
-/** -------------------------- Download 'jquery-ui.min.css' --------------------------------*/
-gulp.task("install:jquery-ui:css", function(callback) {
-    installExternalDependency(
-        "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4",
-        "jquery-ui.min.css",
-        "https://code.jquery.com/ui/1.11.4/themes/black-tie/jquery-ui.min.css",
-        callback);
-});
-
-/** -------------------------- Download 'jquery-ui' --------------------------------*/
-gulp.task("install:jquery-ui", function(callback) {
-    runSequence("install:jquery-ui:js", "install:jquery-ui:css", callback);
-});
 
 /** --------------------------Download 'JASMINE-jquery.js' --------------------------------*/
 gulp.task('install:jasmine', function (callback) {

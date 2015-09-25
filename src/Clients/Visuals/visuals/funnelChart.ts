@@ -451,7 +451,16 @@ module powerbi.visuals {
                     }
                     break;
                 case 'labels':
-                    dataLabelUtils.enumerateDataLabels(enumeration, this.data.dataLabelsSettings, true, true, true, this.labelPositionObjects);
+                    let labelSettingsOptions = {
+                        enumeration: enumeration,
+                        dataLabelsSettings: this.data.dataLabelsSettings,
+                        show: true,
+                        displayUnits: true,
+                        precision: true,
+                        position: true,
+                        positionObject: this.labelPositionObjects
+                    };
+                    dataLabelUtils.enumerateDataLabels(labelSettingsOptions);
                     break;
             }
 

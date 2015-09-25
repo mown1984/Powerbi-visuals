@@ -58,6 +58,7 @@ module powerbi.visuals {
         data: ColumnChartDataPoint[];
         identity: SelectionId;
         color: string;
+        labelSettings: VisualDataLabelsSettings;
     }
 
     export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
@@ -70,6 +71,7 @@ module powerbi.visuals {
         /** Not adjusted for 100% stacked */
         valueOriginal: number;
         seriesIndex: number;
+        labelSettings: VisualDataLabelsSettings;
         categoryIndex: number;
         color: string;
         /** The original values from the highlighted rect, used in animations */
@@ -222,6 +224,7 @@ module powerbi.visuals {
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
         private element: JQuery;
+        private seriesLabelFormattingEnabled: boolean;
 
         constructor(options: ColumnChartConstructorOptions) {
             debug.assertValue(options, 'options');
@@ -233,6 +236,7 @@ module powerbi.visuals {
             this.animator = options.animator;
             this.isScrollable = options.isScrollable;
             this.interactivityService = options.interactivityService;
+            this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
         }
 
         public static customizeQuery(options: CustomizeQueryOptions): void {
@@ -374,20 +378,7 @@ module powerbi.visuals {
                 showAllDataPoints = DataViewObjects.getValue<boolean>(objects, columnChartProps.dataPoint.showAllDataPoints);
 
                 let labelsObj = <DataLabelObject>objects['labels'];
-                if (labelsObj) {
-                    if (labelsObj.show !== undefined)
-                        labelSettings.show = labelsObj.show;
-                    if (labelsObj.color !== undefined) {
-                        labelSettings.labelColor = labelsObj.color.solid.color;
-                    }
-                    if (labelsObj.labelDisplayUnits !== undefined) {
-                        labelSettings.displayUnits = labelsObj.labelDisplayUnits;
-                    }
-                    if (labelsObj.labelPrecision !== undefined) {
-                        labelSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
-                    }
-
-                }
+                dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings);
             }
 
             // Allocate colors
@@ -452,7 +443,7 @@ module powerbi.visuals {
             legend: LegendDataPoint[],
             seriesObjectsList: DataViewObjects[][],
             converterStrategy: ColumnChartConverterHelper,
-            labelSettings: VisualDataLabelsSettings,
+            defaultLabelSettings: VisualDataLabelsSettings,
             is100PercentStacked: boolean = false,
             isScalar: boolean = false,
             supportsOverflow: boolean = false,
@@ -517,7 +508,18 @@ module powerbi.visuals {
                 formatStringProp = columnChartProps.general.formatString;
             for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                 let seriesDataPoints: ColumnChartDataPoint[] = [],
-                    legendItem = legend[seriesIndex];
+                    legendItem = legend[seriesIndex],
+                    seriesLabelSettings: VisualDataLabelsSettings;
+
+                if (!hasDynamicSeries) {
+                    let labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null;
+                    let labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject> labelsSeriesGroup.source.objects['labels'] : null;
+                    if (labelObjects) {
+                        seriesLabelSettings = Prototype.inherit(defaultLabelSettings);
+                        dataLabelUtils.updateLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings);
+                    }
+                }
+
                 columnSeries.push({
                     displayName: legendItem.label,
                     key: 'series' + seriesIndex,
@@ -525,7 +527,9 @@ module powerbi.visuals {
                     data: seriesDataPoints,
                     identity: legendItem.identity,
                     color: legendItem.color,
+                    labelSettings: seriesLabelSettings,
                 });
+
                 if (seriesCount > 1)
                     dataPointObjects = seriesObjectsList[seriesIndex];
                 let metadata = dataViewCat.values[seriesIndex].source;
@@ -580,7 +584,7 @@ module powerbi.visuals {
                         position = baseValuesPos[categoryIndex];
                     }
 
-                    let seriesGroup = grouped && grouped.length > 0 ? grouped[seriesIndex] : null;
+                    let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[0] : null;
                     let category = dataViewCat.categories && dataViewCat.categories.length > 0 ? dataViewCat.categories[0] : null;
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, categoryIndex)
@@ -591,7 +595,9 @@ module powerbi.visuals {
                     let rawCategoryValue = categories[categoryIndex];
                     let color = ColumnChart.getDataPointColor(legendItem, categoryIndex, dataPointObjects);
                     let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex);
-                    let labelColor = labelSettings.labelColor;
+                    let series = columnSeries[seriesIndex];
+                    let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : defaultLabelSettings;
+                    let labelColor = dataPointLabelSettings.labelColor;
                     let lastValue = undefined;
                     //Stacked column/bar label color is white by default (except last series)
                     if ((EnumExtensions.hasFlag(chartType, flagStacked))) {
@@ -606,6 +612,7 @@ module powerbi.visuals {
                         valueAbsolute: valueAbsolute,
                         valueOriginal: unadjustedValue,
                         seriesIndex: seriesIndex,
+                        labelSettings: dataPointLabelSettings,
                         categoryIndex: categoryIndex,
                         color: color,
                         selected: false,
@@ -663,6 +670,7 @@ module powerbi.visuals {
                             valueAbsolute: absoluteValueHighlight,
                             valueOriginal: unadjustedValueHighlight,
                             seriesIndex: seriesIndex,
+                            labelSettings: dataPointLabelSettings,
                             categoryIndex: categoryIndex,
                             color: color,
                             selected: false,
@@ -675,7 +683,7 @@ module powerbi.visuals {
                             key: highlightIdentity.getKey(),
                             tooltipInfo: tooltipInfo,
                             labelFormatString: metadata.format,
-                            labelFill: labelSettings.labelColor,
+                            labelFill: labelColor,
                             lastSeries: lastValue,
                             chartType: chartType
                         };
@@ -846,12 +854,44 @@ module powerbi.visuals {
                         this.enumerateDataPoints(enumeration);
                     break;
                 case 'labels':
-                    if (EnumExtensions.hasFlag(this.chartType, flagStacked100))
-                        dataLabelUtils.enumerateDataLabels(enumeration, this.data.labelSettings, false, true);
-                    else
-                        dataLabelUtils.enumerateDataLabels(enumeration, this.data.labelSettings, false, true, true);
+                    this.enumerateDataLabels(enumeration);
+                    break;
             }
-            return null;
+        }
+
+        private enumerateDataLabels(enumeration: ObjectEnumerationBuilder): void {
+            let data = this.data,
+                labelSettings = this.data.labelSettings,
+                seriesCount = data.series.length;
+
+            //Draw default settings
+            dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings, false));
+
+            if (seriesCount === 0)
+                return;
+
+            //Draw series settings
+            if (!data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled) {
+                for (let i = 0; i < seriesCount; i++) {
+                    let series = data.series[i],
+                        labelSettings: VisualDataLabelsSettings = (series.labelSettings) ? series.labelSettings : this.data.labelSettings;
+
+                    //enumeration.pushContainer({ displayName: series.displayName });
+                    dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings, true, series));
+                    //enumeration.popContainer();
+                }
+            }
+        }
+
+        private getLabelSettingsOptions(enumeration: ObjectEnumerationBuilder, labelSettings: VisualDataLabelsSettings, isSeries: boolean, series?: ColumnChartSeries): VisualDataLabelsSettingsOptions {
+            return {
+                enumeration: enumeration,
+                dataLabelsSettings: labelSettings,
+                show: !isSeries,
+                displayUnits: !EnumExtensions.hasFlag(this.chartType, flagStacked100),
+                precision: true,
+                selector: series && series.identity ? series.identity.getSelector() : null
+            };
         }
 
         private enumerateDataPoints(enumeration: ObjectEnumerationBuilder): void {
@@ -890,12 +930,12 @@ module powerbi.visuals {
                         defaultColor: { solid: { color: data.defaultDataPointColor || this.colors.getColorByIndex(0).value } }
                     }
                 }).pushInstance({
-                    objectName: 'dataPoint',
-                    selector: null,
-                    properties: {
-                        showAllDataPoints: !!data.showAllDataPoints
-                    }
-                });
+                        objectName: 'dataPoint',
+                        selector: null,
+                        properties: {
+                            showAllDataPoints: !!data.showAllDataPoints
+                        }
+                    });
 
                 for (let i = 0; i < singleSeriesData.length; i++) {
                     let singleSeriesDataPoints = singleSeriesData[i],

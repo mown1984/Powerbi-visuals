@@ -96,6 +96,7 @@ module powerbi.visuals {
         animator?: IGenericAnimator;
         cartesianSmallViewPortProperties?: CartesianSmallViewPortProperties;
         behavior?: IInteractiveBehavior;
+        seriesLabelFormattingEnabled?: boolean;
     }
 
     export interface ICartesianVisual {
@@ -118,6 +119,7 @@ module powerbi.visuals {
         isScrollable: boolean;
         interactivityService?: IInteractivityService;
         animator?: IGenericAnimator;
+        seriesLabelFormattingEnabled?: boolean;
     }
 
     export interface CartesianVisualRenderResult {
@@ -250,6 +252,7 @@ module powerbi.visuals {
         private bottomMarginLimit: number;
         private leftRightMarginLimit: number;
         private sharedColorPalette: SharedColorPalette;
+        private seriesLabelFormattingEnabled: boolean;
 
         public animator: IGenericAnimator;
 
@@ -291,6 +294,7 @@ module powerbi.visuals {
             this.isScrollable = false;
             if (options) {
                 this.type = options.chartType;
+                this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
                 if (options.isScrollable)
                     this.isScrollable = options.isScrollable;
                 this.animator = options.animator;
@@ -892,9 +896,9 @@ module powerbi.visuals {
                 if (dataViewMetadata)
                     objects = dataViewMetadata.objects;
             }
-
+         
             // Create the layers
-            let layers = CartesianLayerFactory.createLayers(this.type, objects, this.interactivityService, this.animator, this.isScrollable);
+            let layers = CartesianLayerFactory.createLayers(this.type, objects, this.interactivityService, this.animator, this.isScrollable, this.seriesLabelFormattingEnabled);
 
             // Initialize the layers
             let cartesianOptions = <CartesianVisualInitOptions>Prototype.inherit(this.visualInitOptions);
@@ -1957,7 +1961,8 @@ module powerbi.visuals {
             objects: DataViewObjects,
             interactivityService: IInteractivityService,
             animator?: any,
-            isScrollable: boolean = false): ICartesianVisual[]{
+            isScrollable: boolean = false,
+            seriesLabelFormattingEnabled: boolean = false): ICartesianVisual[]{
 
             let layers: ICartesianVisual[] = [];
 
@@ -1965,6 +1970,7 @@ module powerbi.visuals {
                 isScrollable: isScrollable,
                 animator: animator,
                 interactivityService: interactivityService,
+                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
             };
 
             switch (type) {
@@ -2035,6 +2041,7 @@ module powerbi.visuals {
                 animator: defaultOptions.animator,
                 interactivityService: defaultOptions.interactivityService,
                 isScrollable: defaultOptions.isScrollable,
+                seriesLabelFormattingEnabled: defaultOptions.seriesLabelFormattingEnabled,
                 chartType: type
             };
 
@@ -2074,6 +2081,7 @@ module powerbi.visuals {
                 animator: <IColumnChartAnimator>defaultOptions.animator,
                 interactivityService: defaultOptions.interactivityService,
                 isScrollable: defaultOptions.isScrollable,
+                seriesLabelFormattingEnabled: defaultOptions.seriesLabelFormattingEnabled,
                 chartType: type
             };
             return new ColumnChart(options);

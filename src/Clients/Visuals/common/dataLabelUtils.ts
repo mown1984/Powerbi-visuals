@@ -46,6 +46,17 @@ module powerbi.visuals {
         labelColor: string;
     }
 
+    export interface VisualDataLabelsSettingsOptions {
+        show: boolean;
+        enumeration: ObjectEnumerationBuilder;
+        dataLabelsSettings: VisualDataLabelsSettings;
+        displayUnits?: boolean;
+        precision?: boolean;
+        position?: boolean;
+        positionObject?: string[];
+        selector?: powerbi.data.Selector;
+    }
+
     export interface LabelEnabledDataPoint {
         //for collistion detection use
         labelX?: number;
@@ -126,6 +137,22 @@ module powerbi.visuals {
             class: 'line-label',
             selector: '.line-label',
         };
+
+        export function updateLabelSettingsFromLabelsObject(labelsObj: DataLabelObject, labelSettings: VisualDataLabelsSettings): void {
+            if (labelsObj) {
+                if (labelsObj.show !== undefined)
+                    labelSettings.show = labelsObj.show;
+                if (labelsObj.color !== undefined) {
+                    labelSettings.labelColor = labelsObj.color.solid.color;
+                }
+                if (labelsObj.labelDisplayUnits !== undefined) {
+                    labelSettings.displayUnits = labelsObj.labelDisplayUnits;
+                }
+                if (labelsObj.labelPrecision !== undefined) {
+                    labelSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
+                }
+            }
+        }
         
         export function getDefaultLabelSettings(show: boolean = false, labelColor?: string, labelPrecision?: number, format?: string): VisualDataLabelsSettings {
             if (format) {
@@ -180,7 +207,7 @@ module powerbi.visuals {
                 displayUnits: 0,
                 precision: hasDots ? defaultDecimalLabelPrecision : defaultCountLabelPrecision,
                 labelColor: defaultLabelColor,
-                formatterOptions: null
+                formatterOptions: null,
             };
         }
 
@@ -299,7 +326,7 @@ module powerbi.visuals {
                 return;
             
             labels
-                .attr({ x: (d: LabelEnabledDataPoint) => d.labelX, y: (d: LabelEnabledDataPoint) => d.labelY, dy: '.35em'})
+                .attr({ x: (d: LabelEnabledDataPoint) => d.labelX, y: (d: LabelEnabledDataPoint) => d.labelY, dy: '.35em' })
                 .text((d: LabelEnabledDataPoint) => d.labeltext)
                 .style(layout.style);
 
@@ -522,17 +549,17 @@ module powerbi.visuals {
 
             let formatOverride: string = (isHundredPercent) ? hundredPercentFormat : null;
             let formattersCache = createColumnFormatterCacheManager();
-            let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, data.labelSettings);
-            let labelSettings = data.labelSettings;
             let hasSelection = interactivityService ? interactivityService.hasSelection() : false;
+
             return {
                 labelText: (d: ColumnChartDataPoint) => {
                     let formatString = (formatOverride != null) ? formatOverride : d.labelFormatString;
-                    let formatter = formattersCache.getOrCreate(formatString, labelSettings, value2);
+                    let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, d.labelSettings);
+                    let formatter = formattersCache.getOrCreate(formatString, d.labelSettings, value2);
                     return getLabelFormattedText(formatter.format(d.value), maxLabelWidth);
                 },
                 labelLayout: labelLayoutXY,
-                filter: (d: ColumnChartDataPoint) => dataLabelUtils.getColumnChartLabelFilter(d, hasSelection, data.hasHighlights, axisOptions, visualWidth) ,
+                filter: (d: ColumnChartDataPoint) => dataLabelUtils.getColumnChartLabelFilter(d, hasSelection, data.hasHighlights, axisOptions, visualWidth),
                 style: {
                     'fill': (d: ColumnChartDataPoint) => d.labelFill,
                     'text-anchor': isColumn ? 'middle' : 'start',
@@ -563,7 +590,7 @@ module powerbi.visuals {
                 case ColumnChartType.stackedBar:
                 case ColumnChartType.hundredPercentStackedBar:
                     // if the series isn't last or the label doesn't fit where specified, then it should be inside 
-                    if (!d.lastSeries || (outsidePosition + textWidth > visualWidth) ||d.chartType === ColumnChartType.hundredPercentStackedBar) {
+                    if (!d.lastSeries || (outsidePosition + textWidth > visualWidth) || d.chartType === ColumnChartType.hundredPercentStackedBar) {
                         shapeWidth = -StackedUtil.getSize(xScale, d.valueAbsolute);
                         shapeHeight = columnWidth;
                         inside = true;
@@ -634,13 +661,12 @@ module powerbi.visuals {
         }
 
         export function getLineChartLabelLayout(xScale: D3.Scale.GenericScale<any>, yScale: D3.Scale.GenericScale<any>, labelSettings: PointDataLabelsSettings, isScalar: boolean, axisFormatter: IValueFormatter): ILabelLayout {
-
             let formattersCache = createColumnFormatterCacheManager();
-            let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, labelSettings);
 
             return {
                 labelText: (d: LineChartDataPoint) => {
-                    let formatter = formattersCache.getOrCreate(d.labelFormatString, labelSettings, value2);
+                    let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, d.labelSettings);
+                    let formatter = formattersCache.getOrCreate(d.labelFormatString, d.labelSettings, value2);
                     return getLabelFormattedText(formatter.format(d.value));
                 },
                 labelLayout: {
@@ -779,36 +805,43 @@ module powerbi.visuals {
             };
         }
 
-        export function enumerateDataLabels(enumeration: ObjectEnumerationBuilder, dataLabelsSettings: VisualDataLabelsSettings, withPosition: boolean, withPrecision: boolean = false, withDisplayUnit: boolean = false, labelPositionObjects?: string[]): ObjectEnumerationBuilder {
-            debug.assertValue(enumeration, 'enumeration');
+        export function enumerateDataLabels(
+            options: VisualDataLabelsSettingsOptions): ObjectEnumerationBuilder {
 
-            if (!dataLabelsSettings)
+            debug.assertValue(options, 'options');
+            debug.assertValue(options.enumeration, 'enumeration');
+
+            if (!options.dataLabelsSettings)
                 return;
+
             let instance: VisualObjectInstance = {
                 objectName: 'labels',
-                selector: null,
-                properties: {
-                    show: dataLabelsSettings.show,
-                    color: dataLabelsSettings.labelColor,
-                },
+                selector: options.selector,
+                properties: {},
             };
-            if (withDisplayUnit) {
-                instance.properties['labelDisplayUnits'] = dataLabelsSettings.displayUnits;
-            }
-            if (withPrecision) {
-                instance.properties['labelPrecision'] = dataLabelsSettings.precision;
-            }
-            if (withPosition) {
-                instance.properties['labelPosition'] = dataLabelsSettings.position;
 
-                if (labelPositionObjects) {
+            if (options.show) {
+                instance.properties['show'] = options.dataLabelsSettings.show;
+            }
+
+            instance.properties['color'] = options.dataLabelsSettings.labelColor;
+
+            if (options.displayUnits) {
+                instance.properties['labelDisplayUnits'] = options.dataLabelsSettings.displayUnits;
+            }
+            if (options.precision) {
+                instance.properties['labelPrecision'] = options.dataLabelsSettings.precision;
+            }
+            if (options.position) {
+                instance.properties['labelPosition'] = options.dataLabelsSettings.position;
+                if (options.positionObject) {
                     debug.assert(!instance.validValues, '!instance.validValues');
 
-                    instance.validValues = { 'labelPosition': labelPositionObjects };
+                    instance.validValues = { 'labelPosition': options.positionObject };
                 }
             }
 
-            return enumeration.pushInstance(instance);
+            return options.enumeration.pushInstance(instance);
         }
 
         export function enumerateCategoryLabels(enumeration: ObjectEnumerationBuilder, dataLabelsSettings: VisualDataLabelsSettings, withFill: boolean, isDonutChart: boolean = false, isTreeMap: boolean = false): void {
@@ -833,7 +866,7 @@ module powerbi.visuals {
             if (withFill) {
                 instance.properties['color'] = labelSettings.labelColor;
             }
-
+            
             enumeration.pushInstance(instance);
         }
 
@@ -847,11 +880,18 @@ module powerbi.visuals {
             return <IColumnFormatterCacheManager> {
 
                 cache: { defaultFormatter: null, },
-                getOrCreate (formatString: string, labelSetting: VisualDataLabelsSettings, value2?: number) {
+                getOrCreate(formatString: string, labelSetting: VisualDataLabelsSettings, value2?: number) {
                     if (formatString) {
-                        if (!this.cache[formatString])
-                            this.cache[formatString] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
-                        return this.cache[formatString];
+                        var cacheKeyObject = {
+                            formatString: formatString,
+                            displayUnits: labelSetting.displayUnits,
+                            precision: labelSetting.precision,
+                            value2: value2
+                        };
+                        var cacheKey = JSON.stringify(cacheKeyObject);
+                        if (!this.cache[cacheKey])
+                            this.cache[cacheKey] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
+                        return this.cache[cacheKey];
                     }
                     if (!this.cache.defaultFormatter) {
                         this.cache.defaultFormatter = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
@@ -863,7 +903,7 @@ module powerbi.visuals {
 
         function getOptionsForLabelFormatter(labelSetting: VisualDataLabelsSettings, formatString: string, value2?: number): ValueFormatterOptions {
             return {
-                displayUnitSystemType:DisplayUnitSystemType.DataLabels,
+                displayUnitSystemType: DisplayUnitSystemType.DataLabels,
                 format: formatString,
                 precision: labelSetting.precision,
                 value: labelSetting.displayUnits,

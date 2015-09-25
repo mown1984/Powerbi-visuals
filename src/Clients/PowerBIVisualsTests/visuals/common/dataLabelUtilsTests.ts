@@ -134,7 +134,7 @@ module powerbitests {
             it("undefined labelSettings validation", () => {
                 let labelSettings: powerbi.visuals.VisualDataLabelsSettings;
                 let enumeration = new ObjectEnumerationBuilder();
-                DataLabelUtils.enumerateDataLabels(enumeration, labelSettings, false);
+                DataLabelUtils.enumerateDataLabels({ enumeration: enumeration, dataLabelsSettings: labelSettings, show: true });
                 expect(enumeration.complete()).toBeUndefined();
             });
         });

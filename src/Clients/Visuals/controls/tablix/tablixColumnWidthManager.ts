@@ -145,23 +145,36 @@ module powerbi.visuals.controls {
             this.suppressNotification = !this.isMatrix;
             this.generateVisualObjectInstancesToPersist();
             this.callHostPersistProperties = true;
+            // Keep all persisted column widths in sync
+            if (!this.shouldAutoSizeColumnWidth() && this.currentPersistedWidths.length > 0 && index < this.currentPersistedWidths.length)
+                this.currentPersistedWidths[index] = width;
         }
 
         public persistAllColumnWidths(widthsToPersist: number[]): void {
             if (!this.shouldAutoSizeColumnWidth() && this.dataViewUpdated) {
+                let shouldPersist = true;
                 if (!_.isEqual(widthsToPersist, this.currentPersistedWidths)) {
                     this.currentPersistedWidths = widthsToPersist;
                     this.suppressNotification = true;
                 }
                 else {
-                    this.suppressNotification = false;
-                    this.callHostPersistProperties = false;
-                    return;
+                    shouldPersist = false;
                 }
                 // Persist all column widths
                 let widths = this.isMatrix ? widthsToPersist
                     : widthsToPersist.slice(1, widthsToPersist.length); // Table indices are offset with an empty header. 
                 let savedColumnWidths: controls.TablixColumnWidthObject[] = [];
+
+                if (this.tablixQueryNames.length !== widths.length) {
+                    shouldPersist = false;
+                }
+
+                if (!shouldPersist) {
+                    this.suppressNotification = false;
+                    this.callHostPersistProperties = false;
+                    return;
+                }
+
                 for (let colIndex = 0, len = widths.length; colIndex < len; colIndex++) {
                     let widthObj = {
                         queryName: this.tablixQueryNames[colIndex],
@@ -174,6 +187,7 @@ module powerbi.visuals.controls {
                     }
                     savedColumnWidths.push(widthObj);
                 }
+
                 this.tablixColumnWidthsObject = savedColumnWidths;
                 this.generateVisualObjectInstancesToPersist();
                 this.callHostPersistProperties = true;
@@ -203,8 +217,12 @@ module powerbi.visuals.controls {
 
             // Column Widths
             for (let columnWidthObject of this.tablixColumnWidthsObject) {
+                let queryNameSelector = columnWidthObject.queryName;
+                // Only persist width if we have a valid queryName to use as selector
+                if (!queryNameSelector)
+                    continue;
                 this.visualObjectInstancesToPersist.push({
-                    selector: { metadata: columnWidthObject.queryName },
+                    selector: { metadata: queryNameSelector },
                     objectName: 'general',
                     properties: {
                         columnWidth: data.SQExprBuilder.double(columnWidthObject.width)
@@ -242,12 +260,13 @@ module powerbi.visuals.controls {
             if (this.tablixQueryNames.length === 0)
                 return;
             for (let column of columnMetaData) {
-                if (!column.objects || !column.objects[TablixColumnWidthManager.columnWidthProp.objectName][TablixColumnWidthManager.columnWidthProp.propertyName])
+                let columnWidthPropValue = DataViewObjects.getValue<number>(column.objects, TablixColumnWidthManager.columnWidthProp);
+                if (columnWidthPropValue === null || columnWidthPropValue === undefined)
                     continue;
                 for (let colIndex = 0, len = this.tablixQueryNames.length; colIndex < len; colIndex++) {
                     let propertySelector = this.tablixQueryNames[colIndex];
                     if (column.queryName === propertySelector) {
-                        let columnWidth = <number>column.objects[TablixColumnWidthManager.columnWidthProp.objectName][TablixColumnWidthManager.columnWidthProp.propertyName];
+                        let columnWidth = columnWidthPropValue;
                         let index = this.isMatrix ? colIndex : colIndex + 1; // Table indices are offset with an empty header.
                         this.columnWidths[index] = columnWidth;
                         this.tablixColumnWidthsObject.push({

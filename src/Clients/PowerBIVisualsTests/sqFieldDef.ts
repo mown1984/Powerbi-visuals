@@ -24,12 +24,10 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
+// TODO: this file should be removed.
 module powerbi.data {
-
     /** Represents a simplified table aggregate/column/column aggregate reference within a SQ. */
-    export interface SQFieldDef { // TODO: Deprecate this interface
+    export interface SQFieldDef {
         schema: string;
         entity: string;
         column?: string;
@@ -44,48 +42,7 @@ module powerbi.data {
         }
     }
 
-    export module SQExprBuilder {
-        export function fieldDef(fieldDef: SQFieldDef): SQExpr {
-            return wrapAggr(fieldDef)
-                || wrapColumn(fieldDef)
-                || wrapMeasure(fieldDef)
-                || wrapEntity(fieldDef);
-        }
-
-        function wrapAggr(fieldDef: SQFieldDef): SQExpr {
-            let aggr = fieldDef.aggregate;
-            if (aggr !== undefined) {
-                let expr = wrapColumn(fieldDef) || wrapEntity(fieldDef);
-                if (expr)
-                    return aggregate(expr, aggr);
-               
-            }
-        }
-
-        function wrapColumn(fieldDef: SQFieldDef): SQExpr {
-            let column = fieldDef.column;
-            if (column) {
-                let entityExpr = wrapEntity(fieldDef);
-                if (entityExpr)
-                    return columnRef(entityExpr, column);
-            }
-        }
-
-        function wrapMeasure(fieldDef: SQFieldDef): SQExpr {
-            let measure = fieldDef.measure;
-            if (measure) {
-                let entityExpr = wrapEntity(fieldDef);
-                if (entityExpr)
-                    return measureRef(entityExpr, measure);
-            }
-        }
-
-        function wrapEntity(fieldDef: SQFieldDef): SQExpr {
-            return entity(fieldDef.schema, fieldDef.entity, fieldDef.entityVar);
-        }
-    }
-
-    class SQFieldDefinitionBuilder extends DefaultSQExprVisitor<SQFieldDef> {
+    class SQFieldDefinitionBuilder extends powerbi.data.DefaultSQExprVisitor<SQFieldDef> {
         public static instance: SQFieldDefinitionBuilder = new SQFieldDefinitionBuilder();
 
         public visitColumnRef(expr: SQColumnRefExpr): SQFieldDef {
@@ -123,5 +80,45 @@ module powerbi.data {
             return fieldDef;
         }
     }
+
+    export module SQExprBuilder {
+        export function fieldDef(fieldDef: SQFieldDef): SQExpr {
+            return wrapAggr(fieldDef)
+                || wrapColumn(fieldDef)
+                || wrapMeasure(fieldDef)
+                || wrapEntity(fieldDef);
+        }
+
+        function wrapAggr(fieldDef: SQFieldDef): SQExpr {
+            let aggr = fieldDef.aggregate;
+            if (aggr !== undefined) {
+                let expr = wrapColumn(fieldDef) || wrapEntity(fieldDef);
+                if (expr)
+                    return SQExprBuilder.aggregate(expr, aggr);
+
+            }
+        }
+
+        function wrapColumn(fieldDef: SQFieldDef): SQExpr {
+            let column = fieldDef.column;
+            if (column) {
+                let entityExpr = wrapEntity(fieldDef);
+                if (entityExpr)
+                    return columnRef(entityExpr, column);
+            }
+        }
+
+        function wrapMeasure(fieldDef: SQFieldDef): SQExpr {
+            let measure = fieldDef.measure;
+            if (measure) {
+                let entityExpr = wrapEntity(fieldDef);
+                if (entityExpr)
+                    return measureRef(entityExpr, measure);
+            }
+        }
+
+        function wrapEntity(fieldDef: SQFieldDef): SQExpr {
+            return entity(fieldDef.schema, fieldDef.entity, fieldDef.entityVar);
+        }
+    }
 }
- 

@@ -261,6 +261,33 @@ module powerbitests {
             expect(interactivityService.hasSelection()).toBeTruthy();
             expect((<powerbi.visuals.InteractivityService>interactivityService).legendHasSelection()).toBeFalsy();
         });
+
+        it('Slicer selection', () => {
+            selectableDataPoints[5].selected = true;
+            interactivityService.bind(selectableDataPoints, behavior, null, { overrideSelectionFromData: true });
+
+            // Multiple binds to simulate reloading (should not result in dupes in filter condition).
+            selectableDataPoints[5].selected = true;
+            interactivityService.bind(selectableDataPoints, behavior, null, { overrideSelectionFromData: true });
+
+            let onSelectSpy = spyOn(host, 'onSelect');
+
+            behavior.selectIndex(0, true);
+
+            expect(behavior.selections()).toEqual([true, false, false, false, false, true]);
+            expect(getSelectedIds(interactivityService)).toEqual([
+                selectableDataPoints[5].identity,
+                selectableDataPoints[0].identity,
+            ]);
+
+            expect(host.onSelect).toHaveBeenCalled();
+            expect(onSelectSpy.calls.argsFor(0)).toEqual([<powerbi.SelectEventArgs>{
+                data: [
+                    selectableDataPoints[5].identity.getSelector(),
+                    selectableDataPoints[0].identity.getSelector(),
+                ]
+            }]);
+        });
     });
 
     class MockBehavior implements powerbi.visuals.IInteractiveBehavior {
@@ -325,5 +352,19 @@ module powerbitests {
             }
             return true;
         }
+
+        public selections(): boolean[] {
+            let selectableDataPoints = this.selectableDataPoints;
+            let selections: boolean[] = [];
+            for (let dataPoint of selectableDataPoints) {
+                selections.push(!!dataPoint.selected);
+            }
+            return selections;
+        }
     }
-} 
+
+    function getSelectedIds(interactivityService: powerbi.visuals.IInteractivityService): SelectionId[] {
+        // Accessing a private member.
+        return interactivityService['selectedIds'];
+    }
+}

@@ -81,6 +81,16 @@ module powerbi.data {
             return new SQHierarchyLevelExpr(rewrittenArg, expr.level);
         }
 
+        public visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr): SQExpr {
+            let origArg = expr.arg,
+                rewrittenArg = origArg.accept(this);
+
+            if (origArg === rewrittenArg)
+                return expr;
+
+            return new SQPropertyVariationSourceExpr(rewrittenArg, expr.name, expr.property);
+        }
+
         public visitEntity(expr: SQEntityExpr): SQExpr {
             return expr;
         }

@@ -352,25 +352,18 @@ module powerbi.visuals {
 
         private takeSelectionStateFromDataPoints(dataPoints: SelectableDataPoint[]): void {
             debug.assertValue(dataPoints, "dataPoints");
-            let isInvertedSelectionMode = this.isInvertedSelectionMode;
-            let selectedIds = this.selectedIds;
 
-            if (isInvertedSelectionMode) {
-                for (let dataPoint of dataPoints) {
-                    if (!dataPoint.selected) {
-                        selectedIds.push(dataPoint.identity);
-                    }
+            let selectedIds: SelectionId[] = this.selectedIds;
+
+            // Replace the existing selectedIds rather than merging.
+            ArrayExtensions.clear(selectedIds);
+
+            let targetSelectedValue = !this.isInvertedSelectionMode;
+            for (let dataPoint of dataPoints) {
+                if (targetSelectedValue === !!dataPoint.selected) {
+                    selectedIds.push(dataPoint.identity);
                 }
             }
-            else {
-                for (let dataPoint of dataPoints) {
-                    if (dataPoint.selected) {
-                        selectedIds.push(dataPoint.identity);
-                    }
-                }
-            }
-
-            this.selectedIds = selectedIds;
         }
 
         /**
