@@ -386,6 +386,7 @@ gulp.task("build:package", function(callback) {
         "copy:package_css_unminified",
         "combine:internal_d_ts",
         "combine:external_d_ts",
+        "replace:references",
         "copy:package_sprite",
         callback);
 });
@@ -457,6 +458,17 @@ gulp.task("combine:external_d_ts", function() {
         destinationPath: "lib"
     });
 });
+
+gulp.task("replace:references", function () {
+    replaceInFile("./lib/powerbi-visuals.d.ts", /\/\/\/\s*<reference path.*\/>\s/g);
+});
+
+function replaceInFile(file, find, replace) {
+    var UTF8 = "utf8";
+    replace = replace || "";
+
+    fs.writeFileSync(file, fs.readFileSync(file, UTF8).replace(find, replace), UTF8);
+}
 
 /**
  * Concatenate given files into one.
