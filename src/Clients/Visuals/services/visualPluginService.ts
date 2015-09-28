@@ -271,6 +271,11 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
             }));
+            // Histogram
+            createPlugin(
+                plugins,
+                powerbi.visuals.plugins.histogram,
+                () => new Histogram());
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {

@@ -177,4 +177,6 @@
 
 /// <reference path="visuals/donutChart.ts"/>
 
+/// <reference path="visuals/histogram.ts"/>
+
 /// <reference path="plugins.ts"/>

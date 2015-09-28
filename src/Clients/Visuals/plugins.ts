@@ -314,4 +314,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
     };
+
+    export var histogram: IVisualPlugin = {
+        name: 'histogram',
+        capabilities: Histogram.Capabilities,
+        create: () => new Histogram()
+    };
 }

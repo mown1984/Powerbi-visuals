@@ -1,0 +1,644 @@
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the '"Software"'), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+/// <reference path="../_references.ts" />
+
+module powerbi.visuals {
+    import VisualDataRoleKind = powerbi.VisualDataRoleKind;
+    import SelectionManager = utility.SelectionManager;
+
+    export interface HistogramSettings {
+        displayName?: string;
+        fillColor?: string;
+        frequency: boolean;
+        bins?: number;
+    }
+
+    export interface HistogramDataView {
+        source?: number[];
+        ranges?: number[];
+        data?: D3.Layout.Bin[];
+        x?: D3.Scale.LinearScale;
+        y?: D3.Scale.LinearScale;
+        settings: HistogramSettings;
+    }
+
+    interface Brackets {
+        left: string;
+        right: string;
+    }
+
+    export class Histogram implements IVisual {
+        private static ClassName: string = 'histogram';
+        private static FrequencyText: string = 'Frequency';
+        private static DensityText: string = 'Density';
+
+        private static Properties = {
+            general: {
+                bins: <DataViewObjectPropertyIdentifier> {
+                    objectName: 'general',
+                    propertyName: 'bins'
+                },
+                frequency: <DataViewObjectPropertyIdentifier> {
+                    objectName: 'general',
+                    propertyName: 'frequency'
+                }
+            },
+            dataPoint: {
+                fill: <DataViewObjectPropertyIdentifier> {
+                    objectName: 'dataPoint',
+                    propertyName: 'fill'
+                }
+            }
+        };
+
+        private static DefaultHistogramSettings: HistogramSettings = {
+            frequency: true,
+            displayName: 'Histogram',
+            fillColor: 'teal',
+            bins: null
+        };
+
+        private static Axes: ClassAndSelector = {
+            'class': 'axes',
+            selector: '.axes'
+        };
+
+        private static Axis: ClassAndSelector = {
+            'class': 'axis',
+            selector: '.axis'
+        };
+
+        private static Columns: ClassAndSelector = {
+            'class': 'columns',
+            selector: '.columns'
+        };
+
+        private static Column: ClassAndSelector = {
+            'class': 'column',
+            selector: '.column'
+        };
+
+        private static Legends: ClassAndSelector = {
+            'class': 'legends',
+            selector: '.legends'
+        };
+
+        private static Legend: ClassAndSelector = {
+            'class': 'legend',
+            selector: '.legend'
+        };
+
+        public static Capabilities: VisualCapabilities = {
+            dataRoles: [{
+                name: 'X',
+                kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Axis')
+            }, {
+                name: 'Y',
+                kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Value')
+            }],
+            dataViewMappings: [{
+                categorical: {
+                    values: {
+                        select: [{
+                            bind: {
+                                to: 'X'
+                            }
+                        }]
+                    }
+                }
+            }],
+            objects: {
+                general: {
+                    displayName: data.createDisplayNameGetter('Visual_General'),
+                    properties: {
+                        formatString: {
+                            type: {
+                                formatting: {
+                                    formatString: true
+                                }
+                            },
+                        },
+                        bins: {
+                            displayName: 'Bins',
+                            type: { numeric: true }
+                        },
+                        frequency: {
+                            displayName: 'Frequency',
+                            type: { bool: true }
+                        }
+                    },
+                },
+                datapoint: {
+                    displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                    properties: {
+                        color: {
+                            displayName: 'Fill Color',
+                            type: {
+                                fill: {
+                                    solid: {
+                                        color: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        private ColumnPadding: number = 1;
+        private MinColumnHeight: number = 1;
+        private MinOpacity: number = 0.3;
+        private MaxOpacity: number = 1;
+        private Duration: number = 200;
+        private QuantityLabelsOnAxisY: number = 5;
+        private TooltipDisplayName: string = 'Range';
+        private MinQuantityBins: number = 1;
+        private SeparatorNumbers: string = ', ';
+
+        private ExcludeBrackets: Brackets = {
+            left: '(',
+            right: ')'
+        };
+
+        private IncludeBrackets: Brackets = {
+            left: '[',
+            right: ']'
+        };
+
+        private Margin: IMargin = {
+            top: 15,
+            right: 15,
+            bottom: 75,
+            left: 75
+        };
+
+        private viewport: IViewport;
+        private dataView: DataView;
+        private visualsOptions: VisualInitOptions;
+        private selectiionManager: SelectionManager;
+
+        private root: D3.Selection;
+        private main: D3.Selection;
+        private axes: D3.Selection;
+        private axisX: D3.Selection;
+        private axisY: D3.Selection;
+        private legend: D3.Selection;
+        private columns: D3.Selection;
+
+        public init(visualsOptions: VisualInitOptions): void {
+            this.visualsOptions = visualsOptions;
+
+            this.root = d3.select(visualsOptions.element.get(0))
+                .append('svg')
+                .classed(Histogram.ClassName, true);
+
+            this.main = this.root.append('g');
+
+            this.axes = this.main
+                .append('g')
+                .classed(Histogram.Axes['class'], true);
+
+            this.axisX = this.axes
+                .append('g')
+                .classed(Histogram.Axis['class'], true);
+
+            this.axisY = this.axes
+                .append('g')
+                .classed(Histogram.Axis['class'], true);
+
+            this.legend = this.main
+                .append('g')
+                .classed(Histogram.Legends['class'], true);
+
+            this.columns = this.main
+                .append('g')
+                .classed(Histogram.Columns['class'], true);
+
+            this.selectiionManager = new SelectionManager({
+                hostServices: visualsOptions.host
+            });
+        }
+
+        public converter(dataView: DataView): HistogramDataView {
+            let histogramSettings: HistogramSettings,
+                histogramLayout: D3.Layout.HistogramLayout,
+                values: number[],
+                ranges: number[] = [],
+                data: D3.Layout.Bin[],
+                x: D3.Scale.LinearScale,
+                y: D3.Scale.LinearScale;
+
+            histogramSettings = this.parseOptions(dataView);
+
+            if (!histogramSettings) {
+                return null;
+            }
+
+            if (!dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values ||
+                !(dataView.categorical.values[0].values instanceof Array)) {
+                return null;
+            }
+
+            values = dataView.categorical.values[0].values;
+
+            histogramLayout = d3.layout.histogram();
+
+            if (histogramSettings.bins && histogramSettings.bins > this.MinQuantityBins) {
+                histogramLayout = histogramLayout.bins(histogramSettings.bins);
+            }
+
+            data = histogramLayout
+                .frequency(histogramSettings.frequency)
+                (values);
+
+            x = d3.scale.linear()
+                .domain([
+                    d3.min(data, (item) => d3.min(item)),
+                    d3.max(data, (item) => d3.max(item))
+                ])
+                .range([0, this.viewport.width]);
+
+            y = d3.scale.linear()
+                .domain([
+                    0,
+                    d3.max(data, (item) => item.y)
+                ])
+                .range([this.viewport.height, 0]);
+
+            if (data[0] && data[0].dx) {
+                ranges = this.getRanges(values, data.length, data[0].dx);
+            }
+
+            return {
+                source: values,
+                data: data,
+                x: x,
+                y: y,
+                settings: histogramSettings,
+                ranges: ranges
+            };
+        }
+
+        private parseOptions(dataView: DataView): HistogramSettings {
+            let histogramSettings: HistogramSettings = <HistogramSettings>{},
+                objects: DataViewObjects;
+
+            if (!dataView ||
+                !dataView.metadata ||
+                !dataView.metadata.columns ||
+                !dataView.metadata.columns[0] ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0]) {
+                return null;
+            }
+
+            histogramSettings.displayName = Histogram.DefaultHistogramSettings.displayName;
+            histogramSettings.fillColor = Histogram.DefaultHistogramSettings.fillColor;
+            histogramSettings.bins = Histogram.DefaultHistogramSettings.bins;
+            histogramSettings.frequency = Histogram.DefaultHistogramSettings.frequency;
+
+            objects = dataView.metadata.columns[0].objects;
+
+            histogramSettings.displayName =
+                dataView.metadata.columns[0].displayName ||
+                    Histogram.DefaultHistogramSettings.displayName;
+
+            if (objects) {
+                let binsNumber: number;
+
+                histogramSettings.fillColor = DataViewObjects.getFillColor(
+                    objects,
+                    Histogram.Properties.dataPoint.fill,
+                    Histogram.DefaultHistogramSettings.fillColor);
+
+                binsNumber = Number(DataViewObjects.getValue<number>(
+                    objects,
+                    Histogram.Properties.general.bins,
+                    Histogram.DefaultHistogramSettings.bins));
+
+                if (!binsNumber || isNaN(binsNumber) || binsNumber <= 1) {
+                    histogramSettings.bins = Histogram.DefaultHistogramSettings.bins;
+                } else {
+                    histogramSettings.bins = binsNumber;
+                }
+
+                histogramSettings.frequency = DataViewObjects.getValue<boolean>(
+                    objects,
+                    Histogram.Properties.general.frequency,
+                    Histogram.DefaultHistogramSettings.frequency);
+            }
+
+            return histogramSettings;
+        }
+
+        public update(visualUpdateOptions: VisualUpdateOptions): void {
+            if (!visualUpdateOptions.dataViews && !visualUpdateOptions.dataViews[0]) {
+                return;
+            }
+
+            let dataView: DataView = this.dataView = visualUpdateOptions.dataViews[0],
+                histogramDataView: HistogramDataView;
+
+            this.setSize(visualUpdateOptions.viewport);
+            this.updateElements();
+
+            histogramDataView = this.converter(dataView);
+
+            this.render(histogramDataView);
+        }
+
+        private setSize(viewport: IViewport): void {
+            let height: number,
+                width: number;
+
+            height =
+                viewport.height -
+                this.Margin.top -
+                this.Margin.bottom;
+
+            width =
+                viewport.width -
+                this.Margin.left -
+                this.Margin.right;
+
+            this.viewport = {
+                height: height,
+                width: width
+            };
+        }
+
+        private updateElements(): void {
+            let height: number,
+                width: number;
+
+            height =
+                this.viewport.height +
+                this.Margin.top +
+                this.Margin.bottom;
+
+            width =
+                this.viewport.width +
+                this.Margin.left +
+                this.Margin.right;
+
+            this.root.attr({
+                'height': height,
+                'width': width
+            });
+
+            this.main.attr(
+                'transform',
+                SVGUtil.translate(this.Margin.left, this.Margin.top));
+
+            this.axisX.attr(
+                'transform',
+                SVGUtil.translate(0, this.viewport.height));
+        }
+
+        private render(histogramDataView: HistogramDataView): void {
+            if (!histogramDataView || !histogramDataView.settings) {
+                return;
+            }
+
+            this.renderAxes(histogramDataView);
+            this.renderColumns(histogramDataView);
+            this.renderLegend(histogramDataView);
+        }
+
+        private renderColumns(histogramDataView: HistogramDataView): void {
+            let self: Histogram = this,
+                data: D3.Layout.Bin[] = histogramDataView.data,
+                y: D3.Scale.LinearScale = histogramDataView.y,
+                countOfValues: number = data.length,
+                widthOfColumn: number =
+                    this.viewport.width / countOfValues - this.ColumnPadding,
+                columnsSelection: D3.UpdateSelection,
+                columnElements: D3.Selection = this.main
+                    .select(Histogram.Columns.selector)
+                    .selectAll(Histogram.Column.selector);
+
+            columnsSelection = columnElements.data(data);
+
+            columnsSelection
+                .enter()
+                .append('svg:rect');
+
+            columnsSelection
+                .attr('x', this.ColumnPadding / 2)
+                .attr('width', widthOfColumn)
+                .attr('height', (item) => {
+                    return this.getColumnHeight(item, y);
+                })
+                .attr('fill', histogramDataView.settings.fillColor)
+                .attr('class', Histogram.Column['class'])
+                .attr('transform', (item, index) => {
+                    return SVGUtil.translate(
+                        widthOfColumn * index + this.ColumnPadding * index,
+                        y(item.y) - (this.ColumnPadding / 2.5));
+                })
+                .attr('value', (item) => item.y)
+                .attr('values', (item) => item.slice())
+                .on('click', function() {
+                    let element = d3.select(this);
+
+                    self.setOpacity(columnsSelection, true);
+                    self.setOpacity(element, false);
+
+                    d3.event.stopPropagation();
+                })
+                .classed(Histogram.Column['class']);
+
+            this.renderTooltip(histogramDataView, columnsSelection);
+
+            columnsSelection
+                .exit()
+                .remove();
+
+            d3.selection()
+                .on('click', () => {
+                    this.setOpacity(columnsSelection);
+                });
+        }
+
+        private renderTooltip(histogramDataView: HistogramDataView, selection: D3.UpdateSelection) {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                let range: string =
+                    this.getRangeByIndex(histogramDataView.ranges, tooltipEvent.index);
+
+                if (tooltipEvent && tooltipEvent.data && tooltipEvent.data.y) {
+                    return [{
+                        displayName: this.getLegendText(histogramDataView),
+                        value: tooltipEvent.data.y
+                    }, {
+                        displayName: this.TooltipDisplayName,
+                        value: range
+                    }];
+                }
+            });
+        }
+
+        private setOpacity(element: D3.UpdateSelection | D3.Selection, isHide: boolean = false): void {
+            element
+                .transition()
+                .duration(this.Duration)
+                .style(
+                    'fill-opacity',
+                    isHide
+                        ? this.MinOpacity
+                        : this.MaxOpacity);
+        }
+
+        private getColumnHeight(column, y: D3.Scale.LinearScale): number {
+            let height: number =
+                this.viewport.height - y(column.y);
+
+            return height > 0
+                ? height
+                : this.MinColumnHeight;
+        }
+
+        private renderAxes(histogramDataView: HistogramDataView): void {
+            let x: D3.Scale.LinearScale = histogramDataView.x,
+                y: D3.Scale.LinearScale = histogramDataView.y,
+                xAxis: D3.Svg.Axis,
+                yAxis: D3.Svg.Axis;
+
+            xAxis = d3.svg.axis()
+                .scale(x)
+                .orient('bottom')
+                .tickValues(histogramDataView.ranges);
+
+            yAxis = d3.svg.axis()
+                .scale(y)
+                .orient('left')
+                .ticks(this.QuantityLabelsOnAxisY);
+
+            this.axisX
+                .call(xAxis);
+
+            this.axisY
+                .call(yAxis);
+        }
+
+        private getRanges(values: number[], countOfRanges: number, step: number): number[] {
+            let minValue: number = d3.min(values),
+                labels: number[] = [];
+
+            for (let i = 0; i <= countOfRanges; i++) {
+                labels.push(minValue + i * step);
+            }
+
+            return labels;
+        }
+
+        private getRangeByIndex(ranges: number[], index: number): string {
+            let leftBracket: string,
+                rightBracket: string,
+                range: number[] = ranges.slice(index, index + 2);
+
+            leftBracket = index === 0
+                ? this.IncludeBrackets.left
+                : this.ExcludeBrackets.left;
+
+            rightBracket = this.IncludeBrackets.right;
+
+            return [
+                leftBracket,
+                range[0],
+                this.SeparatorNumbers,
+                range[1],
+                rightBracket
+            ].join('');
+        }
+
+        private renderLegend(histogramDataView: HistogramDataView): void {
+            let legendElements: D3.Selection,
+                legendSelection: D3.UpdateSelection,
+                datalegends = this.getDataLegends(histogramDataView);
+
+            legendElements = this.main
+                .select(Histogram.Legends.selector)
+                .selectAll(Histogram.Legend.selector);
+
+            legendSelection = legendElements.data(datalegends);
+
+            legendSelection
+                .enter()
+                .append('svg:text');
+
+            legendSelection
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('dx', (item) => item.dx)
+                .attr('dy', (item) => item.dy)
+                .attr('transform', (item) => item.transform)
+                .attr('class', Histogram.Legend['class'])
+                .text((item) => item.text)
+                .classed(Histogram.Legend['class'], true);
+
+            legendSelection
+                .exit()
+                .remove();
+        }
+
+        private getDataLegends(histogramDataView: HistogramDataView) {
+            let bottomLegendText: string = this.getLegendText(histogramDataView);
+
+            return [{
+                transform: SVGUtil.translate(
+                    this.viewport.width / 2 - this.Margin.left / 2,
+                    this.viewport.height + this.Margin.bottom / 2),
+                text: histogramDataView.settings.displayName,
+                dx: '3em'
+            }, {
+                transform: SVGUtil.translateAndRotate(
+                    -(this.Margin.left / 2),
+                    this.viewport.height / 2 + this.Margin.top,
+                    0,
+                    0,
+                    270),
+                text: bottomLegendText,
+                dx: '1em'
+            }];
+        }
+
+        private getLegendText(histogramDataView: HistogramDataView): string {
+            return histogramDataView.settings.frequency
+                ? Histogram.FrequencyText
+                : Histogram.DensityText;
+        }
+
+        public destroy(): void {
+            this.root = null;
+        }
+    }
+}
