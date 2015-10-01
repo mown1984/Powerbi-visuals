@@ -262,7 +262,7 @@ module powerbi.visuals {
 
         }
 
-        public update(options: VisualUpdateOptions) {
+        public update(options: VisualUpdateOptions): void {
             if (!options.dataViews || !options.dataViews[0]) return;
             let dataView = this.dataView = options.dataViews[0];
             let data = RadarChart.converter(dataView, this.colors);
@@ -294,7 +294,7 @@ module powerbi.visuals {
             this.drawChart(dataPoints, duration);
         }
 
-        private drawCircularSegments(dataPoints) {
+        private drawCircularSegments(values: string[]): void {
 
             const angle: number = this.angle,
                 factor: number = RadarChart.SegmentFactor,
@@ -311,7 +311,7 @@ module powerbi.visuals {
                 const levelFactor: number = radius * ((level + 1) / levels);
                 const transform: number = -1 * levelFactor;
 
-                for (let i = 0; i < dataPoints.length; i++) {
+                for (let i = 0; i < values.length; i++) {
                     data.push({
                         x1: levelFactor * (1 - factor * Math.sin(i * angle)),
                         y1: levelFactor * (1 - factor * Math.cos(i * angle)),
@@ -336,7 +336,7 @@ module powerbi.visuals {
                 .classed(RadarChart.SegmentNode.class, true);
         }
 
-        private drawAxes(dataPoints) {
+        private drawAxes(values: string[]): void {
 
             const angle: number = this.angle,
                 radius: number = this.radius;
@@ -345,7 +345,7 @@ module powerbi.visuals {
                 .select(RadarChart.Axis.selector)
                 .selectAll(RadarChart.AxisNode.selector);
 
-            let axis = selection.data(dataPoints);
+            let axis = selection.data(values);
 
             axis
                 .enter()
@@ -361,7 +361,7 @@ module powerbi.visuals {
             axis.exit().remove();
         }
 
-        private drawAxesLabels(dataPoints) {
+        private drawAxesLabels(values: string[]): void {
 
             const angle: number = this.angle,
                 radius: number = this.radius;
@@ -370,7 +370,7 @@ module powerbi.visuals {
                 .select(RadarChart.Axis.selector)
                 .selectAll(RadarChart.AxisLabel.selector);
 
-            let labels = selection.data(dataPoints);
+            let labels = selection.data(values);
 
             labels
                 .enter()
@@ -392,7 +392,7 @@ module powerbi.visuals {
             labels.exit().remove();
         }
 
-        private drawChart(dataPoints: RadarChartDatapoint[][], duration: number) {
+        private drawChart(dataPoints: RadarChartDatapoint[][], duration: number): void {
             const angle: number = this.angle,
                   radius: number = this.radius,
                   opacity: number = .5,
@@ -453,11 +453,11 @@ module powerbi.visuals {
             dots.enter()
                 .append('svg:circle')
                 .classed(RadarChart.ChartDot.class, true);
-
             dots.attr('r', dotRadius)
                 .attr('cx', (value, i) => y(value.y) * Math.sin(i * angle))
                 .attr('cy', (value, i) => y(value.y) * Math.cos(i * angle))
                 .style('fill', d => d.color);
+            dots.exit().remove();
 
             selection.exit().remove();
         }
