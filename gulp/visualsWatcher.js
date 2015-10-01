@@ -23,30 +23,11 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require("gulp");
-var merge = require("merge2");
-var concat = require("gulp-concat");
-var sourcemaps = require("gulp-sourcemaps");
-var uglify = require("gulp-uglifyjs");
-var rename = require("gulp-rename");
-var runSequence = require("run-sequence");
-var ts = require("gulp-typescript");
-var less = require("gulp-less");
-var minifyCSS = require("gulp-minify-css");
-var typedoc = require("gulp-typedoc"); 
-var spritesmith = require("gulp.spritesmith");
-var git = require("gulp-git");
-var tslint = require("gulp-tslint");
-var download = require("gulp-download");
-var unzip = require("gulp-unzip");
-var fs = require("fs");
-var minimist = require("minimist");
-var express = require("express");
-var open = require("gulp-open");
-var gutil = require("gulp-util");
-var cliParser = require("./cliParser.js");
-var common = require("./common.js");
-var visualsBuild = require("./visualsBuild.js");
+var gulp = require("gulp"),
+    runSequence = require("run-sequence"),
+    tslint = require("gulp-tslint"),
+    gutil = require("gulp-util"),
+    visualsBuild = require("./visualsBuild.js");
 
 var lintErrors = false;
 var lintReporter = function (output, file, options) {

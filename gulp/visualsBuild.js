@@ -23,34 +23,23 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require("gulp");
-var merge = require("merge2");
-var concat = require("gulp-concat");
-var sourcemaps = require("gulp-sourcemaps");
-var uglify = require("gulp-uglifyjs");
-var rename = require("gulp-rename");
-var runSequence = require("run-sequence");
-var ts = require("gulp-typescript");
-var less = require("gulp-less");
-var minifyCSS = require("gulp-minify-css");
-var typedoc = require("gulp-typedoc"); 
-var spritesmith = require("gulp.spritesmith");
-var git = require("gulp-git");
-var tslint = require("gulp-tslint");
-var download = require("gulp-download");
-var unzip = require("gulp-unzip");
-var fs = require("fs");
-var minimist = require("minimist");
-var express = require("express");
-var open = require("gulp-open");
-var gutil = require("gulp-util");
-var cliParser = require("./cliParser.js");
-var common = require("./common.js");
+var gulp = require("gulp"),
+    merge = require("merge2"),
+    concat = require("gulp-concat"),
+    sourcemaps = require("gulp-sourcemaps"),
+    uglify = require("gulp-uglifyjs"),
+    rename = require("gulp-rename"),
+    runSequence = require("run-sequence"),
+    ts = require("gulp-typescript"),
+    less = require("gulp-less"),
+    minifyCSS = require("gulp-minify-css"),
+    tslint = require("gulp-tslint"),
+    spritesmith = require("gulp.spritesmith"),
+    cliParser = require("./cliParser.js"),
+    common = require("./common.js");
 
 var isDebug = Boolean(cliParser.cliOptions.debug);
-
 var filesOption = common.getOptionFromCli(cliParser.cliOptions.files);
-
 var jsUglifyOptions = {
     compress: {
         drop_console: true,
@@ -77,11 +66,9 @@ var jsUglifyOptions = {
         }
     }
 };
-
 var internalsPaths = ["src/Clients/VisualsCommon/obj/VisualsCommon.js",
     "src/Clients/VisualsData/obj/VisualsData.js",
     "src/Clients/Visuals/obj/Visuals.js"];
-
 var externalsPath = [
     "src/Clients/Externals/ThirdPartyIP/JQuery/2.1.3/jquery.min.js",
     "src/Clients/Externals/ThirdPartyIP/D3/d3.min.js",

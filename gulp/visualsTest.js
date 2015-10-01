@@ -25,15 +25,14 @@
  */
 var gulp = require("gulp"),    
     runSequence = require("run-sequence"),
-    rename = require("gulp-rename"),
-    common = require("./common.js"),
-    visualsCommon = require("./visualsCommon.js"),
-    cliParser = require("./cliParser.js"),
+    rename = require("gulp-rename"),    
     fs = require("fs"),
     jasmineBrowser = require("gulp-jasmine-browser"),
-	openInBrowser = false;
+    common = require("./common.js"),    
+    cliParser = require("./cliParser.js"),
+    visualsCommon = require("./visualsCommon.js");
 
-openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
+var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
 
 /** ----------------------------- TESTS ------------------------------------------- */
 gulp.task("copy:internal_dependencies_visuals_tests", function () {
@@ -58,7 +57,7 @@ gulp.task("copy:external_dependencies_visuals_tests", function () {
         "node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
         "node_modules/jasmine-core/lib/jasmine-core/boot.js",
         "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"
-    ])
+        ])
         .pipe(gulp.dest("VisualsTests"));
 });
 
