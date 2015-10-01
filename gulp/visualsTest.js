@@ -165,7 +165,7 @@ gulp.task("run:performance_tests", function (callback) {
 gulp.task("test:visuals", function (callback) {
     runSequence(
         "build:visuals",
-        "build:visuals_tests",
+        "build:visualsTests:ts",
         "install:jasmine",
         "install:phantomjs",
         "combine:all",

@@ -46,7 +46,7 @@ build_script:
 #---------------------------------#
 
 test_script:
-  - gulp build:visuals_tests
+  - gulp build:visualsTests:ts
   - gulp install:jasmine
   - gulp install:phantomjs
   - gulp combine:all

@@ -66,7 +66,8 @@ var jsUglifyOptions = {
         }
     }
 };
-var internalsPaths = ["src/Clients/VisualsCommon/obj/VisualsCommon.js",
+var internalsPaths = [
+    "src/Clients/VisualsCommon/obj/VisualsCommon.js",
     "src/Clients/VisualsData/obj/VisualsData.js",
     "src/Clients/Visuals/obj/Visuals.js"];
 var externalsPath = [
@@ -75,8 +76,7 @@ var externalsPath = [
     "src/Clients/Externals/ThirdPartyIP/LoDash/lodash.min.js",
     "src/Clients/Externals/ThirdPartyIP/GlobalizeJS/globalize.min.js",
     "src/Clients/Externals/ThirdPartyIP/GlobalizeJS/globalize.culture.en-US.js",
-    "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js"
-];
+    "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js"];
 
 module.exports = {
     getBuildPaths : getBuildPaths,
@@ -149,23 +149,23 @@ function buildProject(projectPath, outFileName, includePaths) {
         ]);
 }
 
-gulp.task("build:visuals_common", function () {
+gulp.task("build:visualsCommon:ts", function () {
     return buildProject("src/Clients/VisualsCommon", "VisualsCommon");
 });
 
-gulp.task("build:visuals_data", function () {
+gulp.task("build:visualsData:ts", function () {
     return buildProject("src/Clients/VisualsData", "VisualsData");
 });
 
-gulp.task("build:visuals_project:ts", function () {
+gulp.task("build:visualsProject:ts", function () {
     return buildProject("src/Clients/Visuals", "Visuals");
 });
 
-gulp.task("build:visuals_playground_project", function () {
+gulp.task("build:visualsPlayground:ts", function () {
     return buildProject("src/Clients/PowerBIVisualsPlayground", "PowerBIVisualsPlayground");
 });
 
-gulp.task("build:visuals_tests", function () {
+gulp.task("build:visualsTests:ts", function () {
     return buildProject(
         "src/Clients/PowerBIVisualsTests",
         "PowerBIVisualsTests",
@@ -173,15 +173,17 @@ gulp.task("build:visuals_tests", function () {
 });
 
 /* --------------------------- LESS/CSS ---------------------------------- */
-gulp.task("build:visuals_sprite", function () {
-    var spriteData = gulp.src("src/Clients/Visuals/images/sprite-src/*.png").pipe(spritesmith({
-        imgName: "images/visuals.sprites.png",
-        cssName: "styles/sprites.less"
-    }));
+gulp.task("build:visuals:sprite", function () {
+    var spriteData = gulp.src("src/Clients/Visuals/images/sprite-src/*.png")
+        .pipe(spritesmith({
+            imgName: "images/visuals.sprites.png",
+            cssName: "styles/sprites.less"
+        }));
 
     return spriteData.pipe(gulp.dest("src/Clients/Visuals/"));
 });
-gulp.task("build:visuals_less", function () {
+
+gulp.task("build:visuals:less", function () {
     var css = gulp.src(["src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css",
        			 "src/Clients/Visuals/styles/visuals.less"])
         .pipe(less())
@@ -285,24 +287,27 @@ gulp.task("copy:image_dependencies_visuals_playground", function () {
 });
 /* --------------------------- BUILD SEQUENCIES ---------------------------------- */
 gulp.task("build:visuals_project", function (callback) {
-    runSequence("build:visuals_project:ts", "build:visuals_sprite", "build:visuals_less", callback);
+    return runSequence(
+        "build:visualsProject:ts",
+        "build:visuals:sprite",
+        "build:visuals:less",
+        callback);
 });
 
 gulp.task("build:visuals:projects", function (callback) {
     runSequence(
-        "build:visuals_common",
-        "build:visuals_data",
+        "build:visualsCommon:ts",
+        "build:visualsData:ts",
         "build:visuals_project",
         "combine:internal_js",
         "combine:external_js",
-        //"combine:all",
         "build:visuals_playground",
         callback);
 });
 
 gulp.task("build:visuals_playground", function (callback) {
     runSequence(
-        "build:visuals_playground_project",
+        "build:visualsPlayground:ts",
         "copy:internal_dependencies_visuals_playground",
         "copy:image_dependencies_visuals_playground",
         callback);
@@ -378,8 +383,8 @@ gulp.task("build:package_unminified", function (callback) {
 
 gulp.task("build:package_projects", function (callback) {
     runSequence(
-        "build:visuals_common",
-        "build:visuals_data",
+        "build:visualsCommon:ts",
+        "build:visualsData:ts",
         "build:visuals_project",
         "combine:internal_js",
         "combine:external_js",

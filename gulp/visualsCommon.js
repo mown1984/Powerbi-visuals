@@ -25,7 +25,9 @@
  */
 var gulp = require("gulp"),
     express = require("express"),
-    open = require("gulp-open");
+    open = require("gulp-open"),
+    consume = require('stream-consume'),
+    q = require('q');
 
 module.exports = {
     runHttpServer : runHttpServer
@@ -68,4 +70,16 @@ function runHttpServer(settings, callback) {
         
         process.exit();
     });
+}
+
+function consumeStream(stream) {
+    var deferred = q.defer();
+    stream
+        .on('end', deferred.resolve)
+        .on('error', deferred.reject);
+
+    // Ensure that the stream completes
+    consume(stream);
+
+    return deferred.promise;
 }

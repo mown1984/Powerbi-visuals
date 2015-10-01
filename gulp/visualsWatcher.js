@@ -49,7 +49,7 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visuals_common");
+                    runSequence("build:visualsCommon:ts");
             }));
     });
     gulp.watch(visualsBuild.getBuildPaths("src/Clients/VisualsData", "VisualsData")).on("change", function (file) {
@@ -57,7 +57,7 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visuals_data");
+                    runSequence("build:visualsData:ts");
             }));
     });
     gulp.watch(visualsBuild.getBuildPaths("src/Clients/Visuals", "Visuals")).on("change", function (file) {
@@ -65,7 +65,7 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visuals_project:ts");
+                    runSequence("build:visualsProject:ts");
             }));
     });
     gulp.watch(visualsBuild.getBuildPaths("src/Clients/PowerBIVisualsPlayground", "PowerBIVisualsPlayground")).on("change", function (file) {
@@ -77,9 +77,9 @@ gulp.task("start:watchers", function (callback) {
             }));
     });
 
-    gulp.watch("src/Clients/Visuals/images/sprite-src/*.png", ["build:visuals_sprite"]);
+    gulp.watch("src/Clients/Visuals/images/sprite-src/*.png", ["build:visuals:sprite"]);
     gulp.watch(["src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css", "src/Clients/Visuals/styles/*.less", "src/Clients/StyleLibrary/less/*.less", "src/Clients/PowerBI/styles/*.less",
-     "src/Clients/Visuals/images/visuals.sprites.png", "src/Clients/Visuals/styles/sprites.less"], ["build:visuals_less"]);
+     "src/Clients/Visuals/images/visuals.sprites.png", "src/Clients/Visuals/styles/sprites.less"], ["build:visuals:less"]);
     gulp.watch(visualsBuild.externalsPath, ["combine:external_js"]).on("change", function (file) {
                     runSequence("combine:external_js", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
     });
