@@ -1,4 +1,3 @@
-/// <binding ProjectOpened='continuous_build_debug' />
 /*
  *  Power BI Visualizations
  *
@@ -24,21 +23,19 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require('gulp'),
-    runSequence = require("run-sequence");
-	
-require('./gulp/visualsTest.js');
-require('./gulp/visualsDownload.js');
-require('./gulp/visualsPlayground.js');
-require('./gulp/visualsBuild.js');
-require('./gulp/visualsWatcher.js');
-	
-gulp.task("build", function (callback) {
-    runSequence("build:visuals", callback);
+var gulp = require("gulp"),
+    runSequence = require("run-sequence"),
+    visualsCommon = require("./visualsCommon.js");
+
+gulp.task("run:playground", function (callback) {
+    visualsCommon.runHttpServer({
+        path: "src/Clients/PowerBIVisualsPlayground"
+    }, callback);
 });
 
-gulp.task("test", function (callback) {
-    runSequence("test:visuals", callback);
+gulp.task("build:run:playground", function (callback) {
+    runSequence("build:visuals", "run:playground", callback);
 });
 
-gulp.task("default", ["build:visuals:debug"]);
+
+
