@@ -28,14 +28,28 @@
 
 module powerbi.visuals {
     import SelectionManager = utility.SelectionManager;
-    
  
-    export interface RadarDatapoint {
-        color: string;
-        value: number;
-        label: string;
-        selector: SelectionId;
-        tooltipInfo: TooltipDataItem[];
+ 
+    export interface RadarChartConstructorOptions {
+        animator?: IGenericAnimator;
+        svg?: D3.Selection;
+    }
+
+    
+    export interface RadarChartDatapoint {
+        x: number;
+        y: number;
+        y0?: number;
+        color?: string;
+        value?: number;
+        label?: string;
+        identity: SelectionId;
+        tooltipInfo?: TooltipDataItem[];
+    }
+    
+    export interface RadarChartData {
+        dataPoints: RadarChartDatapoint[][];
+        legendData: LegendData;
     }
 
     export class RadarChart implements IVisual {
@@ -80,8 +94,8 @@ module powerbi.visuals {
             }
         };
 
-        private static VisualClassName = 'RadarChart';
-        
+        private static VisualClassName = 'radarChart';
+
         private static Segments: ClassAndSelector = {
             class: 'segments',
             selector: '.segments'
@@ -91,8 +105,7 @@ module powerbi.visuals {
             class: 'segmentNode',
             selector: '.segmentNode'
         };
-                
-        
+
         private static Axis: ClassAndSelector = {
             class: 'axis',
             selector: '.axis'
@@ -107,8 +120,7 @@ module powerbi.visuals {
             class: 'axisLabel',
             selector: '.axisLabel'
         };
-                
-        
+
         private static Chart: ClassAndSelector = {
             class: 'chart',
             selector: '.chart'
@@ -119,94 +131,112 @@ module powerbi.visuals {
             selector: '.chartNode'
         };
 
+        private static ChartPolygon: ClassAndSelector = {
+            class: 'chartPolygon',
+            selector: '.chartPolygon'
+        };
+
         private static ChartPoint: ClassAndSelector = {
             class: 'chartPoint',
             selector: '.chartPoint'
         };
-
-        private root: D3.Selection;
+      
+        private svg: D3.Selection;
         private segments: D3.Selection;
         private axis: D3.Selection;
         private chart: D3.Selection;
-        
+
         private mainGroupElement: D3.Selection;
         private colors: IDataColorPalette;
         private selectionManager: SelectionManager;
         private dataView: DataView;
         private viewport: IViewport;
 
+        private animator: IGenericAnimator;             
         private margin: IMargin;
-        
-        private SEGMENT_LEVELS: number = 6;
-        private SEGMENT_FACTOR: number = 1;
-        private RADIANS: number = 2 * Math.PI;
-        private SCALE: number = 1;
+        private legend: ILegend;
+
+        private static segmentLevels: number = 6;
+        private static segmentFactor: number = 1;
+        private static radians: number = 2 * Math.PI;
+        private static scale: number = 1;
         private angle: number;
         private radius: number;
-        
-        private static createDataPoints(values, categories: DataViewCategoricalColumn, maxScore): RadarDatapoint[] {
-            
-            return values.map((value, i) => {
-                
-                const max = Math.max(value, 0);
-                const score = max / maxScore;
 
-                return {
-                    color: "white",
-                    value: value,
-                    score: score,
-                    label: categories.values[i],
-                    selector: '.value',
-                    tooltipInfo: []
-                };
-            });            
-        }
-        
-        public static converter(dataView: DataView, colors: IDataColorPalette) {
-            let catDv: DataViewCategorical = dataView.categorical;
-            let categories: DataViewCategoricalColumn = catDv.categories[0];
+        public static converter(dataView: DataView, colors: IDataColorPalette): RadarChartData {
+            let catDv: DataViewCategorical = dataView.categorical;            
+            let values = catDv.values;
             
-            const maxScore = d3.max(dataView.categorical.values, item => {
-                return d3.max(item.values); 
-            });
-              
-            let values = dataView.categorical.values.map((item, i) => {
-                
-                let dataPoints: RadarDatapoint[] = this.createDataPoints(item.values, categories, maxScore);
-                
-                return {
-                    displayName: item.source.displayName,
-                    color: colors.getColorByIndex(i).value,
-                    data: dataPoints,
-                    //identity: identity,
+            let dataPoints: RadarChartDatapoint[][] = [];
+            let legendData: LegendData = {
+                dataPoints: [],
+                title: values[0].source.displayName
+            };
+            
+            for (let i = 0, iLen = values.length; i < iLen; i++) {
+                let color = colors.getColorByIndex(i).value;
+                dataPoints.push([]);
+                legendData.dataPoints.push({
+                    label: values[i].source.groupName,
+                    color: color,
+                    icon: LegendIcon.Box,
                     selected: false,
-                };                
-            });
+                    identity: null
+                });
+                for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
+                    let id = SelectionIdBuilder
+                        .builder()
+                        .withSeries(dataView.categorical.values, dataView.categorical.values[i])
+                        .createSelectionId();
+                    dataPoints[i].push({
+                        x: k,
+                        y: values[i].values[k],
+                        color: color,
+                        identity: id
+                    });
+                }
+            }
             
             return {
-                categories: categories.values,
-                values: values
+                dataPoints: dataPoints,
+                legendData: legendData
             };
+        }
+
+        public constructor(options?: RadarChartConstructorOptions) {
+
+            if (options && options.svg) {
+                this.svg = options.svg;
+            }
+            if (options && options.animator) {
+                this.animator = options.animator; 
+            }
         }
 
         public init(options: VisualInitOptions): void {
             let element = options.element;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
 
-            this.root = d3.select(element.get(0))
-                .append('svg')
-                .classed(RadarChart.VisualClassName, true);
+            if (!this.svg) { 
+                this.svg = d3.select(element.get(0)).append('svg');
+            }
 
-            this.margin = {
+            this.svg.classed(RadarChart.VisualClassName, true);
+
+            let defaultMargin: IMargin = {
                 top: 50,
                 right: 100,
                 bottom: 50,
                 left: 100
             };
+            
+            this.margin = defaultMargin;
 
             this.colors = options.style.colorPalette.dataColors;
-            this.mainGroupElement = this.root.append('g');
+            this.mainGroupElement = this.svg.append('g');
             
+            this.legend = createLegend(element, false, null);
+
             this.segments = this.mainGroupElement
                 .append('g')
                 .classed(RadarChart.Segments.class, true);
@@ -218,15 +248,19 @@ module powerbi.visuals {
             this.chart = this.mainGroupElement
                 .append('g')
                 .classed(RadarChart.Chart.class, true);
+
         }
 
         public update(options: VisualUpdateOptions) {
             if (!options.dataViews || !options.dataViews[0]) return;
             let dataView = this.dataView = options.dataViews[0];
-            let dataPoints = RadarChart.converter(dataView, this.colors);
+            let data = RadarChart.converter(dataView, this.colors);
+            let dataPoints = data.dataPoints; 
             let viewport = this.viewport = options.viewport;
+            let duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
 
-            this.root
+            this.legend.drawLegend(data.legendData, viewport);
+            this.svg
                 .attr({
                     'height': viewport.height,
                     'width': viewport.width
@@ -234,29 +268,31 @@ module powerbi.visuals {
 
             let mainGroup = this.mainGroupElement;
             mainGroup.attr('transform', SVGUtil.translate(viewport.width / 2, viewport.height / 2));
-
+ 
             let width: number = viewport.width - this.margin.left - this.margin.right;
             let height: number = viewport.height - this.margin.top - this.margin.bottom;
             
-            this.angle = this.RADIANS / dataPoints.categories.length;
-            this.radius = this.SEGMENT_FACTOR * this.SCALE * Math.min(width, height) / 2;
-                                
-            this.drawCircularSegments(dataPoints.categories);
-            this.drawAxes(dataPoints.categories);
-            this.drawAxesLabels(dataPoints.categories);
-            this.drawChart(dataPoints.values);
+            this.angle = RadarChart.radians / dataPoints[0].length;
+            this.radius = RadarChart.segmentFactor * RadarChart.scale * Math.min(width, height) / 2;
+            
+            let categories = dataView.categorical.categories[0].values;
+            
+            this.drawCircularSegments(categories);
+            this.drawAxes(categories);
+            this.drawAxesLabels(categories);
+            this.drawChart(dataPoints, duration);
         }
         
         private drawCircularSegments(dataPoints) {
   
             const angle: number = this.angle,
-                factor: number = this.SEGMENT_FACTOR, 
-                levels: number = this.SEGMENT_LEVELS,
+                factor: number = RadarChart.segmentFactor, 
+                levels: number = RadarChart.segmentLevels,
                 radius: number  = this.radius;
  
             let selection:D3.Selection = this.mainGroupElement
-                                .select(RadarChart.Segments.selector)
-                .selectAll(RadarChart.SegmentNode.selector);
+                                    .select(RadarChart.Segments.selector)
+                                    .selectAll(RadarChart.SegmentNode.selector);
            
             let data = [];
            
@@ -279,48 +315,41 @@ module powerbi.visuals {
             let segments = selection.data(data);
             segments
                 .enter()
-                .append("svg:line");
+                .append('svg:line');
             segments
-                .attr("x1", item => item.x1)
-                .attr("y1", item => item.y1)
-                .attr("x2", item => item.x2)
-                .attr("y2", item => item.y2)
-                .attr("class", "line")
-                .style("stroke", "grey")
-                .style("stroke-opacity", "0.75")
-                .style("stroke-width", "0.3px")
-                .attr("transform", item => item.translate)
+                .attr('x1', item => item.x1)
+                .attr('y1', item => item.y1)
+                .attr('x2', item => item.x2)
+                .attr('y2', item => item.y2)
+                .attr('transform', item => item.translate)
                 .classed(RadarChart.SegmentNode.class, true);
         }       
-                
+ 
         private drawAxes(dataPoints) {
 
             const angle: number = this.angle,
                 radius: number = this.radius;
 
             let selection: D3.Selection = this.mainGroupElement
-                .select(RadarChart.Axis.selector)
-                .selectAll(RadarChart.AxisNode.selector);
+                                    .select(RadarChart.Axis.selector)
+                                    .selectAll(RadarChart.AxisNode.selector);
                 
             let axis = selection.data(dataPoints);
      
             axis
                 .enter()
-                .append("svg:line");
+                .append('svg:line');
             axis
-                .attr("label", item => item)
-                .attr("x1", 0)
-                .attr("y1", 0)
-                .attr("x2", (name, i) => radius * Math.sin(i * angle))
-                .attr("y2", (name, i) => radius * Math.cos(i * angle))
-                .attr("class", "line")
-                .style("stroke", "grey")
-                .style("stroke-width", "1px")
+                .attr('label', item => item)
+                .attr('x1', 0)
+                .attr('y1', 0)
+                .attr('x2', (name, i) => radius * Math.sin(i * angle))
+                .attr('y2', (name, i) => radius * Math.cos(i * angle))
                 .classed(RadarChart.AxisNode.class, true);
                 
             axis.exit().remove();
         }    
-                
+
         private drawAxesLabels(dataPoints) {
 
             const angle: number = this.angle,
@@ -334,19 +363,16 @@ module powerbi.visuals {
 
             labels
                 .enter()
-                .append("svg:text");
+                .append('svg:text');
 
             labels
-                .attr("class", "legend")
-                .style("font-family", "sans-serif")
-                .style("font-size", "11px")
-                .attr("text-anchor", "middle")
-                .attr("dy", "1.5em")
-                .attr("transform", "translate(0, -10)")
-                .attr("x", (name, i) => {
+                .attr('text-anchor', 'middle')
+                .attr('dy', '1.5em')
+                .attr('transform', 'translate(0, -10)')
+                .attr('x', (name, i) => {
                     return radius * Math.sin(i * angle) + 20 * Math.sin(i * angle);
                 })
-                .attr("y", (name, i) => {
+                .attr('y', (name, i) => {
                     return radius * Math.cos(i * angle) + 10 * Math.cos(i * angle);
                 })
                 .text(item => item)
@@ -354,75 +380,70 @@ module powerbi.visuals {
                 
             labels.exit().remove();
         }
-        
-        private drawChart(dataPoints) {
+    
+    
+        private drawChart(dataPoints: RadarChartDatapoint[][], duration: number) {
 
             const angle: number = this.angle,
                 radius: number = this.radius,
                 opacity: number = .5,
                 circleRadius = 5;
-            
-            let selection: D3.Selection = this.mainGroupElement
-                .select(RadarChart.Chart.selector);
 
-            dataPoints.forEach((dataPoint, i) => {
-                let data:any[] = dataPoint.data;
-                const color: string = dataPoint.color;
-                
-                data.forEach((value, i) => {
-                    value.x = value.score * radius * Math.sin(i * angle);
-                    value.y = value.score * radius * Math.cos(i * angle);
-                });
-                
-                let chart = selection
-                            .selectAll(RadarChart.ChartNode.selector + '-' + i)
-                            .data([data]);
-                chart
-                    .enter()
-                    .append("polygon");
-                chart
-                    .style("stroke-width", "2px")
-                    .style("stroke", color)
-                    .attr("points", value => {
-                        return value.map(point => `${point.x},${point.y}`).join(' ');
-                    })
-                    .style("fill", color)
-                    .style("fill-opacity", opacity)
-                    .classed(RadarChart.ChartNode.class + '-' + i, true)
-                    .on('mouseover', function() {
-                        let z = "polygon." + d3.select(this).attr("class");
-                        selection.selectAll("polygon")
-                            .transition()
-                            .duration(200)
-                            .style("fill-opacity", 0.1);
-                        selection.selectAll(z)
-                            .transition()
-                            .duration(200)
-                            .style("fill-opacity", .7);
-                    })
-                    .on('mouseout', function() {
-                        selection.selectAll("polygon")
-                            .transition()
-                            .duration(200)
-                            .style("fill-opacity", opacity);
+            let stack = d3.layout.stack();
+            let layers = stack(dataPoints);
+            let sm = this.selectionManager;
+
+            let y = d3.scale.linear()
+                .domain([0, d3.max(layers, (layer) => {
+                    return d3.max(layer, (d) => {
+                        return d.y0 + d.y;
                     });
-                chart.exit().remove();
+                })]).range([0, radius]);
 
-                let points = selection
-                            .selectAll(RadarChart.ChartPoint.selector + '-' + i)
-                            .data(data);
-                points
-                    .enter()
-                    .append("svg:circle");
-                points
-                    .attr("r", circleRadius)
-                    .attr("cx", point => point.x)
-                    .attr("cy", point => point.y)
-                    .style("fill", color)
-                    .classed(RadarChart.ChartPoint.class + '-' + i, true);
-                 
-                points.exit().remove();
-            });
+            let calculatePoints = (points) => {
+                return points.map((value, i) => {
+                    const x1 = y(value.y) * Math.sin(i * angle);
+                    const y1 = y(value.y) * Math.cos(i * angle);
+                    return `${x1},${y1}`;
+                }).join(' ');
+            };
+
+            let selection: D3.Selection = this.mainGroupElement.select(RadarChart.Chart.selector);
+            let chart = selection.selectAll(RadarChart.ChartNode.selector).data(layers);
+
+            let node = chart.enter()
+                .append('g')
+                .classed(RadarChart.ChartNode.class, true);
+
+            node.append('polygon')
+                .classed(RadarChart.ChartPolygon.class, true)
+                .style('fill', d => d[0].color)
+                .style('opacity', opacity)
+                .on('mouseover', function (d) {
+                    sm.select(d[0].identity).then(ids => {
+                        d3.select(this).style('opacity', 1);
+                    });
+                })
+                .on('mouseout', function (d) {
+                    sm.select(d[0].identity).then(ids => {
+                        d3.select(this).style('opacity', opacity);
+                    });
+                })
+                .transition()
+                .duration(duration)
+                .attr('points', calculatePoints);
+
+            node.selectAll(RadarChart.ChartPoint.selector)
+                .data(d => d)
+                .enter()
+                .append('svg:circle')
+                .classed(RadarChart.ChartPoint.class, true)
+                .attr('r', circleRadius)
+                .attr('cx', (value, i) => y(value.y) * Math.sin(i * angle))
+                .attr('cy', (value, i) => y(value.y) * Math.cos(i * angle))
+                .style('fill', d => d.color);
+
+            chart.exit().remove();
         }
     }
 }

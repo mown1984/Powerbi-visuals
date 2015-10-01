@@ -272,7 +272,9 @@ module powerbi.visuals {
                 behavior: new SlicerWebBehavior(),
             }));
             // Radar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new RadarChart());
+            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new RadarChart({
+                animator: new BaseAnimator()
+            }));
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {
