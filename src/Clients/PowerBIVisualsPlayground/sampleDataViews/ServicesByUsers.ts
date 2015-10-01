@@ -63,8 +63,8 @@ module powerbi.visuals.sampleDataViews {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     {
-                        displayName: 'Device',
-                        queryName: 'Device',
+                        displayName: 'Devices',
+                        queryName: 'Devices',
                         type: powerbi.ValueType.fromDescriptor({ text: true })
                     },
                     {
