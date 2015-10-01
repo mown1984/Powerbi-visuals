@@ -35,7 +35,6 @@ module powerbi.visuals {
         svg?: D3.Selection;
         margin?: IMargin;
     }
-
     
     export interface RadarChartDatapoint {
         x: number;
