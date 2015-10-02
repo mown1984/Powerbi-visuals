@@ -293,15 +293,19 @@ module powerbi.visuals {
                 x: D3.Scale.LinearScale,
                 y: D3.Scale.LinearScale;
 
-            histogramSettings = this.parseOptions(dataView);
-
-            if (!histogramSettings) {
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values ||
+                !(dataView.categorical.values[0].values instanceof Array) ||
+                !(dataView.categorical.values[0].values.length > 0)) {
                 return null;
             }
 
-            if (!dataView.categorical.values[0] ||
-                !dataView.categorical.values[0].values ||
-                !(dataView.categorical.values[0].values instanceof Array)) {
+            histogramSettings = this.parseOptions(dataView);
+
+            if (!histogramSettings) {
                 return null;
             }
 
@@ -349,10 +353,7 @@ module powerbi.visuals {
             if (!dataView ||
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
-                !dataView.metadata.columns[0] ||
-                !dataView.categorical ||
-                !dataView.categorical.values ||
-                !dataView.categorical.values[0]) {
+                !dataView.metadata.columns[0]) {
                 return null;
             }
 
