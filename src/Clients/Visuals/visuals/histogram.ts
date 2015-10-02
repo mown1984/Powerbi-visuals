@@ -6,7 +6,7 @@
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the '"Software"'), to deal
+ *  of this software and associated documentation files (the ""Software""), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
@@ -71,82 +71,82 @@ module powerbi.visuals {
     }
 
     export class Histogram implements IVisual {
-        private static ClassName: string = 'histogram';
-        private static FrequencyText: string = 'Frequency';
-        private static DensityText: string = 'Density';
+        private static ClassName: string = "histogram";
+        private static FrequencyText: string = "Frequency";
+        private static DensityText: string = "Density";
 
         private static Properties: any = {
             general: {
                 bins: <DataViewObjectPropertyIdentifier> {
-                    objectName: 'general',
-                    propertyName: 'bins'
+                    objectName: "general",
+                    propertyName: "bins"
                 },
                 frequency: <DataViewObjectPropertyIdentifier> {
-                    objectName: 'general',
-                    propertyName: 'frequency'
+                    objectName: "general",
+                    propertyName: "frequency"
                 }
             },
             dataPoint: {
                 fill: <DataViewObjectPropertyIdentifier> {
-                    objectName: 'dataPoint',
-                    propertyName: 'fill'
+                    objectName: "dataPoint",
+                    propertyName: "fill"
                 }
             }
         };
 
         private static DefaultHistogramSettings: HistogramSettings = {
             frequency: true,
-            displayName: 'Histogram',
-            fillColor: 'teal',
+            displayName: "Histogram",
+            fillColor: "teal",
             bins: null
         };
 
         private static Axes: ClassAndSelector = {
-            'class': 'axes',
-            selector: '.axes'
+            "class": "axes",
+            selector: ".axes"
         };
 
         private static Axis: ClassAndSelector = {
-            'class': 'axis',
-            selector: '.axis'
+            "class": "axis",
+            selector: ".axis"
         };
 
         private static Columns: ClassAndSelector = {
-            'class': 'columns',
-            selector: '.columns'
+            "class": "columns",
+            selector: ".columns"
         };
 
         private static Column: ClassAndSelector = {
-            'class': 'column',
-            selector: '.column'
+            "class": "column",
+            selector: ".column"
         };
 
         private static Legends: ClassAndSelector = {
-            'class': 'legends',
-            selector: '.legends'
+            "class": "legends",
+            selector: ".legends"
         };
 
         private static Legend: ClassAndSelector = {
-            'class': 'legend',
-            selector: '.legend'
+            "class": "legend",
+            selector: ".legend"
         };
 
         public static Capabilities: VisualCapabilities = {
             dataRoles: [{
-                name: 'X',
+                name: "X",
                 kind: VisualDataRoleKind.Grouping,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Axis')
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Axis")
             }, {
-                name: 'Y',
+                name: "Y",
                 kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Value')
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
             }],
             dataViewMappings: [{
                 categorical: {
                     values: {
                         select: [{
                             bind: {
-                                to: 'X'
+                                to: "X"
                             }
                         }]
                     }
@@ -154,7 +154,7 @@ module powerbi.visuals {
             }],
             objects: {
                 general: {
-                    displayName: data.createDisplayNameGetter('Visual_General'),
+                    displayName: data.createDisplayNameGetter("Visual_General"),
                     properties: {
                         formatString: {
                             type: {
@@ -164,20 +164,20 @@ module powerbi.visuals {
                             },
                         },
                         bins: {
-                            displayName: 'Bins',
+                            displayName: "Bins",
                             type: { numeric: true }
                         },
                         frequency: {
-                            displayName: 'Frequency',
+                            displayName: "Frequency",
                             type: { bool: true }
                         }
                     },
                 },
                 datapoint: {
-                    displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                    displayName: data.createDisplayNameGetter("Visual_DataPoint"),
                     properties: {
                         color: {
-                            displayName: 'Fill Color',
+                            displayName: "Fill Color",
                             type: {
                                 fill: {
                                     solid: {
@@ -197,17 +197,17 @@ module powerbi.visuals {
         private MaxOpacity: number = 1;
         private QuantityLabelsOnAxisY: number = 5;
         private MinQuantityBins: number = 1;
-        private TooltipDisplayName: string = 'Range';
-        private SeparatorNumbers: string = ', ';
+        private TooltipDisplayName: string = "Range";
+        private SeparatorNumbers: string = ", ";
 
         private ExcludeBrackets: Brackets = {
-            left: '(',
-            right: ')'
+            left: "(",
+            right: ")"
         };
 
         private IncludeBrackets: Brackets = {
-            left: '[',
-            right: ']'
+            left: "[",
+            right: "]"
         };
 
         private margin: IMargin = {
@@ -252,32 +252,32 @@ module powerbi.visuals {
                 this.root = this.svg;
             } else {
                 this.root = d3.select(visualsOptions.element.get(0))
-                    .append('svg');
+                    .append("svg");
             }
 
             this.root.classed(Histogram.ClassName, true);
 
-            this.main = this.root.append('g');
+            this.main = this.root.append("g");
 
             this.axes = this.main
-                .append('g')
-                .classed(Histogram.Axes['class'], true);
+                .append("g")
+                .classed(Histogram.Axes["class"], true);
 
             this.axisX = this.axes
-                .append('g')
-                .classed(Histogram.Axis['class'], true);
+                .append("g")
+                .classed(Histogram.Axis["class"], true);
 
             this.axisY = this.axes
-                .append('g')
-                .classed(Histogram.Axis['class'], true);
+                .append("g")
+                .classed(Histogram.Axis["class"], true);
 
             this.legend = this.main
-                .append('g')
-                .classed(Histogram.Legends['class'], true);
+                .append("g")
+                .classed(Histogram.Legends["class"], true);
 
             this.columns = this.main
-                .append('g')
-                .classed(Histogram.Columns['class'], true);
+                .append("g")
+                .classed(Histogram.Columns["class"], true);
 
             this.selectionManager = new SelectionManager({
                 hostServices: visualsOptions.host
@@ -455,16 +455,16 @@ module powerbi.visuals {
                 this.margin.right;
 
             this.root.attr({
-                'height': height,
-                'width': width
+                "height": height,
+                "width": width
             });
 
             this.main.attr(
-                'transform',
+                "transform",
                 SVGUtil.translate(this.margin.left, this.margin.top));
 
             this.axisX.attr(
-                'transform',
+                "transform",
                 SVGUtil.translate(0, this.viewport.height));
         }
 
@@ -494,29 +494,29 @@ module powerbi.visuals {
 
             columnsSelection
                 .enter()
-                .append('svg:rect');
+                .append("svg:rect");
 
             columnsSelection
-                .attr('x', this.ColumnPadding / 2)
-                .attr('width', widthOfColumn)
-                .attr('height', (item: D3.Layout.Bin) => {
+                .attr("x", this.ColumnPadding / 2)
+                .attr("width", widthOfColumn)
+                .attr("height", (item: D3.Layout.Bin) => {
                     return this.getColumnHeight(item, y);
                 })
-                .attr('fill', histogramDataView.settings.fillColor)
-                .attr('class', Histogram.Column['class'])
-                .attr('transform', (item: D3.Layout.Bin, index: number) => {
+                .attr("fill", histogramDataView.settings.fillColor)
+                .attr("class", Histogram.Column["class"])
+                .attr("transform", (item: D3.Layout.Bin, index: number) => {
                     return SVGUtil.translate(
                         widthOfColumn * index + this.ColumnPadding * index,
                         y(item.y) - (this.ColumnPadding / 2.5));
                 })
-                .attr('value', (item: D3.Layout.Bin) => item.y)
-                .on('click', function () {
+                .attr("value", (item: D3.Layout.Bin) => item.y)
+                .on("click", function () {
                     self.setOpacity(columnsSelection, true);
                     self.setOpacity(d3.select(this), false);
 
                     d3.event.stopPropagation();
                 })
-                .classed(Histogram.Column['class']);
+                .classed(Histogram.Column["class"]);
 
             this.renderTooltip(histogramDataView, columnsSelection);
 
@@ -524,7 +524,7 @@ module powerbi.visuals {
                 .exit()
                 .remove();
 
-            d3.selection().on('click', () => {
+            d3.selection().on("click", () => {
                 this.setOpacity(columnsSelection);
             });
         }
@@ -550,7 +550,7 @@ module powerbi.visuals {
             let elementAnimation: D3.Selection = <D3.Selection> this.animation(element);
 
             elementAnimation.style(
-                'fill-opacity',
+                "fill-opacity",
                 isHide
                     ? this.MinOpacity
                     : this.MaxOpacity);
@@ -583,12 +583,12 @@ module powerbi.visuals {
 
             xAxis = d3.svg.axis()
                 .scale(x)
-                .orient('bottom')
+                .orient("bottom")
                 .tickValues(histogramDataView.ranges);
 
             yAxis = d3.svg.axis()
                 .scale(y)
-                .orient('left')
+                .orient("left")
                 .ticks(this.QuantityLabelsOnAxisY);
 
             this.axisX
@@ -636,17 +636,17 @@ module powerbi.visuals {
 
             legendSelection
                 .enter()
-                .append('svg:text');
+                .append("svg:text");
 
             legendSelection
-                .attr('x', 0)
-                .attr('y', 0)
-                .attr('dx', (item: Legend) => item.dx)
-                .attr('dy', (item: Legend) => item.dy)
-                .attr('transform', (item: Legend) => item.transform)
-                .attr('class', Histogram.Legend['class'])
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("dx", (item: Legend) => item.dx)
+                .attr("dy", (item: Legend) => item.dy)
+                .attr("transform", (item: Legend) => item.transform)
+                .attr("class", Histogram.Legend["class"])
                 .text((item: Legend) => item.text)
-                .classed(Histogram.Legend['class'], true);
+                .classed(Histogram.Legend["class"], true);
 
             legendSelection
                 .exit()
@@ -661,7 +661,7 @@ module powerbi.visuals {
                     this.viewport.width / 2 - this.margin.left / 2,
                     this.viewport.height + this.margin.bottom / 2),
                 text: histogramDataView.settings.displayName,
-                dx: '3em'
+                dx: "3em"
             }, {
                 transform: SVGUtil.translateAndRotate(
                     -(this.margin.left / 2),
@@ -670,7 +670,7 @@ module powerbi.visuals {
                     0,
                     270),
                 text: bottomLegendText,
-                dx: '1em'
+                dx: "1em"
             }];
         }
 
