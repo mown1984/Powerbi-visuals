@@ -30,6 +30,18 @@ module powerbi.visuals {
     import VisualDataRoleKind = powerbi.VisualDataRoleKind;
     import SelectionManager = utility.SelectionManager;
 
+    type D3Element = 
+        D3.UpdateSelection |
+        D3.Selection |
+        D3.Selectors |
+        D3.Transition.Transition;
+
+    export interface HistogramConstructorOptions {
+        svg?: D3.Selection;
+        animator?: IGenericAnimator;
+        margin?: IMargin;
+    }
+
     export interface HistogramSettings {
         displayName?: string;
         fillColor?: string;
@@ -46,6 +58,13 @@ module powerbi.visuals {
         settings: HistogramSettings;
     }
 
+    interface Legend {
+        text: string;
+        transform?: string;
+        dx?: string;
+        dy?: string;
+    }
+
     interface Brackets {
         left: string;
         right: string;
@@ -56,7 +75,7 @@ module powerbi.visuals {
         private static FrequencyText: string = 'Frequency';
         private static DensityText: string = 'Density';
 
-        private static Properties = {
+        private static Properties: any = {
             general: {
                 bins: <DataViewObjectPropertyIdentifier> {
                     objectName: 'general',
@@ -176,10 +195,9 @@ module powerbi.visuals {
         private MinColumnHeight: number = 1;
         private MinOpacity: number = 0.3;
         private MaxOpacity: number = 1;
-        private Duration: number = 200;
         private QuantityLabelsOnAxisY: number = 5;
-        private TooltipDisplayName: string = 'Range';
         private MinQuantityBins: number = 1;
+        private TooltipDisplayName: string = 'Range';
         private SeparatorNumbers: string = ', ';
 
         private ExcludeBrackets: Brackets = {
@@ -192,19 +210,22 @@ module powerbi.visuals {
             right: ']'
         };
 
-        private Margin: IMargin = {
+        private margin: IMargin = {
             top: 15,
             right: 15,
             bottom: 75,
             left: 75
         };
 
+        private durationAnimations: number = 200;
+        private suppressAnimations: boolean = false;
+
         private viewport: IViewport;
         private dataView: DataView;
-        private visualsOptions: VisualInitOptions;
-        private selectiionManager: SelectionManager;
+        private selectionManager: SelectionManager;
 
         private root: D3.Selection;
+        private svg: D3.Selection;
         private main: D3.Selection;
         private axes: D3.Selection;
         private axisX: D3.Selection;
@@ -212,12 +233,29 @@ module powerbi.visuals {
         private legend: D3.Selection;
         private columns: D3.Selection;
 
-        public init(visualsOptions: VisualInitOptions): void {
-            this.visualsOptions = visualsOptions;
+        constructor(histogramConstructorOptions?: HistogramConstructorOptions) {
+            if (histogramConstructorOptions) {
+                if (histogramConstructorOptions.svg) {
+                    this.svg = histogramConstructorOptions.svg;
+                }
 
-            this.root = d3.select(visualsOptions.element.get(0))
-                .append('svg')
-                .classed(Histogram.ClassName, true);
+                if (histogramConstructorOptions.animator) {
+                    this.durationAnimations = histogramConstructorOptions.animator.getDuration();
+                }
+
+                this.margin = histogramConstructorOptions.margin || this.margin;
+            }
+        }
+
+        public init(visualsOptions: VisualInitOptions): void {
+            if (this.svg) {
+                this.root = this.svg;
+            } else {
+                this.root = d3.select(visualsOptions.element.get(0))
+                    .append('svg');
+            }
+
+            this.root.classed(Histogram.ClassName, true);
 
             this.main = this.root.append('g');
 
@@ -241,7 +279,7 @@ module powerbi.visuals {
                 .append('g')
                 .classed(Histogram.Columns['class'], true);
 
-            this.selectiionManager = new SelectionManager({
+            this.selectionManager = new SelectionManager({
                 hostServices: visualsOptions.host
             });
         }
@@ -281,15 +319,15 @@ module powerbi.visuals {
 
             x = d3.scale.linear()
                 .domain([
-                    d3.min(data, (item) => d3.min(item)),
-                    d3.max(data, (item) => d3.max(item))
+                    d3.min(data, (item: D3.Layout.Bin) => d3.min(item)),
+                    d3.max(data, (item: D3.Layout.Bin) => d3.max(item))
                 ])
                 .range([0, this.viewport.width]);
 
             y = d3.scale.linear()
                 .domain([
                     0,
-                    d3.max(data, (item) => item.y)
+                    d3.max(data, (item: D3.Layout.Bin) => item.y)
                 ])
                 .range([this.viewport.height, 0]);
 
@@ -308,9 +346,6 @@ module powerbi.visuals {
         }
 
         private parseOptions(dataView: DataView): HistogramSettings {
-            let histogramSettings: HistogramSettings = <HistogramSettings>{},
-                objects: DataViewObjects;
-
             if (!dataView ||
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
@@ -320,6 +355,9 @@ module powerbi.visuals {
                 !dataView.categorical.values[0]) {
                 return null;
             }
+
+            let histogramSettings: HistogramSettings = <HistogramSettings>{},
+                objects: DataViewObjects;
 
             histogramSettings.displayName = Histogram.DefaultHistogramSettings.displayName;
             histogramSettings.fillColor = Histogram.DefaultHistogramSettings.fillColor;
@@ -361,12 +399,18 @@ module powerbi.visuals {
         }
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
-            if (!visualUpdateOptions.dataViews && !visualUpdateOptions.dataViews[0]) {
+            if (!visualUpdateOptions ||
+                !visualUpdateOptions.dataViews ||
+                !visualUpdateOptions.dataViews[0]) {
                 return;
             }
 
-            let dataView: DataView = this.dataView = visualUpdateOptions.dataViews[0],
+            let dataView: DataView,
                 histogramDataView: HistogramDataView;
+
+            dataView = this.dataView = visualUpdateOptions.dataViews[0];
+
+            this.suppressAnimations = Boolean(visualUpdateOptions.suppressAnimations);
 
             this.setSize(visualUpdateOptions.viewport);
             this.updateElements();
@@ -382,13 +426,13 @@ module powerbi.visuals {
 
             height =
                 viewport.height -
-                this.Margin.top -
-                this.Margin.bottom;
+                this.margin.top -
+                this.margin.bottom;
 
             width =
                 viewport.width -
-                this.Margin.left -
-                this.Margin.right;
+                this.margin.left -
+                this.margin.right;
 
             this.viewport = {
                 height: height,
@@ -402,13 +446,13 @@ module powerbi.visuals {
 
             height =
                 this.viewport.height +
-                this.Margin.top +
-                this.Margin.bottom;
+                this.margin.top +
+                this.margin.bottom;
 
             width =
                 this.viewport.width +
-                this.Margin.left +
-                this.Margin.right;
+                this.margin.left +
+                this.margin.right;
 
             this.root.attr({
                 'height': height,
@@ -417,7 +461,7 @@ module powerbi.visuals {
 
             this.main.attr(
                 'transform',
-                SVGUtil.translate(this.Margin.left, this.Margin.top));
+                SVGUtil.translate(this.margin.left, this.margin.top));
 
             this.axisX.attr(
                 'transform',
@@ -455,23 +499,20 @@ module powerbi.visuals {
             columnsSelection
                 .attr('x', this.ColumnPadding / 2)
                 .attr('width', widthOfColumn)
-                .attr('height', (item) => {
+                .attr('height', (item: D3.Layout.Bin) => {
                     return this.getColumnHeight(item, y);
                 })
                 .attr('fill', histogramDataView.settings.fillColor)
                 .attr('class', Histogram.Column['class'])
-                .attr('transform', (item, index) => {
+                .attr('transform', (item: D3.Layout.Bin, index: number) => {
                     return SVGUtil.translate(
                         widthOfColumn * index + this.ColumnPadding * index,
                         y(item.y) - (this.ColumnPadding / 2.5));
                 })
-                .attr('value', (item) => item.y)
-                .attr('values', (item) => item.slice())
-                .on('click', function() {
-                    let element = d3.select(this);
-
+                .attr('value', (item: D3.Layout.Bin) => item.y)
+                .on('click', function () {
                     self.setOpacity(columnsSelection, true);
-                    self.setOpacity(element, false);
+                    self.setOpacity(d3.select(this), false);
 
                     d3.event.stopPropagation();
                 })
@@ -483,13 +524,12 @@ module powerbi.visuals {
                 .exit()
                 .remove();
 
-            d3.selection()
-                .on('click', () => {
-                    this.setOpacity(columnsSelection);
-                });
+            d3.selection().on('click', () => {
+                this.setOpacity(columnsSelection);
+            });
         }
 
-        private renderTooltip(histogramDataView: HistogramDataView, selection: D3.UpdateSelection) {
+        private renderTooltip(histogramDataView: HistogramDataView, selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
                 let range: string =
                     this.getRangeByIndex(histogramDataView.ranges, tooltipEvent.index);
@@ -506,18 +546,27 @@ module powerbi.visuals {
             });
         }
 
-        private setOpacity(element: D3.UpdateSelection | D3.Selection, isHide: boolean = false): void {
-            element
-                .transition()
-                .duration(this.Duration)
-                .style(
-                    'fill-opacity',
-                    isHide
-                        ? this.MinOpacity
-                        : this.MaxOpacity);
+        private setOpacity(element: D3Element, isHide: boolean = false): void {
+            let elementAnimation: D3.Selection = <D3.Selection> this.animation(element);
+
+            elementAnimation.style(
+                'fill-opacity',
+                isHide
+                    ? this.MinOpacity
+                    : this.MaxOpacity);
         }
 
-        private getColumnHeight(column, y: D3.Scale.LinearScale): number {
+        private animation(element: D3Element): D3Element {
+            if (this.suppressAnimations) {
+                return element;
+            }
+
+            return (<D3.Selection> element)
+                .transition()
+                .duration(this.durationAnimations);
+        }
+
+        private getColumnHeight(column: D3.Layout.Bin, y: D3.Scale.LinearScale): number {
             let height: number =
                 this.viewport.height - y(column.y);
 
@@ -571,19 +620,13 @@ module powerbi.visuals {
 
             rightBracket = this.IncludeBrackets.right;
 
-            return [
-                leftBracket,
-                range[0],
-                this.SeparatorNumbers,
-                range[1],
-                rightBracket
-            ].join('');
+            return `${leftBracket}${range[0]}${this.SeparatorNumbers}${range[1]}${rightBracket}`;
         }
 
         private renderLegend(histogramDataView: HistogramDataView): void {
             let legendElements: D3.Selection,
                 legendSelection: D3.UpdateSelection,
-                datalegends = this.getDataLegends(histogramDataView);
+                datalegends: Legend[] = this.getDataLegends(histogramDataView);
 
             legendElements = this.main
                 .select(Histogram.Legends.selector)
@@ -598,11 +641,11 @@ module powerbi.visuals {
             legendSelection
                 .attr('x', 0)
                 .attr('y', 0)
-                .attr('dx', (item) => item.dx)
-                .attr('dy', (item) => item.dy)
-                .attr('transform', (item) => item.transform)
+                .attr('dx', (item: Legend) => item.dx)
+                .attr('dy', (item: Legend) => item.dy)
+                .attr('transform', (item: Legend) => item.transform)
                 .attr('class', Histogram.Legend['class'])
-                .text((item) => item.text)
+                .text((item: Legend) => item.text)
                 .classed(Histogram.Legend['class'], true);
 
             legendSelection
@@ -610,19 +653,19 @@ module powerbi.visuals {
                 .remove();
         }
 
-        private getDataLegends(histogramDataView: HistogramDataView) {
+        private getDataLegends(histogramDataView: HistogramDataView): Legend[] {
             let bottomLegendText: string = this.getLegendText(histogramDataView);
 
             return [{
                 transform: SVGUtil.translate(
-                    this.viewport.width / 2 - this.Margin.left / 2,
-                    this.viewport.height + this.Margin.bottom / 2),
+                    this.viewport.width / 2 - this.margin.left / 2,
+                    this.viewport.height + this.margin.bottom / 2),
                 text: histogramDataView.settings.displayName,
                 dx: '3em'
             }, {
                 transform: SVGUtil.translateAndRotate(
-                    -(this.Margin.left / 2),
-                    this.viewport.height / 2 + this.Margin.top,
+                    -(this.margin.left / 2),
+                    this.viewport.height / 2 + this.margin.top,
                     0,
                     0,
                     270),
