@@ -136,11 +136,6 @@ module powerbi.visuals {
             selector: '.chartPolygon'
         };
 
-        private static ChartDots: ClassAndSelector = {
-            class: 'chartDots',
-            selector: '.chartDots'
-        };
-
         private static ChartDot: ClassAndSelector = {
             class: 'chartDot',
             selector: '.chartDot'
@@ -150,7 +145,6 @@ module powerbi.visuals {
         private segments: D3.Selection;
         private axis: D3.Selection;
         private chart: D3.Selection;
-        private dots: D3.Selection;
 
         private mainGroupElement: D3.Selection;
         private colors: IDataColorPalette;
@@ -225,7 +219,9 @@ module powerbi.visuals {
                 if (options.animator) {
                     this.animator = options.animator;
                 }
-                this.margin = options.margin || RadarChart.DefaultMargin;
+                if (options.margin) {
+                    this.margin = options.margin;
+                }
             }
         }
 
@@ -235,6 +231,10 @@ module powerbi.visuals {
 
             if (!this.svg) {
                 this.svg = d3.select(element.get(0)).append('svg');
+            }
+
+            if (!this.margin) {
+                this.margin = RadarChart.DefaultMargin;
             }
 
             this.svg.classed(RadarChart.VisualClassName, true);
@@ -255,11 +255,6 @@ module powerbi.visuals {
             this.chart = this.mainGroupElement
                 .append('g')
                 .classed(RadarChart.Chart.class, true);
-
-            this.dots = this.mainGroupElement
-                .append('g')
-                .classed(RadarChart.ChartDots.class, true);
-
         }
 
         public update(options: VisualUpdateOptions): void {
