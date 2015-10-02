@@ -301,6 +301,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.AsterPlot()
     };
 
+    export var sunburst: IVisualPlugin = {
+        name: 'sunburst',
+       // capabilities: samples.Sunburst.capabilities,
+        create: () => new samples.Sunburst()
+    };
+
     export var owlGauge: IVisualPlugin = {
         name: 'owlGauge',
         watermarkKey: 'gauge',
