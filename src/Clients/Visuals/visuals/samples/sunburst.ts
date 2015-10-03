@@ -44,7 +44,7 @@ module powerbi.visuals.samples {
         
         public static capabilities: VisualCapabilities = {
         };
-        public static minOpacity = 0.2;
+        private static minOpacity = 0.2;
         private disableMouceOut: boolean = false;
         private svg: D3.Selection;
         private g: D3.Selection;
@@ -56,7 +56,11 @@ module powerbi.visuals.samples {
             this.colors = options.style.colorPalette.dataColors;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
             this.svg = d3.select(options.element.get(0)).append('svg');
+            this.svg.attr('id', 'mainDrawArea');
             this.g = this.svg.append('g');
+            this.g.attr("id", "container");
+            this.svg.select("#container")
+                .on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
                 .attr("id", "percentage")
                 .attr("y", "30px")
@@ -72,40 +76,13 @@ module powerbi.visuals.samples {
                 .style("font-weight", "bold")
                 .text("");
 
-            //Use info panel to debug events
-            //this.svg.append("text")
-            //    .attr("id", "infoPanel")
-            //    .attr("y", "30px")
-            //    .attr("x", "30px")
-            //    .text("Info:");
-        }
-
-        public static getAllUnhide(selection) {
-            selection.attr("setUnHide", "true");
-        }
-        public mousemove(d, i, this_) {
-            console.log(d3.mouse(d));
-        }
-        public update(options: VisualUpdateOptions) {
-            //let infoPanel = this.svg.select("#infoPanel");
-            //infoPanel.text('Update');
-            let data = Sunburst.converter(options.dataViews[0], this.colors);
-            this.viewport = options.viewport;
-            let svg_obj = this.svg;
-            let this_ = this;
-            svg_obj.attr({
-                'id': 'mainDrawArea',
-                'height': this.viewport.height,
-                'width': this.viewport.width
+            this.svg.on('click', (d) => {
+                this.svg.selectAll("path").style("opacity", 1);
+                this.disableMouceOut = false;
+                this.svg.select("#percentageFixed").style("opacity", 0);
+                this.selectionManager.clear();
             });
-
-            svg_obj.on('click', (d) => {
-                    svg_obj.selectAll("path").style("opacity", 1);
-                    this.disableMouceOut = false;
-                    this.svg.select("#percentageFixed").style("opacity", 0);
-                    this.selectionManager.clear();
-                });
-
+            let svg_obj = this.svg;
             svg_obj.on("mousemove", function () {
                 let point = d3.mouse(this)
                     , p = { x: point[0], y: point[1] };
@@ -115,10 +92,27 @@ module powerbi.visuals.samples {
                 percentageText.attr("x", p.x + shift);
             });
 
-            this.g
-                .attr("id", "container")
-                .attr("transform", "translate(" + this.viewport.width / 2 + "," + this.viewport.height / 2 + ")");
+        }
 
+        private static setAllUnhide(selection) {
+            selection.attr("setUnHide", "true");
+        }
+      
+        public update(options: VisualUpdateOptions) {
+
+            let data = Sunburst.converter(options.dataViews[0], this.colors);
+            this.viewport = options.viewport;           
+
+            this.updateInternal(data);         
+        }
+
+        private updateInternal(dataRootNode:SunburstNode) {
+
+            this.svg.attr({
+                'height': this.viewport.height,
+                'width': this.viewport.width
+            });
+            this.g.attr("transform", "translate(" + this.viewport.width / 2 + "," + this.viewport.height / 2 + ")");
             let radius = Math.min(this.viewport.width, this.viewport.height) / 2;
 
             let partition = d3.layout.partition()
@@ -126,22 +120,21 @@ module powerbi.visuals.samples {
                 .size([2 * Math.PI, radius * radius])
                 .value((d) => { return 1; });
 
-            let path = this.g.datum(data).selectAll("path")
+            let path = this.g.datum(dataRootNode).selectAll("path")
                 .data(partition.nodes);
             path.enter().append("path");
-            path
-                .attr("display", (d) => { return d.depth ? null : "none"; })
+            path.attr("display", (d) => { return d.depth ? null : "none"; })
                 .attr("d", this.arc)
                 .style("stroke", "#fff")
                 .style("fill", (d) => { return d.color; })
                 .style("fill-rule", "evenodd")
                 .each(this.stash)
-                .on("mouseover", (d) => { this.mouseover(d, this_, false); })
-                .on("mouseleave", (d) => { this.mouseleave(d, this_); })
+                .on("mouseover", (d) => { this.mouseover(d, this, false); })
+                .on("mouseleave", (d) => { this.mouseleave(d, this); })
                 .on("click", (d) => {
 
                     this.selectionManager.select(d.selector);
-                    d3.selectAll("path").call(Sunburst.getAllUnhide).attr('setUnHide', null);
+                    d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
                     this.svg.select("#container").on("mouseleave", null);
                     this.mouseover(d, this, true);
                     this.disableMouceOut = true;
@@ -152,35 +145,23 @@ module powerbi.visuals.samples {
                     this.onResize();
                     event.stopPropagation();
                 });
-            d3.select("#container")
-                .on("mouseleave", (d) => { this.mouseleave(d, this_); });
 
             this.onResize();
         }
 
-        public arc = d3.svg.arc()
+        private arc = d3.svg.arc()
             .startAngle(function (d) { return d.x; })
             .endAngle(function (d) { return d.x + d.dx; })
             .innerRadius(function (d) { return Math.sqrt(d.y); })
             .outerRadius(function (d) { return Math.sqrt(d.y + d.dy); });
         // Stash the old values for transition.
-        public stash(d) {
+        private stash(d) {
             d.x0 = d.x;
             d.dx0 = d.dx;
         }
-
-        // Interpolate the arcs in data space.
-        public arcTween(a) {
-            let i = d3.interpolate({ x: a.x0, dx: a.dx0 }, a);
-            return (t) => {
-                let b = i(t);
-                a.x0 = b.x;
-                a.dx0 = b.dx;
-                return this.arc(b);
-            };
-        }
+      
         // Get all parents of the node
-        public static getParents(node) {
+        private static getParents(node) {
             let path = [];
             let current = node;
             while (current.parent) {
@@ -190,7 +171,7 @@ module powerbi.visuals.samples {
             return path;
         }
 
-        public onResize() {
+        private onResize() {
             let width = this.viewport.width;
             let height = this.viewport.height;
             let percentageText = this.svg.select("#percentage");
@@ -202,9 +183,8 @@ module powerbi.visuals.samples {
             percentageFixedText.attr("x", ((width / 2) - (percentageFixedText.node().clientWidth / 2)));
         }
 
-        public mouseover(d, svgObj, setUnhide) {
+        private mouseover(d, svgObj, setUnhide) {
             let percentageText = svgObj.svg.select("#percentage");
-            //let percentageValue = (100 * d.value / totalSize).toPrecision(3);
             percentageText.text(d ? d.value + "%" : "");
 
             svgObj.onResize();
@@ -227,7 +207,7 @@ module powerbi.visuals.samples {
                 });
         }
 
-        public mouseleave(d, svgObj) {
+        private mouseleave(d, svgObj) {
 
             if (!svgObj.disableMouceOut) {
                 svgObj.svg.selectAll("path")
@@ -238,14 +218,10 @@ module powerbi.visuals.samples {
             else {
                 svgObj.mouseover(null, svgObj);
             }
-
-            //let infoPanel = svgObj.svg.select("#infoPanel");
-            //infoPanel.text('mouseleave ' + svgObj.disableMouceOut);
         }
 
-        public static covertTreeNodeToSunBurstNode(originParentNode: DataViewTreeNode, sunburstParentNode: SunburstNode, colors: IDataColorPalette): SunburstNode {
+        private static covertTreeNodeToSunBurstNode(originParentNode: DataViewTreeNode, sunburstParentNode: SunburstNode, colors: IDataColorPalette): SunburstNode {
             let key = (originParentNode.children ? originParentNode : sunburstParentNode).name;
-            window.console.log(key);
             let newSunNode: SunburstNode = {
                 name: originParentNode.name,
                 value: originParentNode.value,
@@ -267,7 +243,7 @@ module powerbi.visuals.samples {
             return newSunNode;
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette): any {
+        public static converter(dataView: DataView, colors: IDataColorPalette): SunburstNode{
 
             let root: SunburstNode = Sunburst.covertTreeNodeToSunBurstNode(dataView.tree.root, null, colors);
 
