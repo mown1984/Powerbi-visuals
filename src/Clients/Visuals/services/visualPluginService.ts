@@ -272,7 +272,7 @@ module powerbi.visuals {
                 behavior: new SlicerWebBehavior(),
             }));
             // Radar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new RadarChart({
+            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
                 animator: new BaseAnimator()
             }));
         }

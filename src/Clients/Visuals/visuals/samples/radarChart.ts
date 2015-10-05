@@ -24,9 +24,9 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+/// <reference path="../../_references.ts"/>
 
-module powerbi.visuals {
+module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
  
  
@@ -92,6 +92,12 @@ module powerbi.visuals {
                     }
                 }
             }
+        };
+
+        /** Note: Public for testability */
+        public static formatStringProp: DataViewObjectPropertyIdentifier = {
+            objectName: 'general',
+            propertyName: 'formatString',
         };
 
         private static VisualClassName = 'radarChart';
@@ -303,8 +309,8 @@ module powerbi.visuals {
             let data = [];
 
             for (let level = 0; level < levels - 1; level++) {
-                const levelFactor: number = radius * ((level + 1) / levels);
-                const transform: number = -1 * levelFactor;
+                let levelFactor: number = radius * ((level + 1) / levels);
+                let transform: number = -1 * levelFactor;
 
                 for (let i = 0; i < values.length; i++) {
                     data.push({
@@ -334,7 +340,7 @@ module powerbi.visuals {
         private drawAxes(values: string[]): void {
 
             const angle: number = this.angle,
-                radius: number = this.radius;
+                radius: number = -1 * this.radius;
 
             let selection: D3.Selection = this.mainGroupElement
                 .select(RadarChart.Axis.selector)
@@ -346,7 +352,6 @@ module powerbi.visuals {
                 .enter()
                 .append('svg:line');
             axis
-                .attr('label', item => item)
                 .attr('x1', 0)
                 .attr('y1', 0)
                 .attr('x2', (name, i) => radius * Math.sin(i * angle))
@@ -359,7 +364,14 @@ module powerbi.visuals {
         private drawAxesLabels(values: string[]): void {
 
             const angle: number = this.angle,
-                radius: number = this.radius;
+                radius: number = -1 * this.radius,
+                length: number = this.dataView.categorical.categories[0].values.length;
+
+            let formatter = valueFormatter.create({
+                format: valueFormatter.getFormatString(this.dataView.metadata.columns[0], RadarChart.formatStringProp, true),
+                value: this.dataView.categorical.categories[0].values[0],
+                value2: this.dataView.categorical.categories[0].values[length - 1],
+            });
 
             let selection: D3.Selection = this.mainGroupElement
                 .select(RadarChart.Axis.selector)
@@ -376,12 +388,12 @@ module powerbi.visuals {
                 .attr('dy', '1.5em')
                 .attr('transform', 'translate(0, -10)')
                 .attr('x', (name, i) => {
-                    return radius * Math.sin(i * angle) + 20 * Math.sin(i * angle);
+                    return (radius - 20) * Math.sin(i * angle);
                 })
                 .attr('y', (name, i) => {
-                    return radius * Math.cos(i * angle) + 10 * Math.cos(i * angle);
+                    return (radius - 10) * Math.cos(i * angle);
                 })
-                .text(item => item)
+                .text(item => formatter.format(item))
                 .classed(RadarChart.AxisLabel.class, true);
 
             labels.exit().remove();
@@ -405,8 +417,8 @@ module powerbi.visuals {
 
             let calculatePoints = (points) => {
                 return points.map((value, i) => {
-                    const x1 = y(value.y) * Math.sin(i * angle);
-                    const y1 = y(value.y) * Math.cos(i * angle);
+                    let x1 = -1 * y(value.y) * Math.sin(i * angle);
+                    let y1 = -1 * y(value.y) * Math.cos(i * angle);
                     return `${x1},${y1}`;
                 }).join(' ');
             };
@@ -449,8 +461,8 @@ module powerbi.visuals {
                 .append('svg:circle')
                 .classed(RadarChart.ChartDot.class, true);
             dots.attr('r', dotRadius)
-                .attr('cx', (value, i) => y(value.y) * Math.sin(i * angle))
-                .attr('cy', (value, i) => y(value.y) * Math.cos(i * angle))
+                .attr('cx', (value, i) => -1 * y(value.y) * Math.sin(i * angle))
+                .attr('cy', (value, i) => -1 * y(value.y) * Math.cos(i * angle))
                 .style('fill', d => d.color);
             dots.exit().remove();
 

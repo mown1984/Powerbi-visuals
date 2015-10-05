@@ -317,7 +317,7 @@ module powerbi.visuals.plugins {
     
     export var radarChart: IVisualPlugin = {
         name: 'radarChart',
-        capabilities: RadarChart.capabilities,
-        create: () => new RadarChart()
+        capabilities: samples.RadarChart.capabilities,
+        create: () => new samples.RadarChart()
     };
 }

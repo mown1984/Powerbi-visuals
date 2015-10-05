@@ -37,10 +37,10 @@ module powerbi.visuals.sampleDataViews {
         public visuals: string[] = ['radarChart'];
 
         private sampleData = [
-            [59, 56, 42, 34, 48, 14, 11, 5, 7, 78, 85, 90, 18, 7, 8, 9, 10],
-            [48, 46, 29, 11, 14, 5, 19, 14, 6, 24, 17, 15, 12, 67, 56, 16, 17]
+            [59, 56, 42, 34, 48, 14, 7, 78, 85, 90, 18, 7, 8, 9, 10],
+            [48, 46, 29, 11, 14, 5, 14, 6, 24, 17, 15, 12, 67, 56, 16]
         ];
-        
+
         private sampleMin: number = 1;
         private sampleMax: number = 100;
 
@@ -50,9 +50,9 @@ module powerbi.visuals.sampleDataViews {
 
             let fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
 
-            const categoryValues = ["Email", "Social Networks", "Internet Banking", "News Sportsites", "Search Engine", 
+            const categoryValues = ["Email", "Social Networks", "Internet Banking", "News Sportsites", "Search Engine",
                 "View Shopping sites", "Paying Online", "Buy Online", "Online Gaming", "Offline Gaming", "Photo Video",
-                "Reading", "Listen Music", "Watch TV", "Listen Radio", "Sending Money", "Other"];
+                "Reading", "Listen Music", "Watch TV", "Listen Radio"];
             let categoryIdentities = categoryValues.map(function(value) {
                 let expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(value));
                 return powerbi.data.createDataViewScopeIdentity(expr);
@@ -120,7 +120,7 @@ module powerbi.visuals.sampleDataViews {
             }];
         }
 
-        
+
         public randomize(): void {
 
             this.sampleData = this.sampleData.map((item) => {
@@ -129,6 +129,6 @@ module powerbi.visuals.sampleDataViews {
 
             this.sampleSingleData = this.getRandomValue(this.sampleMin, this.sampleMax);
         }
-        
+
     }
 }
