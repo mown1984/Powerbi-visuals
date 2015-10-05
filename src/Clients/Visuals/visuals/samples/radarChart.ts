@@ -295,7 +295,6 @@ module powerbi.visuals.samples {
         }
 
         private drawCircularSegments(values: string[]): void {
-
             const angle: number = this.angle,
                 factor: number = RadarChart.SegmentFactor,
                 levels: number = RadarChart.SegmentLevels,
