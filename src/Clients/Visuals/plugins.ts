@@ -314,4 +314,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
     };
+
+    export var tornadoChart: IVisualPlugin = {
+        name: "tornadoChart",
+        capabilities: TornadoChart.capabilities,
+        create: () => new TornadoChart()
+    };
 }

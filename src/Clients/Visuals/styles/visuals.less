@@ -1791,3 +1791,25 @@ div.ql-toolbar {
         }
     }
 }
+
+.tornado-chart {
+    @tornadoChartLabelColor: @neutralSecondaryAltColor;
+    @tornadoChartAxisColor: @tornadoChartLabelColor;
+
+    font-family: sans-serif;
+    font-size: 11px;
+
+    .labels, .categories, .legend {
+        text {
+            fill: @tornadoChartLabelColor;
+        }
+    }
+
+    .axes {
+        .axis {
+            fill: none;
+            stroke: @tornadoChartAxisColor;
+            stroke-width: 1px;
+        }
+    }
+}

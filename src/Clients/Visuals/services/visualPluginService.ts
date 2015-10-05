@@ -271,6 +271,8 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
             }));
+            // Tornado Chart
+            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new TornadoChart());
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {
