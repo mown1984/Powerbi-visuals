@@ -233,6 +233,11 @@ module powerbi.visuals.samples {
             if (!this.svg) {
                 this.svg = d3.select(element.get(0)).append('svg');
             }
+
+            if (!this.margin) {
+                this.margin = DotPlot.DefaultMargin;
+            }
+
             this.svg.classed(DotPlot.VisualClassName, true);
             this.colors = options.style.colorPalette.dataColors;
             this.legend = createLegend(element, false, null);
