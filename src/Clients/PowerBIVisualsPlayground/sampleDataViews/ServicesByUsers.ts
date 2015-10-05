@@ -120,7 +120,6 @@ module powerbi.visuals.sampleDataViews {
             }];
         }
 
-
         public randomize(): void {
 
             this.sampleData = this.sampleData.map((item) => {
@@ -129,6 +128,5 @@ module powerbi.visuals.sampleDataViews {
 
             this.sampleSingleData = this.getRandomValue(this.sampleMin, this.sampleMax);
         }
-
     }
 }

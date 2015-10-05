@@ -29,7 +29,6 @@
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
  
- 
     export interface RadarChartConstructorOptions {
         animator?: IGenericAnimator;
         svg?: D3.Selection;
