@@ -94,11 +94,11 @@ module powerbi.visuals.samples {
 
         }
 
-        private static setAllUnhide(selection) {
+        private static setAllUnhide(selection): void {
             selection.attr("setUnHide", "true");
         }
       
-        public update(options: VisualUpdateOptions) {
+        public update(options: VisualUpdateOptions): void {
 
             let data = Sunburst.converter(options.dataViews[0], this.colors);
             this.viewport = options.viewport;           
@@ -106,7 +106,7 @@ module powerbi.visuals.samples {
             this.updateInternal(data);         
         }
 
-        private updateInternal(dataRootNode:SunburstNode) {
+        private updateInternal(dataRootNode: SunburstNode): void {
 
             this.svg.attr({
                 'height': this.viewport.height,
@@ -171,7 +171,7 @@ module powerbi.visuals.samples {
             return path;
         }
 
-        private onResize() {
+        private onResize(): void {
             let width = this.viewport.width;
             let height = this.viewport.height;
             let percentageText = this.svg.select("#percentage");
@@ -183,7 +183,7 @@ module powerbi.visuals.samples {
             percentageFixedText.attr("x", ((width / 2) - (percentageFixedText.node().clientWidth / 2)));
         }
 
-        private mouseover(d, svgObj, setUnhide) {
+        private mouseover(d, svgObj, setUnhide): void {
             let percentageText = svgObj.svg.select("#percentage");
             percentageText.text(d ? d.value + "%" : "");
 
@@ -207,7 +207,7 @@ module powerbi.visuals.samples {
                 });
         }
 
-        private mouseleave(d, svgObj) {
+        private mouseleave(d, svgObj): void {
 
             if (!svgObj.disableMouceOut) {
                 svgObj.svg.selectAll("path")
