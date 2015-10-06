@@ -131,7 +131,7 @@ module powerbi.visuals {
             selector: ".legend"
         };
 
-        public static Capabilities: VisualCapabilities = {
+        public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "X",
                 kind: VisualDataRoleKind.Grouping,

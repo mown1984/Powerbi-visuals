@@ -317,7 +317,7 @@ module powerbi.visuals.plugins {
 
     export var histogram: IVisualPlugin = {
         name: "histogram",
-        capabilities: Histogram.Capabilities,
+        capabilities: Histogram.capabilities,
         create: () => new Histogram()
     };
 }
