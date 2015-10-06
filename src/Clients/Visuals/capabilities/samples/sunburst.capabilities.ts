@@ -26,7 +26,7 @@
 
 /// <reference path="../../_references.ts"/>
 
-module powerbi.visuals {
+module powerbi.visuals.samples {
     export var sunburstRoleNames = {
         nodes: 'Nodes',
         values: 'Values',

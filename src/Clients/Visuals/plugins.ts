@@ -303,7 +303,7 @@ module powerbi.visuals.plugins {
 
     export var sunburst: IVisualPlugin = {
         name: 'sunburst',
-        //capabilities: samples.Sunburst.capabilities,
+        capabilities: samples.sunburstCapabilities,
         create: () => new samples.Sunburst()
     };
 
