@@ -684,9 +684,9 @@ module powerbitests {
                 var navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatRaw);
 
                 var expectedValues: string[][] = [
-                    ['<div class="kpiTrafficLightSingle0" style="display: inline-block, vertical-align: sub"></div>'],
-                    ['<div class="kpiTrafficLightSingle1" style="display: inline-block, vertical-align: sub"></div>'],
-                    ['<div class="kpiTrafficLightSingle2" style="display: inline-block, vertical-align: sub"></div>'],
+                    ['<div class="kpiTrafficLightSingle0" style="display: inline-block; vertical-align: sub;"></div>'],
+                    ['<div class="kpiTrafficLightSingle1" style="display: inline-block; vertical-align: sub;"></div>'],
+                    ['<div class="kpiTrafficLightSingle2" style="display: inline-block; vertical-align: sub;"></div>'],
                 ];
 
                 expect(fillResult<string>(navigator, rows, columns, "domContent")).toEqual(expectedValues);
@@ -1084,7 +1084,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1117,7 +1117,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1154,7 +1154,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
+        it("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1243,7 +1243,7 @@ module powerbitests {
             tablixHelper.validateClassNames(expectedValues, ".bi-tablix tr", NoMarginClass);
         }
 
-        xit("resize with autoSizeColumnwidth on", (done) => {
+        it("resize with autoSizeColumnwidth on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {
@@ -1286,7 +1286,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth on to off then resize", (done) => {
+        it("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".bi-tablix tr";
             let dataView: DataView = {
                 metadata: {
@@ -1329,7 +1329,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth off to on", (done) => {
+        it("autoSizeColumnwidth off to on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {
