@@ -133,20 +133,22 @@ module powerbi.visuals {
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
-                name: "X",
-                kind: VisualDataRoleKind.Grouping,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Axis")
-            }, {
                 name: "Y",
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
             }],
             dataViewMappings: [{
+                conditions: [{
+                    "Y": {
+                        min: 1,
+                        max: 1
+                    }
+                }],
                 categorical: {
                     values: {
                         select: [{
                             bind: {
-                                to: "X"
+                                to: "Y"
                             }
                         }]
                     }
