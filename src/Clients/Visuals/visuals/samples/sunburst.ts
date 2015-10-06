@@ -225,7 +225,7 @@ module powerbi.visuals.samples {
             let newSunNode: SunburstNode = {
                 name: originParentNode.name,
                 value: originParentNode.value,
-                selector: SelectionId.createWithId(originParentNode.value),
+                selector: SelectionId.createWithId(originParentNode.identity),
                 color: colors.getColorScaleByKey(':)').getColor(key).value
             };
             if (originParentNode.children && originParentNode.children.length > 0) {

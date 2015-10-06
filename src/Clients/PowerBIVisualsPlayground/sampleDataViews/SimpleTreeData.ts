@@ -3,7 +3,7 @@
 //        Copyright (c) Microsoft Corporation.  All rights reserved.
 // </copyright>
 //-----------------------------------------------------------------------
-
+/// <reference path="../_references.ts"/>
 module powerbi.visuals.sampleDataViews {
     
     export class SimpleTreeData extends SampleDataViews implements ISampleDataViewsMethods {
