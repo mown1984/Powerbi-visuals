@@ -27,10 +27,11 @@ var gulp = require("gulp"),
     express = require("express"),
     open = require("gulp-open"),
     consume = require('stream-consume'),
-    q = require('q');
+    Q = require('q');
 
 module.exports = {
-    runHttpServer : runHttpServer
+    runHttpServer: runHttpServer,
+    runScriptSequence: runScriptSequence
 };
 
 function runHttpServer(settings, callback) {
@@ -73,13 +74,31 @@ function runHttpServer(settings, callback) {
 }
 
 function consumeStream(stream) {
-    var deferred = q.defer();
+    var deferred = Q.defer();
     stream
         .on('end', deferred.resolve)
         .on('error', deferred.reject);
-
     // Ensure that the stream completes
     consume(stream);
 
     return deferred.promise;
 }
+
+
+function runScript(script, context) {
+    var scriptResult = script();
+
+    if (scriptResult && typeof scriptResult.pipe === 'function') {
+        return consumeStream(scriptResult);
+    }
+    return scriptResult;
+}
+
+function runScriptSequence(scripts, context) {
+    return scripts.reduce(function(prevScriptPromise, nextScript) {
+        return prevScriptPromise.then(function() {
+            return runScript(nextScript, context);
+        });
+    }, Q());
+}
+

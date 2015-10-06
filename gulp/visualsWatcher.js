@@ -27,7 +27,7 @@ var gulp = require("gulp"),
     runSequence = require("run-sequence"),
     tslint = require("gulp-tslint"),
     gutil = require("gulp-util"),
-    visualsBuild = require("./visualsBuild.js");
+    visualsBuild = require("./visualsBuild.js").load();
 
 var lintErrors = false;
 var lintReporter = function (output, file, options) {
@@ -49,7 +49,7 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visualsCommon:ts");
+                    runSequence("build:visualsCommon");
             }));
     });
     gulp.watch(visualsBuild.getBuildPaths("src/Clients/VisualsData", "VisualsData")).on("change", function (file) {
@@ -57,7 +57,7 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visualsData:ts");
+                    runSequence("build:visualsData");
             }));
     });
     gulp.watch(visualsBuild.getBuildPaths("src/Clients/Visuals", "Visuals")).on("change", function (file) {
@@ -73,18 +73,18 @@ gulp.task("start:watchers", function (callback) {
         gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
             .on("end", function () {
                 if (!lintErrors)
-                    runSequence("build:visuals_playground", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
+                    runSequence("build:visuals:playground", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
             }));
     });
 
     gulp.watch("src/Clients/Visuals/images/sprite-src/*.png", ["build:visuals:sprite"]);
     gulp.watch(["src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css", "src/Clients/Visuals/styles/*.less", "src/Clients/StyleLibrary/less/*.less", "src/Clients/PowerBI/styles/*.less",
-     "src/Clients/Visuals/images/visuals.sprites.png", "src/Clients/Visuals/styles/sprites.less"], ["build:visuals:less"]);
-    gulp.watch(visualsBuild.externalsPath, ["combine:external_js"]).on("change", function (file) {
-                    runSequence("combine:external_js", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
+     "src/Clients/Visuals/images/visuals.sprites.png", "src/Clients/Visuals/styles/sprites.less"], ["build:visuals_less"]);
+    gulp.watch(visualsBuild.externalsPath, ["combine:external:js"]).on("change", function (file) {
+        runSequence("combine:external:js", function (e) { gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
     });
     gulp.watch(visualsBuild.internalsPaths, ["combine:internal_js"]).on("change", function (file) {
-                    runSequence("combine:internal_js", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
+        runSequence("combine:internal:js", function (e) { gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
     });
     gutil.log("", "", gutil.colors.magenta("Continuous build successfully started"));
     gutil.log("", "", gutil.colors.magenta("Waiting for changes..."));
@@ -92,18 +92,17 @@ gulp.task("start:watchers", function (callback) {
     });
 
 gulp.task("continuous_build_debug", function (callback) {
-    isDebug = true;
-    runSequence(
-        "continuous_build",
-        callback);
-});
-gulp.task("continuous_build", function (callback) {
-    dontEmitTSbuildErrors = true;
-// first time build 
+    visualsBuild.load({ isDebug: true });
     runSequence(
         "build:visuals:projects",
         "start:watchers",
         callback);
-
+});
+gulp.task("continuous_build", function (callback) {
+    visualsBuild.load({ noTSEmitOnError: true });
+    runSequence(
+        "build:visuals:projects",
+        "start:watchers",
+        callback);
 });
 

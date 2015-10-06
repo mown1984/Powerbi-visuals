@@ -30,8 +30,9 @@ var gulp = require('gulp'),
 require('./gulp/visualsTest.js');
 require('./gulp/visualsDownload.js');
 require('./gulp/visualsPlayground.js');
-require('./gulp/visualsBuild.js');
+require('./gulp/visualsBuild.js').load();
 require('./gulp/visualsWatcher.js');
+require('./gulp/visualsPackage.js');
 	
 gulp.task("build", function (callback) {
     runSequence("build:visuals", callback);
