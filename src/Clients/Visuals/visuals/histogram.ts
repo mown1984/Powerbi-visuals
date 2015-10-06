@@ -53,8 +53,8 @@ module powerbi.visuals {
         source?: number[];
         ranges?: number[];
         data?: D3.Layout.Bin[];
-        x?: D3.Scale.LinearScale;
-        y?: D3.Scale.LinearScale;
+        xScale?: D3.Scale.LinearScale;
+        yScale?: D3.Scale.LinearScale;
         settings: HistogramSettings;
     }
 
@@ -292,15 +292,14 @@ module powerbi.visuals {
                 values: number[],
                 ranges: number[] = [],
                 data: D3.Layout.Bin[],
-                x: D3.Scale.LinearScale,
-                y: D3.Scale.LinearScale;
+                xScale: D3.Scale.LinearScale,
+                yScale: D3.Scale.LinearScale;
 
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.values ||
                 !dataView.categorical.values[0] ||
                 !dataView.categorical.values[0].values ||
-                !(dataView.categorical.values[0].values instanceof Array) ||
                 !(dataView.categorical.values[0].values.length > 0)) {
                 return null;
             }
@@ -323,14 +322,14 @@ module powerbi.visuals {
                 .frequency(histogramSettings.frequency)
                 (values);
 
-            x = d3.scale.linear()
+            xScale = d3.scale.linear()
                 .domain([
                     d3.min(data, (item: D3.Layout.Bin) => d3.min(item)),
                     d3.max(data, (item: D3.Layout.Bin) => d3.max(item))
                 ])
                 .range([0, this.viewport.width]);
 
-            y = d3.scale.linear()
+            yScale = d3.scale.linear()
                 .domain([
                     0,
                     d3.max(data, (item: D3.Layout.Bin) => item.y)
@@ -344,8 +343,8 @@ module powerbi.visuals {
             return {
                 source: values,
                 data: data,
-                x: x,
-                y: y,
+                xScale: xScale,
+                yScale: yScale,
                 settings: histogramSettings,
                 ranges: ranges
             };
@@ -366,12 +365,9 @@ module powerbi.visuals {
             histogramSettings.fillColor = Histogram.DefaultHistogramSettings.fillColor;
             histogramSettings.bins = Histogram.DefaultHistogramSettings.bins;
             histogramSettings.frequency = Histogram.DefaultHistogramSettings.frequency;
+            histogramSettings.displayName = dataView.metadata.columns[0].displayName || Histogram.DefaultHistogramSettings.displayName;
 
             objects = dataView.metadata.columns[0].objects;
-
-            histogramSettings.displayName =
-                dataView.metadata.columns[0].displayName ||
-                    Histogram.DefaultHistogramSettings.displayName;
 
             if (objects) {
                 let binsNumber: number;
@@ -484,7 +480,7 @@ module powerbi.visuals {
         private renderColumns(histogramDataView: HistogramDataView): void {
             let self: Histogram = this,
                 data: D3.Layout.Bin[] = histogramDataView.data,
-                y: D3.Scale.LinearScale = histogramDataView.y,
+                y: D3.Scale.LinearScale = histogramDataView.yScale,
                 countOfValues: number = data.length,
                 widthOfColumn: number =
                     this.viewport.width / countOfValues - this.ColumnPadding,
@@ -579,8 +575,8 @@ module powerbi.visuals {
         }
 
         private renderAxes(histogramDataView: HistogramDataView): void {
-            let x: D3.Scale.LinearScale = histogramDataView.x,
-                y: D3.Scale.LinearScale = histogramDataView.y,
+            let x: D3.Scale.LinearScale = histogramDataView.xScale,
+                y: D3.Scale.LinearScale = histogramDataView.yScale,
                 xAxis: D3.Svg.Axis,
                 yAxis: D3.Svg.Axis;
 
