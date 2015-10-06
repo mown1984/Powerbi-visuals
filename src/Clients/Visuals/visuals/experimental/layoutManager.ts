@@ -1,4 +1,6 @@
-﻿module powerbi.visuals.experimental {
+﻿/// <reference path="../../_references.ts"/>
+
+module powerbi.visuals.experimental {
 
     export enum DockPosition {
         Top,

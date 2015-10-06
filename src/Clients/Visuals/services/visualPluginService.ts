@@ -135,7 +135,8 @@ module powerbi.visuals {
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({ chartType: CartesianChartType.LineClusteredColumnCombo, isScrollable: true, animator: new WebColumnChartAnimator() }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({ chartType: CartesianChartType.LineStackedColumnCombo, isScrollable: true, animator: new WebColumnChartAnimator() }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({ sliceWidthRatio: 0, animator: new WebDonutChartAnimator(), isScrollable: true }));
-                createPlugin(this.visualPlugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({ chartType: CartesianChartType.Scatter, isScrollable: true, animator: new BaseAnimator() }));
+                //createPlugin(this.visualPlugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({ chartType: CartesianChartType.Scatter, isScrollable: true, animator: new BaseAnimator() }));
+                createPlugin(this.visualPlugins, powerbi.visuals.plugins.scatterChart, () => new visuals.experimental.BasicVisual(new visuals.experimental.ScatterPrototype.ScatterVisual()));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.treemap, () => new Treemap({ animator: new WebTreemapAnimator, isScrollable: true }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.waterfallChart, () => new CartesianChart({ chartType: CartesianChartType.Waterfall, isScrollable: true }));
             }

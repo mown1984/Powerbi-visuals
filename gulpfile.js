@@ -272,7 +272,9 @@ var externalsPath = ["src/Clients/Externals/ThirdPartyIP/D3/*.min.js",
     "src/Clients/Externals/ThirdPartyIP/GlobalizeJS/globalize.culture.en-US.js",
     "src/Clients/Externals/ThirdPartyIP/JQuery/**/*.min.js",
     "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js",
-    "src/Clients/Externals/ThirdPartyIP/LoDash/*.min.js"];
+    "src/Clients/Externals/ThirdPartyIP/LoDash/*.min.js",
+    "src/Clients/Externals/ThirdPartyIP/PIXIJS/*.js",
+    "src/Clients/Externals/ThirdPartyIP/twojs/*.js"];
 gulp.task("combine:external_js", function () {
     return gulp.src(externalsPath)
         .pipe(concat("externals.min.js"))

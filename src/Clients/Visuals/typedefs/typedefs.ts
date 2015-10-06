@@ -32,4 +32,6 @@
 ///<reference path="../../Typedefs/velocity/velocity-animate.d.ts"/>
 ///<reference path="../../Typedefs/lodash/lodash.d.ts"/>
 ///<reference path="../../Typedefs/quill/quill.d.ts"/>
+///<reference path="../../Typedefs/pixijs/pixi.js.d.ts"/>
+///<reference path="../../Typedefs/twojs/two.js.d.ts"/>
 ///<reference path="../../Typedefs/ie/ie.d.ts"/>

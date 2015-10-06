@@ -1,4 +1,6 @@
-﻿module powerbi.visuals.experimental {
+﻿/// <reference path="../../_references.ts"/>
+
+module powerbi.visuals.experimental {
 
     export class AxesViewModel {
     }
@@ -13,6 +15,11 @@
         /** if true and the dataType is numeric or dateTime, create a linear axis, else create an ordinal axis */
         isScalar?: boolean;
     };
+
+    export interface CartesianAxesViewModel {
+        plotArea: BoundingBox;
+        // margins...
+    }
 
     export class Domain {
         public min: number;
@@ -48,6 +55,7 @@
         private dataModels: AxisDataModel[];
         private isXScalar: boolean;
         private categoryDomain: Domain;
+        private viewModel: CartesianAxesViewModel;
 
         public xScale: D3.Scale.GenericScale<any>;
         public yScale: D3.Scale.GenericScale<any>;
@@ -101,7 +109,9 @@
             };
         }
 
-        public layout(bbox: BoundingBox, xDomain: Domain, yDomain: Domain, renderer: IVisualRenderer): SceneGraphNode {
+        public layout(bbox: BoundingBox, xDomain: Domain, yDomain: Domain): SceneGraphNode {
+            this.viewModel = this.buildViewModel(bbox);
+
             let node = new SceneGraphNode();
 
             node.render = () => { };
@@ -117,6 +127,16 @@
                 .domain([yDomain.min, yDomain.max]);
 
             return node;
+        }
+
+        private buildViewModel(bbox: BoundingBox): CartesianAxesViewModel {
+            return <CartesianAxesViewModel> {
+                plotArea: bbox  // TODO: take margins into account
+            };
+        }
+
+        public getPlotArea(): BoundingBox {
+            return this.viewModel.plotArea;
         }
 
         public layoutAxes(boundingBox: BoundingBox): IAxisProperties[] {

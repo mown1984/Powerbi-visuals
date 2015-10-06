@@ -1,4 +1,6 @@
-﻿module powerbi.visuals.experimental {
+﻿/// <reference path="../../_references.ts"/>
+
+module powerbi.visuals.experimental {
 
     export class SceneGraphNode {
         public children: SceneGraphNode[];
@@ -31,7 +33,7 @@
     export interface IVisualComponent {
         init(options: VisualInitOptions): void;
         setData(dataView: DataView): void;
-        layout(boundingBox: BoundingBox, renderer: IVisualRenderer): SceneGraphNode;
+        layout(boundingBox: BoundingBox): SceneGraphNode;
         //render(): SceneGraphNode;
     }
 
@@ -60,30 +62,43 @@
 
             this.root.init(options);
 
-            this.renderer = new SvgRenderer(this.initOptions.element);
+            this.renderer = options.renderer || new CanvasRenderer(options.element);
+            this.setViewport(options.viewport);
+            //this.renderer = new SvgRenderer(this.initOptions.element);
             //this.renderer = new CanvasRenderer(this.initOptions.element);
         }
 
         public update(options: VisualUpdateOptions) {
             let dataView = options.dataViews[0];
-
             this.viewport = options.viewport;
-
             this.root.setData(dataView);
+            this.draw(options.viewport);
+        }
 
+        private setViewport(viewport: IViewport): BoundingBox {
             let bbox: BoundingBox = {
                 top: 0,
                 left: 0,
-                height: options.viewport.height,
-                width: options.viewport.width,
+                height: viewport.height,
+                width: viewport.width,
             };
+
             this.renderer.setViewport(bbox);
 
-            let sceneGraph = this.root.layout(bbox, this.renderer);
+            return bbox;
+        }
+
+        private draw(viewport: IViewport) {
+            let bbox = this.setViewport(viewport);
+
+            let sceneGraph = this.root.layout(bbox);
             // Save scene graph for hit testing...
 
             // Render
             this.renderGraph(sceneGraph);
+
+            if (this.renderer.finish)
+                this.renderer.finish();
         }
 
         private renderGraph(node: SceneGraphNode) {
@@ -94,7 +109,9 @@
             }
         }
 
-        public onResizing(viewport: IViewport) { /*NOT NEEDED*/ }
+        public onResizing(viewport: IViewport) {
+            this.draw(viewport);
+        }
 
         public onDataChanged(options: VisualDataChangedOptions) {
             this.update(<VisualUpdateOptions> {

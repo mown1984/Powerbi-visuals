@@ -28,7 +28,7 @@
 
 interface JQuery {
     /** Demonstrates how Power BI visual creation could be implemented as jQuery plugin */
-    visual(plugin: Object, dataView?: Object): JQuery;
+    visual(plugin: Object, rendererName: string, dataView?: Object): JQuery;
 }
 
 module powerbi.visuals {
@@ -48,6 +48,8 @@ module powerbi.visuals {
 
         private static hostControls: HostControls;
         private static container: JQuery;
+
+        public static renderer: (e: JQuery) => powerbi.visuals.experimental.IVisualRenderer;
 
         private static visualStyle: IVisualStyle = {
             titleText: {
@@ -74,31 +76,44 @@ module powerbi.visuals {
             this.hostControls = new HostControls($('#options'));
             this.hostControls.setElement(this.container);
 
+            let rendererSelect = $('#rendererSelect');
+            rendererSelect.on('change', () => this.onChange());
+
             this.populateVisualTypeSelect();
             powerbi.visuals.DefaultVisualHostServices.initialize();
             // Wrapper function to simplify visualization element creation when using jQuery
-            $.fn.visual = function (plugin: IVisualPlugin, dataView?: DataView[]) {
+            $.fn.visual = function (plugin: IVisualPlugin, rendererName: string, dataView?: DataView[]) {
 
                 // Step 1: Create new DOM element to represent Power BI visual
                 let element = $('<div/>');
                 element.addClass('visual');
                 element['visible'] = () => { return true; };
                 this.append(element);
-            
-                Playground.createVisualElement(element, plugin, dataView);
+
+                let renderer = Playground.getRenderer(rendererName, element);
+
+                Playground.createVisualElement(element, plugin, dataView, renderer);
                 return this;
             };
 
             let visualByDefault = jsCommon.Utility.getURLParamValue('visual');
             if (visualByDefault) {
                 $('.topBar, #options').css({ "display": "none" });
-                Playground.onVisualTypeSelection(visualByDefault.toString());
+                this.onChange(visualByDefault.toString());
             } else {
-                this.onVisualTypeSelection($('#visualTypes').val());
+                this.onChange();
             }
         }
 
-        private static createVisualElement(element: JQuery, plugin: IVisualPlugin, dataView?: DataView[]) {
+        private static onChange(visualType?: string) {
+            if (visualType == null) {
+                visualType = $('#visualTypes').val();
+            }
+
+            this.onVisualTypeSelection(visualType, $('#rendererSelect').val());
+        }
+
+        private static createVisualElement(element: JQuery, plugin: IVisualPlugin, dataView?: DataView[], renderer?: visuals.experimental.IVisualRenderer) {
 
             // Step 2: Instantiate Power BI visual
             this.visualElement = plugin.create();
@@ -109,7 +124,8 @@ module powerbi.visuals {
                 viewport: this.hostControls.getViewport(),
                 settings: { slicingEnabled: true },
                 interactivity: { isInteractiveLegend: false, selection: false },
-                animation: { transitionImmediate: true }
+                animation: { transitionImmediate: true },
+                renderer: renderer
             });
             
             this.hostControls.setVisual(this.visualElement);
@@ -133,26 +149,43 @@ module powerbi.visuals {
                 typeSelect.append('<option value="' + visual.name + '">' + visual.name + '</option>');
             }
 
-            typeSelect.change(() => this.onVisualTypeSelection(typeSelect.val()));
+            typeSelect.change(() => this.onChange());
         }
 
-        private static onVisualTypeSelection(pluginName: string): void {
+        private static onVisualTypeSelection(pluginName: string, rendererName: string): void {
             if (pluginName.length === 0) {
                 return;
             }
 
-            this.createVisualPlugin(pluginName);
+            this.createVisualPlugin(pluginName, rendererName);
             this.hostControls.onPluginChange(pluginName);
-        }        
+        }
 
-        private static createVisualPlugin(pluginName: string): void {
+        private static getRenderer(rendererName: string, element: JQuery): visuals.experimental.IVisualRenderer {
+            switch (rendererName) {
+                case "SVG":
+                    return new powerbi.visuals.experimental.SvgRenderer(element);
+                case "Canvas":
+                    return new powerbi.visuals.experimental.CanvasRenderer(element);
+                case "WebGL":
+                    return new powerbi.visuals.experimental.MinimalWebGLRenderer(element);
+                case "TwoJS":
+                    return new powerbi.visuals.experimental.TwoWebGLRenderer(element);
+                case "PIXI":
+                    return new powerbi.visuals.experimental.PixiWebGLRenderer(element);
+            }
+
+            return null;
+        }
+
+        private static createVisualPlugin(pluginName: string, rendererName: string): void {
             this.container.children().not(".ui-resizable-handle").remove();
 
             let plugin = this.pluginService.getPlugin(pluginName);
             if (!plugin) {
                 this.container.append('<div class="wrongVisualWarning">Wrong visual name <span>\'' + pluginName + '\'</span> in parameters</div>'); return;
             }
-            this.container.visual(plugin);
+            this.container.visual(plugin, rendererName);
         }       
         
     }   

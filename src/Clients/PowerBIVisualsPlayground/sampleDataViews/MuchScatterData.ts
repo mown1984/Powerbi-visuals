@@ -50,7 +50,7 @@ module powerbi.visuals.sampleDataViews {
                 max: 235,
             }];
 
-        private categoryCount: number = 1000;
+        private categoryCount: number = 3000;
 
         constructor() {
             super();

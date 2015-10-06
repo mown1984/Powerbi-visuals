@@ -46,6 +46,7 @@ module powerbi.visuals {
 
         private suppressAnimationsElement: JQuery;
         private animationDurationElement: JQuery;
+        private timingElement: JQuery;
         
         private viewport: IViewport;
         private container: JQuery;
@@ -59,12 +60,15 @@ module powerbi.visuals {
             parent.find('#randomize').on('click', () => this.randomize());
 
             this.dataViewsSelect = parent.find('#dataViewsSelect').first();
+            this.dataViewsSelect.change(() => this.onChangeDataViewSelection(this.dataViewsSelect.val()));
 
             this.suppressAnimationsElement = parent.find('input[name=suppressAnimations]').first();
             this.suppressAnimationsElement.on('change', () => this.onChangeSuppressAnimations());
             
             this.animationDurationElement = parent.find('input[name=animation_duration]').first();
             this.animationDurationElement.on('change', () => this.onChangeDuration());
+
+            this.timingElement = parent.find('.timing');
         }
 
         public setElement(container: JQuery): void {
@@ -96,15 +100,20 @@ module powerbi.visuals {
             };
 
             if (this.visualElement) {
-                if (this.visualElement.update) {
-                    this.visualElement.update({
-                        dataViews: this.sampleDataViews.getDataViews(),
-                        suppressAnimations: true,
-                        viewport: this.viewport
-                    });
-                } else if (this.visualElement.onResizing){
+                let start = performance.now();
+
+                //if (this.visualElement.update) {
+                //    this.visualElement.update({
+                //        dataViews: this.sampleDataViews.getDataViews(),
+                //        suppressAnimations: true,
+                //        viewport: this.viewport
+                //    });
+                //} else if (this.visualElement.onResizing){
                     this.visualElement.onResizing(this.viewport);
-                }
+                //}
+                
+                let duration = performance.now() - start;
+                this.timingElement.text(duration + "ms");
             }
         }
 
@@ -128,6 +137,8 @@ module powerbi.visuals {
         }
                 
         private onChange(): void {
+            let start = performance.now();
+
             if (this.visualElement.update) {
                 this.visualElement.update({
                     dataViews: this.sampleDataViews.getDataViews(),
@@ -137,11 +148,14 @@ module powerbi.visuals {
             } else {
                 this.visualElement.onDataChanged({
                     dataViews: this.sampleDataViews.getDataViews(),
-                    suppressAnimations: this.suppressAnimations
+                    suppressAnimations: this.suppressAnimations,
                 });
 
                 this.visualElement.onResizing(this.viewport);
             }
+
+            let duration = performance.now() - start;
+            this.timingElement.text(duration + "ms");
         }
 
         public onPluginChange(pluginName: string): void {
@@ -163,8 +177,6 @@ module powerbi.visuals {
                 this.dataViewsSelect.append(option);
             });
 
-            this.dataViewsSelect.change(() => this.onChangeDataViewSelection(this.dataViewsSelect.val()));
-
             if (defaultDataView) {
                 this.onChangeDataViewSelection(defaultDataView);
             }
@@ -174,6 +186,5 @@ module powerbi.visuals {
             this.sampleDataViews = SampleData.getDataViewsBySampleName(sampleName);
             this.onChange();
         }
-
     }
 }

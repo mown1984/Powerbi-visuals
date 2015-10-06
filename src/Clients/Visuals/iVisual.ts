@@ -255,6 +255,8 @@ module powerbi {
 
         /** Interactivity options. */
         interactivity?: InteractivityOptions;
+
+        renderer?: visuals.experimental.IVisualRenderer;
     }
 
     export interface VisualUpdateOptions {

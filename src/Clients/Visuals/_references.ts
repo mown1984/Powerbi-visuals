@@ -185,7 +185,6 @@
 /// <reference path="visuals/experimental/layoutManager.ts"/>
 /// <reference path="visuals/experimental/legend.ts"/>
 /// <reference path="visuals/experimental/scatterPrototype.ts"/>
-/// <reference path="visuals/experimental/SvgRenderer.ts"/>
 
 /// <reference path="pluginsCapabilities.ts"/>
 /// <reference path="plugins.ts"/>
