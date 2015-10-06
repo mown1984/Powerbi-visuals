@@ -201,6 +201,8 @@ module powerbi.visuals {
         private MinQuantityBins: number = 1;
         private TooltipDisplayName: string = "Range";
         private SeparatorNumbers: string = ", ";
+        private LegendSize: number = 50;
+        private AxisSize: number = 30;
 
         private ExcludeBrackets: Brackets = {
             left: "(",
@@ -213,10 +215,10 @@ module powerbi.visuals {
         };
 
         private margin: IMargin = {
-            top: 15,
-            right: 15,
-            bottom: 75,
-            left: 75
+            top: 10,
+            right: 10,
+            bottom: 10,
+            left: 10
         };
 
         private durationAnimations: number = 200;
@@ -327,14 +329,14 @@ module powerbi.visuals {
                     d3.min(data, (item: D3.Layout.Bin) => d3.min(item)),
                     d3.max(data, (item: D3.Layout.Bin) => d3.max(item))
                 ])
-                .range([0, this.viewport.width]);
+                .range([0, this.viewport.width - this.LegendSize - this.AxisSize]);
 
             yScale = d3.scale.linear()
                 .domain([
                     0,
                     d3.max(data, (item: D3.Layout.Bin) => item.y)
                 ])
-                .range([this.viewport.height, 0]);
+                .range([this.viewport.height - this.LegendSize, 0]);
 
             if (data[0] && data[0].dx) {
                 ranges = this.getRanges(values, data.length, data[0].dx);
@@ -412,7 +414,6 @@ module powerbi.visuals {
             this.suppressAnimations = Boolean(visualUpdateOptions.suppressAnimations);
 
             this.setSize(visualUpdateOptions.viewport);
-            this.updateElements();
 
             histogramDataView = this.converter(dataView);
 
@@ -437,34 +438,29 @@ module powerbi.visuals {
                 height: height,
                 width: width
             };
+
+            this.updateElements(viewport.height, viewport.width);
         }
 
-        private updateElements(): void {
-            let height: number,
-                width: number;
-
-            height =
-                this.viewport.height +
-                this.margin.top +
-                this.margin.bottom;
-
-            width =
-                this.viewport.width +
-                this.margin.left +
-                this.margin.right;
+        private updateElements(height: number, width: number): void {
+            let shiftToRight: number = this.margin.left + this.LegendSize;
 
             this.root.attr({
                 "height": height,
                 "width": width
             });
 
-            this.main.attr(
-                "transform",
-                SVGUtil.translate(this.margin.left, this.margin.top));
+            this.main.attr("transform", SVGUtil.translate(this.margin.left, this.margin.top));
+
+            this.legend.attr("transform", SVGUtil.translate(this.margin.left, this.margin.top));
+
+            this.columns.attr("transform", SVGUtil.translate(shiftToRight, 0));
+
+            this.axes.attr("transform", SVGUtil.translate(shiftToRight, 0));
 
             this.axisX.attr(
                 "transform",
-                SVGUtil.translate(0, this.viewport.height));
+                SVGUtil.translate(0, this.viewport.height - this.LegendSize));
         }
 
         private render(histogramDataView: HistogramDataView): void {
@@ -480,14 +476,15 @@ module powerbi.visuals {
         private renderColumns(histogramDataView: HistogramDataView): void {
             let self: Histogram = this,
                 data: D3.Layout.Bin[] = histogramDataView.data,
-                y: D3.Scale.LinearScale = histogramDataView.yScale,
+                yScale: D3.Scale.LinearScale = histogramDataView.yScale,
                 countOfValues: number = data.length,
-                widthOfColumn: number =
-                    this.viewport.width / countOfValues - this.ColumnPadding,
+                widthOfColumn: number,
                 columnsSelection: D3.UpdateSelection,
                 columnElements: D3.Selection = this.main
                     .select(Histogram.Columns.selector)
                     .selectAll(Histogram.Column.selector);
+
+            widthOfColumn = (this.viewport.width - this.AxisSize - this.LegendSize) / countOfValues - this.ColumnPadding;
 
             columnsSelection = columnElements.data(data);
 
@@ -499,14 +496,14 @@ module powerbi.visuals {
                 .attr("x", this.ColumnPadding / 2)
                 .attr("width", widthOfColumn)
                 .attr("height", (item: D3.Layout.Bin) => {
-                    return this.getColumnHeight(item, y);
+                    return this.getColumnHeight(item, yScale);
                 })
                 .attr("fill", histogramDataView.settings.fillColor)
                 .attr("class", Histogram.Column["class"])
                 .attr("transform", (item: D3.Layout.Bin, index: number) => {
                     return SVGUtil.translate(
                         widthOfColumn * index + this.ColumnPadding * index,
-                        y(item.y) - (this.ColumnPadding / 2.5));
+                        yScale(item.y) - this.ColumnPadding / 2.5);
                 })
                 .attr("value", (item: D3.Layout.Bin) => item.y)
                 .on("click", function () {
@@ -567,7 +564,7 @@ module powerbi.visuals {
 
         private getColumnHeight(column: D3.Layout.Bin, y: D3.Scale.LinearScale): number {
             let height: number =
-                this.viewport.height - y(column.y);
+                this.viewport.height - this.LegendSize - y(column.y);
 
             return height > 0
                 ? height
@@ -575,18 +572,18 @@ module powerbi.visuals {
         }
 
         private renderAxes(histogramDataView: HistogramDataView): void {
-            let x: D3.Scale.LinearScale = histogramDataView.xScale,
-                y: D3.Scale.LinearScale = histogramDataView.yScale,
+            let xScale: D3.Scale.LinearScale = histogramDataView.xScale,
+                yScale: D3.Scale.LinearScale = histogramDataView.yScale,
                 xAxis: D3.Svg.Axis,
                 yAxis: D3.Svg.Axis;
 
             xAxis = d3.svg.axis()
-                .scale(x)
+                .scale(xScale)
                 .orient("bottom")
                 .tickValues(histogramDataView.ranges);
 
             yAxis = d3.svg.axis()
-                .scale(y)
+                .scale(yScale)
                 .orient("left")
                 .ticks(this.QuantityLabelsOnAxisY);
 
@@ -657,19 +654,20 @@ module powerbi.visuals {
 
             return [{
                 transform: SVGUtil.translate(
-                    this.viewport.width / 2 - this.margin.left / 2,
-                    this.viewport.height + this.margin.bottom / 2),
+                    this.viewport.width / 2,
+                    this.viewport.height),
                 text: histogramDataView.settings.displayName,
-                dx: "3em"
+                dx: "1em",
+                dy: "-1em"
             }, {
                 transform: SVGUtil.translateAndRotate(
-                    -(this.margin.left / 2),
-                    this.viewport.height / 2 + this.margin.top,
+                    0,
+                    this.viewport.height / 2,
                     0,
                     0,
                     270),
                 text: bottomLegendText,
-                dx: "1em"
+                dx: "3em"
             }];
         }
 
