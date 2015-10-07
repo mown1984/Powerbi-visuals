@@ -19,17 +19,67 @@ module powerbi.visuals.experimental {
         PIXI,
     }
 
+    // TODO: factory might not be the best name...
+    export class RendererFactory {
+        private renderers: {
+            [type: number]: IVisualRenderer
+        };
+        private element: JQuery;
+
+        constructor(element: JQuery) {
+            this.renderers = {};
+            this.element = element;
+        }
+
+        public getRenderer(type: RendererType): IVisualRenderer {
+            let renderer = this.renderers[type];
+            if (!renderer) {
+                renderer = this.renderers[type] = this.createRenderer(type, this.element);
+            }
+
+            return renderer;
+        }
+
+        public setViewport(bbox: BoundingBox) {
+            for (let type in this.renderers) {
+                let renderer = this.renderers[type];
+                renderer.setViewport(bbox);
+            }
+        }
+
+        // TODO: these should be created lazily, but we likely need the elements in the dom to be in a certain order
+        private createRenderer(type: RendererType, element: JQuery): IVisualRenderer {
+            switch (type) {
+                case RendererType.SVG:
+                    return new powerbi.visuals.experimental.SvgRenderer(element);
+                case RendererType.Canvas:
+                    return new powerbi.visuals.experimental.CanvasRenderer(element);
+                case RendererType.WebGL:
+                    return new powerbi.visuals.experimental.MinimalWebGLRenderer(element);
+                case RendererType.TwoJS:
+                    return new powerbi.visuals.experimental.TwoWebGLRenderer(element);
+                case RendererType.PIXI:
+                    return new powerbi.visuals.experimental.PixiWebGLRenderer(element);
+            }
+        }
+    }
+
     export class SvgRenderer implements IVisualRenderer {
-        private element: D3.Selection;
+        private svg: D3.Selection;
 
         public type: RendererType = RendererType.SVG;
 
         constructor(element: JQuery) {
-            this.element = d3.select(element.get(0)).append('svg');
+            this.svg = d3.select(element.get(0)).append('svg');
+            this.svg.style({
+                position: 'absolute',
+                top: '0px',
+                left: '0px',
+            });
         }
 
         public setViewport(bbox: BoundingBox) {
-            this.element.attr({
+            this.svg.attr({
                 width: bbox.width,
                 height: bbox.height,
             });
@@ -42,7 +92,7 @@ module powerbi.visuals.experimental {
         }
 
         public getElement(): D3.Selection {
-            return this.element;
+            return this.svg;
         }
     }
 
@@ -54,6 +104,11 @@ module powerbi.visuals.experimental {
 
         constructor(element: JQuery) {
             this.canvasElement = $('<canvas>');
+            this.canvasElement.css({
+                position: 'absolute',
+                top: '0px',
+                left: '0px',
+            });
             element.append(this.canvasElement);
             
             let canvasNode = <HTMLCanvasElement>this.canvasElement.get(0);
@@ -183,6 +238,11 @@ module powerbi.visuals.experimental {
 
         constructor(element: JQuery) {
             this.canvasElement = $('<canvas>');
+            this.canvasElement.css({
+                position: 'absolute',
+                top: '0px',
+                left: '0px',
+            });
             element.append(this.canvasElement);
 
             let canvas = <HTMLCanvasElement>this.canvasElement.get(0);

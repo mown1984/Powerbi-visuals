@@ -49,7 +49,7 @@ module powerbi.visuals {
         private static hostControls: HostControls;
         private static container: JQuery;
 
-        public static renderer: (e: JQuery) => powerbi.visuals.experimental.IVisualRenderer;
+        //public static renderer: (e: JQuery) => powerbi.visuals.experimental.IVisualRenderer;
 
         private static visualStyle: IVisualStyle = {
             titleText: {
@@ -89,10 +89,8 @@ module powerbi.visuals {
                 element.addClass('visual');
                 element['visible'] = () => { return true; };
                 this.append(element);
-
-                let renderer = Playground.getRenderer(rendererName, element);
-
-                Playground.createVisualElement(element, plugin, dataView, renderer);
+                
+                Playground.createVisualElement(element, plugin, dataView, rendererName);
                 return this;
             };
 
@@ -113,7 +111,9 @@ module powerbi.visuals {
             this.onVisualTypeSelection(visualType, $('#rendererSelect').val());
         }
 
-        private static createVisualElement(element: JQuery, plugin: IVisualPlugin, dataView?: DataView[], renderer?: visuals.experimental.IVisualRenderer) {
+        private static createVisualElement(element: JQuery, plugin: IVisualPlugin, dataView?: DataView[], preferredRenderer?: string) {
+
+            let rendererType = <experimental.RendererType>experimental.RendererType[preferredRenderer];
 
             // Step 2: Instantiate Power BI visual
             this.visualElement = plugin.create();
@@ -125,7 +125,8 @@ module powerbi.visuals {
                 settings: { slicingEnabled: true },
                 interactivity: { isInteractiveLegend: false, selection: false },
                 animation: { transitionImmediate: true },
-                renderer: renderer
+                preferredRenderer: rendererType,
+                rendererFactory: new experimental.RendererFactory(element),
             });
             
             this.hostControls.setVisual(this.visualElement);
@@ -161,22 +162,22 @@ module powerbi.visuals {
             this.hostControls.onPluginChange(pluginName);
         }
 
-        private static getRenderer(rendererName: string, element: JQuery): visuals.experimental.IVisualRenderer {
-            switch (rendererName) {
-                case "SVG":
-                    return new powerbi.visuals.experimental.SvgRenderer(element);
-                case "Canvas":
-                    return new powerbi.visuals.experimental.CanvasRenderer(element);
-                case "WebGL":
-                    return new powerbi.visuals.experimental.MinimalWebGLRenderer(element);
-                case "TwoJS":
-                    return new powerbi.visuals.experimental.TwoWebGLRenderer(element);
-                case "PIXI":
-                    return new powerbi.visuals.experimental.PixiWebGLRenderer(element);
-            }
+        //private static getRenderer(rendererName: string, element: JQuery): visuals.experimental.IVisualRenderer {
+        //    switch (rendererName) {
+        //        case "SVG":
+        //            return new powerbi.visuals.experimental.SvgRenderer(element);
+        //        case "Canvas":
+        //            return new powerbi.visuals.experimental.CanvasRenderer(element);
+        //        case "WebGL":
+        //            return new powerbi.visuals.experimental.MinimalWebGLRenderer(element);
+        //        case "TwoJS":
+        //            return new powerbi.visuals.experimental.TwoWebGLRenderer(element);
+        //        case "PIXI":
+        //            return new powerbi.visuals.experimental.PixiWebGLRenderer(element);
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         private static createVisualPlugin(pluginName: string, rendererName: string): void {
             this.container.children().not(".ui-resizable-handle").remove();

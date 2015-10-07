@@ -48,12 +48,12 @@ module powerbi.visuals.experimental {
             public init(options: VisualInitOptions) {
                 this.initOptions = options;
 
+                this.renderer = this.getRenderer(options.preferredRenderer, options.rendererFactory);
+
                 this.legend = new Legend();
                 this.legend.init(options);
 
                 this.axes = new CartesianAxes();
-
-                this.renderer = this.getRenderer(options.renderer);
             }
 
             public layout(boundingBox: BoundingBox): SceneGraphNode {
@@ -79,19 +79,19 @@ module powerbi.visuals.experimental {
                 return sceneNode;
             }
 
-            private getRenderer(renderer: IVisualRenderer): IRenderer {
-                switch (renderer.type) {
+            private getRenderer(type: RendererType, factory: RendererFactory): IRenderer {
+                switch (type) {
                     case RendererType.SVG:
-                        return new ScatterSvgRenderer(<SvgRenderer>renderer);
+                        return new ScatterSvgRenderer(<SvgRenderer>factory.getRenderer(RendererType.SVG));
                     case RendererType.Canvas:
-                        return new ScatterCanvasRenderer(<CanvasRenderer>renderer);
+                        return new ScatterCanvasRenderer(<CanvasRenderer>factory.getRenderer(RendererType.Canvas));
                     case RendererType.WebGL:
                         //return new ScatterMinimalWebGLRenderer(<MinimalWebGLRenderer>renderer);
-                        return new ScatterTextureWebGLRenderer(<MinimalWebGLRenderer>renderer);
+                        return new ScatterTextureWebGLRenderer(<MinimalWebGLRenderer>factory.getRenderer(RendererType.WebGL));
                     case RendererType.TwoJS:
-                        return new ScatterTwoWebGLRenderer(<TwoWebGLRenderer>renderer);
+                        return new ScatterTwoWebGLRenderer(<TwoWebGLRenderer>factory.getRenderer(RendererType.TwoJS));
                     case RendererType.PIXI:
-                        return new ScatterPixiWebGLRenderer(<PixiWebGLRenderer>renderer);
+                        return new ScatterPixiWebGLRenderer(<PixiWebGLRenderer>factory.getRenderer(RendererType.PIXI));
                 }
 
                 return null;
@@ -131,28 +131,6 @@ module powerbi.visuals.experimental {
             private buildDataModel(dataView: DataView, colorPalette: IDataColorPalette, defaultDataPointColor?: string): void {
                 this.dataModel = new ScatterChartDataConverter(dataView).convert(colorPalette, defaultDataPointColor);
             }
-
-            //public update(options: VisualUpdateOptions) {
-            //    let dataView = options.dataViews[0];
-
-            //    let plotAreaDataModel = PerfectScatter.converter(dataView);
-            //    //TODO: fix null params
-            //    let legendDataModel = Legend.converter(dataView.categorical.values, null, "", null);
-            //    let axesDataModels = 
-
-            //    let plotAreaBoundingBox = PerfectScatter.getPreferredLayout(plotAreaDataModel);
-            //    let legendBoundingBox = Legend.getPreferredLayout(legendDataModel);
-            //    //...
-
-            //    this.reconcileLayout(/*...*/);
-
-            //    let legendViewModel = Legend.layout(legenDataModel, finalLegendBoundingBox);
-            //    let plotAreaViewModel = PerfectScatter.layout(plotAreaDataModel, finalPlotAreaBoundingBox);
-
-            //    Legend.render(legendViewModel);
-            //    //AxesHelper.render(axes[]);
-            //    PerfectScatter.render({viewModel: viewModel});
-            //}
         }
 
         class ScatterSvgRenderer {

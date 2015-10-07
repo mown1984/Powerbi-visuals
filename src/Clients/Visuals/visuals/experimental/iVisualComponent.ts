@@ -51,7 +51,7 @@ module powerbi.visuals.experimental {
         private root: IVisualComponent;
         private initOptions: VisualInitOptions;
         private viewport: IViewport;
-        private renderer: IVisualRenderer;
+        private rendererFactory: RendererFactory;
 
         constructor(root: IVisualComponent) {
             this.root = root;
@@ -62,10 +62,8 @@ module powerbi.visuals.experimental {
 
             this.root.init(options);
 
-            this.renderer = options.renderer || new CanvasRenderer(options.element);
+            this.rendererFactory = options.rendererFactory;
             this.setViewport(options.viewport);
-            //this.renderer = new SvgRenderer(this.initOptions.element);
-            //this.renderer = new CanvasRenderer(this.initOptions.element);
         }
 
         public update(options: VisualUpdateOptions) {
@@ -83,7 +81,7 @@ module powerbi.visuals.experimental {
                 width: viewport.width,
             };
 
-            this.renderer.setViewport(bbox);
+            this.rendererFactory.setViewport(bbox);
 
             return bbox;
         }
@@ -97,8 +95,8 @@ module powerbi.visuals.experimental {
             // Render
             this.renderGraph(sceneGraph);
 
-            if (this.renderer.finish)
-                this.renderer.finish();
+            //if (this.renderer.finish)
+            //    this.renderer.finish();
         }
 
         private renderGraph(node: SceneGraphNode) {

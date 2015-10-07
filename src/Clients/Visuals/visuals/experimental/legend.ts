@@ -14,7 +14,7 @@ module powerbi.visuals.experimental {
         private renderer: IRenderer;
 
         public init(options: VisualInitOptions) {
-            this.renderer = this.getRenderer(options.renderer);
+            this.renderer = this.getRenderer(options.preferredRenderer, options.rendererFactory);
         }
 
         convert(
@@ -74,19 +74,20 @@ module powerbi.visuals.experimental {
             return sceneNode;
         }
 
-        private getRenderer(renderer: IVisualRenderer): IRenderer {
+        private getRenderer(type: RendererType, factory: RendererFactory): IRenderer {
             // TODO: this pattern is going to occur all over the place
-            switch (renderer.type) {
-                case RendererType.SVG:
-                    return new LegendSvgRenderer(<SvgRenderer>renderer);
+            switch (type) {
                 case RendererType.Canvas:
-                    return new LegendCanvasRenderer(<CanvasRenderer>renderer);
-                case RendererType.WebGL:
-                    return new LegendMinimalWebGLRenderer(<MinimalWebGLRenderer>renderer);
-                case RendererType.TwoJS:
-                    return new LegendTwoWebGLRenderer(<TwoWebGLRenderer>renderer);
-                case RendererType.PIXI:
-                    return new LegendPixiWebGLRenderer(<PixiWebGLRenderer>renderer);
+                    return new LegendCanvasRenderer(<CanvasRenderer>factory.getRenderer(RendererType.Canvas));
+                //case RendererType.SVG:
+                default:
+                    return new LegendSvgRenderer(<SvgRenderer>factory.getRenderer(RendererType.SVG));
+                //case RendererType.WebGL:
+                //    return new LegendMinimalWebGLRenderer(<MinimalWebGLRenderer>renderer);
+                //case RendererType.TwoJS:
+                //    return new LegendTwoWebGLRenderer(<TwoWebGLRenderer>renderer);
+                //case RendererType.PIXI:
+                //    return new LegendPixiWebGLRenderer(<PixiWebGLRenderer>renderer);
             }
 
             return null;
@@ -126,49 +127,49 @@ module powerbi.visuals.experimental {
         }
     }
 
-    class LegendPixiWebGLRenderer implements IRenderer {
-        private renderer: PixiWebGLRenderer;
+    //class LegendPixiWebGLRenderer implements IRenderer {
+    //    private renderer: PixiWebGLRenderer;
 
-        constructor(renderer: PixiWebGLRenderer) {
-            this.renderer = renderer;
-        }
+    //    constructor(renderer: PixiWebGLRenderer) {
+    //        this.renderer = renderer;
+    //    }
 
-        public render(viewModel: LegendViewModel) {
-            let bbox = viewModel.boundingBox;
-            let graphics = this.renderer.createGraphics();
+    //    public render(viewModel: LegendViewModel) {
+    //        let bbox = viewModel.boundingBox;
+    //        let graphics = this.renderer.createGraphics();
 
-            graphics.beginFill(0x0000ff, 1);
-            graphics.drawRect(bbox.left, bbox.top, bbox.width, bbox.height);
-            graphics.endFill();
-        }
-    }
+    //        graphics.beginFill(0x0000ff, 1);
+    //        graphics.drawRect(bbox.left, bbox.top, bbox.width, bbox.height);
+    //        graphics.endFill();
+    //    }
+    //}
 
-    class LegendMinimalWebGLRenderer implements IRenderer {
-        private renderer: MinimalWebGLRenderer;
+    //class LegendMinimalWebGLRenderer implements IRenderer {
+    //    private renderer: MinimalWebGLRenderer;
 
-        constructor(renderer: MinimalWebGLRenderer) {
-            this.renderer = renderer;
-        }
+    //    constructor(renderer: MinimalWebGLRenderer) {
+    //        this.renderer = renderer;
+    //    }
 
-        public render(viewModel: LegendViewModel) {
-        }
-    }
+    //    public render(viewModel: LegendViewModel) {
+    //    }
+    //}
 
-    class LegendTwoWebGLRenderer implements IRenderer {
-        private renderer: TwoWebGLRenderer;
+    //class LegendTwoWebGLRenderer implements IRenderer {
+    //    private renderer: TwoWebGLRenderer;
 
-        constructor(renderer: TwoWebGLRenderer) {
-            this.renderer = renderer;
-        }
+    //    constructor(renderer: TwoWebGLRenderer) {
+    //        this.renderer = renderer;
+    //    }
         
-        public render(viewModel: LegendViewModel) {
-            let bbox = viewModel.boundingBox;
-            let graphics = this.renderer.createGraphics();
+    //    public render(viewModel: LegendViewModel) {
+    //        let bbox = viewModel.boundingBox;
+    //        let graphics = this.renderer.createGraphics();
 
-            let rect = graphics.makeRectangle(bbox.left, bbox.top, bbox.width, bbox.height);
-            rect.fill = "#0000ff";
-            rect.opacity = 0.2;
-            rect.noStroke();
-        }
-    }
+    //        let rect = graphics.makeRectangle(bbox.left, bbox.top, bbox.width, bbox.height);
+    //        rect.fill = "#0000ff";
+    //        rect.opacity = 0.2;
+    //        rect.noStroke();
+    //    }
+    //}
 }
