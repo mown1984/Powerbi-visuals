@@ -34,8 +34,8 @@ gulp.task('help', function (callback) {
     console.log("	build_debug - build the project in debug mode.\n 			All js files will be unminified");
     console.log("	tslint - check the source files for tsLint erros.");
     console.log("	test - run tests.");
-    console.log("	run:performance_tests - run only performance tests.\n\n");
-    console.log("	continuous_build - run the build and then start watchers which\n"+
+    console.log("	test:visuals:performance - run only performance tests.\n\n");
+    console.log("	continuousBuild:visuals - run the build and then start watchers which\n" +
     "				will build project parts after you save\n"+
     "				changes to any file .");
     console.log("Gulp commands parameters:\n\n 	--debug (--d)  - to build files in debug mode\n\n"+

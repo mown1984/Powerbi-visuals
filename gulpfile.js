@@ -1,4 +1,4 @@
-/// <binding ProjectOpened='continuous_build_debug' />
+/// <binding ProjectOpened='continuousBuild:debug' />
 /*
  *  Power BI Visualizations
  *
@@ -34,12 +34,13 @@ require('./gulp/visualsBuild.js').load();
 require('./gulp/visualsWatcher.js');
 require('./gulp/visualsPackage.js');
 	
-gulp.task("build", function (callback) {
-    runSequence("build:visuals", callback);
-});
+gulp.task("build", ["build:visuals"]);
 
-gulp.task("test", function (callback) {
-    runSequence("test:visuals", callback);
-});
+gulp.task("test", ["test:visuals"]);
+
+gulp.task("run:test", ["run:test:visuals"]);
 
 gulp.task("default", ["build:visuals:debug"]);
+
+gulp.task("continuousBuild:debug", ["continuousBuild:visuals:debug"]);
+

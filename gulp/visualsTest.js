@@ -34,12 +34,9 @@ var gulp = require("gulp"),
 
 var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
 
-/** ----------------------------- TESTS ------------------------------------------- */
 gulp.task("copy:internal_dependencies_visuals_tests", function () {
-    var src = [];
-    src.push("src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js");
-
-    return gulp.src(src)
+    return gulp.src([
+        "src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js"])
         .pipe(rename("powerbi-visuals-tests.js"))
         .pipe(gulp.dest("VisualsTests"));
 });
@@ -56,8 +53,7 @@ gulp.task("copy:external_dependencies_visuals_tests", function () {
         "node_modules/jasmine-core/lib/jasmine-core/jasmine.js",
         "node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
         "node_modules/jasmine-core/lib/jasmine-core/boot.js",
-        "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"
-        ])
+        "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"])
         .pipe(gulp.dest("VisualsTests"));
 });
 
@@ -117,7 +113,7 @@ function createHtmlTestRunner(fileName, paths, testName) {
     fs.writeFileSync(fileName, html);
 }
 
-gulp.task("run:test", function (callback) {
+gulp.task("run:test:visuals", function (callback) {
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",
         specRunnerPath = testFolder + "/" + specRunnerFileName,
@@ -157,7 +153,7 @@ gulp.task("run:test", function (callback) {
     }
 });
 
-gulp.task("run:performance_tests", function (callback) {
+gulp.task("test:visuals:performance", function (callback) {
     filesOption.push("performance/performanceTests.ts");
     runSequence("test:visuals", callback);
 });
@@ -170,11 +166,11 @@ gulp.task("test:visuals", function (callback) {
         "install:phantomjs",
         "combine:all",
         "copy:dependencies_visuals_tests",
-        "run:test",
+        "run:test:visuals",
         callback);
 });
 
-gulp.task("open:test", function (callback) {
+gulp.task("open:test:visuals", function (callback) {
     openInBrowser = true;
     
     runSequence("test:visuals", callback);

@@ -250,7 +250,7 @@ module.exports.load = function (options) {
         return result;
     }
 
-    gulp.task("combine:internal:js", function () {
+    gulp.task("combine:visuals:internalJs", function () {
         return combineInternalJs();
     });
 
@@ -287,7 +287,7 @@ module.exports.load = function (options) {
     }
 
     /* --------------------------- EXTERNALS ---------------------------------- */
-    gulp.task("combine:external:js", function () {
+    gulp.task("combine:visuals:externalJs", function () {
         return combineExternalJs();
     });
 

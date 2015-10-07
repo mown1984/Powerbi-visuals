@@ -27,78 +27,111 @@ var gulp = require("gulp"),
     runSequence = require("run-sequence"),
     tslint = require("gulp-tslint"),
     gutil = require("gulp-util"),
-    visualsBuild = require("./visualsBuild.js").load();
+    visualsBuild = require("./visualsBuild.js"),
+    visualsBuildDefault = visualsBuild.load();
+
+var lessFilesToWatch = [
+        "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css",
+        "src/Clients/Visuals/styles/*.less",
+        "src/Clients/StyleLibrary/less/*.less",
+        "src/Clients/PowerBI/styles/*.less",
+        "src/Clients/Visuals/images/visuals.sprites.png",
+        "src/Clients/Visuals/styles/sprites.less"];
 
 var lintErrors = false;
 var lintReporter = function (output, file, options) {
-    if (output.length > 0)
+    if (output.length > 0) {
         lintErrors = true;
+    }
     // file is a reference to the vinyl File object 
     console.log("Found " + output.length + " errors in " + file.path);
-    for (var i = 0; i < output.length; i++)
-        gutil.log("TsLint Error " + i + ": ", "", gutil.colors
-            .red(" line:" + output[i].endPosition.line + ", char:" + output[i].endPosition.character +
-                ", message: " + output[i].failure));
-    // options is a reference to the reporter options, e.g. including the emitError boolean 
-    gutil.log("", "", gutil.colors.magenta("Waiting for changes..."));
+    for (var i = 0; i < output.length; i++) {
+        var outputItem = output[i];
+        var message = " line:" + outputItem.endPosition.line + ", char:" + outputItem.endPosition.character + ", message: " + outputItem.failure;
+        gutil.log(
+            "TsLint Error " + i + ": ",
+            "",
+            gutil.colors.red(message)
+        );
+    }
+    waitingMessageLog();
 };
 
 gulp.task("start:watchers", function (callback) {
-    gulp.watch(visualsBuild.getBuildPaths("src/Clients/VisualsCommon", "VisualsCommon")).on("change", function (file) {
-        lintErrors = false;
-        gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
-            .on("end", function () {
-                if (!lintErrors)
-                    runSequence("build:visualsCommon");
-            }));
-    });
-    gulp.watch(visualsBuild.getBuildPaths("src/Clients/VisualsData", "VisualsData")).on("change", function (file) {
-        lintErrors = false;
-        gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
-            .on("end", function () {
-                if (!lintErrors)
-                    runSequence("build:visualsData");
-            }));
-    });
-    gulp.watch(visualsBuild.getBuildPaths("src/Clients/Visuals", "Visuals")).on("change", function (file) {
-        lintErrors = false;
-        gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
-            .on("end", function () {
-                if (!lintErrors)
-                    runSequence("build:visualsProject:ts");
-            }));
-    });
-    gulp.watch(visualsBuild.getBuildPaths("src/Clients/PowerBIVisualsPlayground", "PowerBIVisualsPlayground")).on("change", function (file) {
-        lintErrors = false;
-        gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) {})
-            .on("end", function () {
-                if (!lintErrors)
-                    runSequence("build:visuals:playground", function(e){ gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
-            }));
-    });
+    watchProjectBuild(
+        "src/Clients/VisualsCommon",
+        "VisualsCommon",
+        "build:visualsCommon");
+    watchProjectBuild(
+        "src/Clients/VisualsData",
+        "VisualsData",
+        "build:visualsData");
+    watchProjectBuild(
+        "src/Clients/Visuals",
+        "Visuals",
+        "build:visualsProject:ts");
+    watchProjectBuild(
+        "src/Clients/PowerBIVisualsPlayground",
+        "PowerBIVisualsPlayground",
+        "build:visuals:playground",
+        waitingMessageLog);
 
-    gulp.watch("src/Clients/Visuals/images/sprite-src/*.png", ["build:visuals:sprite"]);
-    gulp.watch(["src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css", "src/Clients/Visuals/styles/*.less", "src/Clients/StyleLibrary/less/*.less", "src/Clients/PowerBI/styles/*.less",
-     "src/Clients/Visuals/images/visuals.sprites.png", "src/Clients/Visuals/styles/sprites.less"], ["build:visuals_less"]);
-    gulp.watch(visualsBuild.externalsPath, ["combine:external:js"]).on("change", function (file) {
-        runSequence("combine:external:js", function (e) { gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
-    });
-    gulp.watch(visualsBuild.internalsPaths, ["combine:internal_js"]).on("change", function (file) {
-        runSequence("combine:internal:js", function (e) { gutil.log("", "", gutil.colors.magenta("Waiting for changes...")); });
-    });
-    gutil.log("", "", gutil.colors.magenta("Continuous build successfully started"));
-    gutil.log("", "", gutil.colors.magenta("Waiting for changes..."));
+    watchProjectFiles("src/Clients/Visuals/images/sprite-src/*.png", "build:visuals:sprite");
 
-    });
+    watchProjectFiles(lessFilesToWatch, "build:visuals:less", waitingMessageLog);
 
-gulp.task("continuous_build_debug", function (callback) {
-    visualsBuild.load({ isDebug: true });
+    watchProjectFiles(visualsBuildDefault.externalsPath, "combine:visuals:externalJs", waitingMessageLog);
+
+    watchProjectFiles(visualsBuildDefault.internalsPaths, "combine:visuals:internalJs", waitingMessageLog);
+
+    serviceMessageLog("Continuous build successfully started");
+    waitingMessageLog();
+});
+
+function waitingMessageLog() {
+    serviceMessageLog("Waiting for changes...");
+}
+
+function serviceMessageLog(message) {
+    gutil.log("", "", gutil.colors.magenta(message));
+}
+
+function watchProjectFiles(files, taskToRun, callback) {
+    if (callback) {
+        gulp.watch(files).on("change", function (file) {
+            runSequence(taskToRun, callback);
+        });
+    }
+    else {
+        gulp.watch(files, [taskToRun]);
+    }
+}
+
+function watchProjectBuild(projectPath, projectName, buildTask, callback) {
+    gulp.watch(visualsBuildDefault.getBuildPaths(projectPath, projectName)).on("change", function (file) {
+        lintErrors = false;
+        gulp.src(file.path).pipe(tslint()).pipe(tslint.report(lintReporter).on("error", function (error) { })
+            .on("end", function () {
+                if (!lintErrors) {
+                    if (callback) {
+                        runSequence(buildTask, callback);
+                    } else {
+                        runSequence(buildTask);
+                    }
+                }
+            }));
+    });
+}
+
+gulp.task("continuousBuild:visuals:debug", function (callback) {
+    visualsBuild.load({ isDebug: true, noTSEmitOnError: true });
     runSequence(
         "build:visuals:projects",
         "start:watchers",
         callback);
 });
-gulp.task("continuous_build", function (callback) {
+
+gulp.task("continuousBuild:visuals", function (callback) {
     visualsBuild.load({ noTSEmitOnError: true });
     runSequence(
         "build:visuals:projects",
