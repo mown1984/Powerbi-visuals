@@ -86,7 +86,8 @@ module powerbi.visuals.experimental {
                     case RendererType.Canvas:
                         return new ScatterCanvasRenderer(<CanvasRenderer>renderer);
                     case RendererType.WebGL:
-                        return new ScatterMinimalWebGLRenderer(<MinimalWebGLRenderer>renderer);
+                        //return new ScatterMinimalWebGLRenderer(<MinimalWebGLRenderer>renderer);
+                        return new ScatterTextureWebGLRenderer(<MinimalWebGLRenderer>renderer);
                     case RendererType.TwoJS:
                         return new ScatterTwoWebGLRenderer(<TwoWebGLRenderer>renderer);
                     case RendererType.PIXI:
@@ -265,10 +266,10 @@ module powerbi.visuals.experimental {
         class ScatterMinimalWebGLRenderer {
             private viewModel: ScatterViewModel;
 
-            private vertexShader: DefaultVertexShader;
+            private vertexShader: WebGL.DefaultVertexShader;
             private vertexBuffer: WebGLBuffer;
             private colorBuffer: WebGLBuffer;
-            private fragmentShader: DefaultFragmentShader;
+            private fragmentShader: WebGL.DefaultFragmentShader;
             private program: WebGLProgram;
             private gl: WebGLRenderingContext;
             private renderer: MinimalWebGLRenderer;
@@ -280,8 +281,8 @@ module powerbi.visuals.experimental {
                 this.renderer = renderer;
                 this.gl = renderer.getGL();
 
-                this.vertexShader = new DefaultVertexShader();
-                this.fragmentShader = new DefaultFragmentShader();
+                this.vertexShader = new WebGL.DefaultVertexShader();
+                this.fragmentShader = new WebGL.DefaultFragmentShader();
                 this.program = renderer.buildProgram(this.vertexShader, this.fragmentShader);
             }
 
@@ -328,7 +329,7 @@ module powerbi.visuals.experimental {
                 renderer.clear();
 
                 // set buffers & attributes
-                this.vertexShader.setAttributes(gl, this.vertexBuffer, this.colorBuffer);
+                this.vertexShader.setAttributes(gl, this.vertexBuffer, this.colorBuffer, null, null);
 
                 // set uniforms
                 this.vertexShader.setUniforms(gl, renderer.bbox);
@@ -368,63 +369,141 @@ module powerbi.visuals.experimental {
             }
         }
 
-        //class ScatterSpriteWebGLRenderer {
-        //    private viewModel: ScatterViewModel;
+        class ScatterTextureWebGLRenderer {
+            private viewModel: ScatterViewModel;
 
-        //    private vertexShader: DefaultVertexShader;
-        //    private vertexBuffer: WebGLBuffer;
-        //    private colorBuffer: WebGLBuffer;
-        //    private fragmentShader: DefaultFragmentShader;
-        //    private program: WebGLProgram;
+            private vertexShader: WebGL.DefaultVertexShader;
+            private vertexBuffer: WebGLBuffer;
+            private colorBuffer: WebGLBuffer;
+            private texCoordBuffer: WebGLBuffer;
+            private radiusBuffer: WebGLBuffer;
+            private fragmentShader: WebGL.CircleFragmentShader;
+            private program: WebGLProgram;
+            private gl: WebGLRenderingContext;
+            private renderer: MinimalWebGLRenderer;
+            private canvas: HTMLCanvasElement;
+            private canvasCtx: CanvasRenderingContext2D;
+            private texture: WebGL.Texture;
 
-        //    constructor(viewModel: ScatterViewModel, renderer: MinimalWebGLRenderer) {
-        //        this.viewModel = viewModel;
-        //        let gl = renderer.getGL();
+            constructor(renderer: MinimalWebGLRenderer) {
+                this.renderer = renderer;
+                this.gl = renderer.getGL();
 
-        //        let vertices = [];
-        //        let colors = [];
-        //        for (let p of viewModel.dataPoints) {
-        //            makeCircle(p.x, p.y, p.radius);
-        //            //vertices.push(p.x, p.y);
-        //            colors.push(p.fill.R / 255.0, p.fill.G / 255.0, p.fill.B / 255.0, p.alpha);
-        //        }
+                this.vertexShader = new WebGL.DefaultVertexShader();
+                this.fragmentShader = new WebGL.CircleFragmentShader();
+                this.program = renderer.buildProgram(this.vertexShader, this.fragmentShader);
 
-        //        // Buffers
-        //        this.vertexBuffer = gl.createBuffer();
-        //        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-        //        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        //        (<any>this.vertexBuffer).itemSize = 2;
+                let body = $('body');
+                let canvasElement = $('<canvas>');
+                body.append(canvasElement);
+                this.canvas = <HTMLCanvasElement>canvasElement.get(0);
+                this.canvasCtx = this.canvas.getContext('2d');
+            }
 
-        //        this.colorBuffer = gl.createBuffer();
-        //        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        //        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-        //        (<any>this.colorBuffer).itemSize = 4;
+            public render(viewModel: ScatterViewModel) {
+                this.setViewModel(viewModel);
+                this.draw();
+            }
 
-        //        this.vertexShader = new DefaultVertexShader();
-        //        this.fragmentShader = new DefaultFragmentShader();
-        //        this.program = renderer.buildProgram(this.vertexShader, this.fragmentShader);
-        //    }
+            public setViewModel(viewModel: ScatterViewModel) {
+                this.viewModel = viewModel;
+                let gl = this.gl;
 
-        //    private makeCircle(x: number, y: number, r: number) {
+                // TODO: will likely have to create a texture for each bubble, seems infeasible.
 
-        //    }
+                let vertices = [];
+                let texcoords = [];
+                let colors = [];
+                let radii = [];
+                let vertexOffsets = [  // TODO: 0.5?
+                    -1, 1,
+                    1, 1,
+                    1, -1,
+                    -1, 1,
+                    -1, -1,
+                    1, -1];
+                let texCycle = [
+                    0, 1,
+                    1, 1,
+                    1, 0,
+                    0, 1,
+                    0, 0,
+                    1, 0,
+                ];
 
-        //    public render(renderer: MinimalWebGLRenderer) {
-        //        let gl = renderer.getGL();
-        //        gl.useProgram(this.program);  // TODO: check if it is already the last used program
+                for (let p of viewModel.dataPoints) {
+                    let r = p.radius;
+                    for (let i = 0; i < 6; i++) {
+                        vertices.push(r * vertexOffsets[i * 2] + p.x, viewModel.boundingBox.height - (r * vertexOffsets[i * 2 + 1] + p.y));
+                        texcoords.push(texCycle[i * 2], texCycle[i * 2 + 1]);
+                        colors.push(p.fill.R / 255.0, p.fill.G / 255.0, p.fill.B / 255.0, p.alpha);
+                        radii.push(r);
+                    }
+                }
 
-        //        renderer.clear();
+                //gl.enable(gl.DEPTH_TEST);
+                //gl.depthFunc(gl.LESS);  // TODO: might be the default...
+                gl.enable(gl.BLEND);
 
-        //        // set buffers & attributes
-        //        this.vertexShader.setAttributes(gl, this.vertexBuffer, this.colorBuffer);
+                let texture = gl.createTexture();
+                let textureUnit = 0;
+                //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.canvas);
 
-        //        // set uniforms
-        //        this.vertexShader.setUniforms(gl, renderer.bbox);
+                // TODO: maybe not necessary, always make canvas the max size rounded up to the next power of 2
+                // make sure we can render it even if it's not a power of 2
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-        //        gl.drawArrays(gl.POINTS, 0, 1000);
-        //        //gl.drawArrays(gl.LINE_LOOP, 0, 1000);
-        //    }
-        //}
+                this.texture = {
+                    texture: texture,
+                    unit: textureUnit,
+                };
+
+                // Buffers
+                this.vertexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+                //(<any>this.vertexBuffer).itemSize = 2;
+
+                this.colorBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+                //(<any>this.colorBuffer).itemSize = 4;
+
+                this.texCoordBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
+
+                this.radiusBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.radiusBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(radii), gl.STATIC_DRAW);
+            }
+
+            public draw() {
+                let gl = this.gl;
+                let renderer = this.renderer;
+
+                gl.useProgram(this.program);  // TODO: check if it is already the last used program
+
+                renderer.clear();
+
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+                // set buffers & attributes
+                this.vertexShader.setAttributes(gl, this.vertexBuffer, this.colorBuffer, this.texCoordBuffer, this.radiusBuffer);
+
+                // set uniforms
+                this.vertexShader.setUniforms(gl, renderer.bbox);
+                this.
+
+                //gl.drawArrays(gl.POINTS, 0, this.viewModel.dataPoints.length);
+                gl.drawArrays(gl.TRIANGLES, 0, this.viewModel.dataPoints.length * 6);
+                //gl.drawElements(gl.TRIANGLES, this.viewModel.dataPoints.length * 2, gl.UNSIGNED_SHORT, 0);
+            }
+        }
 
         class ScatterPixiWebGLRenderer implements IRenderer {
             private renderer: PixiWebGLRenderer;

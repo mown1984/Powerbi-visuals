@@ -208,7 +208,7 @@ module powerbi.visuals.experimental {
             this.gl.viewport(0, 0, bbox.width, bbox.height);
         }
 
-        public buildProgram(vshader: Shader, fshader: Shader): WebGLProgram {
+        public buildProgram(vshader: WebGL.Shader, fshader: WebGL.Shader): WebGLProgram {
             let gl = this.gl;
 
             let vertexShader: WebGLShader;
@@ -235,9 +235,6 @@ module powerbi.visuals.experimental {
                 gl.deleteShader(vertexShader);
             if (fragmentShader)
                 gl.deleteShader(fragmentShader);
-
-            // TODO: log?
-            //gl.getProgramInfoLog(program);
         }
 
         public createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
@@ -246,6 +243,7 @@ module powerbi.visuals.experimental {
             gl.attachShader(program, fragmentShader);
             gl.linkProgram(program);
             if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
                 return;
             }
 
@@ -257,7 +255,7 @@ module powerbi.visuals.experimental {
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                gl.deleteShader(shader);
+                console.error(gl.getShaderInfoLog(shader));
                 return;
             }
 
@@ -276,74 +274,154 @@ module powerbi.visuals.experimental {
         }
     }
 
-    interface WebGLAttributeDefn {
-        buffer: WebGLBuffer;
-        components: number;
-        // stride, etc.
-    }
+    export module WebGL {
 
-    export interface Shader {
-        getSource(): string;
-        init(gl: WebGLRenderingContext, program: WebGLProgram): void;
-    }
-
-    export class DefaultVertexShader implements Shader {
-        private aPosition: number;
-        private aColor: number;
-        private uResolution: WebGLUniformLocation;
-
-        public init(gl: WebGLRenderingContext, program: WebGLProgram) {
-            this.aPosition = gl.getAttribLocation(program, "a_position");
-            this.aColor = gl.getAttribLocation(program, "a_color");
-            this.uResolution = gl.getUniformLocation(program, "u_resolution");
+        export interface Texture {
+            texture: WebGLTexture;
+            unit: number;
         }
 
-        public setAttributes(gl: WebGLRenderingContext, vertexBuffer: WebGLBuffer, colorBuffer: WebGLBuffer) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(this.aColor);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(this.aPosition);
+        export interface Shader {
+            getSource(): string;
+            init(gl: WebGLRenderingContext, program: WebGLProgram): void;
         }
 
-        public setUniforms(gl: WebGLRenderingContext, bbox: BoundingBox) {
-            gl.uniform2f(this.uResolution, bbox.width, bbox.height);
-        }
+        export class DefaultVertexShader implements Shader {
+            private aPosition: number;
+            private aTexCoord: number;
+            private aColor: number;
+            private aRadius: number;  // NOTE: for CircleFragmentShader
+            private uResolution: WebGLUniformLocation;
 
-        public getSource(): string {
-            return [
-                "attribute vec2 a_position;",
-                "attribute vec4 a_color;",
-                "uniform vec2 u_resolution;",
-                "varying vec4 v_color;",
-                "void main(void) {",
+            public init(gl: WebGLRenderingContext, program: WebGLProgram) {
+                this.aPosition = gl.getAttribLocation(program, "a_position");
+                this.aTexCoord = gl.getAttribLocation(program, "a_texcoord");
+                this.aColor = gl.getAttribLocation(program, "a_color");
+                this.aRadius = gl.getAttribLocation(program, "a_radius");
+                this.uResolution = gl.getUniformLocation(program, "u_resolution");
+            }
+
+            public setAttributes(gl: WebGLRenderingContext, vertexBuffer: WebGLBuffer, colorBuffer: WebGLBuffer, texCoordBuffer: WebGLBuffer, radiusBuffer: WebGLBuffer) {
+                if (colorBuffer) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+                    gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, 0, 0);
+                    gl.enableVertexAttribArray(this.aColor);
+                }  // TODO: disable somehow?
+
+                if (texCoordBuffer) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+                    gl.vertexAttribPointer(this.aTexCoord, 2, gl.FLOAT, false, 0, 0);
+                    gl.enableVertexAttribArray(this.aTexCoord);
+                }
+
+                if (radiusBuffer) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, radiusBuffer);
+                    gl.vertexAttribPointer(this.aRadius, 1, gl.FLOAT, false, 0, 0);
+                    gl.enableVertexAttribArray(this.aRadius);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                gl.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(this.aPosition);
+            }
+
+            public setUniforms(gl: WebGLRenderingContext, bbox: BoundingBox) {
+                gl.uniform2f(this.uResolution, bbox.width, bbox.height);
+            }
+
+            public getSource(): string {
+                return [
+                    "attribute vec2 a_position;",
+                    "attribute vec2 a_texcoord;",
+                    "attribute vec4 a_color;",
+                    "attribute float a_radius;",
+                    "uniform vec2 u_resolution;",
+                    "varying vec4 v_color;",
+                    "varying vec2 v_texcoord;",
+                    "varying float v_radius;",
+                    "void main(void) {",
                 //"    gl_PointSize = 20.0;",
-                "    vec2 zeroToOne = a_position / u_resolution;",
-                "    vec2 zeroToTwo = zeroToOne * 2.0;",
-                "    vec2 clipSpace = zeroToTwo - 1.0;",
-                "    gl_Position = vec4(clipSpace, 0, 1);",
-                "    v_color = a_color;",
-                "}",
-            ].join("\n");
-        }
-    }
-
-    export class DefaultFragmentShader implements Shader {
-        public init(gl: WebGLRenderingContext, program: WebGLProgram) {
+                    "    vec2 zeroToOne = a_position / u_resolution;",
+                    "    vec2 zeroToTwo = zeroToOne * 2.0;",
+                    "    vec2 clipSpace = zeroToTwo - 1.0;",
+                    "    gl_Position = vec4(clipSpace, 0, 1);",
+                    "    v_color = a_color;",
+                    "    v_texcoord = a_texcoord;",
+                    "    v_radius = a_radius;",
+                    "}",
+                ].join("\n");
+            }
         }
 
-        public getSource(): string {
-            return [
-                "#ifdef GL_ES",
-                "  precision highp float;",
-                "#endif",
-                "varying vec4 v_color;",
-                "void main(void) {",
-                "    gl_FragColor = v_color;",
-                "}"
-            ].join("\n");
+        export class DefaultFragmentShader implements Shader {
+            public init(gl: WebGLRenderingContext, program: WebGLProgram) {
+            }
+
+            public getSource(): string {
+                return [
+                    "#ifdef GL_ES",
+                    "  precision highp float;",
+                    "#endif",
+                    "varying vec4 v_color;",
+                    "void main(void) {",
+                    "    gl_FragColor = v_color;",
+                    "}"
+                ].join("\n");
+            }
+        }
+
+        export class CircleFragmentShader implements Shader {
+            public init(gl: WebGLRenderingContext, program: WebGLProgram) {
+            }
+
+            // TODO: could probably use fragCoord / resolution rather than texcoords
+            public getSource(): string {
+                return [
+                    "#ifdef GL_ES",
+                    "  precision highp float;",
+                    "#endif",
+                    "varying vec4 v_color;",
+                    "varying vec2 v_texcoord;",
+                    "varying float v_radius;",
+                    "void main(void) {",
+                    "    vec2 center = vec2(0.5, 0.5) * v_radius * 2.0;",
+                    "    vec2 uv = v_texcoord * v_radius * 2.0;",
+                    "    float d = length(center - uv) - v_radius;",
+                    "    float t = clamp(d, 0.0, 1.0);",
+                    "    vec4 c = vec4(v_color.rgb, 1.0 - t);",
+                    "    gl_FragColor = c;",
+                    "}"
+                ].join("\n");
+            }
+        }
+
+        // TODO: not sure this works...
+        export class TextureFragmentShader implements Shader {
+            private uTexture: WebGLUniformLocation;
+
+            public init(gl: WebGLRenderingContext, program: WebGLProgram) {
+                this.uTexture = gl.getUniformLocation(program, "u_texture");
+            }
+
+            public setUniforms(gl: WebGLRenderingContext, texture: Texture) {
+                gl.uniform1i(this.uTexture, texture.unit);
+                gl.activeTexture(gl.TEXTURE0 + texture.unit);
+                gl.bindTexture(gl.TEXTURE_2D, texture.texture);
+            }
+
+            public getSource(): string {
+                return [
+                    "#ifdef GL_ES",
+                    "  precision highp float;",
+                    "#endif",
+                    "varying vec4 v_color;",
+                    "varying vec2 v_texcoord;",
+                    "uniform sampler2D u_texture;",  // TODO: don't think i need this with no image
+                    "void main(void) {",
+                    "    gl_FragColor = texture2D(u_texture, v_texcoord);",
+                    "}"
+                ].join("\n");
+            }
         }
     }
 }
