@@ -48,7 +48,7 @@ module powerbi.visuals.samples {
     }
     
     export interface DotPlotData {
-        dataPoints: DotPlotDatapoint[][];
+        dataPoints: DotPlotDatapoint[];
         legendData: LegendData;
     }
 
@@ -106,11 +106,6 @@ module powerbi.visuals.samples {
             selector: '.axis'
         };
 
-        private static Dots: ClassAndSelector = {
-            class: 'dots',
-            selector: '.dots'
-        };
-
         private static Dot: ClassAndSelector = {
             class: 'dot',
             selector: '.dot'
@@ -141,23 +136,30 @@ module powerbi.visuals.samples {
 
         private static DefaultRadius: number = 5;
         private static DefaultStrokeWidth: number = 1;
+        private static FrequencyText: string = "Frequency";
 
         private static round10(value: number, digits: number = 2) {
             const scale = Math.pow(10, digits);
             return (Math.round(scale * value) / scale);
         }
 
+        private static getTooltipData(value: number): TooltipDataItem[] {
+            return [{
+                displayName: DotPlot.FrequencyText,
+                value: value.toString()
+            }];
+        }
+
         public static converter(dataView: DataView, maxDots: number, colors: IDataColorPalette): DotPlotData {
             let catDv: DataViewCategorical = dataView.categorical;
             let values = catDv.values;
 
-            let dataPoints: DotPlotDatapoint[][] = [];
+            let dataPoints: DotPlotDatapoint[] = [];
             let legendData: LegendData = {
                 dataPoints: [],
             };
 
             for (let i = 0, iLen = values.length; i < iLen; i++) {
-                dataPoints.push([]);
                 let legendText = values[i].source.displayName;
                 let color = colors.getColorByIndex(i).value;
                 let counts = {};
@@ -188,11 +190,12 @@ module powerbi.visuals.samples {
                             .builder()
                             .withSeries(dataView.categorical.values, dataView.categorical.values[i])
                             .createSelectionId();
-                        dataPoints[i].push({
+                        dataPoints.push({
                             x: data[k].key,
                             y: level,
                             color: color,
-                            identity: id
+                            identity: id,
+                            tooltipInfo: DotPlot.getTooltipData(data[k].value)
                         });
                     }
                 }
@@ -284,19 +287,13 @@ module powerbi.visuals.samples {
             this.drawDotPlot(dataPoints, xScale, yScale);
         }
 
-        private drawDotPlot(data: DotPlotDatapoint[][], xScale: D3.Scale.OrdinalScale, yScale: D3.Scale.LinearScale): void {
-            let selection = this.dotPlot.selectAll(DotPlot.Dots.selector).data(data);
+        private drawDotPlot(data: DotPlotDatapoint[], xScale: D3.Scale.OrdinalScale, yScale: D3.Scale.LinearScale): void {
+            let selection = this.dotPlot.selectAll(DotPlot.Dot.selector).data(data);
             selection
-                .enter()
-                .append("g")
-                .classed(DotPlot.Dots.class, true);
-
-            let dots = selection.selectAll(DotPlot.Dot.selector).data(d => d);
-            dots
                 .enter()
                 .append('circle')
                 .classed(DotPlot.Dot.class, true);
-            dots   
+            selection   
                 .attr("cx", function(point: DotPlotDatapoint) {
                     return xScale(point.x) + xScale.rangeBand()/2;
                 })
@@ -308,18 +305,25 @@ module powerbi.visuals.samples {
                 .attr("stroke-width", this.strokeWidth)
                 .attr("r", this.radius);
 
-            dots.exit().remove();
+            this.renderTooltip(selection);
+
             selection.exit().remove();
-        }          
-        
-        private drawAxis(values: any[], xScale: D3.Scale.OrdinalScale, height: number) {
+        }
+
+        private renderTooltip(selection: D3.UpdateSelection): void {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (<DotPlotDatapoint>tooltipEvent.data).tooltipInfo;
+            });
+        }
+
+        private drawAxis(values: any[], xScale: D3.Scale.OrdinalScale, translateY: number) {
             let xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
                 .tickValues(values);
 
             this.axis.attr("class", "x axis")
-                .attr("transform", `translate(0, ${height})`);
+                .attr('transform', SVGUtil.translate(0, translateY));
             this.axis.call(xAxis);
         }
     }
