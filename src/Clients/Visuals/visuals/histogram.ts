@@ -49,10 +49,12 @@ module powerbi.visuals {
         bins?: number;
     }
 
+    export interface HistogramData extends D3.Layout.Bin, TooltipEnabledDataPoint {
+        range: number[];
+    }
+
     export interface HistogramDataView {
-        source?: number[];
-        ranges?: number[];
-        data?: D3.Layout.Bin[];
+        data: HistogramData[];
         xScale?: D3.Scale.LinearScale;
         yScale?: D3.Scale.LinearScale;
         settings: HistogramSettings;
@@ -140,7 +142,6 @@ module powerbi.visuals {
             dataViewMappings: [{
                 conditions: [{
                     "Y": {
-                        min: 1,
                         max: 1
                     }
                 }],
@@ -178,15 +179,9 @@ module powerbi.visuals {
                 datapoint: {
                     displayName: data.createDisplayNameGetter("Visual_DataPoint"),
                     properties: {
-                        color: {
-                            displayName: "Fill Color",
-                            type: {
-                                fill: {
-                                    solid: {
-                                        color: true
-                                    }
-                                }
-                            }
+                        fill: {
+                            displayName: data.createDisplayNameGetter('Visual_Fill'),
+                            type: { fill: { solid: { color: true } } }
                         }
                     }
                 }
@@ -292,7 +287,6 @@ module powerbi.visuals {
             let histogramSettings: HistogramSettings,
                 histogramLayout: D3.Layout.HistogramLayout,
                 values: number[],
-                ranges: number[] = [],
                 data: D3.Layout.Bin[],
                 xScale: D3.Scale.LinearScale,
                 yScale: D3.Scale.LinearScale;
@@ -306,7 +300,7 @@ module powerbi.visuals {
                 return null;
             }
 
-            histogramSettings = this.parseOptions(dataView);
+            histogramSettings = this.parseSettings(dataView);
 
             if (!histogramSettings) {
                 return null;
@@ -338,21 +332,47 @@ module powerbi.visuals {
                 ])
                 .range([this.viewport.height - this.LegendSize, 0]);
 
-            if (data[0] && data[0].dx) {
-                ranges = this.getRanges(values, data.length, data[0].dx);
-            }
-
             return {
-                source: values,
-                data: data,
                 xScale: xScale,
                 yScale: yScale,
                 settings: histogramSettings,
-                ranges: ranges
+                data: this.getData(values, data, histogramSettings)
             };
         }
 
-        private parseOptions(dataView: DataView): HistogramSettings {
+        private getData(values: number[], data: D3.Layout.Bin[], settings: HistogramSettings): HistogramData[] {
+            let minValue: number = d3.min(values),
+                maxValue: number = d3.max(values);
+
+            return data.map((bin: HistogramData, index: number) => {
+                bin.range = this.getRange(minValue, maxValue, bin.dx, index);
+                bin.tooltipInfo = this.getTooltipData(bin.y, bin.range, settings, index === 0);
+
+                return bin;
+            });
+        }
+
+        private getRange(minValue: number, maxValue: number, step: number, index: number): number[] {
+            let leftBorder: number = minValue + index * step,
+                rightBorder: number = leftBorder + step;
+
+            return [
+                leftBorder,
+                rightBorder
+            ];
+        }
+
+        private getTooltipData(value: number, range: number[], settings: HistogramSettings, includeLeftBorder: boolean): TooltipDataItem[] {
+            return [{
+                displayName: this.getLegendText(settings),
+                value: value.toString()
+            }, {
+                displayName: this.TooltipDisplayName,
+                value: this.rangeToString(range, includeLeftBorder)
+            }];
+        }
+
+        private parseSettings(dataView: DataView): HistogramSettings {
             if (!dataView ||
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
@@ -475,7 +495,7 @@ module powerbi.visuals {
 
         private renderColumns(histogramDataView: HistogramDataView): void {
             let self: Histogram = this,
-                data: D3.Layout.Bin[] = histogramDataView.data,
+                data: HistogramData[] = histogramDataView.data,
                 yScale: D3.Scale.LinearScale = histogramDataView.yScale,
                 countOfValues: number = data.length,
                 widthOfColumn: number,
@@ -495,17 +515,18 @@ module powerbi.visuals {
             columnsSelection
                 .attr("x", this.ColumnPadding / 2)
                 .attr("width", widthOfColumn)
-                .attr("height", (item: D3.Layout.Bin) => {
+                .attr("height", (item: HistogramData) => {
                     return this.getColumnHeight(item, yScale);
                 })
                 .attr("fill", histogramDataView.settings.fillColor)
                 .attr("class", Histogram.Column["class"])
-                .attr("transform", (item: D3.Layout.Bin, index: number) => {
+                .attr("transform", (item: HistogramData, index: number) => {
                     return SVGUtil.translate(
                         widthOfColumn * index + this.ColumnPadding * index,
                         yScale(item.y) - this.ColumnPadding / 2.5);
                 })
-                .attr("value", (item: D3.Layout.Bin) => item.y)
+                .attr("value", (item: HistogramData) => item.y)
+                .attr("values", (item: HistogramData) => item)
                 .on("click", function () {
                     self.setOpacity(columnsSelection, true);
                     self.setOpacity(d3.select(this), false);
@@ -514,31 +535,20 @@ module powerbi.visuals {
                 })
                 .classed(Histogram.Column["class"]);
 
-            this.renderTooltip(histogramDataView, columnsSelection);
-
             columnsSelection
                 .exit()
                 .remove();
+
+            this.renderTooltip(columnsSelection);
 
             d3.selection().on("click", () => {
                 this.setOpacity(columnsSelection);
             });
         }
 
-        private renderTooltip(histogramDataView: HistogramDataView, selection: D3.UpdateSelection): void {
+        private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                let range: string =
-                    this.getRangeByIndex(histogramDataView.ranges, tooltipEvent.index);
-
-                if (tooltipEvent && tooltipEvent.data && tooltipEvent.data.y) {
-                    return [{
-                        displayName: this.getLegendText(histogramDataView),
-                        value: tooltipEvent.data.y
-                    }, {
-                        displayName: this.TooltipDisplayName,
-                        value: range
-                    }];
-                }
+               return (<HistogramData> tooltipEvent.data).tooltipInfo;
             });
         }
 
@@ -580,7 +590,7 @@ module powerbi.visuals {
             xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
-                .tickValues(histogramDataView.ranges);
+                .tickValues(this.rangesToArray(histogramDataView.data));
 
             yAxis = d3.svg.axis()
                 .scale(yScale)
@@ -594,23 +604,23 @@ module powerbi.visuals {
                 .call(yAxis);
         }
 
-        private getRanges(values: number[], countOfRanges: number, step: number): number[] {
-            let minValue: number = d3.min(values),
-                labels: number[] = [];
+        private rangesToArray(data: HistogramData[]): number[] {
+            return data.reduce((previousValue: number[], currentValue: HistogramData, index: number) => {
+                let range: number[];
 
-            for (let i = 0; i <= countOfRanges; i++) {
-                labels.push(minValue + i * step);
-            }
+                range = index === 0
+                    ? currentValue.range
+                    : currentValue.range.slice(1);
 
-            return labels;
+                return previousValue.concat(range);
+            }, []);
         }
 
-        private getRangeByIndex(ranges: number[], index: number): string {
+        private rangeToString(range: number[], includeLeftBorder: boolean): string {
             let leftBracket: string,
-                rightBracket: string,
-                range: number[] = ranges.slice(index, index + 2);
+                rightBracket: string;
 
-            leftBracket = index === 0
+            leftBracket = includeLeftBorder
                 ? this.IncludeBrackets.left
                 : this.ExcludeBrackets.left;
 
@@ -622,7 +632,7 @@ module powerbi.visuals {
         private renderLegend(histogramDataView: HistogramDataView): void {
             let legendElements: D3.Selection,
                 legendSelection: D3.UpdateSelection,
-                datalegends: Legend[] = this.getDataLegends(histogramDataView);
+                datalegends: Legend[] = this.getDataLegends(histogramDataView.settings);
 
             legendElements = this.main
                 .select(Histogram.Legends.selector)
@@ -649,14 +659,14 @@ module powerbi.visuals {
                 .remove();
         }
 
-        private getDataLegends(histogramDataView: HistogramDataView): Legend[] {
-            let bottomLegendText: string = this.getLegendText(histogramDataView);
+        private getDataLegends(settings: HistogramSettings): Legend[] {
+            let bottomLegendText: string = this.getLegendText(settings);
 
             return [{
                 transform: SVGUtil.translate(
                     this.viewport.width / 2,
                     this.viewport.height),
-                text: histogramDataView.settings.displayName,
+                text: settings.displayName,
                 dx: "1em",
                 dy: "-1em"
             }, {
@@ -671,8 +681,8 @@ module powerbi.visuals {
             }];
         }
 
-        private getLegendText(histogramDataView: HistogramDataView): string {
-            return histogramDataView.settings.frequency
+        private getLegendText(settings: HistogramSettings): string {
+            return settings.frequency
                 ? Histogram.FrequencyText
                 : Histogram.DensityText;
         }
