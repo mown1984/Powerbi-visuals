@@ -61,26 +61,25 @@ module powerbi.visuals.samples {
             this.colors = options.style.colorPalette.dataColors;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
             this.svg = d3.select(options.element.get(0)).append('svg');
-            this.svg.attr('id', 'mainDrawArea');
+            this.svg.attr('class', 'mainDrawArea');
             this.g = this.svg.append('g');
-            this.g.attr("id", "container");
+            this.g.attr('class', "container");
             this.g
                 .on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
-                .attr("id", "percentage")                
+                .attr('class', "percentage")                
                 .attr("opacity", "0")
                 .style("font-weight", "bold")
                 .text("");
             this.svg.append("text")
-                .attr("id", "percentageFixed")
+                .attr('class', "percentageFixed")
                 .attr("opacity", "0")
-                .style("font-weight", "bold")
-                .text("");
+                .style("font-weight", "bold");
 
             this.svg.on('click', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
                 this.disableMouseOut = false;
-                this.svg.select("#percentageFixed").style("opacity", 0);
+                this.svg.select(".percentageFixed").style("opacity", 0);
                 this.selectionManager.clear();
             });
             let svg_obj = this.svg;
@@ -88,7 +87,7 @@ module powerbi.visuals.samples {
                 let point = d3.mouse(this)
                     , p = { x: point[0], y: point[1] };
                 let shift = 20;
-                let percentageText = svg_obj.select("#percentage");
+                let percentageText = svg_obj.select(".percentage");
                 percentageText.attr("y", p.y + shift);
                 percentageText.attr("x", p.x + shift);
             });
@@ -136,11 +135,11 @@ module powerbi.visuals.samples {
 
                     this.selectionManager.select(d.selector);
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
-                    this.svg.select("#container").on("mouseleave", null);
+                    this.svg.select(".container").on("mouseleave", null);
                     this.mouseover(d, this, true);
                     this.disableMouseOut = true;
 
-                    let percentageFixedText = this.svg.select("#percentageFixed");
+                    let percentageFixedText = this.svg.select(".percentageFixed");
                     percentageFixedText.text(d ? d.value + "%" : "");
                     percentageFixedText.style('fill', d.color);
                     this.onResize();
@@ -175,8 +174,8 @@ module powerbi.visuals.samples {
         private onResize(): void {
             let width = this.viewport.width;
             let height = this.viewport.height;
-            let percentageText = this.svg.select("#percentage");
-            let percentageFixedText = this.svg.select("#percentageFixed");
+            let percentageText = this.svg.select(".percentage");
+            let percentageFixedText = this.svg.select(".percentageFixed");
             let dXtextFixed = percentageText.text.length > 0 ? 10 : 0;
             percentageText.style("opacity", 1);
             percentageFixedText.style("opacity", 1);
@@ -185,7 +184,7 @@ module powerbi.visuals.samples {
         }
 
         private mouseover(d, svgObj, setUnhide): void {
-            let percentageText = svgObj.svg.select("#percentage");
+            let percentageText = svgObj.svg.select(".percentage");
             percentageText.text(d ? d.value + "%" : "");
 
             svgObj.onResize();
@@ -213,7 +212,7 @@ module powerbi.visuals.samples {
             if (!svgObj.disableMouseOut) {
                 svgObj.svg.selectAll("path")
                     .style("opacity", 1);
-                let percentageText = this.svg.select("#percentage");
+                let percentageText = this.svg.select(".percentage");
                 percentageText.style("opacity", 0);
             }
             else {
