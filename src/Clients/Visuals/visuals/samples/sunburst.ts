@@ -42,12 +42,9 @@ module powerbi.visuals.samples {
             this.g
                 .on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
-                .attr('class', "sunBurstPercentage")
-                .attr("opacity", "0");                
+                .attr('class', "sunBurstPercentage");
             this.svg.append("text")
-                .attr('class', "sunBurstPercentageFixed")
-                .attr("opacity", "0")
-                .style("font-weight", "bold");
+                .attr('class', "sunBurstPercentageFixed");
 
             this.svg.on('click', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
