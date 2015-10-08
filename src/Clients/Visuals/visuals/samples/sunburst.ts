@@ -159,7 +159,7 @@ module powerbi.visuals.samples {
         }
       
         // Get all parents of the node
-        private static getParents(node) {
+        private static getTreePath(node) {
             let path = [];
             let current = node;
             while (current.parent) {
@@ -186,7 +186,7 @@ module powerbi.visuals.samples {
             percentageText.text(d ? d.value + "%" : "");
 
             svgObj.onResize();
-            let parentsArray = d ? Sunburst.getParents(d) : [];
+            let parentsArray = d ? Sunburst.getTreePath(d) : [];
             // Set opacity for all the segments.
             svgObj.svg.selectAll("path").each(function () {
                 if (d3.select(this).attr('setUnHide') !== 'true') {
