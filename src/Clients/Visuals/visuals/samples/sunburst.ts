@@ -181,20 +181,20 @@ module powerbi.visuals.samples {
             percentageFixedText.attr("x", ((width / 2) - (percentageFixedText.node().clientWidth / 2)));
         }
 
-        private mouseover(d, svgObj, setUnhide): void {
-            let percentageText = svgObj.svg.select(".sunBurstPercentage");
+        private mouseover(d, sunBurst, setUnhide): void {
+            let percentageText = sunBurst.svg.select(".sunBurstPercentage");
             percentageText.text(d ? d.value + "%" : "");
 
-            svgObj.onResize();
+            sunBurst.onResize();
             let parentsArray = d ? Sunburst.getTreePath(d) : [];
             // Set opacity for all the segments.
-            svgObj.svg.selectAll("path").each(function () {
+            sunBurst.svg.selectAll("path").each(function () {
                 if (d3.select(this).attr('setUnHide') !== 'true') {
                     d3.select(this).style("opacity", Sunburst.minOpacity);
                 }
             });
             // Highlight only ancestors of the current segment.
-            svgObj.svg.selectAll("path")
+            sunBurst.svg.selectAll("path")
                 .filter(function (node) {
                     return (parentsArray.indexOf(node) >= 0);
                 }).each(function () {
@@ -205,16 +205,16 @@ module powerbi.visuals.samples {
                 });
         }
 
-        private mouseleave(d, svgObj): void {
+        private mouseleave(d, sunBurst): void {
 
-            if (!svgObj.disableMouseOut) {
-                svgObj.svg.selectAll("path")
+            if (!sunBurst.disableMouseOut) {
+                sunBurst.svg.selectAll("path")
                     .style("opacity", 1);
                 let percentageText = this.svg.select(".sunBurstPercentage");
                 percentageText.style("opacity", 0);
             }
             else {
-                svgObj.mouseover(null, svgObj);
+                sunBurst.mouseover(null, sunBurst);
             }
         }
 
