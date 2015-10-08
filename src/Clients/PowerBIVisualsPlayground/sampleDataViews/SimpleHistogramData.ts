@@ -30,7 +30,6 @@ module powerbi.visuals.sampleDataViews {
     import DataView = powerbi.DataView;
     import DataViewMetadata = powerbi.DataViewMetadata;
     import ValueType = powerbi.ValueType;
-    import DataViewTransform = powerbi.data.DataViewTransform;
 
     export class SimpleHistogramData 
         extends SampleDataViews
@@ -76,18 +75,15 @@ module powerbi.visuals.sampleDataViews {
                             }
                         }
                     }]
-                },
-                columns = [{
-                    source: dataViewMetadata.columns[0], 
-                    values: this.sampleData
-                }],
-                dataValues: DataViewValueColumns = 
-                    DataViewTransform.createValueColumns(columns);
+                };
 
             return [{
                 metadata: dataViewMetadata,
                 categorical: {
-                    values: dataValues
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: this.sampleData
+                    }]
                 }
             }];
         }

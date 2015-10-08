@@ -438,18 +438,15 @@ module powerbitests.performanceTestsHelpers {
                             }
                         }
                     }]
-                },
-                histogramColumns = [{
-                    source: histogramDataViewMetadata.columns[0], 
-                    values: histogramValues
-                }],
-                histogramDataValues: DataViewValueColumns = 
-                    DataViewTransform.createValueColumns(histogramColumns);
+                };
 
                 return {
                     metadata: histogramDataViewMetadata,
                     categorical: {
-                        values: histogramDataValues
+                        categories: [{
+                            source: histogramDataViewMetadata.columns[0],
+                            values: histogramValues
+                        }]
                     }
                 };
 
