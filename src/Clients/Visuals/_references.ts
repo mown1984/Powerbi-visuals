@@ -63,7 +63,6 @@
 /// <reference path="capabilities/treemap.capabilities.ts"/>
 /// <reference path="capabilities/card.capabilities.ts"/>
 /// <reference path="capabilities/waterfallChart.capabilities.ts"/>
-/// <reference path="capabilities/samples/sunburst.capabilities.ts"/>
 /// <reference path="pluginsCapabilities.ts"/>
 
 /// <reference path="behaviours/columnChartBehaviors.ts"/>
@@ -179,5 +178,6 @@
 /// <reference path="visuals/donutChart.ts"/>
 /// <reference path="visuals/samples/radarChart.ts"/>
 /// <reference path="visuals/samples/dotPlot.ts"/>
+/// <reference path="visuals/samples/sunburst.ts"/>
 
 /// <reference path="plugins.ts"/>

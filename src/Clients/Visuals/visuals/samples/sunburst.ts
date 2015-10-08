@@ -40,6 +40,11 @@ module powerbi.visuals.samples {
         root: SunburstNode;
     }
 
+    export var sunburstRoleNames = {
+        nodes: 'Nodes',
+        values: 'Values',
+    };
+
     export class Sunburst implements IVisual {
         
         public static capabilities: VisualCapabilities = {
@@ -59,19 +64,15 @@ module powerbi.visuals.samples {
             this.svg.attr('id', 'mainDrawArea');
             this.g = this.svg.append('g');
             this.g.attr("id", "container");
-            this.svg.select("#container")
+            this.g
                 .on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
-                .attr("id", "percentage")
-                .attr("y", "30px")
-                .attr("x", "30px")
+                .attr("id", "percentage")                
                 .attr("opacity", "0")
                 .style("font-weight", "bold")
                 .text("");
             this.svg.append("text")
                 .attr("id", "percentageFixed")
-                .attr("y", "30px")
-                .attr("x", "30px")
                 .attr("opacity", "0")
                 .style("font-weight", "bold")
                 .text("");
