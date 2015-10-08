@@ -45,7 +45,7 @@ module powerbi.visuals.samples {
         public static capabilities: VisualCapabilities = {
         };
         private static minOpacity = 0.2;
-        private disableMouceOut: boolean = false;
+        private disableMouseOut: boolean = false;
         private svg: D3.Selection;
         private g: D3.Selection;
         private viewport: IViewport;
@@ -78,7 +78,7 @@ module powerbi.visuals.samples {
 
             this.svg.on('click', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
-                this.disableMouceOut = false;
+                this.disableMouseOut = false;
                 this.svg.select("#percentageFixed").style("opacity", 0);
                 this.selectionManager.clear();
             });
@@ -137,7 +137,7 @@ module powerbi.visuals.samples {
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
                     this.svg.select("#container").on("mouseleave", null);
                     this.mouseover(d, this, true);
-                    this.disableMouceOut = true;
+                    this.disableMouseOut = true;
 
                     let percentageFixedText = this.svg.select("#percentageFixed");
                     percentageFixedText.text(d ? d.value + "%" : "");
@@ -209,7 +209,7 @@ module powerbi.visuals.samples {
 
         private mouseleave(d, svgObj): void {
 
-            if (!svgObj.disableMouceOut) {
+            if (!svgObj.disableMouseOut) {
                 svgObj.svg.selectAll("path")
                     .style("opacity", 1);
                 let percentageText = this.svg.select("#percentage");
