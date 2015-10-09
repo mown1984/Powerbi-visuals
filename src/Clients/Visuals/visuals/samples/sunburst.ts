@@ -33,6 +33,13 @@ module powerbi.visuals.samples {
         private selectionManager: SelectionManager;
 
         public init(options: VisualInitOptions): void {
+
+            this.arc = d3.svg.arc()
+                .startAngle(function (d) { return d.x; })
+                .endAngle(function (d) { return d.x + d.dx; })
+                .innerRadius(function (d) { return Math.sqrt(d.y); })
+                .outerRadius(function (d) { return Math.sqrt(d.y + d.dy); });
+
             this.colors = options.style.colorPalette.dataColors;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
             this.svg = d3.select(options.element.get(0)).append('svg');
@@ -46,7 +53,7 @@ module powerbi.visuals.samples {
             this.svg.append("text")
                 .attr('class', "sunBurstPercentageFixed");
 
-            this.svg.on('click', (d) => {
+            this.svg.on('mousedown', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
                 this.disableMouseOut = false;
                 this.svg.select(".sunBurstPercentageFixed").style("opacity", 0);
@@ -71,9 +78,8 @@ module powerbi.visuals.samples {
         public update(options: VisualUpdateOptions): void {
 
             let data = Sunburst.converter(options.dataViews[0], this.colors);
-            this.viewport = options.viewport;           
-
-            this.updateInternal(data);         
+            this.viewport = options.viewport;
+            this.updateInternal(data);
         }
 
         private updateInternal(dataRootNode: SunburstNode): void {
@@ -101,7 +107,7 @@ module powerbi.visuals.samples {
                 .each(this.stash)
                 .on("mouseover", (d) => { this.mouseover(d, this, false); })
                 .on("mouseleave", (d) => { this.mouseleave(d, this); })
-                .on("click", (d) => {
+                .on("mousedown", (d) => {
 
                     this.selectionManager.select(d.selector);
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
@@ -119,11 +125,7 @@ module powerbi.visuals.samples {
             this.onResize();
         }
 
-        private arc = d3.svg.arc()
-            .startAngle(function (d) { return d.x; })
-            .endAngle(function (d) { return d.x + d.dx; })
-            .innerRadius(function (d) { return Math.sqrt(d.y); })
-            .outerRadius(function (d) { return Math.sqrt(d.y + d.dy); });
+        private arc: D3.Svg.Arc;
         // Stash the old values for transition.
         private stash(d) {
             d.x0 = d.x;
