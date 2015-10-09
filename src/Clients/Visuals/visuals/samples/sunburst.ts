@@ -76,10 +76,11 @@ module powerbi.visuals.samples {
         }
       
         public update(options: VisualUpdateOptions): void {
-
-            let data = Sunburst.converter(options.dataViews[0], this.colors);
-            this.viewport = options.viewport;
-            this.updateInternal(data);
+            if (options.dataViews.length > 0) {
+                let data = Sunburst.converter(options.dataViews[0], this.colors);
+                this.viewport = options.viewport;
+                this.updateInternal(data);
+            }
         }
 
         private updateInternal(dataRootNode: SunburstNode): void {
