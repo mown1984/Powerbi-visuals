@@ -289,6 +289,10 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
                 animator: new BaseAnimator()
             }));
+            // Area Range Chart
+            createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
+                animator: new BaseAnimator()
+            }));
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {
