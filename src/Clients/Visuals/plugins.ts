@@ -321,6 +321,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.RadarChart()
     };
 
+    export var dotPlot: IVisualPlugin = {
+        name: 'dotPlot',
+        capabilities: samples.DotPlot.capabilities,
+        create: () => new samples.DotPlot()
+    };
+
     export var histogram: IVisualPlugin = {
         name: "histogram",
         capabilities: Histogram.capabilities,
