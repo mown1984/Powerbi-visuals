@@ -122,6 +122,8 @@ module powerbi.visuals.samples {
                     this.onResize();
                     event.stopPropagation();
                 });
+
+            path.exit().remove();
             
             this.onResize();
         }
