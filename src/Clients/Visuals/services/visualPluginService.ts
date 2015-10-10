@@ -271,8 +271,18 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
             }));
+            // Radar Chart
+            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
+                animator: new BaseAnimator()
+            }));
+            // DotPlot
+            createPlugin(plugins, powerbi.visuals.plugins.dotPlot, () => new samples.DotPlot({
+                animator: new BaseAnimator()
+            }));
             // Tornado Chart
-            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new TornadoChart());
+            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new TornadoChart({
+                animator: new BaseAnimator()
+            }));
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {

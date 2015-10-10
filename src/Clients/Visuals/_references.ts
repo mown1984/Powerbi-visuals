@@ -178,5 +178,7 @@
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
+/// <reference path="visuals/samples/radarChart.ts"/>
+/// <reference path="visuals/samples/dotPlot.ts"/>
 
 /// <reference path="plugins.ts"/>

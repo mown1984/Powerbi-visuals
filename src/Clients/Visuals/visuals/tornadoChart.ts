@@ -438,7 +438,7 @@ module powerbi.visuals {
         private widthMiddleSection: number = 0;
         private widthRightSection: number = 0;
 
-        private isSelectColumn: boolean = false;
+        private isSelectColumn: boolean;
 
         constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions) {
             if (tornadoChartConstructorOptions) {
@@ -451,6 +451,8 @@ module powerbi.visuals {
                     this.durationAnimations = tornadoChartConstructorOptions.animator.getDuration();
                 }
             }
+
+            this.isSelectColumn = false;
         }
 
         public init(visualInitOptions: VisualInitOptions): void {
@@ -763,7 +765,7 @@ module powerbi.visuals {
             (columnElements[0] && columnElements[0].length > 0
                 ? columnsSelectionAnimation
                 : columnsSelection)
-                .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle))
+                .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle));
 
             columnsSelection
                 .exit()
@@ -777,7 +779,7 @@ module powerbi.visuals {
                         .select(TornadoChart.Columns.selector)
                         .selectAll(TornadoChart.Column.selector);
 
-                    self.setOpacity(columnsSelectionAnimation, self.MaxOpacity);
+                    this.setOpacity(columnsSelectionAnimation, self.MaxOpacity);
 
                     self.isSelectColumn = false;
                 }
