@@ -27,72 +27,71 @@ var gulp = require("gulp"),
     fs = require("fs"),
     download = require("gulp-download"),
     os = require("os"),
-    exec = require("child_process").exec; 
+    exec = require("child_process").execSync,
+    unzip = require("gulp-unzip");
+
+module.exports = {
+    installJasmine: installJasmine,
+    installPhantomjs: installPhantomjs,
+};
     
 /** --------------------------Download "JASMINE-jquery.js" --------------------------------*/
-gulp.task("install:jasmine", function (callback) {
-    fs.exists("src/Clients/Externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js", function (exists) {
-        if (!exists) {
-            console.log("Jasmine test dependency missing. Downloading dependency.");
-            download("https://raw.github.com/velesin/jasmine-jquery/master/lib/jasmine-jquery.js")
-                .pipe(gulp.dest("src/Clients/Externals/ThirdPartyIP/JasmineJQuery"))
-                .on("end", callback);
-        } else {
-            console.log("Jasmine test dependency exists.");
-            callback();
-        }
-    });
-});
+function installJasmine() {
+    var result = null;
+    var exists = fs.existsSync("src/Clients/Externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js");
+    if (!exists) {
+        console.log("Jasmine test dependency missing. Downloading dependency.");
+        result = download("https://raw.github.com/velesin/jasmine-jquery/master/lib/jasmine-jquery.js")
+            .pipe(gulp.dest("src/Clients/Externals/ThirdPartyIP/JasmineJQuery"));
+    } else {
+        console.log("Jasmine test dependency exists.");
+    }
+    return result;
+};
 
 /** ------------------------------ Download PHANTOM --------------------------------------- */
-gulp.task("install:phantomjs", function (callback) {
+function installPhantomjs() {
     var zipUrl = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.0.0-windows.zip";
     var phantomExe = "phantomjs.exe";
     var jasmineBrowserDir = "./node_modules/gulp-jasmine-browser/lib/";
 
     // Download phantomjs only for Windows OS.
+    var version = getPhantomJsVersion(jasmineBrowserDir);
     if (os.type().search("Windows") !== -1) {
-        onPhantomjsExist(jasmineBrowserDir, function (exists, version) {
-            if (!exists) {
-                console.log("Phantomjs missing. Downloading dependency.");
-                download(zipUrl)
-                    .pipe(unzip({
-                        filter: function (entry) {
-                            if (entry.path.search(phantomExe) !== -1) {
-                                entry.path = phantomExe;
-                                return true;
-                            }
-                        }}))
-                    .pipe(gulp.dest(jasmineBrowserDir))
-                    .on("end", callback);
-            } else {
-                logIfExists(version);
-                callback();
-            }
-        });
-    } else {
-        onPhantomjsExist(jasmineBrowserDir, function (exists, version) {
-            if (exists) {
-                logIfExists(version);
-            } else {
-                console.log("Automatic installation does not allowed for current OS [" + os.type() + "]. Please install Phantomjs manually. (https://bitbucket.org/ariya/phantomjs)");
-            }
-        });
-        callback();
+        if (!version) {
+            console.log("Phantomjs missing. Downloading dependency.");
+            return download(zipUrl)
+                .pipe(unzip({
+                    filter: function (entry) {
+                        if (entry.path.search(phantomExe) !== -1) {
+                            entry.path = phantomExe;
+                            return true;
+                        }
+                    }}))
+                .pipe(gulp.dest(jasmineBrowserDir));
+        } else {
+            logIfExists(version);
+        }
+    } else {        
+        if (version) {
+            logIfExists(version);
+        } else {
+            console.log("Automatic installation does not allowed for current OS [" + os.type() + "]. Please install Phantomjs manually. (https://bitbucket.org/ariya/phantomjs)");
+        }
     }
 
     function logIfExists(version) {
         console.log("Phantomjs has already exist. [Version: " + version + "]");
     }
 
-    function onPhantomjsExist(path, callback) {
-        exec("phantomjs -v", {cwd: path}, function (error, stdout) {
-            if (error !== null) {
-                callback(false, null);
-            } else if (stdout !== null) {
-                callback(true, stdout.substring(0, 5));
-            }
-        });
+    function getPhantomJsVersion(path) {
+        try {
+            var stdout = exec("phantomjs -v", { cwd: path }).toString();
+            return stdout.substring(0, 5)
+        }
+        catch (e) {
+            return null;
+        }
     }
-});
+};
 

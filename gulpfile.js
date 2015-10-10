@@ -33,6 +33,8 @@ require('./gulp/visualsPlayground.js');
 require('./gulp/visualsBuild.js').load();
 require('./gulp/visualsWatcher.js');
 require('./gulp/visualsPackage.js');
+require('./gulp/ghPages.js');
+require('./gulp/gulpHelp.js');
 	
 gulp.task("build", ["build:visuals"]);
 
@@ -40,7 +42,7 @@ gulp.task("test", ["test:visuals"]);
 
 gulp.task("run:test", ["run:test:visuals"]);
 
-gulp.task("default", ["build:visuals:debug"]);
+gulp.task("default", ["build:visuals"]);
 
 gulp.task("continuousBuild:debug", ["continuousBuild:visuals:debug"]);
 

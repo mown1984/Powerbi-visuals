@@ -87,7 +87,6 @@ function consumeStream(stream) {
 
 function runScript(script, context) {
     var scriptResult = script();
-
     if (scriptResult && typeof scriptResult.pipe === 'function') {
         return consumeStream(scriptResult);
     }

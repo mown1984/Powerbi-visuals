@@ -31,17 +31,19 @@ var gulp = require("gulp"),
     common = require("./common.js"),    
     cliParser = require("./cliParser.js"),
     visualsCommon = require("./visualsCommon.js");
+    visualsBuildDefault = require("./visualsBuild.js").load();
+    visualsDownload = require("./visualsDownload.js");
 
 var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
 
-gulp.task("copy:internal_dependencies_visuals_tests", function () {
+function copyInternalDependencies () {
     return gulp.src([
         "src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js"])
         .pipe(rename("powerbi-visuals-tests.js"))
         .pipe(gulp.dest("VisualsTests"));
-});
+};
 
-gulp.task("copy:external_dependencies_visuals_tests", function () {
+function copyExternalDependencies () {
     return gulp.src([
         "build/styles/visuals.css",
         "build/scripts/powerbi-visuals.all.js",
@@ -55,15 +57,8 @@ gulp.task("copy:external_dependencies_visuals_tests", function () {
         "node_modules/jasmine-core/lib/jasmine-core/boot.js",
         "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"])
         .pipe(gulp.dest("VisualsTests"));
-});
+};
 
-gulp.task("copy:dependencies_visuals_tests", function (callback) {
-    runSequence(
-        "copy:internal_dependencies_visuals_tests",
-        "copy:external_dependencies_visuals_tests",
-        callback
-        );
-});
 
 function addLink(link) {
     return '<link rel="stylesheet" type="text/css" href="' + link + '"/>';
@@ -161,18 +156,24 @@ gulp.task("test:visuals:performance", function (callback) {
 gulp.task("test:visuals", function (callback) {
     runSequence(
         "build:visuals",
-        "build:visualsTests:ts",
-        "install:jasmine",
-        "install:phantomjs",
-        "combine:all",
-        "copy:dependencies_visuals_tests",
+        "build:visualsTests",
         "run:test:visuals",
         callback);
 });
 
+gulp.task("build:visualsTests", function () {
+    return visualsCommon.runScriptSequence([
+        visualsBuildDefault.buildVisualsTestsTs,
+        visualsDownload.installJasmine,
+        visualsDownload.installPhantomjs,
+        visualsBuildDefault.combineVisualJsAll,
+        copyInternalDependencies,
+        copyExternalDependencies
+    ]);
+});
+
 gulp.task("open:test:visuals", function (callback) {
-    openInBrowser = true;
-    
+    openInBrowser = true;    
     runSequence("test:visuals", callback);
 });
 

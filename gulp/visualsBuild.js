@@ -102,12 +102,12 @@ module.exports.load = function (options) {
         buildVisualsProjectLess: buildVisualsProjectLess,
         combineInternalJs: combineInternalJs,
         combineExternalJs: combineExternalJs,
-        combineAll: combineAll,
+        combineVisualJsAll: combineVisualJsAll,
         combineInternalDts: combineInternalDts,
         combineExternalDts: combineExternalDts,
+        buildVisualsTestsTs: buildVisualsTestsTs
     };
 
-    /* ------------------------ GET PATH --------------------------------------- */
     function getBuildPaths(projectPath, outFileName, includePaths) {
         var paths = [];
 
@@ -184,10 +184,6 @@ module.exports.load = function (options) {
         return buildProject("src/Clients/Visuals", "Visuals");
     }
 
-    gulp.task("build:visualsPlayground:ts", function () {
-        return buildVisualsPlaygroundTs();
-    });
-
     function buildVisualsPlaygroundTs() {
         return buildProject("src/Clients/PowerBIVisualsPlayground", "PowerBIVisualsPlayground");
     }
@@ -203,7 +199,6 @@ module.exports.load = function (options) {
             getPathsForVisualsTests(filesOption));
     }
 
-    /* --------------------------- LESS/CSS ---------------------------------- */
     gulp.task("build:visuals:sprite", function () {
         return buildVisualsProjectSprite();
     });
@@ -223,8 +218,9 @@ module.exports.load = function (options) {
     });
 
     function buildVisualsProjectLess() {
-        var css = gulp.src(["src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css",
-       			     "src/Clients/Visuals/styles/visuals.less"])
+        var css = gulp.src([
+                "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.css",
+                "src/Clients/Visuals/styles/visuals.less"])
             .pipe(less())
             .pipe(concat("visuals.css"));
         if (!isDebug) {
@@ -235,7 +231,12 @@ module.exports.load = function (options) {
             .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"));
     }
 
-    /* -------------- COMBINERS LINKERS CONCATENATORS ------------------------- */
+    function buildVisualsScripts() {
+        return visualsCommon.runScriptSequence([
+            combineInternalJs,
+            combineExternalJs]);
+    }
+
     function concatFilesWithSourceMap(source, outFileName) {
         var result = source;
 
@@ -271,22 +272,17 @@ module.exports.load = function (options) {
         }
     }
 
-    gulp.task("combine:all", function () {
-        return combineAll();
+    gulp.task("combine:visuals:js", function () {
+        return combineVisualJsAll();
     });
 
-    function combineAll() {
-        var src = [
-        "build/scripts/externals.min.js"
-        ];
-
-        src.push("build/scripts/powerbi-visuals.js");
-
+    function combineVisualJsAll() {
+        var src = ["build/scripts/externals.min.js",
+            "build/scripts/powerbi-visuals.js"];
         return concatFilesWithSourceMap(gulp.src(src), "powerbi-visuals.all.js")
             .pipe(gulp.dest("build/scripts"));
     }
 
-    /* --------------------------- EXTERNALS ---------------------------------- */
     gulp.task("combine:visuals:externalJs", function () {
         return combineExternalJs();
     });
@@ -298,19 +294,6 @@ module.exports.load = function (options) {
             .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"));
     }
 
-    /* --------------------------- SCRIPTS ---------------------------------- */
-
-    gulp.task("build:visuals:scripts", function () {
-        return buildVisualsScripts();
-    });
-
-    function buildVisualsScripts() {
-        return visualsCommon.runScriptSequence([
-            combineInternalJs,
-            combineExternalJs]);
-    }
-
-    /* --------------------------- TS-LINT ---------------------------------- */
     var tslintPaths = ["src/Clients/VisualsCommon/**/*.ts",
         "!src/Clients/VisualsCommon*/obj/*.*",
         "!src/Clients/VisualsCommon/**/*.d.ts",
@@ -332,10 +315,8 @@ module.exports.load = function (options) {
             .pipe(tslint())
             .pipe(tslint.report("verbose"));
     });
-    /* --------------------------- COPY FILES ---------------------------------- */
-    gulp.task("copy:internal_dependencies_visuals_playground", function () {
-        return copyInternalDependenciesVisualsPlayground();
-    });
+
+
     function copyInternalDependenciesVisualsPlayground() {
         var src = [];
         src.push("src/Clients/PowerBIVisualsPlayground/obj/PowerBIVisualsPlayground.js");
@@ -344,9 +325,6 @@ module.exports.load = function (options) {
             .pipe(rename("PowerBIVisualsPlayground.js"))
             .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"));
     }
-    gulp.task("copy:image_dependencies_visuals_playground", function () {
-        return copyImageDependenciesVisualsPlayground();
-    });
     function copyImageDependenciesVisualsPlayground() {
         var src = [];
         src.push("src/Clients/Visuals/images/visuals.sprites.png");
@@ -354,7 +332,7 @@ module.exports.load = function (options) {
         return gulp.src(src)
             .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground/images"));
     }
-    /* --------------------------- BUILD SEQUENCIES ---------------------------------- */
+
     gulp.task("build:visualsCommon", function () {
         return buildVisualsCommon();
     });
@@ -383,6 +361,11 @@ module.exports.load = function (options) {
     }
 
     gulp.task("build:visuals:projects", function (callback) {
+
+        gulp.task("build:visuals:scripts", function () {
+            return buildVisualsScripts();
+        });
+
         runSequence(
             "build:visualsCommon",
             "build:visualsData",
@@ -410,33 +393,16 @@ module.exports.load = function (options) {
             "build:visuals:projects",
             callback);
     });
-    gulp.task("build:visuals:debug", function (callback) {
-        isDebug = true;
-        runSequence(
-            "build:visuals:projects",
-            callback);
-    });
-
-
-    gulp.task("combine:internal_d_ts", function () {
-        return combineInternalDts();
-    });
 
     function combineInternalDts() {
         return combine({
-            src: [
-                "src/Clients/VisualsCommon/obj/VisualsCommon.d.ts",
+            src: ["src/Clients/VisualsCommon/obj/VisualsCommon.d.ts",
                 "src/Clients/VisualsData/obj/VisualsData.d.ts",
-                "src/Clients/Visuals/obj/Visuals.d.ts"
-            ],
+                "src/Clients/Visuals/obj/Visuals.d.ts"],
             name: "powerbi-visuals.d.ts",
             destinationPath: "lib"
         });
     };
-
-    gulp.task("combine:external_d_ts", function () {
-        return combineExternalDts();
-    });
 
     function combineExternalDts() {
         return combine({
@@ -449,17 +415,6 @@ module.exports.load = function (options) {
         });
     };
 
-    /**
-     * Concatenate given files into one.
-     * <br/>
-     * <p>Option object props: <br/>
-     *  src {String[]} - Array of paths with files to combine <br/>
-     *  name {String} - Name of resulting file.<br/>
-     *  destinationPath {String} - Destination path where file will be placed.<br/>
-     * <p/>
-     * @
-     * @param {Object} options
-     */
     function combine(options) {
         return gulp.src(options.src)
             .pipe(concat(options.name))

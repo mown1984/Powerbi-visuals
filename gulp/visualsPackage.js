@@ -31,73 +31,75 @@ var gulp = require("gulp"),
     visualsBuild = require("./visualsBuild.js");
 
 gulp.task("build:package", function (callback) {
+    gulp.task("build:package:minified", function () {
+        return buildPackageProjects(false);
+    });
+
+    gulp.task("build:package:unminified", function () {
+        return buildPackageProjects(true);
+    });
+
+    gulp.task("build:package:artifacts", function () {
+        var visualsBuildMode = visualsBuild.load();
+        return visualsCommon.runScriptSequence([
+            visualsBuildMode.combineInternalDts,
+            visualsBuildMode.combineExternalDts,
+            copyPackageSprite
+        ]);
+    });
+
     runSequence(
         "build:package:minified",
         "build:package:unminified",
         "build:package:artifacts",
         callback);
+
+
+    function copyPackageJsMinified() {
+        return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.min.js");
+    };
+
+    function copyPackageJsUnminified() {
+        return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.js");
+    };
+
+    function copyPackageCssMinified() {
+        return copyPackageFile("build/styles/visuals.css", "visuals.min.css");
+    };
+
+    function copyPackageCssUnminified() {
+        return copyPackageFile("build/styles/visuals.css", "visuals.css");
+    };
+
+    function copyPackageSprite() {
+        return copyPackageFile("src/Clients/Visuals/images/visuals.sprites.png", "images/visuals.sprites.png");
+    };
+
+    function buildPackageProjects(isDebugFlag) {
+        var visualsBuildMode = visualsBuild.load({ isDebug: isDebugFlag });
+        return visualsCommon.runScriptSequence([
+            visualsBuildMode.buildVisualsCommon,
+            visualsBuildMode.buildVisualsData,
+            visualsBuildMode.buildVisualsProjectTs,
+            visualsBuildMode.buildVisualsProjectSprite,
+            visualsBuildMode.buildVisualsProjectLess,
+            visualsBuildMode.combineInternalJs,
+            visualsBuildMode.combineExternalJs,
+            visualsBuildMode.combineVisualJsAll,
+            isDebugFlag ? copyPackageJsUnminified : copyPackageJsMinified,
+            isDebugFlag ? copyPackageCssUnminified : copyPackageCssMinified],
+            isDebugFlag);
+    };
+
+    function copyPackageFile(inputFile, outputFile) {
+        var src = [];
+        src.push(inputFile);
+
+        return gulp.src(src)
+            .pipe(rename(outputFile))
+            .pipe(gulp.dest("lib"))
+    }
 });
 
-gulp.task("build:package:minified", function () {
-    return buildPackageProjects(false);
-});
-
-gulp.task("build:package:unminified", function () {
-    return buildPackageProjects(true);
-});
-
-gulp.task("build:package:artifacts", function () {
-    var visualsBuildMode = visualsBuild.load();
-    return visualsCommon.runScriptSequence([
-        visualsBuildMode.combineInternalDts,
-        visualsBuildMode.combineExternalDts,
-        copyPackageSprite
-    ]);
-});
-
-function copyPackageJsMinified() {
-    return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.min.js");
-};
-
-function copyPackageJsUnminified() {
-    return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.js");
-};
-
-function copyPackageCssMinified() {
-    return copyPackageFile("build/styles/visuals.css", "visuals.min.css");
-};
-
-function copyPackageCssUnminified() {
-    return copyPackageFile("build/styles/visuals.css", "visuals.css");
-};
-
-function copyPackageSprite() {
-    return copyPackageFile("src/Clients/Visuals/images/visuals.sprites.png", "images/visuals.sprites.png");
-};
-
-function buildPackageProjects(isDebugFlag) {
-    var visualsBuildMode = visualsBuild.load({ isDebug: isDebugFlag });
-    return visualsCommon.runScriptSequence([
-        visualsBuildMode.buildVisualsCommon,
-        visualsBuildMode.buildVisualsData,
-        visualsBuildMode.buildVisualsProjectTs,
-        visualsBuildMode.buildVisualsProjectSprite,
-        visualsBuildMode.buildVisualsProjectLess,
-        visualsBuildMode.combineInternalJs,
-        visualsBuildMode.combineExternalJs,
-        visualsBuildMode.combineAll,
-        isDebugFlag ? copyPackageJsUnminified : copyPackageJsMinified,
-        isDebugFlag ? copyPackageCssUnminified : copyPackageCssMinified],
-        isDebugFlag);
-};
-
-function copyPackageFile(inputFile, outputFile) {
-	var src = [];
-    src.push(inputFile);
-	
-	return gulp.src(src)
-        .pipe(rename(outputFile))
-        .pipe(gulp.dest("lib"))
-}
 
 
