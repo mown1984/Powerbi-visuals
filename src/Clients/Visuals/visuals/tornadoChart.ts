@@ -381,8 +381,9 @@ module powerbi.visuals {
         };
 
         private MinPrecision: number = 0;
-        
-        private MinOpacity: number = 0.2;
+
+        private MinOpacity: number = 0;
+        private MinColumnOpacity: number = 0.2;
         private MaxOpacity: number = 1;
 
         private MaxSizeSections: number = 100;
@@ -729,6 +730,7 @@ module powerbi.visuals {
 
         private renderColumns(columnsData: ColumnData[]): void {
             let self: TornadoChart = this,
+                columnsSelectionAnimation: D3.UpdateSelection,
                 columnsSelection: D3.UpdateSelection,
                 columnElements: D3.Selection = this.main
                     .select(TornadoChart.Columns.selector)
@@ -743,12 +745,11 @@ module powerbi.visuals {
             columnsSelection
                 .attr("x", (item: ColumnData) => item.x)
                 .attr("y", (item: ColumnData) => item.y)
-                .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle))
                 .attr("height", (item: ColumnData) => item.height)
                 .attr("fill", (item: ColumnData) => item.color)
                 .on("click", function () {
-                    self.setOpacity(columnsSelection, true);
-                    self.setOpacity(d3.select(this), false);
+                    self.setOpacity(columnsSelection, self.MinColumnOpacity);
+                    self.setOpacity(d3.select(this), self.MaxOpacity);
 
                     self.isSelectColumn = true;
 
@@ -756,8 +757,13 @@ module powerbi.visuals {
                 })
                 .classed(TornadoChart.Column["class"], true);
 
-            (<D3.UpdateSelection> this.animation(columnsSelection))
-                .attr("width", (item: ColumnData) => item.width);
+            columnsSelectionAnimation = (<D3.UpdateSelection> this.animation(columnsSelection));
+            columnsSelectionAnimation.attr("width", (item: ColumnData) => item.width);
+
+            (columnElements[0] && columnElements[0].length > 0
+                ? columnsSelectionAnimation
+                : columnsSelection)
+                .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle))
 
             columnsSelection
                 .exit()
@@ -771,7 +777,7 @@ module powerbi.visuals {
                         .select(TornadoChart.Columns.selector)
                         .selectAll(TornadoChart.Column.selector);
 
-                    self.setOpacity(columnsSelectionAnimation, false);
+                    self.setOpacity(columnsSelectionAnimation, self.MaxOpacity);
 
                     self.isSelectColumn = false;
                 }
@@ -972,10 +978,10 @@ module powerbi.visuals {
                 axesElements: D3.Selection = this.main
                     .select(TornadoChart.Axes.selector)
                     .selectAll(TornadoChart.Axis.selector);
-            
+
             if (tornadoChartDataView.series.length !== this.MaxSeries) {
                 axesElements.remove();
-                
+
                 return;
             }
 
@@ -985,14 +991,14 @@ module powerbi.visuals {
 
             axesSelection
                 .enter()
-                .append("svg:line");
+                .append("svg:line")
+                .classed(TornadoChart.Axis["class"], true);
 
-            axesSelection
+            (<D3.UpdateSelection> this.animation(axesSelection))
                 .attr("x1", (item: LineData) => item.x1)
                 .attr("y1", (item: LineData) => item.y1)
                 .attr("x2", (item: LineData) => item.x2)
-                .attr("y2", (item: LineData) => item.y2)
-                .classed(TornadoChart.Axis["class"], true);
+                .attr("y2", (item: LineData) => item.y2);
 
             axesSelection
                 .exit()
@@ -1019,15 +1025,10 @@ module powerbi.visuals {
         private renderLabels(columnsData: ColumnData[], settings: TornadoChartSettings): void {
             let labelEnterSelection: D3.Selection,
                 labelSelection: D3.UpdateSelection,
+                labelSelectionAnimation: D3.UpdateSelection,
                 labelElements: D3.Selection = this.main
                     .select(TornadoChart.Labels.selector)
                     .selectAll(TornadoChart.Label.selector);
-
-            if (!settings.showLabels) {
-                labelElements.remove();
-
-                return;
-            }
 
             labelSelection = labelElements.data(columnsData);
 
@@ -1047,17 +1048,27 @@ module powerbi.visuals {
                 .attr("x", (item: ColumnData) => item.label.x)
                 .attr("y", (item: ColumnData) => item.label.y)
                 .classed(TornadoChart.Label["class"], true);
-                
+
             labelSelection
                 .select(TornadoChart.LabelTitle.selector)
                 .text((item: ColumnData) => item.label.source);
 
-            (<D3.UpdateSelection> this.animation(labelSelection))
+            labelSelectionAnimation = labelElements[0] && labelElements[0].length > 0
+                ? (<D3.UpdateSelection> this.animation(labelSelection))
+                : labelSelection;
+
+            labelSelectionAnimation
                 .attr("transform", (item: ColumnData) => SVGUtil.translate(item.label.dx, item.label.dy));
 
             (<D3.UpdateSelection> this.animation(labelSelection
                 .select(TornadoChart.LabelText.selector)))
                 .text((item: ColumnData) => item.label.value);
+
+            if (!settings.showLabels) {
+                this.setOpacity(labelSelectionAnimation);
+            } else {
+                this.setOpacity(labelSelectionAnimation, this.MaxOpacity);
+            }
 
             labelSelection
                 .exit()
@@ -1065,7 +1076,7 @@ module powerbi.visuals {
         }
 
         private renderCategories(tornadoChartDataView: TornadoChartDataView): void {
-            let setting: TornadoChartSettings = tornadoChartDataView.settings,
+            let settings: TornadoChartSettings = tornadoChartDataView.settings,
                 categoriesEnterSelection: D3.Selection,
                 categoriesSelection: D3.UpdateSelection,
                 categoryElements: D3.Selection = this.main
@@ -1073,7 +1084,7 @@ module powerbi.visuals {
                     .selectAll(TornadoChart.Category.selector),
                 self: TornadoChart = this;
 
-            if (!setting.showCategories) {
+            if (!settings.showCategories) {
                 categoryElements.remove();
 
                 return;
@@ -1101,7 +1112,7 @@ module powerbi.visuals {
                         textData: TextData = this.getTextData(item);
 
                     shift = shift + textData.height / 2 - this.InnerTextHeightDelta;
-                    
+
                     return SVGUtil.translate(0, shift);
                 })
                 .classed(TornadoChart.Category["class"], true);
@@ -1114,7 +1125,7 @@ module powerbi.visuals {
                 .select(TornadoChart.CategoryText.selector)
                 .text((item: string) => {
                     let textData: TextData = self.getTextData(item);
-                    
+
                     return TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, self.widthLeftSection);
                 });
 
@@ -1324,14 +1335,14 @@ module powerbi.visuals {
             return instances;
         }
 
-        private setOpacity(element: D3Element, isHide: boolean = false): D3Element {
-            let elementAnimation: D3.Selection = <D3.Selection> this.animation(element);
+        private setOpacity(element: D3Element, opacityValue: number = this.MinOpacity, disableAnimation: boolean = false): D3Element {
+            let elementAnimation: D3.Selection = disableAnimation
+                ? <D3.Selection> element
+                : <D3.Selection> this.animation(element);
 
             return elementAnimation.style(
                 "fill-opacity",
-                isHide
-                    ? this.MinOpacity
-                    : this.MaxOpacity);
+                opacityValue);
         }
 
         private animation(element: D3Element): D3Element {
