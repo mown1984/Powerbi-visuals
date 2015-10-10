@@ -150,12 +150,13 @@ module powerbi.visuals {
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Y",
-                kind: VisualDataRoleKind.GroupingOrMeasure,
+                kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
             }],
             dataViewMappings: [{
                 conditions: [{
                     "Y": {
+                        min: 1,
                         max: 1
                     }
                 }],
