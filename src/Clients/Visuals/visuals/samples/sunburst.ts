@@ -105,11 +105,6 @@ module powerbi.visuals.samples {
                 .style("stroke", "#fff")
                 .style("fill", (d) => { return d.color; })
                 .style("fill-rule", "evenodd")
-                .each((d) => {
-                this.total2 += d.value ? d.value:0;
-                    d.x0 = d.x;
-                    d.dx0 = d.dx;
-                })
                 .on("mouseover", (d) => { this.mouseover(d, this, false); })
                 .on("mouseleave", (d) => { this.mouseleave(d, this); })
                 .on("mousedown", (d) => {
@@ -134,7 +129,6 @@ module powerbi.visuals.samples {
         private arc: D3.Svg.Arc;
         // Stash the old values for transition.
         private total: number = 0;
-        private total2: number = 0;
         // Get all parents of the node
         private static getTreePath(node) {
             let path = [];
