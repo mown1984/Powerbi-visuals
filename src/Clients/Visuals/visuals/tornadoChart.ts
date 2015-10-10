@@ -383,7 +383,7 @@ module powerbi.visuals {
         private MinPrecision: number = 0;
 
         private MinOpacity: number = 0;
-        private MinColumnOpacity: number = 0.2;
+        private MinColumnOpacity: number;
         private MaxOpacity: number = 1;
 
         private MaxSizeSections: number = 100;
@@ -453,6 +453,7 @@ module powerbi.visuals {
             }
 
             this.isSelectColumn = false;
+            this.MinColumnOpacity = 0.2;
         }
 
         public init(visualInitOptions: VisualInitOptions): void {
