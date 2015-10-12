@@ -77,12 +77,17 @@ gulp.task("start:watchers", function (callback) {
         waitingMessageLog);
 
     watchProjectFiles("src/Clients/Visuals/images/sprite-src/*.png", "build:visuals:sprite");
-
     watchProjectFiles(lessFilesToWatch, "build:visuals:less", waitingMessageLog);
-
     watchProjectFiles(visualsBuildDefault.externalsPath, "combine:visuals:externalJs", waitingMessageLog);
-
     watchProjectFiles(visualsBuildDefault.internalsPaths, "combine:visuals:internalJs", waitingMessageLog);
+
+    gulp.task("combine:visuals:internalJs", function () {
+        return visualsBuildDefault.combineInternalJs();
+    });
+
+    gulp.task("combine:visuals:externalJs", function () {
+        return visualsBuildDefault.combineExternalJs();
+    });
 
     serviceMessageLog("Continuous build successfully started");
     waitingMessageLog();

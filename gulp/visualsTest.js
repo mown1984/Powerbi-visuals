@@ -59,7 +59,6 @@ function copyExternalDependencies () {
         .pipe(gulp.dest("VisualsTests"));
 };
 
-
 function addLink(link) {
     return '<link rel="stylesheet" type="text/css" href="' + link + '"/>';
 }
