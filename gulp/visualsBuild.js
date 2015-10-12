@@ -272,10 +272,6 @@ module.exports.load = function (options) {
         }
     }
 
-    gulp.task("combine:visuals:js", function () {
-        return combineVisualJsAll();
-    });
-
     function combineVisualJsAll() {
         var src = [
             "build/scripts/externals.min.js",
