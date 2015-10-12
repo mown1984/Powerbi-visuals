@@ -65,14 +65,23 @@ module powerbi.visuals.samples {
 
     export class AreaRangeChart implements IVisual {
 
-        private static Properties: any = {
+    private static Properties: any = {
             general: {
-                formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
+                formatString: <DataViewObjectPropertyIdentifier>{
+                    objectName: "general",
+                    propertyName: "formatString"
+                }
             },
             dataPoint: {
                 fill: <DataViewObjectPropertyIdentifier>{
                     objectName: 'dataPoint',
                     propertyName: 'fill'
+                }
+            },
+            labels: {
+                labelPrecision: <DataViewObjectPropertyIdentifier>{
+                    objectName: "labels",
+                    propertyName: "labelPrecision"
                 }
             }
         };
@@ -92,7 +101,6 @@ module powerbi.visuals.samples {
             ],
             dataViewMappings: [{
                 conditions: [
-                    { 'Category': { max: 1 }, 'Y': { max: 1 } },
                 ],
                 categorical: {
                     categories: {
@@ -145,6 +153,7 @@ module powerbi.visuals.samples {
 
         private static OpacityMin = 0.5;
         private static OpacityMax = 0.9;
+        private MinPrecision: number = 0;
 
         private svg: D3.Selection;
 
@@ -156,6 +165,12 @@ module powerbi.visuals.samples {
         private animator: IGenericAnimator;
         private margin: IMargin;
         private legend: ILegend;
+
+        private static DefaultSettings: AreaRangeChartSettings = {
+            displayName: "Area Range Chart",
+            fillColor: "teal",
+            precision: 2
+        };
 
         private static DefaultMargin: IMargin = {
             top: 50,
@@ -473,8 +488,42 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{};
+            let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
+                objects: DataViewObjects;
+
+            settings.displayName = AreaRangeChart.DefaultSettings.displayName;
+            settings.fillColor = AreaRangeChart.DefaultSettings.fillColor;
+
+            objects = this.getObjectsFromDataView(dataView);
+
+            if (objects) {
+                settings.precision = this.getPrecision(objects);
+            }
             return settings;
+        }
+
+        private getPrecision(objects: DataViewObjects): number {
+            let precision: number = DataViewObjects.getValue(
+                objects,
+                AreaRangeChart.Properties.labels.labelPrecision,
+                AreaRangeChart.DefaultSettings.precision);
+
+            if (precision <= this.MinPrecision) {
+                return this.MinPrecision;
+            }
+
+            return precision;
+        }
+
+        private getObjectsFromDataView(dataView: DataView): DataViewObjects {
+            if (!dataView ||
+                !dataView.metadata ||
+                !dataView.metadata.columns ||
+                !dataView.metadata.objects) {
+                return null;
+            }
+
+            return this.dataView.metadata.objects;
         }
 
     }
