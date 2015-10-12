@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals.sampleDataViews {
-    //import DataViewTransform = powerbi.data.DataViewTransform;
+    import DataViewTransform = powerbi.data.DataViewTransform;
 
     export class SimpleAreaRangeData extends SampleDataViews implements ISampleDataViewsMethods {
 
@@ -37,12 +37,22 @@ module powerbi.visuals.sampleDataViews {
         public visuals: string[] = ['areaRangeChart'];
 
         private sampleData = [
-            [0, 1],
-            [2, 3],
-            [4, 6]
-            [6, 7],
-            [8, 9],
-            [10, 11],
+            [
+                [0, 1],
+                [2, 3],
+                [4, 6],
+                [2, 3],
+                [2, 4],
+                [0, 1],
+            ],
+            [
+                [8, 9],
+                [7, 8],
+                [4, 7],
+                [3, 5],
+                [1, 2],
+                [1, 2],
+            ]
         ];
 
         private sampleMin: number = 1;
@@ -100,35 +110,29 @@ module powerbi.visuals.sampleDataViews {
                 }
             ];
 
-            //var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-            var tableDataValues = this.categoryValues.map(function (countryName, idx) {
-                return [countryName, columns[0].values[idx], columns[1].values[idx]];
-            });
+            var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
 
             return [{
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: [{
                         source: dataViewMetadata.columns[0],
-                        values: this.sampleData,
+                        values: this.categoryValues,
                         identity: categoryIdentities,
-                    }]
-                },
-                table: {
-                    rows: tableDataValues,
-                    columns: dataViewMetadata.columns,
+                    }],
+                    values: dataValues,
                 }
             }];
         }
-
         
         public randomize(): void {
 
-            this.sampleData = this.categoryValues.map((item) => {
-                return [this.getRandomValue(this.sampleMin, this.sampleMax),
+            this.sampleData = this.sampleData.map(data => {
+                return data.map(item => {
+                    return [this.getRandomValue(this.sampleMin, this.sampleMax),
                         this.getRandomValue(this.sampleMin, this.sampleMax)];
-            });
-
+                    });
+                });
         }
         
     }

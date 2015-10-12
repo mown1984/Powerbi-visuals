@@ -28,57 +28,51 @@
 
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
+    import ValueFormatter = powerbi.visuals.valueFormatter;
  
     export interface AreaRangeChartConstructorOptions {
         animator?: IGenericAnimator;
         svg?: D3.Selection;
         margin?: IMargin;
-        radius?: number;
-        strokeWidth?: number;
     }
     
     export interface AreaRangeChartData {
         x: number;
         y0: number;
-        y: number;
+        y1: number;
         color?: string;
         value?: number;
         label?: string;
-        identity: SelectionId;
+        identity?: SelectionId;
         tooltipInfo?: TooltipDataItem[];
-    }
-    
-    export interface AreaRangeChartDataView {
-        data: AreaRangeChartData[];
-        xScale?: D3.Scale.LinearScale;
-        yScale?: D3.Scale.LinearScale;
-        //settings: HistogramSettings;
-        formatter: IValueFormatter;
     }
 
     export interface AreaRangeChartSettings {
         displayName?: string;
         fillColor?: string;
+        precision: number;
+    }
+    
+    export interface AreaRangeChartDataView {
+        data: AreaRangeChartData[][];
+        categories: any[];
+        legendData: LegendData;
+        xScale?: D3.Scale.OrdinalScale;
+        yScale?: D3.Scale.LinearScale;
+        settings: AreaRangeChartSettings;
+        formatter: IValueFormatter;
     }
 
     export class AreaRangeChart implements IVisual {
 
         private static Properties: any = {
             general: {
-                bins: <DataViewObjectPropertyIdentifier>{
-                    objectName: "general",
-                    propertyName: "bins"
-                },
-                frequency: <DataViewObjectPropertyIdentifier>{
-                    objectName: "general",
-                    propertyName: "frequency"
-                },
                 formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
             },
             dataPoint: {
                 fill: <DataViewObjectPropertyIdentifier>{
-                    objectName: "dataPoint",
-                    propertyName: "fill"
+                    objectName: 'dataPoint',
+                    propertyName: 'fill'
                 }
             }
         };
@@ -88,20 +82,27 @@ module powerbi.visuals.samples {
                 {
                     name: 'Category',
                     kind: powerbi.VisualDataRoleKind.Grouping,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Category")
                 },
                 {
                     name: 'Y',
                     kind: powerbi.VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
                 },
             ],
             dataViewMappings: [{
-                categories: {
-                    for: { in: 'Category' },
-                    dataReductionAlgorithm: { top: {} }
-                },
-                values: {
-                    select: [{ bind: { to: 'Y' } }]
-                },
+                conditions: [
+                    { 'Category': { max: 1 }, 'Y': { max: 1 } },
+                ],
+                categorical: {
+                    categories: {
+                        for: { in: 'Category' },
+                        dataReductionAlgorithm: { top: {} }
+                    },
+                    values: {
+                        select: [{ bind: { to: 'Y' } }]
+                    },
+                }
             }],
             objects: {
                 general: {
@@ -124,27 +125,29 @@ module powerbi.visuals.samples {
             }
         };
 
-        private static VisualClassName = 'dotPlot';
-/*
+        private static VisualClassName = 'areaRangeChart';
+        private QuantityLabelsOnAxisY: number = 5;
+
         private static AreaRangeChart: ClassAndSelector = {
-            class: 'areaRangeChart',
-            selector: '.areaRangeChart'
+            class: 'chart',
+            selector: '.chart'
         };
-/*
+
+        private static Area: ClassAndSelector = {
+            class: 'area',
+            selector: '.area'
+        };
+
         private static Axis: ClassAndSelector = {
             class: 'axis',
             selector: '.axis'
         };
 
-        private static Dot: ClassAndSelector = {
-            class: 'dot',
-            selector: '.dot'
-        };
-*/
+        private static OpacityMin = 0.5;
+        private static OpacityMax = 0.9;
+
         private svg: D3.Selection;
-    /*    private axis: D3.Selection;
-        private dotPlot: D3.Selection;
-*/
+
         private colors: IDataColorPalette;
         private selectionManager: SelectionManager;
         private dataView: DataView;
@@ -161,21 +164,14 @@ module powerbi.visuals.samples {
             left: 50
         };
 
-        private radius: number;
-        private strokeWidth: number;
+        private suppressAnimations: boolean = false;
+        private duration: number = 0;
+        private areaRangeChartDataView: AreaRangeChartDataView;
 
-        private static DefaultRadius: number = 5;
-        private static DefaultStrokeWidth: number = 1;
-/*        private static FrequencyText: string = "Frequency";
-
-        private static getTooltipData(value: number): TooltipDataItem[] {
-            return [{
-                displayName: AreaRangeChart.FrequencyText,
-                value: value.toString()
-            }];
-        }
-*/
-   
+        private chart: D3.Selection;
+        private axis: D3.Selection;
+        private axisX: D3.Selection;
+        private axisY: D3.Selection;
 
         public constructor(options?: AreaRangeChartConstructorOptions) {
             if (options) {
@@ -186,8 +182,6 @@ module powerbi.visuals.samples {
                     this.animator = options.animator;
                 }
                 this.margin = options.margin || AreaRangeChart.DefaultMargin;
-                this.radius = options.radius || AreaRangeChart.DefaultRadius;
-                this.strokeWidth = options.strokeWidth || AreaRangeChart.DefaultStrokeWidth;
             }
         }
 
@@ -206,139 +200,269 @@ module powerbi.visuals.samples {
             this.svg.classed(AreaRangeChart.VisualClassName, true);
             this.colors = options.style.colorPalette.dataColors;
             this.legend = createLegend(element, false, null);
-/*
-            this.dotPlot = this.svg
+
+            this.chart = this.svg
                 .append('g')
                 .classed(AreaRangeChart.AreaRangeChart.class, true);
 
             this.axis = this.svg
                 .append('g')
-                .classed(AreaRangeChart.Axis.class, true);*/
+                .classed(AreaRangeChart.Axis.class, true);
+
+            this.axisX = this.axis
+                .append('g')
+                .classed(AreaRangeChart.Axis.class, true);
+
+            this.axisY = this.axis
+                .append('g')
+                .classed(AreaRangeChart.Axis.class, true);
         }
 
         public update(options: VisualUpdateOptions): void {
-            if (!options.dataViews || !options.dataViews[0]) return;
-            let dataView = this.dataView = options.dataViews[0];
-            let viewport = this.viewport = options.viewport;
-            this.svg
-                .attr({
-                    'height': viewport.height,
-                    'width': viewport.width
-                });
+            let dataView: DataView;
 
-            let height = viewport.height - this.margin.bottom - this.margin.top;
+            if (!options ||
+                !options.dataViews ||
+                !options.dataViews[0]) {
+                return;
+            }
 
-            let source = dataView.categorical.categories[0].source;
-            let data = this.converter(dataView);
+            dataView = this.dataView = options.dataViews[0];
 
-            console.log(height, source, data);
-            /*
-            let dataPoints = data.dataPoints;
+            this.suppressAnimations = Boolean(options.suppressAnimations);
+            this.duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
 
-            let values = dataView.categorical.values[0].values;
-            let xValues = d3.set(values).values();
+            this.setSize(options.viewport);
+            this.areaRangeChartDataView = this.converter(dataView);
+            this.render();
+        }
 
-            let xScale: D3.Scale.OrdinalScale = d3.scale.ordinal()
-                .domain(xValues)
-                .rangeBands([this.margin.left, viewport.width - this.margin.right]);
+        private render(): void {
+            if (!this.areaRangeChartDataView || !this.areaRangeChartDataView.settings) {
+                return;
+            }
+            let legendData = this.areaRangeChartDataView.legendData;
 
-            let yScale: D3.Scale.LinearScale = d3.scale.linear()
-                .domain([0, maxDots])
-                .range([height - radius, this.margin.top]);
-*/
-            //this.legend.drawLegend(data.legendData, viewport);
-           
-           // this.drawAxis(source, data.xScale, height);
-           // this.drawAreaRangeChart(dataPoints, xScale, yScale);
+            this.renderAxis();
+            this.renderChart();
+            this.legend.drawLegend(legendData, this.viewport);
+        }
+
+        private setSize(viewport: IViewport): void {
+            let height: number,
+                width: number;
+
+            height = viewport.height - this.margin.top - this.margin.bottom;
+            width  = viewport.width - this.margin.left - this.margin.right;
+
+            this.viewport = {
+                height: height,
+                width: width
+            };
+
+            this.updateElements(viewport.height, viewport.width);
+        }
+
+        private updateElements(height: number, width: number): void {
+            this.svg.attr({
+                'height': height,
+                'width': width
+            });
+            this.chart.attr('transform', SVGUtil.translate(this.margin.left, 0));
+            this.axisY.attr('transform', SVGUtil.translate(this.margin.left, 0));
+            this.axisX.attr('transform', SVGUtil.translate(this.margin.left, this.viewport.height));
         }
 
         public converter(dataView: DataView): AreaRangeChartDataView {
-            let catDv: DataViewCategorical = dataView.categorical;
-            let values = catDv.categories[0].values;
+            let settings: AreaRangeChartSettings,
+                categories: any[],
+                values: DataViewValueColumns,
+                xScale: D3.Scale.OrdinalScale,
+                yScale: D3.Scale.LinearScale,
+                valueFormatter: IValueFormatter,
+                min,
+                max;
 
-            let min = d3.min(values, d => {
-                return d3.min(d);
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                !dataView.categorical.categories[0] ||
+                !dataView.categorical.categories[0].values ||
+                !(dataView.categorical.categories[0].values.length > 0)) {
+                return null;
+            }
+
+            settings = this.parseSettings(dataView);
+            if (!settings) {
+                return null;
+            }
+
+            categories = dataView.categorical.categories[0].values;
+            values = dataView.categorical.values;
+
+            xScale = d3.scale.ordinal()
+                .domain(categories)
+                .rangeBands([0, this.viewport.width], 0, 0);
+
+            min = d3.min(values, (data1) => {
+                return d3.min(data1.values, data2 => d3.min(data2));
             });
-            let max = d3.max(values, d => {
-                return d3.max(d);
+            max = d3.max(values, (data1) => {
+                return d3.max(data1.values, data2 => d3.max(data2));
             });
+            
+            yScale = d3.scale.linear()
+                .domain([min, max])
+                .range([this.viewport.height, 0]);
 
-            let xScale: D3.Scale.LinearScale = d3.scale.linear().domain([min, max]);
-            let yScale: D3.Scale.LinearScale = d3.scale.linear().domain([min, max]);
-
-            let valFormatter = powerbi.visuals.valueFormatter.create({
-                format: powerbi.visuals.valueFormatter.getFormatString(dataView.categorical.categories[0].source, AreaRangeChart.Properties.general.formatString),
+            valueFormatter = ValueFormatter.create({
+                format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, AreaRangeChart.Properties.general.formatString),
                 value: values[0],
+                precision: settings.precision
             });
-
-            let settings: AreaRangeChartSettings = this.parseSettings(dataView);
-
-            /*
-                        for (let i = 0, iLen = values.length; i < iLen; i++) {
-                            let data = values[i];
-                            let color = colors.getColorByIndex(i).value;
-            
-                        
-                            let legendText = values[i].source.displayName;
-                            let color = colors.getColorByIndex(i).value;
-                            let counts = {};
-            
-                            for (let j = 0, jLen = values[i].values.length; j < jLen; j++) {
-                                let num = values[i].values[j];
-                                counts[num] = counts[num] ? counts[num]+1 : 1;
-                            }                
-                            let data = d3.entries(counts);
-                            let min = d3.min(data, d => d.value);
-                            let max = d3.max(data, d => d.value);
-            
-                            let dotsScale: D3.Scale.LinearScale = d3.scale.linear().domain([min, max]);
-            
-             
-                            for (let j = 0, jLen = data.length; j < jLen; j++) {
-                                let id = SelectionIdBuilder
-                                    .builder()
-                                    .withSeries(dataView.categorical.values, dataView.categorical.values[i])
-                                    .createSelectionId();
-                                dataPoints.push({
-                                    x: category[j],
-                                    y0: data[j][0],
-                                    y: data[j][1],
-                                    color: color,
-                                    identity: id,
-                                    //tooltipInfo: AreaRangeChart.getTooltipData(data[j][0], data[j][1]);
-                                });
-                            }
-            
-                            legendData.dataPoints.push({
-                                label: legendText,
-                                color: color,
-                                icon: LegendIcon.Box,
-                                selected: false,
-                                identity: null
-                            });
-                        }
-                        */
 
             return {
-                data: this.getData(values, values, settings, valFormatter),
                 xScale: xScale,
                 yScale: yScale,
                 settings: settings,
-                formatter: valFormatter
+                data: this.getData(values, categories, settings, valueFormatter),
+                legendData: this.getLegend(values),
+                categories: categories,
+                formatter: valueFormatter
             };
         }
 
-        private getData(values: number[], data: any[], settings: AreaRangeChartSettings, formatter: IValueFormatter): AreaRangeChartData[] {
-  /*          var minValue: number = d3.min(values),
-                maxValue: number = d3.max(values);
+        private renderAxis(): void {
+            let xScale: D3.Scale.OrdinalScale = this.areaRangeChartDataView.xScale,
+                yScale: D3.Scale.LinearScale = this.areaRangeChartDataView.yScale,
+                categories: any[] = this.areaRangeChartDataView.categories,
+                axisX: D3.Svg.Axis,
+                axisY: D3.Svg.Axis;
 
-            return data.map((bin: HistogramData, index: number) => {
-                bin.range = this.getRange(minValue, maxValue, bin.dx, index);
-                bin.tooltipInfo = this.getTooltipData(bin.y, bin.range, settings, index === 0, formatter);
+            axisX = d3.svg.axis()
+                .scale(xScale)
+                .orient('bottom')
+                .tickValues(categories);
 
-                return bin;
-            });*/
-            return data;
+            axisY = d3.svg.axis()
+                .scale(yScale)
+                .orient('left')
+                .ticks(this.QuantityLabelsOnAxisY);
+
+            this.axisX
+                .call(axisX);
+
+            this.axisY
+                .call(axisY);
+        }
+
+        private renderChart(): void {
+            let data: AreaRangeChartData[][] = this.areaRangeChartDataView.data,
+                xScale: D3.Scale.OrdinalScale = this.areaRangeChartDataView.xScale,
+                yScale: D3.Scale.LinearScale = this.areaRangeChartDataView.yScale,
+                selection: D3.UpdateSelection,
+                sm = this.selectionManager;
+
+            const duration = this.duration,
+                opacityMin: number = AreaRangeChart.OpacityMin,
+                opacityMax: number = AreaRangeChart.OpacityMax;
+
+            let area: D3.Svg.Area = d3.svg.area()
+                .x(d => (xScale(d.x) + xScale.rangeBand() / 2))
+                .y0(d => yScale(d.y0))
+                .y1(d => yScale(d.y1));
+
+            selection = this.chart.selectAll(AreaRangeChart.Area.selector).data(data);
+
+            selection
+                .enter()
+                .append('svg:path')
+                .classed(AreaRangeChart.Area.class, true);
+
+            selection
+                .attr('fill', d => d[0].color)
+                .attr('stroke', d => d[0].color)
+                .attr('d', d => area(d))
+                .style('fill-opacity', opacityMin)
+                .on('click', function(d) {
+                    sm.select(d[0].identity).then(ids => {
+                        if (ids.length > 0) {
+                            selection.style('fill-opacity', opacityMin);
+                            d3.select(this).transition()
+                                .duration(duration)
+                                .style('fill-opacity', opacityMax);
+                        } else {
+                            selection.style('fill-opacity', opacityMin);
+                        }
+                    });
+                    d3.event.stopPropagation();
+                });
+
+            selection.exit().remove();
+            this.renderTooltip(selection);
+        }
+
+        private renderTooltip(selection: D3.UpdateSelection): void {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (<AreaRangeChartData>tooltipEvent.data[0]).tooltipInfo;
+            });
+        }
+
+        private getLegend(values: any[]): LegendData {
+            let colors: IDataColorPalette = this.colors;
+            let dataPoints = values.map((value: any, i: number) => {
+                let color = colors.getColorByIndex(i).value;
+                let displayName = value.source.displayName;
+                return {
+                    label: displayName,
+                    color: color,
+                    icon: LegendIcon.Box,
+                    selected: false,
+                    identity: null
+                };
+            });
+
+            return {
+                dataPoints: dataPoints,
+            };
+        }
+
+        private getData(data: DataViewValueColumns, categories, settings: AreaRangeChartSettings, formatter: IValueFormatter): AreaRangeChartData[][] {
+            let colors: IDataColorPalette = this.colors;
+            return data.map((value: DataViewValueColumn, i: number) => {
+                let color = colors.getColorByIndex(i).value;
+                let id = SelectionIdBuilder
+                    .builder()
+                    .withSeries(data, value)
+                    .createSelectionId();
+
+                return value.values.map((item: any[], index: number) => {
+                    let x = categories[index];
+                    let y0 = d3.min(item);
+                    let y1 = d3.min(item);
+                    return {
+                        color: color,
+                        x: categories[index],
+                        y0: d3.min(item),
+                        y1: d3.max(item),
+                        tooltipInfo: this.getTooltipData(x, y0, y1, settings, formatter),
+                        identity: id
+                    };
+                });
+            });
+        }
+
+        private getTooltipData(category: string, y0: number, y1: number, settings: AreaRangeChartSettings, valueFormatter: IValueFormatter): TooltipDataItem[] {
+            return [{
+                displayName: category,
+                value: '',
+            }, {
+                displayName: 'Min:',
+                value: valueFormatter.format(y0)
+            }, {
+                displayName: 'Max:',
+                value: valueFormatter.format(y1)
+            }];
         }
 
         private parseSettings(dataView: DataView): AreaRangeChartSettings {
@@ -350,50 +474,8 @@ module powerbi.visuals.samples {
             }
 
             let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{};
-              //  objects: DataViewObjects;
-
             return settings;
         }
 
-/*
-        private drawAreaRangeChart(data: AreaRangeChartDatapoint[], xScale: D3.Scale.OrdinalScale, yScale: D3.Scale.LinearScale): void {
-            let selection = this.dotPlot.selectAll(AreaRangeChart.Dot.selector).data(data);
-            selection
-                .enter()
-                .append('circle')
-                .classed(AreaRangeChart.Dot.class, true);
-            selection   
-                .attr("cx", function(point: AreaRangeChartDatapoint) {
-                    return xScale(point.x) + xScale.rangeBand()/2;
-                })
-                .attr("cy", function(point: AreaRangeChartDatapoint) {
-                    return yScale(point.y);
-                })
-                .attr("fill", d => d.color)
-                .attr("stroke", "black")
-                .attr("stroke-width", this.strokeWidth)
-                .attr("r", this.radius);
-
-            this.renderTooltip(selection);
-
-            selection.exit().remove();
-        }
-
-        private renderTooltip(selection: D3.UpdateSelection): void {
-            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                return (<AreaRangeChartDatapoint>tooltipEvent.data).tooltipInfo;
-            });
-        }
-
-        private drawAxis(values: any[], xScale: D3.Scale.OrdinalScale, translateY: number) {
-            let xAxis = d3.svg.axis()
-                .scale(xScale)
-                .orient("bottom")
-                .tickValues(values);
-
-            this.axis.attr("class", "x axis")
-                .attr('transform', SVGUtil.translate(0, translateY));
-            this.axis.call(xAxis);
-        }*/
     }
 }

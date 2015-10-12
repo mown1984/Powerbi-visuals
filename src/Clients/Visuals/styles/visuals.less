@@ -1865,3 +1865,29 @@ div.ql-toolbar {
         }
     }
 }
+
+.areaRangeChart {
+    @areaRangeChartAxesColor: @neutralSecondaryAltColor;
+    @areaRangeChartLegendTextColor: @blackColor;
+
+    font-family: @regularFontFamily;
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: @areaRangeChartAxesColor;
+            shape-rendering: crispEdges;
+        }
+
+        text {
+            fill: @areaRangeChartAxesColor;
+            font-size: 11px;
+        }
+    }
+
+    .chart {
+        path, line {
+            stroke-width: 1;
+        }
+    }
+}
