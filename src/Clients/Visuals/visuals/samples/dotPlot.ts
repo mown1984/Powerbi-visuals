@@ -79,7 +79,7 @@ module powerbi.visuals.samples {
                         },
                         values: {
                             select: [{ bind: { to: 'Y' } }]
-                        },
+                        }
                     }
                 }
             ],
@@ -166,7 +166,9 @@ module powerbi.visuals.samples {
                 dataPoints: [],
             };
 
-            if (!dataView.categorical || dataView.categorical.values.length < 1) {
+            if (!dataView.categorical || 
+                !dataView.categorical.values || 
+                dataView.categorical.values.length < 1) {
                 return {
                     dataPoints: dataPoints,
                     legendData: legendData,
@@ -278,8 +280,17 @@ module powerbi.visuals.samples {
         }
 
         public update(options: VisualUpdateOptions): void {
-            if (!options.dataViews || !options.dataViews[0]) return;
+            if (!options.dataViews || !options.dataViews[0]) {
+                return;
+            }
             let dataView = this.dataView = options.dataViews[0];
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values) {
+                return;
+            }
             let viewport = this.viewport = options.viewport;
             this.svg
                 .attr({
@@ -316,7 +327,7 @@ module powerbi.visuals.samples {
                 .enter()
                 .append('circle')
                 .classed(DotPlot.Dot.class, true);
-            selection   
+            selection
                 .attr("cx", function(point: DotPlotDatapoint) {
                     return xScale(point.x) + xScale.rangeBand()/2;
                 })
