@@ -10,6 +10,7 @@ module powerbi.visuals.samples {
         parent?: SunburstSlice;
         selector: SelectionId;
         total: number;
+        tooltipInfo?: TooltipDataItem[];
     }
 
     export interface SunburstViewModel {
@@ -22,7 +23,6 @@ module powerbi.visuals.samples {
     };
 
     export class Sunburst implements IVisual {
-       
         private static minOpacity = 0.2;
         private disableMouseOut: boolean = false;
         private svg: D3.Selection;
@@ -76,7 +76,6 @@ module powerbi.visuals.samples {
         };
 
         public init(options: VisualInitOptions): void {
-
             this.arc = d3.svg.arc()
                 .startAngle(function (d) { return d.x; })
                 .endAngle(function (d) { return d.x + d.dx; })
@@ -89,10 +88,7 @@ module powerbi.visuals.samples {
             this.svg.attr('class', 'mainDrawArea');
             this.g = this.svg.append('g');
             this.g.attr('class', "container");
-            this.g
-                .on("mouseleave", (d) => { this.mouseleave(d, this); });
-            this.svg.append("text")
-                .attr('class', "sunBurstPercentage");
+            this.g.on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
                 .attr('class', "sunBurstPercentageFixed");
 
@@ -102,16 +98,6 @@ module powerbi.visuals.samples {
                 this.svg.select(".sunBurstPercentageFixed").style("opacity", 0);
                 this.selectionManager.clear();
             });
-            let svg_obj = this.svg;
-            svg_obj.on("mousemove", function () {
-                let point = d3.mouse(this)
-                    , p = { x: point[0], y: point[1] };
-                let shift = 20;
-                let percentageText = svg_obj.select(".sunBurstPercentage");
-                percentageText.attr("y", p.y + shift);
-                percentageText.attr("x", p.x + shift);
-            });
-
         }
 
         private static setAllUnhide(selection): void {
@@ -127,18 +113,15 @@ module powerbi.visuals.samples {
         }
         
         private updateInternal(dataRootNode: SunburstSlice): void {
-
             this.svg.attr({
                 'height': this.viewport.height,
                 'width': this.viewport.width
             });
-            this.g.attr("transform", "translate(" + this.viewport.width / 2 + "," + this.viewport.height / 2 + ")");
+            this.g.attr('transform', SVGUtil.translate(this.viewport.width / 2, this.viewport.height / 2));
             let radius = Math.min(this.viewport.width, this.viewport.height) / 2;
-
             let partition = d3.layout.partition()
                 .size([2 * Math.PI, radius * radius])
                 .value((d) => { return d.value; });
-
             let path = this.g.datum(dataRootNode).selectAll("path")
                 .data(partition.nodes);
             path.enter().append("path");
@@ -150,21 +133,22 @@ module powerbi.visuals.samples {
                 .on("mouseover", (d) => { this.mouseover(d, this, false); })
                 .on("mouseleave", (d) => { this.mouseleave(d, this); })
                 .on("mousedown", (d) => {
-                    if (d.selector)
-                    this.selectionManager.select(d.selector);
+                    if (d.selector) {
+                        this.selectionManager.select(d.selector);
+                    }
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
                     this.svg.select(".container").on("mouseleave", null);
                     this.mouseover(d, this, true);
                     this.disableMouseOut = true;
 
                     let percentageFixedText = this.svg.select(".sunBurstPercentageFixed");
-                    var percentage = (100 * d.total / this.total).toPrecision(3);
+                    var percentage = this.total === 0 ? 0 : (100 * d.total / this.total).toPrecision(3);
                     percentageFixedText.text(d ? percentage + "%" : "");
-                    percentageFixedText.style('fill', d.color);
+                    percentageFixedText.style("fill", d.color);
                     this.onResize();
                     event.stopPropagation();
                 });
-
+            this.renderTooltip(path);
             path.exit().remove();
             
             this.onResize();
@@ -191,16 +175,6 @@ module powerbi.visuals.samples {
         }
 
         private mouseover(d, sunBurst, setUnhide): void {
-            let percentageText = sunBurst.svg.select(".sunBurstPercentage");
-            if (d) {
-                var percentage = (100 * d.total / this.total).toPrecision(3);
-                percentageText.style("opacity", 1);
-                percentageText.text(percentage + "%");
-                sunBurst.onResize();
-            } else {
-                percentageText.style("opacity", 0);
-            }
-            
             let parentsArray = d ? Sunburst.getTreePath(d) : [];
             // Set opacity for all the segments.
             sunBurst.svg.selectAll("path").each(function () {
@@ -221,45 +195,62 @@ module powerbi.visuals.samples {
         }
 
         private mouseleave(d, sunBurst): void {
-
             if (!sunBurst.disableMouseOut) {
                 sunBurst.svg.selectAll("path")
                     .style("opacity", 1);
-                let percentageText = this.svg.select(".sunBurstPercentage");
-                percentageText.style("opacity", 0);
             }
             else {
                 sunBurst.mouseover(null, sunBurst);
             }
         }
 
+        private renderTooltip(selection: D3.UpdateSelection): void {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (<SunburstSlice>tooltipEvent.data).tooltipInfo;
+            });
+        }
+
+        private static getTooltipData(displayName: string, value: number): TooltipDataItem[] {
+            return [{
+                displayName: displayName,
+                value: value < 0 ? "" : value.toString()
+            }];
+        }
+
         private covertTreeNodeToSunBurstNode(originParentNode: DataViewTreeNode, sunburstParentNode: SunburstSlice,
-            colors: IColorScale, pathIdentity: DataViewScopeIdentity[]): SunburstSlice {
+            colors: IColorScale, pathIdentity: DataViewScopeIdentity[], color): SunburstSlice {
             var selector: powerbi.data.Selector;
             if (originParentNode.identity) {
                 pathIdentity = pathIdentity.concat([originParentNode.identity]);
                 selector = { data: pathIdentity, };
             }
 
-            let selectionId = pathIdentity.length === 0?null: new SelectionId(selector, false);
+            let selectionId = pathIdentity.length === 0 ? null : new SelectionId(selector, false);
+            var valueToSet = originParentNode.values ? originParentNode.values[0].value : 0;
+            
             let newSunNode: SunburstSlice = {
                 name: originParentNode.name,
-                value: originParentNode.values ? originParentNode.values[0].value:0,
+                value: Math.max(valueToSet, 0),
                 selector: selectionId,
                 key: selectionId ? selectionId.getKey() : null,
-                color: colors.getColor(originParentNode.value).value,
-                total: originParentNode.values ? originParentNode.values[0].value : 0
+                total: valueToSet
             };
-            this.total += (newSunNode.value ? newSunNode.value:0);
+            if (originParentNode.value) {
+                newSunNode.color = color ? color : colors.getColor(originParentNode.value).value;
+            }
+            this.total += (newSunNode.value ? newSunNode.value : 0);
             if (originParentNode.children && originParentNode.children.length > 0) {
+
+                newSunNode.tooltipInfo = Sunburst.getTooltipData(originParentNode.value, -1);
+
                 newSunNode.children = [];
                 for (let i = 0; i < originParentNode.children.length; i++) {
-                    var newChild = this.covertTreeNodeToSunBurstNode(originParentNode.children[i], newSunNode, colors, pathIdentity);
-                    newSunNode.children.push(
-                        newChild
-                        );
+                    var newChild = this.covertTreeNodeToSunBurstNode(originParentNode.children[i], newSunNode, colors, pathIdentity, newSunNode.color);
+                    newSunNode.children.push(newChild);
                     newSunNode.total += newChild.total;
                 }
+            } else {
+                newSunNode.tooltipInfo = Sunburst.getTooltipData(originParentNode.value, valueToSet);
             }
             if (sunburstParentNode) {
                 newSunNode.parent = sunburstParentNode;
@@ -271,7 +262,7 @@ module powerbi.visuals.samples {
         public converter(dataView: DataView, colors: IDataColorPalette): SunburstSlice{
             var colorScale = colors.getNewColorScale();
             this.total = 0;
-            let root: SunburstSlice = this.covertTreeNodeToSunBurstNode(dataView.matrix.rows.root, null, colorScale, []);
+            let root: SunburstSlice = this.covertTreeNodeToSunBurstNode(dataView.matrix.rows.root, null, colorScale, [], undefined);
 
             return root;
         }
