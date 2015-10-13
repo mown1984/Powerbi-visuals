@@ -11,7 +11,7 @@ module powerbi.visuals.sampleDataViews {
         public name: string = "SimpleTreeData";
         public displayName: string = "Tree data";
 
-        public visuals: string[] = ['comboChart','sunburst'];
+        public visuals: string[] = ['comboChart'];
 
         public getDataViews(): DataView[]{
           

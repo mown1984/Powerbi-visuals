@@ -2,18 +2,18 @@
 
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
-    export interface SunburstNode {
-        children?: SunburstNode[];
+    export interface SunburstSlice {
+        children?: SunburstSlice[];
         value?: any;
         color?: string;
         name?: string;
-        parent?: SunburstNode;
+        parent?: SunburstSlice;
         selector: SelectionId;
         total: number;
     }
 
     export interface SunburstViewModel {
-        root: SunburstNode;
+        root: SunburstSlice;
     }
 
     export var sunburstRoleNames = {
@@ -22,16 +22,58 @@ module powerbi.visuals.samples {
     };
 
     export class Sunburst implements IVisual {
-        
-        public static capabilities: VisualCapabilities = {
-        };
+       
         private static minOpacity = 0.2;
         private disableMouseOut: boolean = false;
         private svg: D3.Selection;
         private g: D3.Selection;
+        private arc: D3.Svg.Arc;
+        private total: number = 0;
         private viewport: IViewport;
         private colors: IDataColorPalette;
         private selectionManager: SelectionManager;
+      
+        private static roleNames = {
+            nodes: 'Nodes',
+            values: 'Values',
+        };
+
+        public static capabilities: VisualCapabilities = {
+            dataRoles: [
+                {
+                    name: Sunburst.roleNames.nodes,
+                    kind: VisualDataRoleKind.Grouping,
+                    displayName: 'Groups'
+                }, {
+                    name: Sunburst.roleNames.values,
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: 'Values'
+                }
+            ],
+            objects: {
+                general: {
+                    displayName: data.createDisplayNameGetter('Visual_General'),
+                    properties: {
+                        formatString: {
+                            type: { formatting: { formatString: true } },
+                        },
+                    },
+                },
+            },
+            dataViewMappings: [{
+                conditions: [
+                    { 'Groups': { min: 0 }, 'Values': { max: 1 } },
+                ],
+                matrix: {
+                    rows: {
+                        for: { in: Sunburst.roleNames.nodes },
+                    },
+                    values: {                      
+                        for: { in: Sunburst.roleNames.values } 
+                    },
+                }
+            }],
+        };
 
         public init(options: VisualInitOptions): void {
 
@@ -75,7 +117,7 @@ module powerbi.visuals.samples {
         private static setAllUnhide(selection): void {
             selection.attr("setUnHide", "true");
         }
-      
+
         public update(options: VisualUpdateOptions): void {
             if (options.dataViews.length > 0) {
                 let data = this.converter(options.dataViews[0], this.colors);
@@ -83,8 +125,8 @@ module powerbi.visuals.samples {
                 this.updateInternal(data);
             }
         }
-
-        private updateInternal(dataRootNode: SunburstNode): void {
+        
+        private updateInternal(dataRootNode: SunburstSlice): void {
 
             this.svg.attr({
                 'height': this.viewport.height,
@@ -108,7 +150,7 @@ module powerbi.visuals.samples {
                 .on("mouseover", (d) => { this.mouseover(d, this, false); })
                 .on("mouseleave", (d) => { this.mouseleave(d, this); })
                 .on("mousedown", (d) => {
-
+                    if (d.selector)
                     this.selectionManager.select(d.selector);
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
                     this.svg.select(".container").on("mouseleave", null);
@@ -128,9 +170,6 @@ module powerbi.visuals.samples {
             this.onResize();
         }
 
-        private arc: D3.Svg.Arc;
-        // Stash the old values for transition.
-        private total: number = 0;
         // Get all parents of the node
         private static getTreePath(node) {
             let path = [];
@@ -145,20 +184,21 @@ module powerbi.visuals.samples {
         private onResize(): void {
             let width = this.viewport.width;
             let height = this.viewport.height;
-            let percentageText = this.svg.select(".sunBurstPercentage");
             let percentageFixedText = this.svg.select(".sunBurstPercentageFixed");
-            percentageText.style("opacity", 1);
             percentageFixedText.style("opacity", 1);
             percentageFixedText.attr("y", (height / 2));
             percentageFixedText.attr("x", ((width / 2) - (percentageFixedText.node().clientWidth / 2)));
         }
 
         private mouseover(d, sunBurst, setUnhide): void {
+            let percentageText = sunBurst.svg.select(".sunBurstPercentage");
             if (d) {
-                let percentageText = sunBurst.svg.select(".sunBurstPercentage");
                 var percentage = (100 * d.total / this.total).toPrecision(3);
+                percentageText.style("opacity", 1);
                 percentageText.text(percentage + "%");
                 sunBurst.onResize();
+            } else {
+                percentageText.style("opacity", 0);
             }
             
             let parentsArray = d ? Sunburst.getTreePath(d) : [];
@@ -193,20 +233,28 @@ module powerbi.visuals.samples {
             }
         }
 
-        private covertTreeNodeToSunBurstNode(originParentNode: DataViewTreeNode, sunburstParentNode: SunburstNode, colors: IDataColorPalette): SunburstNode {
-            let key = (originParentNode.children ? originParentNode : sunburstParentNode).name;
-            let newSunNode: SunburstNode = {
+        private covertTreeNodeToSunBurstNode(originParentNode: DataViewTreeNode, sunburstParentNode: SunburstSlice,
+            colors: IColorScale, pathIdentity: DataViewScopeIdentity[]): SunburstSlice {
+            var selector: powerbi.data.Selector;
+            if (originParentNode.identity) {
+                pathIdentity = pathIdentity.concat([originParentNode.identity]);
+                selector = { data: pathIdentity, };
+            }
+
+            let selectionId = pathIdentity.length === 0?null: new SelectionId(selector, false);
+            let newSunNode: SunburstSlice = {
                 name: originParentNode.name,
-                value: originParentNode.value,
-                selector: SelectionId.createWithId(originParentNode.identity),
-                color: colors.getColorScaleByKey(':)').getColor(key).value,
-                total: originParentNode.value ? originParentNode.value:0
+                value: originParentNode.values ? originParentNode.values[0].value:0,
+                selector: selectionId,
+                key: selectionId ? selectionId.getKey() : null,
+                color: colors.getColor(originParentNode.value).value,
+                total: originParentNode.values ? originParentNode.values[0].value : 0
             };
             this.total += (newSunNode.value ? newSunNode.value:0);
             if (originParentNode.children && originParentNode.children.length > 0) {
                 newSunNode.children = [];
                 for (let i = 0; i < originParentNode.children.length; i++) {
-                    var newChild = this.covertTreeNodeToSunBurstNode(originParentNode.children[i], newSunNode, colors);
+                    var newChild = this.covertTreeNodeToSunBurstNode(originParentNode.children[i], newSunNode, colors, pathIdentity);
                     newSunNode.children.push(
                         newChild
                         );
@@ -220,12 +268,12 @@ module powerbi.visuals.samples {
             return newSunNode;
         }
 
-        public converter(dataView: DataView, colors: IDataColorPalette): SunburstNode{
+        public converter(dataView: DataView, colors: IDataColorPalette): SunburstSlice{
+            var colorScale = colors.getNewColorScale();
             this.total = 0;
-            let root: SunburstNode = this.covertTreeNodeToSunBurstNode(dataView.tree.root, null, colors);
+            let root: SunburstSlice = this.covertTreeNodeToSunBurstNode(dataView.matrix.rows.root, null, colorScale, []);
 
             return root;
         }
-
     }
 }
