@@ -84,11 +84,11 @@ module powerbi.visuals.samples {
             this.colors = options.style.colorPalette.dataColors;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
             this.svg = d3.select(options.element.get(0)).append('svg');
-            this.svg.attr('class', 'mainDrawArea');
+            this.svg.classed('mainDrawArea',true);
             this.g = this.svg.append('g');
-            this.g.attr('class', "container");
+            this.g.classed("container", true);
             this.svg.append("text")
-                .attr('class', "sunBurstPercentageFixed");
+                .classed("sunBurstPercentageFixed", true);
 
             this.svg.on('mousedown', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
@@ -220,7 +220,7 @@ module powerbi.visuals.samples {
             if (originParentNode.value) {
                 newSunNode.color = color ? color : colors.getColor(originParentNode.value).value;
             }
-            this.total += (newSunNode.value ? newSunNode.value : 0);
+            this.total += newSunNode.value;
             if (originParentNode.children && originParentNode.children.length > 0) {
 
                 newSunNode.tooltipInfo = Sunburst.getTooltipData(originParentNode.value, -1);
