@@ -24,7 +24,6 @@ module powerbi.visuals.samples {
 
     export class Sunburst implements IVisual {
         private static minOpacity = 0.2;
-        private disableMouseOut: boolean = false;
         private svg: D3.Selection;
         private g: D3.Selection;
         private arc: D3.Svg.Arc;
@@ -88,13 +87,11 @@ module powerbi.visuals.samples {
             this.svg.attr('class', 'mainDrawArea');
             this.g = this.svg.append('g');
             this.g.attr('class', "container");
-            this.g.on("mouseleave", (d) => { this.mouseleave(d, this); });
             this.svg.append("text")
                 .attr('class', "sunBurstPercentageFixed");
 
             this.svg.on('mousedown', (d) => {
                 this.svg.selectAll("path").style("opacity", 1);
-                this.disableMouseOut = false;
                 this.svg.select(".sunBurstPercentageFixed").style("opacity", 0);
                 this.selectionManager.clear();
             });
@@ -130,17 +127,12 @@ module powerbi.visuals.samples {
                 .style("stroke", "#fff")
                 .style("fill", (d) => { return d.color; })
                 .style("fill-rule", "evenodd")
-                .on("mouseover", (d) => { this.mouseover(d, this, false); })
-                .on("mouseleave", (d) => { this.mouseleave(d, this); })
                 .on("mousedown", (d) => {
                     if (d.selector) {
                         this.selectionManager.select(d.selector);
                     }
                     d3.selectAll("path").call(Sunburst.setAllUnhide).attr('setUnHide', null);
-                    this.svg.select(".container").on("mouseleave", null);
-                    this.mouseover(d, this, true);
-                    this.disableMouseOut = true;
-
+                    this.highlightPath(d, this, true);
                     let percentageFixedText = this.svg.select(".sunBurstPercentageFixed");
                     var percentage = this.total === 0 ? 0 : (100 * d.total / this.total).toPrecision(3);
                     percentageFixedText.text(d ? percentage + "%" : "");
@@ -174,7 +166,7 @@ module powerbi.visuals.samples {
             percentageFixedText.attr("x", ((width / 2) - (percentageFixedText.node().clientWidth / 2)));
         }
 
-        private mouseover(d, sunBurst, setUnhide): void {
+        private highlightPath(d, sunBurst, setUnhide): void {
             let parentsArray = d ? Sunburst.getTreePath(d) : [];
             // Set opacity for all the segments.
             sunBurst.svg.selectAll("path").each(function () {
@@ -192,16 +184,6 @@ module powerbi.visuals.samples {
                         d3.select(this).attr('setUnHide', 'true');
                     }
                 });
-        }
-
-        private mouseleave(d, sunBurst): void {
-            if (!sunBurst.disableMouseOut) {
-                sunBurst.svg.selectAll("path")
-                    .style("opacity", 1);
-            }
-            else {
-                sunBurst.mouseover(null, sunBurst);
-            }
         }
 
         private renderTooltip(selection: D3.UpdateSelection): void {
