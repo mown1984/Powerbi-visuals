@@ -327,6 +327,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.DotPlot()
     };
 
+    export var histogram: IVisualPlugin = {
+        name: "histogram",
+        capabilities: Histogram.capabilities,
+        create: () => new Histogram()
+    };
+
     export var tornadoChart: IVisualPlugin = {
         name: "tornadoChart",
         capabilities: TornadoChart.capabilities,

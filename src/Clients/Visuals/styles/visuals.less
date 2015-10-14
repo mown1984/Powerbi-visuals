@@ -1792,7 +1792,6 @@ div.ql-toolbar {
     }
 }
 
-
 .radarChart {
     .axis {
         path, line {
@@ -1831,11 +1830,40 @@ div.ql-toolbar {
     }
 }
 
+
+.histogram {
+    @histogramAxesColor: @neutralSecondaryAltColor;
+    @histogramLegendTextColor: @blackColor;
+
+    font-family: @regularFontFamily;
+
+    .axis, .legends {
+        path, line {
+            fill: none;
+            stroke: @histogramAxesColor;
+            shape-rendering: crispEdges;
+        }
+
+        text {
+            fill: @histogramAxesColor;
+            font-size: 11px;
+        }
+    }
+
+    .legends {
+        text {
+            font-size: 12px;
+            fill: @histogramLegendTextColor;
+            text-anchor: middle;
+        }
+    }
+}
+
 .tornado-chart {
     @tornadoChartLabelColor: @neutralSecondaryAltColor;
     @tornadoChartAxisColor: @tornadoChartLabelColor;
 
-    font-family: sans-serif;
+    font-family: @regularFontFamily;
     font-size: 11px;
 
     .labels, .categories, .legend {

@@ -279,6 +279,10 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.dotPlot, () => new samples.DotPlot({
                 animator: new BaseAnimator()
             }));
+            // Histogram
+            createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
+                animator: new BaseAnimator()
+            }));
             // Tornado Chart
             createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new TornadoChart({
                 animator: new BaseAnimator()
