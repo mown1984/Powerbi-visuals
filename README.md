@@ -72,13 +72,13 @@ To run sample app:
 
 4. Ctrl + F5 to launch the Playground.
  
- ### Running PlayGround without Visual Studio
+### Running PlayGround without Visual Studio
  
- Make sure you first follow the [Prerequisites](https://github.com/Microsoft/PowerBI-visuals#prerequisites) & [Onetime Setup](https://github.com/Microsoft/PowerBI-visuals#one-time-setup)
+Make sure you first follow the [Prerequisites](https://github.com/Microsoft/PowerBI-visuals#prerequisites) & [Onetime Setup](https://github.com/Microsoft/PowerBI-visuals#one-time-setup)
  
- To run sample app:
+To run sample app:
  
- 1. gulp run:playground
+1. gulp run:playground
  
 ### Running Build and Test
 
