@@ -1837,3 +1837,31 @@ div.ql-toolbar {
     font-weight:bold;
     opacity:0;
 }
+
+.histogram {
+    @histogramAxesColor: @neutralSecondaryAltColor;
+    @histogramLegendTextColor: @blackColor;
+
+    font-family: @regularFontFamily;
+
+    .axis, .legends {
+        path, line {
+            fill: none;
+            stroke: @histogramAxesColor;
+            shape-rendering: crispEdges;
+        }
+
+        text {
+            fill: @histogramAxesColor;
+            font-size: 11px;
+        }
+    }
+
+    .legends {
+        text {
+            font-size: 12px;
+            fill: @histogramLegendTextColor;
+            text-anchor: middle;
+        }
+    }
+}
