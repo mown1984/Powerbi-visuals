@@ -78,8 +78,11 @@ Make sure you first follow the [Prerequisites](https://github.com/Microsoft/Powe
  
 To run sample app:
  
-1. gulp run:playground
- 
+1. Run gulp task 
+
+```
+gulp run:playground
+``` 
 ### Running Build and Test
 
 Use the following commands to build and test:
