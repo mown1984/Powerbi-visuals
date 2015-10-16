@@ -178,6 +178,7 @@
 /// <reference path="visuals/donutChart.ts"/>
 /// <reference path="visuals/samples/radarChart.ts"/>
 /// <reference path="visuals/samples/dotPlot.ts"/>
+/// <reference path="visuals/samples/sunburst.ts"/>
 
 /// <reference path="visuals/histogram.ts"/>
 

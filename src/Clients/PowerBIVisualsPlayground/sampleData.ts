@@ -46,6 +46,7 @@ module powerbi.visuals.sampleData {
             new sampleDataViews.SimpleMatrixData(),
             new sampleDataViews.SimpleTableData(),
             new sampleDataViews.TeamScoreData(),
+            new sampleDataViews.SimpleTreeData(),
             new sampleDataViews.ProductSalesByDate(),
             new sampleDataViews.SimpleDotPlotData(),
             new sampleDataViews.SimpleHistogramData()
