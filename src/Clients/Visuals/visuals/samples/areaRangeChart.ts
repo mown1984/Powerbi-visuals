@@ -234,15 +234,17 @@ module powerbi.visuals.samples {
         }
 
         public update(options: VisualUpdateOptions): void {
-            let dataView: DataView;
-
-            if (!options ||
-                !options.dataViews ||
-                !options.dataViews[0]) {
+            if (!options.dataViews || !options.dataViews[0]) {
                 return;
             }
-
-            dataView = this.dataView = options.dataViews[0];
+            let dataView = this.dataView = options.dataViews[0];
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values) {
+                return;
+            }
 
             this.suppressAnimations = Boolean(options.suppressAnimations);
             this.duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
