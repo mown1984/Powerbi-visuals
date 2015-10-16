@@ -182,6 +182,7 @@ module powerbi.visuals.samples {
         private suppressAnimations: boolean = false;
         private duration: number = 0;
         private areaRangeChartDataView: AreaRangeChartDataView;
+        private static DefaultColor: string = '#aaa';
 
         private chart: D3.Selection;
         private axis: D3.Selection;
@@ -250,7 +251,7 @@ module powerbi.visuals.samples {
             this.duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
 
             this.setSize(options.viewport);
-            this.areaRangeChartDataView = this.converter(dataView);
+            this.areaRangeChartDataView = this.converter(dataView, this.colors);
             this.render();
         }
 
@@ -290,7 +291,7 @@ module powerbi.visuals.samples {
             this.axisX.attr('transform', SVGUtil.translate(this.margin.left, this.viewport.height));
         }
 
-        public converter(dataView: DataView): AreaRangeChartDataView {
+        public converter(dataView: DataView, colors: IDataColorPalette): AreaRangeChartDataView {
             let settings: AreaRangeChartSettings,
                 categories: any[],
                 values: DataViewValueColumns,
@@ -342,8 +343,8 @@ module powerbi.visuals.samples {
                 xScale: xScale,
                 yScale: yScale,
                 settings: settings,
-                data: this.getData(values, categories, settings, valueFormatter),
-                legendData: this.getLegend(values),
+                data: this.getData(values, categories, settings, colors, valueFormatter),
+                legendData: this.getLegend(values, colors),
                 categories: categories,
                 formatter: valueFormatter
             };
@@ -397,8 +398,18 @@ module powerbi.visuals.samples {
                 .classed(AreaRangeChart.Area.class, true);
 
             selection
-                .attr('fill', d => d[0].color)
-                .attr('stroke', d => d[0].color)
+                .attr('fill', d => {
+                    if (d && d.length > 0 && d[0].color) {
+                        return d[0].color;
+                    }
+                    return AreaRangeChart.DefaultColor;
+                })
+                .attr('stroke', d => {
+                    if (d && d.length > 0 && d[0].color) {
+                        return d[0].color;
+                    }
+                    return AreaRangeChart.DefaultColor;
+                })
                 .attr('d', d => area(d))
                 .style('fill-opacity', opacityMin)
                 .on('click', function(d) {
@@ -425,8 +436,7 @@ module powerbi.visuals.samples {
             });
         }
 
-        private getLegend(values: any[]): LegendData {
-            let colors: IDataColorPalette = this.colors;
+        private getLegend(values: any[], colors: IDataColorPalette): LegendData {
             let dataPoints = values.map((value: any, i: number) => {
                 let color = colors.getColorByIndex(i).value;
                 let displayName = value.source.displayName;
@@ -444,8 +454,7 @@ module powerbi.visuals.samples {
             };
         }
 
-        private getData(data: DataViewValueColumns, categories, settings: AreaRangeChartSettings, formatter: IValueFormatter): AreaRangeChartData[][] {
-            let colors: IDataColorPalette = this.colors;
+        private getData(data: DataViewValueColumns, categories, settings: AreaRangeChartSettings, colors: IDataColorPalette, formatter: IValueFormatter): AreaRangeChartData[][] {
             return data.map((value: DataViewValueColumn, i: number) => {
                 let color = colors.getColorByIndex(i).value;
                 let id = SelectionIdBuilder
