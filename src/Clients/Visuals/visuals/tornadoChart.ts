@@ -923,11 +923,11 @@ module powerbi.visuals {
             valueFormatter: IValueFormatter): LabelData {
             let dx: number,
                 valueAfterValueFormatter: string,
-                textData: TextData = this.getTextData(valueFormatter.format(value)),
+                textData: TextData = this.getTextData(valueFormatter.format(value), false, true),
                 textDataAfterValueFormatter: TextData;
 
             valueAfterValueFormatter = TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, this.maxLabelWidth);
-            textDataAfterValueFormatter = this.getTextData(valueAfterValueFormatter);
+            textDataAfterValueFormatter = this.getTextData(valueAfterValueFormatter, true);
 
             if (isColumnPositionLeft) {
                 dx = dxColumn - this.leftLabelMargin - textDataAfterValueFormatter.width;
@@ -1092,7 +1092,7 @@ module powerbi.visuals {
                 .attr("y", 0)
                 .attr("transform", (item: string, index: number) => {
                     let shift: number = (this.heightColumn + this.columnPadding) * index + this.heightColumn / 2,
-                        textData: TextData = this.getTextData(item);
+                        textData: TextData = this.getTextData(item, false, true);
 
                     shift = shift + textData.height / 2 - this.InnerTextHeightDelta;
 
@@ -1136,7 +1136,7 @@ module powerbi.visuals {
             ));
         }
 
-        private getTextData(text): TextData {
+        private getTextData(text: string, measureWidth: boolean = false, measureHeight: boolean = false): TextData {
             let width: number = 0,
                 height: number = 0,
                 textProperties: TextProperties;
@@ -1149,8 +1149,13 @@ module powerbi.visuals {
                 fontSize: `${this.textOptions.fontSize}${this.textOptions.sizeUnit}`
             };
 
-            width = TextMeasurementService.measureSvgTextWidth(textProperties);
-            height = TextMeasurementService.measureSvgTextHeight(textProperties);
+            if (measureWidth) {
+                width = TextMeasurementService.measureSvgTextWidth(textProperties);
+            }
+
+            if (measureHeight) {
+                height = TextMeasurementService.measureSvgTextHeight(textProperties);
+            }
 
             return {
                 text: text,
