@@ -37,8 +37,7 @@ module powerbi.visuals {
 
     export interface TornadoChartSections {
         left: number;
-        middle?: number;
-        right: number;
+        right?: number;
         isPercent: boolean;
     }
 
@@ -54,6 +53,7 @@ module powerbi.visuals {
         margin?: IMargin;
         sections?: TornadoChartSections;
         maxLabelWidth?: number;
+        columnPadding?: number;
     }
 
     export interface TornadoChartSeries {
@@ -76,6 +76,7 @@ module powerbi.visuals {
         categories: string[];
         series: TornadoChartSeries[];
         settings: TornadoChartSettings;
+        legend: LegendData;
     }
 
     interface LabelData {
@@ -115,34 +116,6 @@ module powerbi.visuals {
         height: number;
         width: number;
         textProperties: TextProperties;
-    }
-
-    interface LegendTextData {
-        textData: TextData;
-        text: string;
-        x: number;
-        y: number;
-        dx: number;
-        dy: number;
-    }
-
-    interface LegendLogoData {
-        x: number;
-        y: number;
-        dx: number;
-        dy: number;
-        width: number;
-        height: number;
-        fill: string;
-    }
-
-    interface LegendData {
-        textData: LegendTextData;
-        logoData: LegendLogoData;
-        x: number;
-        y: number;
-        dx: number;
-        dy: number;
     }
 
     export class TornadoChart implements IVisual  {
@@ -250,28 +223,8 @@ module powerbi.visuals {
         };
 
         private static Legend: ClassAndSelector = {
-            "class": "legend",
-            selector: ".legend"
-        };
-
-        private static LegendItem: ClassAndSelector = {
-            "class": "legend-item",
-            selector: ".legend-item"
-        };
-
-        private static LegendLogo: ClassAndSelector = {
-            "class": "legend-logo",
-            selector: ".legend-logo"
-        };
-
-        private static LegendTitle: ClassAndSelector = {
-            "class": "legend-title",
-            selector: ".legend-title"
-        };
-
-        private static LegendText: ClassAndSelector = {
-            "class": "legend-text",
-            selector: ".legend-text"
+            "class": "legendGroup",
+            selector: "#legendGroup"
         };
 
         public static capabilities: VisualCapabilities = {
@@ -390,22 +343,20 @@ module powerbi.visuals {
 
         private MaxSeries: number = 2;
 
+        private columnPadding: number = 12.5;
+
         private maxLabelWidth: number = 55;
         private leftLabelMargin: number = 4;
-        private LeftLegendTextMargin: number = 2.5;
-
         private durationAnimations: number = 200;
         private suppressAnimations: boolean = false;
 
         private InnerTextHeightDelta: number = 2;
-        private InnerTextHeightLegendDelta: number = 3.5;
 
         private textOptions: TornadoChartTextOptions = {};
 
         private sections: TornadoChartSections = {
             left: 90,
-            middle: 0,
-            right: 130,
+            right: 0,
             isPercent: false
         };
 
@@ -418,6 +369,7 @@ module powerbi.visuals {
             left: 10
         };
 
+        private element: JQuery;
         private root: D3.Selection;
         private svg: D3.Selection;
         private main: D3.Selection;
@@ -425,7 +377,8 @@ module powerbi.visuals {
         private axes: D3.Selection;
         private labels: D3.Selection;
         private categories: D3.Selection;
-        private legend: D3.Selection;
+
+        private legend: ILegend;
 
         private colors: IDataColorPalette;
 
@@ -435,7 +388,6 @@ module powerbi.visuals {
 
         private heightColumn: number = 0;
         private widthLeftSection: number = 0;
-        private widthMiddleSection: number = 0;
         private widthRightSection: number = 0;
 
         private isSelectColumn: boolean;
@@ -445,6 +397,7 @@ module powerbi.visuals {
                 this.svg = tornadoChartConstructorOptions.svg || this.svg;
                 this.margin = tornadoChartConstructorOptions.margin || this.margin;
                 this.sections = tornadoChartConstructorOptions.sections || this.sections;
+                this.columnPadding = tornadoChartConstructorOptions.columnPadding || this.columnPadding;
                 this.currentSections = _.clone(this.sections);
 
                 if (tornadoChartConstructorOptions.animator && tornadoChartConstructorOptions.animator.getDuration) {
@@ -460,6 +413,8 @@ module powerbi.visuals {
             let style: IVisualStyle = visualInitOptions.style,
                 fontSize: string;
 
+            this.element = visualInitOptions.element;
+
             this.colors = style && style.colorPalette 
                 ? style.colorPalette.dataColors
                 : new DataColorPalette();
@@ -467,7 +422,7 @@ module powerbi.visuals {
             if (this.svg) {
                 this.root = this.svg;
             } else {
-                this.root = d3.select(visualInitOptions.element.get(0))
+                this.root = d3.select(this.element.get(0))
                     .append("svg");
             }
 
@@ -497,9 +452,11 @@ module powerbi.visuals {
                 .append("g")
                 .classed(TornadoChart.Categories["class"], true);
 
-            this.legend = this.main
-                .append("g")
-                .classed(TornadoChart.Legend["class"], true);
+            this.legend = createLegend(this.element, false, null);
+        }
+
+        private getLegendElement(): D3.Selection {
+            return d3.select(this.element.get(0)).select(TornadoChart.Legend.selector);
         }
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
@@ -543,6 +500,8 @@ module powerbi.visuals {
         }
 
         private updateElements(height: number, width: number): void {
+            let elementsTranslate: string = SVGUtil.translate(this.widthLeftSection, 0);
+
             this.root.attr({
                 "height": height,
                 "width": width
@@ -554,21 +513,17 @@ module powerbi.visuals {
             ));
 
             this.columns
-                .attr("transform", SVGUtil.translate(this.widthLeftSection, 0));
+                .attr("transform", elementsTranslate);
 
             this.labels
-                .attr("transform", SVGUtil.translate(this.widthLeftSection, 0));
+                .attr("transform", elementsTranslate);
 
             this.axes
-                .attr("transform", SVGUtil.translate(this.widthLeftSection, 0));
-
-            this.legend
-                .attr("transform", SVGUtil.translate(this.widthLeftSection + this.widthMiddleSection, 0));
+                .attr("transform", elementsTranslate);
         }
 
         private updateSectionsWidth(): void {
             this.widthLeftSection = this.getValueByPercent(this.currentSections.left, this.viewport.width, this.currentSections.isPercent);
-            this.widthMiddleSection = this.getValueByPercent(this.currentSections.middle, this.viewport.width, this.currentSections.isPercent);
             this.widthRightSection = this.getValueByPercent(this.currentSections.right, this.viewport.width, this.currentSections.isPercent);
         }
 
@@ -610,7 +565,8 @@ module powerbi.visuals {
                 displayName: displayName,
                 categories: categories,
                 series: series,
-                settings: settings
+                settings: settings,
+                legend: this.getLegendData(series)
             };
         }
 
@@ -683,6 +639,24 @@ module powerbi.visuals {
             });
         }
 
+        private getLegendData(series: TornadoChartSeries[]): LegendData {
+            let legendDataPoints: LegendDataPoint[];
+
+            legendDataPoints = series.map((item: TornadoChartSeries) => {
+                return <LegendDataPoint> {
+                    label: item.name,
+                    color: item.fill,
+                    icon: LegendIcon.Box,
+                    selected: false,
+                    identity: null
+                };
+            });
+
+            return {
+                dataPoints: legendDataPoints
+            };
+        }
+
         private updateSections(dataView: TornadoChartDataView): void {
             if (!dataView ||
                 !dataView.settings) {
@@ -695,13 +669,9 @@ module powerbi.visuals {
                 ? this.sections.left
                 : 0;
 
-            this.currentSections.right = settings.showLegend
-                ? this.sections.right
-                : 0;
-            
-            this.currentSections.middle = this.currentSections.isPercent
-                ? this.MaxSizeSections - this.currentSections.left - this.currentSections.right
-                : this.viewport.width - this.currentSections.left - this.currentSections.right;
+            this.currentSections.right = this.currentSections.isPercent
+                ? this.MaxSizeSections - this.currentSections.left
+                : this.viewport.width - this.currentSections.left;
         }
 
         private render(tornadoChartDataView: TornadoChartDataView): void {
@@ -710,18 +680,24 @@ module powerbi.visuals {
                 return;
             }
 
+            this.renderLegend(tornadoChartDataView);
+
+            this.updateViewportHeight();
             this.computeHeightColumn(tornadoChartDataView);
 
             this.renderMiddleSection(tornadoChartDataView);
             this.renderAxes(tornadoChartDataView);
             this.renderCategories(tornadoChartDataView);
-            this.renderLegend(tornadoChartDataView);
+        }
+
+        private updateViewportHeight(): void {
+            this.viewport.height -= this.legend.getMargins().height;
         }
 
         private computeHeightColumn(tornadoChartDataView: TornadoChartDataView): void {
             let length: number = tornadoChartDataView.categories.length;
 
-            this.heightColumn = this.viewport.height / (length * this.MaxSeries - 1);
+            this.heightColumn = (this.viewport.height - (length - 1) * this.columnPadding) / length;
         }
 
         private renderMiddleSection(tornadoChartDataView: TornadoChartDataView): void {
@@ -776,11 +752,11 @@ module powerbi.visuals {
 
             d3.selection().on("click", () => {
                 if (self.isSelectColumn) {
-                    let columnsSelectionAnimation: D3.Selection = this.main
+                    let columnsElements: D3.Selection = this.main
                         .select(TornadoChart.Columns.selector)
                         .selectAll(TornadoChart.Column.selector);
 
-                    this.setOpacity(columnsSelectionAnimation, self.MaxOpacity);
+                    this.setOpacity(columnsElements, self.MaxOpacity, true);
 
                     self.isSelectColumn = false;
                 }
@@ -803,13 +779,13 @@ module powerbi.visuals {
                 minValue: number,
                 maxValue: number;
 
-            width = this.widthMiddleSection;
+            width = this.widthRightSection;
 
             if (series.length === 0) {
                 return [];
             }
 
-            minValue = d3.min(series[0].values);
+            minValue = Math.min(d3.min(series[0].values), 0);
             maxValue = d3.max(series[0].values);
 
             if (series.length === this.MaxSeries) {
@@ -827,7 +803,7 @@ module powerbi.visuals {
                 return previousValue.concat(
                     this.generateColumnDataByValues(
                         currentValue,
-                        0,
+                        minValue,
                         maxValue,
                         width,
                         shiftToRight,
@@ -839,7 +815,7 @@ module powerbi.visuals {
                         settings.showLabels));
             }, []);
         }
-        
+
         private generateColumnDataByValues(
             tornadoChartSeries: TornadoChartSeries,
             minValue: number,
@@ -854,7 +830,7 @@ module powerbi.visuals {
             showLabels: boolean): ColumnData[] {
             return tornadoChartSeries.values.map((value: number, index: number) => {
                 let categoryValue: string = categories[index];
-                
+
                 return this.generateColumnData(
                     value,
                     minValue,
@@ -904,7 +880,7 @@ module powerbi.visuals {
             shift = width - widthOfColumn;
 
             dx = shift * Number(shiftToMiddle) + width * Number(shiftToRight); 
-            dy = this.heightColumn * index * this.MaxSeries;
+            dy = (this.heightColumn + this.columnPadding) * index;
 
             label = this.getLabelData(value, x, y, dx, dy, widthOfColumn, shiftToMiddle, valueFormatter);
 
@@ -929,7 +905,11 @@ module powerbi.visuals {
         }
 
         private getColumnWidth(value: number, minValue: number, maxValue: number, width: number): number {
-            return width * value / (maxValue - minValue);
+            if (minValue === maxValue) {
+                return width;
+            }
+
+            return width * (value - minValue) / (maxValue - minValue);
         }
 
         private getLabelData(
@@ -1013,7 +993,7 @@ module powerbi.visuals {
                 y1: number,
                 y2: number;
 
-            x = this.widthMiddleSection / 2;
+            x = this.widthRightSection / 2;
             y1 = 0;
             y2 = this.viewport.height;
 
@@ -1111,7 +1091,7 @@ module powerbi.visuals {
                 .attr("x", 0)
                 .attr("y", 0)
                 .attr("transform", (item: string, index: number) => {
-                    let shift: number = this.heightColumn * this.MaxSeries * index + this.heightColumn / 2,
+                    let shift: number = (this.heightColumn + this.columnPadding) * index + this.heightColumn / 2,
                         textData: TextData = this.getTextData(item);
 
                     shift = shift + textData.height / 2 - this.InnerTextHeightDelta;
@@ -1138,101 +1118,22 @@ module powerbi.visuals {
         }
 
         private renderLegend(tornadoChartDataView: TornadoChartDataView): void {
-            let settings: TornadoChartSettings = tornadoChartDataView.settings,
-                legendData: LegendData[] = this.getLegendData(tornadoChartDataView),
-                legendSelection: D3.UpdateSelection,
-                legendEnterSelection: D3.Selection,
-                legendElements: D3.Selection = this.main
-                    .select(TornadoChart.Legend.selector)
-                    .selectAll(TornadoChart.LegendItem.selector);
-
-            if (!settings.showLegend) {
-                legendElements.remove();
-
+            if (!tornadoChartDataView.legend) {
                 return;
             }
 
-            legendSelection = legendElements.data(legendData);
+            if (tornadoChartDataView.settings.showLegend) {
+                this.legend.changeOrientation(LegendPosition.Top);
+            } else {
+                this.legend.changeOrientation(LegendPosition.None);
+            }
 
-            legendEnterSelection = legendSelection
-                .enter()
-                .append("g");
+            this.legend.drawLegend(tornadoChartDataView.legend, this.viewport);
 
-            legendEnterSelection
-                .append("svg:rect")
-                .classed(TornadoChart.LegendLogo["class"], true);
-
-            legendEnterSelection
-                .append("svg:title")
-                .classed(TornadoChart.LegendTitle["class"], true);
-
-            legendEnterSelection
-                .append("svg:text")
-                .classed(TornadoChart.LegendText["class"], true);
-
-            legendSelection
-                .attr("x", (item: LegendData) => item.x)
-                .attr("y", (item: LegendData) => item.y)
-                .attr("transform", (item: LegendData) => SVGUtil.translate(item.dx, item.dy))
-                .classed(TornadoChart.LegendItem["class"], true);
-
-            legendSelection
-                .select(TornadoChart.LegendLogo.selector)
-                .attr("x", (item: LegendData) => item.logoData.x)
-                .attr("y", (item: LegendData) => item.logoData.y)
-                .attr("transform", (item: LegendData) => SVGUtil.translate(item.logoData.dx, item.logoData.dy))
-                .attr("height", (item: LegendData) => item.logoData.height)
-                .attr("width", (item: LegendData) => item.logoData.width)
-                .attr("fill", (item: LegendData) => item.logoData.fill);
-
-            legendSelection
-                .select(TornadoChart.LegendTitle.selector)
-                .text((item: LegendData) => item.textData.textData.text);
-
-            legendSelection
-                .select(TornadoChart.LegendText.selector)
-                .attr("x", (item: LegendData) => item.textData.x)
-                .attr("y", (item: LegendData) => item.textData.y)
-                .attr("transform", (item: LegendData) => SVGUtil.translate(item.textData.dx, item.textData.dy))
-                .text((item: LegendData) => item.textData.text);
-
-            legendSelection
-                .exit()
-                .remove();
-        }
-
-        private getLegendData(tornadoChartDataView: TornadoChartDataView): LegendData[] {
-            return tornadoChartDataView.series.map((value: TornadoChartSeries, index: number) => {
-                let textData: TextData = this.getTextData(value.name),
-                    shift: number = textData.height + this.LeftLegendTextMargin,
-                    width: number = this.widthRightSection - shift,
-                    text: string = TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, width),
-                    dx: number = this.widthRightSection - width;
-
-                return <LegendData> {
-                    x: 0,
-                    y: 0,
-                    dx: dx,
-                    dy: textData.height * 2 * index,
-                    textData: {
-                        textData: textData,
-                        text: text,
-                        x: 0,
-                        y: 0,
-                        dx: shift,
-                        dy: textData.height / 2 + this.InnerTextHeightLegendDelta
-                    },
-                    logoData: {
-                        x: 0,
-                        y: 0,
-                        dx: 0,
-                        dy: 0,
-                        width: textData.height,
-                        height: textData.height,
-                        fill: value.fill
-                    }
-                };
-            });
+            this.getLegendElement().attr("transform", SVGUtil.translate(
+                this.margin.left,
+                0
+            ));
         }
 
         private getTextData(text): TextData {
