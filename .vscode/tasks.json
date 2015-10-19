@@ -7,7 +7,7 @@
     ],
     "tasks": [
         {
-            "taskName": "continuousBuild:debug",
+            "taskName": "init",
             "isBuildCommand": true,
             "isWatching": true
         },

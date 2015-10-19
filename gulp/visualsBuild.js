@@ -36,7 +36,7 @@ var gulp = require("gulp"),
     tslint = require("gulp-tslint"),
     spritesmith = require("gulp.spritesmith"),
     cliParser = require("./cliParser.js"),
-    common = require("./common.js"),
+    common = require("./utils.js"),
     visualsCommon = require("./visualsCommon.js");
 
 var filesOption = common.getOptionFromCli(cliParser.cliOptions.files);
@@ -79,9 +79,9 @@ var externalsPath = [
     "src/Clients/Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js"];
 
 module.exports.load = function (options) {
-    var isDebug = Boolean(cliParser.cliOptions.debug);
-    if (options && typeof options.isDebug !== "undefined") {
-        isDebug = options.isDebug;
+    var isRelease = Boolean(cliParser.cliOptions.release);
+    if (options && typeof options.isRelease !== "undefined") {
+        isRelease = options.isRelease;
     }
 
     var noTSEmitOnError = false;
@@ -141,7 +141,7 @@ module.exports.load = function (options) {
     function buildProject(projectPath, outFileName, includePaths) {
         var paths = getBuildPaths(projectPath, outFileName, includePaths);
         var srcResult = gulp.src(paths);
-        if (isDebug)
+        if (!isRelease)
             srcResult = srcResult.pipe(sourcemaps.init());
 
         var tscResult = srcResult
@@ -153,11 +153,11 @@ module.exports.load = function (options) {
                 out: projectPath + "/obj/" + outFileName + ".js"
             }));
 
-        if (isDebug) {
+        if (!isRelease) {
             tscResult.js = tscResult.js.pipe(sourcemaps.write());
         }
 
-        if (isDebug) {
+        if (!isRelease) {
             return merge([tscResult.js.pipe(gulp.dest("./")),
                 tscResult.dts.pipe(gulp.dest("./"))]);
         }
@@ -225,7 +225,7 @@ module.exports.load = function (options) {
                 "src/Clients/Visuals/styles/visuals.less"])
             .pipe(less())
             .pipe(concat("visuals.css"));
-        if (!isDebug) {
+        if (isRelease) {
             css = css.pipe(minifyCSS());
         }
 
@@ -242,13 +242,13 @@ module.exports.load = function (options) {
     function concatFilesWithSourceMap(source, outFileName) {
         var result = source;
 
-        if (isDebug) {
+        if (!isRelease) {
             result = result.pipe(sourcemaps.init({ loadMaps: true }));
         }
 
         result = result.pipe(concat(outFileName));
 
-        if (isDebug) {
+        if (!isRelease) {
             result = result.pipe(sourcemaps.write());
         }
 
@@ -259,16 +259,16 @@ module.exports.load = function (options) {
         var srcResult = gulp.src(internalsPaths, {
             base: "build"
         });
-        if (isDebug) {
-            return concatFilesWithSourceMap(srcResult, "powerbi-visuals.js")
-                .pipe(gulp.dest("build/scripts"))
-                .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"))
-        }
-        else {
+        if (isRelease) {
             return concatFilesWithSourceMap(srcResult, "powerbi-visuals.js")
                 .pipe(uglify("powerbi-visuals.js", jsUglifyOptions))
                 .pipe(gulp.dest("build/scripts"))
                 .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"));
+        }
+        else {
+            return concatFilesWithSourceMap(srcResult, "powerbi-visuals.js")
+                .pipe(gulp.dest("build/scripts"))
+                .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"))
         }
     }
 
@@ -371,14 +371,14 @@ module.exports.load = function (options) {
     });
 
     gulp.task("build:visuals", function (callback) {
-        if (isDebug) {
+        if (isRelease) {
             runSequence(
+                "tslint:visuals",
                 "build:visuals:projects",
                 callback);
         }
         else {
             runSequence(
-                "tslint:visuals",
                 "build:visuals:projects",
                 callback);
         }

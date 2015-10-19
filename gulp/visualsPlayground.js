@@ -33,8 +33,8 @@ gulp.task("run:playground", function (callback) {
     }, callback);
 });
 
-gulp.task("build:run:playground", function (callback) {
-    runSequence("build:visuals", "run:playground", callback);
+gulp.task("build:run:playground", ["build:visuals"], function (callback) {
+    runSequence("run:playground", callback);
 });
 
 

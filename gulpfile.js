@@ -1,4 +1,4 @@
-/// <binding ProjectOpened='continuousBuild:debug' />
+/// <binding ProjectOpened='init' />
 /*
  *  Power BI Visualizations
  *
@@ -44,5 +44,5 @@ gulp.task("run:test", ["run:test:visuals"]);
 
 gulp.task("default", ["build:visuals"]);
 
-gulp.task("continuousBuild:debug", ["continuousBuild:visuals:debug"]);
+gulp.task("init", ["init:visuals"]);
 

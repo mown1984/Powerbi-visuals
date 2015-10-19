@@ -128,15 +128,15 @@ function watchProjectBuild(projectPath, projectName, buildTask, callback) {
     });
 }
 
-gulp.task("continuousBuild:visuals:debug", function (callback) {
-    visualsBuild.load({ isDebug: true, noTSEmitOnError: true });
+gulp.task("init:visuals:release", function (callback) {
+    visualsBuild.load({ isRelease: true, noTSEmitOnError: true });
     runSequence(
         "build:visuals:projects",
         "start:watchers",
         callback);
 });
 
-gulp.task("continuousBuild:visuals", function (callback) {
+gulp.task("init:visuals", function (callback) {
     visualsBuild.load({ noTSEmitOnError: true });
     runSequence(
         "build:visuals:projects",

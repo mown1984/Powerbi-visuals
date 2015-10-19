@@ -28,7 +28,8 @@ var gulp = require("gulp"),
     download = require("gulp-download"),
     os = require("os"),
     exec = require("child_process").execSync,
-    unzip = require("gulp-unzip");
+    unzip = require("gulp-unzip"),
+    visualsCommon = require("./visualsCommon.js");
 
 module.exports = {
     installJasmine: installJasmine,
@@ -94,4 +95,11 @@ function installPhantomjs() {
         }
     }
 };
+
+// we need this task to install phantom JS manually
+gulp.task("install:phantomjs", function () {
+    return visualsCommon.runScriptSequence([
+        installPhantomjs
+    ]);
+});
 

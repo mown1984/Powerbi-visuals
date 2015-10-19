@@ -30,16 +30,16 @@ var gulp = require("gulp"),
     visualsCommon = require("./visualsCommon.js");
     visualsBuild = require("./visualsBuild.js");
 
-gulp.task("build:package", function (callback) {
-    gulp.task("build:package:minified", function () {
-        return buildPackageProjects(false);
-    });
-
-    gulp.task("build:package:unminified", function () {
+gulp.task("package", function (callback) {
+    gulp.task("package:minified", function () {
         return buildPackageProjects(true);
     });
 
-    gulp.task("build:package:artifacts", function () {
+    gulp.task("package:unminified", function () {
+        return buildPackageProjects(false);
+    });
+
+    gulp.task("package:artifacts", function () {
         var visualsBuildMode = visualsBuild.load();
         return visualsCommon.runScriptSequence([
             visualsBuildMode.combineInternalDts,
@@ -49,9 +49,9 @@ gulp.task("build:package", function (callback) {
     });
 
     runSequence(
-        "build:package:minified",
-        "build:package:unminified",
-        "build:package:artifacts",
+        "package:minified",
+        "package:unminified",
+        "package:artifacts",
         callback);
 
 
@@ -75,8 +75,8 @@ gulp.task("build:package", function (callback) {
         return copyPackageFile("src/Clients/Visuals/images/visuals.sprites.png", "images/visuals.sprites.png");
     };
 
-    function buildPackageProjects(isDebugFlag) {
-        var visualsBuildMode = visualsBuild.load({ isDebug: isDebugFlag });
+    function buildPackageProjects(isReleaseFlag) {
+        var visualsBuildMode = visualsBuild.load({ isRelease: isReleaseFlag });
         return visualsCommon.runScriptSequence([
             visualsBuildMode.buildVisualsCommon,
             visualsBuildMode.buildVisualsData,
@@ -86,9 +86,9 @@ gulp.task("build:package", function (callback) {
             visualsBuildMode.combineInternalJs,
             visualsBuildMode.combineExternalJs,
             visualsBuildMode.combineVisualJsAll,
-            isDebugFlag ? copyPackageJsUnminified : copyPackageJsMinified,
-            isDebugFlag ? copyPackageCssUnminified : copyPackageCssMinified],
-            isDebugFlag);
+            isReleaseFlag ? copyPackageJsMinified : copyPackageJsUnminified,
+            isReleaseFlag ? copyPackageCssMinified : copyPackageCssUnminified],
+            isReleaseFlag);
     };
 
     function copyPackageFile(inputFile, outputFile) {
