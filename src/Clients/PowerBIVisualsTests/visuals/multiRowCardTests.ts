@@ -250,7 +250,7 @@ module powerbitests {
                 metadata: dataViewMetadata,
                 table: {
                     rows: [
-                        ["this is the label that never ends, it just goes on and on my friends.Some axis started rendering it not knowing what it was, and now it keeps on rendering forever just because this the label that never ends...", "Category1"]
+                        ["this is the label that never ends, it just goes on and on my friends.Some axis started rendering it not knowing what it was, and now it keeps on rendering forever just because this the label that never ends", "Category1"]
                     ],
                     columns: dataViewMetadata.columns
                 }
@@ -258,11 +258,14 @@ module powerbitests {
 
             v.onDataChanged({ dataViews: [data] });
             window.setTimeout(() => {
-
-            // Note: the exact text will be different depending on the environment in which the test is run, so we can't do an exact match.
-            // Just check that the text is truncated with ellipses.
-                let labelText = $(".caption").first().text();
-                expect(labelText.substr(labelText.length - 3)).toBe("...");
+                /**
+                 * NOTE: This test was never verifying the truncation
+                 * The original string, which ended with '...' was always placed in the DOM
+                 * CSS text-overflow property with value ellipsis was truncating the text visually
+                 * Let's verify the width and visual truncation are working appropriately
+                 */
+                let label = $(".caption").first();
+                verifyEllipsisActive(label);
                 done();
             }, timeoutAmount);
         });
@@ -664,6 +667,12 @@ module powerbitests {
                     width: element.width()
                 }
             };
+        }
+
+        function verifyEllipsisActive($element: JQuery): void {
+            let element = $element.get(0);
+            expect($element.css('textOverflow')).toBe('ellipsis');
+            expect(element.offsetWidth).toBeLessThan(element.scrollWidth);
         }
     });
 }

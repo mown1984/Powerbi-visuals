@@ -859,7 +859,7 @@ module powerbi.visuals {
             let dataViewMatrix: data.CompiledDataViewMatrixMapping = <data.CompiledDataViewMatrixMapping>dataViewMapping.matrix;
 
             let objects: MatrixDataViewObjects = <MatrixDataViewObjects>dataViewMapping.metadata.objects;
-            dataViewMatrix.rows.for.in.subtotalType = Matrix.shouldShowRowSubtotals(objects) ? data.CompiledSubtotalType.After : data.CompiledSubtotalType.None;
+            (<data.CompiledDataViewRoleForMappingWithReduction>dataViewMatrix.rows).for.in.subtotalType = Matrix.shouldShowRowSubtotals(objects) ? data.CompiledSubtotalType.After : data.CompiledSubtotalType.None;
             dataViewMatrix.columns.for.in.subtotalType = Matrix.shouldShowColumnSubtotals(objects) ? data.CompiledSubtotalType.After : data.CompiledSubtotalType.None;
         }
 
@@ -954,7 +954,7 @@ module powerbi.visuals {
         }
 
         private refreshControl(clear: boolean) {
-            if (this.element.visible() || this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
+            if (visibilityHelper.partiallyVisible(this.element) || this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
                 this.tablixControl.refresh(clear);
             }
         }

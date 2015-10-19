@@ -75,8 +75,16 @@ module powerbi {
         /** The name of the containing group. */
         groupName?: string;
 
+        /** The sort direction of this column. */
+        sort?: SortDirection;
+
         /** The name of the statusGraphic to use to convert the numeric Kpi value into the visual representation.*/
         kpiStatusGraphic?: string;
+    }
+
+    export const enum SortDirection {
+        Ascending = 1,
+        Descending = 2,
     }
 
     export interface DataViewSegmentMetadata {

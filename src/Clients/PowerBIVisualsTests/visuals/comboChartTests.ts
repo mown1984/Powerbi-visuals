@@ -489,101 +489,7 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
-
-        //Data Labels
-        it("Ensure data labels are on both charts with default color", (done) => {
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType();
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType();
-            
-            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels.length).toBeGreaterThan(0);
-                expect(lineLabels.length).toBeGreaterThan(0);
-
-                var fillColumnLabel = columnLabels.first().css("fill");
-                var fillLineLabel = lineLabels.first().css("fill");
-
-                var labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
-
-                expect(ColorConverter(fillColumnLabel)).toBe(labelColor);
-                expect(ColorConverter(fillLineLabel)).toBe(labelColor);
-
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it("Ensure data labels removed when remove column chart values", (done) => {
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType();
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType();
-
-            visualBuilder.onDataChanged({
-                dataViews: [dataView1, dataView2]
-            });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels.length).toBeGreaterThan(0);
-                expect(lineLabels.length).toBeGreaterThan(0);
-
-                visualBuilder.onDataChanged({
-                    dataViews: [
-                        dataViewFactory.buildDataViewEmpty(),
-                        dataView2]
-                });
-
-                setTimeout(() => {
-                    var columnLabels2 = $('.columnChartMainGraphicsContext .labels .data-labels');
-                    var lineLabels2 = $('.lineChartSVG .labels .data-labels');
-
-                    expect(columnLabels2.length).toBe(0);
-                    expect(lineLabels2.length).toBeGreaterThan(0);
-
-                    done();
-                }, DefaultWaitForRender);
-
-            }, DefaultWaitForRender);
-        });
-
-        it("Labels should support display units with no precision", (done) => {
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType(undefined, 1000, 0);
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType(undefined, 1000, 0);
-
-            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels.first().text()).toBe("0K");
-                expect(lineLabels.first().text()).toBe("0K");
-
-                done();
-            }, DefaultWaitForRender);
-        });
-       
-        it("Labels should support display units with precision", (done) => {
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType(undefined, 1000, 1);
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType(undefined, 1000, 1);
-
-            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels.first().text()).toBe("0.1K");
-                expect(lineLabels.first().text()).toBe("0.2K");
-
-                done();
-            }, DefaultWaitForRender);
-        });
-
+        
         it("Values that have NaN show a warning.", (done) => {
             visualBuilder.onDataChanged({
                 dataViews: [
@@ -653,64 +559,6 @@ module powerbitests {
 
             setTimeout(() => {
                 expect(visualBuilder.warningSpy).not.toHaveBeenCalled();
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it("Ensure data lables are on both charts with custom color", (done) => {
-            var color = { solid: { color: "rgb(255, 0, 0)" } }; // Red
-
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType(color);
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType(color);
-
-            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-                
-                expect(columnLabels.length).toBeGreaterThan(0);
-                expect(lineLabels.length).toBeGreaterThan(0);
-
-                var fillColumnLabel = columnLabels.first().css("fill");
-                var fillLineLabel = lineLabels.first().css("fill");
-
-                expect(ColorConverter(fillColumnLabel)).toBe(ColorConverter(color.solid.color));
-                expect(ColorConverter(fillLineLabel)).toBe(ColorConverter(color.solid.color));
-
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it("Ensure data lables are on both charts and removed", (done) => {
-            var dataView1 = dataViewFactory.buildDataForLabelsFirstType();
-            var dataView2 = dataViewFactory.buildDataForLabelsSecondType();
-
-            dataView1.metadata.objects = { labels: { show: true } };
-            dataView2.metadata.objects = { labels: { show: true } };
-
-            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-            setTimeout(() => {
-                var columnLabels = $('.columnChartMainGraphicsContext .labels .data-labels');
-                var lineLabels = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels.length).toBeGreaterThan(0);
-                expect(lineLabels.length).toBeGreaterThan(0);
-
-                dataView1.metadata.objects = { labels: { show: false } };
-                dataView2.metadata.objects = { labels: { show: false } };
-
-                visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
-
-                setTimeout(() => {
-                    var columnLabels2 = $('.columnChartMainGraphicsContext .labels .data-labels');
-                    var lineLabels2 = $('.lineChartSVG .labels .data-labels');
-
-                expect(columnLabels2.length).toBe(0);
-                expect(lineLabels2.length).toBe(0);
-                    done();
-                }, DefaultWaitForRender);
                 done();
             }, DefaultWaitForRender);
         });
@@ -1024,6 +872,23 @@ module powerbitests {
                 // Static series lines
                 expect(ColorConverter(lines.eq(0).css("stroke"))).toBe(colors[2].value);
                 expect(ColorConverter(lines.eq(1).css("stroke"))).toBe(colors[3].value);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+        
+        it("should draw data labels when enabled", (done) => {
+            visualBuilder.initVisual();
+
+            var dataView1 = dataViewFactory.buildDataForLabelsFirstType();
+
+            var dataView2 = dataViewFactory.buildDataForLabelsSecondType();
+
+            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
+
+            setTimeout(() => {
+                expect($(".labelGraphicsContext")).toBeInDOM();
+                expect($(".labelGraphicsContext .label").length).toBe(6);
 
                 done();
             }, DefaultWaitForRender);

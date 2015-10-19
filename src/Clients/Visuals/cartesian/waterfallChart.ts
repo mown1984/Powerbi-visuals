@@ -84,9 +84,12 @@ module powerbi.visuals {
         };
 
         private static defaultTotalColor = "#00b8aa";
+        private static validLabelPositions = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd];
+        private static validZeroLabelPosition = [RectLabelPosition.OutsideEnd, RectLabelPosition.OutsideBase];
 
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
+        private labelGraphicsContext: D3.Selection;
         private mainGraphicsSVG: D3.Selection;
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
@@ -131,6 +134,8 @@ module powerbi.visuals {
             this.mainGraphicsSVG = this.svg.append('svg');
             this.mainGraphicsContext = this.mainGraphicsSVG.append('g')
                 .classed(WaterfallChart.MainGraphicsContextClassName, true);
+            this.labelGraphicsContext = this.mainGraphicsSVG.append('g')
+                .classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
         }
 
         public static converter(
@@ -293,7 +298,7 @@ module powerbi.visuals {
                 scalarCategoryAxis: false,
                 positionMax: 0,
                 positionMin: 0,
-                dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(/* show */ false, /* labelColor */ undefined, /* labelPrecision */ undefined, /* format */ labelFormatString),
+                dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(/* show */ false, /* labelColor */ undefined, /* format */ labelFormatString),
                 sentimentColors: sentimentColors,
                 axesLabels: { x: null, y: null },
             };
@@ -613,11 +618,12 @@ module powerbi.visuals {
                     'y2': (d: WaterfallChartDataPoint) => yScale(d.position + d.value),
                 });
 
-            if (this.data.dataLabelsSettings.show) {
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.svg, this.layout, this.currentViewport);
-            } else {
-                dataLabelUtils.cleanDataLabels(this.svg);
+            let labelSettings = this.data.dataLabelsSettings;
+            let labelDataPoints: LabelDataPoint[] = [];
+            if (labelSettings && labelSettings.show || labelSettings.showCategory) {
+                labelDataPoints = this.createLabelDataPoints();
             }
+
             let behaviorOptions: WaterfallChartBehaviorOptions = undefined;
             if (this.interactivityService) {
                 behaviorOptions = {
@@ -629,7 +635,7 @@ module powerbi.visuals {
             // This should always be the last line in the render code.
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
 
-            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions };
+            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions, labelDataPoints: labelDataPoints };
         }
 
         public onClearSelection(): void {
@@ -667,6 +673,66 @@ module powerbi.visuals {
                 decreaseFill: { solid: { color: decreaseColor } },
                 totalFill: { solid: { color: totalColor } }
             };
+        }
+
+        // Public for testing
+        public createLabelDataPoints(): LabelDataPoint[]{
+            let labelDataPoints: LabelDataPoint[] = [];
+
+            let data = this.data;
+            let xScale = this.xAxisProperties.scale;
+            let yScale = this.yAxisProperties.scale;
+            let y0 = yScale(0);
+            let series = data.series;
+            let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
+            let axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yAxisProperties.formatter, data.dataLabelsSettings);
+            let labelSettings = this.data.dataLabelsSettings;
+
+            for (let currentSeries of series) {
+                for (let dataPoint of currentSeries.data) {
+                    // Calculate parent rectangle
+                    let parentRect: IRect = {
+                        left: xScale(dataPoint.categoryIndex),
+                        top: WaterfallChart.getRectTop(yScale, dataPoint.position, dataPoint.value),
+                        width: this.layout.categoryWidth,
+                        height: y0 - yScale(Math.abs(dataPoint.value)),
+                    };
+
+                    // Calculate label text
+                    let formatString = dataPoint.labelFormatString;
+                    let formatter = formattersCache.getOrCreate(formatString, this.data.dataLabelsSettings, axisFormatter);
+                    let text = NewDataLabelUtils.getLabelFormattedText(formatter.format(dataPoint.value));
+
+                    // Calculate text size
+                    let properties: TextProperties = {
+                        text: text,
+                        fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
+                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
+                    };
+                    let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+
+                    labelDataPoints.push({
+                        isPreferred: true,
+                        text: text,
+                        textSize: {
+                            width: textWidth,
+                            height: textHeight,
+                        },
+                        outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
+                        insideFill: NewDataLabelUtils.defaultInsideLabelColor,
+                        isParentRect: true,
+                        parentShape: {
+                            rect: parentRect,
+                            orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,
+                            validPositions: dataPoint.value === 0 ? WaterfallChart.validZeroLabelPosition : WaterfallChart.validLabelPositions,
+                        }
+                    });
+                }
+            }
+
+            return labelDataPoints;
         }
     }
 }

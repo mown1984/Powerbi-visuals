@@ -115,8 +115,8 @@ module powerbi.visuals {
         export var defaultInsideLabelColor = "#ffffff"; //white
         export var hundredPercentFormat = "0.00 %;-0.00 %;0.00 %";
 
-        var defaultDecimalLabelPrecision: number = 2;        
-        var defaultCountLabelPrecision: number = 0;   
+        const defaultDecimalLabelPrecision: number = 2;        
+        const defaultCountLabelPrecision: number = 0;   
 
         let labelGraphicsContextClass: ClassAndSelector = {
             class: 'labels',
@@ -154,36 +154,22 @@ module powerbi.visuals {
             }
         }
         
-        export function getDefaultLabelSettings(show: boolean = false, labelColor?: string, labelPrecision?: number, format?: string): VisualDataLabelsSettings {
-            if (format) {
-                var hasDots = NumberFormat.getCustomFormatMetadata(format).hasDots;
-            }
-            var precision = defaultCountLabelPrecision;
-            if (labelPrecision) {
-                precision = labelPrecision;
-            }
-            else if (hasDots)
-            {
-                precision = defaultDecimalLabelPrecision;
-            }
+        export function getDefaultLabelSettings(show: boolean = false, labelColor?: string, format?: string): VisualDataLabelsSettings {
             return {
                 show: show,
                 position: PointLabelPosition.Above,
                 displayUnits: 0,
-                precision: precision,
+                precision: getPrecision(format),
                 labelColor: labelColor || defaultLabelColor,
                 formatterOptions: null,
             };
         }
 
         export function getDefaultTreemapLabelSettings(format?: string): VisualDataLabelsSettings {
-            if (format) {
-                var hasDots = NumberFormat.getCustomFormatMetadata(format).hasDots;
-            }
             return {
                 show: false,
                 displayUnits: 0,
-                precision: hasDots ? defaultDecimalLabelPrecision : defaultCountLabelPrecision,
+                precision: getPrecision(format),
                 labelColor: defaultInsideLabelColor,
                 showCategory: true,
                 formatterOptions: null,
@@ -191,34 +177,39 @@ module powerbi.visuals {
         }
 
         export function getDefaultColumnLabelSettings(isLabelPositionInside: boolean, format?: string): VisualDataLabelsSettings {
-            var labelSettings = getDefaultLabelSettings(false, undefined, undefined, format);
+            var labelSettings = getDefaultLabelSettings(false, undefined, format);
             labelSettings.position = null;
             labelSettings.labelColor = isLabelPositionInside ? defaultInsideLabelColor : defaultLabelColor;
             return labelSettings;
         }
 
         export function getDefaultPointLabelSettings(format?: string): PointDataLabelsSettings {
-            if (format) {
-                var hasDots = NumberFormat.getCustomFormatMetadata(format).hasDots;
-            }
             return {
                 show: false,
                 position: PointLabelPosition.Above,
                 displayUnits: 0,
-                precision: hasDots ? defaultDecimalLabelPrecision : defaultCountLabelPrecision,
+                precision: getPrecision(format),
                 labelColor: defaultLabelColor,
                 formatterOptions: null,
             };
         }
 
+        export function getDefaultMapLabelSettings(format?: string): PointDataLabelsSettings {
+            return {
+                show: false,
+                position: PointLabelPosition.Above,
+                displayUnits: 0,
+                precision: getPrecision(format),
+                labelColor: defaultInsideLabelColor,
+                formatterOptions: null,
+            };
+        }
+
         export function getDefaultDonutLabelSettings(format?: string): VisualDataLabelsSettings {
-            if (format) {
-                var hasDots = NumberFormat.getCustomFormatMetadata(format).hasDots;
-            }
             return {
                 show: false,
                 displayUnits: 0,
-                precision: hasDots ? defaultDecimalLabelPrecision : defaultCountLabelPrecision,
+                precision: getPrecision(format),
                 labelColor: defaultLabelColor,
                 position: null,
                 showCategory: true,
@@ -227,17 +218,27 @@ module powerbi.visuals {
         }
 
         export function getDefaultFunnelLabelSettings(format?: string): VisualDataLabelsSettings {
-            if (format) {
-                var hasDots = NumberFormat.getCustomFormatMetadata(format).hasDots;
-            }
             return {
                 show: true,
                 position: powerbi.labelPosition.insideCenter,
                 displayUnits: 0,
-                precision: hasDots ? defaultDecimalLabelPrecision : defaultCountLabelPrecision,
+                precision: getPrecision(format),
                 labelColor: defaultLabelColor,
                 formatterOptions: null,
             };
+        }
+
+        function getPrecision(format: string): number {
+            debug.assertAnyValue(format, 'format');
+
+            if (format) {
+                let formatMetadata = NumberFormat.getCustomFormatMetadata(format);
+                if (formatMetadata.hasDots) {
+                    return defaultDecimalLabelPrecision;
+                }
+            }
+
+            return defaultCountLabelPrecision;
         }
 
         export function drawDefaultLabelsForDataPointChart(data: any[], context: D3.Selection, layout: ILabelLayout,

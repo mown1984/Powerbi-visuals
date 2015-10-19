@@ -57,6 +57,10 @@ module powerbi.visuals {
         'RichTextbox_Link_DefaultText': 'Link',
         'TableTotalLabel': 'Total',
         'Tooltip_HighlightedValueDisplayName': 'Highlighted',
+        'Funnel_PercentOfFirst': 'Percent of first',	
+        'Funnel_PercentOfPrevious': 'Percent of previous',
+        'Funnel_PercentOfFirst_Highlight': 'Percent of first (highlight)',
+        'Funnel_PercentOfPrevious_Highlight': 'Percent of previous (highlight)',
         // Geotagging strings
         'GeotaggingString_Continent': 'continent',
         'GeotaggingString_Continents': 'continents',

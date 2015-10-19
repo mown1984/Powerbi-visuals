@@ -1017,7 +1017,8 @@ module powerbitests {
 
             v.onResizing({ width: 100, height: 100 });
 
-            expect(controlSpy).not.toHaveBeenCalled();
+            // Even though element visibility is false, because height and width are greater than zero, refresh will be called
+            expect(controlSpy).toHaveBeenCalled();
         });
 
         it("RefreshControl invisible parent but dashboard layout", () => {
@@ -1084,7 +1085,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1117,7 +1118,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1154,7 +1155,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
+        it("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
@@ -1243,7 +1244,7 @@ module powerbitests {
             tablixHelper.validateClassNames(expectedValues, ".bi-tablix tr", NoMarginClass);
         }
 
-        xit("resize with autoSizeColumnwidth on", (done) => {
+        it("resize with autoSizeColumnwidth on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {
@@ -1286,7 +1287,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth on to off then resize", (done) => {
+        it("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".bi-tablix tr";
             let dataView: DataView = {
                 metadata: {
@@ -1329,7 +1330,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth off to on", (done) => {
+        it("autoSizeColumnwidth off to on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {

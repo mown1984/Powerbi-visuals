@@ -238,7 +238,7 @@ module powerbi.visuals {
         }
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string): FunnelData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string): FunnelData {
             var slices: FunnelSlice[] = [];
             var formatStringProp = funnelChartProps.general.formatString;
             var valueMetaData = dataView.metadata ? dataView.metadata.columns.filter(d => d.isMeasure) : [];
@@ -250,6 +250,10 @@ module powerbi.visuals {
             var labelFormatString: string = categorical.values ? valueFormatter.getFormatString(categorical.values[0].source, formatStringProp) : undefined;
             var dataLabelsSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultFunnelLabelSettings(labelFormatString);
             var colorHelper = new ColorHelper(colors, funnelChartProps.dataPoint.fill, defaultDataPointColor);
+            let firstValue: number;
+            let firstHighlight: number;
+            let previousValue: number;
+            let previousHighlight: number;
 
             if (dataView && dataView.metadata && dataView.metadata.objects) {
                 let labelsObj = <DataLabelObject>dataView.metadata.objects['labels'];
@@ -268,11 +272,15 @@ module powerbi.visuals {
                     }
                 }
             }
-            if (categories.length === 1 && values) {
+            if (categories.length === 1 && values && values.length > 0) {
                 let category = categories[0];
                 let categoryValues = category.values;
 
                 let categorySourceFormatString = valueFormatter.getFormatString(category.source, formatStringProp);
+                firstValue = d3.sum(values.map(d => d.values[0]));
+                if (hasHighlights) {
+                    firstHighlight = d3.sum(values.map(d => d.highlights[0]));
+                }
 
                 for (var i = 0, ilen = categoryValues.length; i < ilen; i++) {
                     let measureName = values[0].source.queryName;
@@ -292,6 +300,7 @@ module powerbi.visuals {
                             tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlight);
                         }
                     }
+                    FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
 
                     // Same color for all bars
                     let color = colorHelper.getColorForMeasure(category.objects && category.objects[i], '');
@@ -313,6 +322,7 @@ module powerbi.visuals {
                         let highlight = d3.sum(values.map(d => d.highlights[i]));
                         let highlightedValue = highlight !== 0 ? highlight : undefined;
                         let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlightedValue);
+                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
 
                         slices.push({
                             label: formattedCategoryValue,
@@ -328,10 +338,16 @@ module powerbi.visuals {
                             tooltipInfo: tooltipInfo,
                             color: color,
                         });
+                        previousHighlight = highlight;
                     }
+                    previousValue = value;
                 }
-            } else if (valueMetaData.length > 0 && values) {
+            } else if (valueMetaData.length > 0 && values && values.length > 0) {
                 // Multi-measures
+                firstValue = d3.sum(values[0].values);
+                if (hasHighlights) {
+                    firstHighlight = d3.sum(values[0].highlights);
+                }
                 for (var i = 0, len = values.length; i < len; i++) {
                     let valueColumn = values[i];
                     let value = d3.sum(valueColumn.values);
@@ -349,6 +365,7 @@ module powerbi.visuals {
                             tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlight);
                         }
                     }
+                    FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
 
                     slices.push({
                         label: valueMetaData[i].displayName,
@@ -370,6 +387,7 @@ module powerbi.visuals {
                         }
                         let highlightedValue = highlight !== 0 ? highlight : undefined;
                         let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightedValue);
+                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
 
                         slices.push({
                             label: valueMetaData[i].displayName,
@@ -385,7 +403,9 @@ module powerbi.visuals {
                             tooltipInfo: tooltipInfo,
                             color: color,
                         });
+                        previousHighlight = highlight;
                     }
+                    previousValue = value;
                 }
             }
 
@@ -565,7 +585,7 @@ module powerbi.visuals {
                 }
 
                 if (dataView.categorical) {
-                    this.data = FunnelChart.converter(dataView, this.colors, this.defaultDataPointColor);
+                    this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor);
 
                     if (this.interactivityService) {
                         this.interactivityService.applySelectionStateToData(this.data.slices);
@@ -1040,6 +1060,21 @@ module powerbi.visuals {
                 }
             }
             return true;
+        }
+
+        private static addFunnelPercentsToTooltip(tooltipInfo: TooltipDataItem[], hostServices: IVisualHostServices, percentOfFirst?: number, percentOfPrevious?: number, highlight?: boolean): void {
+            if (percentOfFirst != null) {
+                tooltipInfo.push({
+                    displayName: hostServices.getLocalizedString("Funnel_PercentOfFirst" + (highlight ? "_Highlight" : "")),
+                    value: valueFormatter.format(percentOfFirst, '0.00 %;-0.00 %;0.00 %'),
+                });
+            }
+            if (percentOfPrevious != null) {
+                tooltipInfo.push({
+                    displayName: hostServices.getLocalizedString("Funnel_PercentOfPrevious" + (highlight ? "_Highlight" : "")),
+                    value: valueFormatter.format(percentOfPrevious, '0.00 %;-0.00 %;0.00 %'),
+                });
+            }
         }
     }
 }

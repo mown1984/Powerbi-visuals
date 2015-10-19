@@ -32,7 +32,9 @@ module powerbitests {
     import ValueType = powerbi.ValueType;
     import SelectionId = powerbi.visuals.SelectionId;
 
-    var SelectAllTextKey = "Select All";
+    const SelectAllTextKey = 'Select All';
+    const SelectedClass = 'selected';
+    const CheckedClass = 'checked';
 
     powerbitests.mocks.setLocale();
 
@@ -134,7 +136,7 @@ module powerbitests {
             jasmine.clock().uninstall();
         });
 
-        xit("Slicer DOM Validation", () => {
+        it("Slicer DOM Validation", () => {
             spyOn(powerbi.visuals.valueFormatter, "format").and.callThrough();
 
             v.onDataChanged(interactiveDataViewOptions);
@@ -204,44 +206,32 @@ module powerbitests {
             var dataPoints = [
                 {
                     value: SelectAllTextKey,
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: SelectionId.createWithMeasure(SelectAllTextKey),
                     selected: false,
                     isSelectAllDataPoint: true
                 },
                 {
                     value: "Apple",
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: selectionIds[0],
                     selected: false
                 },
                 {
                     value: "Orange",
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: selectionIds[1],
                     selected: false
                 },
                 {
                     value: "Kiwi",
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: selectionIds[2],
                     selected: false
                 },
                 {
                     value: "Grapes",
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: selectionIds[3],
                     selected: false
                 },
                 {
                     value: "Banana",
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: selectionIds[4],
                     selected: false
                 }];
@@ -261,8 +251,6 @@ module powerbitests {
                 },
                 slicerText: {
                     color: '#666666',
-                    hoverColor: '#212121',
-                    selectionColor: '#212121',
                     outline: 'None',
                     background: '#ffffff',
                     textSize: 10,
@@ -286,7 +274,7 @@ module powerbitests {
             expect($(".slicerText").length).toBe(0);
         });
 
-        xit("Slicer resize", () => {
+        it("Slicer resize", () => {
             var viewport = {
                 height: 200,
                 width: 300
@@ -334,7 +322,7 @@ module powerbitests {
             };
 
             element = powerbitests.helpers.testDom("200", "300");
-            v = <Slicer> powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false, devToolsEnabled: false }).getPlugin("slicer").create();
+            v = <Slicer> powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false}).getPlugin("slicer").create();
             hostServices = mocks.createVisualHostServices();
             hostServices.canSelect = () => true;
 
@@ -371,39 +359,16 @@ module powerbitests {
         });
 
         describe("slicer item select", () => {
-            xit("by text", () => {
+            it("by text", () => {
                 jasmine.clock().tick(0);
                 (<any>slicerText.eq(1)).d3Click(0, 0);
 
-                expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-                expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-                expect(slicerText[2].style.color).toBe("rgb(102, 102, 102)");
-                expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
+                expect(slicerCheckbox[1].classList).toContain(SelectedClass);
+                expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+                expect(slicerCheckbox[2].classList).not.toContain(SelectedClass);
+                expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
 
-                expect(hostServices.onSelect).toHaveBeenCalledWith(
-                    {
-                        data:
-                        [
-                            {
-                                data: [
-                                    interactiveDataViewOptions.dataViews[0].categorical.categories[0].identity[0]
-                                ]
-                            }
-                        ]
-                    });
-            });
-
-            xit("by checkbox", () => {
-            jasmine.clock().tick(0);
-            (<any>slicerCheckbox.eq(1)).d3Click(0, 0);
-
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(slicerText[2].style.color).toBe("rgb(102, 102, 102)");
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
-
-            expect(hostServices.onSelect).toHaveBeenCalledWith(
-                {
+                expect(hostServices.onSelect).toHaveBeenCalledWith({
                     data:
                     [
                         {
@@ -413,153 +378,135 @@ module powerbitests {
                         }
                     ]
                 });
-        });
+            });
+
+            it("by checkbox", () => {
+                jasmine.clock().tick(0);
+                (<any>slicerCheckbox.eq(1)).d3Click(0, 0);
+
+                expect(slicerCheckbox[1].classList).toContain(SelectedClass);
+                expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+                expect(slicerCheckbox[2].classList).not.toContain(SelectedClass);
+                expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
+
+                expect(hostServices.onSelect).toHaveBeenCalledWith({
+                    data:
+                    [
+                        {
+                            data: [
+                                interactiveDataViewOptions.dataViews[0].categorical.categories[0].identity[0]
+                            ]
+                        }
+                    ]
+                });
+            });
         });
 
-        xit("slicer item multi-select checkboxes", () => {
+        it("slicer item multi-select checkboxes", () => {
             jasmine.clock().tick(0);
             (<any>slicerText.eq(1)).d3Click(0, 0);
 
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-            expect(slicerText[2].style.color).toBe("rgb(102, 102, 102)");
-            expect(d3.select(slicerCheckboxInput[0]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
+            expect(slicerCheckbox[1].classList).toContain(SelectedClass);
+            expect(slicerCheckbox[2].classList).not.toContain(SelectedClass);
+            expect(d3.select(slicerCheckboxInput[0]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
 
             (<any>slicerText.last()).d3Click(0, 0);
-            expect(slicerText[5].style.color).toBe("rgb(33, 33, 33)");
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(true);
+            expect(slicerCheckbox[5].classList).toContain(SelectedClass);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(true);
         });
 
-        xit("slicer item repeated selection", () => {
+        it("slicer item repeated selection", () => {
             jasmine.clock().tick(0);
             (<any>slicerText.eq(1)).d3Click(0, 0);
 
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
+            expect(slicerCheckbox[1].classList).toContain(SelectedClass);
 
             (<any>slicerText.last()).d3Click(0, 0);
             (<any>slicerText.last()).d3Click(0, 0);
                 
-            expect(slicerText[5].style.color).toBe("rgb(102, 102, 102)");
+            expect(slicerCheckbox[5].classList).not.toContain(SelectedClass);
 
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(false);
         });
 
-        xit("slicer selectAll", () => {
+        it("slicer selectAll", () => {
             jasmine.clock().tick(0);
 
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
 
             (<any>slicerText.eq(0)).d3Click(0, 0);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(true);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(true);
 
             (<any>slicerText.eq(1)).d3Click(0, 0);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(true);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(true);
         });
 
-        xit("slicer partial select", () => {
+        it("slicer partial select", () => {
             jasmine.clock().tick(0);
 
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
 
             (<any>slicerText.eq(0)).d3Click(0, 0);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(true);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(true);
             var partialSelect = $(".partiallySelected");
             expect(partialSelect.length).toBe(0);
 
             (<any>slicerText.eq(1)).d3Click(0, 0);
             partialSelect = $(".partiallySelected");
             expect(partialSelect.length).toBe(1);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(true);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(true);
 
             (<any>slicerText.eq(0)).d3Click(0, 0);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(false);
             var partialSelect = $(".partiallySelected");
             expect(partialSelect.length).toBe(0);
 
             (<any>slicerText.eq(1)).d3Click(0, 0);
             partialSelect = $(".partiallySelected");
             expect(partialSelect.length).toBe(1);
-            expect(d3.select(slicerCheckboxInput[1]).property("checked")).toBe(true);
-            expect(d3.select(slicerCheckboxInput[2]).property("checked")).toBe(false);
-            expect(d3.select(slicerCheckboxInput[5]).property("checked")).toBe(false);
+            expect(d3.select(slicerCheckboxInput[1]).property(CheckedClass)).toBe(true);
+            expect(d3.select(slicerCheckboxInput[2]).property(CheckedClass)).toBe(false);
+            expect(d3.select(slicerCheckboxInput[5]).property(CheckedClass)).toBe(false);
         });
 
-        xit("slicer clear", () => {
+        it("slicer clear", () => {
             jasmine.clock().tick(0);
             var clearBtn = $(".clear");
 
             // Slicer click
             (<any>slicerText.eq(1)).d3Click(0, 0);
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-            expect(slicerText[2].style.color).toBe("rgb(102, 102, 102)");
+            expect(slicerCheckbox[1].classList).toContain(SelectedClass);
+            expect(slicerCheckbox[2].classList).not.toContain(SelectedClass);
 
             (<any>slicerText.last()).d3Click(0, 0);
-            expect(slicerText[5].style.color).toBe("rgb(33, 33, 33)");
+            expect(slicerCheckbox[5].classList).toContain(SelectedClass);
 
             /* Slicer clear */
             (<any>clearBtn.first()).d3Click(0, 0);
 
-            expect(slicerText[0].style.color).toBe("rgb(102, 102, 102)");
-            expect(slicerText[1].style.color).toBe("rgb(102, 102, 102)");
-            expect(slicerText[2].style.color).toBe("rgb(102, 102, 102)");
-            expect(slicerText[3].style.color).toBe("rgb(102, 102, 102)");
-            expect(slicerText[4].style.color).toBe("rgb(102, 102, 102)");
-            expect(slicerText[5].style.color).toBe("rgb(102, 102, 102)");
-                
+            expect(slicerCheckbox[0].classList).not.toContain(SelectedClass);
+            expect(slicerCheckbox[1].classList).not.toContain(SelectedClass);
+            expect(slicerCheckbox[2].classList).not.toContain(SelectedClass);
+            expect(slicerCheckbox[3].classList).not.toContain(SelectedClass);
+            expect(slicerCheckbox[4].classList).not.toContain(SelectedClass);
+            expect(slicerCheckbox[5].classList).not.toContain(SelectedClass);
+
             expect(hostServices.onSelect).toHaveBeenCalledWith({ data: [] });
-        });
-
-        xit("slicer mouseover", () => {
-            jasmine.clock().tick(0);
-            var event = document.createEvent("Event");
-            event.initEvent("mouseover", true, true);
-            slicerText[0].dispatchEvent(event);
-
-            expect(slicerText[0].style.color).toBe("rgb(33, 33, 33)");
-            expect(slicerText[1].style.color).toBe("rgb(102, 102, 102)");
-            expect(d3.select(slicerCheckboxInput[0]).property("checked")).toBe(false);
-        });
-
-        xit("slicer mouseout", () => {
-            jasmine.clock().tick(0);
-
-            // mouseover, mouseout
-            var mouseOverEvent = document.createEvent("Event");
-            mouseOverEvent.initEvent("mouseover", true, true);
-            slicerText[0].dispatchEvent(mouseOverEvent);
-            expect(slicerText[0].style.color).toBe("rgb(33, 33, 33)");
-
-            var mouseOutEvent = document.createEvent("Event");
-            mouseOutEvent.initEvent("mouseout", true, true);
-            slicerText[0].dispatchEvent(mouseOutEvent);
-            expect(slicerText[0].style.color).toBe("rgb(102, 102, 102)");
-
-            (<any>slicerText.eq(1)).d3Click(0, 0);
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-
-            var mouseOverEvent1 = document.createEvent("Event");
-            mouseOverEvent1.initEvent("mouseover", true, true);
-            slicerText[1].dispatchEvent(mouseOverEvent1);
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
-
-            var mouseOutEvent1 = document.createEvent("Event");
-            mouseOutEvent1.initEvent("mouseout", true, true);
-            slicerText[1].dispatchEvent(mouseOutEvent1);
-            expect(slicerText[1].style.color).toBe("rgb(33, 33, 33)");
         });
 
         it("slicer loadMoreData noSegment", () => {
@@ -653,7 +600,7 @@ module powerbitests {
             expect(renderSpy).toHaveBeenCalled();
         });
 
-        xit('show hide header test', () => {
+        it('show hide header test', () => {
             jasmine.clock().tick(0);
 
             expect($(".slicerHeader").css('display')).toBe('block');
@@ -672,7 +619,7 @@ module powerbitests {
             expect($(".headerText").css('border-color')).toBe('rgb(128, 128, 128)');
         });
 
-        xit('background and font slicer text test', () => {
+        it('background and font slicer text test', () => {
             jasmine.clock().tick(0);
 
             expect($(".slicerText").css('color')).toBe('rgb(102, 102, 102)');
@@ -692,7 +639,7 @@ module powerbitests {
             expect($(".slicerText").css('background-color')).toBe('rgb(246, 246, 246)');
         });
 
-        xit('background and font header test', () => {
+        it('background and font header test', () => {
             jasmine.clock().tick(0);
 
             expect($(".slicerHeader .headerText").css('color')).toBe('rgb(0, 0, 0)');
@@ -713,7 +660,7 @@ module powerbitests {
             expect($(".slicerHeader .headerText").css('background-color')).toBe('rgb(246, 246, 246)');
         });
 
-        xit('test header border outline', () => {
+        it('test header border outline', () => {
            jasmine.clock().tick(0);
 
             expect($(".headerText").css('border-width')).toBe('0px 0px 1px');
@@ -759,7 +706,7 @@ module powerbitests {
             expect($(".headerText").css('border-width')).toBe('1px');
         });
 
-        xit('row text size', () => {
+        it('row text size', () => {
             jasmine.clock().tick(0);
 
             expect($(".slicerText").css('font-size')).toBe('13px');
@@ -777,7 +724,7 @@ module powerbitests {
             expect($(".slicerText").css('font-size')).toBe('19px');
         });
 
-        xit('header text size', () => {
+        it('header text size', () => {
             jasmine.clock().tick(0);
 
             expect($(".slicerHeader .headerText").css('font-size')).toBe('13px');

@@ -971,6 +971,7 @@ module powerbi.visuals {
 
             function clearLinkInput(linkTooltip: JQuery): void {
                 linkTooltip.removeClass('editing');
+                linkTooltip.removeClass('blank-editing');
                 linkTooltip.find('.input').val(DefaultLinkInputValue);
             }
 
@@ -987,6 +988,10 @@ module powerbi.visuals {
                 // Special case for blank selection (no text near cursor) when enter key or done button clicked
                 toolbarLinkInput.on('keydown mousedown', (event: JQueryEventObject) => {
                     if (event.keyCode === jsCommon.DOMConstants.enterKeyCode || (<HTMLElement>event.target).classList.contains('done')) {
+                        if (!linkTooltip.hasClass('blank-editing'))
+                            return true;
+
+                        // Only perform these steps if tooltip was not in editing mode (special case for blank)
                         let link = toolbarLinkInput.find('.input').val();
                         let selection = quillWrapper.getSelectionAtCursor();
                         let word = quillWrapper.getWord();
@@ -1020,7 +1025,7 @@ module powerbi.visuals {
                         // If blank selection (no text near cursor), special case for link button
                         let word = quillWrapper.getWord();
                         if (!word) {
-                            linkTooltip.addClass('editing');
+                            linkTooltip.addClass('editing blank-editing');
                             toolbarLinkInput.find('.input')
                                 .val(DefaultLinkInputValue)
                                 .focus();

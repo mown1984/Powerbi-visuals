@@ -676,8 +676,8 @@ module powerbitests {
                 });
                 setTimeout(() => {
                     var labels = element.find('.donutChart .labels').find('text');
-                    expect($(labels[0]).text()).toContain("...");
-                    expect($(labels[1]).text()).toContain("...");
+                    expect($(labels[0]).text()).toContain('…');
+                    expect($(labels[1]).text()).toContain('…');
                     expect($(labels[2]).text()).toBe("abcdefg");
                     expect($(labels[3]).text()).toBe("d");
                     expect($(labels[4]).text()).toBe("e");
@@ -2530,8 +2530,8 @@ module powerbitests {
                 expect($('.donutChart')).toBeInDOM();
                 var labels = $('.labels').find('text');
                 for (var i = 0; i < labels.length; i++) {
-                    var text = $(labels[i]).text().substr(-3);
-                    expect(text).toEqual('...');
+                    var text = $(labels[i]).text().substr(-1);
+                    expect(text).toEqual('…');
                 }
                 done();
             }, DefaultWaitForRender);
