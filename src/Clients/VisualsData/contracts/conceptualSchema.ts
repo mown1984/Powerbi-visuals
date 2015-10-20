@@ -80,11 +80,12 @@ module powerbi.data {
 
     export interface ConceptualEntity {
         name: string;
-        hidden?: boolean;
+        visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
         properties: jsCommon.ArrayNamedItems<ConceptualProperty>;
         hierarchies: jsCommon.ArrayNamedItems<ConceptualHierarchy>;
+        navigationProperties: jsCommon.ArrayNamedItems<ConceptualNavigationProperty>;
     }
 
     export interface ConceptualProperty {
@@ -112,12 +113,30 @@ module powerbi.data {
         hidden?: boolean;
     }
 
+    export interface ConceptualNavigationProperty {
+        name: string;
+        isActive: boolean;
+        sourceColumn?: ConceptualColumn;
+        targetEntity: ConceptualEntity;
+        sourceMultiplicity: ConceptualMultiplicity;
+        targetMultiplicity: ConceptualMultiplicity;
+    }
+
+    export interface ConceptualVariationSource {
+        name: string;
+        isDefault: boolean;
+        navigationProperty?: ConceptualNavigationProperty;
+        defaultHierarchy?: ConceptualHierarchy;
+        defaultProperty?: ConceptualProperty;
+    }
+
     export interface ConceptualColumn {
         defaultAggregate?: ConceptualDefaultAggregate;
         keys?: jsCommon.ArrayNamedItems<ConceptualProperty>;
         idOnEntityKey?: boolean;
         calculated?: boolean;
         defaultValue?: SQConstantExpr;
+        variations?: jsCommon.ArrayNamedItems<ConceptualVariationSource>;
     }
 
     export interface ConceptualMeasure {
@@ -130,18 +149,31 @@ module powerbi.data {
         goal?: ConceptualProperty;
     }
 
-    export enum ConceptualQueryableState {
+    export const enum ConceptualVisibility {
+        Visible = 0,
+        Hidden = 1,
+        ShowAsVariationsOnly = 2,
+        IsPrivate = 4,
+    }
+
+    export const enum ConceptualQueryableState {
         Queryable = 0,
         Error = 1,
     }
 
-    export enum ConceptualPropertyKind {
+    export const enum ConceptualMultiplicity {
+        ZeroOrOne = 0,
+        One = 1,
+        Many = 2,
+    }
+
+    export const enum ConceptualPropertyKind {
         Column,
         Measure,
         Kpi,
     }
 
-    export enum ConceptualDefaultAggregate {
+    export const enum ConceptualDefaultAggregate {
         Default,
         None,
         Sum,

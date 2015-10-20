@@ -49,7 +49,7 @@ module powerbi.data {
     /** Represents a sort over an expression. */
     export interface SQSortDefinition {
         expr: SQExpr;
-        direction: QuerySortDirection;
+        direction: SortDirection;
     }
 
     export interface QueryFromEnsureEntityResult {

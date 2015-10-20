@@ -176,12 +176,12 @@ import Helpers = powerbitests.helpers;
         legend.drawLegend({ dataPoints: legendData, title: 'This is a super long title and should be truncated by now' }, viewport);
         powerbi.visuals.SVGUtil.flushAllD3Transitions();
         // 2 different possible values
-        // 'This is a super long ti...' in Windows
-        // 'This is a super long ti ...' in Mac OS
+        // 'This is a super long ti… in Windows
+        // 'This is a super long ti … in Mac OS
         // So check start part of the text, tail part and length
         var text = $('.legendTitle').text();
         expect(text.substr(0, 23)).toEqual('This is a super long ti');
-        expect(text.substr(text.length - 3, 3)).toEqual('...');
+        expect(text.substr(text.length - 3, 3)).toEqual('…');
         expect(Helpers.isInRange(text.length, 25, 26)).toBe(true);
     });
 
@@ -239,7 +239,7 @@ import Helpers = powerbitests.helpers;
         legend.drawLegend({ dataPoints: legendData }, { height: 100, width: 1000 });
         powerbi.visuals.SVGUtil.flushAllD3Transitions();
         expect($('.legendItem').length).toBe(1);
-        expect($($('.legendText')[0]).text()).not.toContain('...');
+        expect($($('.legendText')[0]).text()).not.toContain('…');
     });
 
     it('Intelligent Layout: Lots of small labels should get compacted in horizontal layout',() => {

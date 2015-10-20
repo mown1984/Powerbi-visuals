@@ -468,6 +468,18 @@ module powerbi {
         export function isInteger(value: number): boolean {
             return value !== null && value % 1 === 0;
         }
+
+        /**
+         * Dividing by increment will give us count of increments
+         * Round out the rough edges into even integer
+         * Multiply back by increment to get rounded value
+         * e.g. Rounder.toIncrement(0.647291, 0.05) => 0.65
+         * @param value - value to round to nearest increment
+         * @param increment - smallest increment to round toward
+         */
+        export function toIncrement(value: number, increment: number) {
+            return Math.round(value / increment) * increment;
+        }
     }
 
     function applyDefault(value: number, defaultValue: number): number { 

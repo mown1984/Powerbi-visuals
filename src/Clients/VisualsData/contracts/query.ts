@@ -62,7 +62,7 @@ module powerbi.data {
 
     export interface QuerySortClause {
         Expression: QueryExpressionContainer;
-        Direction: QuerySortDirection;
+        Direction: SortDirection;
     }
 
     export interface QueryExpressionContainer {
@@ -235,11 +235,6 @@ module powerbi.data {
         Variance = 8,
     }
 
-    export enum QuerySortDirection {
-        Ascending = 1,
-        Descending = 2,
-    }
-
     export enum QueryComparisonKind {
         Equal = 0,
         GreaterThan = 1,
@@ -300,6 +295,9 @@ module powerbi.data {
 
         /** The select projection name. */
         Name?: string;
+
+        /* If defined, this indicates the KPI class*/
+        kpiStatusGraphic?: string;
     }
 
     export interface FilterMetadata {

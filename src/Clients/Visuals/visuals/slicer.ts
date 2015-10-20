@@ -43,8 +43,6 @@ module powerbi.visuals {
 
     export interface SlicerDataPoint extends SelectableDataPoint {
         value: string;
-        mouseOver: boolean;
-        mouseOut: boolean;
         isSelectAllDataPoint?: boolean;
     }
 
@@ -63,8 +61,6 @@ module powerbi.visuals {
         };
         slicerText: {
             color: string;
-            hoverColor: string;
-            selectionColor: string;
             outline: string;
             background: string;
             textSize: number;
@@ -130,6 +126,10 @@ module powerbi.visuals {
             class: 'slicerCheckbox',
             selector: '.slicerCheckbox'
         };
+        private static Checkbox: ClassAndSelector = {
+            class: 'checkbox',
+            selector: '.checkbox'
+        };
         private static Clear: ClassAndSelector = {
             class: 'clear',
             selector: '.clear'
@@ -151,8 +151,6 @@ module powerbi.visuals {
                 },
                 slicerText: {
                     color: '#666666',
-                    hoverColor: '#212121',
-                    selectionColor: '#212121',
                     outline: 'None',
                     background: '#ffffff',
                     textSize: 10,
@@ -211,8 +209,6 @@ module powerbi.visuals {
 
             slicerDataPoints.push({
                 value: localizedSelectAllText,
-                mouseOver: false,
-                mouseOut: true,
                 identity: SelectionId.createWithMeasure(localizedSelectAllText),
                 selected: !!isInvertedSelectionMode,
                 isSelectAllDataPoint: true
@@ -259,8 +255,6 @@ module powerbi.visuals {
 
                 slicerDataPoints.push({
                     value: categories.values[idx],
-                    mouseOver: false,
-                    mouseOut: true,
                     identity: SelectionId.createWithId(categoryIdentity),
                     selected: categoryIsSelected
                 });
@@ -433,7 +427,10 @@ module powerbi.visuals {
         private initContainer() {
             let settings = this.settings;
             let slicerBodyViewport = this.getSlicerBodyViewport(this.currentViewport);
-            let slicerContainer: D3.Selection = d3.select(this.element.get(0)).classed(Slicer.Container.class, true);
+
+            let slicerContainerDiv = document.createElement('div');
+            slicerContainerDiv.className = Slicer.Container.class;
+            let slicerContainer: D3.Selection = d3.select(slicerContainerDiv);
 
             this.slicerHeader = slicerContainer.append('div').classed(Slicer.Header.class, true);
 
@@ -467,6 +464,7 @@ module powerbi.visuals {
                     .attr('type', 'checkbox');
 
                 labelElement.append('span')
+                    .classed(Slicer.Checkbox.class, true)
                     .style(this.buildCheckboxStyle());
 
                 listItemElement.append('span')
@@ -555,6 +553,9 @@ module powerbi.visuals {
             };
 
             this.listView = ListViewFactory.createListView(listViewOptions);
+
+            // Append container to DOM
+            this.element.get(0).appendChild(slicerContainerDiv);
         }
 
         private onLoadMoreData(): void {
@@ -603,7 +604,10 @@ module powerbi.visuals {
             let scale = jsCommon.TextSizeDefaults.getScale(this.settings.slicerText.textSize);
             let size = (Slicer.CheckboxSpritePixelSizeMinimum + (Slicer.CheckboxSpritePixelSizeRange * scale));
             let relativeZoom = size / Slicer.CheckboxSpritePixelSize;
-            return SVGUtil.scale(relativeZoom);
+
+            let rounded = powerbi.Double.toIncrement(relativeZoom, 0.05);
+
+            return SVGUtil.scale(rounded);
         }
 
         private buildCheckboxStyle(): CheckboxStyle {

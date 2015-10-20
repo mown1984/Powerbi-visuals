@@ -1083,7 +1083,7 @@ module powerbi.visuals {
 
         public render(suppressAnimations: boolean): CartesianVisualRenderResult {
             if (!this.data || !this.dataView)
-                return { dataPoints: [], behaviorOptions: null };
+                return { dataPoints: [], behaviorOptions: null, labelDataPoints: [] };
 
             let data = this.data;
             let dataPoints = this.data.dataPoints;
@@ -1213,7 +1213,7 @@ module powerbi.visuals {
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
 
             // pass allDataPoints to keep track of current selected bubble even if it drops out for a few frames
-            return { dataPoints: _.flatten<SelectableDataPoint>(this.data.allDataPoints), behaviorOptions: behaviorOptions };
+            return { dataPoints: _.flatten<SelectableDataPoint>(this.data.allDataPoints), behaviorOptions: behaviorOptions, labelDataPoints: [] };
         }
 
         public static renderTraceLine(options: PlayBehaviorOptions, selectedPoints: SelectableDataPoint[], shouldAnimate: boolean): void {

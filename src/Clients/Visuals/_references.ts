@@ -87,6 +87,7 @@
 /// <reference path="common/columnChartUtil.ts"/>
 /// <reference path="common/converterHelper.ts"/>
 /// <reference path="common/dataLabelUtils.ts"/>
+/// <reference path="common/newDataLabelUtils.ts"/>
 /// <reference path="common/dataRoleHelper.ts"/>
 /// <reference path="common/kpiUtil.ts"/>
 
@@ -103,6 +104,7 @@
 /// <reference path="common/objectEnumerationBuilder.ts"/>
 
 /// <reference path="formatting/dataLabelManager.ts"/>
+/// <reference path="formatting/labelLayout.ts"/>
 /// <reference path="formatting/dateTimeSequence.ts"/>
 /// <reference path="formatting/displayUnitSystem.ts"/>
 /// <reference path="formatting/numericSequence.ts"/>

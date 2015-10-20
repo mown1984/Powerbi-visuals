@@ -27,32 +27,13 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export interface ColumnBehaviorOptions {
-        datapoints: SelectableDataPoint[];
-        bars: D3.Selection;
-        mainGraphicsContext: D3.Selection;
-        hasHighlights: boolean;
-        viewport: IViewport;
-        axisOptions: ColumnAxisOptions;
-        showLabel: boolean;
-    }
-
-    export class ColumnChartWebBehavior implements IInteractiveBehavior {
-        private options: ColumnBehaviorOptions;
-
-        public bindEvents(options: ColumnBehaviorOptions, selectionHandler: ISelectionHandler) {
-            this.options = options;
-            let bars = options.bars;
-
-            bars.on('click', (d: SelectableDataPoint, i: number) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
-        }
-
-        public renderSelection(hasSelection: boolean) {
-            let options = this.options;
-            options.bars.style("fill-opacity", (d: ColumnChartDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && options.hasHighlights));
-
+    export module visibilityHelper {
+        /**  Helper method that uses jQuery :visible selector to determine if visual is visible.
+            Elements are considered visible if they consume space in the document. Visible elements have a width or height that is greater than zero.
+            Elements with visibility: hidden or opacity: 0 are considered visible, since they still consume space in the layout.
+        */
+        export function partiallyVisible(element: JQuery): boolean {
+            return element.is(":visible");
         }
     }
-} 
+}

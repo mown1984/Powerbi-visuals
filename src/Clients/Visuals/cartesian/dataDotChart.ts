@@ -383,7 +383,7 @@ module powerbi.visuals {
             // This should always be the last line in the render code.
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
 
-            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions };
+            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions, labelDataPoints: [] };
         }
 
         public calculateLegend(): LegendData {

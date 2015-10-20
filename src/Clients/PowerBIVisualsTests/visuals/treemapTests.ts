@@ -2186,7 +2186,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = mocks.createVisualHostServices();
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false, devToolsEnabled: false }).getPlugin('treemap').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false,}).getPlugin('treemap').create();
             v.init({
                 element: element,
                 host: hostServices,

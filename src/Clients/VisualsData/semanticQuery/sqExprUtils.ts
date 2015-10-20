@@ -43,6 +43,43 @@ module powerbi.data {
         }
     }
 
+    module SQExprVariationConverter {
+        export function expand(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr[] {
+            debug.assertValue(expr, 'sqExpr');
+            debug.assertValue(schema, 'federatedSchema');
+
+            let exprs: SQExpr[];
+            let conceptualProperty = expr.getConceptualProperty(schema);
+
+            if (conceptualProperty) {
+                let column = conceptualProperty.column;
+                if (column && column.variations && column.variations.length > 0) {
+                    let variations = column.variations;
+                    // for SU10, we support only one variation
+                    debug.assert(variations.length === 1, "variations.length");
+                    let variation = variations[0];
+
+                    let columnExpr = <SQColumnRefExpr>expr;
+                    let entityExpr = <SQEntityExpr>columnExpr.source;
+
+                    exprs = [];
+                    if (variation.defaultHierarchy) {
+                        let hierarchyExpr = SQExprBuilder.hierarchy(
+                            SQExprBuilder.propertyVariationSource(
+                                SQExprBuilder.entity(entityExpr.schema, entityExpr.entity),
+                                variation.name, conceptualProperty.name),
+                            variation.defaultHierarchy.name);
+
+                        for (let level of variation.defaultHierarchy.levels)
+                            exprs.push(SQExprBuilder.hierarchyLevel(hierarchyExpr, level.name));
+                    }
+                }
+            }
+
+            return exprs;
+        }
+    }
+
     export module SQExprUtils {
         /** Returns an array of supported aggregates for a given expr and role. */
         export function getSupportedAggregates(
@@ -144,6 +181,20 @@ module powerbi.data {
             return expr.accept(IsMeasureVisitor.instance);
         }
 
+        /** Gets a value indicating whether the expr is an AnyValue or equals comparison to AnyValue*/
+        export function isAnyValue(expr: SQExpr): boolean {
+            debug.assertValue(expr, 'expr');
+
+            return expr.accept(IsAnyValueVisitor.instance);
+        }
+
+        /** Gets a value indicating whether the expr is a DefaultValue or equals comparison to DefaultValue*/
+        export function isDefaultValue(expr: SQExpr): boolean {
+            debug.assertValue(expr, 'expr');
+
+            return expr.accept(IsDefaultValueVisitor.instance);
+        }
+
         export function discourageAggregation(expr: SQExpr, schema: FederatedConceptualSchema): boolean {
             debug.assertValue(expr, 'expr');
             debug.assertValue(schema, 'schema');
@@ -198,9 +249,10 @@ module powerbi.data {
             }
         }
 
-        export function getExpr(schema, expr): SQExpr | SQExpr[] {
-            let exprs = SQExprHierarchyToHierarchyLevelConverter.convert(expr, schema);
-            return exprs || expr;
+        export function getExpr(schema: FederatedConceptualSchema, expr: SQExpr): SQExpr | SQExpr[] {
+            return SQExprHierarchyToHierarchyLevelConverter.convert(expr, schema) ||
+                SQExprVariationConverter.expand(expr, schema) ||
+                expr;
         }
 
         function getKpiStatusProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {
@@ -255,6 +307,44 @@ module powerbi.data {
             }
 
             public visitAggr(expr: SQAggregationExpr): boolean {
+                return true;
+            }
+
+            public visitDefault(expr: SQExpr): boolean {
+                return false;
+            }
+        }
+
+        class IsDefaultValueVisitor extends DefaultSQExprVisitor<boolean> {
+            public static instance: IsDefaultValueVisitor = new IsDefaultValueVisitor();
+
+            public visitCompare(expr: SQCompareExpr): boolean {
+                if (expr.kind !== QueryComparisonKind.Equal)
+                    return false;
+
+                return expr.right.accept(this);
+            }
+
+            public visitDefaultValue(expr: SQDefaultValueExpr): boolean {
+                return true;
+            }
+
+            public visitDefault(expr: SQExpr): boolean {
+                return false;
+            }
+        }
+
+        class IsAnyValueVisitor extends DefaultSQExprVisitor<boolean> {
+            public static instance: IsAnyValueVisitor = new IsAnyValueVisitor();
+
+            public visitCompare(expr: SQCompareExpr): boolean {
+                if (expr.kind !== QueryComparisonKind.Equal)
+                    return false;
+
+                return expr.right.accept(this);
+            }
+
+            public visitAnyValue(expr: SQAnyValueExpr): boolean {
                 return true;
             }
 

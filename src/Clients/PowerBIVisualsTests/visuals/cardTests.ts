@@ -554,7 +554,7 @@ module powerbitests {
 
             setTimeout(() => {
                 // No word wrapping, category label should be cut
-                expect($('.card .label')[0].textContent).toContain("...");
+                expect($('.card .label')[0].textContent).toContain('…');
                 expect($('.card .label tspan').length).toBe(0);
 
                 metadata.objects = {
@@ -789,8 +789,8 @@ module powerbitests {
                 var valueText = $(".value").first().text();
                 expect(labelText.length).toBeLessThan(60);
                 expect(valueText.length).toBeLessThan(30);
-                expect(valueText.substr(valueText.length - 3)).toBe("...");
-                expect(labelText.substr(labelText.length - 3)).toBe("...");
+                expect(valueText.substr(valueText.length - 1)).toBe('…');
+                expect(labelText.substr(labelText.length - 1)).toBe('…');
 
                 done();
             }, DefaultWaitForRender);
