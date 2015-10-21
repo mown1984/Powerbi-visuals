@@ -29,6 +29,8 @@
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface AreaRangeChartConstructorOptions {
         animator?: IGenericAnimator;
@@ -41,9 +43,7 @@ module powerbi.visuals.samples {
         identity: SelectionId;
     }
 
-    export interface AreaRangeChartDataPoint extends SelectableDataPoint,
-                                                     TooltipEnabledDataPoint,
-                                                     LabelEnabledDataPoint {
+    export interface AreaRangeChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
         x: number;
         y0: number;
         y1: number;
@@ -69,19 +69,19 @@ module powerbi.visuals.samples {
 
         private static properties: any = {
             general: {
-                formatString: <DataViewObjectPropertyIdentifier>{
+                formatString: <DataViewObjectPropertyIdentifier> {
                     objectName: "general",
                     propertyName: "formatString"
                 }
             },
             dataPoint: {
-                fill: <DataViewObjectPropertyIdentifier>{
-                    objectName: 'dataPoint',
-                    propertyName: 'fill'
+                fill: <DataViewObjectPropertyIdentifier> {
+                    objectName: "dataPoint",
+                    propertyName: "fill"
                 }
             },
             labels: {
-                labelPrecision: <DataViewObjectPropertyIdentifier>{
+                labelPrecision: <DataViewObjectPropertyIdentifier> {
                     objectName: "labels",
                     propertyName: "labelPrecision"
                 }
@@ -94,6 +94,7 @@ module powerbi.visuals.samples {
             Lower: "Lower",
             Upper: "Upper",
         };
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
@@ -109,31 +110,41 @@ module powerbi.visuals.samples {
                 {
                     name: AreaRangeChart.RoleNames.Lower,
                     kind: powerbi.VisualDataRoleKind.Measure,
-                    displayName: 'Lower'
+                    displayName: data.createDisplayNameGetter("Lower")
                 },
                 {
                     name: AreaRangeChart.RoleNames.Upper,
                     kind: powerbi.VisualDataRoleKind.Measure,
-                    displayName: 'Upper'
+                    displayName: data.createDisplayNameGetter("Upper")
                 },
             ],
-            dataViewMappings: [{
-                conditions: [
-                    { "Category": { max: 1 }, "Series": { max: 1 }, "Lower": { max: 1 }, "Upper": { max: 1 } },
-                ],
-                categorical: {
-                    categories: {
-                        for: { in: AreaRangeChart.RoleNames.Category },
-                        dataReductionAlgorithm: { top: {} }
-                    },
-                    values: {
-                        group: {
-                            by: AreaRangeChart.RoleNames.Series,
-                            select: [{ bind: { to: AreaRangeChart.RoleNames.Lower } }, { bind: { to: AreaRangeChart.RoleNames.Upper } }]
+            dataViewMappings: [
+                {
+                    conditions: [
+                        {
+                            "Category": { max: 1 },
+                            "Series": { max: 1 },
+                            "Lower": { max: 1 },
+                            "Upper": { max: 1 }
                         },
-                    },
+                    ],
+                    categorical: {
+                        categories: {
+                            for: { in: AreaRangeChart.RoleNames.Category },
+                            dataReductionAlgorithm: { top: {} }
+                        },
+                        values: {
+                            group: {
+                                by: AreaRangeChart.RoleNames.Series,
+                                select: [
+                                    { bind: { to: AreaRangeChart.RoleNames.Lower } },
+                                    { bind: { to: AreaRangeChart.RoleNames.Upper } }
+                                ]
+                            },
+                        },
+                    }
                 }
-            }],
+            ],
             objects: {
                 general: {
                     displayName: data.createDisplayNameGetter('Visual_General'),
@@ -144,10 +155,10 @@ module powerbi.visuals.samples {
                     },
                 },
                 label: {
-                    displayName: 'Label',
+                    displayName: data.createDisplayNameGetter("Label"),
                     properties: {
                         fill: {
-                            displayName: 'Fill',
+                            displayName: data.createDisplayNameGetter("Fill"),
                             type: { fill: { solid: { color: true } } }
                         }
                     }
@@ -157,20 +168,9 @@ module powerbi.visuals.samples {
 
         private static VisualClassName = 'areaRangeChart';
 
-        private static AreaRangeChart: ClassAndSelector = {
-            class: 'chart',
-            selector: '.chart'
-        };
-
-        private static Area: ClassAndSelector = {
-            class: 'area',
-            selector: '.area'
-        };
-
-        private static Axis: ClassAndSelector = {
-            class: 'axis',
-            selector: '.axis'
-        };
+        private static Chart: ClassAndSelector = createClassAndSelector('chart');
+        private static Area:  ClassAndSelector = createClassAndSelector('area');
+        private static Axis:  ClassAndSelector = createClassAndSelector('axis');        
 
         private static DimmedFillOpacity = 0.5;
         private static FillOpacity = 0.9;
@@ -224,7 +224,7 @@ module powerbi.visuals.samples {
 
             this.chart = this.svg
                 .append('g')
-                .classed(AreaRangeChart.AreaRangeChart.class, true);
+                .classed(AreaRangeChart.Chart.class, true);
 
             this.axis = this.svg
                 .append('g')
@@ -293,6 +293,59 @@ module powerbi.visuals.samples {
             this.axisX.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top + this.viewport.height));
         }
 
+        private getObjectsFromDataView(dataView: DataView): DataViewObjects {
+            if (!dataView ||
+                !dataView.metadata ||
+                !dataView.metadata.columns ||
+                !dataView.metadata.objects) {
+                return null;
+            }
+
+            return this.dataView.metadata.objects;
+        }
+
+        private getPrecision(objects: DataViewObjects): number {
+            var precision: number = DataViewObjects.getValue(
+                objects,
+                AreaRangeChart.properties.labels.labelPrecision,
+                AreaRangeChart.DefaultSettings.precision);
+
+            //if (precision <= this.minPrecision) {
+            //    return this.minPrecision;
+            //}
+
+            return precision;
+        }
+        
+        private parseSettings(dataView: DataView): AreaRangeChartSettings {
+            var settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
+                objects: DataViewObjects;
+
+            settings.displayName = AreaRangeChart.DefaultSettings.displayName;
+            settings.fillColor = AreaRangeChart.DefaultSettings.fillColor;
+
+            objects = this.getObjectsFromDataView(dataView);
+
+            if (objects) {
+                settings.precision = this.getPrecision(objects);
+            }
+            return settings;
+        }
+        
+        private getTooltipData(categoryColumn: DataViewCategoricalColumn, categoryIndex: number, y0: number, y1: number, settings: AreaRangeChartSettings, valueFormatter: IValueFormatter): TooltipDataItem[] {
+            return [
+                {
+                    displayName: categoryColumn.source.displayName,
+                    value: categoryColumn.values[categoryIndex],
+                }, {
+                    displayName: 'Min:',
+                    value: valueFormatter.format(y0)
+                }, {
+                    displayName: 'Max:',
+                    value: valueFormatter.format(y1)
+                }];
+        }        
+        
         public converter(dataView: DataView, colors: IDataColorPalette): AreaRangeChartData {
             var settings: AreaRangeChartSettings,
                 categories: any[],
@@ -323,8 +376,9 @@ module powerbi.visuals.samples {
             var colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.fill, settings.fillColor);
             var hasDynamicSeries = !!valueColumns.source;
 
-            if (lowerMeasureIndex < 0 || upperMeasureIndex < 0)
+            if (lowerMeasureIndex < 0 || upperMeasureIndex < 0) {
                 return;
+            }
 
             valueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, AreaRangeChart.properties.general.formatString),
@@ -383,16 +437,19 @@ module powerbi.visuals.samples {
         }
 
         private calculateYDomain(valueColumns: DataViewValueColumns, lowerMeasureIndex: number, upperMeasureIndex: number): number[] {
-            var min, max;
-            for (var valueColumn of valueColumns) {
-                var range = AxisHelper.getRangeForColumn(valueColumn);
-                if (min == null || range.min < min)
+            var min = 0,
+               max = 0;
+            for (var i = 0; i < valueColumns.length; i++) {
+                var range = AxisHelper.getRangeForColumn(valueColumns[i]);
+                if (range.min < min) {
                     min = range.min;
-                if (max == null || range.max > max)
+                }
+                if (range.max > max) {
                     max = range.max;
+                }
             }
 
-            return [min || 0, max || 0];
+            return [min, max];
         }
 
         private getXAxisProperties(categoryColumn: DataViewCategoricalColumn): IAxisProperties {
@@ -446,7 +503,6 @@ module powerbi.visuals.samples {
             var yAxis = data.yAxisProperties.axis;
 
             xAxis.orient('bottom');
-
             yAxis.orient('left');
 
             this.axisX
@@ -503,15 +559,17 @@ module powerbi.visuals.samples {
 
         private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                return (<AreaRangeChartDataPoint>tooltipEvent.data[0]).tooltipInfo;
+                return (<AreaRangeChartDataPoint>tooltipEvent.data.data[0]).tooltipInfo;
             });
         }
 
         private getLegend(series: AreaRangeChartSeries[], title: string): LegendData {
             var legendItems: LegendDataPoint[] = [];
-            for (var value of series) {
-                if (!value.identity.hasIdentity())
+            for (var i = 0; i < series.length; i++) {
+                var value: AreaRangeChartSeries = series[i];
+                if (!value.identity.hasIdentity()) {
                     continue;
+                }
 
                 legendItems.push({
                     label: value.name,
@@ -527,59 +585,5 @@ module powerbi.visuals.samples {
                 title: title,
             };
         }
-
-        private getTooltipData(categoryColumn: DataViewCategoricalColumn, categoryIndex: number, y0: number, y1: number, settings: AreaRangeChartSettings, valueFormatter: IValueFormatter): TooltipDataItem[] {
-            return [
-                {
-                    displayName: categoryColumn.source.displayName,
-                    value: categoryColumn.values[categoryIndex],
-                }, {
-                    displayName: 'Min:',
-                    value: valueFormatter.format(y0)
-                }, {
-                    displayName: 'Max:',
-                    value: valueFormatter.format(y1)
-                }];
-        }
-
-        private parseSettings(dataView: DataView): AreaRangeChartSettings {
-            var settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
-                objects: DataViewObjects;
-
-            settings.displayName = AreaRangeChart.DefaultSettings.displayName;
-            settings.fillColor = AreaRangeChart.DefaultSettings.fillColor;
-
-            objects = this.getObjectsFromDataView(dataView);
-
-            if (objects) {
-                settings.precision = this.getPrecision(objects);
-            }
-            return settings;
-        }
-
-        private getPrecision(objects: DataViewObjects): number {
-            var precision: number = DataViewObjects.getValue(
-                objects,
-                AreaRangeChart.properties.labels.labelPrecision,
-                AreaRangeChart.DefaultSettings.precision);
-
-            //if (precision <= this.minPrecision) {
-            //    return this.minPrecision;
-            //}
-
-            return precision;
-        }
-
-        private getObjectsFromDataView(dataView: DataView): DataViewObjects {
-            if (!dataView ||
-                !dataView.metadata ||
-                !dataView.metadata.columns ||
-                !dataView.metadata.objects) {
-                return null;
-            }
-
-            return this.dataView.metadata.objects;
-        }
-
     }
 }

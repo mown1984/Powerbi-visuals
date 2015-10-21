@@ -41,7 +41,6 @@ module powerbi.visuals.sampleData {
             new sampleDataViews.SalesByCountryData(),
             new sampleDataViews.SalesByDayOfWeekData(),
             new sampleDataViews.ServicesByUsers(),
-
             new sampleDataViews.SimpleAreaRangeData(),
             new sampleDataViews.SimpleFunnelData(),
             new sampleDataViews.SimpleGaugeData(),

@@ -37,22 +37,8 @@ module powerbi.visuals.sampleDataViews {
         public visuals: string[] = ['areaRangeChart'];
 
         private sampleData = [
-            [
-                [0, 1],
-                [2, 3],
-                [4, 6],
-                [2, 3],
-                [2, 4],
-                [0, 1],
-            ],
-            [
-                [8, 9],
-                [7, 8],
-                [4, 7],
-                [3, 5],
-                [1, 2],
-                [1, 2],
-            ]
+            [0, 2, 4, 2, 2, 0],
+            [1, 3, 6, 3, 4, 1]
         ];
 
         private sampleMin: number = 1;
@@ -62,28 +48,42 @@ module powerbi.visuals.sampleDataViews {
 
         public getDataViews(): DataView[] {
 
-            var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
+            let fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
 
             this.categoryValues = ["Australia", "Canada", "France", "Germany", "United Kingdom", "United States"];
-            var categoryIdentities = this.categoryValues.map(function(value) {
-                var expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(value));
+            let categoryIdentities = this.categoryValues.map(function(value) {
+                let expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(value));
                 return powerbi.data.createDataViewScopeIdentity(expr);
             });
-        
+
             // Metadata, describes the data columns, and provides the visual with hints
             // so it can decide how to best represent the data
-            var dataViewMetadata: powerbi.DataViewMetadata = {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     {
                         displayName: 'Country',
                         queryName: 'Country',
-                        type: powerbi.ValueType.fromDescriptor({ text: true })
+                        type: powerbi.ValueType.fromDescriptor({ text: true }),
+                        roles: {
+                            Category: true
+                        }
+                    },
+                    {
+                        displayName: 'District',
+                        queryName: 'District',
+                        type: powerbi.ValueType.fromDescriptor({ text: true }),
+                        roles: {
+                            Series: true
+                        }
                     },
                     {
                         displayName: 'Sales Amount (2014)',
                         isMeasure: true,
                         format: "$0,000.00",
-                        queryName: 'sales1',
+                        queryName: 'sales2014',
+                        roles: {
+                            Lower: true
+                        },
                         type: powerbi.ValueType.fromDescriptor({ numeric: true }),
                         objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
                     },
@@ -91,26 +91,29 @@ module powerbi.visuals.sampleDataViews {
                         displayName: 'Sales Amount (2015)',
                         isMeasure: true,
                         format: "$0,000.00",
-                        queryName: 'sales2',
+                        queryName: 'sales2015',
+                        roles: {
+                            Upper: true
+                        },
                         type: powerbi.ValueType.fromDescriptor({ numeric: true })
                     }
                 ]
             };
 
-            var columns = [
+            let columns: DataViewValueColumn[] = [
                 {
-                    source: dataViewMetadata.columns[1],
+                    source: dataViewMetadata.columns[2],
                     // Sales Amount for 2014
                     values: this.sampleData[0],
                 },
                 {
-                    source: dataViewMetadata.columns[2],
+                    source: dataViewMetadata.columns[3],
                     // Sales Amount for 2015
                     values: this.sampleData[1],
                 }
             ];
 
-            var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
 
             return [{
                 metadata: dataViewMetadata,
@@ -118,7 +121,7 @@ module powerbi.visuals.sampleDataViews {
                     categories: [{
                         source: dataViewMetadata.columns[0],
                         values: this.categoryValues,
-                        identity: categoryIdentities,
+                        identity: categoryIdentities
                     }],
                     values: dataValues,
                 }
@@ -129,11 +132,9 @@ module powerbi.visuals.sampleDataViews {
 
             this.sampleData = this.sampleData.map(data => {
                 return data.map(item => {
-                    return [this.getRandomValue(this.sampleMin, this.sampleMax),
-                        this.getRandomValue(this.sampleMin, this.sampleMax)];
+                    return this.getRandomValue(this.sampleMin, this.sampleMax);
                     });
                 });
         }
-        
     }
 }
