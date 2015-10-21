@@ -352,6 +352,9 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.playChart);
                 }
 
+                // TODO: remove
+                convertibleVisualTypes.push(powerbi.visuals.plugins.areaRangeChart);
+
                 return convertibleVisualTypes;
             }
 
