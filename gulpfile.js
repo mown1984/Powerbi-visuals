@@ -53,14 +53,18 @@ require('require-dir')('./gulp');
 var expressServer = express(); 
 
 var isDebug = false,
-    openInBrowser = false;
+    openInBrowser = false,
+    noLint = false;
 
 var cliOptions = {
     string: [
         "files",
-        "openInBrowser"
     ],
-    boolean: "debug",
+    boolean: [
+        "openInBrowser",
+        "debug",
+        "noLint"
+    ],
     alias: {
         files: "f",
         debug: "d",
@@ -72,6 +76,7 @@ var cliArguments = minimist(process.argv.slice(2), cliOptions);
 
 isDebug = Boolean(cliArguments.debug);
 openInBrowser = Boolean(cliArguments.openInBrowser);
+noLint = Boolean(cliArguments.noLint);
 
 function getOptionFromCli(cliArg) {
     if (cliArg && cliArg.length > 0) {
@@ -298,6 +303,9 @@ var tslintPaths = ["src/Clients/VisualsCommon/**/*.ts",
     "!src/Clients/PowerBIVisualsPlayground/**/*.d.ts"];
 
 gulp.task("tslint", function () {
+    if (noLint)
+        return;
+
     return gulp.src(tslintPaths)
         .pipe(tslint())
         .pipe(tslint.report("verbose"));

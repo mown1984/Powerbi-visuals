@@ -46,8 +46,6 @@ module powerbitests {
     var dataTypeNumber = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double);
     var dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
 
-    var DefaultWaitForRender = 500;
-
     powerbitests.mocks.setLocale();
 
     var dataViewMetadataCategorySeriesColumns: powerbi.DataViewMetadata = {
