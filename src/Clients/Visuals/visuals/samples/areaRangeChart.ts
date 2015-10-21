@@ -41,7 +41,9 @@ module powerbi.visuals.samples {
         identity: SelectionId;
     }
 
-    export interface AreaRangeChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
+    export interface AreaRangeChartDataPoint extends SelectableDataPoint,
+                                                     TooltipEnabledDataPoint,
+                                                     LabelEnabledDataPoint {
         x: number;
         y0: number;
         y1: number;
@@ -210,7 +212,7 @@ module powerbi.visuals.samples {
         }
 
         public init(options: VisualInitOptions): void {
-            let element = options.element;
+            var element = options.element;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
 
             this.colors = options.style.colorPalette.dataColors;
@@ -242,12 +244,12 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let dataView = this.dataView = options.dataViews[0];
+            var dataView = this.dataView = options.dataViews[0];
 
             this.setSize(options.viewport);
-            let data = this.converter(dataView, this.colors);
+            var data = this.converter(dataView, this.colors);
 
-            let duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
+            var duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
             this.render(data, duration);
         }
 
@@ -257,7 +259,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let legendData = data.legendData;
+            var legendData = data.legendData;
 
             this.renderAxis(data, duration);
             this.renderChart(data, duration);
@@ -267,7 +269,7 @@ module powerbi.visuals.samples {
         }
 
         private setSize(viewport: IViewport): void {
-            let height: number,
+            var height: number,
                 width: number;
 
             height = viewport.height - this.margin.top - this.margin.bottom;
@@ -292,7 +294,7 @@ module powerbi.visuals.samples {
         }
 
         public converter(dataView: DataView, colors: IDataColorPalette): AreaRangeChartData {
-            let settings: AreaRangeChartSettings,
+            var settings: AreaRangeChartSettings,
                 categories: any[],
                 valueColumns: DataViewValueColumns,
                 valueFormatter: IValueFormatter;
@@ -312,14 +314,14 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let categoryColumn = dataView.categorical.categories[0];
+            var categoryColumn = dataView.categorical.categories[0];
             categories = categoryColumn.values;
             valueColumns = dataView.categorical.values;
-            let grouped = valueColumns.grouped();
-            let lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
-            let upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
-            let colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.fill, settings.fillColor);
-            let hasDynamicSeries = !!valueColumns.source;
+            var grouped = valueColumns.grouped();
+            var lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
+            var upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
+            var colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.fill, settings.fillColor);
+            var hasDynamicSeries = !!valueColumns.source;
 
             if (lowerMeasureIndex < 0 || upperMeasureIndex < 0)
                 return;
@@ -330,20 +332,20 @@ module powerbi.visuals.samples {
                 precision: settings.precision
             });
 
-            let series: AreaRangeChartSeries[] = [];
-            for (let seriesIndex = 0; seriesIndex < grouped.length; seriesIndex++) {
-                let group = grouped[seriesIndex];
-                let color = colorHelper.getColorForSeriesValue(group.objects, valueColumns.identityFields, group.name);
-                let id = SelectionIdBuilder
+            var series: AreaRangeChartSeries[] = [];
+            for (var seriesIndex = 0; seriesIndex < grouped.length; seriesIndex++) {
+                var group = grouped[seriesIndex];
+                var color = colorHelper.getColorForSeriesValue(group.objects, valueColumns.identityFields, group.name);
+                var id = SelectionIdBuilder
                     .builder()
                     .withSeries(valueColumns, group)
                     .createSelectionId();
 
-                let dataPoints: AreaRangeChartDataPoint[] = [];
-                for (let categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
-                    let y0 = group.values[lowerMeasureIndex].values[categoryIndex];
-                    let y1 = group.values[upperMeasureIndex].values[categoryIndex];
-                    let pointId = SelectionIdBuilder
+                var dataPoints: AreaRangeChartDataPoint[] = [];
+                for (var categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
+                    var y0 = group.values[lowerMeasureIndex].values[categoryIndex];
+                    var y1 = group.values[upperMeasureIndex].values[categoryIndex];
+                    var pointId = SelectionIdBuilder
                         .builder()
                         .withSeries(valueColumns, group)
                         .withCategory(categoryColumn, categoryIndex)
@@ -367,7 +369,7 @@ module powerbi.visuals.samples {
                 });
             };
 
-            let legendTitle = hasDynamicSeries ? valueColumns.source.displayName : "";
+            var legendTitle = hasDynamicSeries ? valueColumns.source.displayName : "";
 
             return {
                 xAxisProperties: this.getXAxisProperties(categoryColumn),
@@ -381,9 +383,9 @@ module powerbi.visuals.samples {
         }
 
         private calculateYDomain(valueColumns: DataViewValueColumns, lowerMeasureIndex: number, upperMeasureIndex: number): number[] {
-            let min, max;
-            for (let valueColumn of valueColumns) {
-                let range = AxisHelper.getRangeForColumn(valueColumn);
+            var min, max;
+            for (var valueColumn of valueColumns) {
+                var range = AxisHelper.getRangeForColumn(valueColumn);
                 if (min == null || range.min < min)
                     min = range.min;
                 if (max == null || range.max > max)
@@ -394,14 +396,14 @@ module powerbi.visuals.samples {
         }
 
         private getXAxisProperties(categoryColumn: DataViewCategoricalColumn): IAxisProperties {
-            let xDomain = _.range(0, categoryColumn.values.length);
+            var xDomain = _.range(0, categoryColumn.values.length);
 
-            //let isScalar = !AxisHelper.isOrdinal(categoryColumn.source.type);
-            //let categoryThickness = this.viewport.width / xDomain.length;
-            let categoryThickness = this.viewport.width / (xDomain.length + (CartesianChart.OuterPaddingRatio * 2));
+            //var isScalar = !AxisHelper.isOrdinal(categoryColumn.source.type);
+            //var categoryThickness = this.viewport.width / xDomain.length;
+            var categoryThickness = this.viewport.width / (xDomain.length + (CartesianChart.OuterPaddingRatio * 2));
             categoryThickness = Math.max(categoryThickness, CartesianChart.MinOrdinalRectThickness);
 
-            let xAxisProperties = AxisHelper.createAxis({
+            var xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: this.viewport.width,
                 dataDomain: xDomain,
                 metaDataColumn: categoryColumn.source,
@@ -420,10 +422,10 @@ module powerbi.visuals.samples {
         }
 
         private getYAxisProperties(valueColumns: DataViewValueColumns, lowerMeasureIndex: number, upperMeasureIndex: number): IAxisProperties {
-            let grouped = valueColumns.grouped();
-            let yDomain = this.calculateYDomain(valueColumns, lowerMeasureIndex, upperMeasureIndex);
+            var grouped = valueColumns.grouped();
+            var yDomain = this.calculateYDomain(valueColumns, lowerMeasureIndex, upperMeasureIndex);
 
-            let yAxisProperties = AxisHelper.createAxis({
+            var yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: this.viewport.height,
                 dataDomain: yDomain,
                 metaDataColumn: grouped[0].values[lowerMeasureIndex].source,
@@ -440,8 +442,8 @@ module powerbi.visuals.samples {
         }
 
         private renderAxis(data: AreaRangeChartData, duration: number): void {
-            let xAxis = data.xAxisProperties.axis;
-            let yAxis = data.yAxisProperties.axis;
+            var xAxis = data.xAxisProperties.axis;
+            var yAxis = data.yAxisProperties.axis;
 
             xAxis.orient('bottom');
 
@@ -459,17 +461,17 @@ module powerbi.visuals.samples {
         }
 
         private renderChart(data: AreaRangeChartData, duration: number): void {
-            let series: AreaRangeChartSeries[] = data.series,
+            var series: AreaRangeChartSeries[] = data.series,
                 xScale: D3.Scale.OrdinalScale = <D3.Scale.OrdinalScale>data.xAxisProperties.scale,
                 yScale: D3.Scale.LinearScale = <D3.Scale.LinearScale>data.yAxisProperties.scale,
                 sm = this.selectionManager;
 
-            let area: D3.Svg.Area = d3.svg.area()
+            var area: D3.Svg.Area = d3.svg.area()
                 .x((d: AreaRangeChartDataPoint) => (xScale(d.x) + xScale.rangeBand() / 2))
                 .y0((d: AreaRangeChartDataPoint) => yScale(d.y0))
                 .y1((d: AreaRangeChartDataPoint) => yScale(d.y1));
 
-            let selection = this.chart.selectAll(AreaRangeChart.Area.selector).data(series);
+            var selection = this.chart.selectAll(AreaRangeChart.Area.selector).data(series);
 
             selection
                 .enter()
@@ -506,8 +508,8 @@ module powerbi.visuals.samples {
         }
 
         private getLegend(series: AreaRangeChartSeries[], title: string): LegendData {
-            let legendItems: LegendDataPoint[] = [];
-            for (let value of series) {
+            var legendItems: LegendDataPoint[] = [];
+            for (var value of series) {
                 if (!value.identity.hasIdentity())
                     continue;
 
@@ -541,7 +543,7 @@ module powerbi.visuals.samples {
         }
 
         private parseSettings(dataView: DataView): AreaRangeChartSettings {
-            let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
+            var settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
                 objects: DataViewObjects;
 
             settings.displayName = AreaRangeChart.DefaultSettings.displayName;
@@ -556,7 +558,7 @@ module powerbi.visuals.samples {
         }
 
         private getPrecision(objects: DataViewObjects): number {
-            let precision: number = DataViewObjects.getValue(
+            var precision: number = DataViewObjects.getValue(
                 objects,
                 AreaRangeChart.properties.labels.labelPrecision,
                 AreaRangeChart.DefaultSettings.precision);

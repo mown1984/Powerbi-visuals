@@ -45,3 +45,6 @@ VisualsTests
 
 # Obj dirs
 src/Clients/**/obj/*.*
+
+# IDE temp data
+.sublime-gulp.cache
