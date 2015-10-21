@@ -37,8 +37,14 @@ module powerbi.visuals.sampleDataViews {
         public visuals: string[] = ['areaRangeChart'];
 
         private sampleData = [
-            [0, 2, 4, 2, 2, 0],
-            [1, 3, 6, 3, 4, 1]
+            [
+                [0, 2, 4, 2, 2, 0],
+                [1, 3, 6, 3, 4, 1]
+            ],
+            [
+                [8, 9, 7, 6, 8, 0],
+                [2, 4, 2, 1, 9, 1]
+            ]
         ];
 
         private sampleMin: number = 1;
@@ -100,21 +106,34 @@ module powerbi.visuals.sampleDataViews {
                 ]
             };
 
-            let columns: DataViewValueColumn[] = [
-                {
-                    source: dataViewMetadata.columns[2],
-                    // Sales Amount for 2014
-                    values: this.sampleData[0],
-                },
-                {
-                    source: dataViewMetadata.columns[3],
-                    // Sales Amount for 2015
-                    values: this.sampleData[1],
-                }
-            ];
+            let districtExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "district" } });
+
+            let districtValues = ["F-01", "D-02"];
+            let districtIdentities = districtValues.map(function(value) {
+                let expr = powerbi.data.SQExprBuilder.equal(districtExpr, powerbi.data.SQExprBuilder.text(value));
+                return powerbi.data.createDataViewScopeIdentity(expr);
+            });
+
+            let columns: DataViewValueColumn[] = [];
+
+            for (let i = 0; i < districtIdentities.length; i++) {
+                columns.push(
+                    {
+                        source: dataViewMetadata.columns[2],
+                        // Sales Amount for 2014
+                        values: this.sampleData[i][0],
+                        identity: districtIdentities[i]
+                    });
+                columns.push(
+                    {
+                        source: dataViewMetadata.columns[3],
+                        // Sales Amount for 2015
+                        values: this.sampleData[i][1],
+                        identity: districtIdentities[i]
+                    });
+            }
 
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-
             return [{
                 metadata: dataViewMetadata,
                 categorical: {
@@ -130,11 +149,13 @@ module powerbi.visuals.sampleDataViews {
         
         public randomize(): void {
 
-            this.sampleData = this.sampleData.map(data => {
-                return data.map(item => {
-                    return this.getRandomValue(this.sampleMin, this.sampleMax);
+            this.sampleData = this.sampleData.map(series => {
+                return series.map(data => {
+                    return data.map(item => {
+                        return this.getRandomValue(this.sampleMin, this.sampleMax);
                     });
                 });
+            });
         }
     }
 }
