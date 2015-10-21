@@ -338,4 +338,10 @@ module powerbi.visuals.plugins {
         capabilities: Histogram.capabilities,
         create: () => new Histogram()
     };
+
+    export var wordCloud: IVisualPlugin = {
+        name: "wordCloud",
+        capabilities: WordCloud.capabilities,
+        create: () => new WordCloud()
+    };
 }

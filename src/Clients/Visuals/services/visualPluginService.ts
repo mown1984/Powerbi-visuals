@@ -289,6 +289,10 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
                 animator: new BaseAnimator()
             }));
+            // Word Cloud
+            createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new WordCloud({
+                animator: new BaseAnimator()
+            }));
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {

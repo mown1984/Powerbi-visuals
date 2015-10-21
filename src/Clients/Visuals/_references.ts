@@ -183,5 +183,6 @@
 /// <reference path="visuals/samples/sunburst.ts"/>
 
 /// <reference path="visuals/histogram.ts"/>
+/// <reference path="visuals/wordCloud.ts"/>
 
 /// <reference path="plugins.ts"/>
