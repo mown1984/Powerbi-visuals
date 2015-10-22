@@ -352,6 +352,8 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.playChart);
                 }
 
+                convertibleVisualTypes.push(powerbi.visuals.plugins.tornadoChart);
+
                 return convertibleVisualTypes;
             }
 

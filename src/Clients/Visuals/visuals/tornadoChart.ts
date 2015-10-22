@@ -233,19 +233,19 @@ module powerbi.visuals {
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
             }, {
-                name: "Y",
-                kind: VisualDataRoleKind.GroupingOrMeasure,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Values"),
-            }],
+                    name: "Values",
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Values"),
+                }],
             dataViewMappings: [{
                 conditions: [{
-                   "Category": {
-                       max: 1
-                   },
-                   "Y": {
-                       min: 1,
-                       max: 2
-                   }
+                    "Category": {
+                        max: 1
+                    },
+                    "Values": {
+                        min: 1,
+                        max: 2
+                    }
                 }],
                 categorical: {
                     categories: {
@@ -254,14 +254,7 @@ module powerbi.visuals {
                         }
                     },
                     values: {
-                        group: {
-                            by: "Series",
-                            select: [{
-                                bind: {
-                                    to: "Y"
-                                }
-                            }]
-                        }
+                        select: [{ for: { in: "Values" } }]
                     }
                 }
             }],
@@ -281,14 +274,15 @@ module powerbi.visuals {
                 dataPoint: {
                     displayName: data.createDisplayNameGetter("Visual_DataPoint"),
                     properties: {
-                        fillFirstSeries: {
-                            displayName: data.createDisplayNameGetter("Visual_Fill"),
-                            type: { fill: { solid: { color: true } } }
-                        },
-                        fillSecondSeries: {
-                            displayName: data.createDisplayNameGetter("Visual_Fill"),
-                            type: { fill: { solid: { color: true } } }
-                        }
+                        // TODO: colors
+                        //fillFirstSeries: {
+                        //    displayName: data.createDisplayNameGetter("Visual_Fill"),
+                        //    type: { fill: { solid: { color: true } } }
+                        //},
+                        //fillSecondSeries: {
+                        //    displayName: data.createDisplayNameGetter("Visual_Fill"),
+                        //    type: { fill: { solid: { color: true } } }
+                        //}
                     }
                 },
                 labels: {
@@ -415,10 +409,9 @@ module powerbi.visuals {
 
             this.element = visualInitOptions.element;
 
-            this.colors = style && style.colorPalette 
-                ? style.colorPalette.dataColors
-                : new DataColorPalette();
+            this.colors = style.colorPalette.dataColors
 
+            // TODO: we never pass in this as far as I know. Is it a playground thing?
             if (this.svg) {
                 this.root = this.svg;
             } else {
@@ -428,6 +421,7 @@ module powerbi.visuals {
 
             this.root.classed(TornadoChart.ClassName, true);
 
+            // TODO: just hard-code this to match the CSS for now.
             fontSize = this.root.style("font-size");
 
             this.textOptions.sizeUnit = fontSize.slice(fontSize.length - 2);
@@ -438,19 +432,19 @@ module powerbi.visuals {
 
             this.columns = this.main
                 .append("g")
-                .classed(TornadoChart.Columns["class"], true);
+                .classed(TornadoChart.Columns.class, true);
 
             this.axes = this.main
                 .append("g")
-                .classed(TornadoChart.Axes["class"], true);
+                .classed(TornadoChart.Axes.class, true);
 
             this.labels = this.main
                 .append("g")
-                .classed(TornadoChart.Labels["class"], true);
+                .classed(TornadoChart.Labels.class, true);
 
             this.categories = this.main
                 .append("g")
-                .classed(TornadoChart.Categories["class"], true);
+                .classed(TornadoChart.Categories.class, true);
 
             this.legend = createLegend(this.element, false, null);
         }
