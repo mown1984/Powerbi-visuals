@@ -86,7 +86,7 @@ module powerbi.visuals.sampleDataViews {
                         displayName: 'Sales Amount (2014)',
                         isMeasure: true,
                         format: "$0,000.00",
-                        queryName: 'sales2014',
+                        queryName: 'district',
                         roles: {
                             Lower: true
                         },
@@ -97,7 +97,7 @@ module powerbi.visuals.sampleDataViews {
                         displayName: 'Sales Amount (2015)',
                         isMeasure: true,
                         format: "$0,000.00",
-                        queryName: 'sales2015',
+                        queryName: 'district',
                         roles: {
                             Upper: true
                         },
@@ -133,7 +133,9 @@ module powerbi.visuals.sampleDataViews {
                     });
             }
 
-            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns, 
+                [districtExpr], dataViewMetadata.columns[1]);
+
             return [{
                 metadata: dataViewMetadata,
                 categorical: {

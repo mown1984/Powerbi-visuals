@@ -31,6 +31,7 @@ module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import axisScale = powerbi.axisScale;
 
     export interface AreaRangeChartConstructorOptions {
         animator?: IGenericAnimator;
@@ -472,7 +473,7 @@ module powerbi.visuals.samples {
                 getValueFn: (index, type) => categoryColumn.values[index],
                 categoryThickness: categoryThickness, //CartesianChart.getCategoryThickness(data.series, origCatgSize, this.getAvailableWidth(), xDomain, isScalar),
                 isCategoryAxis: true,
-                scaleType: powerbi.axisScale.linear,
+                scaleType: axisScale.linear,
             });
 
             return xAxisProperties;
@@ -492,7 +493,7 @@ module powerbi.visuals.samples {
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: false,
-                scaleType: powerbi.axisScale.linear,
+                scaleType: axisScale.linear,
             });
 
             return yAxisProperties;
@@ -554,13 +555,35 @@ module powerbi.visuals.samples {
                 });
 
             selection.exit().remove();
-            this.renderTooltip(selection);
+            this.renderTooltip(selection, xScale);
         }
 
-        private renderTooltip(selection: D3.UpdateSelection): void {
+        private static findClosestXAxisIndex(currentX: number, xAxisValues: AreaRangeChartDataPoint[]): number {
+            let closestValueIndex: number = -1;
+            let minDistance = Number.MAX_VALUE;
+            for (let i in xAxisValues) {
+                let distance = Math.abs(currentX - (<AreaRangeChartDataPoint>xAxisValues[i]).x);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestValueIndex = i;
+                }
+            }
+            return closestValueIndex;
+        }
+
+        public static getTooltipInfoByPointX(pointData: any, xScale: D3.Scale.OrdinalScale, pointX: number): TooltipDataItem[] {
+
+            let index: number = 0;
+            let currentX = powerbi.visuals.AxisHelper.invertScale(xScale, pointX);
+            index = AreaRangeChart.findClosestXAxisIndex(currentX, pointData.data);
+            return pointData.data[index].tooltipInfo;
+        }
+
+        private renderTooltip(selection: D3.UpdateSelection, xScale: D3.Scale.OrdinalScale): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                return (<AreaRangeChartDataPoint>tooltipEvent.data.data[0]).tooltipInfo;
-            });
+                let pointX: number = tooltipEvent.elementCoordinates[0];
+                return AreaRangeChart.getTooltipInfoByPointX(tooltipEvent.data, xScale, pointX);
+            }, true);
         }
 
         private getLegend(series: AreaRangeChartSeries[], title: string): LegendData {
@@ -584,6 +607,59 @@ module powerbi.visuals.samples {
                 dataPoints: legendItems,
                 title: title,
             };
+        }
+
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
+            let instances: VisualObjectInstance[] = [],
+                settings: AreaRangeChartSettings;
+
+            if (!this.dataView) {
+                return instances;
+            }
+
+            settings = this.parseSettings(this.dataView);
+
+            switch (options.objectName) {
+                case "general":
+                    let general: VisualObjectInstance = {
+                        objectName: "general",
+                        displayName: "general",
+                        selector: null,
+                        properties: {
+                        }
+                    };
+
+                    instances.push(general);
+                    break;
+
+                case "dataPoint":
+                    let dataPoint: VisualObjectInstance = {
+                        objectName: "dataPoint",
+                        displayName: "dataPoint",
+                        selector: null,
+                        properties: {
+                            fill: settings.fillColor
+                        }
+                    };
+
+                    instances.push(dataPoint);
+                    break;
+
+                case "labels":
+                    let labels: VisualObjectInstance = {
+                        objectName: "labels",
+                        displayName: "labels",
+                        selector: null,
+                        properties: {
+                            labelPrecision: settings.precision
+                        }
+                    };
+
+                    instances.push(labels);
+                    break;
+            }
+
+            return instances;
         }
     }
 }
