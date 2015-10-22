@@ -111,12 +111,12 @@ module powerbi.visuals.samples {
                 {
                     name: AreaRangeChart.RoleNames.Lower,
                     kind: powerbi.VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter("Lower")
+                    displayName: 'Y1'
                 },
                 {
                     name: AreaRangeChart.RoleNames.Upper,
                     kind: powerbi.VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter("Upper")
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Y2")
                 },
             ],
             dataViewMappings: [
@@ -333,17 +333,17 @@ module powerbi.visuals.samples {
             return settings;
         }
         
-        private getTooltipData(categoryColumn: DataViewCategoricalColumn, categoryIndex: number, y0: number, y1: number, settings: AreaRangeChartSettings, valueFormatter: IValueFormatter): TooltipDataItem[] {
+        private getTooltipData(categoryColumn: DataViewCategoricalColumn, y0: any, y1: any, categoryIndex: number, valueFormatter: IValueFormatter): TooltipDataItem[] {
             return [
                 {
                     displayName: categoryColumn.source.displayName,
                     value: categoryColumn.values[categoryIndex],
                 }, {
-                    displayName: 'Min:',
-                    value: valueFormatter.format(y0)
+                    displayName: y0.source.displayName,
+                    value: valueFormatter.format(y0.values[categoryIndex])
                 }, {
-                    displayName: 'Max:',
-                    value: valueFormatter.format(y1)
+                    displayName: y1.source.displayName,
+                    value: valueFormatter.format(y1.values[categoryIndex])
                 }];
         }        
         
@@ -371,7 +371,7 @@ module powerbi.visuals.samples {
             let categoryColumn = dataView.categorical.categories[0];
             categories = categoryColumn.values;
             valueColumns = dataView.categorical.values;
-            let grouped = valueColumns.grouped();
+            let grouped: DataViewValueColumnGroup[] = valueColumns.grouped();
             let lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
             let upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
             let colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.fill, settings.fillColor);
@@ -382,14 +382,14 @@ module powerbi.visuals.samples {
             }
 
             valueFormatter = ValueFormatter.create({
-                format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, AreaRangeChart.properties.general.formatString),
+                format: ValueFormatter.getFormatString(valueColumns[0].source, AreaRangeChart.properties.general.formatString),
                 value: valueColumns[0],
                 precision: settings.precision
             });
 
             let series: AreaRangeChartSeries[] = [];
             for (let seriesIndex = 0; seriesIndex < grouped.length; seriesIndex++) {
-                let group = grouped[seriesIndex];
+                let group: DataViewValueColumnGroup = grouped[seriesIndex];
                 let color = colorHelper.getColorForSeriesValue(group.objects, valueColumns.identityFields, group.name);
                 let id = SelectionIdBuilder
                     .builder()
@@ -398,8 +398,12 @@ module powerbi.visuals.samples {
 
                 let dataPoints: AreaRangeChartDataPoint[] = [];
                 for (let categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
-                    let y0 = group.values[lowerMeasureIndex].values[categoryIndex];
-                    let y1 = group.values[upperMeasureIndex].values[categoryIndex];
+                    let y0_group = group.values[lowerMeasureIndex];
+                    let y1_group = group.values[upperMeasureIndex];
+
+                    let y0 = y0_group.values[categoryIndex];
+                    let y1 = y1_group.values[categoryIndex];
+
                     let pointId = SelectionIdBuilder
                         .builder()
                         .withSeries(valueColumns, group)
@@ -410,7 +414,7 @@ module powerbi.visuals.samples {
                         x: categoryIndex,
                         y0: y0,
                         y1: y1,
-                        tooltipInfo: this.getTooltipData(categoryColumn, categoryIndex, y0, y1, settings, valueFormatter),
+                        tooltipInfo: this.getTooltipData(categoryColumn, y0_group, y1_group, categoryIndex, valueFormatter),
                         identity: pointId,
                         selected: false,
                     });
@@ -611,21 +615,22 @@ module powerbi.visuals.samples {
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
             let instances: VisualObjectInstance[] = [],
-                settings: AreaRangeChartSettings;
+                settings: AreaRangeChartSettings,
+                dataView = this.dataView;
 
-            if (!this.dataView) {
+            if (!dataView) {
                 return instances;
             }
-
-            settings = this.parseSettings(this.dataView);
+            settings = this.parseSettings(dataView);
 
             switch (options.objectName) {
                 case "general":
                     let general: VisualObjectInstance = {
                         objectName: "general",
-                        displayName: "general",
+                        displayName: "General",
                         selector: null,
                         properties: {
+                            fill: { solid: { color: settings && settings.fillColor ? settings.fillColor : AreaRangeChart.DefaultSettings.fillColor } }
                         }
                     };
 
