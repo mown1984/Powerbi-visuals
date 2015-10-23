@@ -162,6 +162,12 @@ module powerbi.visuals.sampleDataViews {
                         values: this.countries,
                         identity: categoryIdentities
                     }],
+                },
+                table: {
+                    columns: [dataViewMetadata.columns[0]],
+                    rows: this.countries.map((item: string) => {
+                        return [item];
+                    })
                 }
             }];
         }

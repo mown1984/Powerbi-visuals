@@ -38,6 +38,7 @@ module powerbi.visuals.samples {
     interface WordCloudText {
         text: string;
         count: number;
+        index: number;
     }
 
     export interface WordCloudData extends IPoint {
@@ -77,6 +78,10 @@ module powerbi.visuals.samples {
         quantityAngles?: number;
         valueFormatter?: IValueFormatter;
         isRotateText: boolean;
+        isBrokenText: boolean;
+        isRemoveStopWords: boolean;
+        stopWords: string;
+        stopWordsArray: string[];
     }
 
     export class WordCloud implements IVisual {
@@ -95,7 +100,21 @@ module powerbi.visuals.samples {
                 maxFontSize: <DataViewObjectPropertyIdentifier> {
                     objectName: "general",
                     propertyName: "maxFontSize"
-                }
+                },
+                isBrokenText: <DataViewObjectPropertyIdentifier> {
+                    objectName: "general",
+                    propertyName: "isBrokenText"
+                },
+            },
+            stopWords: {
+                show: <DataViewObjectPropertyIdentifier> {
+                    objectName: "stopWords",
+                    propertyName: "show"
+                },
+                words: <DataViewObjectPropertyIdentifier> {
+                    objectName: "stopWords",
+                    propertyName: "words"
+                },
             },
             rotateText: {
                 show: <DataViewObjectPropertyIdentifier> {
@@ -128,6 +147,7 @@ module powerbi.visuals.samples {
         };
 
         private static Size: string = "px";
+        private static StopWordsDelemiter: string = ",";
 
         private static Radians: number = Math.PI / 180;
 
@@ -135,6 +155,10 @@ module powerbi.visuals.samples {
             dataRoles: [{
                 name: "Category",
                 kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
+            }, {
+                name: "Values",
+                kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
             }],
             dataViewMappings: [{
@@ -142,11 +166,18 @@ module powerbi.visuals.samples {
                     "Category": {
                         min: 1,
                         max: 1
+                    },
+                    "Values": {
+                        min: 0,
+                        max: 1
                     }
                 }],
                 categorical: {
                     categories: {
                         for: { in: "Category" }
+                    },
+                    values: {
+                        for: {in: "Values"}
                     }
                 }
             }],
@@ -168,6 +199,27 @@ module powerbi.visuals.samples {
                         maxFontSize: {
                             displayName: "Max Font",
                             type: { numeric: true }
+                        },
+                        isBrokenText: {
+                            displayName: "Word-breaking",
+                            type: { bool: true }
+                        },
+                        isRemoveStopWords: {
+                            displayName: "Stop Words",
+                            type: { bool : true }
+                        }
+                    }
+                },
+                stopWords: {
+                    displayName: "Stop Words",
+                    properties: {
+                        show: {
+                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            type: { bool: true }
+                        },
+                        words: {
+                            displayName: "Words",
+                            type: { text: true }
                         }
                     }
                 },
@@ -201,7 +253,23 @@ module powerbi.visuals.samples {
             minAngle: -60,
             maxAngle: 90,
             quantityAngles: 0,
-            isRotateText: true
+            isRotateText: true,
+            isBrokenText: true,
+            isRemoveStopWords: false,
+            stopWordsArray: [
+                "a", "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an",
+                "and", "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot",
+                "could", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get",
+                "got", "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i",
+                "if", "in", "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may",
+                "me", "might", "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often",
+                "on", "only", "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should",
+                "since", "so", "some", "than", "that", "the", "their", "them", "then", "there", "these",
+                "they", "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what",
+                "when", "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet",
+                "you", "your", ".", ",", '"', "", ":", ";", "!", "?"
+            ],
+            stopWords: undefined
         };
 
         private settings: WordCloudSettings;
@@ -269,12 +337,13 @@ module powerbi.visuals.samples {
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0] ||
-                !dataView.categorical.categories[0].values) {
+                !dataView.table ||
+                !dataView.table.rows) {
                 return null;
             }
 
-            let values: string[] = dataView.categorical.categories[0].values,
-                settings: WordCloudSettings = this.parseSettings(dataView, values[0]);
+            let values: string[][] = dataView.table.rows,
+                settings: WordCloudSettings = this.parseSettings(dataView, values[0][0]);
 
             if (settings) {
                 this.settings = settings;
@@ -300,7 +369,11 @@ module powerbi.visuals.samples {
                 minAngle: number,
                 maxAngle: number,
                 quantityAngles: number,
-                isRotateText: boolean = false;
+                isRotateText: boolean = false,
+                isBrokenText: boolean = true,
+                isRemoveStopWords: boolean = true,
+                stopWords: string,
+                stopWordsArray: string[];
 
             minFonSize = this.getNumberFromObjects(
                 objects,
@@ -357,6 +430,27 @@ module powerbi.visuals.samples {
                 value: value
             });
 
+            isBrokenText = DataViewObjects.getValue<boolean>(
+                objects,
+                WordCloud.Properties.general.isBrokenText,
+                WordCloud.DefaultSettings.isBrokenText);
+
+            isRemoveStopWords = DataViewObjects.getValue<boolean>(
+                objects,
+                WordCloud.Properties.stopWords.show,
+                WordCloud.DefaultSettings.isRemoveStopWords);
+
+            stopWords = DataViewObjects.getValue(
+                objects,
+                WordCloud.Properties.stopWords.words,
+                WordCloud.DefaultSettings.stopWords);
+
+            if (typeof stopWords === "string") {
+                stopWordsArray = stopWords.split(WordCloud.StopWordsDelemiter);
+            } else {
+                stopWordsArray = WordCloud.DefaultSettings.stopWordsArray;
+            }
+
             return {
                 minFontSize: minFonSize,
                 maxFontSize: maxFontSize,
@@ -364,7 +458,11 @@ module powerbi.visuals.samples {
                 maxAngle: maxAngle,
                 quantityAngles: quantityAngles,
                 valueFormatter: valueFormatter,
-                isRotateText: isRotateText
+                isRotateText: isRotateText,
+                isBrokenText: isBrokenText,
+                isRemoveStopWords: isRemoveStopWords,
+                stopWords: stopWords,
+                stopWordsArray: stopWordsArray
             };
         }
 
@@ -749,20 +847,16 @@ module powerbi.visuals.samples {
             return context;
         }
 
-        private getReducedText(values: string[]): WordCloudText[] {
-            let brokenStrings: string[] = [];
+        private getReducedText(values: any[][]): WordCloudText[] {
+            let convertedToWordCloudText: WordCloudText[],
+                brokenStrings: WordCloudText[] = [];
 
-            values.forEach((item: string) => {
-                if (typeof item === "string") {
-                    brokenStrings = brokenStrings.concat(item.split(" "));
-                } else {
-                    brokenStrings.push(item);
-                }
-            });
+            convertedToWordCloudText = this.convertValuesToWordCloudText(values);
+            brokenStrings = this.getBrokenWords(convertedToWordCloudText);
 
-            return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: string) => {
+            return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
                 if (!previousValue.some((value: WordCloudText) => {
-                    if (value.text === currentValue) {
+                    if (value.index !== currentValue.index && value.text === currentValue.text) {
                         value.count++;
 
                         return true;
@@ -770,14 +864,63 @@ module powerbi.visuals.samples {
 
                     return false;
                 })) {
-                    previousValue.push({
-                        text: currentValue,
-                        count: 1
-                    });
+                    previousValue.push(currentValue);
                 }
 
                 return previousValue;
             }, []);
+        }
+
+        private convertValuesToWordCloudText(values: any[][]): WordCloudText[] {
+            return values.map((item: any[], index: number) => {
+                if (item[1] && !isNaN(item[1]) && item[1] > 1) {
+                    return <WordCloudText> {
+                        text: item[0],
+                        count: item[1],
+                        index: index
+                    };
+                }
+                
+                return <WordCloudText> {
+                    text: item[0],
+                    count: 1,
+                    index: index
+                };
+            });
+        }
+
+        private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
+            let brokenStrings: WordCloudText[] = [];
+
+            if (!this.settings.isBrokenText) {
+                return words;
+            }
+
+            words.forEach((item: WordCloudText) => {
+                if (typeof item.text === "string") {
+                    let words: string[] = item.text.split(" ");
+
+                    if (this.settings.isRemoveStopWords) {
+                        words = words.filter((value: string) => {
+                            return !this.settings.stopWordsArray.some((removeWord: string) => {
+                                return value.toLocaleLowerCase() === removeWord.toLocaleLowerCase();
+                            });
+                        });
+                    }
+
+                    brokenStrings = brokenStrings.concat(words.map((element: string) => {
+                        return <WordCloudText> {
+                            text: element,
+                            count: item.count,
+                            index: item.index
+                        };
+                    }));
+                } else {
+                    brokenStrings.push(item);
+                }
+            });
+
+            return brokenStrings;
         }
 
         private getWords(values: WordCloudText[]): WordCloudData[] {
@@ -1012,7 +1155,8 @@ module powerbi.visuals.samples {
                         selector: null,
                         properties: {
                             minFontSize: this.settings.minFontSize,
-                            maxFontSize: this.settings.maxFontSize
+                            maxFontSize: this.settings.maxFontSize,
+                            isBrokenText: this.settings.isBrokenText
                         }
                     };
 
@@ -1033,6 +1177,21 @@ module powerbi.visuals.samples {
                     };
 
                     instances.push(rotateText);
+                    break;
+                }
+                case "stopWords": {
+                    let stopWords: VisualObjectInstance = {
+                        objectName: "stopWords",
+                        displayName: "stopWords",
+                        selector: null,
+                        properties: {
+                            show: this.settings.isRemoveStopWords,
+                            words: this.settings.stopWords ||
+                                this.settings.stopWordsArray.join(WordCloud.StopWordsDelemiter)
+                        }
+                    };
+
+                    instances.push(stopWords);
                     break;
                 }
             }
