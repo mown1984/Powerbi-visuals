@@ -144,7 +144,8 @@ module powerbi.visuals.sampleDataViews {
                     columns: [{
                         displayName: "Country",
                         queryName: "Country",
-                        type: powerbi.ValueType.fromDescriptor({ text: true })
+                        type: powerbi.ValueType.fromDescriptor({ text: true }),
+                        roles: { "Values": true }
                     }],
                     objects: {
                         rotateText: {

@@ -290,7 +290,7 @@ module powerbi.visuals {
                 animator: new BaseAnimator()
             }));
             // Word Cloud
-            createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new WordCloud({
+            createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
                 animator: new BaseAnimator()
             }));
         }

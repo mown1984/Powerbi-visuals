@@ -553,6 +553,8 @@ module powerbitests.performanceTestsHelpers {
             case "donutChart":
             case "pieChart":
                 return 100;
+            case "wordCloud":
+                return 10;
             default:
                 return 6;
         }

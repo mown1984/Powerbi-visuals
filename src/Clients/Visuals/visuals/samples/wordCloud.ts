@@ -24,16 +24,10 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts" />
+/// <reference path="../../_references.ts" />
 
-module powerbi.visuals {
+module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
-
-    type D3Element = 
-        D3.UpdateSelection |
-        D3.Selection |
-        D3.Selectors |
-        D3.Transition.Transition;
 
     export enum WordCloudScaleType {
         logn,
@@ -139,17 +133,22 @@ module powerbi.visuals {
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
-                name: "Values",
+                name: "Category",
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
             }],
             dataViewMappings: [{
                 conditions: [{
-                    "Values": {
+                    "Category": {
                         min: 1,
                         max: 1
                     }
-                }]
+                }],
+                categorical: {
+                    categories: {
+                        for: { in: "Category" }
+                    }
+                }
             }],
             objects: {
                 general: {
@@ -197,8 +196,8 @@ module powerbi.visuals {
         };
 
         private static DefaultSettings: WordCloudSettings = {
-            minFontSize: 5,
-            maxFontSize: 20,
+            minFontSize: 20,
+            maxFontSize: 100,
             minAngle: -60,
             maxAngle: 90,
             quantityAngles: 0,
@@ -221,7 +220,7 @@ module powerbi.visuals {
 
         private canvasViewport: IViewport = {
             width: 128,
-            height: 384
+            height: 2048
         };
 
         private root: D3.Selection;
@@ -751,7 +750,17 @@ module powerbi.visuals {
         }
 
         private getReducedText(values: string[]): WordCloudText[] {
-            return values.reduce((previousValue: WordCloudText[], currentValue: string) => {
+            let brokenStrings: string[] = [];
+
+            values.forEach((item: string) => {
+                if (typeof item === "string") {
+                    brokenStrings = brokenStrings.concat(item.split(" "));
+                } else {
+                    brokenStrings.push(item);
+                }
+            });
+
+            return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: string) => {
                 if (!previousValue.some((value: WordCloudText) => {
                     if (value.text === currentValue) {
                         value.count++;
@@ -905,17 +914,10 @@ module powerbi.visuals {
         }
 
         private updateElements(height: number, width: number): void {
-            let shiftToRight: number = this.margin.left + this.viewport.width / 2,
-                shiftToBottom: number = this.margin.top + this.viewport.height / 2;
-
             this.root.attr({
                 "height": height,
                 "width": width
             });
-
-            this.main.attr(
-                "transform",
-                SVGUtil.translate(shiftToRight, shiftToBottom));
         }
 
         private render(wordCloudDataView: WordCloudDataView): void {
@@ -924,7 +926,10 @@ module powerbi.visuals {
             }
 
             this.renderWords(wordCloudDataView);
-            this.scaleMainView(wordCloudDataView);
+
+            if (this.suppressAnimations) {
+                this.scaleMainView(wordCloudDataView);
+            }
         }
 
         private renderWords(wordCloudDataView: WordCloudDataView): void {
@@ -933,7 +938,8 @@ module powerbi.visuals {
                 return;
             }
 
-            let wordsSelection: D3.UpdateSelection,
+            let self: WordCloud = this,
+                wordsSelection: D3.UpdateSelection,
                 wordElements: D3.Selection = this.main
                     .select(WordCloud.Words.selector)
                     .selectAll(WordCloud.Word.selector);
@@ -944,7 +950,11 @@ module powerbi.visuals {
                 .enter()
                 .append("svg:text");
 
-            (<D3.UpdateSelection>this.animation(wordsSelection))
+            (<D3.UpdateSelection> this.animation(wordsSelection, (data: any, index: number) => {
+                if (index === wordCloudDataView.data.length - 1) {
+                    self.scaleMainView(wordCloudDataView);
+                }
+            }))
                 .attr("transform", (item: WordCloudData) => {
                     return `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`;
                 })
@@ -970,18 +980,21 @@ module powerbi.visuals {
             let scale: number = 1,
                 width: number = this.viewport.width,
                 height: number = this.viewport.height,
-                width2: number = width /2,
-                height2: number = height / 2,
+                mainSVGRect: SVGRect = this.main.node()["getBBox"](),
+                width2: number = Math.abs(mainSVGRect.x) + this.margin.left + (width - mainSVGRect.width) / 2,
+                height2: number =  Math.abs(mainSVGRect.y) + this.margin.top / 2 + (height - mainSVGRect.height) / 2,
                 leftBorder: IPoint = wordCloudDataView.leftBorder,
-                rightBorder: IPoint = wordCloudDataView.rightBorder;
+                rightBorder: IPoint = wordCloudDataView.rightBorder,
+                scaleByX: number,
+                scaleByY: number;
 
-            scale = Math.min(
-                (width / Math.abs(leftBorder.x - rightBorder.x)),
-                (height / Math.abs(leftBorder.y - rightBorder.y)));
+            scaleByX = width / Math.abs(leftBorder.x - rightBorder.x);
+            scaleByY = height / Math.abs(leftBorder.y - rightBorder.y);
 
-            this.main.attr("transform", () => {
-                return `${SVGUtil.translate(width2, height2)}scale(${scale})`;
-            });
+            scale = Math.min(scaleByX, scaleByY);
+
+            (<D3.Selection> this.animation(this.main))
+                .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
@@ -1027,14 +1040,15 @@ module powerbi.visuals {
             return instances;
         }
 
-        private animation(element: D3Element): D3Element {
+        private animation(element: D3.Selection, callback?: (data: any, index: number) => void): D3.Transition.Transition | D3.Selection {
             if (this.suppressAnimations) {
                 return element;
             }
 
-            return (<D3.Selection> element)
+            return element
                 .transition()
-                .duration(this.durationAnimations);
+                .duration(this.durationAnimations)
+                .each("end", callback);
         }
 
         public destroy(): void {

@@ -341,7 +341,7 @@ module powerbi.visuals.plugins {
 
     export var wordCloud: IVisualPlugin = {
         name: "wordCloud",
-        capabilities: WordCloud.capabilities,
-        create: () => new WordCloud()
+        capabilities: samples.WordCloud.capabilities,
+        create: () => new samples.WordCloud()
     };
 }
