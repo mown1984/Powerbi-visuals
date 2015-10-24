@@ -59,7 +59,7 @@ module powerbi.visuals.sampleDataViews {
         
         public getDataViews(): DataView[] {
 
-            var fieldExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: "table1", column: "category" });
+            var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
 
             var categoryValues = _.map(_.range(0, this.categoryCount), (n) => n.toString());
 
