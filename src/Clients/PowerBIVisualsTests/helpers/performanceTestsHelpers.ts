@@ -554,7 +554,7 @@ module powerbitests.performanceTestsHelpers {
             case "pieChart":
                 return 100;
             case "wordCloud":
-                return 10;
+                return 25;
             default:
                 return 6;
         }

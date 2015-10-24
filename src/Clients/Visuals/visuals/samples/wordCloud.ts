@@ -57,7 +57,7 @@ module powerbi.visuals.samples {
         y1: number;
         colour: string;
     }
-    
+
     export interface WordCloudDataView {
         data: WordCloudData[];
         leftBorder: IPoint;
@@ -252,7 +252,7 @@ module powerbi.visuals.samples {
             maxFontSize: 100,
             minAngle: -60,
             maxAngle: 90,
-            quantityAngles: 0,
+            quantityAngles: 2,
             isRotateText: true,
             isBrokenText: true,
             isRemoveStopWords: false,
@@ -336,16 +336,22 @@ module powerbi.visuals.samples {
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
-                !dataView.categorical.categories[0]) {
+                !dataView.categorical.categories[0] ||
+                !dataView.categorical.categories[0].values ||
+                !dataView.categorical.categories[0].values.length ||
+                !(dataView.categorical.categories[0].values.length > 0)) {
                 return null;
             }
 
             let text: string[] = dataView.categorical.categories[0].values,
-                settings: WordCloudSettings = this.parseSettings(dataView, text[0]);
+                settings: WordCloudSettings = this.parseSettings(dataView, text[0]),
+                frequencies: number[];
 
-            let frequencies: number[];
-            if (!_.isEmpty(dataView.categorical.values))
+            if (!_.isEmpty(dataView.categorical.values) && 
+                !_.isEmpty(dataView.categorical.values[0]) &&
+                !_.isEmpty(dataView.categorical.values[0].values)) {
                 frequencies = dataView.categorical.values[0].values;
+            }
 
             if (settings) {
                 this.settings = settings;
@@ -499,6 +505,10 @@ module powerbi.visuals.samples {
                 surface: number[] = [],
                 borders: IPoint[] = null;
 
+            if (!words || !(words.length > 0)) {
+                return null;
+            }
+
             for (let i: number; i < (this.viewport.width >> 5) * this.viewport.height; i++) {
                 surface[i] = 0;
             }
@@ -519,6 +529,10 @@ module powerbi.visuals.samples {
                 }
             });
 
+            borders = borders
+                ? borders
+                : [];
+
             return {
                 data: wordsForDraw,
                 leftBorder: borders[0],
@@ -530,7 +544,7 @@ module powerbi.visuals.samples {
             if (borders && borders.length === 2) {
                 let leftBorder: IPoint = borders[0],
                     rightBorder: IPoint = borders[1];
-                
+
                 if (word.x + word.x0 < leftBorder.x) {
                     leftBorder.x = word.x + word.x0;
                 }
@@ -615,7 +629,7 @@ module powerbi.visuals.samples {
                 }
 
                 context.translate((x + (widthOfWord >> 1)), (y + (heightOfWord >> 1)));
-                
+
                 if (currentWordData.rotate) {
                     context.rotate(currentWordData.rotate * WordCloud.Radians);
                 }
@@ -874,18 +888,19 @@ module powerbi.visuals.samples {
         }
 
         private convertValuesToWordCloudText(text: string[], frequencies?: number[]): WordCloudText[] {
-            let textObjects = [];
-            for (let i = 0; i < text.length; i++) {
-                let phrase = text[i];
-                let count = frequencies ? frequencies[i] : 1;
-                textObjects.push(<WordCloudText>{
-                    text: phrase,
-                    count: count,
-                    index: i,
-                });
-            }
+            return text.map((item: string, index: number) => {
+                let frequency: number = 1;
 
-            return textObjects;
+                if (frequencies && frequencies[index] && !isNaN(frequencies[index])) {
+                    frequency = frequencies[index];
+                }
+
+                return {
+                    text: item,
+                    count: frequency,
+                    index: index
+                };
+            });
         }
 
         private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
@@ -927,6 +942,10 @@ module powerbi.visuals.samples {
                 minValue: number = 0,
                 maxValue: number = 0,
                 valueFormatter: IValueFormatter = this.settings.valueFormatter;
+
+            if (!values || !(values.length > 1)) {
+                return [];
+            }
 
             sortedValues = values.sort((a: WordCloudText, b: WordCloudText) => {
                 return b.count - a.count;
