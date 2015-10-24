@@ -336,14 +336,16 @@ module powerbi.visuals.samples {
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
-                !dataView.categorical.categories[0] ||
-                !dataView.table ||
-                !dataView.table.rows) {
+                !dataView.categorical.categories[0]) {
                 return null;
             }
 
-            let values: string[][] = dataView.table.rows,
-                settings: WordCloudSettings = this.parseSettings(dataView, values[0][0]);
+            let text: string[] = dataView.categorical.categories[0].values,
+                settings: WordCloudSettings = this.parseSettings(dataView, text[0]);
+
+            let frequencies: number[];
+            if (!_.isEmpty(dataView.categorical.values))
+                frequencies = dataView.categorical.values[0].values;
 
             if (settings) {
                 this.settings = settings;
@@ -351,10 +353,10 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            return this.computeTextPositions(this.getWords(this.getReducedText(values)));
+            return this.computeTextPositions(this.getWords(this.getReducedText(text, frequencies)));
         }
 
-        private parseSettings(dataView: DataView, value: string): WordCloudSettings {
+        private parseSettings(dataView: DataView, value: any): WordCloudSettings {
             if (!dataView ||
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
@@ -847,11 +849,11 @@ module powerbi.visuals.samples {
             return context;
         }
 
-        private getReducedText(values: any[][]): WordCloudText[] {
+        private getReducedText(text: string[], frequencies?: number[]): WordCloudText[] {
             let convertedToWordCloudText: WordCloudText[],
                 brokenStrings: WordCloudText[] = [];
 
-            convertedToWordCloudText = this.convertValuesToWordCloudText(values);
+            convertedToWordCloudText = this.convertValuesToWordCloudText(text, frequencies);
             brokenStrings = this.getBrokenWords(convertedToWordCloudText);
 
             return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
@@ -871,22 +873,19 @@ module powerbi.visuals.samples {
             }, []);
         }
 
-        private convertValuesToWordCloudText(values: any[][]): WordCloudText[] {
-            return values.map((item: any[], index: number) => {
-                if (item[1] && !isNaN(item[1]) && item[1] > 1) {
-                    return <WordCloudText> {
-                        text: item[0],
-                        count: item[1],
-                        index: index
-                    };
-                }
-                
-                return <WordCloudText> {
-                    text: item[0],
-                    count: 1,
-                    index: index
-                };
-            });
+        private convertValuesToWordCloudText(text: string[], frequencies?: number[]): WordCloudText[] {
+            let textObjects = [];
+            for (let i = 0; i < text.length; i++) {
+                let phrase = text[i];
+                let count = frequencies ? frequencies[i] : 1;
+                textObjects.push(<WordCloudText>{
+                    text: phrase,
+                    count: count,
+                    index: i,
+                });
+            }
+
+            return textObjects;
         }
 
         private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
