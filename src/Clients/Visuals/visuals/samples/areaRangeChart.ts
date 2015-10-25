@@ -56,7 +56,6 @@ module powerbi.visuals.samples {
         position?: LegendPosition;
     }
 
-
     export interface AreaRangeChartSettings {
         displayName?: string;
         fillColor?: string;
@@ -266,7 +265,6 @@ module powerbi.visuals.samples {
         private scaleType: string = powerbi.axisScale.linear;
 
         public constructor(options?: AreaRangeChartConstructorOptions) {
-            let axisModule;
             if (options) {
                 this.animator = options.animator;
             }
@@ -699,7 +697,6 @@ module powerbi.visuals.samples {
                 title: title,
             };
         }
-
 
         private enumerateLegend(enumeration: ObjectEnumerationBuilder): ObjectEnumerationBuilder {
             let data = this.data;
