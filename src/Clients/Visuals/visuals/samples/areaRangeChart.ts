@@ -31,7 +31,6 @@ module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
-    import axisScale = powerbi.axisScale;
 
     export interface AreaRangeChartConstructorOptions {
         animator?: IGenericAnimator;
@@ -50,10 +49,20 @@ module powerbi.visuals.samples {
         y1: number;
     }
 
+    export interface AreaRangeChartLegend extends DataViewObject {
+        show?: boolean;
+        showTitle?: boolean;
+        titleText?: string;
+        position?: LegendPosition;
+    }
+
+
     export interface AreaRangeChartSettings {
         displayName?: string;
         fillColor?: string;
         precision: number;
+        legend?: AreaRangeChartLegend;
+        colors?: IColorPalette;
     }
 
     export interface AreaRangeChartData {
@@ -68,21 +77,26 @@ module powerbi.visuals.samples {
 
     export class AreaRangeChart implements IVisual {
 
-        private static properties: any = {
+        private static properties = {
             general: {
-                formatString: <DataViewObjectPropertyIdentifier> {
+                formatString: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "formatString"
                 }
             },
+            legend: {
+                show: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'show' },
+                position: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'position' },
+                showTitle: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'showTitle' },
+                titleText: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'titleText' },
+            },
             dataPoint: {
-                fill: <DataViewObjectPropertyIdentifier> {
-                    objectName: "dataPoint",
-                    propertyName: "fill"
-                }
+                defaultColor: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'defaultColor' },
+                fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
+                showAllDataPoints: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'showAllDataPoints' },
             },
             labels: {
-                labelPrecision: <DataViewObjectPropertyIdentifier> {
+                labelPrecision: <DataViewObjectPropertyIdentifier>{
                     objectName: "labels",
                     propertyName: "labelPrecision"
                 }
@@ -155,6 +169,44 @@ module powerbi.visuals.samples {
                         },
                     },
                 },
+                legend: {
+                    displayName: data.createDisplayNameGetter('Visual_Legend'),
+                    properties: {
+                        show: {
+                            displayName: data.createDisplayNameGetter('Visual_Show'),
+                            type: { bool: true }
+                        },
+                        position: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
+                            type: { formatting: { legendPosition: true } }
+                        },
+                        showTitle: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
+                            type: { bool: true }
+                        },
+                        titleText: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendTitleText'),
+                            type: { text: true }
+                        }
+                    }
+                },
+                dataPoint: {
+                    displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                    properties: {
+                        defaultColor: {
+                            displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
+                            type: { fill: { solid: { color: true } } }
+                        },
+                        showAllDataPoints: {
+                            displayName: data.createDisplayNameGetter('Visual_DataPoint_Show_All'),
+                            type: { bool: true }
+                        },
+                        fill: {
+                            displayName: data.createDisplayNameGetter('Visual_Fill'),
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
                 label: {
                     displayName: data.createDisplayNameGetter("Label"),
                     properties: {
@@ -170,8 +222,8 @@ module powerbi.visuals.samples {
         private static VisualClassName = 'areaRangeChart';
 
         private static Chart: ClassAndSelector = createClassAndSelector('chart');
-        private static Area:  ClassAndSelector = createClassAndSelector('area');
-        private static Axis:  ClassAndSelector = createClassAndSelector('axis');        
+        private static Area: ClassAndSelector = createClassAndSelector('area');
+        private static Axis: ClassAndSelector = createClassAndSelector('axis');
 
         private static DimmedFillOpacity = 0.5;
         private static FillOpacity = 0.9;
@@ -187,9 +239,16 @@ module powerbi.visuals.samples {
         private margin: IMargin;
         private legend: ILegend;
 
+        private data: AreaRangeChartData;
+
         private static DefaultSettings: AreaRangeChartSettings = {
             displayName: "Area Range Chart",
-            precision: 2
+            precision: 2,
+            legend: {
+                show: true,
+                position: LegendPosition.Top,
+                showTitle: true,
+            }
         };
 
         private static DefaultMargin: IMargin = {
@@ -204,7 +263,10 @@ module powerbi.visuals.samples {
         private axisX: D3.Selection;
         private axisY: D3.Selection;
 
+        private scaleType: string = powerbi.axisScale.linear;
+
         public constructor(options?: AreaRangeChartConstructorOptions) {
+            let axisModule;
             if (options) {
                 this.animator = options.animator;
             }
@@ -248,7 +310,7 @@ module powerbi.visuals.samples {
             let dataView = this.dataView = options.dataViews[0];
 
             this.setSize(options.viewport);
-            let data = this.converter(dataView, this.colors);
+            let data = this.data = this.converter(dataView, this.colors);
 
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, options.suppressAnimations);
             this.render(data, duration);
@@ -265,7 +327,11 @@ module powerbi.visuals.samples {
             this.renderAxis(data, duration);
             this.renderChart(data, duration);
 
-            this.legend.changeOrientation(LegendPosition.Top);
+            if (data.settings.legend) {
+                LegendData.update(legendData, data.settings.legend);
+                this.legend.changeOrientation(data.settings.legend.position);
+            }
+
             this.legend.drawLegend(legendData, this.viewport);
         }
 
@@ -311,13 +377,33 @@ module powerbi.visuals.samples {
                 AreaRangeChart.properties.labels.labelPrecision,
                 AreaRangeChart.DefaultSettings.precision);
 
-            //if (precision <= this.minPrecision) {
-            //    return this.minPrecision;
-            //}
-
             return precision;
         }
-        
+
+        private getLegendSettings(objects: DataViewObjects): DataViewObject {
+            let legend: any = objects["legend"];
+
+            legend.show = DataViewObjects.getValue(objects,
+                AreaRangeChart.properties.legend.show,
+                AreaRangeChart.DefaultSettings.legend.show)
+            legend.position = DataViewObjects.getValue(objects,
+                AreaRangeChart.properties.legend.position,
+                AreaRangeChart.DefaultSettings.legend.position)
+            legend.showTitle = DataViewObjects.getValue(objects,
+                AreaRangeChart.properties.legend.showTitle,
+                AreaRangeChart.DefaultSettings.legend.showTitle)
+            legend.titleText = DataViewObjects.getValue(objects,
+                AreaRangeChart.properties.legend.titleText,
+                AreaRangeChart.DefaultSettings.legend.titleText);
+
+            return legend;
+        }
+
+        private getDataColorsSettings(objects: DataViewObjects): IColorPalette {
+            let legend: any = objects["dataPoints"];
+            return legend;
+        }
+
         private parseSettings(dataView: DataView): AreaRangeChartSettings {
             let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
                 objects: DataViewObjects;
@@ -329,10 +415,13 @@ module powerbi.visuals.samples {
 
             if (objects) {
                 settings.precision = this.getPrecision(objects);
+
+                settings.legend = this.getLegendSettings(objects);
+                settings.colors = this.getDataColorsSettings(objects);
             }
             return settings;
         }
-        
+
         private getTooltipData(categoryColumn: DataViewCategoricalColumn, y0: any, y1: any, categoryIndex: number, valueFormatter: IValueFormatter): TooltipDataItem[] {
             return [
                 {
@@ -345,8 +434,8 @@ module powerbi.visuals.samples {
                     displayName: y1.source.displayName,
                     value: valueFormatter.format(y1.values[categoryIndex])
                 }];
-        }        
-        
+        }
+
         public converter(dataView: DataView, colors: IDataColorPalette): AreaRangeChartData {
             let settings: AreaRangeChartSettings,
                 categories: any[],
@@ -374,7 +463,7 @@ module powerbi.visuals.samples {
             let grouped: DataViewValueColumnGroup[] = valueColumns.grouped();
             let lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
             let upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
-            let colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.fill, settings.fillColor);
+            let colorHelper = new ColorHelper(this.colors, AreaRangeChart.properties.dataPoint.fill, settings.fillColor);
             let hasDynamicSeries = !!valueColumns.source;
 
             if (lowerMeasureIndex < 0 || upperMeasureIndex < 0) {
@@ -443,7 +532,7 @@ module powerbi.visuals.samples {
 
         private calculateYDomain(valueColumns: DataViewValueColumns, lowerMeasureIndex: number, upperMeasureIndex: number): number[] {
             let min = 0,
-               max = 0;
+                max = 0;
             for (let i = 0; i < valueColumns.length; i++) {
                 let range = AxisHelper.getRangeForColumn(valueColumns[i]);
                 if (range.min < min) {
@@ -460,8 +549,6 @@ module powerbi.visuals.samples {
         private getXAxisProperties(categoryColumn: DataViewCategoricalColumn): IAxisProperties {
             let xDomain = _.range(0, categoryColumn.values.length);
 
-            //let isScalar = !AxisHelper.isOrdinal(categoryColumn.source.type);
-            //let categoryThickness = this.viewport.width / xDomain.length;
             let categoryThickness = this.viewport.width / (xDomain.length + (CartesianChart.OuterPaddingRatio * 2));
             categoryThickness = Math.max(categoryThickness, CartesianChart.MinOrdinalRectThickness);
 
@@ -469,15 +556,15 @@ module powerbi.visuals.samples {
                 pixelSpan: this.viewport.width,
                 dataDomain: xDomain,
                 metaDataColumn: categoryColumn.source,
-                formatStringProp: AreaRangeChart.properties.formatString,
+                formatStringProp: AreaRangeChart.properties.general.formatString,
                 outerPadding: 0,
-                isScalar: false, //isScalar,
+                isScalar: false,
                 isVertical: false,
                 useTickIntervalForDisplayUnits: true,
                 getValueFn: (index, type) => categoryColumn.values[index],
-                categoryThickness: categoryThickness, //CartesianChart.getCategoryThickness(data.series, origCatgSize, this.getAvailableWidth(), xDomain, isScalar),
+                categoryThickness: categoryThickness,
                 isCategoryAxis: true,
-                scaleType: axisScale.linear,
+                scaleType: this.scaleType,
             });
 
             return xAxisProperties;
@@ -491,13 +578,13 @@ module powerbi.visuals.samples {
                 pixelSpan: this.viewport.height,
                 dataDomain: yDomain,
                 metaDataColumn: grouped[0].values[lowerMeasureIndex].source,
-                formatStringProp: AreaRangeChart.properties.formatString,
+                formatStringProp: AreaRangeChart.properties.general.formatString,
                 outerPadding: 0,
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: false,
-                scaleType: axisScale.linear,
+                scaleType: this.scaleType,
             });
 
             return yAxisProperties;
@@ -544,7 +631,7 @@ module powerbi.visuals.samples {
                 .attr('stroke', (d: AreaRangeChartSeries) => d.color)
                 .attr('d', (d: AreaRangeChartSeries) => area(d.data))
                 .style('fill-opacity', AreaRangeChart.DimmedFillOpacity)
-                .on('click', function (d: AreaRangeChartSeries) {
+                .on('click', function(d: AreaRangeChartSeries) {
                     sm.select(d.identity).then(ids => {
                         if (ids.length > 0) {
                             selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
@@ -613,58 +700,68 @@ module powerbi.visuals.samples {
             };
         }
 
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let instances: VisualObjectInstance[] = [],
-                settings: AreaRangeChartSettings,
-                dataView = this.dataView;
 
-            if (!dataView) {
-                return instances;
+        private enumerateLegend(enumeration: ObjectEnumerationBuilder): ObjectEnumerationBuilder {
+            let data = this.data;
+            if (!data) {
+                return;
             }
-            settings = this.parseSettings(dataView);
+
+            let legendObjectProperties: DataViewObjects = { legend: data.settings.legend };
+
+            let show = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.show, this.legend.isVisible());
+            let showTitle = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.showTitle, true);
+            let titleText = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.titleText, this.data.legendData.title);
+
+            enumeration.pushInstance({
+                selector: null,
+                objectName: 'legend',
+                properties: {
+                    show: show,
+                    position: LegendPosition[this.legend.getOrientation()],
+                    showTitle: showTitle,
+                    titleText: titleText
+                }
+            });
+        }
+
+        private enumerateDataPoints(enumeration: ObjectEnumerationBuilder): ObjectEnumerationBuilder {
+            let data = this.data;
+            if (!data)
+                return;
+
+            let series = data.series;
+
+            for (let i = 0; i < series.length; i++) {
+                let item = series[i];
+
+                let color = item.color;
+                let selector = item.identity.getSelector();
+                let isSingleSeries = !!selector.data;
+
+                enumeration.pushInstance({
+                    objectName: 'dataPoint',
+                    displayName: item.name,
+                    selector: ColorHelper.normalizeSelector(selector, isSingleSeries),
+                    properties: {
+                        fill: { solid: { color: color } }
+                    },
+                });
+            }
+        }
+
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+            let enumeration = new ObjectEnumerationBuilder();
 
             switch (options.objectName) {
-                case "general":
-                    let general: VisualObjectInstance = {
-                        objectName: "general",
-                        displayName: "General",
-                        selector: null,
-                        properties: {
-                            fill: { solid: { color: settings && settings.fillColor ? settings.fillColor : AreaRangeChart.DefaultSettings.fillColor } }
-                        }
-                    };
-
-                    instances.push(general);
+                case 'legend':
+                    this.enumerateLegend(enumeration);
                     break;
-
-                case "dataPoint":
-                    let dataPoint: VisualObjectInstance = {
-                        objectName: "dataPoint",
-                        displayName: "dataPoint",
-                        selector: null,
-                        properties: {
-                            fill: settings.fillColor
-                        }
-                    };
-
-                    instances.push(dataPoint);
-                    break;
-
-                case "labels":
-                    let labels: VisualObjectInstance = {
-                        objectName: "labels",
-                        displayName: "labels",
-                        selector: null,
-                        properties: {
-                            labelPrecision: settings.precision
-                        }
-                    };
-
-                    instances.push(labels);
+                case 'dataPoint':
+                    this.enumerateDataPoints(enumeration);
                     break;
             }
-
-            return instances;
+            return enumeration.complete();
         }
     }
 }
