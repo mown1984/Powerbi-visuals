@@ -385,13 +385,13 @@ module powerbi.visuals.samples {
 
             legend.show = DataViewObjects.getValue(objects,
                 AreaRangeChart.properties.legend.show,
-                AreaRangeChart.DefaultSettings.legend.show)
+                AreaRangeChart.DefaultSettings.legend.show);
             legend.position = DataViewObjects.getValue(objects,
                 AreaRangeChart.properties.legend.position,
-                AreaRangeChart.DefaultSettings.legend.position)
+                AreaRangeChart.DefaultSettings.legend.position);
             legend.showTitle = DataViewObjects.getValue(objects,
                 AreaRangeChart.properties.legend.showTitle,
-                AreaRangeChart.DefaultSettings.legend.showTitle)
+                AreaRangeChart.DefaultSettings.legend.showTitle);
             legend.titleText = DataViewObjects.getValue(objects,
                 AreaRangeChart.properties.legend.titleText,
                 AreaRangeChart.DefaultSettings.legend.titleText);
