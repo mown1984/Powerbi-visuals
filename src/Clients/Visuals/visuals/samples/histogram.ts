@@ -24,9 +24,9 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts" />
+/// <reference path="../../_references.ts" />
 
-module powerbi.visuals {
+module powerbi.visuals.samples {
     import VisualDataRoleKind = powerbi.VisualDataRoleKind;
     import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
