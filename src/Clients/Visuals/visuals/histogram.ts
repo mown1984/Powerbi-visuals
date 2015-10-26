@@ -30,6 +30,7 @@ module powerbi.visuals {
     import VisualDataRoleKind = powerbi.VisualDataRoleKind;
     import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
 
     type D3Element = 
         D3.UpdateSelection |
@@ -240,7 +241,6 @@ module powerbi.visuals {
         };
 
         private durationAnimations: number = 200;
-        private suppressAnimations: boolean = false;
 
         private viewport: IViewport;
         private dataView: DataView;
@@ -258,6 +258,8 @@ module powerbi.visuals {
 
         private histogramDataView: HistogramDataView;
 
+        private animator: IGenericAnimator;
+
         constructor(histogramConstructorOptions?: HistogramConstructorOptions) {
             if (histogramConstructorOptions) {
                 if (histogramConstructorOptions.svg) {
@@ -265,7 +267,7 @@ module powerbi.visuals {
                 }
 
                 if (histogramConstructorOptions.animator) {
-                    this.durationAnimations = histogramConstructorOptions.animator.getDuration();
+                    this.animator = histogramConstructorOptions.animator;
                 }
 
                 this.margin = histogramConstructorOptions.margin || this.margin;
@@ -490,7 +492,9 @@ module powerbi.visuals {
 
             dataView = this.dataView = visualUpdateOptions.dataViews[0];
 
-            this.suppressAnimations = Boolean(visualUpdateOptions.suppressAnimations);
+            this.durationAnimations = getAnimationDuration(
+                this.animator,
+                visualUpdateOptions.suppressAnimations);
 
             this.setSize(visualUpdateOptions.viewport);
 
@@ -622,10 +626,6 @@ module powerbi.visuals {
         }
 
         private animation(element: D3Element): D3Element {
-            if (this.suppressAnimations) {
-                return element;
-            }
-
             return (<D3.Selection> element)
                 .transition()
                 .duration(this.durationAnimations);
