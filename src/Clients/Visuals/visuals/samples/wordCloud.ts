@@ -28,6 +28,7 @@
 
 module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
 
     export enum WordCloudScaleType {
         logn,
@@ -275,7 +276,6 @@ module powerbi.visuals.samples {
         private settings: WordCloudSettings;
 
         private durationAnimations: number = 500;
-        private suppressAnimations: boolean = false;
 
         private margin: IMargin = {
             top: 10,
@@ -300,13 +300,15 @@ module powerbi.visuals.samples {
 
         private fontFamily: string;
 
+        private animator: IGenericAnimator;
+
         constructor(constructorOptions?: WordCloudConstructorOptions) {
             if (constructorOptions) {
                 this.svg = constructorOptions.svg || this.svg;
                 this.margin = constructorOptions.margin || this.margin;
 
                 if (constructorOptions.animator) {
-                    this.durationAnimations = constructorOptions.animator.getDuration();
+                    this.animator = constructorOptions.animator;
                 }
             }
         }
@@ -1043,7 +1045,9 @@ module powerbi.visuals.samples {
             let dataView: DataView = visualUpdateOptions.dataViews[0],
                 wordCloudDataView: WordCloudDataView = null;
 
-            this.suppressAnimations = Boolean(visualUpdateOptions.suppressAnimations);
+            this.durationAnimations = getAnimationDuration(
+                this.animator,
+                visualUpdateOptions.suppressAnimations);
 
             this.setSize(visualUpdateOptions.viewport);
 
@@ -1087,10 +1091,6 @@ module powerbi.visuals.samples {
             }
 
             this.renderWords(wordCloudDataView);
-
-            if (this.suppressAnimations) {
-                this.scaleMainView(wordCloudDataView);
-            }
         }
 
         private renderWords(wordCloudDataView: WordCloudDataView): void {
@@ -1217,11 +1217,9 @@ module powerbi.visuals.samples {
             return instances;
         }
 
-        private animation(element: D3.Selection, callback?: (data: any, index: number) => void): D3.Transition.Transition | D3.Selection {
-            if (this.suppressAnimations) {
-                return element;
-            }
-
+        private animation(
+            element: D3.Selection,
+            callback?: (data: any, index: number) => void): D3.Transition.Transition | D3.Selection {
             return element
                 .transition()
                 .duration(this.durationAnimations)
