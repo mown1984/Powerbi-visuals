@@ -150,22 +150,33 @@ module powerbi.visuals.samples {
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
-                name: "Y",
+                name: "Category",
                 kind: VisualDataRoleKind.Grouping,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Category")
+            }, {
+                name: "Values",
+                kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
             }],
             dataViewMappings: [{
                 conditions: [{
-                    "Y": {
+                    "Category": {
                         min: 1,
+                        max: 1
+                    },
+                    "Values": {
+                        min: 0,
                         max: 1
                     }
                 }],
                 categorical: {
                     categories: {
                         bind: {
-                            to: "Y"
+                            to: "Category"
                         }
+                    },
+                    values: {
+                        for: { in: "Values" }
                     }
                 }
             }],
@@ -324,7 +335,8 @@ module powerbi.visuals.samples {
                 data: D3.Layout.Bin[],
                 xScale: D3.Scale.LinearScale,
                 yScale: D3.Scale.LinearScale,
-                valueFormatter: IValueFormatter;
+                valueFormatter: IValueFormatter,
+                frequencies: number[] = [];
 
             if (!dataView ||
                 !dataView.categorical ||
@@ -335,13 +347,21 @@ module powerbi.visuals.samples {
                 return null;
             }
 
+            if (dataView.categorical.values &&
+                dataView.categorical.values[0] &&
+                dataView.categorical.values[0].values) {
+                frequencies = dataView.categorical.values[0].values;
+            }
+
             histogramSettings = this.parseSettings(dataView);
 
             if (!histogramSettings) {
                 return null;
             }
 
-            values = dataView.categorical.categories[0].values;
+            values = this.getValuesByFrequencies(
+                dataView.categorical.categories[0].values,
+                frequencies);
 
             histogramLayout = d3.layout.histogram();
 
@@ -380,6 +400,25 @@ module powerbi.visuals.samples {
                 data: this.getData(values, data, histogramSettings, valueFormatter),
                 formatter: valueFormatter
             };
+        }
+
+        private getValuesByFrequencies(values: number[], frequencies: number[]): number[] {
+            let filteredValues: number[] = [];
+
+            values.forEach((item: number, index: number) => {
+                if (frequencies &&
+                    frequencies[index] &&
+                    !isNaN(frequencies[index]) &&
+                    frequencies[index] > 1) {
+                    for (let i = 0; i < frequencies[index]; i++) {
+                        filteredValues.push(item);
+                    }
+                } else {
+                    filteredValues.push(item);
+                }
+            });
+
+            return filteredValues;
         }
 
         private getData(values: number[], data: D3.Layout.Bin[], settings: HistogramSettings, valueFormatter: IValueFormatter): HistogramData[] {
