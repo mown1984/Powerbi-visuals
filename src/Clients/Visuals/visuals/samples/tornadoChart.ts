@@ -28,6 +28,7 @@
 
 module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
 
     type D3Element = 
         D3.UpdateSelection |
@@ -342,7 +343,6 @@ module powerbi.visuals.samples {
         private maxLabelWidth: number = 55;
         private leftLabelMargin: number = 4;
         private durationAnimations: number = 200;
-        private suppressAnimations: boolean = false;
 
         private InnerTextHeightDelta: number = 2;
 
@@ -386,6 +386,8 @@ module powerbi.visuals.samples {
 
         private isSelectColumn: boolean;
 
+        private animator: IGenericAnimator;
+
         constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions) {
             if (tornadoChartConstructorOptions) {
                 this.svg = tornadoChartConstructorOptions.svg || this.svg;
@@ -394,8 +396,8 @@ module powerbi.visuals.samples {
                 this.columnPadding = tornadoChartConstructorOptions.columnPadding || this.columnPadding;
                 this.currentSections = _.clone(this.sections);
 
-                if (tornadoChartConstructorOptions.animator && tornadoChartConstructorOptions.animator.getDuration) {
-                    this.durationAnimations = tornadoChartConstructorOptions.animator.getDuration();
+                if (tornadoChartConstructorOptions.animator) {
+                    this.animator = tornadoChartConstructorOptions.animator;
                 }
             }
 
@@ -462,7 +464,9 @@ module powerbi.visuals.samples {
 
             this.dataView = visualUpdateOptions.dataViews[0];
 
-            this.suppressAnimations = Boolean(visualUpdateOptions.suppressAnimations);
+            this.durationAnimations = getAnimationDuration(
+                this.animator,
+                visualUpdateOptions.suppressAnimations);
 
             this.tornadoChartDataView = this.converter(this.dataView);
             this.setSize(visualUpdateOptions.viewport);
@@ -697,11 +701,11 @@ module powerbi.visuals.samples {
         private renderMiddleSection(tornadoChartDataView: TornadoChartDataView): void {
             let columnsData: ColumnData[] = this.generateColumnDataBySeries(tornadoChartDataView);
 
-            this.renderColumns(columnsData);
+            this.renderColumns(columnsData, tornadoChartDataView.series.length === 2);
             this.renderLabels(columnsData, tornadoChartDataView.settings);
         }
 
-        private renderColumns(columnsData: ColumnData[]): void {
+        private renderColumns(columnsData: ColumnData[], selectSecondSeries: boolean = false): void {
             let self: TornadoChart = this,
                 columnsSelectionAnimation: D3.UpdateSelection,
                 columnsSelection: D3.UpdateSelection,
@@ -720,12 +724,10 @@ module powerbi.visuals.samples {
                 .attr("y", (item: ColumnData) => item.y)
                 .attr("height", (item: ColumnData) => item.height)
                 .attr("fill", (item: ColumnData) => item.color)
-                .on("click", function () {
-                    self.setOpacity(columnsSelection, self.MinColumnOpacity);
-                    self.setOpacity(d3.select(this), self.MaxOpacity);
+                .on("click", (item: ColumnData, index: number) => {
+                    this.setSelection(index, columnsSelection, selectSecondSeries);
 
-                    self.isSelectColumn = true;
-
+                    this.isSelectColumn = true;
                     d3.event.stopPropagation();
                 })
                 .classed(TornadoChart.Column["class"], true);
@@ -755,6 +757,32 @@ module powerbi.visuals.samples {
                     self.isSelectColumn = false;
                 }
             });
+        }
+
+        private setSelection(
+            currentIndexOfColumn: number,
+            columns: D3.UpdateSelection,
+            selectSecondSeries: boolean = false): void {
+            let columnElements = columns[0],
+                quantityOfColumns: number = columnElements.length,
+                shift: number = Math.floor(quantityOfColumns / 2),
+                index: number = currentIndexOfColumn;
+
+            if (selectSecondSeries) {
+                index = currentIndexOfColumn < shift
+                    ? currentIndexOfColumn + shift
+                    : currentIndexOfColumn - shift;
+            }
+
+            this.setOpacity(columns.filter((item: any) => {
+                return item !== columnElements[index] || item !== columnElements[currentIndexOfColumn];
+            }), this.MinColumnOpacity);
+
+            this.setOpacity(d3.select(columnElements[currentIndexOfColumn]), this.MaxOpacity);
+
+            if (selectSecondSeries) {
+                this.setOpacity(d3.select(columnElements[index]), this.MaxOpacity);
+            }
         }
 
         private renderTooltip(selection: D3.UpdateSelection): void {
@@ -1249,7 +1277,7 @@ module powerbi.visuals.samples {
         }
 
         private animation(element: D3Element): D3Element {
-            if (this.suppressAnimations) {
+            if (!this.durationAnimations) {
                 return element;
             }
 
