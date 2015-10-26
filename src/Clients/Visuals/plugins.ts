@@ -335,7 +335,7 @@ module powerbi.visuals.plugins {
 
     export var tornadoChart: IVisualPlugin = {
         name: "tornadoChart",
-        capabilities: TornadoChart.capabilities,
-        create: () => new TornadoChart()
+        capabilities: samples.TornadoChart.capabilities,
+        create: () => new samples.TornadoChart()
     };
 }

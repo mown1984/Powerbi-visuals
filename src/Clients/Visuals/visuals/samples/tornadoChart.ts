@@ -24,9 +24,9 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+/// <reference path="../../_references.ts"/>
 
-module powerbi.visuals {
+module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
 
     type D3Element = 
@@ -409,7 +409,7 @@ module powerbi.visuals {
 
             this.element = visualInitOptions.element;
 
-            this.colors = style.colorPalette.dataColors
+            this.colors = style.colorPalette.dataColors;
 
             // TODO: we never pass in this as far as I know. Is it a playground thing?
             if (this.svg) {
@@ -432,19 +432,19 @@ module powerbi.visuals {
 
             this.columns = this.main
                 .append("g")
-                .classed(TornadoChart.Columns.class, true);
+                .classed(TornadoChart.Columns["class"], true);
 
             this.axes = this.main
                 .append("g")
-                .classed(TornadoChart.Axes.class, true);
+                .classed(TornadoChart.Axes["class"], true);
 
             this.labels = this.main
                 .append("g")
-                .classed(TornadoChart.Labels.class, true);
+                .classed(TornadoChart.Labels["class"], true);
 
             this.categories = this.main
                 .append("g")
-                .classed(TornadoChart.Categories.class, true);
+                .classed(TornadoChart.Categories["class"], true);
 
             this.legend = createLegend(this.element, false, null);
         }

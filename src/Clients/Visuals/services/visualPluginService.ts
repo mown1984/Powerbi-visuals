@@ -284,7 +284,7 @@ module powerbi.visuals {
                 animator: new BaseAnimator()
             }));
             // Tornado Chart
-            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new TornadoChart({
+            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
                 animator: new BaseAnimator()
             }));
         }
