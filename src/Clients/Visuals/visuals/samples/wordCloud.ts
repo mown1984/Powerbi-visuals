@@ -24,6 +24,9 @@
  *  THE SOFTWARE.
  */
 
+// Word cloud layout by Jason Davies, https://www.jasondavies.com/wordcloud/ https://github.com/jasondavies/d3-cloud
+// Algorithm due to Jonathan Feinberg, http://static.mrfeinberg.com/bv_ch03.pdf
+
 /// <reference path="../../_references.ts" />
 
 module powerbi.visuals.samples {
