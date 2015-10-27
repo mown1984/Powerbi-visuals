@@ -386,7 +386,7 @@ module powerbi.visuals {
         private getDefaultFormatSettings(): CardFormatSetting {
             return {
                 showTitle: true,
-                labelSettings: dataLabelUtils.getDefaultLabelSettings(/* showLabel: */true, Card.DefaultStyle.value.color, 0, undefined),
+                labelSettings: dataLabelUtils.getDefaultLabelSettings(/* showLabel: */true, Card.DefaultStyle.value.color, undefined),
                 wordWrap: false,
             };
         }

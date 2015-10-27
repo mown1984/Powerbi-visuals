@@ -99,6 +99,7 @@ module powerbi.visuals {
         private static MaxSizeRange = 3000;
         private static ClassName = 'scatterChart';
         private static MainGraphicsContextClassName = 'mainGraphicsContext';
+        private static validLabelPositions = [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
 
         private static DotClasses: ClassAndSelector = {
             class: 'dot',
@@ -109,6 +110,7 @@ module powerbi.visuals {
         private element: JQuery;
         private mainGraphicsContext: D3.Selection;
         private mainGraphicsG: D3.Selection;
+        private labelGraphicsContext: D3.Selection;
         private currentViewport: IViewport;
         private style: IVisualStyle;
         private data: ScatterChartData;
@@ -152,6 +154,9 @@ module powerbi.visuals {
                 .classed(ScatterChart.MainGraphicsContextClassName, true);
 
             this.mainGraphicsContext = this.mainGraphicsG.append('svg');
+
+            this.labelGraphicsContext = svg.append('g')
+                .classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
         }
 
         public static converter(dataView: DataView, currentViewport: IViewport, colorPalette: IDataColorPalette, interactivityService?: IInteractivityService, categoryAxisProperties?: DataViewObject, valueAxisProperties?: DataViewObject): ScatterChartData {
@@ -731,28 +736,31 @@ module powerbi.visuals {
             let viewport = this.currentViewport;
             let width = viewport.width - (margin.left + margin.right);
             let height = viewport.height - (margin.top + margin.bottom);
-            let xScale = this.xAxisProperties.scale;
-            let yScale = this.yAxisProperties.scale;
 
             let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
 
             this.mainGraphicsContext.attr('width', width)
                 .attr('height', height);
 
-            let sortedData = dataPoints.sort(function (a, b) {
-                return b.radius.sizeMeasure ? (b.radius.sizeMeasure.values[b.radius.index] - a.radius.sizeMeasure.values[a.radius.index]) : 0;
-            });
-
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
-            let scatterMarkers = this.drawScatterMarkers(sortedData, hasSelection, data.sizeRange, duration);
 
-            if (this.data.dataLabelsSettings.show) {
-                let layout = dataLabelUtils.getScatterChartLabelLayout(xScale, yScale, this.data.dataLabelsSettings, viewport, data.sizeRange);
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.currentViewport, !suppressAnimations, duration);
+            let scatterMarkers: D3.UpdateSelection;
+
+            if (this.hasSizeMeasure()) {
+                // Bubbles must be drawn from largest to smallest.
+                dataPoints = dataPoints.sort(ScatterChart.sortBubbles);
+                scatterMarkers = this.drawScatterMarkers(dataPoints, hasSelection, data.sizeRange, duration);
+                scatterMarkers.order();
             }
             else {
-                dataLabelUtils.cleanDataLabels(this.mainGraphicsG);
+                scatterMarkers = this.drawScatterMarkers(dataPoints, hasSelection, data.sizeRange, duration);
             }
+
+            let labelDataPoints: LabelDataPoint[] = [];
+            if (data.dataLabelsSettings && data.dataLabelsSettings.show || data.dataLabelsSettings.showCategory) {
+                labelDataPoints = this.createLabelDataPoints();
+            }
+
             let behaviorOptions: ScatterBehaviorOptions = undefined;
             if (this.interactivityService) {
                 behaviorOptions = {
@@ -772,7 +780,7 @@ module powerbi.visuals {
 
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
 
-            return { dataPoints: data.dataPoints, behaviorOptions };
+            return { dataPoints: data.dataPoints, behaviorOptions, labelDataPoints: labelDataPoints };
         }
 
         private drawScatterMarkers(scatterData: ScatterChartDataPoint[], hasSelection: boolean, sizeRange: NumberRange, duration: number) {
@@ -874,6 +882,59 @@ module powerbi.visuals {
 
         public getSupportedCategoryAxisType(): string {
             return axisType.scalar;
+        }
+
+        private createLabelDataPoints(): LabelDataPoint[]{
+            let xScale = this.xAxisProperties.scale;
+            let yScale = this.yAxisProperties.scale;
+            let sizeRange = this.data.sizeRange;
+            let labelDataPoints: LabelDataPoint[] = [];
+            let dataPoints = this.data.dataPoints;
+            let labelSettings = this.data.dataLabelsSettings;
+
+            for (let dataPoint of dataPoints) {
+                let text = dataPoint.category;
+
+                let properties: TextProperties = {
+                    text: text,
+                    fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
+                    fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                    fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
+                };
+                let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                
+                labelDataPoints.push({
+                    isPreferred: true,
+                    text: text,
+                    textSize: {
+                        width: textWidth,
+                        height: textHeight,
+                    },
+                    outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
+                    insideFill: NewDataLabelUtils.defaultInsideLabelColor,
+                    isParentRect: false,
+                    parentShape: {
+                        point: {
+                            x: xScale(dataPoint.x),
+                            y: yScale(dataPoint.y),
+                        },
+                        radius: ScatterChart.getBubbleRadius(dataPoint.radius, sizeRange, this.currentViewport),
+                        validPositions: ScatterChart.validLabelPositions,
+                    }
+                });
+            }
+
+            return labelDataPoints;
+        }
+
+        public static sortBubbles(a: ScatterChartDataPoint, b: ScatterChartDataPoint): number {
+            let diff = (b.radius.sizeMeasure.values[b.radius.index] - a.radius.sizeMeasure.values[a.radius.index]);
+            if (diff !== 0)
+                return diff;
+
+            // Tie-break equal size bubbles using identity.
+            return b.identity.getKey().localeCompare(a.identity.getKey());
         }
     }
 }

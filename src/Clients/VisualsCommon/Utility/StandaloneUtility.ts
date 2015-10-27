@@ -55,7 +55,23 @@ module jsCommon {
 
             return (value & flag) === flag;
         }
-        
+
+        /**
+         * Sets a value of a flag without modifying any other flags.
+         */        
+        export function setFlag(value: number, flag: number): number {
+            debug.assert(!!flag, "flag must be specified and nonzero.");
+            return value |= flag;
+        }
+
+        /**
+         * Resets a value of a flag without modifying any other flags.
+         */                
+        export function resetFlag(value: number, flag: number): number {
+            debug.assert(!!flag, "flag must be specified and nonzero.");
+            return value &= ~flag;
+        }
+
         /**
          * According to the TypeScript Handbook, this is safe to do.
          */
@@ -144,4 +160,4 @@ module jsCommon {
             return toString(PxPtRatio * pt);
         }
     }
-} 
+}

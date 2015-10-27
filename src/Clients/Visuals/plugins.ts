@@ -301,6 +301,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.AsterPlot()
     };
 
+    export var sunburst: IVisualPlugin = {
+        name: 'sunburst',
+        capabilities: samples.Sunburst.capabilities,
+        create: () => new samples.Sunburst()
+    };
+
     export var owlGauge: IVisualPlugin = {
         name: 'owlGauge',
         watermarkKey: 'gauge',
@@ -331,6 +337,12 @@ module powerbi.visuals.plugins {
         name: "histogram",
         capabilities: Histogram.capabilities,
         create: () => new Histogram()
+    };
+
+    export var areaRangeChart: IVisualPlugin = {
+        name: 'areaRangeChart',
+        capabilities: samples.AreaRangeChart.capabilities,
+        create: () => new samples.AreaRangeChart()
     };
 
     export var tornadoChart: IVisualPlugin = {

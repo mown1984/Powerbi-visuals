@@ -28,7 +28,6 @@
 
 module powerbitests {
     import AxisType = powerbi.axisType;
-    import ColorUtility = powerbitests.utils.ColorUtility;
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
     import DataViewObjects = powerbi.DataViewObjects;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
@@ -2808,586 +2807,6 @@ module powerbitests {
         describe("areaChart DOM validation", () => areaChartDomValidation(false));
 
         describe("interactive areaChart DOM validation", () => areaChartDomValidation(true));
-
-        //Data Labels
-        function lineChartDataLabelsValidation(interactiveChart: boolean) {
-
-            var v: powerbi.IVisual, element: JQuery;
-            var dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'col1',
-                        queryName: 'col1',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                    },
-                    {
-                        displayName: 'col2',
-                        queryName: 'col2',
-                        isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                    },
-                    {
-                        displayName: 'col3',
-                        queryName: 'col3',
-                        isMeasure: false,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime),
-                        format: 'd'
-                    }],
-            };
-
-            var dataViewMetadataWithLabelsOnObject = powerbi.Prototype.inherit(dataViewMetadata);
-            dataViewMetadataWithLabelsOnObject.objects = { labels: { show: true, labelPrecision: 0 } };
-
-            var dataViewMetadataWithLabelsOffObject = powerbi.Prototype.inherit(dataViewMetadata);
-            dataViewMetadataWithLabelsOffObject.objects = { labels: { show: false } };
-
-            var dataViewMetadataWithDisplayUnitsObject = powerbi.Prototype.inherit(dataViewMetadata);
-            dataViewMetadataWithDisplayUnitsObject.objects = { labels: { show: true, labelDisplayUnits: 1000, labelPrecision: 0 } };
-
-            var dataViewMetadataWithDisplayUnitsAndPrecisionObject = powerbi.Prototype.inherit(dataViewMetadata);
-            dataViewMetadataWithDisplayUnitsAndPrecisionObject.objects = { labels: { show: true, labelDisplayUnits: 1000, labelPrecision: 1 } };
-
-            beforeEach(() => {
-                element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
-                v.init({
-                    element: element,
-                    host: hostServices,
-                    style: powerbi.visuals.visualStyles.create(),
-                    viewport: {
-                        height: element.height(),
-                        width: element.width()
-                    },
-                    animation: { transitionImmediate: true },
-                    interactivity: { isInteractiveLegend: interactiveChart },
-                });
-            });
-
-            it('line chart show labels validation', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadataWithLabelsOnObject.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOnObject.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBeGreaterThan(0);
-                    // First and last labels are hidden due to collision detection
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().text()).toBe('495K');
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('line chart labels style validation', (done) => {
-                var opacity = '1';
-
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadataWithLabelsOnObject.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOnObject.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    var fill = $('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill)).toBe(labelColor);
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill-opacity')).toBe(opacity);
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('line chart labels custom style validation', (done) => {
-
-                var color = { solid: { color: "rgb(255, 0, 0)" } }; // Red
-
-                var dataViewMetadataWithLabelsFillObject = powerbi.Prototype.inherit(dataViewMetadata);
-                dataViewMetadataWithLabelsFillObject.objects = { labels: { show: true, color: color } };
-
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsFillObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadataWithLabelsFillObject.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsFillObject.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    var fill = $('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill)).toBe(ColorUtility.convertFromRGBorHexToHex(color.solid.color));
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('line chart hide labels validation', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOffObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOffObject.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBe(0);
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('labels should support display units with no precision', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithDisplayUnitsObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOffObject.columns[1],
-                                values: [500123, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().text()).toBe('500K');
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('labels should support display units with precision', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithDisplayUnitsAndPrecisionObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOffObject.columns[1],
-                                values: [500123, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().text()).toBe('500.1K');
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            //multi series
-            it('line chart data labels multi-series', (done) => {
-                var seriesScopeIdentities = [mocks.dataViewScopeIdentity('col2'), mocks.dataViewScopeIdentity('col3')];
-                var metadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        {
-                            displayName: 'col1',
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
-                        },
-                        {
-                            displayName: 'col2',
-                            queryName: 'col2',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                            format: '#,0.00'
-                        },
-                        {
-                            displayName: 'col3',
-                            queryName: 'col3',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                            format: '$#,0'
-                        }]
-                };
-                metadata.objects = { labels: { show: true } };
-                
-                var measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-                var measureColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
-                var valueColumns = DataViewTransform.createValueColumns([
-                    {
-                        source: metadata.columns[1],
-                        values: [110, 120, 130, 140, 150],
-                        identity: seriesScopeIdentities[0],
-                    }, {
-                        source: metadata.columns[2],
-                        values: [210, 220, 230, 240, 250],
-                        identity: seriesScopeIdentities[1],
-                    }],
-                    [measureColumnRef]);
-                valueColumns.source = measureColumn;
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            categories: [{
-                                source: metadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e'],
-                                identityFields: [categoryColumnRef],
-                            }],
-                            values: valueColumns
-                        }
-                    }]
-                });
-
-                setTimeout(() => {
-                    var fill0 = $('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill0)).toBe(labelColor);
-
-                    var fill1 = $('.lineChart .axisGraphicsContext .labels .data-labels').last().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill1)).toBe(labelColor);
-
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().text()).toBe('110.00');
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').last().text()).toBe('$250');
-
-                    done();
-                }, DefaultWaitForRender);
-
-            });
-
-            it('line chart data labels multi-series to one series', (done) => {
-                var seriesScopeIdentities = [mocks.dataViewScopeIdentity('col2'), mocks.dataViewScopeIdentity('col3')];
-                var metadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        {
-                            displayName: 'col1',
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                        },
-                        {
-                            displayName: 'col2',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        },
-                        {
-                            displayName: 'col3',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        }]
-                };
-                metadata.objects = { labels: { show: true } };
-                
-                var measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-                var measureColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
-                var valueColumns = DataViewTransform.createValueColumns([
-                    {
-                        source: metadata.columns[1],
-                        values: [110, 120, 130, 140, 150],
-                        identity: seriesScopeIdentities[0],
-                    }, {
-                        source: metadata.columns[2],
-                        values: [210, 220, 230, 240, 250],
-                        identity: seriesScopeIdentities[1],
-                    }],
-                    [measureColumnRef]);
-                valueColumns.source = measureColumn;
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            categories: [{
-                                source: metadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e'],
-                                identityFields: [categoryColumnRef],
-                            }],
-                            values: valueColumns
-                        }
-                    }]
-                });
-
-                //to one series
-                var valueColumns2 = DataViewTransform.createValueColumns([
-                    {
-                        source: metadata.columns[1],
-                        values: [110, 120, 130, 140, 150],
-                        identity: seriesScopeIdentities[0],
-                    }],
-                    [measureColumnRef]);
-                valueColumns2.source = measureColumn;
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            categories: [{
-                                source: metadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e'],
-                                identityFields: [categoryColumnRef],
-                            }],
-                            values: valueColumns2
-                        }
-                    }]
-                });
-
-                setTimeout(() => {
-                    var fill0 = $('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill0)).toBe(labelColor);
-
-                    var fill1 = $('.lineChart .axisGraphicsContext .labels .data-labels').last().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill1)).toBe(labelColor);
-
-                    done();
-                }, DefaultWaitForRender);
-
-            });
-
-            it('line chart with nulls dom validation', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[1],
-                                values: [null, 10, null, 15, null],
-                                subtotal: 20
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    // One label is hidden due to collision detection
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBe(1);
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('change line chart dom data label validation', (done) => {
-                var seriesScopeIdentities = [mocks.dataViewScopeIdentity('col2'), mocks.dataViewScopeIdentity('col3')];
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadataWithLabelsOnObject.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                identity: seriesScopeIdentities[0],
-                            }])
-                        }
-                    }]
-                });
-
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBe(3);
-                    // First and last labels are hidden due to collision detection
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').first().text()).toBe('495K');                   
-
-                    v.onDataChanged({
-                        dataViews: [{
-                            metadata: dataViewMetadataWithLabelsOnObject,
-                            categorical: {
-                                categories: [{
-                                    source: dataViewMetadata.columns[0],
-                                    values: ['q', 'w', 'r', 't']
-                                }],
-                                values: DataViewTransform.createValueColumns([{
-                                    source: dataViewMetadataWithLabelsOnObject.columns[1],
-                                    values: [400, 500, 300, 200],
-                                    identity: seriesScopeIdentities[0],
-                                }])
-                            }
-                        }]
-                    });
-
-                    setTimeout(() => {
-                        // One label is hidden due to collision detection
-                        var dataLabels = $('.lineChart .axisGraphicsContext .labels .data-labels');
-                        expect(dataLabels.length).toBe(3);
-                        expect(dataLabels.filter('text:contains("500")').length).toBe(0);
-                        expect(dataLabels.filter('text:contains("400")').length).toBe(1);
-                        expect(dataLabels.filter('text:contains("300")').length).toBe(1);
-                        expect(dataLabels.filter('text:contains("200")').length).toBe(1);
-                        done();
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);
-            });
-
-            it('line chart non-category multi-measure dom data label validation', (done) => {
-                var metadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        { displayName: 'col1', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                        { displayName: 'col2', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
-                    ]
-                };
-                metadata.objects = { labels: { show: true } };
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            values: DataViewTransform.createValueColumns([
-                                {
-                                    source: dataViewMetadata.columns[0],
-                                    values: [100]
-                                }, {
-                                    source: dataViewMetadata.columns[1],
-                                    values: [200]
-                                }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    // One label is hidden due to collision detection
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBe(1);
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            //empty dom
-            it('empty line chart dom data labels validation', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: []
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[1],
-                                values: []
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').length).toBe(0);
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            //One point
-            it('line chart with single point dom data label validation', (done) => {
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: dataViewMetadataWithLabelsOnObject,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[1],
-                                values: [4]
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    expect($('.lineChart .axisGraphicsContext .labels .data-labels').text()).toBe('4');
-                    done();
-                }, DefaultWaitForRender);
-            });
-
-            it('line chart data labels per-series', (done) => {
-                var label1Color = '#ff0000';
-                var label2Color = '#ff0020';
-
-                var dataViewMetadata1Category2Measure: any = {
-                    columns: [
-                        { displayName: 'col1', queryName: 'col1' },
-                        { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { color: { solid: { color: label1Color } } } } },
-                        { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, objects: { labels: { color: { solid: { color: label2Color } } } } }]
-                };
-                var metadata: powerbi.DataViewMetadata = {
-                    columns: dataViewMetadata1Category2Measure,
-                    objects: {
-                        labels: {
-                            show: true,
-                        }
-                    }
-                };
-
-                var categoryIdentities = [
-                    mocks.dataViewScopeIdentity("John Domo"),
-                    mocks.dataViewScopeIdentity("Delta Force"),
-                    mocks.dataViewScopeIdentity("Mr Bing"),
-                ];
-
-                var dataChangedOptions = {
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata1Category2Measure.columns[0],
-                                values: ['John Domo', 'Delta Force', 'Mr Bing'],
-                                identity: categoryIdentities,
-                                identityFields: [categoryColumnRef],
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata1Category2Measure.columns[1],
-                                values: [-200, 100, 150],
-                                subtotal: 450
-                            }, {
-                                    source: dataViewMetadata1Category2Measure.columns[2],
-                                    values: [-300, 300, 30],
-                                    subtotal: 630
-                                }])
-                        }
-                    }]
-                };
-                v.onDataChanged(dataChangedOptions);
-
-                setTimeout(() => {
-                    var fill0 = $('.lineChart .axisGraphicsContext .labels .data-labels').first().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill0)).toBe(label1Color);
-
-                    var fill1 = $('.lineChart .axisGraphicsContext .labels .data-labels').last().css('fill');
-                    expect(ColorUtility.convertFromRGBorHexToHex(fill1)).toBe(label2Color);
-
-                    done();
-                }, DefaultWaitForRender);
-
-            });
-        }
-
-        describe("lineChart Data Labels validation", () => lineChartDataLabelsValidation(false));
-
-        describe("interactive lineChart Data Labels validation", () => lineChartDataLabelsValidation(true));
     });
 
     describe("Line Chart Legend Formatting", () => {
@@ -4379,4 +3798,283 @@ module powerbitests {
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: 'e' }, { displayName: 'col2', value: '500000' }]);
         });
     });
+
+    describe("label data point creation", () => {
+        var hostServices = powerbitests.mocks.createVisualHostServices();
+        var v: powerbi.IVisual, element: JQuery;
+
+        beforeEach(() => {
+            element = powerbitests.helpers.testDom('150', '75');
+            v = powerbi.visuals.visualPluginFactory.createMinerva({
+                scrollableVisuals: true,
+            }).getPlugin('lineChart').create();
+
+            v.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+                interactivity: {},
+            });
+        });
+
+        it("Label data points have correct text", () => {
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].text).toEqual("500.00");
+            expect(labelDataPoints[1].text).toEqual("300.00");
+            expect(labelDataPoints[2].text).toEqual("700.00");
+            expect(labelDataPoints[3].text).toEqual("400.00");
+            expect(labelDataPoints[4].text).toEqual("100.00");
+        });
+
+        it("Label data points have correct default fill", () => {
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(labelDataPoints[1].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(labelDataPoints[2].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(labelDataPoints[3].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(labelDataPoints[4].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+        });
+
+        it("Label data points have correct fill", () => {
+            let labelColor = "#007700";
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: { solid: { color: labelColor } },
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[1].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[2].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[3].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[4].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+        });
+
+        it("Label data points have correct display units", () => {
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: 1000,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [5000, 3000, 7000, 4000, 1000],
+                            subtotal: 20000,
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].text).toEqual("5.00K");
+            expect(labelDataPoints[1].text).toEqual("3.00K");
+            expect(labelDataPoints[2].text).toEqual("7.00K");
+            expect(labelDataPoints[3].text).toEqual("4.00K");
+            expect(labelDataPoints[4].text).toEqual("1.00K");
+        });
+
+        it("Label data points have correct precision", () => {
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: 0,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].text).toEqual("500");
+            expect(labelDataPoints[1].text).toEqual("300");
+            expect(labelDataPoints[2].text).toEqual("700");
+            expect(labelDataPoints[3].text).toEqual("400");
+            expect(labelDataPoints[4].text).toEqual("100");
+        });
+    });
+
+    function callCreateLabelDataPoints(v: powerbi.IVisual): powerbi.LabelDataPoint[] {
+        return (<any>v).layers[0].createLabelDataPoints();
+    }
 }

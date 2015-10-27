@@ -117,22 +117,22 @@ module powerbi.visuals {
 
     export interface IColumnLayout {
         shapeLayout: {
-            width: (d: ColumnChartDataPoint, i) => number;
-            x: (d: ColumnChartDataPoint, i) => number;
-            y: (d: ColumnChartDataPoint, i) => number;
-            height: (d: ColumnChartDataPoint, i) => number;
+            width: (d: ColumnChartDataPoint) => number;
+            x: (d: ColumnChartDataPoint) => number;
+            y: (d: ColumnChartDataPoint) => number;
+            height: (d: ColumnChartDataPoint) => number;
         };
         shapeLayoutWithoutHighlights: {
-            width: (d: ColumnChartDataPoint, i) => number;
-            x: (d: ColumnChartDataPoint, i) => number;
-            y: (d: ColumnChartDataPoint, i) => number;
-            height: (d: ColumnChartDataPoint, i) => number;
+            width: (d: ColumnChartDataPoint) => number;
+            x: (d: ColumnChartDataPoint) => number;
+            y: (d: ColumnChartDataPoint) => number;
+            height: (d: ColumnChartDataPoint) => number;
         };
         zeroShapeLayout: {
-            width: (d: ColumnChartDataPoint, i) => number;
-            x: (d: ColumnChartDataPoint, i) => number;
-            y: (d: ColumnChartDataPoint, i) => number;
-            height: (d: ColumnChartDataPoint, i) => number;
+            width: (d: ColumnChartDataPoint) => number;
+            x: (d: ColumnChartDataPoint) => number;
+            y: (d: ColumnChartDataPoint) => number;
+            height: (d: ColumnChartDataPoint) => number;
         };
     }
 
@@ -142,11 +142,13 @@ module powerbi.visuals {
         duration: number;
         margin: IMargin;
         mainGraphicsContext: D3.Selection;
+        labelGraphicsContext: D3.Selection;
         layout: CategoryLayout;
         animator: IColumnChartAnimator;
         onDragStart?: (datum: ColumnChartDataPoint) => void;
         interactivityService: IInteractivityService;
         viewportHeight: number;
+        viewportWidth: number;
         is100Pct: boolean;
     }
 
@@ -181,9 +183,9 @@ module powerbi.visuals {
 
     export interface ColumnChartDrawInfo {
         shapesSelection: D3.Selection;
-        labelLayout: ILabelLayout;
         viewport: IViewport;
         axisOptions: ColumnAxisOptions;
+        labelDataPoints: LabelDataPoint[];
     }
     var RoleNames = {
         category: 'Category',
@@ -203,6 +205,7 @@ module powerbi.visuals {
 
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
+        private labelGraphicsContext: D3.Selection;
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
         private currentViewport: IViewport;
@@ -296,6 +299,7 @@ module powerbi.visuals {
         public init(options: CartesianVisualInitOptions) {
             this.svg = options.svg;
             this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
+            this.labelGraphicsContext = this.svg.append('g').classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
             this.style = options.style;
             this.currentViewport = options.viewport;
             this.hostService = options.host;
@@ -368,7 +372,7 @@ module powerbi.visuals {
                 categoryMetadata: DataViewMetadataColumn = dataView.categories && dataView.categories.length > 0 ? dataView.categories[0].source : undefined,
                 labelFormatString: string = dataView.values && dataView.values[0] ? valueFormatter.getFormatString(dataView.values[0].source, columnChartProps.general.formatString) : undefined;
 
-            let labelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultColumnLabelSettings(is100PercentStacked, labelFormatString);
+            let labelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultColumnLabelSettings(is100PercentStacked || EnumExtensions.hasFlag(chartType, flagStacked), labelFormatString);
             let defaultDataPointColor = undefined;
             let showAllDataPoints = undefined;
             if (dataViewMetadata && dataViewMetadata.objects) {
@@ -792,7 +796,7 @@ module powerbi.visuals {
                 hasHighlights: false,
                 categoryMetadata: null,
                 scalarCategoryAxis: false,
-                labelSettings: dataLabelUtils.getDefaultColumnLabelSettings(is100PctStacked),
+                labelSettings: dataLabelUtils.getDefaultColumnLabelSettings(is100PctStacked || EnumExtensions.hasFlag(this.chartType, flagStacked)),
                 axesLabels: { x: null, y: null },
                 hasDynamicSeries: false,
                 defaultDataPointColor: null,
@@ -996,11 +1000,13 @@ module powerbi.visuals {
                 duration: 0,
                 hostService: this.hostService,
                 mainGraphicsContext: this.mainGraphicsContext,
+                labelGraphicsContext: this.labelGraphicsContext,
                 margin: this.margin,
                 layout: chartLayout,
                 animator: this.animator,
                 interactivityService: this.interactivityService,
                 viewportHeight: this.currentViewport.height - (margin.top + margin.bottom),
+                viewportWidth: this.currentViewport.width - (margin.left + margin.right),
                 is100Pct: is100Pct,
             };
             this.ApplyInteractivity(chartContext);
@@ -1163,7 +1169,6 @@ module powerbi.visuals {
                     bars: columnChartDrawInfo.shapesSelection,
                     hasHighlights: data.hasHighlights,
                     mainGraphicsContext: this.mainGraphicsContext,
-                    labelLayout: columnChartDrawInfo.labelLayout,
                     viewport: columnChartDrawInfo.viewport,
                     axisOptions: columnChartDrawInfo.axisOptions,
                     showLabel: data.labelSettings.show
@@ -1176,7 +1181,7 @@ module powerbi.visuals {
                 }
             }
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
-            return { dataPoints: allDataPoints, behaviorOptions: behaviorOptions };
+            return { dataPoints: allDataPoints, behaviorOptions: behaviorOptions, labelDataPoints: columnChartDrawInfo.labelDataPoints };
         }
 
         public onClearSelection(): void {

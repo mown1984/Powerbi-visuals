@@ -58,6 +58,9 @@ module powerbi.data {
             if (field.column || field.columnAggr || field.measure || field.hierarchyLevel)
                 return this.getMetadataForProperty(field, federatedSchema);
 
+            if (field.columnHierarchyLevelVariation)
+                return this.getMetadataForVariation(field, federatedSchema);
+
             return SQExpr.getMetadataForEntity(field, federatedSchema);
         }
 
@@ -143,6 +146,36 @@ module powerbi.data {
             return federatedSchema
                 .schema(fieldExprItem.schema)
                 .findProperty(fieldExprItem.entity, FieldExprPattern.getPropertyName(field));
+        }
+
+        private getMetadataForVariation(field: data.FieldExprPattern, federatedSchema: FederatedConceptualSchema): SQExprMetadata {
+            debug.assertValue(field, 'field');
+            debug.assertValue(federatedSchema, 'federatedSchema');
+
+            let columnHierarchyLevelVariation = field.columnHierarchyLevelVariation;
+            let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(field);
+            let sourceProperty = federatedSchema
+                .schema(fieldExprItem.schema)
+                .findProperty(fieldExprItem.entity, columnHierarchyLevelVariation.source.name);
+
+            if (sourceProperty.column && sourceProperty.column.variations) {
+                for (let variation of sourceProperty.column.variations) {
+                    if (variation.defaultHierarchy && variation.defaultHierarchy.levels) {
+                        for (let level of variation.defaultHierarchy.levels) {
+                            if (level.name === columnHierarchyLevelVariation.level.level) {
+                                let property = level.column;
+                                return {
+                                    kind: (property.kind === ConceptualPropertyKind.Measure) ? FieldKind.Measure : FieldKind.Column,
+                                    type: property.type,
+                                    format: property.format,
+                                    idOnEntityKey: property.column ? property.column.idOnEntityKey : false,
+                                    defaultAggregate: property.column ? property.column.defaultAggregate : null
+                                };
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private getMetadataForProperty(field: FieldExprPattern, federatedSchema: FederatedConceptualSchema): SQExprMetadata {

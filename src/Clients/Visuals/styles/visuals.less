@@ -58,44 +58,97 @@
         margin: 2px 0 0 8px;
         box-sizing: border-box;
         white-space: nowrap;
+        cursor: pointer;
 
         * {
             display: table-cell;
-	        vertical-align: bottom;
+            vertical-align: bottom;
         }
 
-        &:hover .slicerCheckbox span::before {
-            opacity: 1;
+        &:hover {
+            .slicerText {
+                color: @neutralDarkColor !important;
+            }
+
+            .slicerCheckbox {
+                span.checkbox {
+                    border-color: @neutralSecondaryColor;
+                }
+
+                &.selected span.checkbox {
+                    border-color: @neutralDarkColor;
+                }
+
+                &.partiallySelected span.checkbox::before {
+                    background-color: @neutralSecondaryColor;
+                }
+            }
         }
     }
 
     .slicerCheckbox {
         cursor: pointer;
+        vertical-align: middle;
 
         input {
             display: none;
         }
 
         span {
-            display: table-cell;
-        }
-
-        span::before {
-            content: '';
             display: inline-block;
-            vertical-align: middle;
-            .sprite(@slicer-checkbox);
-            opacity: 0.5;
+            width: 9px;
+            height: 9px;
+            border: 2px solid @neutralTertiaryAltColor;
+            box-shadow: inset 0px 0px 1px @neutralTertiaryAltColor;
         }
 
-        input:checked + span::before {
-            .sprite(@slicer-checkbox-selected);
-            opacity: 1;
+        &.selected {
+            border: none !important;
+
+            & + .slicerText {
+                color: @neutralDarkColor !important;
+            }
+
+            span.checkbox {
+                border-color: @neutralDarkColor;
+                background-color: @neutralDarkColor;
+                box-shadow: none;
+            }
+
+            span.checkbox::before {
+                content: '';
+
+                height: 8px;
+                width: 3px;
+                position: absolute;
+                display: inline-block;
+                margin: -2px 0 0px 3px;
+
+                border-right: 2px solid @whiteColor;
+                border-bottom: 2px solid @whiteColor;
+                transform: rotate(45deg);
+            }
         }
 
-        input.partiallySelected + span::before {
-            .sprite(@slicer-partially-selected);
-            opacity: 1;
+        &.partiallySelected {
+            span.checkbox {
+                background-color: transparent;
+                border-color: @neutralTertiaryAltColor;
+            }
+
+            span.checkbox::before {
+                content: '';
+
+                height: 3px;
+                width: 3px;
+                position: absolute;
+                display: inline-block;
+                margin: 3px 0 0px 3px;
+
+                background-color: @neutralTertiaryAltColor;
+                box-shadow: 0px 0px 2px @neutralTertiaryAltColor;
+                border: none;
+            }
         }
     }
 
@@ -1401,6 +1454,17 @@
     }
 }
 
+.labelGraphicsContext {
+    .label {
+        font-size: 12px;
+        text-anchor: middle;
+        font-family: @regularSecondaryFontFamily;
+        /* Enables tooltip when hovering on data label inside visual */
+        pointer-events: none;
+    }
+}
+
+/* Kept around for funnel labels; can be removed once it's moved to the new system */
 .data-labels {
     font-size: 12px;
     text-anchor: middle;
@@ -1829,6 +1893,14 @@ div.ql-toolbar {
         }
     }
 }
+.sunBurstPercentage{
+    font-weight:bold;
+    opacity:0;
+}
+.sunBurstPercentageFixed{
+    font-weight:bold;
+    opacity:0;
+}
 
 
 .histogram {
@@ -1855,6 +1927,32 @@ div.ql-toolbar {
             font-size: 12px;
             fill: @histogramLegendTextColor;
             text-anchor: middle;
+        }
+    }
+}
+
+.areaRangeChart {
+    @areaRangeChartAxesColor: @neutralSecondaryAltColor;
+    @areaRangeChartLegendTextColor: @blackColor;
+
+    font-family: @regularFontFamily;
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: @areaRangeChartAxesColor;
+            shape-rendering: crispEdges;
+        }
+
+        text {
+            fill: @areaRangeChartAxesColor;
+            font-size: 11px;
+        }
+    }
+
+    .chart {
+        path, line {
+            stroke-width: 1;
         }
     }
 }

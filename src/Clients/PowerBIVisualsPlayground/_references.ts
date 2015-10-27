@@ -36,6 +36,7 @@
 /// <reference path="sampleDataViews/SalesByCountryData.ts"/>
 /// <reference path="sampleDataViews/SalesByDayOfWeekData.ts"/>
 /// <reference path="sampleDataViews/ServicesByUsers.ts"/>
+/// <reference path="sampleDataViews/SimpleAreaRangeData.ts"/>
 /// <reference path="sampleDataViews/SimpleDotPlotData.ts"/>
 /// <reference path="sampleDataViews/SimpleFunnelData.ts"/>
 /// <reference path="sampleDataViews/SimpleGaugeData.ts"/>
@@ -43,8 +44,8 @@
 /// <reference path="sampleDataViews/SimpleTableData.ts"/>
 /// <reference path="sampleDataViews/TeamScoreData.ts"/>
 /// <reference path="sampleDataViews/calenderData.ts"/>
+/// <reference path="sampleDataViews/SimpleTreeData.ts"/>
 /// <reference path="sampleDataViews/SimpleHistogramData.ts"/>
-
 /// <reference path="sampleData.ts"/>
 /// <reference path="hostControls.ts"/>
 /// <reference path="app.ts"/>

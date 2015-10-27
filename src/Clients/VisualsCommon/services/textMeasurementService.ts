@@ -58,7 +58,7 @@ module powerbi {
     }
 
     export module TextMeasurementService {
-        const ellipsis = '...';
+        const ellipsis = '…';
 
         var spanElement: JQuery;
         var svgTextElement: D3.Selection;
@@ -101,6 +101,8 @@ module powerbi {
          * @param textProperties The text properties to use for text measurement.
          */
         export function measureSvgTextWidth(textProperties: TextProperties): number {
+            debug.assertValue(textProperties, 'textProperties');
+
             ensureDOM();
 
             canvasCtx.font = textProperties.fontSize + ' ' + textProperties.fontFamily;
@@ -112,6 +114,8 @@ module powerbi {
          * @param textProperties The text properties to use for text measurement.
          */
         export function measureSvgTextHeight(textProperties: TextProperties): number {
+            debug.assertValue(textProperties, 'textProperties');
+
             ensureDOM();
 
             svgTextElement.style(null);
@@ -136,6 +140,8 @@ module powerbi {
          * @param {TextProperties} textProperties - The text properties to use for text measurement
          */
         export function estimateSvgTextHeight(textProperties: TextProperties): number {
+            debug.assertValue(textProperties, 'textProperties');
+
             let propertiesKey = textProperties.fontFamily + textProperties.fontSize;
             let height: number = ephemeralStorageService.getData(propertiesKey);
             if (height)
@@ -160,6 +166,7 @@ module powerbi {
          * @param svgElement The SVGTextElement to be measured.
          */
         export function measureSvgTextElementWidth(svgElement: SVGTextElement): number {
+            debug.assertValue(svgElement, 'svgElement');
             return measureSvgTextWidth(getSvgMeasurementProperties(svgElement));
         }
 
@@ -168,6 +175,8 @@ module powerbi {
          * @param element The selector for the DOM Element.
          */
         export function getMeasurementProperties(element: JQuery): TextProperties {
+            debug.assertValue(element, 'element');
+
             return {
                 text: element.val() || element.text(),
                 fontFamily: element.css('font-family'),
@@ -183,6 +192,8 @@ module powerbi {
          * @param svgElement The SVGTextElement to be measured.
          */
         export function getSvgMeasurementProperties(svgElement: SVGTextElement): TextProperties {
+            debug.assertValue(svgElement, 'svgElement');
+
             let style = window.getComputedStyle(svgElement, null);
             return {
                 text: svgElement.textContent,
@@ -209,10 +220,10 @@ module powerbi {
          * @param maxWidth The maximum width available for rendering the text.
         */
         export function getTailoredTextOrDefault(properties: TextProperties, maxWidth: number): string {
-            ensureDOM();
-
             debug.assertValue(properties, 'properties');
             debug.assertValue(properties.text, 'properties.text');
+
+            ensureDOM();
 
             let strLength = properties.text.length;
 
@@ -231,7 +242,7 @@ module powerbi {
 
             let min = 1;
             let max = text.length;
-            let i = 3;
+            let i = ellipsis.length;
             
             while (min <= max) {
                 // num | 0 prefered to Math.floor(num) for performance benefits
@@ -257,7 +268,7 @@ module powerbi {
             if (width > maxWidth)
                 i--;
 
-            return text.substr(3, i - 3) + ellipsis;
+            return text.substr(ellipsis.length, i - ellipsis.length) + ellipsis;
         }
 
         /**
@@ -266,6 +277,8 @@ module powerbi {
          * @param maxWidth The maximum width available for rendering the text.
         */
         export function svgEllipsis(textElement: SVGTextElement, maxWidth: number): void {
+            debug.assertValue(textElement, 'textElement');
+
             let properties = getSvgMeasurementProperties(textElement);
             let originalText = properties.text;
             let tailoredText = getTailoredTextOrDefault(properties, maxWidth);
@@ -285,9 +298,6 @@ module powerbi {
         */
         export function wordBreak(textElement: SVGTextElement, maxWidth: number, maxHeight: number, linePadding: number = 0): void {
             debug.assertValue(textElement, 'textElement');
-
-            if (!textElement)
-                return;
 
             let properties = getSvgMeasurementProperties(textElement);
             let height = estimateSvgTextHeight(properties) + linePadding;

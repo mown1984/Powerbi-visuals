@@ -1596,6 +1596,19 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("should draw category labels when enabled", (done) => {
+            var dataView = new MapDataBuilder().withCategoryLabels().withShortCategoryNames().build(false, false);
+
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                expect($(".labelGraphicsContext")).toBeInDOM();
+                expect($(".labelGraphicsContext .label").length).toBe(3);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
         function getBubbles(): JQuery {
             return $('.mapControl circle.bubble');
         }
@@ -1666,6 +1679,56 @@ module powerbitests {
         }
     });
 
+    describe("label data point creation", () => {
+        let v: powerbi.IVisual;
+
+        beforeEach(() => {
+            v = new MapVisualBuilder().build(false);
+        });
+
+        it("Label data points have correct text", () => {
+            let dataView = new MapDataBuilder().withCategoryLabels().build(false, false);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].text).toEqual("Montana");
+            expect(labelDataPoints[1].text).toEqual("California");
+            expect(labelDataPoints[2].text).toEqual("Arizona");
+        });
+
+        it("Label data points have correct default fill", () => {
+            let dataView = new MapDataBuilder().withCategoryLabels().build(false, false);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[1].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[2].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+        });
+
+        it("Label data points have correct fill", () => {
+            let labelColor = "#007700";
+            let dataView = new MapDataBuilder().withCategoryLabels(labelColor).build(false, false);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+            expect(labelDataPoints[0].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[1].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[2].outsideFill).toEqual(labelColor);
+            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+        });
+    });
+
+    function callCreateLabelDataPoints(v: powerbi.IVisual): powerbi.LabelDataPoint[]{
+        let map = <any>v;
+        return map.dataPointRenderer.createLabelDataPoints();
+    }
+
     class MapDataBuilder {
         private categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Category: true } };
         private addressCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'address', queryName: 'address', roles: { Category: true } };
@@ -1673,11 +1736,15 @@ module powerbitests {
         private longitudeColumn: powerbi.DataViewMetadataColumn = { displayName: 'longitude', queryName: 'longitude', isMeasure: true, roles: { X: true } };
         private lattitudeColumn: powerbi.DataViewMetadataColumn = { displayName: 'lattitude', queryName: 'lattitude', isMeasure: true, roles: { Y: true } };
 
-        private _addressCategoryValues = ['Some address', 'Some different address', 'Another different address'];
         private _categoryValues = ['Montana', 'California', 'Arizona'];
+        private _addressCategoryValues = ['Some address', 'Some different address', 'Another different address'];
+        private _shortCategoryValues = ['MT', 'CA', 'AZ'];
         public get categoryValues(): string[] { return this._categoryValues; }
 
         private suppressCategories = false;
+
+        private _objects: powerbi.DataViewObjects;
+        public get objects(): powerbi.DataViewObjects { return this._objects; }
 
         private sizeValues = {
             source: this.sizeColumn,
@@ -1700,7 +1767,8 @@ module powerbitests {
         public build(size: boolean, longLat: boolean): powerbi.DataView {
             var dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                ]
+                ],
+                objects: this._objects,
             };
             var valueDataArray = [];
             var categories;
@@ -1745,6 +1813,25 @@ module powerbitests {
 
         public withNullValue(): MapDataBuilder {
             this.sizeValues.values[1] = null;
+            return this;
+        }
+
+        public withCategoryLabels(color?: string, labelDisplayUnits?: number, labelPrecision?: number): MapDataBuilder {
+            if (!this._objects) {
+                this._objects = {};
+            }
+            this._objects["categoryLabels"] = <powerbi.visuals.DataLabelObject> {
+                show: true,
+                color: { solid: { color: color } },
+                labelDisplayUnits: labelDisplayUnits,
+                labelPosition: undefined,
+                labelPrecision: labelPrecision,
+            };
+            return this;
+        };
+
+        public withShortCategoryNames(): MapDataBuilder {
+            this._categoryValues = this._shortCategoryValues;
             return this;
         }
     }

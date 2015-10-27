@@ -47,25 +47,12 @@ module powerbi.visuals {
         public bindEvents(options: SlicerBehaviorOptions, selectionHandler: ISelectionHandler): void {
             let filterPropertyId = slicerProps.filterPropertyIdentifier;
             let slicers = options.slicerItemContainers;
-            let slicerClear = options.slicerClear;
 
             this.slicerItemLabels = options.slicerItemLabels;
             this.slicerItemInputs = options.slicerItemInputs;
             this.dataPoints = options.dataPoints;
             this.interactivityService = options.interactivityService;
             this.slicerSettings = options.slicerSettings;
-
-            slicers.on("mouseover", (d: SlicerDataPoint) => {
-                d.mouseOver = true;
-                d.mouseOut = false;
-                this.renderMouseover();
-            });
-
-            slicers.on("mouseout", (d: SlicerDataPoint) => {
-                d.mouseOver = false;
-                d.mouseOut = true;
-                this.renderMouseover();
-            });
 
             slicers.on("click", (d: SlicerDataPoint) => {
                 d3.event.preventDefault();
@@ -78,56 +65,45 @@ module powerbi.visuals {
                 selectionHandler.persistSelectionFilter(filterPropertyId);
             });
 
+            let slicerClear = options.slicerClear;
+            if (slicerClear) {
             slicerClear.on("click", (d: SelectableDataPoint) => {
                 selectionHandler.handleClearSelection();
                 selectionHandler.persistSelectionFilter(filterPropertyId);
             });
         }
+        }
 
         public renderSelection(hasSelection: boolean): void {
             if (!hasSelection && !this.interactivityService.isSelectionModeInverted()) {
-                this.slicerItemInputs.selectAll('.partiallySelected').classed('partiallySelected', false);
+                this.slicerItemInputs.filter('.selected').classed('selected', false);
+                this.slicerItemInputs.filter('.partiallySelected').classed('partiallySelected', false);
                 this.slicerItemInputs.selectAll('input').property('checked', false);
                 this.slicerItemLabels.style('color', this.slicerSettings.slicerText.color);
             }
             else {
                 SlicerWebBehavior.styleSlicerInputs(this.slicerItemInputs, hasSelection);
-                this.slicerItemLabels.style({
-                    'color': (d: SlicerDataPoint) => {
-                        if (d.selected)
-                            return this.slicerSettings.slicerText.selectionColor;
-                        else
-                            return this.slicerSettings.slicerText.color;
-                }
-            });
-        }
-        }
-
-        private renderMouseover(): void {
-            this.slicerItemLabels.style({
-                'color': (d: SlicerDataPoint) => {
-                    if (d.mouseOver)
-                        return this.slicerSettings.slicerText.hoverColor;
-
-                    if (d.mouseOut) {
-                        if (d.selected)
-                            return this.slicerSettings.slicerText.selectionColor;
-                        else
-                            return this.slicerSettings.slicerText.color;
-                    }
-                }
-            });
+            }
         }
 
         public static styleSlicerInputs(slicerItemInputs: D3.Selection, hasSelection: boolean) {
-            slicerItemInputs.selectAll('input').each(function (d: SlicerDataPoint) {
-                if (d.isSelectAllDataPoint) {
-                    d3.select(this).classed('partiallySelected', hasSelection);
-                    d3.select(this).property({ 'checked': d.selected });
-                }
-                else {
-                    d3.select(this).property({ 'checked': d.selected });
-                }
+            slicerItemInputs.each(function (d: SlicerDataPoint) {
+                let checkbox: HTMLElement = this;
+                let input = checkbox.getElementsByTagName('input')[0];
+
+                if (d.isSelectAllDataPoint && hasSelection)
+                    checkbox.classList.add('partiallySelected');
+                else
+                    checkbox.classList.remove('partiallySelected');
+                
+                if (d.selected)
+                    checkbox.classList.add('selected');
+                else
+                    checkbox.classList.remove('selected');
+                 
+                // Set input selected state to match selection
+                if (input)
+                    input.checked = d.selected;
             });
         }
     }

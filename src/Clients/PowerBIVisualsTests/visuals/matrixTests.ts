@@ -28,6 +28,7 @@
 
 module powerbitests {
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
+    import CompiledDataViewRoleForMappingWithReduction = powerbi.data.CompiledDataViewRoleForMappingWithReduction;
     import CompiledSubtotalType = powerbi.data.CompiledSubtotalType;
     import DataViewAnalysis = powerbi.DataViewAnalysis;
     import DataViewMatrix = powerbi.DataViewMatrix;
@@ -2433,7 +2434,7 @@ module powerbitests {
                 dataViewMappings: [dataViewMapping]
             });
 
-            expect(dataViewMapping.matrix.rows.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
+            expect((<CompiledDataViewRoleForMappingWithReduction>dataViewMapping.matrix.rows).for.in.subtotalType).toEqual(CompiledSubtotalType.After);
             expect(dataViewMapping.matrix.columns.for.in.subtotalType).toEqual(CompiledSubtotalType.None);
         });
 
@@ -2451,7 +2452,7 @@ module powerbitests {
                 dataViewMappings: [dataViewMapping]
             });
 
-            expect(dataViewMapping.matrix.rows.for.in.subtotalType).toEqual(CompiledSubtotalType.None);
+            expect((<CompiledDataViewRoleForMappingWithReduction>dataViewMapping.matrix.rows).for.in.subtotalType).toEqual(CompiledSubtotalType.None);
             expect(dataViewMapping.matrix.columns.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
         });
 
@@ -2469,7 +2470,7 @@ module powerbitests {
                 dataViewMappings: [dataViewMapping]
             });
 
-            expect(dataViewMapping.matrix.rows.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
+            expect((<CompiledDataViewRoleForMappingWithReduction>dataViewMapping.matrix.rows).for.in.subtotalType).toEqual(CompiledSubtotalType.After);
             expect(dataViewMapping.matrix.columns.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
         });
 
@@ -2481,7 +2482,7 @@ module powerbitests {
             });
 
             // Totals default to Enabled (After)
-            expect(dataViewMapping.matrix.rows.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
+            expect((<CompiledDataViewRoleForMappingWithReduction>dataViewMapping.matrix.rows).for.in.subtotalType).toEqual(CompiledSubtotalType.After);
             expect(dataViewMapping.matrix.columns.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
         });
 
@@ -2500,7 +2501,7 @@ module powerbitests {
             });
 
             // Totals default to Enabled (After)
-            expect(dataViewMapping.matrix.rows.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
+            expect((<CompiledDataViewRoleForMappingWithReduction>dataViewMapping.matrix.rows).for.in.subtotalType).toEqual(CompiledSubtotalType.After);
             expect(dataViewMapping.matrix.columns.for.in.subtotalType).toEqual(CompiledSubtotalType.After);
         });
 

@@ -144,9 +144,12 @@ module powerbi.visuals {
         private clearCatcher: D3.Selection;
         private bubbleGraphicsContext: D3.Selection;
         private sliceGraphicsContext: D3.Selection;
+        private labelGraphicsContext: D3.Selection;
         private sliceLayout: D3.Layout.PieLayout;
         private arc: D3.Svg.Arc;
         private dataLabelsSettings: PointDataLabelsSettings;
+        private static validLabelPositions: NewPointLabelPosition[] = [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+        private mapData: MapData;
 
         public constructor() {
             this.values = [];
@@ -193,6 +196,9 @@ module powerbi.visuals {
             this.sliceGraphicsContext = svg
                 .append("g")
                 .classed("mapSlices", true);
+            this.labelGraphicsContext = svg
+                .append("g")
+                .classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
             this.sliceLayout = d3.layout.pie()
                 .sort(null)
                 .value((d: MapSlice) => {
@@ -200,7 +206,7 @@ module powerbi.visuals {
                 });
             this.arc = d3.svg.arc();
             this.clearMaxDataPointRadius();
-            this.dataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings();
+            this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
         }
 
         public addDataPoint(dataPoint: MapDataPoint): void {
@@ -244,13 +250,8 @@ module powerbi.visuals {
             let strokeWidth = 1;
 
             //update data label settings
-            if (this.dataLabelsSettings) {
-                this.dataLabelsSettings.show = labelSettings.show;
-                this.dataLabelsSettings.labelColor = labelSettings.labelColor;
-            }
-            else {
-                this.dataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings();
-            }
+            this.dataLabelsSettings = labelSettings;
+
             // See MapSeriesPresenter::GetDataPointRadius for the PV behavior
             let radiusScale = Math.min(viewport.width, viewport.height) / 384;
             this.clearMaxDataPointRadius();
@@ -376,7 +377,7 @@ module powerbi.visuals {
 
         public updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService): MapBehaviorOptions {
             debug.assertValue(viewport, "viewport");
-
+            this.mapData = data;
             if (this.svg) {
                 this.svg
                     .style("width", viewport.width.toString() + "px")
@@ -444,24 +445,19 @@ module powerbi.visuals {
 
             slices.exit().remove();
 
-            if (this.dataLabelsSettings.show) {
-                let layout = dataLabelUtils.getMapLabelLayout(this.dataLabelsSettings);
-
-                let dataPoints: MapVisualDataPoint[] = [];
-                for (let i = 0, ilen = sliceData.length; i < ilen; i++) {
-                    dataPoints.push(sliceData[i][0]);
-                }
-                for (let j = 0, jlen = data.bubbleData.length; j < jlen; j++) {
-                    dataPoints.push(data.bubbleData[j]);
-                }
-                let viewPort = { height: this.mapControl.getHeight(), width: this.mapControl.getWidth() };
-
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.bubbleGraphicsContext, layout, viewPort);
+            let labelSettings = this.dataLabelsSettings;
+            let dataLabels: Label[] = [];
+            if (labelSettings && (labelSettings.show || labelSettings.showCategory)) {
+                let labelDataPoints = this.createLabelDataPoints();
+                let labelLayout = new LabelLayout({
+                    maximumOffset: NewDataLabelUtils.maxLabelOffset,
+                    startingOffset: NewDataLabelUtils.startingLabelOffset
+                });
+                dataLabels = labelLayout.layout(labelDataPoints, { width: viewport.width, height: viewport.height });
             }
-            else {
-                dataLabelUtils.cleanDataLabels(this.bubbleGraphicsContext);
-            }
-
+            NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContext, dataLabels, "#000000", 0.5);
+            NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, dataLabels);
+            
             TooltipManager.addTooltip(slices, (tooltipEvent: TooltipEvent) => tooltipEvent.data.data.tooltipInfo);
 
             let allData: SelectableDataPoint[] = data.bubbleData.slice();
@@ -476,6 +472,49 @@ module powerbi.visuals {
                 dataPoints: allData,
             };
             return behaviorOptions;
+        }
+
+        private createLabelDataPoints(): LabelDataPoint[]{
+            let data = this.mapData;
+            let labelDataPoints: LabelDataPoint[] = [];
+            let dataPoints = data.bubbleData;
+            dataPoints = dataPoints.concat(_.map(data.sliceData, (value: MapSlice[]) => value[0]));
+            let labelSettings = this.dataLabelsSettings;
+
+            for (let dataPoint of dataPoints) {
+                let text = dataPoint.labeltext;
+
+                let properties: TextProperties = {
+                    text: text,
+                    fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
+                    fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                    fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
+                };
+                let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+
+                labelDataPoints.push({
+                    isPreferred: true,
+                    text: text,
+                    textSize: {
+                        width: textWidth,
+                        height: textHeight,
+                    },
+                    outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultInsideLabelColor, // Use inside for outside colors because we draw backgrounds for map labels
+                    insideFill: NewDataLabelUtils.defaultInsideLabelColor,
+                    isParentRect: false,
+                    parentShape: {
+                        point: {
+                            x: dataPoint.x,
+                            y: dataPoint.y,
+                        },
+                        radius: dataPoint.radius,
+                        validPositions: MapBubbleDataPointRenderer.validLabelPositions,
+                    }
+                });
+            }
+
+            return labelDataPoints;
         }
     }
 
@@ -800,7 +839,7 @@ module powerbi.visuals {
             this.colors = this.style.colorPalette.dataColors;
             if (this.behavior)
                 this.interactivityService = createInteractivityService(options.host);
-            this.dataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings();
+            this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
             this.legend = powerbi.visuals.createLegend(element, options.interactivity && options.interactivity.isInteractiveLegend, this.interactivityService);
             this.legendHeight = 0;
             this.legendData = { dataPoints: [] };
@@ -1352,7 +1391,7 @@ module powerbi.visuals {
             let enableGeoShaping = this.enableGeoShaping;
 
             //Revert Back 
-            this.dataLabelsSettings = dataLabelUtils.getDefaultPointLabelSettings();
+            this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
             this.defaultDataPointColor = null;
             this.showAllDataPoints = null;
             let warnings = undefined;

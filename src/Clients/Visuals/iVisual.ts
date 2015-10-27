@@ -227,7 +227,7 @@ module powerbi {
 
     export interface VisualImplicitSortingClause {
         role: string;
-        direction: data.QuerySortDirection;
+        direction: SortDirection;
     }
 
     export enum VisualDataRoleKind {
@@ -293,7 +293,7 @@ module powerbi {
 
     export interface SortableFieldDescriptor {
         queryName: string;
-        sortDirection?: data.QuerySortDirection;
+        sortDirection?: SortDirection;
     }
 
     export enum ViewMode {
