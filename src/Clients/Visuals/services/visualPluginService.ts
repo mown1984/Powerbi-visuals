@@ -289,6 +289,10 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
                 animator: new BaseAnimator()
             }));
+            // Area Range Chart
+            createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
+                animator: new BaseAnimator()
+            }));
             // Word Cloud
             createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
                 animator: new BaseAnimator()

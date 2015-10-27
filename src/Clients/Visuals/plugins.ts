@@ -339,6 +339,12 @@ module powerbi.visuals.plugins {
         create: () => new Histogram()
     };
 
+    export var areaRangeChart: IVisualPlugin = {
+        name: 'areaRangeChart',
+        capabilities: samples.AreaRangeChart.capabilities,
+        create: () => new samples.AreaRangeChart()
+    };
+
     export var wordCloud: IVisualPlugin = {
         name: "wordCloud",
         capabilities: samples.WordCloud.capabilities,
