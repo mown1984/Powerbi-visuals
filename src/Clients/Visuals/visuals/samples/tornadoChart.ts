@@ -61,12 +61,12 @@ module powerbi.visuals.samples {
         fill: string;
         name: string;
         values: any[];
+        selectionId: SelectionId;
     }
 
     export interface TornadoChartSettings {
         precision: number;
         formatter?: IValueFormatter;
-        fillColors: string[];
         showLabels?: boolean;
         showLegend?: boolean;
         showCategories?: boolean;
@@ -140,13 +140,9 @@ module powerbi.visuals.samples {
                 }
             },
             dataPoint: {
-                fillFirstSeries: <DataViewObjectPropertyIdentifier> {
+                fill: <DataViewObjectPropertyIdentifier> {
                     objectName: "dataPoint",
-                    propertyName: "fillFirstSeries"
-                },
-                fillSecondSeries: <DataViewObjectPropertyIdentifier> {
-                    objectName: "dataPoint",
-                    propertyName: "fillSecondSeries"
+                    propertyName: "fill"
                 }
             },
             legend: {
@@ -234,10 +230,10 @@ module powerbi.visuals.samples {
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
             }, {
-                    name: "Values",
-                    kind: VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter("Role_DisplayName_Values"),
-                }],
+                name: "Values",
+                kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Values"),
+            }],
             dataViewMappings: [{
                 conditions: [{
                     "Category": {
@@ -275,15 +271,10 @@ module powerbi.visuals.samples {
                 dataPoint: {
                     displayName: data.createDisplayNameGetter("Visual_DataPoint"),
                     properties: {
-                        // TODO: colors
-                        //fillFirstSeries: {
-                        //    displayName: data.createDisplayNameGetter("Visual_Fill"),
-                        //    type: { fill: { solid: { color: true } } }
-                        //},
-                        //fillSecondSeries: {
-                        //    displayName: data.createDisplayNameGetter("Visual_Fill"),
-                        //    type: { fill: { solid: { color: true } } }
-                        //}
+                        fill: {
+                            displayName: data.createDisplayNameGetter('Visual_Fill'),
+                            type: { fill: { solid: { color: true } } }
+                        }
                     }
                 },
                 labels: {
@@ -322,11 +313,14 @@ module powerbi.visuals.samples {
 
         private DefaultTornadoChartSettings: TornadoChartSettings = {
             precision: 2,
-            fillColors: ["teal", "purple"],
             showCategories: true,
             showLegend: true,
             showLabels: true
         };
+
+        private DefaultFillColors: string[] = [
+            "teal", "purple"
+        ];
 
         private MinPrecision: number = 0;
 
@@ -413,7 +407,6 @@ module powerbi.visuals.samples {
 
             this.colors = style.colorPalette.dataColors;
 
-            // TODO: we never pass in this as far as I know. Is it a playground thing?
             if (this.svg) {
                 this.root = this.svg;
             } else {
@@ -423,7 +416,6 @@ module powerbi.visuals.samples {
 
             this.root.classed(TornadoChart.ClassName, true);
 
-            // TODO: just hard-code this to match the CSS for now.
             fontSize = this.root.style("font-size");
 
             this.textOptions.sizeUnit = fontSize.slice(fontSize.length - 2);
@@ -557,7 +549,7 @@ module powerbi.visuals.samples {
 
             settings = this.parseSettings(dataView, objects, values[0].values[0]);
 
-            series = this.parseSeries(values, settings);
+            series = this.parseSeries(values);
 
             return {
                 displayName: displayName,
@@ -570,9 +562,7 @@ module powerbi.visuals.samples {
 
         private parseSettings(dataView: DataView, objects: DataViewObjects, value: number): TornadoChartSettings {
             let valueFormatter: IValueFormatter,
-                precision: number,
-                fillFirstSeries: string,
-                fillSecondSeries: string;
+                precision: number;
 
             precision = this.getPrecision(objects);
 
@@ -582,13 +572,9 @@ module powerbi.visuals.samples {
                 value: value
             });
 
-            fillFirstSeries = this.getColor(TornadoChart.Properties.dataPoint.fillFirstSeries, this.DefaultTornadoChartSettings.fillColors[0], objects);
-            fillSecondSeries = this.getColor(TornadoChart.Properties.dataPoint.fillSecondSeries, this.DefaultTornadoChartSettings.fillColors[1], objects);
-
             return {
                 formatter: valueFormatter,
                 precision: precision,
-                fillColors: [fillFirstSeries, fillSecondSeries],
                 showCategories: DataViewObjects.getValue(objects, TornadoChart.Properties.categories.show, this.DefaultTornadoChartSettings.showCategories),
                 showLabels: DataViewObjects.getValue(objects, TornadoChart.Properties.labels.show, this.DefaultTornadoChartSettings.showLabels),
                 showLegend: DataViewObjects.getValue(objects, TornadoChart.Properties.legend.show, this.DefaultTornadoChartSettings.showLegend)
@@ -627,12 +613,20 @@ module powerbi.visuals.samples {
             return dataView.metadata.objects;
         }
 
-        private parseSeries(dataViewValueColumn: DataViewValueColumn[], settings: TornadoChartSettings): TornadoChartSeries[] {
+        private parseSeries(dataViewValueColumn: DataViewValueColumn[]): TornadoChartSeries[] {
             return dataViewValueColumn.map((dataViewValueColumn: DataViewValueColumn, index: number) => {
+                let colour: string;
+
+                colour = this.getColor(
+                    TornadoChart.Properties.dataPoint.fill,
+                    this.DefaultFillColors[index],
+                    dataViewValueColumn.source.objects);
+
                 return <TornadoChartSeries> {
-                    fill: settings.fillColors[index],
+                    fill: colour,
                     name: dataViewValueColumn.source.displayName,
-                    values: dataViewValueColumn.values
+                    values: dataViewValueColumn.values,
+                    selectionId: SelectionId.createWithMeasure(dataViewValueColumn.source.queryName)
                 };
             });
         }
@@ -1188,41 +1182,24 @@ module powerbi.visuals.samples {
             };
         }
 
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let instances: VisualObjectInstance[] = [],
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+            let enumeration = new ObjectEnumerationBuilder(),
                 settings: TornadoChartSettings;
 
             if (!this.tornadoChartDataView ||
                 !this.tornadoChartDataView.settings) {
-                return instances;
+                return [];
             }
 
             settings = this.tornadoChartDataView.settings;
 
-            switch(options.objectName) {
-                case "dataPoint":
-                    let dataPointProperties: any = {},
-                        dataPoint: VisualObjectInstance;
+            switch (options.objectName) {
+                case "dataPoint": {
+                    this.enumerateDataPoint(enumeration);
 
-                    dataPointProperties.fillFirstSeries = settings.fillColors[0];
-
-                    if (this.tornadoChartDataView &&
-                        this.tornadoChartDataView.series &&
-                        this.tornadoChartDataView.series.length === this.MaxSeries) {
-                        dataPointProperties.fillSecondSeries = settings.fillColors[1];
-                    }
-
-                    dataPoint = {
-                        objectName: "dataPoint",
-                        displayName: "dataPoint",
-                        selector: null,
-                        properties: dataPointProperties
-                    };
-
-                    instances.push(dataPoint);
                     break;
-
-                case "labels":
+                }
+                case "labels": {
                     let labels: VisualObjectInstance = {
                         objectName: "labels",
                         displayName: "labels",
@@ -1233,10 +1210,10 @@ module powerbi.visuals.samples {
                         }
                     };
 
-                    instances.push(labels);
+                    enumeration.pushInstance(labels);
                     break;
-
-                case "legend":
+                }
+                case "legend": {
                     let legend: VisualObjectInstance = {
                         objectName: "legend",
                         displayName: "legend",
@@ -1246,10 +1223,10 @@ module powerbi.visuals.samples {
                         }
                     };
 
-                    instances.push(legend);
+                    enumeration.pushInstance(legend);
                     break;
-
-                case "categories":
+                }
+                case "categories": {
                     let categories: VisualObjectInstance = {
                         objectName: "categories",
                         displayName: "categories",
@@ -1259,11 +1236,32 @@ module powerbi.visuals.samples {
                         }
                     };
 
-                    instances.push(categories);
+                    enumeration.pushInstance(categories);
                     break;
+                }
             }
 
-            return instances;
+            return enumeration.complete();
+        }
+
+        private enumerateDataPoint(enumeration: ObjectEnumerationBuilder): void {
+            if (!this.tornadoChartDataView ||
+                !this.tornadoChartDataView.series) {
+                return;
+            }
+
+            let series: TornadoChartSeries[] = this.tornadoChartDataView.series;
+
+            series.forEach((item: TornadoChartSeries) => {
+                enumeration.pushInstance({
+                    objectName: "dataPoint",
+                    displayName: item.name,
+                    selector: ColorHelper.normalizeSelector(item.selectionId.getSelector(), false),
+                    properties: {
+                        fill: { solid: { color: item.fill } }
+                    }
+                });
+            });
         }
 
         private setOpacity(element: D3Element, opacityValue: number = this.MinOpacity, disableAnimation: boolean = false): D3Element {
