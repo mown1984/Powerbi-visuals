@@ -752,23 +752,22 @@ module powerbi.visuals.samples {
             columnsSelection
                 .attr("x", (item: ColumnData) => item.x)
                 .attr("y", (item: ColumnData) => item.y)
-                .attr("height", (item: ColumnData) => item.height)
-                .attr("fill", (item: ColumnData) => item.color)
                 .on("click", (item: ColumnData, index: number) => {
                     this.setSelection(index, columnsSelection, selectSecondSeries);
 
                     this.isSelectColumn = true;
                     d3.event.stopPropagation();
-                })
-                .classed(TornadoChart.Column["class"], true);
+                });
 
-            columnsSelectionAnimation = (<D3.UpdateSelection> this.animation(columnsSelection));
-            columnsSelectionAnimation.attr("width", (item: ColumnData) => item.width);
-
-            (columnElements[0] && columnElements[0].length > 0
-                ? columnsSelectionAnimation
+            (columnElements[0] && columnElements[0].length === columnsData.length
+                ? <D3.UpdateSelection> this.animation(columnsSelection)
                 : columnsSelection)
+                .attr("width", (item: ColumnData) => item.width)
+                .attr("height", (item: ColumnData) => item.height)
+                .attr("fill", (item: ColumnData) => item.color)
                 .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle));
+
+            columnsSelection.classed(TornadoChart.Column["class"], true);
 
             columnsSelection
                 .exit()
@@ -1127,7 +1126,7 @@ module powerbi.visuals.samples {
                 .select(TornadoChart.LabelTitle.selector)
                 .text((item: ColumnData) => item.label.source);
 
-            labelSelectionAnimation = labelElements[0] && labelElements[0].length > 0
+            labelSelectionAnimation = labelElements[0] && labelElements[0].length === columnsData.length
                 ? (<D3.UpdateSelection> this.animation(labelSelection))
                 : labelSelection;
 
