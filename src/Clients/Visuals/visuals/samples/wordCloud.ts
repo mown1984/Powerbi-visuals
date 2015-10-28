@@ -537,13 +537,13 @@ module powerbi.visuals.samples {
                 surface[i] = 0;
             }
 
-            words.map((word: WordCloudData, index: number) => {
+            words.forEach((word: WordCloudData, index: number) => {
                 word.x = (this.viewport.width * (Math.random() + 0.5)) >> 1;
                 word.y = (this.viewport.height * (Math.random() + 0.5)) >> 1;
 
                 this.generateSprites(context, word, words, index);
 
-                if (this.findPosition(surface, word, borders)) {
+                if (word.sprite && this.findPosition(surface, word, borders)) {
                     wordsForDraw.push(word);
 
                     borders = this.updateBorders(word, borders);
@@ -692,6 +692,13 @@ module powerbi.visuals.samples {
                     y: number = 0,
                     seen: number = 0,
                     seenRow: number = 0;
+
+                if (currentWordData.xOff + width >= (this.canvasViewport.width << 5) ||
+                    currentWordData.yOff + height >= this.canvasViewport.height) {
+                    currentWordData.sprite = null;
+
+                    continue;
+                }
 
                 for (let j = 0; j < height * width32; j++) {
                     sprite[j] = 0;
