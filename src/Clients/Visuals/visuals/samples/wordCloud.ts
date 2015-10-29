@@ -160,6 +160,8 @@ module powerbi.visuals.samples {
 
         private static Radians: number = Math.PI / 180;
 
+        private static UpdateInterval: number = 10;
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Category",
@@ -317,6 +319,8 @@ module powerbi.visuals.samples {
 
         private animator: IGenericAnimator;
 
+        private updateTimer: number;
+
         constructor(constructorOptions?: WordCloudConstructorOptions) {
             if (constructorOptions) {
                 this.svg = constructorOptions.svg || this.svg;
@@ -349,7 +353,7 @@ module powerbi.visuals.samples {
             this.canvas = document.createElement("canvas");
         }
 
-        public converter(dataView: DataView): WordCloudDataView {
+        public converter(dataView: DataView, callback: (dataView: WordCloudDataView) => void): void {
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
@@ -376,7 +380,7 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            return this.computeTextPositions(this.getWords(this.getReducedText(text, frequencies)));
+            this.computePositions(this.getWords(this.getReducedText(text, frequencies)), callback);
         }
 
         private parseSettings(dataView: DataView, value: any): WordCloudSettings {
@@ -523,11 +527,13 @@ module powerbi.visuals.samples {
             return dataView.metadata.objects;
         }
 
-        private computeTextPositions(words: WordCloudData[]): WordCloudDataView {
+        private computePositions(words: WordCloudData[], callback: (dataView: WordCloudDataView) => void): void {
             let context: CanvasRenderingContext2D = this.getCanvasContext(),
                 wordsForDraw: WordCloudData[] = [],
                 surface: number[] = [],
-                borders: IPoint[] = null;
+                borders: IPoint[] = null,
+                index: number = 0,
+                self: WordCloud = this;
 
             if (!words || !(words.length > 0)) {
                 return null;
@@ -537,31 +543,56 @@ module powerbi.visuals.samples {
                 surface[i] = 0;
             }
 
-            words.forEach((word: WordCloudData, index: number) => {
-                word.x = (this.viewport.width * (Math.random() + 0.5)) >> 1;
-                word.y = (this.viewport.height * (Math.random() + 0.5)) >> 1;
+            function compute(): void {
+                let startDate: Date = new Date();
 
-                this.generateSprites(context, word, words, index);
+                while (true) {
+                    let currentDate: Date = new Date();
 
-                if (word.sprite && this.findPosition(surface, word, borders)) {
-                    wordsForDraw.push(word);
+                    if (!(currentDate.getTime() - startDate.getTime() < WordCloud.UpdateInterval) ||
+                        !self.updateTimer || !(index < words.length)) {
+                        break;
+                    }
 
-                    borders = this.updateBorders(word, borders);
+                    let word: WordCloudData = words[index];
 
-                    word.x -= this.viewport.width >> 1;
-                    word.y -= this.viewport.height >> 1;
+                    word.x = (self.viewport.width * (Math.random() + 0.5)) >> 1;
+                    word.y = (self.viewport.height * (Math.random() + 0.5)) >> 1;
+    
+                    self.generateSprites(context, word, words, index);
+    
+                    if (word.sprite && self.findPosition(surface, word, borders)) {
+                        wordsForDraw.push(word);
+
+                        borders = self.updateBorders(word, borders);
+
+                        word.x -= self.viewport.width >> 1;
+                        word.y -= self.viewport.height >> 1;
+                    }
+
+                    index++;
                 }
-            });
 
-            borders = borders
-                ? borders
-                : [];
+                if (index >= words.length) {
+                    borders = borders
+                        ? borders
+                        : [];
 
-            return {
-                data: wordsForDraw,
-                leftBorder: borders[0],
-                rightBorder: borders[1]
-            };
+                    clearInterval(self.updateTimer);
+
+                    callback({
+                        data: wordsForDraw,
+                        leftBorder: borders[0],
+                        rightBorder: borders[1]
+                    });
+                }
+            }
+
+            if (this.updateTimer) {
+                clearInterval(this.updateTimer);
+            }
+
+            this.updateTimer = setInterval(compute, WordCloud.UpdateInterval);
         }
 
         private updateBorders(word: WordCloudData, borders: IPoint[]): IPoint[] {
@@ -1077,8 +1108,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let dataView: DataView = visualUpdateOptions.dataViews[0],
-                wordCloudDataView: WordCloudDataView = null;
+            let dataView: DataView = visualUpdateOptions.dataViews[0];
 
             this.durationAnimations = getAnimationDuration(
                 this.animator,
@@ -1086,9 +1116,9 @@ module powerbi.visuals.samples {
 
             this.setSize(visualUpdateOptions.viewport);
 
-            wordCloudDataView = this.converter(dataView);
-
-            this.render(wordCloudDataView);
+            this.converter(dataView, (wordCloudDataView: WordCloudDataView) => {
+                this.render(wordCloudDataView);
+            });
         }
 
         private setSize(viewport: IViewport): void {
@@ -1134,28 +1164,37 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let self: WordCloud = this,
+            let timeoutId: number,
                 wordsSelection: D3.UpdateSelection,
+                animatedWordSelection: D3.Selection,
                 wordElements: D3.Selection = this.main
                     .select(WordCloud.Words.selector)
-                    .selectAll(WordCloud.Word.selector);
+                    .selectAll(WordCloud.Word.selector),
+                delayOfScaleView: number;
+
+            delayOfScaleView = wordElements[0].length === 0
+                ? 0
+                : this.durationAnimations;
 
             wordsSelection = wordElements.data(wordCloudDataView.data);
 
-            wordsSelection
-                .enter()
-                .append("svg:text");
-
-            (<D3.UpdateSelection> this.animation(wordsSelection, (data: any, index: number) => {
-                if (index === wordCloudDataView.data.length - 1) {
-                    self.scaleMainView(wordCloudDataView);
-                }
-            }))
+            (<D3.UpdateSelection> this.animation(wordsSelection, this.durationAnimations))
                 .attr("transform", (item: WordCloudData) => {
                     return `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`;
                 })
-                .style("fill", (item: WordCloudData) => item.colour)
                 .style("font-size", (item: WordCloudData) => `${item.size}${WordCloud.Size}`);
+
+            animatedWordSelection = wordsSelection
+                .enter()
+                .append("svg:text")
+                .attr("transform", (item: WordCloudData) => {
+                    return `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`;
+                })
+                .style("font-size", "1px");
+
+            (<D3.UpdateSelection> this.animation(animatedWordSelection, this.durationAnimations))
+                .style("font-size", (item: WordCloudData) => `${item.size}${WordCloud.Size}`)
+                .style("fill", (item: WordCloudData) => item.colour);
 
             wordsSelection
                 .text((item: WordCloudData) => item.text)
@@ -1164,9 +1203,15 @@ module powerbi.visuals.samples {
             wordsSelection
                 .exit()
                 .remove();
+
+            timeoutId = setTimeout(() => {
+                this.scaleMainView(wordCloudDataView, delayOfScaleView);
+
+                clearTimeout(timeoutId);
+            }, delayOfScaleView);
         }
 
-        private scaleMainView(wordCloudDataView: WordCloudDataView): void {
+        private scaleMainView(wordCloudDataView: WordCloudDataView, durationAnimation: number = 0): void {
             if (!wordCloudDataView ||
                 !wordCloudDataView.leftBorder ||
                 !wordCloudDataView.rightBorder) {
@@ -1189,7 +1234,7 @@ module powerbi.visuals.samples {
 
             scale = Math.min(scaleByX, scaleByY);
 
-            (<D3.Selection> this.animation(this.main))
+            (<D3.Selection> this.animation(this.main, durationAnimation))
                 .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
         }
 
@@ -1255,14 +1300,17 @@ module powerbi.visuals.samples {
 
         private animation(
             element: D3.Selection,
+            duration: number = 0,
             callback?: (data: any, index: number) => void): D3.Transition.Transition | D3.Selection {
             return element
                 .transition()
-                .duration(this.durationAnimations)
+                .duration(duration)
                 .each("end", callback);
         }
 
         public destroy(): void {
+            clearInterval(this.updateTimer);
+
             this.root = null;
             this.canvas = null;
         }
