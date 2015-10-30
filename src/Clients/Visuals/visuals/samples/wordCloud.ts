@@ -185,13 +185,22 @@ module powerbi.visuals.samples {
                 }],
                 categorical: {
                     categories: {
-                        for: { in: "Category" }
+                        for: { in: "Category" },
+                        dataReductionAlgorithm: { top: {} }
                     },
                     values: {
                         for: {in: "Values"}
                     }
                 }
             }],
+            sorting: {
+                implicit: {
+                    clauses: [{
+                        role: "Values",
+                        direction: SortDirection.Descending
+                    }]
+                }
+            },
             objects: {
                 general: {
                     displayName: data.createDisplayNameGetter("Visual_General"),
@@ -261,6 +270,13 @@ module powerbi.visuals.samples {
                 }
             }
         };
+
+        private static Punctuation: string[] = [
+            "!", ".", ":", "'", ";", ",", "!",
+            "@", "#", "$", "%", "^", "&", "*",
+            "(", ")", "[", "]", "\"", "\\", "/",
+            "-", "_", "+", "="
+        ];
 
         private static StopWords: string[] = [
             "a", "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an",
@@ -976,15 +992,20 @@ module powerbi.visuals.samples {
         }
 
         private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
-            let brokenStrings: WordCloudText[] = [];
+            let brokenStrings: WordCloudText[] = [],
+                punctuatuinRegExp: RegExp;
 
             if (!this.settings.isBrokenText) {
                 return words;
             }
 
+            punctuatuinRegExp = new RegExp(`[${WordCloud.Punctuation.join("\\")}]`, "gim");
+
             words.forEach((item: WordCloudText) => {
                 if (typeof item.text === "string") {
-                    let words: string[] = item.text.split(" ");
+                    let words: string[];
+
+                    words = item.text.replace(punctuatuinRegExp, " ").split(/\s/);
 
                     if (this.settings.isRemoveStopWords) {
                         let stopWords: string[] = this.settings.stopWordsArray;
@@ -994,7 +1015,7 @@ module powerbi.visuals.samples {
                         }
 
                         words = words.filter((value: string) => {
-                            return !stopWords.some((removeWord: string) => {
+                            return value.length > 0 && !stopWords.some((removeWord: string) => {
                                 return value.toLocaleLowerCase() === removeWord.toLocaleLowerCase();
                             });
                         });
