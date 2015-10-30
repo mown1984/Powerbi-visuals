@@ -290,6 +290,8 @@ module powerbi.visuals.samples {
             isDefaultStopWords: false
         };
 
+        private static RenderDelay: number = 50;
+
         private settings: WordCloudSettings;
 
         private durationAnimations: number = 500;
@@ -302,11 +304,19 @@ module powerbi.visuals.samples {
         };
 
         private viewport: IViewport;
+        private currentViewport: IViewport;
+
+        private fakeViewport: IViewport = {
+            width: 1500,
+            height: 1000
+        };
 
         private canvasViewport: IViewport = {
             width: 128,
             height: 2048
         };
+
+        private ratio: number = 1;
 
         private root: D3.Selection;
         private svg: D3.Selection;
@@ -1104,7 +1114,10 @@ module powerbi.visuals.samples {
             if (!visualUpdateOptions ||
                 !visualUpdateOptions.viewport ||
                 !visualUpdateOptions.dataViews ||
-                !visualUpdateOptions.dataViews[0]) {
+                !visualUpdateOptions.dataViews[0] ||
+                !visualUpdateOptions.viewport ||
+                !(visualUpdateOptions.viewport.height >= 0) ||
+                !(visualUpdateOptions.viewport.width >= 0)) {
                 return;
             }
 
@@ -1123,7 +1136,9 @@ module powerbi.visuals.samples {
 
         private setSize(viewport: IViewport): void {
             let height: number,
-                width: number;
+                width: number,
+                fakeWidth: number,
+                fakeHeight: number;
 
             height =
                 viewport.height -
@@ -1135,9 +1150,19 @@ module powerbi.visuals.samples {
                 this.margin.left -
                 this.margin.right;
 
-            this.viewport = {
+            this.currentViewport = {
                 height: height,
                 width: width
+            };
+
+            this.ratio = Math.sqrt((this.fakeViewport.width * this.fakeViewport.height) / (width * height));
+
+            fakeHeight = height * this.ratio;
+            fakeWidth = width * this.ratio;
+
+            this.viewport = {
+                height: fakeHeight,
+                width: fakeWidth
             };
 
             this.updateElements(viewport.height, viewport.width);
@@ -1208,7 +1233,7 @@ module powerbi.visuals.samples {
                 this.scaleMainView(wordCloudDataView, delayOfScaleView);
 
                 clearTimeout(timeoutId);
-            }, delayOfScaleView);
+            }, delayOfScaleView + WordCloud.RenderDelay);
         }
 
         private scaleMainView(wordCloudDataView: WordCloudDataView, durationAnimation: number = 0): void {
@@ -1219,13 +1244,13 @@ module powerbi.visuals.samples {
             }
 
             let scale: number = 1,
-                width: number = this.viewport.width,
-                height: number = this.viewport.height,
+                width: number = this.currentViewport.width,
+                height: number = this.currentViewport.height,
                 mainSVGRect: SVGRect = this.main.node()["getBBox"](),
-                width2: number = Math.abs(mainSVGRect.x) + this.margin.left + (width - mainSVGRect.width) / 2,
-                height2: number =  Math.abs(mainSVGRect.y) + this.margin.top / 2 + (height - mainSVGRect.height) / 2,
                 leftBorder: IPoint = wordCloudDataView.leftBorder,
                 rightBorder: IPoint = wordCloudDataView.rightBorder,
+                width2: number,
+                height2: number,
                 scaleByX: number,
                 scaleByY: number;
 
@@ -1233,6 +1258,9 @@ module powerbi.visuals.samples {
             scaleByY = height / Math.abs(leftBorder.y - rightBorder.y);
 
             scale = Math.min(scaleByX, scaleByY);
+
+            width2  = this.margin.left + Math.abs(mainSVGRect.x * scale) + (width - (mainSVGRect.width * scale)) / 2;
+            height2 = this.margin.top + Math.abs(mainSVGRect.y * scale) + (height - (mainSVGRect.height * scale)) / 2;
 
             (<D3.Selection> this.animation(this.main, durationAnimation))
                 .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
