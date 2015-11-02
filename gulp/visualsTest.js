@@ -23,16 +23,18 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require("gulp"),    
+var gulp = require("gulp"),
     runSequence = require("run-sequence"),
-    rename = require("gulp-rename"),    
+    rename = require("gulp-rename"),
     fs = require("fs"),
     jasmineBrowser = require("gulp-jasmine-browser"),
     common = require("./utils.js"),
     cliParser = require("./cliParser.js"),
-    visualsCommon = require("./visualsCommon.js");
-    visualsBuildDefault = require("./visualsBuild.js").load();
+    visualsCommon = require("./visualsCommon.js"),
+    visualsBuildDebug = require("./visualsBuild.js").load(),
+	visualsBuildRelease = require("./visualsBuild.js").load({isRelease: true}),
     visualsDownload = require("./visualsDownload.js");
+
 
 var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
 
@@ -108,6 +110,10 @@ function createHtmlTestRunner(fileName, paths, testName) {
 }
 
 gulp.task("run:test:visuals", function (callback) {
+    return runTestVisuals();
+});
+
+function runTestVisuals () {
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",
         specRunnerPath = testFolder + "/" + specRunnerFileName,
@@ -145,31 +151,69 @@ gulp.task("run:test:visuals", function (callback) {
             .pipe(jasmineBrowser.specRunner({console: true}))
             .pipe(jasmineBrowser.headless());
     }
-});
+};
 
 gulp.task("test:visuals:performance", function (callback) {
     filesOption.push("performance/performanceTests.ts");
     runSequence("test:visuals", callback);
 });
 
-gulp.task("test:visuals", function (callback) {
-    runSequence(
-        "build:visuals",
-        "build:visualsTests",
-        "run:test:visuals",
-        callback);
+gulp.task("test:visuals", function () {
+   return visualsCommon.runScriptSequence([
+		buildVisuals,
+		buildVisualsTests,
+        runTestVisuals
+    ]);
 });
 
+function buildVisuals() {
+	var isDebug = Boolean(cliParser.cliOptions.debug);
+	var buildingVisualsLog = function() {
+		console.log('Building visuals...');
+	}
+	if (isDebug) {
+		return visualsCommon.runScriptSequence([
+			buildingVisualsLog,
+			visualsBuildDebug.buildVisualsCommon,
+			visualsBuildDebug.buildVisualsData,
+			visualsBuildDebug.buildVisualsProject,
+			visualsBuildDebug.buildVisualsScripts
+		]);
+	}
+	else {
+		var tsLintLog = function() {
+			console.log('Linting TypeScript...');
+		}
+		return visualsCommon.runScriptSequence([
+			tsLintLog,
+			visualsBuildRelease.tslintVisuals,
+			buildingVisualsLog,
+			visualsBuildRelease.buildVisualsCommon,
+			visualsBuildRelease.buildVisualsData,
+			visualsBuildRelease.buildVisualsProject,
+			visualsBuildRelease.buildVisualsScripts
+		]);
+	}	 
+}
+
 gulp.task("build:visualsTests", function () {
-    return visualsCommon.runScriptSequence([
-        visualsBuildDefault.buildVisualsTestsTs,
+    return buildVisualsTests();
+});
+
+function buildVisualsTests() {
+	// by default, tests are build in release mode
+	// but if debug flag exists, then we have to build in debug mode
+	var isDebug = Boolean(cliParser.cliOptions.debug);
+	var tsBuildMode = isDebug ? visualsBuildDebug : visualsBuildRelease;
+    return visualsCommon.runScriptSequence([		
+        tsBuildMode.buildVisualsTestsTs,
         visualsDownload.installJasmine,
         visualsDownload.installPhantomjs,
-        visualsBuildDefault.combineVisualJsAll,
+        tsBuildMode.combineVisualJsAll,
         copyInternalDependencies,
         copyExternalDependencies
     ]);
-});
+};
 
 gulp.task("open:test:visuals", function (callback) {
     openInBrowser = true;    

@@ -25,6 +25,7 @@
  */
 var gulp = require("gulp"),
     rename = require("gulp-rename"),
+	fs = require("fs"),
     runSequence = require("run-sequence"),
     cliParser = require("./cliParser.js"),
     visualsCommon = require("./visualsCommon.js");
@@ -44,6 +45,7 @@ gulp.task("package", function (callback) {
         return visualsCommon.runScriptSequence([
             visualsBuildMode.combineInternalDts,
             visualsBuildMode.combineExternalDts,
+			replaceReferences,
             copyPackageSprite
         ]);
     });
@@ -74,6 +76,17 @@ gulp.task("package", function (callback) {
     function copyPackageSprite() {
         return copyPackageFile("src/Clients/Visuals/images/visuals.sprites.png", "images/visuals.sprites.png");
     };
+	
+	function replaceReferences () {
+		replaceInFile("./lib/powerbi-visuals.d.ts", /\/\/\/\s*<reference path.*\/>\s/g);
+	};
+	
+	function replaceInFile(file, find, replace) {
+		var UTF8 = "utf8";
+		replace = replace || "";
+		
+		fs.writeFileSync(file, fs.readFileSync(file, UTF8).replace(find, replace), UTF8);
+	}
 
     function buildPackageProjects(isReleaseFlag) {
         var visualsBuildMode = visualsBuild.load({ isRelease: isReleaseFlag });

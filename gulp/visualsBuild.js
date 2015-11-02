@@ -105,7 +105,12 @@ module.exports.load = function (options) {
         combineVisualJsAll: combineVisualJsAll,
         combineInternalDts: combineInternalDts,
         combineExternalDts: combineExternalDts,
-        buildVisualsTestsTs: buildVisualsTestsTs
+        buildVisualsTestsTs: buildVisualsTestsTs,
+		buildVisualsCommon: buildVisualsCommon,
+		buildVisualsData: buildVisualsData,
+		buildVisualsProject: buildVisualsProject,
+		buildVisualsScripts: buildVisualsScripts,
+		tslintVisuals: tslintVisuals
     };
 
     function getBuildPaths(projectPath, outFileName, includePaths) {
@@ -305,10 +310,14 @@ module.exports.load = function (options) {
         "!src/Clients/PowerBIVisualsPlayground/**/*.d.ts"];
 
     gulp.task("tslint:visuals", function () {
-        return gulp.src(tslintPaths)
+        return tslintVisuals();
+    });
+	
+	function tslintVisuals() {
+		return gulp.src(tslintPaths)
             .pipe(tslint())
             .pipe(tslint.report("verbose"));
-    });
+	}
 
 
     function copyInternalDependenciesVisualsPlayground() {
