@@ -1042,7 +1042,7 @@ module powerbi.visuals.samples {
                 maxValue: number = 0,
                 valueFormatter: IValueFormatter = this.settings.valueFormatter;
 
-            if (!values || !(values.length > 1)) {
+            if (!values || !(values.length >= 1)) {
                 return [];
             }
 
@@ -1280,8 +1280,8 @@ module powerbi.visuals.samples {
 
             scale = Math.min(scaleByX, scaleByY);
 
-            width2  = this.margin.left + Math.abs(mainSVGRect.x * scale) + (width - (mainSVGRect.width * scale)) / 2;
-            height2 = this.margin.top + Math.abs(mainSVGRect.y * scale) + (height - (mainSVGRect.height * scale)) / 2;
+            width2  = this.margin.left + (mainSVGRect.x * scale * -1) + (width - (mainSVGRect.width * scale)) / 2;
+            height2 = this.margin.top + (mainSVGRect.y * scale * -1) + (height - (mainSVGRect.height * scale)) / 2;
 
             (<D3.Selection> this.animation(this.main, durationAnimation))
                 .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
