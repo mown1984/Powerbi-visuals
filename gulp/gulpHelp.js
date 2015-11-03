@@ -38,7 +38,7 @@ gulp.task('help', function (callback) {
     console.log("	init - run the build and then start watchers which\n" +
     "				will build project parts after you save\n"+
     "				changes to any file .");
-    console.log("Gulp commands parameters:\n\n 	--debug (--d)  - to build files in debug mode\n\n"+
+    console.log("Gulp commands parameters:\n\n 	--debug (--d)  - build files in debug mode\n 	--release (--r)  - build files in release mode\n"+
 				" 	--openInBrowser (--o)  - in order to run all tests\n 				 (or single test) in browser\n"+
 				" 		For example:\n"+
 				"			gulp test --openInBrowser\" or \"gulp test --o\"\n"+

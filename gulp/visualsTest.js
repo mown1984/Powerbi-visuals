@@ -38,6 +38,8 @@ var gulp = require("gulp"),
 
 var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
 
+var filesOption = common.getOptionFromCli(cliParser.cliOptions.files);
+
 function copyInternalDependencies () {
     return gulp.src([
         "src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js"])
@@ -110,10 +112,10 @@ function createHtmlTestRunner(fileName, paths, testName) {
 }
 
 gulp.task("run:test:visuals", function (callback) {
-    return runTestVisuals();
+    return runTestVisuals(callback);
 });
 
-function runTestVisuals () {
+function runTestVisuals (callback) {
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",
         specRunnerPath = testFolder + "/" + specRunnerFileName,
@@ -158,13 +160,18 @@ gulp.task("test:visuals:performance", function (callback) {
     runSequence("test:visuals", callback);
 });
 
-gulp.task("test:visuals", function () {
-   return visualsCommon.runScriptSequence([
+gulp.task("test:visuals", function (callback) {
+   testVisuals(callback);
+});
+
+function testVisuals(callback) {
+	return visualsCommon.runScriptSequence([
 		buildVisuals,
 		buildVisualsTests,
-        runTestVisuals
+        runTestVisuals,
+		callback
     ]);
-});
+}
 
 function buildVisuals() {
 	var isDebug = Boolean(cliParser.cliOptions.debug);
@@ -219,7 +226,7 @@ function buildVisualsTests() {
 
 gulp.task("open:test:visuals", function (callback) {
     openInBrowser = true;    
-    runSequence("test:visuals", callback);
+    testVisuals(callback);
 });
 
 
