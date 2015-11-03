@@ -182,7 +182,9 @@ function buildVisuals() {
 	}
 	else {
 		var tsLintLog = function() {
-			console.log('Linting TypeScript...');
+			if (!cliParser.cliOptions.noLint) {
+				console.log('Linting TypeScript...');
+			}
 		}
 		return visualsCommon.runScriptSequence([
 			tsLintLog,

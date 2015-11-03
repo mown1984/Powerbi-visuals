@@ -31,7 +31,11 @@ var minimist = require("minimist"),
         "files",
         "openInBrowser"
     ],
-    boolean: ["debug", "release"],
+    boolean: [
+		"debug", 
+		"release", 
+		"noLint"
+	],
     alias: {
         files: "f",
 		debug: "d",

@@ -314,6 +314,9 @@ module.exports.load = function (options) {
     });
 	
 	function tslintVisuals() {
+		if (cliParser.cliOptions.noLint) {
+			return;
+		}			
 		return gulp.src(tslintPaths)
             .pipe(tslint())
             .pipe(tslint.report("verbose"));
