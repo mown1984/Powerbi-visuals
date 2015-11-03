@@ -149,6 +149,7 @@ module powerbi.visuals.sampleDataViews {
                     }],
                     objects: {
                         rotateText: {
+                            show: true,
                             quantityAngles: this.quantityAngles
                         }
                     }

@@ -298,7 +298,7 @@ module powerbi.visuals.samples {
             minAngle: -60,
             maxAngle: 90,
             quantityAngles: 2,
-            isRotateText: true,
+            isRotateText: false,
             isBrokenText: true,
             isRemoveStopWords: false,
             stopWordsArray: [],
@@ -331,8 +331,6 @@ module powerbi.visuals.samples {
             width: 128,
             height: 2048
         };
-
-        private ratio: number = 1;
 
         private root: D3.Selection;
         private svg: D3.Selection;
@@ -580,13 +578,22 @@ module powerbi.visuals.samples {
                         break;
                     }
 
-                    let word: WordCloudData = words[index];
+                    let word: WordCloudData = words[index],
+                        ratio: number = 1;
 
-                    word.x = (self.viewport.width * (Math.random() + 0.5)) >> 1;
-                    word.y = (self.viewport.height * (Math.random() + 0.5)) >> 1;
-    
+                    if (words.length < 8) {
+                        ratio = 5;
+                    } else if (words.length < 16) {
+                        ratio = 3.5;
+                    } else if (words.length < 25) {
+                        ratio = 2;
+                    }
+
+                    word.x = (self.viewport.width / ratio * (Math.random() + 0.5)) >> 1;
+                    word.y = (self.viewport.height / ratio * (Math.random() + 0.5)) >> 1;
+
                     self.generateSprites(context, word, words, index);
-    
+
                     if (word.sprite && self.findPosition(surface, word, borders)) {
                         wordsForDraw.push(word);
 
@@ -1159,7 +1166,8 @@ module powerbi.visuals.samples {
             let height: number,
                 width: number,
                 fakeWidth: number,
-                fakeHeight: number;
+                fakeHeight: number,
+                ratio: number;
 
             height =
                 viewport.height -
@@ -1176,10 +1184,14 @@ module powerbi.visuals.samples {
                 width: width
             };
 
-            this.ratio = Math.sqrt((this.fakeViewport.width * this.fakeViewport.height) / (width * height));
+            ratio = Math.sqrt((this.fakeViewport.width * this.fakeViewport.height) / (width * height));
 
-            fakeHeight = height * this.ratio;
-            fakeWidth = width * this.ratio;
+            if (isNaN(ratio)) {
+                fakeHeight = fakeWidth = 1;
+            } else {
+                fakeHeight = height * ratio;
+                fakeWidth = width * ratio;
+            }
 
             this.viewport = {
                 height: fakeHeight,
