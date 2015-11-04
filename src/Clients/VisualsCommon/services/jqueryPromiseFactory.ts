@@ -51,6 +51,10 @@ module powerbi {
             deferred.resolve(value);
             return deferred.promise;
         }
+
+        public all(promises: IPromise2<any, any>[]): IPromise2<any, any> {
+            return $.when.apply($, promises);
+        }
     }
 
     /** 

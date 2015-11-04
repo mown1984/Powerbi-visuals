@@ -45,11 +45,14 @@ module powerbi.visuals {
         private yProps: IAxisProperties;
         private categoryLayout: CategoryLayout;
         private viewportHeight: number;
+        private viewportWidth: number;
 
         private columnsCenters: number[];
         private columnSelectionLineHandle: D3.Selection;
         private animator: IColumnChartAnimator;
         private interactivityService: IInteractivityService;
+        private static validLabelPositions: RectLabelPosition[] = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd, RectLabelPosition.InsideCenter, RectLabelPosition.InsideBase];
+        private layout: IColumnLayout;
 
         public setupVisualProps(columnChartProps: ColumnChartContext): void {
             this.graphicsContext = columnChartProps;
@@ -60,6 +63,7 @@ module powerbi.visuals {
             this.animator = columnChartProps.animator;
             this.interactivityService = columnChartProps.interactivityService;
             this.viewportHeight = columnChartProps.viewportHeight;
+            this.viewportWidth = columnChartProps.viewportWidth;
         }
 
         public setData(data: ColumnChartData) {
@@ -172,11 +176,11 @@ module powerbi.visuals {
                 isScalar: this.categoryLayout.isScalar,
                 margin: this.margin,
             };
-            let clusteredColumnLayout = ClusteredColumnChartStrategy.getLayout(data, axisOptions);
+            let clusteredColumnLayout = this.layout = ClusteredColumnChartStrategy.getLayout(data, axisOptions);
             let dataLabelSettings = data.labelSettings;
-            let dataLabelLayout = null;
-            if (dataLabelSettings != null) {
-                dataLabelLayout = dataLabelUtils.getColumnChartLabelLayout(data, this.getLabelLayoutXY(axisOptions, dataLabelSettings), true, false, this.yProps.formatter, axisOptions, this.interactivityService);
+            let labelDataPoints: LabelDataPoint[] = [];
+            if (dataLabelSettings && dataLabelSettings.show) {
+                labelDataPoints = this.createLabelDataPoints();
             }
 
             let result: ColumnChartAnimationResult;
@@ -190,30 +194,21 @@ module powerbi.visuals {
                     itemCS: ClusteredColumnChartStrategy.classes.item,
                     interactivityService: this.interactivityService,
                     mainGraphicsContext: this.graphicsContext.mainGraphicsContext,
-                    labelLayout: dataLabelLayout,
                     viewPort: { height: this.height, width: this.width }
                 });
                 shapes = result.shapes;
             }
             if (!this.animator || !useAnimation || result.failed) {
                 shapes = ColumnUtil.drawDefaultShapes(data, series, clusteredColumnLayout, ClusteredColumnChartStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection());
-                if (dataLabelLayout !== null) {
-                    if (dataLabelSettings.show) {
-                        ColumnUtil.drawDefaultLabels(series, this.graphicsContext.mainGraphicsContext, dataLabelLayout, { height: this.height, width: this.width });
-                }
-                    else {
-                        dataLabelUtils.cleanDataLabels(this.graphicsContext.mainGraphicsContext);
-                    }
-                }
             }
 
             ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
            
             return {
                 shapesSelection: shapes,
-                labelLayout: dataLabelLayout,
                 viewport: { height: this.height, width: this.width },
-                axisOptions: axisOptions
+                axisOptions: axisOptions,
+                labelDataPoints: labelDataPoints,
             };
         }
 
@@ -310,35 +305,66 @@ module powerbi.visuals {
             };
         }
 
-        private getLabelLayoutXY(axisOptions: ColumnAxisOptions, labelSettings: VisualDataLabelsSettings): any {
-            let columnWidth = axisOptions.columnWidth;
-            let halfColumnWidth = 0.5 * columnWidth;
-            let isScalar = axisOptions.isScalar;
-            let xScale = axisOptions.xScale;
-            let yScale = axisOptions.yScale;
-            let seriesOffsetScale = axisOptions.seriesOffsetScale;
-            let xScaleOffset = 0;
-            let scaledY0 = yScale(0);
+        private createLabelDataPoints(): LabelDataPoint[] {
+            let labelDataPoints: LabelDataPoint[] = [];
+            let data = this.data;
+            let series = data.series;
+            let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
+            let shapeLayout = this.layout.shapeLayout;
 
-            if (isScalar)
-                xScaleOffset = axisOptions.categoryWidth / 2;
-
-            return {
-                x: (d: ColumnChartDataPoint) => xScale(isScalar ? d.categoryValue : d.categoryIndex) + seriesOffsetScale(d.seriesIndex) - xScaleOffset + halfColumnWidth,
-                y: (d: ColumnChartDataPoint) => {
-                    let outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
-                    let insidePosition = scaledY0 + AxisHelper.diffScaled(yScale, Math.max(0, d.value), 0) / 2 - dataLabelUtils.defaultColumnLabelMargin;
-                     // Try to honor the position, but if the label doesn't fit where specified, then swap the position.
-                    if (outsidePosition <= 0) {
-                        // Inside position, change color to white
-                        d.labelFill = dataLabelUtils.defaultInsideLabelColor;
-                        return insidePosition;
+            for (let currentSeries of series) {
+                let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
+                let axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yProps.formatter, labelSettings);
+                for (let dataPoint of currentSeries.data) {
+                    if ((this.interactivityService && this.interactivityService.hasSelection() && !dataPoint.selected) || (data.hasHighlights && !dataPoint.highlight)) {
+                        continue;
                     }
-                    return outsidePosition;
-                    
-                },
-            };
-    }
+
+                    // Calculate parent rectangle
+                    let parentRect: IRect = {
+                        left: shapeLayout.x(dataPoint),
+                        top: shapeLayout.y(dataPoint),
+                        width: shapeLayout.width(dataPoint),
+                        height: shapeLayout.height(dataPoint),
+                    };
+
+                    // Calculate label text
+                    let formatString = dataPoint.labelFormatString;
+                    let formatter = formattersCache.getOrCreate(formatString, labelSettings, axisFormatter);
+                    let text = NewDataLabelUtils.getLabelFormattedText(formatter.format(dataPoint.value));
+
+                    // Calculate text size
+                    let properties: TextProperties = {
+                        text: text,
+                        fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
+                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
+                    };
+                    let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+
+                    labelDataPoints.push({
+                        isPreferred: true,
+                        text: text,
+                        textSize: {
+                            width: textWidth,
+                            height: textHeight,
+                        },
+                        outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
+                        insideFill: NewDataLabelUtils.defaultInsideLabelColor,
+                        isParentRect: true,
+                        parentShape: {
+                            rect: parentRect,
+                            orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,
+                            validPositions: ClusteredColumnChartStrategy.validLabelPositions,
+                        },
+                        identity: dataPoint.identity,
+                    });
+                }
+            }
+
+            return labelDataPoints;
+        }
     }
 
     export class ClusteredBarChartStrategy implements IColumnChartStrategy {
@@ -359,11 +385,15 @@ module powerbi.visuals {
         private yProps: IAxisProperties;
         private categoryLayout: CategoryLayout;
         private viewportHeight: number;
+        private viewportWidth: number;
 
         private barsCenters: number[];
         private columnSelectionLineHandle: D3.Selection;
         private animator: IColumnChartAnimator;
         private interactivityService: IInteractivityService;
+        private static validLabelPositions: RectLabelPosition[] = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd, RectLabelPosition.InsideCenter, RectLabelPosition.InsideBase];
+
+        private layout: IColumnLayout;
 
         public setupVisualProps(barChartProps: ColumnChartContext): void {
             this.graphicsContext = barChartProps;
@@ -374,6 +404,7 @@ module powerbi.visuals {
             this.animator = barChartProps.animator;
             this.interactivityService = barChartProps.interactivityService;
             this.viewportHeight = barChartProps.viewportHeight;
+            this.viewportWidth = barChartProps.viewportWidth;
         }
 
         public setData(data: ColumnChartData) {
@@ -488,11 +519,11 @@ module powerbi.visuals {
                 isScalar: this.categoryLayout.isScalar,
                 margin: this.margin,
             };
-            let clusteredBarLayout = ClusteredBarChartStrategy.getLayout(data, axisOptions);
+            let clusteredBarLayout = this.layout = ClusteredBarChartStrategy.getLayout(data, axisOptions);
             let dataLabelSettings = data.labelSettings;
-            let dataLabelLayout = null;
-            if (dataLabelSettings != null) {
-                dataLabelLayout = dataLabelUtils.getColumnChartLabelLayout(data, this.getLabelLayoutXY(axisOptions,this.width, dataLabelSettings), false, false, this.xProps.formatter, axisOptions, this.interactivityService, this.width);
+            let labelDataPoints: LabelDataPoint[] = [];
+            if (dataLabelSettings && dataLabelSettings.show) {
+                labelDataPoints = this.createLabelDataPoints();
             }
 
             let result: ColumnChartAnimationResult;
@@ -506,30 +537,21 @@ module powerbi.visuals {
                     itemCS: ClusteredBarChartStrategy.classes.item,
                     interactivityService: this.interactivityService,
                     mainGraphicsContext: this.graphicsContext.mainGraphicsContext,
-                    labelLayout: dataLabelLayout,
                     viewPort: { height: this.height, width: this.width }
                 });
                 shapes = result.shapes;
             }
             if (!this.animator || !useAnimation || result.failed) {
                 shapes = ColumnUtil.drawDefaultShapes(data, series, clusteredBarLayout, ClusteredBarChartStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection());
-                if (dataLabelLayout !== null) {
-                    if (dataLabelSettings.show) {
-                        ColumnUtil.drawDefaultLabels(series, this.graphicsContext.mainGraphicsContext, dataLabelLayout, { height: this.height, width: this.width });
-                }
-                    else {
-                        dataLabelUtils.cleanDataLabels(this.graphicsContext.mainGraphicsContext);
-                    }
-            }
             }
 
             ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
 
             return {
                 shapesSelection: shapes,
-                labelLayout: dataLabelLayout,
                 viewport: { height: this.height, width: this.width },
-                axisOptions: axisOptions
+                axisOptions: axisOptions,
+                labelDataPoints: labelDataPoints,
             };
         }
 
@@ -625,41 +647,65 @@ module powerbi.visuals {
             };
         }
 
-        private getLabelLayoutXY(axisOptions: ColumnAxisOptions, visualWidth: number, labelSettings: VisualDataLabelsSettings): any {
-            let columnWidth = axisOptions.columnWidth;
-            let halfColumnWidth = 0.5 * columnWidth;
-            let isScalar = axisOptions.isScalar;
-            let xScale = axisOptions.xScale;
-            let yScale = axisOptions.yScale;
-            let seriesOffsetScale = axisOptions.seriesOffsetScale;
-            let xScaleOffset = 0;
-            let scaledX0 = xScale(0);
+        private createLabelDataPoints(): LabelDataPoint[] {
+            let labelDataPoints: LabelDataPoint[] = [];
+            let data = this.data;
+            let series = data.series;
+            let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
+            let shapeLayout = this.layout.shapeLayout;
 
-            if (isScalar)
-                xScaleOffset = axisOptions.categoryWidth / 2;
+            for (let currentSeries of series) {
+                let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
+                let axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yProps.formatter, labelSettings);
+                for (let dataPoint of currentSeries.data) {
+                    if ((this.interactivityService && this.interactivityService.hasSelection() && !dataPoint.selected) || (data.hasHighlights && !dataPoint.highlight)) {
+                        continue;
+                    }
 
-            return {
-                x: (d: ColumnChartDataPoint) => {
+                    // Calculate label text
+                    let formatString = dataPoint.labelFormatString;
+                    let formatter = formattersCache.getOrCreate(formatString, labelSettings, axisFormatter);
+                    let text = NewDataLabelUtils.getLabelFormattedText(formatter.format(dataPoint.value));
+
+                    // Calculate text size
                     let properties: TextProperties = {
-                        text: d.labeltext,
-                        fontFamily: dataLabelUtils.LabelTextProperties.fontFamily,
-                        fontSize: dataLabelUtils.LabelTextProperties.fontSize,
-                        fontWeight: dataLabelUtils.LabelTextProperties.fontWeight,
+                        text: text,
+                        fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
+                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
                     };
                     let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-                    let outsidePosition = ColumnUtil.calculatePosition(d, axisOptions);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
 
-                    // Try to honor the position, but if the label doesn't fit where specified, then swap the position.
-                    if (outsidePosition + textWidth > visualWidth) {
-                        // Inside position, change color to white
-                        d.labelFill = dataLabelUtils.defaultInsideLabelColor;
-                        return scaledX0 + AxisHelper.diffScaled(xScale, Math.max(0, d.value), 0) / 2 - (textWidth / 2);
-                    }
-                    return outsidePosition;
-                },
-                y: (d: ColumnChartDataPoint) => yScale(isScalar ? d.categoryValue : d.categoryIndex) + seriesOffsetScale(d.seriesIndex) - xScaleOffset + halfColumnWidth + dataLabelUtils.defaultColumnHalfLabelHeight,
-            };                                         
+                    // Calculate parent rectangle
+                    let parentRect: IRect = {
+                        left: shapeLayout.x(dataPoint),
+                        top: shapeLayout.y(dataPoint),
+                        width: shapeLayout.width(dataPoint),
+                        height: shapeLayout.height(dataPoint),
+                    };
+
+                    labelDataPoints.push({
+                        isPreferred: true,
+                        text: text,
+                        textSize: {
+                            width: textWidth,
+                            height: textHeight,
+                        },
+                        outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
+                        insideFill: NewDataLabelUtils.defaultInsideLabelColor,
+                        isParentRect: true,
+                        parentShape: {
+                            rect: parentRect,
+                            orientation: dataPoint.value >= 0 ? NewRectOrientation.HorizontalLeftBased : NewRectOrientation.HorizontalRightBased,
+                            validPositions: ClusteredBarChartStrategy.validLabelPositions,
+                        },
+                        identity: dataPoint.identity,
+                    });
+                }
+            }
+
+            return labelDataPoints;
         }
-
     }
 } 

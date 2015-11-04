@@ -125,6 +125,7 @@ module powerbi.visuals {
     export interface CartesianVisualRenderResult {
         dataPoints: SelectableDataPoint[];
         behaviorOptions: any;
+        labelDataPoints: LabelDataPoint[];
     }
 
     export interface CartesianDataPoint {
@@ -264,6 +265,7 @@ module powerbi.visuals {
         private isYScrollBarVisible: boolean;
         private svgScrollable: D3.Selection;
         private axisGraphicsContextScrollable: D3.Selection;
+        private labelGraphicsContextScrollable: D3.Selection;
         private brushGraphicsContext: D3.Selection;
         private brushContext: D3.Selection;
         private brush: D3.Svg.Brush;
@@ -304,8 +306,8 @@ module powerbi.visuals {
 
                 if (options.behavior) {
                     this.behavior = options.behavior;
-                }
             }
+        }
         }
 
         public init(options: VisualInitOptions) {
@@ -363,6 +365,9 @@ module powerbi.visuals {
 
             let axisGraphicsContextScrollable = this.axisGraphicsContextScrollable = this.svgScrollable.append('g')
                 .classed(CartesianChart.AxisGraphicsContextClassName, true);
+
+            this.labelGraphicsContextScrollable = this.svgScrollable.append('g')
+                .classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
 
             if (this.behavior)
                 this.clearCatcher = appendClearCatcher(this.axisGraphicsContextScrollable);
@@ -536,12 +541,14 @@ module powerbi.visuals {
 
             this.axisGraphicsContext.attr('transform', SVGUtil.translate(margin.left, margin.top));
             this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(margin.left, margin.top));
+            this.labelGraphicsContextScrollable.attr('transform', SVGUtil.translate(margin.left, margin.top));
 
             if (this.isXScrollBarVisible) {
                 this.svgScrollable.attr({
                     'x': this.margin.left
                 });
                 this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, margin.top));
+                this.labelGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, margin.top));
                 this.svgScrollable.attr('width', width);
                 this.svg.attr('width', viewport.width)
                     .attr('height', viewport.height + CartesianChart.ScrollBarWidth);
@@ -686,11 +693,11 @@ module powerbi.visuals {
                 let layer = this.layers[i];
                 if (layer.enumerateObjectInstances) {
                     layer.enumerateObjectInstances(enumeration, options);
-                }
-            }
+                                }
+                                }
 
             return enumeration.complete();
-        }
+                            }
 
         private shouldShowLegendCard(): boolean {
             let layers = this.layers;
@@ -784,16 +791,16 @@ module powerbi.visuals {
             enumeration
                 .pushInstance(instance)
                 .pushInstance({
-                    selector: null,
-                    properties: {
-                        axisStyle: this.categoryAxisProperties && this.categoryAxisProperties['axisStyle'] ? this.categoryAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
-                        labelColor: this.categoryAxisProperties ? this.categoryAxisProperties['labelColor'] : null
-                    },
-                    objectName: 'categoryAxis',
-                    validValues: {
-                        axisStyle: this.categoryAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
-                    }
-                });
+                selector: null,
+                properties: {
+                    axisStyle: this.categoryAxisProperties && this.categoryAxisProperties['axisStyle'] ? this.categoryAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
+                    labelColor: this.categoryAxisProperties ? this.categoryAxisProperties['labelColor'] : null
+                },
+                objectName: 'categoryAxis',
+                validValues: {
+                    axisStyle: this.categoryAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                }
+            });
         }
 
         //todo: wrap all these object getters and other related stuff into an interface
@@ -825,16 +832,16 @@ module powerbi.visuals {
             enumeration
                 .pushInstance(instance)
                 .pushInstance({
-                    selector: null,
-                    properties: {
-                        axisStyle: this.valueAxisProperties && this.valueAxisProperties['axisStyle'] != null ? this.valueAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
-                        labelColor: this.valueAxisProperties ? this.valueAxisProperties['labelColor'] : null
-                    },
-                    objectName: 'valueAxis',
-                    validValues: {
-                        axisStyle: this.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
-                    },
-                });
+                selector: null,
+                properties: {
+                    axisStyle: this.valueAxisProperties && this.valueAxisProperties['axisStyle'] != null ? this.valueAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
+                    labelColor: this.valueAxisProperties ? this.valueAxisProperties['labelColor'] : null
+                },
+                objectName: 'valueAxis',
+                validValues: {
+                    axisStyle: this.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                },
+            });
 
             if (this.layers.length === 2) {
                 instance.properties['secShow'] = this.valueAxisProperties && this.valueAxisProperties['secShow'] != null ? this.valueAxisProperties['secShow'] : this.y2AxisExists;
@@ -864,16 +871,16 @@ module powerbi.visuals {
                 enumeration
                     .pushInstance(secInstance)
                     .pushInstance({
-                        selector: null,
-                        properties: {
-                            secAxisStyle: this.valueAxisProperties && this.valueAxisProperties['secAxisStyle'] ? this.valueAxisProperties['secAxisStyle'] : axisStyle.showTitleOnly,
-                            labelColor: this.valueAxisProperties ? this.valueAxisProperties['secLabelColor'] : null
-                        },
-                        objectName: 'valueAxis',
-                        validValues: {
-                            secAxisStyle: this.secValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
-                        },
-                    });
+                    selector: null,
+                    properties: {
+                        secAxisStyle: this.valueAxisProperties && this.valueAxisProperties['secAxisStyle'] ? this.valueAxisProperties['secAxisStyle'] : axisStyle.showTitleOnly,
+                        labelColor: this.valueAxisProperties ? this.valueAxisProperties['secLabelColor'] : null
+                    },
+                    objectName: 'valueAxis',
+                    validValues: {
+                        secAxisStyle: this.secValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                    },
+                });
 
                 enumeration.popContainer();
             }
@@ -1362,6 +1369,13 @@ module powerbi.visuals {
             return this.visualInitOptions.style.maxMarginFactor || CartesianChart.MaxMarginFactor;
         }
 
+        private static getChartViewport(viewport: IViewport, margin: IMargin): IViewport {
+            return {
+                width: viewport.width - margin.left - margin.right,
+                height: viewport.height - margin.top - margin.bottom,
+            };
+        }
+
         private renderChart(
             mainAxisScale: any,
             axes: CartesianAxisProperties,
@@ -1378,6 +1392,7 @@ module powerbi.visuals {
             let leftRightMarginLimit = this.leftRightMarginLimit;
             let layers = this.layers;
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
+            let chartViewport = CartesianChart.getChartViewport(viewport, this.margin);
 
             debug.assertValue(layers, 'layers');
 
@@ -1582,12 +1597,29 @@ module powerbi.visuals {
             if (this.behavior) {
                 let dataPoints: SelectableDataPoint[] = [];
                 let layerBehaviorOptions: any[] = [];
+                let labelDataPoints: LabelDataPoint[] = [];
                 for (let i = 0, len = layers.length; i < len; i++) {
                     let result = layers[i].render(suppressAnimations);
                     if (result) {
                         dataPoints = dataPoints.concat(result.dataPoints);
                         layerBehaviorOptions.push(result.behaviorOptions);
+                        labelDataPoints = labelDataPoints.concat(result.labelDataPoints);
                     }
+                }
+                labelDataPoints = NewDataLabelUtils.removeDuplicates(labelDataPoints);
+                let labelLayout = new LabelLayout({
+                    maximumOffset: NewDataLabelUtils.maxLabelOffset,
+                    startingOffset: NewDataLabelUtils.startingLabelOffset
+                });
+                let dataLabels = labelLayout.layout(labelDataPoints, chartViewport);
+                if (layers.length > 1) {
+                    NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContextScrollable, dataLabels, "#FFFFFF", 0.7);
+                }
+                if (this.animator && !suppressAnimations) {
+                    NewDataLabelUtils.animateDefaultLabels(this.labelGraphicsContextScrollable, dataLabels, this.animator.getDuration());
+                }
+                else {
+                    NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContextScrollable, dataLabels);
                 }
                 if (this.interactivityService) {
                     let behaviorOptions: CartesianBehaviorOptions = {
@@ -1598,8 +1630,22 @@ module powerbi.visuals {
                 }
             }
             else {
-                for (let i = 0, len = layers.length; i < len; i++)
-                    layers[i].render(suppressAnimations);
+                let labelDataPoints: LabelDataPoint[] = [];
+                for (let i = 0, len = layers.length; i < len; i++) {
+                    let result = layers[i].render(suppressAnimations);
+                    if (result) // Workaround until out of date mobile render path for line chart is removed
+                        labelDataPoints = labelDataPoints.concat(result.labelDataPoints);
+                }
+                labelDataPoints = NewDataLabelUtils.removeDuplicates(labelDataPoints);
+                let labelLayout = new LabelLayout({
+                    maximumOffset: NewDataLabelUtils.maxLabelOffset,
+                    startingOffset: NewDataLabelUtils.startingLabelOffset
+                });
+                let dataLabels = labelLayout.layout(labelDataPoints, chartViewport);
+                if (layers.length > 1) {
+                    NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContextScrollable, dataLabels, "#FFFFFF", 0.7);
+                }
+                NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContextScrollable, dataLabels);
             }
         }
         

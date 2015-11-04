@@ -684,9 +684,9 @@ module powerbitests {
                 var navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatRaw);
 
                 var expectedValues: string[][] = [
-                    ['<div class="kpiTrafficLightSingle0" style="display: inline-block, vertical-align: sub"></div>'],
-                    ['<div class="kpiTrafficLightSingle1" style="display: inline-block, vertical-align: sub"></div>'],
-                    ['<div class="kpiTrafficLightSingle2" style="display: inline-block, vertical-align: sub"></div>'],
+                    ['<div class="kpiTrafficLightSingle0" style="display: inline-block; vertical-align: sub;"></div>'],
+                    ['<div class="kpiTrafficLightSingle1" style="display: inline-block; vertical-align: sub;"></div>'],
+                    ['<div class="kpiTrafficLightSingle2" style="display: inline-block; vertical-align: sub;"></div>'],
                 ];
 
                 expect(fillResult<string>(navigator, rows, columns, "domContent")).toEqual(expectedValues);
@@ -1017,7 +1017,8 @@ module powerbitests {
 
             v.onResizing({ width: 100, height: 100 });
 
-            expect(controlSpy).not.toHaveBeenCalled();
+            // Even though element visibility is false, because height and width are greater than zero, refresh will be called
+            expect(controlSpy).toHaveBeenCalled();
         });
 
         it("RefreshControl invisible parent but dashboard layout", () => {

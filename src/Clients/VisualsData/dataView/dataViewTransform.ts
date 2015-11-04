@@ -61,6 +61,7 @@ module powerbi.data {
         type?: ValueType;
         roles?: { [roleName: string]: boolean };
         kpiStatusGraphic?: string;
+        sort?: SortDirection;
     }
 
     export interface DataViewSplitTransform {
@@ -232,6 +233,8 @@ module powerbi.data {
                     column.queryName = select.queryName;
                 if (select.kpiStatusGraphic)
                     column.kpiStatusGraphic = select.kpiStatusGraphic;
+                if (select.sort)
+                    column.sort = select.sort;
 
                 rewrites.push({
                     from: prototypeColumn,
@@ -536,11 +539,12 @@ module powerbi.data {
             if (valueSources) {
                 matrix.valueSources = valueSources;
 
-                // Only need to reorder if we have more than one value source
-                if (projectionOrdering && valueSources.length > 1) {
+                // Only need to reorder if we have more than one value source, and they are all bound to the same role
+                let matrixValues = <DataViewRoleForMapping>roleMappings[0].matrix.values;
+                if (projectionOrdering && valueSources.length > 1 && matrixValues && matrixValues.for) {
                     let columnLevels = columns.levels.length;
                     if (columnLevels > 0) {
-                        let newToOldPositions = createMatrixValuesPositionMapping(roleMappings[0].matrix, projectionOrdering, valueSources, columnRewrites);
+                        let newToOldPositions = createMatrixValuesPositionMapping(matrixValues, projectionOrdering, valueSources, columnRewrites);
                         if (newToOldPositions) {
                             let keys = Object.keys(newToOldPositions);
                             let numKeys = keys.length;
@@ -601,11 +605,12 @@ module powerbi.data {
 
         /** Creates a mapping of new position to original position. */
         function createMatrixValuesPositionMapping(
-            matrixMapping: DataViewMatrixMapping,
+            matrixValues: DataViewRoleForMapping,
             projectionOrdering: DataViewProjectionOrdering,
             valueSources: DataViewMetadataColumn[],
             columnRewrites: ValueRewrite<DataViewMetadataColumn>[]): NumberToNumberMapping {
-            let role = matrixMapping.values.for.in;
+
+            let role = matrixValues.for.in;
 
             function matchValueSource(columnRewrite: ValueRewrite<DataViewMetadataColumn>) {
                 for (let i = 0, len = valueSources.length; i < len; i++) {
@@ -1348,6 +1353,10 @@ module powerbi.data {
 
             if (select.Type) {
                 result.type = describeDataType(select.Type, ConceptualDataCategory[select.DataCategory]);
+            }
+
+            if (select.kpiStatusGraphic) {
+                result.kpiStatusGraphic = select.kpiStatusGraphic;
             }
 
             return result;

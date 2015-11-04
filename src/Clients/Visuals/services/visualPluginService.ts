@@ -31,6 +31,7 @@ module powerbi.visuals {
         getPlugin(type: string): IVisualPlugin;
         getVisuals(): IVisualPlugin[];
         capabilities(type: string): VisualCapabilities;
+        removeAnyCustomVisuals(): void;
     }
 
     export interface MinervaVisualFeatureSwitches {
@@ -40,11 +41,6 @@ module powerbi.visuals {
          * This feature switch enables the data-dot & column combo charts.
          */
         dataDotChartEnabled?: boolean;
-        
-        /**
-         * To show or not the custom visualizations created.
-         */
-        devToolsEnabled?: boolean;
 
         /**
          * Visual should prefer to request a higher volume of data.
@@ -104,6 +100,16 @@ module powerbi.visuals {
                 let plugin = this.getPlugin(type);
                 if (plugin)
                     return plugin.capabilities;
+            }
+
+            public removeAnyCustomVisuals() {
+                var plugins = powerbi.visuals.plugins;
+                for (var key in plugins) {
+                    var p: IVisualPlugin = plugins[key];
+                    if (p.custom) {
+                        delete plugins[key];
+                    }
+                }
             }
         }
 
@@ -271,6 +277,22 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
             }));
+            // Radar Chart
+            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
+                animator: new BaseAnimator()
+            }));
+            // DotPlot
+            createPlugin(plugins, powerbi.visuals.plugins.dotPlot, () => new samples.DotPlot({
+                animator: new BaseAnimator()
+            }));
+            // Histogram
+            createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
+                animator: new BaseAnimator()
+            }));
+            // Area Range Chart
+            createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
+                animator: new BaseAnimator()
+            }));
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {
@@ -285,9 +307,7 @@ module powerbi.visuals {
 
                 this.visualPlugins = {};
 
-                if (this.featureSwitches.devToolsEnabled) {
-                    this.addCustomVisualizations([]);
-                }
+                this.addCustomVisualizations([]);
                 
                 createMinervaPlugins(this.visualPlugins, this.featureSwitches.seriesLabelFormattingEnabled);
             }
@@ -322,10 +342,16 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.slicer,
                     powerbi.visuals.plugins.donutChart,
                 ];
-
-                if (this.featureSwitches.devToolsEnabled) {
-                    this.addCustomVisualizations(convertibleVisualTypes);
+                    // Add any visuals compiled in the developer tools
+                    // Additionally add custom visuals.
+                for (let p in plugins) {
+                    var plugin = plugins[p];
+                    if (plugin.custom) {
+                        this.pushPluginIntoConveratbleTypes(convertibleVisualTypes, plugin);
+                    }
                 }
+
+                this.addCustomVisualizations(convertibleVisualTypes);
 
                 if (this.featureSwitches.dataDotChartEnabled) {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.dataDotClusteredColumnComboChart);
@@ -339,6 +365,12 @@ module powerbi.visuals {
                 return convertibleVisualTypes;
             }
 
+            private pushPluginIntoConveratbleTypes(convertibleVisualTypes: IVisualPlugin[], plugin: IVisualPlugin) {
+                if (!convertibleVisualTypes.some(pl => pl.name === plugin.name)) {
+                    convertibleVisualTypes.push(plugin);
+                }
+            }
+            
             private addCustomVisualizations(convertibleVisualTypes: IVisualPlugin[]): void {
                 // Read new visual from localstorage
                 let customVisualizationList = localStorageService.getData('customVisualizations');
@@ -346,7 +378,7 @@ module powerbi.visuals {
                     let len = customVisualizationList.length;
                     for (let i = 0; i < len; i++) {
                         let pluginName = customVisualizationList[i].pluginName;
-                        let plugin = this.getPlugin(pluginName);
+                        var plugin = this.getPlugin(pluginName);
                         // If the browser session got restarted or its a new window the plugin wont be available, so we need to add it
                         if (!plugin) {
                             let jsCode = customVisualizationList[i].javaScriptCode;
@@ -368,7 +400,7 @@ module powerbi.visuals {
 
                             plugin = this.getPlugin(pluginName);
                         }
-                        convertibleVisualTypes.push(plugin);
+                        this.pushPluginIntoConveratbleTypes(convertibleVisualTypes, plugin);
                     }
                 }
             }
@@ -387,7 +419,7 @@ module powerbi.visuals {
             public constructor() {
                 super();
 
-                this.visualPlugins = <any>powerbi.visuals.plugins;
+                this.visualPlugins = {};
 
                 createMinervaPlugins(this.visualPlugins, false);
             }

@@ -46,8 +46,6 @@ module powerbitests {
     var dataTypeNumber = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double);
     var dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
 
-    var DefaultWaitForRender = 500;
-
     powerbitests.mocks.setLocale();
 
     var dataViewMetadataCategorySeriesColumns: powerbi.DataViewMetadata = {
@@ -2186,7 +2184,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = mocks.createVisualHostServices();
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false, devToolsEnabled: false }).getPlugin('treemap').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false,}).getPlugin('treemap').create();
             v.init({
                 element: element,
                 host: hostServices,
