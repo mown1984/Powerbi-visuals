@@ -46,3 +46,4 @@ gulp.task("default", ["build:visuals"]);
 
 gulp.task("init", ["init:visuals"]);
 
+gulp.task("tslint", ["tslint:visuals"]);

@@ -66,8 +66,9 @@ function runHttpServer(settings, callback) {
         if (server && server.close) {
             server.close();
         }
-        
-        callback();
+        if (callback) {			
+			callback();
+		}
         
         process.exit();
     });
