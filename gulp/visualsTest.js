@@ -45,7 +45,7 @@ function copyInternalDependencies () {
         "src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js"])
         .pipe(rename("powerbi-visuals-tests.js"))
         .pipe(gulp.dest("VisualsTests"));
-};
+}
 
 function copyExternalDependencies () {
     return gulp.src([
