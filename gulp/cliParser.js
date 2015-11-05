@@ -1,4 +1,3 @@
-/// <binding ProjectOpened='init' />
 /*
  *  Power BI Visualizations
  *
@@ -24,26 +23,25 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require('gulp'),
-    runSequence = require("run-sequence");
-	
-require('./gulp/visualsTest.js');
-require('./gulp/visualsDownload.js');
-require('./gulp/visualsPlayground.js');
-require('./gulp/visualsBuild.js').load();
-require('./gulp/visualsWatcher.js');
-require('./gulp/visualsPackage.js');
-require('./gulp/ghPages.js');
-require('./gulp/gulpHelp.js');
-	
-gulp.task("build", ["build:visuals"]);
+"use strict";
 
-gulp.task("test", ["test:visuals"]);
+var minimist = require("minimist"),
+    cliOptions = {
+    string: [
+        "files",
+        "openInBrowser"
+    ],
+    boolean: [
+		"debug", 
+		"release", 
+		"noLint"
+	],
+    alias: {
+        files: "f",
+		debug: "d",
+        release: "r",
+        openInBrowser: ["o", "oib"]
+    }
+};
 
-gulp.task("run:test", ["run:test:visuals"]);
-
-gulp.task("default", ["build:visuals"]);
-
-gulp.task("init", ["init:visuals"]);
-
-gulp.task("tslint", ["tslint:visuals"]);
+module.exports.cliOptions = minimist(process.argv.slice(2), cliOptions) || {};

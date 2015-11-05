@@ -32,7 +32,9 @@
         "jasmine-core": "2.3.4",
         "gulp-open": "1.0.0",
         "require-dir": "^0.3.0",
-        "express": "4.13.3"
+        "express": "4.13.3",
+        "q": "^1.4.1",
+        "stream-consume": "^0.1.0"
     },
     "scripts": {
         "preinstall": "npm install -g gulp"

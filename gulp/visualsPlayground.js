@@ -1,4 +1,3 @@
-/// <binding ProjectOpened='init' />
 /*
  *  Power BI Visualizations
  *
@@ -24,26 +23,19 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require('gulp'),
-    runSequence = require("run-sequence");
-	
-require('./gulp/visualsTest.js');
-require('./gulp/visualsDownload.js');
-require('./gulp/visualsPlayground.js');
-require('./gulp/visualsBuild.js').load();
-require('./gulp/visualsWatcher.js');
-require('./gulp/visualsPackage.js');
-require('./gulp/ghPages.js');
-require('./gulp/gulpHelp.js');
-	
-gulp.task("build", ["build:visuals"]);
+var gulp = require("gulp"),
+    runSequence = require("run-sequence"),
+    visualsCommon = require("./visualsCommon.js");
 
-gulp.task("test", ["test:visuals"]);
+gulp.task("run:playground", function (callback) {
+    visualsCommon.runHttpServer({
+        path: "src/Clients/PowerBIVisualsPlayground"
+    }, callback);
+});
 
-gulp.task("run:test", ["run:test:visuals"]);
+gulp.task("build:run:playground", ["build:visuals"], function (callback) {
+    runSequence("run:playground", callback);
+});
 
-gulp.task("default", ["build:visuals"]);
 
-gulp.task("init", ["init:visuals"]);
 
-gulp.task("tslint", ["tslint:visuals"]);
