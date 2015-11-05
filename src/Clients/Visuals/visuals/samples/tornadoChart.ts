@@ -317,11 +317,26 @@ module powerbi.visuals.samples {
                     }
                 },
                 legend: {
-                    displayName: data.createDisplayNameGetter("Visual_Legend"),
+                    displayName: data.createDisplayNameGetter('Visual_Legend'),
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            displayName: data.createDisplayNameGetter('Visual_Show'),
                             type: { bool: true }
+                        },
+                        position: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
+                            description: data.createDisplayNameGetter('Visual_LegendPositionDescription'),
+                            type: { enumeration: legendPosition.type }
+                        },
+                        showTitle: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
+                            description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
+                            type: { bool: true }
+                        },
+                    titleText: {
+                            displayName: data.createDisplayNameGetter('Visual_LegendName'),
+                            description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
+                            type: { text: true }
                         }
                     }
                 },
@@ -399,6 +414,7 @@ module powerbi.visuals.samples {
         private labels: D3.Selection;
         private categories: D3.Selection;
 
+        private legendObjectProperties: DataViewObject;
         private legend: ILegend;
 
         private colors: IDataColorPalette;
@@ -476,10 +492,6 @@ module powerbi.visuals.samples {
             this.legend = createLegend(this.element, false, null);
         }
 
-        private getLegendElement(): D3.Selection {
-            return d3.select(this.element.get(0)).select(TornadoChart.Legend.selector);
-        }
-
         public update(visualUpdateOptions: VisualUpdateOptions): void {
             if (!visualUpdateOptions ||
                 !visualUpdateOptions.dataViews ||
@@ -495,9 +507,6 @@ module powerbi.visuals.samples {
 
             this.tornadoChartDataView = this.converter(this.dataView);
             this.setSize(visualUpdateOptions.viewport);
-            this.updateSections(this.tornadoChartDataView);
-            this.updateSectionsWidth();
-            this.updateElements(visualUpdateOptions.viewport.height, visualUpdateOptions.viewport.width);
 
             this.render(this.tornadoChartDataView);
         }
@@ -605,6 +614,8 @@ module powerbi.visuals.samples {
                 value: value
             });
 
+            this.parseLegendProperties(dataView);
+
             return {
                 formatter: valueFormatter,
                 precision: precision,
@@ -615,6 +626,17 @@ module powerbi.visuals.samples {
                 labelOutsideFillColour: this.getColor(TornadoChart.Properties.labels.outsideFill, this.DefaultTornadoChartSettings.labelOutsideFillColour, objects),
                 categoriesFillColour: this.getColor(TornadoChart.Properties.categories.fill, this.DefaultTornadoChartSettings.categoriesFillColour, objects)
             };
+        }
+
+        private parseLegendProperties(dataView: DataView): void {
+            if (!dataView || !dataView.metadata) {
+                this.legendObjectProperties = {};
+
+                return;
+            }
+
+            this.legendObjectProperties =
+                DataViewObjects.getObject(dataView.metadata.objects, "legend", {});
         }
 
         private getColor(properties: any, defaultColor: string, objects: DataViewObjects): string {
@@ -710,7 +732,10 @@ module powerbi.visuals.samples {
 
             this.renderLegend(tornadoChartDataView);
 
-            this.updateViewportHeight();
+            this.updateViewport();
+            this.updateSections(tornadoChartDataView);
+            this.updateSectionsWidth();
+            this.updateElements(this.viewport.height, this.viewport.width);
             this.computeHeightColumn(tornadoChartDataView);
 
             this.renderMiddleSection(tornadoChartDataView);
@@ -718,14 +743,36 @@ module powerbi.visuals.samples {
             this.renderCategories(tornadoChartDataView);
         }
 
-        private updateViewportHeight(): void {
-            this.viewport.height -= this.legend.getMargins().height;
+        private updateViewport(): void {
+            let legendMargins: IViewport = this.legend.getMargins(),
+                legendPosition: LegendPosition;
+
+            legendPosition = LegendPosition[<string> this.legendObjectProperties[legendProps.position]];
+
+            switch (legendPosition) {
+                case LegendPosition.Top:
+                case LegendPosition.TopCenter:
+                case LegendPosition.Bottom:
+                case LegendPosition.BottomCenter: {
+                    this.viewport.height -= legendMargins.height;
+
+                    break;
+                }
+                case LegendPosition.Left:
+                case LegendPosition.LeftCenter:
+                case LegendPosition.Right:
+                case LegendPosition.RightCenter: {
+                    this.viewport.width -= legendMargins.width;
+
+                    break;
+                }
+            }
         }
 
         private computeHeightColumn(tornadoChartDataView: TornadoChartDataView): void {
             let length: number = tornadoChartDataView.categories.length;
 
-            this.heightColumn = (this.viewport.height - (length - 1) * this.columnPadding) / length;
+            this.heightColumn = (this.viewport.height - length * this.columnPadding) / length;
         }
 
         private renderMiddleSection(tornadoChartDataView: TornadoChartDataView): void {
@@ -1215,18 +1262,24 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            if (tornadoChartDataView.settings.showLegend) {
-                this.legend.changeOrientation(LegendPosition.Top);
-            } else {
-                this.legend.changeOrientation(LegendPosition.None);
+            let legendData: LegendData = {
+                title: tornadoChartDataView.legend.title,
+                dataPoints: tornadoChartDataView.legend.dataPoints
+            };
+
+            if (this.legendObjectProperties) {
+                let position: string;
+
+                LegendData.update(legendData, this.legendObjectProperties);
+
+                position = <string> this.legendObjectProperties[legendProps.position];
+
+                if (position) {
+                    this.legend.changeOrientation(LegendPosition[position]);
+                }
             }
 
-            this.legend.drawLegend(tornadoChartDataView.legend, this.viewport);
-
-            this.getLegendElement().attr("transform", SVGUtil.translate(
-                this.margin.left,
-                0
-            ));
+            this.legend.drawLegend(legendData, this.viewport);
         }
 
         private getTextData(text: string, measureWidth: boolean = false, measureHeight: boolean = false): TextData {
@@ -1293,12 +1346,29 @@ module powerbi.visuals.samples {
                     break;
                 }
                 case "legend": {
-                    let legend: VisualObjectInstance = {
+                    let showTitle: boolean = true,
+                        titleText: string = "",
+                        legend: VisualObjectInstance;
+
+                    showTitle = DataViewObject.getValue(
+                        this.legendObjectProperties,
+                        legendProps.showTitle,
+                        showTitle);
+
+                    titleText = DataViewObject.getValue(
+                        this.legendObjectProperties,
+                        legendProps.titleText,
+                        titleText);
+
+                    legend = {
                         objectName: "legend",
                         displayName: "legend",
                         selector: null,
                         properties: {
-                            show: settings.showLegend
+                            show: settings.showLegend,
+                            position: LegendPosition[this.legend.getOrientation()],
+                            showTitle: showTitle,
+                            titleText: titleText
                         }
                     };
 
