@@ -61,7 +61,7 @@ function copyExternalDependencies () {
         "node_modules/jasmine-core/lib/jasmine-core/boot.js",
         "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"])
         .pipe(gulp.dest("VisualsTests"));
-};
+}
 
 function addLink(link) {
     return '<link rel="stylesheet" type="text/css" href="' + link + '"/>';
@@ -98,12 +98,11 @@ function addTestName(testName) {
 function createHtmlTestRunner(fileName, paths, testName) {
     var html = "<!DOCTYPE html><html>",
         head =
-            "<head>"
-            + '<meta charset="utf-8">'
-            + "<title>Jasmine Spec Runner</title>"
-            + addPaths(paths)
-            + addTestName(testName)
-            + "</head>",
+            "<head>" +
+            '<meta charset="utf-8">' + 
+            "<title>Jasmine Spec Runner</title>" +
+            addPaths(paths) +
+            addTestName(testName) + "</head>",
         body = "<body></body>";
 
     html = html + head + body + "</html>";
@@ -153,7 +152,7 @@ function runTestVisuals (callback) {
             .pipe(jasmineBrowser.specRunner({console: true}))
             .pipe(jasmineBrowser.headless());
     }
-};
+}
 
 gulp.task("test:visuals:performance", function (callback) {
     filesOption.push("performance/performanceTests.ts");
@@ -177,7 +176,7 @@ function buildVisuals() {
 	var isDebug = Boolean(cliParser.cliOptions.debug);
 	var buildingVisualsLog = function() {
 		console.log('Building visuals...');
-	}
+	};
 	if (isDebug) {
 		return visualsCommon.runScriptSequence([
 			buildingVisualsLog,
@@ -192,7 +191,7 @@ function buildVisuals() {
 			if (!cliParser.cliOptions.noLint) {
 				console.log('Linting TypeScript...');
 			}
-		}
+		};
 		return visualsCommon.runScriptSequence([
 			tsLintLog,
 			visualsBuildRelease.tslintVisuals,
@@ -222,7 +221,7 @@ function buildVisualsTests() {
         copyInternalDependencies,
         copyExternalDependencies
     ]);
-};
+}
 
 gulp.task("open:test:visuals", function (callback) {
     openInBrowser = true;    

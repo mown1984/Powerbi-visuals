@@ -59,27 +59,27 @@ gulp.task("package", function (callback) {
 
     function copyPackageJsMinified() {
         return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.min.js");
-    };
+    }
 
     function copyPackageJsUnminified() {
         return copyPackageFile("build/scripts/powerbi-visuals.all.js", "powerbi-visuals.js");
-    };
+    }
 
     function copyPackageCssMinified() {
         return copyPackageFile("build/styles/visuals.css", "visuals.min.css");
-    };
+    }
 
     function copyPackageCssUnminified() {
         return copyPackageFile("build/styles/visuals.css", "visuals.css");
-    };
+    }
 
     function copyPackageSprite() {
         return copyPackageFile("src/Clients/Visuals/images/visuals.sprites.png", "images/visuals.sprites.png");
-    };
+    }
 	
 	function replaceReferences () {
 		replaceInFile("./lib/powerbi-visuals.d.ts", /\/\/\/\s*<reference path.*\/>\s/g);
-	};
+	}
 	
 	function replaceInFile(file, find, replace) {
 		var UTF8 = "utf8";
@@ -102,7 +102,7 @@ gulp.task("package", function (callback) {
             isReleaseFlag ? copyPackageJsMinified : copyPackageJsUnminified,
             isReleaseFlag ? copyPackageCssMinified : copyPackageCssUnminified],
             isReleaseFlag);
-    };
+    }
 
     function copyPackageFile(inputFile, outputFile) {
         var src = [];
@@ -110,7 +110,7 @@ gulp.task("package", function (callback) {
 
         return gulp.src(src)
             .pipe(rename(outputFile))
-            .pipe(gulp.dest("lib"))
+            .pipe(gulp.dest("lib"));
     }
 });
 

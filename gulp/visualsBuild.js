@@ -103,11 +103,7 @@ module.exports.load = function (options) {
         combineInternalJs: combineInternalJs,
         combineExternalJs: combineExternalJs,
         combineVisualJsAll: combineVisualJsAll,
-        combineInternalDts: combineInternalDts,
-        combineExternalDts: combineExternalDts,
         buildVisualsTestsTs: buildVisualsTestsTs,
-		buildVisualsCommon: buildVisualsCommon,
-		buildVisualsData: buildVisualsData,
 		buildVisualsProject: buildVisualsProject,
 		buildVisualsScripts: buildVisualsScripts,
 		tslintVisuals: tslintVisuals
@@ -273,7 +269,7 @@ module.exports.load = function (options) {
         else {
             return concatFilesWithSourceMap(srcResult, "powerbi-visuals.js")
                 .pipe(gulp.dest("build/scripts"))
-                .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"))
+                .pipe(gulp.dest("src/Clients/PowerBIVisualsPlayground"));
         }
     }
 
@@ -404,7 +400,7 @@ module.exports.load = function (options) {
             name: "powerbi-visuals.d.ts",
             destinationPath: "lib"
         });
-    };
+    }
 
     function combineExternalDts() {
         return combine({
@@ -414,7 +410,7 @@ module.exports.load = function (options) {
             name: "powerbi-externals.d.ts",
             destinationPath: "lib"
         });
-    };
+    }
 
     function combine(options) {
         return gulp.src(options.src)

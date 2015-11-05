@@ -48,7 +48,7 @@ function installJasmine() {
         console.log("Jasmine test dependency exists.");
     }
     return result;
-};
+}
 
 /** ------------------------------ Download PHANTOM --------------------------------------- */
 function installPhantomjs() {
@@ -88,13 +88,13 @@ function installPhantomjs() {
     function getPhantomJsVersion(path) {
         try {
             var stdout = exec("phantomjs -v", { cwd: path }).toString();
-            return stdout.substring(0, 5)
+            return stdout.substring(0, 5);
         }
         catch (e) {
             return null;
         }
     }
-};
+}
 
 // we need this task to install phantom JS manually
 gulp.task("install:phantomjs", function () {
