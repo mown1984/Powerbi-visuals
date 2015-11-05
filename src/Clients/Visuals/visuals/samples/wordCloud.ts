@@ -87,6 +87,7 @@ module powerbi.visuals.samples {
         stopWords: string;
         isDefaultStopWords: boolean;
         stopWordsArray: string[];
+        maxCountWords: number;
     }
 
     export class WordCloud implements IVisual {
@@ -97,6 +98,10 @@ module powerbi.visuals.samples {
                 formatString: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "formatString"
+                },
+                maxCountWords: <DataViewObjectPropertyIdentifier> {
+                    objectName: "general",
+                    propertyName: "maxCountWords"
                 },
                 minFontSize: <DataViewObjectPropertyIdentifier> {
                     objectName: "general",
@@ -162,6 +167,9 @@ module powerbi.visuals.samples {
 
         private static UpdateInterval: number = 10;
 
+        private static MinAngle: number = -180;
+        private static MaxAngle: number = 180;
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Category",
@@ -211,6 +219,10 @@ module powerbi.visuals.samples {
                                     formatString: true
                                 }
                             }
+                        },
+                        maxCountWords: {
+                            displayName: "Max Count Words",
+                            type: { numeric: true }
                         },
                         minFontSize: {
                             displayName: "Min Font",
@@ -303,7 +315,8 @@ module powerbi.visuals.samples {
             isRemoveStopWords: false,
             stopWordsArray: [],
             stopWords: undefined,
-            isDefaultStopWords: false
+            isDefaultStopWords: false,
+            maxCountWords: 200
         };
 
         private static RenderDelay: number = 50;
@@ -427,7 +440,13 @@ module powerbi.visuals.samples {
                 isRemoveStopWords: boolean = true,
                 stopWords: string,
                 stopWordsArray: string[],
-                isDefaultStopWords: boolean = false;
+                isDefaultStopWords: boolean = false,
+                maxCountWords: number;
+
+            maxCountWords = this.getNumberFromObjects(
+                objects,
+                WordCloud.Properties.general.maxCountWords,
+                WordCloud.DefaultSettings.maxCountWords);
 
             minFonSize = this.getNumberFromObjects(
                 objects,
@@ -471,6 +490,14 @@ module powerbi.visuals.samples {
 
                 minAngle = maxAngle;
                 maxAngle = buf;
+            }
+
+            if (minAngle < WordCloud.MinAngle) {
+                minAngle = WordCloud.MinAngle;
+            }
+
+            if (maxAngle > WordCloud.MaxAngle) {
+                maxAngle = WordCloud.MaxAngle;
             }
 
             quantityAngles = quantityAngles > 0
@@ -522,7 +549,8 @@ module powerbi.visuals.samples {
                 isRemoveStopWords: isRemoveStopWords,
                 stopWords: stopWords,
                 stopWordsArray: stopWordsArray,
-                isDefaultStopWords: isDefaultStopWords
+                isDefaultStopWords: isDefaultStopWords,
+                maxCountWords: maxCountWords
             };
         }
 
@@ -563,6 +591,10 @@ module powerbi.visuals.samples {
                 return null;
             }
 
+            if (words.length > this.settings.maxCountWords) {
+                words = words.slice(0, this.settings.maxCountWords);
+            }
+
             for (let i: number; i < (this.viewport.width >> 5) * this.viewport.height; i++) {
                 surface[i] = 0;
             }
@@ -581,11 +613,11 @@ module powerbi.visuals.samples {
                     let word: WordCloudData = words[index],
                         ratio: number = 1;
 
-                    if (words.length < 8) {
+                    if (words.length <= 10) {
                         ratio = 5;
-                    } else if (words.length < 16) {
+                    } else if (words.length <= 25) {
                         ratio = 3.5;
-                    } else if (words.length < 25) {
+                    } else if (words.length <= 100) {
                         ratio = 2;
                     }
 
@@ -747,7 +779,7 @@ module powerbi.visuals.samples {
 
             sprite = [];
 
-            for (let i = quantityOfWords - 1; i >=0; i--) {
+            for (let i = quantityOfWords - 1; i >= 0; i--) {
                 let currentWordData: WordCloudData = words[i],
                     width: number = currentWordData.width,
                     width32: number = width >> 5,
@@ -807,7 +839,7 @@ module powerbi.visuals.samples {
         }
 
         private findPosition(surface: number[], word: WordCloudData, borders: IPoint[]): boolean {
-            let startPoint: IPoint= {x: word.x, y: word.y},
+            let startPoint: IPoint = { x: word.x, y: word.y },
                 delta = Math.sqrt(this.viewport.width * this.viewport.width + this.viewport.height * this.viewport.height),
                 point: IPoint,
                 dt: number = Math.random() < 0.5 ? 1 : -1,
@@ -1000,6 +1032,7 @@ module powerbi.visuals.samples {
 
         private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
             let brokenStrings: WordCloudText[] = [],
+                whiteSpaceRegExp: RegExp = /\s/,
                 punctuatuinRegExp: RegExp;
 
             if (!this.settings.isBrokenText) {
@@ -1012,7 +1045,7 @@ module powerbi.visuals.samples {
                 if (typeof item.text === "string") {
                     let words: string[];
 
-                    words = item.text.replace(punctuatuinRegExp, " ").split(/\s/);
+                    words = item.text.replace(punctuatuinRegExp, " ").split(whiteSpaceRegExp);
 
                     if (this.settings.isRemoveStopWords) {
                         let stopWords: string[] = this.settings.stopWordsArray;
@@ -1028,13 +1061,15 @@ module powerbi.visuals.samples {
                         });
                     }
 
-                    brokenStrings = brokenStrings.concat(words.map((element: string) => {
-                        return <WordCloudText> {
-                            text: element,
-                            count: item.count,
-                            index: item.index
-                        };
-                    }));
+                    words.forEach((element: string) => {
+                        if (element.length > 0 && !whiteSpaceRegExp.test(element)) {
+                            brokenStrings.push({
+                                text: element,
+                                count: item.count,
+                                index: item.index
+                            });
+                        }
+                    });
                 } else {
                     brokenStrings.push(item);
                 }
@@ -1313,6 +1348,7 @@ module powerbi.visuals.samples {
                         displayName: "general",
                         selector: null,
                         properties: {
+                            maxCountWords: this.settings.maxCountWords,
                             minFontSize: this.settings.minFontSize,
                             maxFontSize: this.settings.maxFontSize,
                             isBrokenText: this.settings.isBrokenText
