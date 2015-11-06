@@ -460,9 +460,6 @@ module powerbi.visuals.samples {
                 WordCloud.Properties.general.maxFontSize,
                 WordCloud.DefaultSettings.maxFontSize);
 
-            minFontSize = Math.abs(this.parseNumber(minFontSize, WordCloud.DefaultSettings.minFontSize));
-            maxFontSize = Math.abs(this.parseNumber(maxFontSize, WordCloud.DefaultSettings.maxFontSize));
-
             minAngle = this.getNumberFromObjects(
                 objects, 
                 WordCloud.Properties.rotateText.minAngle, 
@@ -472,18 +469,6 @@ module powerbi.visuals.samples {
                 objects,
                 WordCloud.Properties.rotateText.maxAngle,
                 WordCloud.DefaultSettings.maxAngle);
-
-            minAngle = this.parseNumber(
-                minAngle,
-                0,
-                WordCloud.MinAngle,
-                WordCloud.MaxAngle);
-
-            maxAngle = this.parseNumber(
-                maxAngle,
-                0,
-                WordCloud.MinAngle,
-                WordCloud.MaxAngle);
 
             isRotateText = DataViewObjects.getValue<boolean>(
                 objects,
@@ -1147,8 +1132,11 @@ module powerbi.visuals.samples {
             scaleType: WordCloudScaleType = WordCloudScaleType.value) {
             let weight: number,
                 fontSize: number,
-                maxFontSize: number = this.settings.maxFontSize,
-                minFontSize: number = this.settings.minFontSize;
+                maxFontSize: number,
+                minFontSize: number;
+
+            minFontSize = Math.abs(this.parseNumber(this.settings.minFontSize, WordCloud.DefaultSettings.minFontSize));
+            maxFontSize = Math.abs(this.parseNumber(this.settings.maxFontSize, WordCloud.DefaultSettings.maxFontSize));
 
             if (minFontSize > maxFontSize) {
                 let buffer: number = minFontSize;
@@ -1186,12 +1174,24 @@ module powerbi.visuals.samples {
                 return 0;
             }
 
-            let minAngle: number = this.settings.minAngle,
-                maxAngle: number = this.settings.maxAngle,
+            let minAngle: number,
+                maxAngle: number,
                 maxNumberOfOrientations: number,
                 angle: number;
 
             maxNumberOfOrientations = Math.abs(this.parseNumber(this.settings.maxNumberOfOrientations, 0));
+
+            minAngle = this.parseNumber(
+                this.settings.minAngle,
+                0,
+                WordCloud.MinAngle,
+                WordCloud.MaxAngle);
+
+            maxAngle = this.parseNumber(
+                this.settings.maxAngle,
+                0,
+                WordCloud.MinAngle,
+                WordCloud.MaxAngle);
 
             if (minAngle > maxAngle) {
                 let buffer: number = minAngle;
