@@ -79,7 +79,7 @@ module powerbi.visuals.samples {
         maxFontSize: number;
         minAngle?: number;
         maxAngle?: number;
-        quantityAngles?: number;
+        maxNumberOfOrientations?: number;
         valueFormatter?: IValueFormatter;
         isRotateText: boolean;
         isBrokenText: boolean;
@@ -87,7 +87,7 @@ module powerbi.visuals.samples {
         stopWords: string;
         isDefaultStopWords: boolean;
         stopWordsArray: string[];
-        maxCountWords: number;
+        maxNumberOfWords: number;
     }
 
     export class WordCloud implements IVisual {
@@ -99,9 +99,9 @@ module powerbi.visuals.samples {
                     objectName: "general",
                     propertyName: "formatString"
                 },
-                maxCountWords: <DataViewObjectPropertyIdentifier> {
+                maxNumberOfWords: <DataViewObjectPropertyIdentifier> {
                     objectName: "general",
-                    propertyName: "maxCountWords"
+                    propertyName: "maxNumberOfWords"
                 },
                 minFontSize: <DataViewObjectPropertyIdentifier> {
                     objectName: "general",
@@ -143,9 +143,9 @@ module powerbi.visuals.samples {
                     objectName: "rotateText",
                     propertyName: "maxAngle"
                 },
-                quantityAngles: <DataViewObjectPropertyIdentifier> {
+                maxNumberOfOrientations: <DataViewObjectPropertyIdentifier> {
                     objectName: "rotateText",
-                    propertyName: "quantityAngles"
+                    propertyName: "maxNumberOfOrientations"
                 }
             }
         };
@@ -169,6 +169,8 @@ module powerbi.visuals.samples {
 
         private static MinAngle: number = -180;
         private static MaxAngle: number = 180;
+
+        private static MaxNumberOfWords: number = 2500;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
@@ -194,10 +196,10 @@ module powerbi.visuals.samples {
                 categorical: {
                     categories: {
                         for: { in: "Category" },
-                        dataReductionAlgorithm: { top: {} }
+                        dataReductionAlgorithm: { top: { count: WordCloud.MaxNumberOfWords } }
                     },
                     values: {
-                        for: {in: "Values"}
+                        for: { in: "Values" }
                     }
                 }
             }],
@@ -220,8 +222,8 @@ module powerbi.visuals.samples {
                                 }
                             }
                         },
-                        maxCountWords: {
-                            displayName: "Max Count Words",
+                        maxNumberOfWords: {
+                            displayName: "Max number of words",
                             type: { numeric: true }
                         },
                         minFontSize: {
@@ -274,8 +276,8 @@ module powerbi.visuals.samples {
                             displayName: "Max Angle",
                             type: { numeric: true }
                         },
-                        quantityAngles: {
-                            displayName: data.createDisplayNameGetter("Aggregate_CountNonNull"),
+                        maxNumberOfOrientations: {
+                            displayName: "Max number of orientations",
                             type: { numeric: true }
                         }
                     }
@@ -309,14 +311,14 @@ module powerbi.visuals.samples {
             maxFontSize: 100,
             minAngle: -60,
             maxAngle: 90,
-            quantityAngles: 2,
+            maxNumberOfOrientations: 2,
             isRotateText: false,
             isBrokenText: true,
             isRemoveStopWords: false,
             stopWordsArray: [],
             stopWords: undefined,
             isDefaultStopWords: false,
-            maxCountWords: 200
+            maxNumberOfWords: 200
         };
 
         private static RenderDelay: number = 50;
@@ -430,25 +432,25 @@ module powerbi.visuals.samples {
 
             let objects: DataViewObjects = this.getObjectsFromDataView(dataView),
                 valueFormatter: IValueFormatter,
-                minFonSize: number,
+                minFontSize: number,
                 maxFontSize: number,
                 minAngle: number,
                 maxAngle: number,
-                quantityAngles: number,
+                maxNumberOfOrientations: number,
                 isRotateText: boolean = false,
                 isBrokenText: boolean = true,
                 isRemoveStopWords: boolean = true,
                 stopWords: string,
                 stopWordsArray: string[],
                 isDefaultStopWords: boolean = false,
-                maxCountWords: number;
+                maxNumberOfWords: number;
 
-            maxCountWords = this.getNumberFromObjects(
+            maxNumberOfWords = this.getNumberFromObjects(
                 objects,
-                WordCloud.Properties.general.maxCountWords,
-                WordCloud.DefaultSettings.maxCountWords);
+                WordCloud.Properties.general.maxNumberOfWords,
+                WordCloud.DefaultSettings.maxNumberOfWords);
 
-            minFonSize = this.getNumberFromObjects(
+            minFontSize = this.getNumberFromObjects(
                 objects,
                 WordCloud.Properties.general.minFontSize,
                 WordCloud.DefaultSettings.minFontSize);
@@ -458,12 +460,8 @@ module powerbi.visuals.samples {
                 WordCloud.Properties.general.maxFontSize,
                 WordCloud.DefaultSettings.maxFontSize);
 
-            if (minFonSize > maxFontSize) {
-                let buf: number = minFonSize;
-
-                minFonSize = maxFontSize;
-                maxFontSize = buf;
-            }
+            minFontSize = Math.abs(this.parseNumber(minFontSize, WordCloud.DefaultSettings.minFontSize));
+            maxFontSize = Math.abs(this.parseNumber(maxFontSize, WordCloud.DefaultSettings.maxFontSize));
 
             minAngle = this.getNumberFromObjects(
                 objects, 
@@ -475,34 +473,27 @@ module powerbi.visuals.samples {
                 WordCloud.Properties.rotateText.maxAngle,
                 WordCloud.DefaultSettings.maxAngle);
 
+            minAngle = this.parseNumber(
+                minAngle,
+                0,
+                WordCloud.MinAngle,
+                WordCloud.MaxAngle);
+
+            maxAngle = this.parseNumber(
+                maxAngle,
+                0,
+                WordCloud.MinAngle,
+                WordCloud.MaxAngle);
+
             isRotateText = DataViewObjects.getValue<boolean>(
                 objects,
                 WordCloud.Properties.rotateText.show,
                 WordCloud.DefaultSettings.isRotateText);
 
-            quantityAngles = this.getNumberFromObjects(
+            maxNumberOfOrientations = this.getNumberFromObjects(
                 objects,
-                WordCloud.Properties.rotateText.quantityAngles,
-                WordCloud.DefaultSettings.quantityAngles);
-
-            if (minAngle > maxAngle) {
-                let buf: number = minAngle;
-
-                minAngle = maxAngle;
-                maxAngle = buf;
-            }
-
-            if (minAngle < WordCloud.MinAngle) {
-                minAngle = WordCloud.MinAngle;
-            }
-
-            if (maxAngle > WordCloud.MaxAngle) {
-                maxAngle = WordCloud.MaxAngle;
-            }
-
-            quantityAngles = quantityAngles > 0
-                ? quantityAngles
-                : 0;
+                WordCloud.Properties.rotateText.maxNumberOfOrientations,
+                WordCloud.DefaultSettings.maxNumberOfOrientations);
 
             valueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(
@@ -538,11 +529,11 @@ module powerbi.visuals.samples {
                 WordCloud.DefaultSettings.isDefaultStopWords);
 
             return {
-                minFontSize: minFonSize,
+                minFontSize: minFontSize,
                 maxFontSize: maxFontSize,
                 minAngle: minAngle,
                 maxAngle: maxAngle,
-                quantityAngles: quantityAngles,
+                maxNumberOfOrientations: maxNumberOfOrientations,
                 valueFormatter: valueFormatter,
                 isRotateText: isRotateText,
                 isBrokenText: isBrokenText,
@@ -550,7 +541,7 @@ module powerbi.visuals.samples {
                 stopWords: stopWords,
                 stopWordsArray: stopWordsArray,
                 isDefaultStopWords: isDefaultStopWords,
-                maxCountWords: maxCountWords
+                maxNumberOfWords: maxNumberOfWords
             };
         }
 
@@ -559,13 +550,29 @@ module powerbi.visuals.samples {
                 return defaultValue;
             }
 
-            let value: number = Number(DataViewObjects.getValue<number>(objects, properties, defaultValue));
+            return DataViewObjects.getValue<number>(objects, properties, defaultValue);
+        }
 
-            if (isNaN(value)) {
+        private parseNumber(
+            value: number | string,
+            defaultValue: number = 0,
+            minValue: number = -Number.MAX_VALUE,
+            maxValue: number = Number.MAX_VALUE): number {
+            let parsedValue: number = Number(value);
+
+            if (isNaN(parsedValue) || (typeof value === "string" && value.length === 0)) {
                 return defaultValue;
             }
 
-            return value;
+            if (parsedValue < minValue) {
+                return minValue;
+            }
+
+            if (parsedValue > maxValue) {
+                return maxValue;
+            }
+
+            return parsedValue;
         }
 
         private getObjectsFromDataView(dataView: DataView): DataViewObjects {
@@ -585,14 +592,21 @@ module powerbi.visuals.samples {
                 surface: number[] = [],
                 borders: IPoint[] = null,
                 index: number = 0,
-                self: WordCloud = this;
+                self: WordCloud = this,
+                maxNumberOfWords: number;
 
             if (!words || !(words.length > 0)) {
                 return null;
             }
 
-            if (words.length > this.settings.maxCountWords) {
-                words = words.slice(0, this.settings.maxCountWords);
+            maxNumberOfWords = Math.abs(this.parseNumber(
+                this.settings.maxNumberOfWords,
+                WordCloud.DefaultSettings.maxNumberOfWords,
+                words.length * -1,
+                words.length));
+
+            if (words.length > maxNumberOfWords) {
+                words = words.slice(0, maxNumberOfWords);
             }
 
             for (let i: number; i < (this.viewport.width >> 5) * this.viewport.height; i++) {
@@ -616,9 +630,11 @@ module powerbi.visuals.samples {
                     if (words.length <= 10) {
                         ratio = 5;
                     } else if (words.length <= 25) {
-                        ratio = 3.5;
+                        ratio = 3;
+                    } else if (words.length <= 75) {
+                        ratio = 1.5;
                     } else if (words.length <= 100) {
-                        ratio = 2;
+                        ratio = 1.25;
                     }
 
                     word.x = (self.viewport.width / ratio * (Math.random() + 0.5)) >> 1;
@@ -1130,7 +1146,16 @@ module powerbi.visuals.samples {
             maxValue: number,
             scaleType: WordCloudScaleType = WordCloudScaleType.value) {
             let weight: number,
-                fontSize: number;
+                fontSize: number,
+                maxFontSize: number = this.settings.maxFontSize,
+                minFontSize: number = this.settings.minFontSize;
+
+            if (minFontSize > maxFontSize) {
+                let buffer: number = minFontSize;
+
+                minFontSize = maxFontSize;
+                maxFontSize = buffer;
+            }
 
             switch (scaleType) {
                 case WordCloudScaleType.logn: {
@@ -1145,12 +1170,12 @@ module powerbi.visuals.samples {
             }
 
             fontSize = weight > minValue
-                ? (this.settings.maxFontSize * (weight - minValue)) / (maxValue - minValue)
+                ? (maxFontSize * (weight - minValue)) / (maxValue - minValue)
                 : 0;
 
-            fontSize = (fontSize * 100) / (this.settings.maxFontSize - 0);
+            fontSize = (fontSize * 100) / maxFontSize;
 
-            fontSize = (fontSize * (this.settings.maxFontSize - this.settings.minFontSize)) / 100 + this.settings.minFontSize;
+            fontSize = (fontSize * (maxFontSize - minFontSize)) / 100 + minFontSize;
 
             return fontSize;
         }
@@ -1161,14 +1186,23 @@ module powerbi.visuals.samples {
                 return 0;
             }
 
-            let minAngle: number = this.settings.minAngle || 0,
-                maxAngle: number = this.settings.maxAngle || 0,
-                quantityAngles: number = this.settings.quantityAngles,
+            let minAngle: number = this.settings.minAngle,
+                maxAngle: number = this.settings.maxAngle,
+                maxNumberOfOrientations: number,
                 angle: number;
 
-            angle = Math.abs(((maxAngle - minAngle) / quantityAngles) * Math.floor(Math.random() * quantityAngles));
+            maxNumberOfOrientations = Math.abs(this.parseNumber(this.settings.maxNumberOfOrientations, 0));
 
-            return quantityAngles !== 0 
+            if (minAngle > maxAngle) {
+                let buffer: number = minAngle;
+
+                minAngle = maxAngle;
+                maxAngle = buffer;
+            }
+
+            angle = Math.abs(((maxAngle - minAngle) / maxNumberOfOrientations) * Math.floor(Math.random() * maxNumberOfOrientations));
+
+            return maxNumberOfOrientations !== 0 
                 ? minAngle + angle
                 : 0;
         }
@@ -1348,7 +1382,7 @@ module powerbi.visuals.samples {
                         displayName: "general",
                         selector: null,
                         properties: {
-                            maxCountWords: this.settings.maxCountWords,
+                            maxNumberOfWords: this.settings.maxNumberOfWords,
                             minFontSize: this.settings.minFontSize,
                             maxFontSize: this.settings.maxFontSize,
                             isBrokenText: this.settings.isBrokenText
@@ -1367,7 +1401,7 @@ module powerbi.visuals.samples {
                             show: this.settings.isRotateText,
                             minAngle: this.settings.minAngle,
                             maxAngle: this.settings.maxAngle,
-                            quantityAngles: this.settings.quantityAngles
+                            maxNumberOfOrientations: this.settings.maxNumberOfOrientations
                         }
                     };
 
