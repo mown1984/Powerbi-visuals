@@ -29,6 +29,7 @@
 module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
+    import IStringResourceProvider = jsCommon.IStringResourceProvider;
 
     type D3Element = 
         D3.UpdateSelection |
@@ -125,8 +126,35 @@ module powerbi.visuals.samples {
         textProperties: TextProperties;
     }
 
+    export class TornadoChartWarning implements IVisualWarning {
+        public get code(): string {
+            return "TornadoChartWarning";
+        }
+
+        public getMessages(resourceProvider: IStringResourceProvider): IVisualErrorMessage {
+            let message: string = "This visual requires two distinct values to be returned for the Legend field.",
+                titleKey: string = "",
+                detailKey: string = "",
+                visualMessage: IVisualErrorMessage;
+
+            visualMessage = {
+                message: message,
+                title: resourceProvider.get(titleKey),
+                detail: resourceProvider.get(detailKey)
+            };
+
+            return visualMessage;
+        }
+    }
+
+    export function getTornadoChartWarning(): IVisualWarning {
+        return new TornadoChartWarning();
+    }
+
     export class TornadoChart implements IVisual  {
         private static ClassName: string = "tornado-chart";
+
+        private static MaxSeries: number = 2;
 
         private static Properties: any = {
             general: {
@@ -243,20 +271,19 @@ module powerbi.visuals.samples {
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
             }, {
+                name: "Series",
+                kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Legend')
+            }, {
                 name: "Values",
                 kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Values"),
+                displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
             }],
             dataViewMappings: [{
-                conditions: [{
-                    "Category": {
-                        max: 1
-                    },
-                    "Values": {
-                        min: 1,
-                        max: 2
-                    }
-                }],
+                conditions: [
+                    { "Category": { max: 1 }, "Values": { min: 1, max: 1 }, "Series": { min: 0, max: 1 } },
+                    { "Category": { max: 1 }, "Values": { min: 2, max: 2 }, "Series": { max: 0 } }
+                ],
                 categorical: {
                     categories: {
                         for: {
@@ -264,7 +291,11 @@ module powerbi.visuals.samples {
                         }
                     },
                     values: {
-                        select: [{ for: { in: "Values" } }]
+                        group: {
+                            by: "Series",
+                            select: [{ for: { in: "Values" } }],
+                            dataReductionAlgorithm: { top: {} }
+                        }
                     }
                 }
             }],
@@ -373,9 +404,7 @@ module powerbi.visuals.samples {
 
         private MaxSizeSections: number = 100;
 
-        private MaxSeries: number = 2;
-
-        private columnPadding: number = 10;
+        private columnPadding: number = 5;
 
         private maxLabelWidth: number = 55;
         private leftLabelMargin: number = 4;
@@ -426,6 +455,8 @@ module powerbi.visuals.samples {
 
         private animator: IGenericAnimator;
 
+        private hostService: IVisualHostServices;
+
         constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions) {
             if (tornadoChartConstructorOptions) {
                 this.svg = tornadoChartConstructorOptions.svg || this.svg;
@@ -446,6 +477,8 @@ module powerbi.visuals.samples {
         public init(visualInitOptions: VisualInitOptions): void {
             let style: IVisualStyle = visualInitOptions.style,
                 fontSize: string;
+
+            this.hostService = visualInitOptions.host;
 
             this.element = visualInitOptions.element;
 
@@ -571,13 +604,11 @@ module powerbi.visuals.samples {
             }
 
             let categories: string[],
-                values: DataViewValueColumn[],
+                values: DataViewValueColumns = dataView.categorical.values,
                 series: TornadoChartSeries[],
                 displayName: string,
                 objects: DataViewObjects,
                 settings: TornadoChartSettings;
-
-            values = dataView.categorical.values.slice(0, this.MaxSeries);
 
             categories = dataView.categorical.categories[0].values;
             displayName = dataView.categorical.categories[0].source.displayName;
@@ -587,6 +618,10 @@ module powerbi.visuals.samples {
             settings = this.parseSettings(dataView, objects, values[0].values[0]);
 
             series = this.parseSeries(values);
+
+            if (series.length === 0) {
+                categories = [];
+            }
 
             return {
                 displayName: displayName,
@@ -638,7 +673,7 @@ module powerbi.visuals.samples {
             let colorHelper: ColorHelper;
 
             colorHelper = new ColorHelper(this.colors, properties, defaultColor);
-            
+
             return colorHelper.getColorForMeasure(objects, "");
         }
 
@@ -666,20 +701,54 @@ module powerbi.visuals.samples {
             return dataView.metadata.objects;
         }
 
-        private parseSeries(dataViewValueColumn: DataViewValueColumn[]): TornadoChartSeries[] {
-            return dataViewValueColumn.map((dataViewValueColumn: DataViewValueColumn, index: number) => {
-                let colour: string;
+        private parseSeries(dataViewValueColumns: DataViewValueColumns): TornadoChartSeries[] {
+            if (dataViewValueColumns.length > TornadoChart.MaxSeries) {
+                this.hostService.setWarnings([getTornadoChartWarning()]);
+
+                return [];
+            }
+
+            let isGrouped: boolean = !!dataViewValueColumns.source,
+                grouped: DataViewValueColumnGroup[] = [];
+            
+            if (dataViewValueColumns.grouped){
+                grouped = dataViewValueColumns.grouped();
+            }
+
+            return dataViewValueColumns.map((dataViewValueColumn: DataViewValueColumn, index: number) => {
+                let displayName: string = "",
+                    colour: string,
+                    selectionId: SelectionId,
+                    objects: DataViewObjects;
+
+                if (isGrouped && grouped[index]) {
+                    selectionId = SelectionId.createWithIdAndMeasure(
+                        dataViewValueColumn.identity,
+                        dataViewValueColumn.source.queryName);
+
+                    objects = grouped[index].objects;
+                } else {
+                    selectionId = SelectionId.createWithMeasure(dataViewValueColumn.source.queryName);
+
+                    objects = dataViewValueColumn.source.objects;
+                }
+
+                if (dataViewValueColumn.source.groupName) {
+                    displayName = dataViewValueColumn.source.groupName;
+                } else if (dataViewValueColumn.source.displayName) {
+                    displayName = dataViewValueColumn.source.displayName;
+                }
 
                 colour = this.getColor(
                     TornadoChart.Properties.dataPoint.fill,
                     this.DefaultFillColors[index],
-                    dataViewValueColumn.source.objects);
+                    objects);
 
                 return <TornadoChartSeries> {
                     fill: colour,
-                    name: dataViewValueColumn.source.displayName,
+                    name: displayName,
                     values: dataViewValueColumn.values,
-                    selectionId: SelectionId.createWithMeasure(dataViewValueColumn.source.queryName)
+                    selectionId: selectionId
                 };
             });
         }
@@ -873,22 +942,22 @@ module powerbi.visuals.samples {
 
             width = this.widthRightSection;
 
-            if (series.length === 0) {
+            if (series && series.length === 0) {
                 return [];
             }
 
             minValue = Math.min(d3.min(series[0].values), 0);
             maxValue = d3.max(series[0].values);
 
-            if (series.length === this.MaxSeries) {
+            if (series.length === TornadoChart.MaxSeries) {
                 minValue = d3.min([minValue, d3.min(series[1].values)]);
                 maxValue = d3.max([maxValue, d3.max(series[1].values)]);
 
-                width = width / this.MaxSeries;
+                width = width / TornadoChart.MaxSeries;
             }
 
             return series.reduce((previousValue: ColumnData[], currentValue: TornadoChartSeries, index: number) => {
-                let shiftToMiddle: boolean = index === 0 && series.length === this.MaxSeries,
+                let shiftToMiddle: boolean = index === 0 && series.length === TornadoChart.MaxSeries,
                     shiftToRight: boolean = index === 1,
                     seriesName: string = currentValue.name;
 
@@ -926,7 +995,7 @@ module powerbi.visuals.samples {
                 let categoryValue: string = categories[index];
 
                 return this.generateColumnData(
-                    value,
+                    value ? value : 0,
                     minValue,
                     maxValue,
                     maxWidth,
@@ -1075,7 +1144,7 @@ module powerbi.visuals.samples {
                     .select(TornadoChart.Axes.selector)
                     .selectAll(TornadoChart.Axis.selector);
 
-            if (tornadoChartDataView.series.length !== this.MaxSeries) {
+            if (tornadoChartDataView.series.length !== TornadoChart.MaxSeries) {
                 axesElements.remove();
 
                 return;
