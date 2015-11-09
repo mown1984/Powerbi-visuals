@@ -33,6 +33,7 @@ module powerbitests {
     import Rect = powerbi.visuals.shapes.Rect;
     import Thickness = powerbi.visuals.shapes.Thickness;
     import Vector = powerbi.visuals.shapes.Vector;
+    import IRect = powerbi.visuals.IRect;
 
     describe("Point tests", () => {
 
@@ -543,7 +544,7 @@ module powerbitests {
         var rectB;
         var isEmpty;
         var isIntersecting;
-        var defaultRect: Shapes.IRect = { left: 110, top: 100, width: 150, height: 117 };
+        var defaultRect: IRect = { left: 110, top: 100, width: 150, height: 117 };
 
         function AreRectsEqual(rectA, rectB): boolean {
             return (rectB.left === rectA.left && rectB.top === rectA.top && rectB.width === rectA.width && rectB.height === rectA.height);
@@ -806,6 +807,16 @@ module powerbitests {
             expect(isContains).toBe(true);
         });
 
+        it("Contains Point check floating point rounding precision", () => {
+            rectA = { left: 70, top: 110, width: 130, height: 270 };
+            var inPoint: Shapes.IPoint = { x: 69.99999, y: 140 };
+            var outPoint: Shapes.IPoint = { x: 69.9999, y: 140 };
+            var containsInner = Shapes.Rect.containsPoint(rectA, inPoint);
+            var containsOuter = Shapes.Rect.containsPoint(rectA, outPoint);
+            expect(containsInner).toBe(true);
+            expect(containsOuter).toBe(false);
+        });
+
         it("Contains Point - Return false", () => {
             rectA = { left: 70, top: 110, width: 130, height: 270 };
             var newPoint: Shapes.IPoint = { x: 220, y: 170 };
@@ -887,7 +898,7 @@ module powerbitests {
             rectA = { left: 50, top: 50, width: 50, height: 50 };
             rectB = { left: 60, top: 60, width: 60, height: 60 };
             var newRect = Rect.combine(rectA, rectB);
-            var newRectCalculated: Shapes.IRect = { left: 50, top: 50, width: 70, height: 70 };
+            var newRectCalculated: IRect = { left: 50, top: 50, width: 70, height: 70 };
             expect(AreRectsEqual(newRectCalculated, newRect)).toBe(true);
         });
 

@@ -189,9 +189,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings)).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings)).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
         });
 
         it('Capabilities should only allow one measure if is a detail group',() => {
@@ -210,8 +210,8 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections, dataViewMappings)).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections, dataViewMappings, {})).toBe(null);
         });
 
         it('Capabilities should allow multiple measures if there is no detail group',() => {
@@ -249,10 +249,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings)).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
         });
 
         it('Capabilities should not allow multiple category groups',() => {
@@ -284,9 +284,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings)).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings)).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings)).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {})).toBe(null);
         });
 
         it('Capabilities should not allow multiple detail groups',() => {
@@ -318,9 +318,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings)).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings)).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings)).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {})).toBe(null);
         });
 
         it('Capabilities should allow one category and/or one detail groups',() => {
@@ -346,10 +346,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings)).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings)).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
         });
     });
 
@@ -1079,15 +1079,11 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);
 
             setTimeout(() => {
-                var minorActualColor = $('.treemap .labels .minorLabel').css('fill').replace(/\ /g, "");
-                var majorActualColor = $('.treemap .labels .majorLabel').css('fill').replace(/\ /g, "");
+                var minorActualColor = $('.treemap .labels .minorLabel').css('fill');
+                var majorActualColor = $('.treemap .labels .majorLabel').css('fill');
 
-                //convert the actual color to rgb format if target browser returns hex format
-                minorActualColor = (minorActualColor[0] === '#') ? jsCommon.color.rgbString(jsCommon.color.parseRgb(minorActualColor)) : minorActualColor;
-                majorActualColor = (majorActualColor[0] === '#') ? jsCommon.color.rgbString(jsCommon.color.parseRgb(majorActualColor)) : majorActualColor;
-
-                expect(minorActualColor).toBe(colorRgb);
-                expect(majorActualColor).toBe(colorRgb);
+                helpers.assertColorsMatch(minorActualColor, colorRgb);
+                helpers.assertColorsMatch(majorActualColor, colorRgb);
 
                 done();
             }, DefaultWaitForRender);
@@ -3454,8 +3450,8 @@ module powerbitests {
             var node1: TreemapNode = <TreemapNode>rootNode.children[0];
             var node2: TreemapNode = <TreemapNode>rootNode.children[1];
 
-            expect(node1.color).toEqual(dataPointColors[0]);
-            expect(node2.color).toEqual(dataPointColors[1]);
+            helpers.assertColorsMatch(node1.color, dataPointColors[0]);
+            helpers.assertColorsMatch(node2.color, dataPointColors[1]);
         });
 
         it("treemap gradient color test - validate tool tip", () => {
@@ -3558,10 +3554,58 @@ module powerbitests {
             var node1: TreemapNode = <TreemapNode>rootNode.children[0];
             var node2: TreemapNode = <TreemapNode>rootNode.children[1];
 
-            expect(node1.color).toEqual(dataPointColors[0]);
-            expect(node2.color).toEqual(dataPointColors[1]);
+            helpers.assertColorsMatch(node1.color, dataPointColors[0]);
+            helpers.assertColorsMatch(node2.color, dataPointColors[1]);
             expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col2', value: '110' }]);
             expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col2', value: '120' }]);
         });
+
+        it('treemap non-categorical series, formatted color', () => {
+            var dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1', },
+                    { displayName: 'col2', queryName: 'col2', isMeasure: true }]
+            };
+
+            var dataViewMetadata3Measure: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1', isMeasure: true, },
+                    { displayName: 'col2', queryName: 'col2', isMeasure: true, },
+                    { displayName: 'col3', queryName: 'col3', isMeasure: true, }]
+            };
+
+            var dataView: powerbi.DataView = {
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata3Measure.columns[0],
+                            values: [200],
+                            identity: mocks.dataViewScopeIdentity('col1'),
+                        }, {
+                            source: dataViewMetadata3Measure.columns[1],
+                            values: [300],
+                            identity: mocks.dataViewScopeIdentity('col2'),
+                        }
+                    ],
+                        [categoryColumnRef],
+                        dataViewMetadata.columns[1])
+                },
+                metadata: dataViewMetadata,
+            };
+            
+            var groupedValues = dataView.categorical.values.grouped();
+            groupedValues[0].objects = { dataPoint: { fill: { solid: { color: '#00FF00' } } } };
+            groupedValues[1].objects = { dataPoint: { fill: { solid: { color: '#FF0000' } } } };
+            dataView.categorical.values.grouped = () => groupedValues;
+
+            var dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            var rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+            var node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            var node2: TreemapNode = <TreemapNode>rootNode.children[1];
+
+            helpers.assertColorsMatch(node1.color, '#00FF00');
+            helpers.assertColorsMatch(node2.color, '#FF0000' );
+        });    
     });
 }

@@ -71,11 +71,21 @@ module powerbitests {
     var measureSource3: DataViewMetadataColumn = { displayName: "measure3", queryName: "measure3", type: dataTypeNumber, isMeasure: true, index: 5, objects: { general: { formatString: "#" } } };
 
     var webPluginService = new powerbi.visuals.visualPluginFactory.MinervaVisualPluginService({});
+    var dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({});
 
     var tableTotals: TableDataViewObjects = {
         general: {
             totals: true,
             autoSizeColumnWidth: true,
+            textSize: 8,
+        }
+    };
+
+    var tableTotalsIncreasedFontSize: TableDataViewObjects = {
+        general: {
+            totals: true,
+            autoSizeColumnWidth: true,
+            textSize: 14,
         }
     };
 
@@ -83,6 +93,7 @@ module powerbitests {
         general: {
             totals: false,
             autoSizeColumnWidth: true,
+            textSize: 8,
         }
     };
 
@@ -90,6 +101,7 @@ module powerbitests {
         general: {
             totals: true,
             autoSizeColumnWidth: false,
+            textSize: 8,
         }
     };
 
@@ -97,6 +109,7 @@ module powerbitests {
         general: {
             totals: true,
             autoSizeColumnWidth: true,
+            textSize: 8,
         }
     };
 
@@ -162,10 +175,38 @@ module powerbitests {
         table: dataViewTableTwoGroups
     };
 
+    var tableTwoGroupsIncreasedFontSize: DataView = {
+        metadata: {
+            columns: [groupSource1, groupSource2],
+            objects: tableTotalsIncreasedFontSize,
+        },
+        table: dataViewTableTwoGroups
+    };
+
     var tableTwoGroupsThreeMeasures: DataView = {
         metadata: {
             columns: [groupSource1, groupSource2, measureSource1, measureSource2, measureSource3],
             objects: tableTotals
+        },
+        table: {
+            columns: [groupSource1, groupSource2, measureSource1, measureSource2, measureSource3],
+            rows: [
+                ["A", "a1", 100, 101, 102],
+                ["A", "a2", 103, 104, 105],
+                ["A", "a3", 106, 107, 108],
+                ["B", "a1", 109, 110, 111],
+                ["B", "a2", 112, 113, 114],
+                ["C", "c1", 115, 116, 117],
+                ["C", "c2", 118, 119, 120]
+            ],
+            totals: [null, null, 763, 770, 777]
+        }
+    };
+
+    var tableTwoGroupsThreeMeasuresIncreasedFontSize: DataView = {
+        metadata: {
+            columns: [groupSource1, groupSource2, measureSource1, measureSource2, measureSource3],
+            objects: tableTotalsIncreasedFontSize
         },
         table: {
             columns: [groupSource1, groupSource2, measureSource1, measureSource2, measureSource3],
@@ -366,6 +407,7 @@ module powerbitests {
                 general: {
                     totals: undefined,
                     autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             };
             var dataViewMapping = createCompiledDataViewMapping(objects);
@@ -684,9 +726,9 @@ module powerbitests {
                 var navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatRaw);
 
                 var expectedValues: string[][] = [
-                    ['<div class="kpiTrafficLightSingle0" style="display: inline-block; vertical-align: sub;"></div>'],
-                    ['<div class="kpiTrafficLightSingle1" style="display: inline-block; vertical-align: sub;"></div>'],
-                    ['<div class="kpiTrafficLightSingle2" style="display: inline-block; vertical-align: sub;"></div>'],
+                    ['<div class="ms-kpi-glyph circle kpi-red" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
+                    ['<div class="ms-kpi-glyph circle kpi-yellow" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
+                    ['<div class="ms-kpi-glyph circle kpi-green" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
                 ];
 
                 expect(fillResult<string>(navigator, rows, columns, "domContent")).toEqual(expectedValues);
@@ -930,6 +972,7 @@ module powerbitests {
                 properties: {
                     totals: true,
                     autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             }]);
         });
@@ -943,6 +986,7 @@ module powerbitests {
                 properties: {
                     totals: false,
                     autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             }]);
         });
@@ -969,7 +1013,8 @@ module powerbitests {
                 objectName: "general",
                 properties: {
                     totals: true,
-                    autoSizeColumnWidth: true
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             }]);
         });
@@ -989,7 +1034,8 @@ module powerbitests {
                 objectName: "general",
                 properties: {
                     totals: true,
-                    autoSizeColumnWidth: false
+                    autoSizeColumnWidth: false,
+                    textSize: 8,
                 }
             }]);
         });
@@ -1002,7 +1048,8 @@ module powerbitests {
                 objectName: "general",
                 properties: {
                     totals: true,
-                    autoSizeColumnWidth: true
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             }]);
         });
@@ -1063,6 +1110,7 @@ module powerbitests {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             };
             let dataView: DataView = {
@@ -1085,11 +1133,12 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: false,
+                    textSize: 8,
                 }
             };
             let dataView: DataView = {
@@ -1108,21 +1157,22 @@ module powerbitests {
                     let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                     expect(persistedColWidths.length).toBe(3);
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(68);
+                    expect(persistedColWidths[0].width).toBe(47);
                     expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
-                    expect(persistedColWidths[1].width).toBe(73);
+                    expect(persistedColWidths[1].width).toBe(55);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(71);
+                    expect(persistedColWidths[2].width).toBe(49);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
+        it("ColumnWidthChangedCallback AutoSizeProperty off then resize", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: false,
+                    textSize: 8,
                 }
             };
             let dataView: DataView = {
@@ -1145,21 +1195,22 @@ module powerbitests {
                     let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                     expect(persistedColWidths.length).toBe(3);
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(68);
+                    expect(persistedColWidths[0].width).toBe(47);
                     expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
                     expect(persistedColWidths[1].width).toBe(45);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(71);
+                    expect(persistedColWidths[2].width).toBe(49);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
+        it("ColumnWidthManager AutoSizeProperty off malformed selector", (done) => {
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: false,
+                    textSize: 8,
                 }
             };
             let newMeasureSource2: DataViewMetadataColumn = { displayName: "", queryName: undefined, type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
@@ -1187,9 +1238,9 @@ module powerbitests {
                     expect(objectInstances.length).toBe(3);
                     expect(objectInstances[0].properties["autoSizeColumnWidth"]["value"]).toBe(false);
                     expect(objectInstances[1].selector.metadata).toBe(measureSource1.queryName);
-                    expect(objectInstances[1].properties["columnWidth"]["value"]).toBe(68);
+                    expect(objectInstances[1].properties["columnWidth"]["value"]).toBe(47);
                     expect(objectInstances[2].selector.metadata).toBe(measureSource3.queryName);
-                    expect(objectInstances[2].properties["columnWidth"]["value"]).toBe(71);
+                    expect(objectInstances[2].properties["columnWidth"]["value"]).toBe(49);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1199,6 +1250,7 @@ module powerbitests {
     describe("Table DOM validation", () => {
         var v: powerbi.IVisual,
             element: JQuery,
+            ContainerClassName = 'bi-tablix',
             NoMarginClass = "bi-tablix-cellNoMarginStyle",
             ColumnHeaderClassName = "bi-table-column-header",
             RowClassName = "bi-table-row",
@@ -1244,12 +1296,13 @@ module powerbitests {
             tablixHelper.validateClassNames(expectedValues, ".bi-tablix tr", NoMarginClass);
         }
 
-        xit("resize with autoSizeColumnwidth on", (done) => {
+        it("resize with autoSizeColumnwidth on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: true,
+                    textSize: 8,
                 }
             };
             let dataView: DataView = {
@@ -1263,9 +1316,9 @@ module powerbitests {
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(69);
-                expect(rowCells.eq(2).width()).toEqual(74);
-                expect(rowCells.eq(3).width()).toEqual(72);
+                expect(rowCells.eq(1).width()).toEqual(48);
+                expect(rowCells.eq(2).width()).toEqual(56);
+                expect(rowCells.eq(3).width()).toEqual(50);
                 // Mock Resize
                 var newMeasureSource2: DataViewMetadataColumn = { displayName: "measure2", queryName: "measure2", type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
                 let dataView2: DataView = {
@@ -1279,15 +1332,15 @@ module powerbitests {
                 setTimeout(() => {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
-                    expect(newRowCells.eq(1).width()).toEqual(69);
+                    expect(newRowCells.eq(1).width()).toEqual(48);
                     expect(newRowCells.eq(2).width()).toEqual(46);
-                    expect(newRowCells.eq(3).width()).toEqual(72);
+                    expect(newRowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth on to off then resize", (done) => {
+        it("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".bi-tablix tr";
             let dataView: DataView = {
                 metadata: {
@@ -1300,10 +1353,10 @@ module powerbitests {
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(69);
-                expect(rowCells.eq(2).width()).toEqual(74);
-                expect(rowCells.eq(3).width()).toEqual(72);
-                                                       
+                expect(rowCells.eq(1).width()).toEqual(48);
+                expect(rowCells.eq(2).width()).toEqual(56);
+                expect(rowCells.eq(3).width()).toEqual(50);
+
                 // Mock Resize
                 let newMeasureSource2: DataViewMetadataColumn = { displayName: "measure2", queryName: "measure2", type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
                 let dataView2: DataView = {
@@ -1322,20 +1375,21 @@ module powerbitests {
                 setTimeout(() => {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
-                    expect(newRowCells.eq(1).width()).toEqual(69);
+                    expect(newRowCells.eq(1).width()).toEqual(48);
                     expect(newRowCells.eq(2).width()).toEqual(46);
-                    expect(newRowCells.eq(3).width()).toEqual(72);
+                    expect(newRowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth off to on", (done) => {
+        it("autoSizeColumnwidth off to on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: TableDataViewObjects = {
                 general: {
                     totals: true,
                     autoSizeColumnWidth: false,
+                    textSize: 8,
                 }
             };
             let newMeasureSource2: DataViewMetadataColumn = { displayName: "measure2", queryName: "measure2", type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
@@ -1351,14 +1405,15 @@ module powerbitests {
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(69);
+                expect(rowCells.eq(1).width()).toEqual(48);
                 expect(rowCells.eq(2).width()).toEqual(46);
-                expect(rowCells.eq(3).width()).toEqual(72);
+                expect(rowCells.eq(3).width()).toEqual(50);
                 // AutoSize property on
                 let dataViewObjects1: TableDataViewObjects = {
                     general: {
                         totals: true,
                         autoSizeColumnWidth: true,
+                        textSize: 8,
                     }
                 };
                 let dataView1: DataView = {
@@ -1377,12 +1432,193 @@ module powerbitests {
                 setTimeout(() => {
                     let rows = $(selector);
                     let rowCells = rows.eq(0).find('td');
-                    expect(rowCells.eq(1).width()).toEqual(69);
-                    expect(rowCells.eq(2).width()).toEqual(74);
-                    expect(rowCells.eq(3).width()).toEqual(72);
+                    expect(rowCells.eq(1).width()).toEqual(48);
+                    expect(rowCells.eq(2).width()).toEqual(56);
+                    expect(rowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
+        });
+
+        describe('text size', () => {
+            describe('default', () => {
+                it('font size set on container', (done) => {
+                    let newMeasureSource2: DataViewMetadataColumn = {
+                        displayName: "measure2",
+                        queryName: "measure2",
+                        type: dataTypeNumber,
+                        isMeasure: true,
+                        index: 4,
+                        objects: {
+                            general: {
+                                formatString: "#.00",
+                                columnWidth: 45,
+                            },
+                        },
+                    };
+            
+                    // AutoSize property off
+                    v.onDataChanged({
+                        dataViews: [{
+                            metadata: {
+                                columns: [measureSource1, newMeasureSource2, measureSource3],
+                                objects: {
+                                    general: {
+                                        totals: true,
+                                        autoSizeColumnWidth: false,
+                                    }
+                                }
+                            },
+                            table: dataViewTableThreeMeasures
+                        }]
+                    });
+                    setTimeout(() => {
+                        let actualFontSize = element.find(`.${ContainerClassName}`).css('font-size');
+                        tablixHelper.validateFontSize(actualFontSize, 8);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("2x8 table with default text size row height", (done) => {
+                    let dataView = tableTwoGroups;
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        let cells = element
+                            .find(`.${RowClassName}, .${ColumnHeaderClassName}, .${LastRowClassName}`)
+                            .find('> div');
+
+                        expect(cells.length).toBe(16);
+                        tablixHelper.validateCellHeights(cells, 13);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+
+            describe('specified', () => {
+                it('font size set on container', (done) => {
+                    let newMeasureSource2: DataViewMetadataColumn = {
+                        displayName: "measure2",
+                        queryName: "measure2",
+                        type: dataTypeNumber,
+                        isMeasure: true,
+                        index: 4,
+                        objects: {
+                            general: {
+                                formatString: "#.00",
+                                columnWidth: 45,
+                            },
+                        },
+                    };
+            
+                    // AutoSize property off
+                    v.onDataChanged({
+                        dataViews: [{
+                            metadata: {
+                                columns: [measureSource1, newMeasureSource2, measureSource3],
+                                objects: {
+                                    general: {
+                                        totals: true,
+                                        autoSizeColumnWidth: false,
+                                        textSize: 18,
+                                    }
+                                }
+                            },
+                            table: dataViewTableThreeMeasures,
+                        }]
+                    });
+                    setTimeout(() => {
+                        let actualFontSize = element.find(`.${ContainerClassName}`).css('font-size');
+                        tablixHelper.validateFontSize(actualFontSize, 18);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("2x8 table with specified text size adjusted row height", (done) => {
+                    let dataView = tableTwoGroupsIncreasedFontSize;
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        let cells = element
+                            .find(`.${RowClassName}, .${ColumnHeaderClassName}, .${LastRowClassName}`)
+                            .find('> div');
+
+                        expect(cells.length).toBe(16);
+                        tablixHelper.validateCellHeights(cells, 25);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("5x9 table with text size does not crop columns by minimum column width", (done) => {
+                    let dataView = tableTwoGroupsThreeMeasuresIncreasedFontSize;
+                    measureSource1.index = 2;
+                    measureSource2.index = 3;
+                    measureSource3.index = 4;
+
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        // All columns will be visible since this is not dashboard
+                        let cellValue1: string = formatter(dataView.table.rows[0][2], measureSource1);
+                        let cellValue2: string = formatter(dataView.table.rows[1][2], measureSource1);
+                        let cellValue3: string = formatter(dataView.table.rows[2][2], measureSource1);
+                        let cellValue4: string = formatter(dataView.table.rows[3][2], measureSource1);
+                        let cellValue5: string = formatter(dataView.table.rows[4][2], measureSource1);
+                        let cellValue6: string = formatter(dataView.table.rows[5][2], measureSource1);
+                        let cellValue7: string = formatter(dataView.table.rows[6][2], measureSource1);
+                        let cellValue8: string = formatter(dataView.table.rows[0][3], measureSource2);
+                        let cellValue9: string = formatter(dataView.table.rows[1][3], measureSource2);
+                        let cellValue10: string = formatter(dataView.table.rows[2][3], measureSource2);
+                        let cellValue11: string = formatter(dataView.table.rows[3][3], measureSource2);
+                        let cellValue12: string = formatter(dataView.table.rows[4][3], measureSource2);
+                        let cellValue13: string = formatter(dataView.table.rows[5][3], measureSource2);
+                        let cellValue14: string = formatter(dataView.table.rows[6][3], measureSource2);
+                        let cellValue15: string = formatter(dataView.table.rows[0][4], measureSource3);
+                        let cellValue16: string = formatter(dataView.table.rows[1][4], measureSource3);
+                        let cellValue17: string = formatter(dataView.table.rows[2][4], measureSource3);
+                        let cellValue18: string = formatter(dataView.table.rows[3][4], measureSource3);
+                        let cellValue19: string = formatter(dataView.table.rows[4][4], measureSource3);
+                        let cellValue20: string = formatter(dataView.table.rows[5][4], measureSource3);
+                        let cellValue21: string = formatter(dataView.table.rows[6][4], measureSource3);
+
+                        let total1: string = formatter(dataView.table.totals[2], measureSource1);
+                        let total2: string = formatter(dataView.table.totals[3], measureSource2);
+                        let total3: string = formatter(dataView.table.totals[4], measureSource3);
+
+                        let expectedCells: string[][] = [
+                            ["", groupSource1.displayName, groupSource2.displayName, measureSource1.displayName, measureSource2.displayName, measureSource3.displayName, ""],
+                            ["", dataView.table.rows[0][0], dataView.table.rows[0][1], cellValue1, cellValue8, cellValue15],
+                            ["", dataView.table.rows[1][0], dataView.table.rows[1][1], cellValue2, cellValue9, cellValue16],
+                            ["", dataView.table.rows[2][0], dataView.table.rows[2][1], cellValue3, cellValue10, cellValue17],
+                            ["", dataView.table.rows[3][0], dataView.table.rows[3][1], cellValue4, cellValue11, cellValue18],
+                            ["", dataView.table.rows[4][0], dataView.table.rows[4][1], cellValue5, cellValue12, cellValue19],
+                            ["", dataView.table.rows[5][0], dataView.table.rows[5][1], cellValue6, cellValue13, cellValue20],
+                            ["", dataView.table.rows[6][0], dataView.table.rows[6][1], cellValue7, cellValue14, cellValue21],
+                            ["", "Total", "", total1, total2, total3, ""]
+                        ];
+
+                        validateTable(expectedCells);
+
+                        let expectedClassNames: string[][] = [
+                            ["", ColumnHeaderClassName, ColumnHeaderClassName, ColumnHeaderClassName + NumericCellClassName, ColumnHeaderClassName + NumericCellClassName, ColumnHeaderClassName + NumericCellClassName, ""],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", LastRowClassName, LastRowClassName, LastRowClassName + NumericCellClassName, LastRowClassName + NumericCellClassName, LastRowClassName + NumericCellClassName],
+                            ["", FooterClassName, FooterClassName, FooterClassName + NumericCellClassName, FooterClassName + NumericCellClassName, FooterClassName + NumericCellClassName, ""]
+                        ];
+
+                        validateClassNames(expectedClassNames);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
         });
 
         it("1x2 table (one measure)", (done) => {
@@ -1740,9 +1976,9 @@ module powerbitests {
 
                 var expectedChildTags: string[][] = [
                     [undefined, undefined, undefined],
-                    [undefined, ".kpiTrafficLightSingle0"],
-                    [undefined, ".kpiTrafficLightSingle1"],
-                    [undefined, ".kpiTrafficLightSingle2"]
+                    [undefined, ".ms-kpi-glyph.circle.kpi-red"],
+                    [undefined, ".ms-kpi-glyph.circle.kpi-yellow"],
+                    [undefined, ".ms-kpi-glyph.circle.kpi-green"],
                 ];
 
                 validateChildTag(expectedChildTags, $(".bi-tablix tr"));
@@ -1926,6 +2162,7 @@ module powerbitests {
     describe("Dashboard table DOM validation", () => {
         var v: powerbi.IVisual,
             element: JQuery,
+            ContainerClassName = 'bi-dashboard-tablix',
             NoMarginClass = "bi-tablix-cellNoMarginStyle",
             ColumnHeaderClassName = "bi-table-column-header",
             RowClassName = "bi-table-row",
@@ -1948,7 +2185,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return false; };
-            v = webPluginService.getPlugin("table").create();
+            v = dashboardPluginService.getPlugin("table").create();
             v.init({
                 element: element,
                 host: host,
@@ -1971,6 +2208,179 @@ module powerbitests {
         function validateClassNames(expectedValues: string[][]): void {
             tablixHelper.validateClassNames(expectedValues, ".bi-dashboard-tablix tr", NoMarginClass);
         }
+
+        describe('text size', () => {
+            describe('default', () => {
+                it('font size set on container', (done) => {
+                    let newMeasureSource2: DataViewMetadataColumn = {
+                        displayName: "measure2",
+                        queryName: "measure2",
+                        type: dataTypeNumber,
+                        isMeasure: true,
+                        index: 4,
+                        objects: {
+                            general: {
+                                formatString: "#.00",
+                                columnWidth: 45,
+                            },
+                        },
+                    };
+            
+                    // AutoSize property off
+                    v.onDataChanged({
+                        dataViews: [{
+                            metadata: {
+                                columns: [measureSource1, newMeasureSource2, measureSource3],
+                                objects: {
+                                    general: {
+                                        totals: true,
+                                        autoSizeColumnWidth: false,
+                                    }
+                                }
+                            },
+                            table: dataViewTableThreeMeasures
+                        }]
+                    });
+                    setTimeout(() => {
+                        let actualFontSize = element.find(`.${ContainerClassName}`).css('font-size');
+                        tablixHelper.validateFontSize(actualFontSize, 8);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("2x8 table with default text size row height", (done) => {
+                    let dataView = tableTwoGroups;
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        let cells = element
+                            .find(`.${RowClassName}, .${ColumnHeaderClassName}, .${LastRowClassName}`)
+                            .find('> div');
+
+                        expect(cells.length).toBe(16);
+                        tablixHelper.validateCellHeights(cells, 14);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+
+            describe('specified', () => {
+                it('font size set on container', (done) => {
+                    let newMeasureSource2: DataViewMetadataColumn = {
+                        displayName: "measure2",
+                        queryName: "measure2",
+                        type: dataTypeNumber,
+                        isMeasure: true,
+                        index: 4,
+                        objects: {
+                            general: {
+                                formatString: "#.00",
+                                columnWidth: 45,
+                            },
+                        },
+                    };
+            
+                    // AutoSize property off
+                    v.onDataChanged({
+                        dataViews: [{
+                            metadata: {
+                                columns: [measureSource1, newMeasureSource2, measureSource3],
+                                objects: {
+                                    general: {
+                                        totals: true,
+                                        autoSizeColumnWidth: false,
+                                        textSize: 18,
+                                    }
+                                }
+                            },
+                            table: dataViewTableThreeMeasures,
+                        }]
+                    });
+                    setTimeout(() => {
+                        let actualFontSize = element.find(`.${ContainerClassName}`).css('font-size');
+                        tablixHelper.validateFontSize(actualFontSize, 18);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("2x8 table with specified text size adjusted row height", (done) => {
+                    let dataView = tableTwoGroupsIncreasedFontSize;
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        let cells = element
+                            .find(`.${RowClassName}, .${ColumnHeaderClassName}, .${LastRowClassName}`)
+                            .find('> div');
+
+                        expect(cells.length).toBe(16);
+                        tablixHelper.validateCellHeights(cells, 21);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("5x9 table with text size scaling factor adjusts minimum column width", (done) => {
+                    let dataView = tableTwoGroupsThreeMeasuresIncreasedFontSize;
+                    measureSource1.index = 2;
+                    measureSource2.index = 3;
+                    measureSource3.index = 4;
+
+                    v.onDataChanged({ dataViews: [dataView] });
+
+                    setTimeout(() => {
+                        // Dashboard crops out columns which do not fit (minimum width based on text size)
+                        let cellValue1: string = formatter(dataView.table.rows[0][2], measureSource1);
+                        let cellValue2: string = formatter(dataView.table.rows[1][2], measureSource1);
+                        let cellValue3: string = formatter(dataView.table.rows[2][2], measureSource1);
+                        let cellValue4: string = formatter(dataView.table.rows[3][2], measureSource1);
+                        let cellValue5: string = formatter(dataView.table.rows[4][2], measureSource1);
+                        let cellValue6: string = formatter(dataView.table.rows[5][2], measureSource1);
+                        let cellValue7: string = formatter(dataView.table.rows[6][2], measureSource1);
+                        let cellValue8: string = formatter(dataView.table.rows[0][3], measureSource2);
+                        let cellValue9: string = formatter(dataView.table.rows[1][3], measureSource2);
+                        let cellValue10: string = formatter(dataView.table.rows[2][3], measureSource2);
+                        let cellValue11: string = formatter(dataView.table.rows[3][3], measureSource2);
+                        let cellValue12: string = formatter(dataView.table.rows[4][3], measureSource2);
+                        let cellValue13: string = formatter(dataView.table.rows[5][3], measureSource2);
+                        let cellValue14: string = formatter(dataView.table.rows[6][3], measureSource2);
+
+                        let total1: string = formatter(dataView.table.totals[2], measureSource1);
+                        let total2: string = formatter(dataView.table.totals[3], measureSource2);
+
+                        let expectedCells: string[][] = [
+                            ["", groupSource1.displayName, groupSource2.displayName, measureSource1.displayName, measureSource2.displayName],
+                            ["", dataView.table.rows[0][0], dataView.table.rows[0][1], cellValue1, cellValue8],
+                            ["", dataView.table.rows[1][0], dataView.table.rows[1][1], cellValue2, cellValue9],
+                            ["", dataView.table.rows[2][0], dataView.table.rows[2][1], cellValue3, cellValue10],
+                            ["", dataView.table.rows[3][0], dataView.table.rows[3][1], cellValue4, cellValue11],
+                            ["", dataView.table.rows[4][0], dataView.table.rows[4][1], cellValue5, cellValue12],
+                            ["", dataView.table.rows[5][0], dataView.table.rows[5][1], cellValue6, cellValue13],
+                            ["", dataView.table.rows[6][0], dataView.table.rows[6][1], cellValue7, cellValue14],
+                            ["", "Total", "", total1, total2],
+                        ];
+
+                        validateTable(expectedCells);
+
+                        let expectedClassNames: string[][] = [
+                            ["", ColumnHeaderClassName, ColumnHeaderClassName, ColumnHeaderClassName + NumericCellClassName, ColumnHeaderClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
+                            ["", LastRowClassName, LastRowClassName, LastRowClassName + NumericCellClassName, LastRowClassName + NumericCellClassName],
+                            ["", FooterClassName, FooterClassName, FooterClassName + NumericCellClassName, FooterClassName + NumericCellClassName],
+                        ];
+
+                        validateClassNames(expectedClassNames);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+        });
 
         it("1x2 table (one measure)", (done) => {
             v.onDataChanged({ dataViews: [tableOneMeasure] });

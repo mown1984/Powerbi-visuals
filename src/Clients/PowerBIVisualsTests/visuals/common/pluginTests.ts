@@ -145,6 +145,20 @@ module powerbitests {
                 }
             }]);
 
+            // no values
+            changeData(v, objectDescs, [{
+                metadata: dataViewMetadataTwoColumn,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataTwoColumn.columns[0],
+                        values: ["abc", "def"],
+                        identity: [mocks.dataViewScopeIdentity("abc"), mocks.dataViewScopeIdentity("def")],
+                        identityFields: [categoryColumnRef]
+                    }],
+                    values: DataViewTransform.createValueColumns([])
+                }
+            }]);
+
             // no values.values
             changeData(v, objectDescs, [{
                 metadata: dataViewMetadataTwoColumn,

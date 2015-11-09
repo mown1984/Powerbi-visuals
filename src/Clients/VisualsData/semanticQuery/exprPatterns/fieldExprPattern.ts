@@ -67,9 +67,9 @@ module powerbi.data {
         }
 
         function wrapColumnAggr(fieldExpr: FieldExprPattern): SQExpr {
-            var aggr = fieldExpr.columnAggr;
+            let aggr = fieldExpr.columnAggr;
             if (aggr) {
-                var entityExpr = wrapEntity(fieldExpr.columnAggr);
+                let entityExpr = wrapEntity(fieldExpr.columnAggr);
                 return aggregate(columnRef(entityExpr, aggr.name), aggr.aggregate);
             }
         }
@@ -99,26 +99,26 @@ module powerbi.data {
         }
 
         function wrapColumn(fieldExpr: FieldExprPattern): SQExpr {
-            var column = fieldExpr.column;
+            let column = fieldExpr.column;
             if (column) {
-                var entityExpr = wrapEntity(fieldExpr.column);
+                let entityExpr = wrapEntity(fieldExpr.column);
                 return columnRef(entityExpr, column.name);
             }
         }
 
         function wrapMeasure(fieldExpr: FieldExprPattern): SQExpr {
-            var measure = fieldExpr.measure;
+            let measure = fieldExpr.measure;
             if (measure) {
-                var entityExpr = wrapEntity(fieldExpr.measure);
+                let entityExpr = wrapEntity(fieldExpr.measure);
                 return measureRef(entityExpr, measure.name);
             }
         }
 
         function wrapEntityAggr(fieldExpr: FieldExprPattern): SQExpr {
-            var entityAggregate = fieldExpr.entityAggr;
+            let entityAggregate = fieldExpr.entityAggr;
 
             if (entityAggregate) {
-                var entityExpr = wrapEntity(fieldExpr.entityAggr);
+                let entityExpr = wrapEntity(fieldExpr.entityAggr);
                 return aggregate(entityExpr, entityAggregate.aggregate);
             }
         }
@@ -370,7 +370,7 @@ module powerbi.data {
         }
 
         export function toFieldExprEntityItemPattern(fieldExpr: FieldExprPattern): FieldExprEntityItemPattern {
-            var field = <FieldExprEntityItemPattern>(fieldExpr.column ||
+            let field = <FieldExprEntityItemPattern>(fieldExpr.column ||
                 fieldExpr.columnAggr ||
                 fieldExpr.entityAggr ||
                 fieldExpr.hierarchy ||

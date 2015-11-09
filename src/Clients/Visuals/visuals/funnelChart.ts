@@ -27,6 +27,9 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
     export interface FunnelChartConstructorOptions {
         animator: IFunnelAnimator;
         funnelSmallViewPortProperties?: FunnelSmallViewPortProperties;
@@ -162,27 +165,21 @@ module powerbi.visuals {
         public static InnerTickSize = 0;
         public static MinimumInteractorSize = 15;
         public static InnerTextClassName = 'labelSeries';
-        public static CreateSelector = function (className) {
-            return {
-                class: className,
-                selector: '.' + className,
-            };
-        };
         public static Selectors: IFunnelChartSelectors = {
             funnel: {
-                bars: FunnelChart.CreateSelector('funnelBar'),
-                highlights: FunnelChart.CreateSelector('highlight'),
-                interactors: FunnelChart.CreateSelector('funnelBarInteractor'),
+                bars: createClassAndSelector('funnelBar'),
+                highlights: createClassAndSelector('highlight'),
+                interactors: createClassAndSelector('funnelBarInteractor'),
             },
             labels: {
-                dataLabels: FunnelChart.CreateSelector('data-labels'),
+                dataLabels: createClassAndSelector('data-labels'),
             },
             percentBar: {
-                root: FunnelChart.CreateSelector('percentBars'),
-                mainLine: FunnelChart.CreateSelector('mainLine'),
-                leftTick: FunnelChart.CreateSelector('leftTick'),
-                rightTick: FunnelChart.CreateSelector('rightTick'),
-                text: FunnelChart.CreateSelector('value'),
+                root: createClassAndSelector('percentBars'),
+                mainLine: createClassAndSelector('mainLine'),
+                leftTick: createClassAndSelector('leftTick'),
+                rightTick: createClassAndSelector('rightTick'),
+                text: createClassAndSelector('value'),
             },
         };
         public static FunnelBarHighlightClass = [FunnelChart.Selectors.funnel.bars.class, FunnelChart.Selectors.funnel.highlights.class].join(' ');
@@ -234,22 +231,40 @@ module powerbi.visuals {
                 }
                 if (options.behavior) {
                     this.behavior = options.behavior;
+                }
             }
         }
+
+        private static isValidValueColumn(valueColumn: DataViewValueColumn): boolean {
+            debug.assertValue(valueColumn, 'valueColumn');
+            return DataRoleHelper.hasRole(valueColumn.source, 'Y');
+        }
+
+        private static getFirstValidValueColumn(values: DataViewValueColumns): DataViewValueColumn {
+            for (let valueColumn of values) {
+                if (!FunnelChart.isValidValueColumn(valueColumn))
+                    continue;
+                return valueColumn;
+            }
+
+            return undefined;
         }
 
         public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string): FunnelData {
-            var slices: FunnelSlice[] = [];
-            var formatStringProp = funnelChartProps.general.formatString;
-            var valueMetaData = dataView.metadata ? dataView.metadata.columns.filter(d => d.isMeasure) : [];
-            var categories = dataView.categorical.categories || [];
-            var values = dataView.categorical.values;
-            var hasHighlights = values && values[0] && !!values[0].highlights;
-            var highlightsOverflow = false;
-            var categorical: DataViewCategorical = dataView.categorical;
-            var labelFormatString: string = categorical.values ? valueFormatter.getFormatString(categorical.values[0].source, formatStringProp) : undefined;
-            var dataLabelsSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultFunnelLabelSettings(labelFormatString);
-            var colorHelper = new ColorHelper(colors, funnelChartProps.dataPoint.fill, defaultDataPointColor);
+            let slices: FunnelSlice[] = [];
+            let formatStringProp = funnelChartProps.general.formatString;
+            let valueMetaData = dataView.metadata ? dataView.metadata.columns.filter(d => d.isMeasure) : [];
+            let categories = dataView.categorical.categories || [];
+            let values = dataView.categorical.values;
+            let hasHighlights = values && values.length > 0 && values[0] && !!values[0].highlights;
+            let highlightsOverflow = false;
+            let hasNegativeValues = false;
+            let allValuesAreNegative = false;
+            let categoryLabels = [];
+            let categorical: DataViewCategorical = dataView.categorical;
+            let labelFormatString: string = categorical.values && !_.isEmpty(categorical.values) ? valueFormatter.getFormatString(categorical.values[0].source, formatStringProp) : undefined;
+            let dataLabelsSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultFunnelLabelSettings(labelFormatString);
+            let colorHelper = new ColorHelper(colors, funnelChartProps.dataPoint.fill, defaultDataPointColor);
             let firstValue: number;
             let firstHighlight: number;
             let previousValue: number;
@@ -272,30 +287,50 @@ module powerbi.visuals {
                     }
                 }
             }
-            if (categories.length === 1 && values && values.length > 0) {
+
+            // Always take the first valid value field
+            let firstValueColumn = !_.isEmpty(values) && FunnelChart.getFirstValidValueColumn(values);
+            
+            // If we don't have a valid value column, just return
+            if (!firstValueColumn)
+                return {
+                    slices: slices,
+                    categoryLabels: categoryLabels,
+                    valuesMetadata: valueMetaData,
+                    hasHighlights: hasHighlights,
+                    highlightsOverflow: highlightsOverflow,
+                    canShowDataLabels: true,
+                    dataLabelsSettings: dataLabelsSettings,
+                    hasNegativeValues: hasNegativeValues,
+                    allValuesAreNegative: allValuesAreNegative,
+                };
+
+            // Calculate the first value for percent tooltip values
+            firstValue = firstValueColumn.values[0];
+            if (hasHighlights) {
+                firstHighlight = firstValueColumn.highlights[0];
+            }
+
+            if (categories.length === 1) {
+                // Single Category, Value and (optional) Gradient
                 let category = categories[0];
                 let categoryValues = category.values;
-
                 let categorySourceFormatString = valueFormatter.getFormatString(category.source, formatStringProp);
-                firstValue = d3.sum(values.map(d => d.values[0]));
-                if (hasHighlights) {
-                    firstHighlight = d3.sum(values.map(d => d.highlights[0]));
-                }
 
                 for (var i = 0, ilen = categoryValues.length; i < ilen; i++) {
-                    let measureName = values[0].source.queryName;
+                    let measureName = firstValueColumn.source.queryName;
 
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, i)
                         .withMeasure(measureName)
                         .createSelectionId();
 
-                    let value = d3.sum(values.map(d => d.values[i]));
+                    let value = firstValueColumn.values[i];
                     let formattedCategoryValue = valueFormatter.format(categoryValues[i], categorySourceFormatString);
                     let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i);
 
                     if (hasHighlights) {
-                        let highlight = d3.sum(values.map(d => d.highlights[i]));
+                        let highlight = firstValueColumn.highlights[i];
                         if (highlight !== 0) {
                             tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlight);
                         }
@@ -319,7 +354,7 @@ module powerbi.visuals {
                     });
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
-                        let highlight = d3.sum(values.map(d => d.highlights[i]));
+                        let highlight = firstValueColumn.highlights[i];
                         let highlightedValue = highlight !== 0 ? highlight : undefined;
                         let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlightedValue);
                         FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
@@ -342,15 +377,16 @@ module powerbi.visuals {
                     }
                     previousValue = value;
                 }
-            } else if (valueMetaData.length > 0 && values && values.length > 0) {
+            }
+            else if (valueMetaData.length > 0 && values && values.length > 0) {
                 // Multi-measures
-                firstValue = d3.sum(values[0].values);
-                if (hasHighlights) {
-                    firstHighlight = d3.sum(values[0].highlights);
-                }
                 for (var i = 0, len = values.length; i < len; i++) {
                     let valueColumn = values[i];
-                    let value = d3.sum(valueColumn.values);
+
+                    if (!FunnelChart.isValidValueColumn(valueColumn))
+                        continue;
+
+                    let value = valueColumn.values[0];
                     let identity = SelectionId.createWithMeasure(valueColumn.source.queryName);
                     let categoryValue: any = valueMetaData[i].displayName;
                     let valueIndex: number = categorical.categories ? null : i;
@@ -360,7 +396,7 @@ module powerbi.visuals {
                     let color = colorHelper.getColorForMeasure(valueColumn.source.objects, '');
 
                     if (hasHighlights) {
-                        let highlight = d3.sum(values.map(d => d.highlights[i]));
+                        let highlight = valueColumn.highlights[0];
                         if (highlight !== 0) {
                             tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlight);
                         }
@@ -381,7 +417,7 @@ module powerbi.visuals {
                     });
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
-                        let highlight = d3.sum(values[i].highlights);
+                        let highlight = valueColumn.highlights[0];
                         if (highlight > value) {
                             highlightsOverflow = true;
                         }
@@ -409,15 +445,13 @@ module powerbi.visuals {
                 }
             }
 
-            let categoryLabels = [];
             for (let i = 0; i < slices.length; i += hasHighlights ? 2 : 1) {
                 let slice = slices[i];
                 categoryLabels.push(slice.label);
             }
 
-            var hasNegativeValues = false;
-            var allValuesAreNegative = _.every(slices, (slice: FunnelSlice) => (slice.highlight ? slice.highlightValue <= 0 : true) && slice.value < 0);
-
+            // Calculate negative value warning flags
+            allValuesAreNegative = slices.length > 0 && _.every(slices, (slice: FunnelSlice) => (slice.highlight ? slice.highlightValue <= 0 : true) && slice.value < 0);
             for (var slice of slices) {
                 if (allValuesAreNegative) {
                     slice.value = Math.abs(slice.value);

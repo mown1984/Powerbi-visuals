@@ -90,10 +90,7 @@ module powerbi.visuals.samples {
         };
 
         private static VisualClassName = 'streamGraph';
-        private static Layer: ClassAndSelector = {
-            class: 'layer',
-            selector: '.layer'
-        };
+        private static Layer: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('layer');
 
         private svg: D3.Selection;
         private axis: D3.Selection;

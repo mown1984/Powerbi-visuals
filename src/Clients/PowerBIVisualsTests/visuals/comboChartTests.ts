@@ -32,8 +32,7 @@ module powerbitests {
     import PrimitiveType = powerbi.PrimitiveType;
     import ComboChart = powerbi.visuals.ComboChart;
     import ComboChartDataViewObjects = powerbi.visuals.ComboChartDataViewObjects;
-    import ColorConverter = powerbitests.utils.ColorUtility.convertFromRGBorHexToHex;
-    import AxisType = powerbi.axisType;
+    import AxisType = powerbi.visuals.axisType;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     powerbitests.mocks.setLocale();
@@ -463,8 +462,8 @@ module powerbitests {
                 expect(yAxis).toBe(2);
                 expect(legend).toBe(1);
                 
-                expect(ColorConverter($($(".legendIcon")[0]).css("fill"))).toBe("#ff0000");
-                expect(ColorConverter($($(".legendIcon")[2]).css("fill"))).toBe("#ff0000");
+                helpers.assertColorsMatch($(".legendIcon").eq(0).css("fill"), "#ff0000");
+                helpers.assertColorsMatch($(".legendIcon").eq(2).css("fill"), "#ff0000");
 
                 done();
             }, DefaultWaitForRender);
@@ -651,6 +650,60 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it('Axis customization- display units', (done) => {
+            var objects: ComboChartDataViewObjects = {
+                general: dataViewFactory.general,
+                categoryAxis: {
+                    displayName: "scalar",
+                    show: true,
+                    start: 0,
+                    end: 100000,
+                    axisType: AxisType.scalar,
+                    showAxisTitle: true,                    
+                    labelDisplayUnits: 1000,
+                    labelPrecision: 5
+                },
+                valueAxis: {
+                    secShow: true,
+                    labelDisplayUnits: 1000,
+                    labelPrecision: 5,
+                    start: 0,
+                    end: 1000000,
+                    secStart: 0,
+                    secEnd: 1000000,
+                    secLabelDisplayUnits: 1000,
+                    secLabelPrecision: 5,
+                }
+            };
+            visualBuilder.onDataChanged({
+                dataViews: [
+                    dataViewFactory.buildDataViewNumber(objects),
+                    dataViewFactory.buildDataViewNumber(objects)]
+            });
+
+            setTimeout(() => {
+                var ylabels = $(".axisGraphicsContext .y.axis").first().find(".tick");
+
+                //Verify begin&end labels
+                expect(ylabels[0].textContent).toBe("0.00000K");
+                expect(ylabels[ylabels.length - 1].textContent).toBe("1,000.00000K");
+
+                var y1labels = $(".axisGraphicsContext .y.axis").last().find(".tick");
+
+                //Verify begin&end labels
+                expect(y1labels[0].textContent).toBe("0.00000K");
+                expect(y1labels[y1labels.length - 1].textContent).toBe("1,000.00000K");
+
+                var xlabels = $(".x.axis").children(".tick");
+
+                //Verify begin&end labels
+                expect(xlabels[0].textContent).toBe("0.00000K");
+                expect(xlabels[xlabels.length - 1].textContent).toBe("100.00000K");
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it("Merge axes when user turns off the secondary axis.", (done) => {
             var objects: ComboChartDataViewObjects = {
                 general: dataViewFactory.general,
@@ -816,18 +869,18 @@ module powerbitests {
                 var series2Columns = columnSeries.eq(1).children(".column");
 
                 // Dynamic series columns
-                expect(ColorConverter(series1Columns.eq(0).css("fill"))).toEqual(colors[0].value);
-                expect(ColorConverter(series1Columns.eq(1).css("fill"))).toEqual(colors[0].value);
-                expect(ColorConverter(series1Columns.eq(2).css("fill"))).toEqual(colors[0].value);
+                helpers.assertColorsMatch(series1Columns.eq(0).css("fill"), colors[0].value);
+                helpers.assertColorsMatch(series1Columns.eq(1).css("fill"), colors[0].value);
+                helpers.assertColorsMatch(series1Columns.eq(2).css("fill"), colors[0].value);
 
-                expect(ColorConverter(series2Columns.eq(0).css("fill"))).toEqual(colors[1].value);
-                expect(ColorConverter(series2Columns.eq(1).css("fill"))).toEqual(colors[1].value);
-                expect(ColorConverter(series2Columns.eq(2).css("fill"))).toEqual(colors[1].value);
+                helpers.assertColorsMatch(series2Columns.eq(0).css("fill"), colors[1].value);
+                helpers.assertColorsMatch(series2Columns.eq(1).css("fill"), colors[1].value);
+                helpers.assertColorsMatch(series2Columns.eq(2).css("fill"), colors[1].value);
 
                 // Static series lines
-                expect(ColorConverter(lines.eq(0).css("stroke"))).toBe(colors[2].value);
-                expect(ColorConverter(lines.eq(1).css("stroke"))).toBe(colors[3].value);
-                expect(ColorConverter(lines.eq(2).css("stroke"))).toBe(colors[4].value);
+                helpers.assertColorsMatch(lines.eq(0).css("stroke"), colors[2].value);
+                helpers.assertColorsMatch(lines.eq(1).css("stroke"), colors[3].value);
+                helpers.assertColorsMatch(lines.eq(2).css("stroke"), colors[4].value);
 
                 done();
             }, DefaultWaitForRender);
@@ -863,15 +916,15 @@ module powerbitests {
                 var series2Columns = columnSeries.eq(1).children(".column");
 
                 // Static series columns
-                expect(ColorConverter(series1Columns.eq(0).css("fill"))).toEqual(colors[0].value);
-                expect(ColorConverter(series1Columns.eq(1).css("fill"))).toEqual(colors[0].value);
+                helpers.assertColorsMatch(series1Columns.eq(0).css("fill"), colors[0].value);
+                helpers.assertColorsMatch(series1Columns.eq(1).css("fill"), colors[0].value);
 
-                expect(ColorConverter(series2Columns.eq(0).css("fill"))).toEqual(colors[1].value);
-                expect(ColorConverter(series2Columns.eq(1).css("fill"))).toEqual(colors[1].value);
+                helpers.assertColorsMatch(series2Columns.eq(0).css("fill"), colors[1].value);
+                helpers.assertColorsMatch(series2Columns.eq(1).css("fill"), colors[1].value);
 
                 // Static series lines
-                expect(ColorConverter(lines.eq(0).css("stroke"))).toBe(colors[2].value);
-                expect(ColorConverter(lines.eq(1).css("stroke"))).toBe(colors[3].value);
+                helpers.assertColorsMatch(lines.eq(0).css("stroke"), colors[2].value);
+                helpers.assertColorsMatch(lines.eq(1).css("stroke"), colors[3].value);
 
                 done();
             }, DefaultWaitForRender);
@@ -917,15 +970,15 @@ module powerbitests {
 
             var scale2 = sharedPalette.getColorScaleByKey("series");
 
-            expect(scale2.getColor("b").value).toEqual(colorB.value);
-            expect(scale2.getColor("a").value).toEqual(colorA.value);
+            helpers.assertColorsMatch(scale2.getColor("b").value, colorB.value);
+            helpers.assertColorsMatch(scale2.getColor("a").value, colorA.value);
         });
 
         it("should get colors for measures from default scale", () => {
             var scale = sharedPalette.getNewColorScale();
 
-            expect(scale.getColor(0).value).toEqual(colors[0].value);
-            expect(scale.getColor(1).value).toEqual(colors[1].value);
+            helpers.assertColorsMatch(scale.getColor(0).value, colors[0].value);
+            helpers.assertColorsMatch(scale.getColor(1).value, colors[1].value);
         });
 
         it("measure colors should come after series colors", () => {
@@ -939,10 +992,10 @@ module powerbitests {
             var measureColor1 = measureScale.getColor(0);
             var measureColor2 = measureScale.getColor(1);
 
-            expect(seriesColor1.value).toEqual(colors[0].value);
-            expect(seriesColor2.value).toEqual(colors[1].value);
-            expect(measureColor1.value).toEqual(colors[2].value);
-            expect(measureColor2.value).toEqual(colors[3].value);
+            helpers.assertColorsMatch(seriesColor1.value, colors[0].value);
+            helpers.assertColorsMatch(seriesColor2.value, colors[1].value);
+            helpers.assertColorsMatch(measureColor1.value, colors[2].value);
+            helpers.assertColorsMatch(measureColor2.value, colors[3].value);
         });
 
         it("measure colors should come after measure colors", () => {
@@ -956,10 +1009,10 @@ module powerbitests {
             var measureColor3 = measureScale2.getColor(1);
             var measureColor4 = measureScale2.getColor(2);
 
-            expect(measureColor1.value).toEqual(colors[0].value);
-            expect(measureColor2.value).toEqual(colors[1].value);
-            expect(measureColor3.value).toEqual(colors[2].value);
-            expect(measureColor4.value).toEqual(colors[3].value);
+            helpers.assertColorsMatch(measureColor1.value, colors[0].value);
+            helpers.assertColorsMatch(measureColor2.value, colors[1].value);
+            helpers.assertColorsMatch(measureColor3.value, colors[2].value);
+            helpers.assertColorsMatch(measureColor4.value, colors[3].value);
         });
 
         it("getSentimentColors should call parent", () => {

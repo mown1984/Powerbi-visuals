@@ -155,9 +155,19 @@ module jsCommon {
 
         /**
          * Converts point value (pt) to pixels
+         * Returns a string for font-size property
+         * e.g. fromPoint(8) => '24px'
          */
         export function fromPoint(pt: number): string {
             return toString(PxPtRatio * pt);
+        }
+
+        /**
+         * Converts pixel value (px) to pt
+         * e.g. toPoint(24) => 8
+         */
+        export function toPoint(px: number): number {
+            return px / PxPtRatio;
         }
     }
 }

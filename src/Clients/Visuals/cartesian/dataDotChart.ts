@@ -464,7 +464,7 @@ module powerbi.visuals {
             let categoryValues = category.values;
 
             // I only handle a single series
-            if (categorical.values) {
+            if (!_.isEmpty(categorical.values)) {
                 let measure = categorical.values[0];
 
                 let hasHighlights: boolean = !!measure.highlights;

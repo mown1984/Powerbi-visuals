@@ -29,8 +29,19 @@
 
 /// <reference path="iVisual.ts"/>
 
-/// <reference path="geocodingManager.ts"/>
+/// <reference path="common/point.ts"/>
+/// <reference path="common/rect.ts"/>
 /// <reference path="legend.ts"/>
+
+/// <reference path="types/axisScale.ts"/>
+/// <reference path="types/axisStyle.ts"/>
+/// <reference path="types/axisType.ts"/>
+/// <reference path="types/basicShapeType.ts"/>
+/// <reference path="types/imageScalingType.ts"/>
+/// <reference path="types/labelPosition.ts"/>
+/// <reference path="types/legendPosition.ts"/>
+/// <reference path="types/outline.ts"/>
+/// <reference path="types/yAxisPosition.ts"/>
 
 /// <reference path="animators/animatorCommon.ts"/>
 /// <reference path="animators/columnChartAnimator.ts"/>
@@ -56,7 +67,6 @@
 /// <reference path="capabilities/richTextbox.capabilities.ts"/>
 /// <reference path="capabilities/sampleVisual.capabilities.ts"/>
 /// <reference path="capabilities/scatterChart.capabilities.ts"/>
-/// <reference path="capabilities/playChart.capabilities.ts"/>
 /// <reference path="capabilities/slicer.capabilities.ts"/>
 /// <reference path="capabilities/table.capabilities.ts"/>
 /// <reference path="capabilities/matrix.capabilities.ts"/>
@@ -93,6 +103,7 @@
 
 /// <reference path="common/invalidDataValuesChecker.ts"/>
 /// <reference path="common/listView.ts"/>
+/// <reference path="common/mapUtil.ts"/>
 /// <reference path="common/selectionId.ts"/>
 /// <reference path="common/selectionManager.ts"/>
 /// <reference path="common/shapes.ts"/>
@@ -114,6 +125,7 @@
 /// <reference path="services/colorAllocatorFactory.ts"/>
 /// <reference path="services/defaultVisualHostService.ts"/>
 /// <reference path="services/interactivityService.ts"/>
+/// <reference path="services/geocoder.ts"/>
 /// <reference path="services/geocodingCache.ts"/>
 /// <reference path="services/visualPluginService.ts"/>
 
@@ -178,11 +190,5 @@
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
-/// <reference path="visuals/samples/radarChart.ts"/>
-/// <reference path="visuals/samples/dotPlot.ts"/>
-/// <reference path="visuals/samples/sunburst.ts"/>
-/// <reference path="visuals/samples/areaRangeChart.ts"/>
-
-/// <reference path="visuals/histogram.ts"/>
 
 /// <reference path="plugins.ts"/>

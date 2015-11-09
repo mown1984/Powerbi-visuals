@@ -29,14 +29,12 @@
 module powerbitests {
     import ScatterChart = powerbi.visuals.ScatterChart;
     import ArrayExtensions = jsCommon.ArrayExtensions;
+    import AxisType = powerbi.visuals.axisType;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
     import DataViewTransform = powerbi.data.DataViewTransform;
-    import ColorUtility = utils.ColorUtility;
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-
-    import AxisType = powerbi.axisType;
 
     powerbitests.mocks.setLocale();
 
@@ -51,6 +49,22 @@ module powerbitests {
     var legendVisibleSmallerThanMinHeight: number = legendVisibleMinHeight - 1;
     var legendVisibleGreaterThanMinHeightString: string = legendVisibleGreaterThanMinHeight.toString();
     var legendVisibleSmallerThanMinHeightString: string = legendVisibleSmallerThanMinHeight.toString();
+
+    function createConverterOptions(
+        viewport: powerbi.IViewport,
+        colors: any,
+        interactivityService?: any,
+        categoryAxisProperties?: any,
+        valueAxisProperties?: any) {
+
+        return {
+            viewport: viewport,
+            colors: colors,
+            interactivityService: interactivityService,
+            categoryAxisProperties: categoryAxisProperties,
+            valueAxisProperties: valueAxisProperties,
+        };
+    }
 
     describe("ScatterChart", () => {
         var categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
@@ -1414,7 +1428,7 @@ module powerbitests {
                 }
             };
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
 
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].category).toBe("a");
@@ -1523,10 +1537,10 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var legendItems = scatterChartData.legendData.dataPoints;
             expect(legendItems[0].label).toBe(powerbi.visuals.valueFormatter.format(null));
-            expect(legendItems[0].color).toBe('#41BEE1');
+            helpers.assertColorsMatch(legendItems[0].color, '#41BEE1');
 
             var legendColors = legendItems.map(l => l.color);
             expect(legendColors).toEqual(ArrayExtensions.distinct(legendColors));
@@ -1616,7 +1630,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             expect(scatterChartData.dataPoints[0].category).not.toBe(null);
         });
 
@@ -1700,7 +1714,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].category).toBe("a");
             expect(dataPoints[0].x).toBe(0);
@@ -1764,7 +1778,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
 
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].category).toBe("a");
@@ -1818,7 +1832,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].category).toBe("a");
             expect(dataPoints[0].x).toBe(110);
@@ -1869,7 +1883,7 @@ module powerbitests {
                 }
             };
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].category).toBe("a");
             expect(dataPoints[0].x).toBe(110);
@@ -1978,7 +1992,7 @@ module powerbitests {
             var dataView: powerbi.DataView = getDataViewMultiSeries();
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors).dataPoints;
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
             expect(scatterChartData[0].category).toBe('1/1/2012');
             expect(scatterChartData[0].x).toBe(150);
             expect(scatterChartData[0].y).toBe(30);
@@ -2010,11 +2024,11 @@ module powerbitests {
                 objects: { dataPoint: { defaultColor: { solid: { color: hexDefaultColorRed } } } }
             };
 
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors, null).dataPoints;
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
             expect(scatterChartData[0].category).toBe('1/1/2012');
             expect(scatterChartData[0].x).toBe(150);
             expect(scatterChartData[0].y).toBe(30);
-            expect(scatterChartData[0].fill).toBe(hexDefaultColorRed);
+            helpers.assertColorsMatch(scatterChartData[0].fill, hexDefaultColorRed);
             expect(scatterChartData[0].fill).toBe(scatterChartData[2].fill);
             expect(scatterChartData[0].fill).toBe(scatterChartData[3].fill);
         });
@@ -2034,7 +2048,7 @@ module powerbitests {
             groupedValues[1].objects = { dataPoint: { fill: { solid: { color: 'green' } } } };
             dataView.categorical.values.grouped = () => groupedValues;
 
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors, null).dataPoints;
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
             expect(scatterChartData[0].fill).toBe('red');
             expect(scatterChartData[1].fill).toBe('green');
         });
@@ -2086,12 +2100,12 @@ module powerbitests {
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors, null).dataPoints;
-            expect(scatterChartData[0].fill).toBe('#41BEE0');
-            expect(scatterChartData[1].fill).toBe('#41BEE1');
-            expect(scatterChartData[2].fill).toBe('#41BEE2');
-            expect(scatterChartData[3].fill).toBe('#41BEE3');
-            expect(scatterChartData[4].fill).toBe('#41BEE4');
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
+            helpers.assertColorsMatch(scatterChartData[0].fill, '#41BEE0');
+            helpers.assertColorsMatch(scatterChartData[1].fill, '#41BEE1');
+            helpers.assertColorsMatch(scatterChartData[2].fill, '#41BEE2');
+            helpers.assertColorsMatch(scatterChartData[3].fill, '#41BEE3');
+            helpers.assertColorsMatch(scatterChartData[4].fill, '#41BEE4');
         });
 
         it('scatterChart multi-series with min/max', () => {
@@ -2249,7 +2263,7 @@ module powerbitests {
             
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors).dataPoints;
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
             expect(scatterChartData[0].category).toBe('Bellevue, WA');
             expect(scatterChartData[0].x).toBe(126439);
             expect(scatterChartData[0].y).toBe(4244.000000003725);
@@ -2313,7 +2327,7 @@ module powerbitests {
             expect(pivotedDataView).not.toBe(dataView);
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(pivotedDataView, viewport, colors).dataPoints;
+            var scatterChartData = ScatterChart.converter(pivotedDataView, createConverterOptions(viewport, colors)).dataPoints;
             expect(scatterChartData[0].category).toBe(powerbi.visuals.valueFormatter.format(null));
             expect(scatterChartData[0].fill).not.toBe(scatterChartData[1].fill);
 
@@ -2362,7 +2376,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
             expect(dataPoints[0].fill).toBe(dataPoints[1].fill);
 
@@ -2421,9 +2435,9 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors, null);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].fill).toBe(hexDefaultColorRed);
+            helpers.assertColorsMatch(dataPoints[0].fill, hexDefaultColorRed);
         });
 
         it('scatter chart null X axes values', () => {
@@ -2475,7 +2489,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var scatterChartDataPoints = scatterChartData.dataPoints;
             expect(scatterChartDataPoints.length).toBe(0);
         });
@@ -2524,7 +2538,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var scatterChartDataPoints = scatterChartData.dataPoints;
             expect(scatterChartDataPoints.length).toBe(0);
         });
@@ -2563,7 +2577,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var scatterChartDataPoints = scatterChartData.dataPoints;
             expect(scatterChartDataPoints.length).toBe(0);
         });
@@ -2609,10 +2623,10 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var scatterChartDataPoints = scatterChartData.dataPoints;
             expect(scatterChartDataPoints[0].category).toBe('a');
-            expect(scatterChartDataPoints[1].fill).toBe('#41BEE1');
+            helpers.assertColorsMatch(scatterChartDataPoints[1].fill, '#41BEE1');
             expect(scatterChartDataPoints[0].x).toBe(210);
             expect(scatterChartDataPoints[0].y).toBe(0);
         });
@@ -2653,7 +2667,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var scatterChartDataPoints = scatterChartData.dataPoints;
             expect(scatterChartDataPoints.length).toBe(0);
         });
@@ -2695,7 +2709,7 @@ module powerbitests {
             var dataLabelsSettings = powerbi.visuals.dataLabelUtils.getDefaultPointLabelSettings();
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             
             expect(scatterChartData.dataLabelsSettings).toEqual(dataLabelsSettings);
         });
@@ -2756,14 +2770,14 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
             
-            expect(dataPoints[0].fill).toBe('#d9f2fb');
-            expect(dataPoints[1].fill).toBe('#b1eab7');
-            expect(dataPoints[2].fill).toBe('#cceab7');
-            expect(dataPoints[3].fill).toBe('#b100b7');
-            expect(dataPoints[4].fill).toBe('#cceab7');
+            helpers.assertColorsMatch(dataPoints[0].fill, '#d9f2fb');
+            helpers.assertColorsMatch(dataPoints[1].fill, '#b1eab7');
+            helpers.assertColorsMatch(dataPoints[2].fill, '#cceab7');
+            helpers.assertColorsMatch(dataPoints[3].fill, '#b100b7');
+            helpers.assertColorsMatch(dataPoints[4].fill, '#cceab7');
         });
 
         it('scatter chart bubble gradient color - validate tool tip', () => {
@@ -2822,7 +2836,7 @@ module powerbitests {
             };
 
             var colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            var scatterChartData = ScatterChart.converter(dataView, viewport, colors);
+            var scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             var dataPoints = scatterChartData.dataPoints;
 
             expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: 'col1', value: 'a' }, { displayName: 'col3', value: '210' }, { displayName: 'col2', value: '110' }, { displayName: 'col4', value: '10' }]);
@@ -2849,7 +2863,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = mocks.createVisualHostServices();
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false, devToolsEnabled: false }).getPlugin('scatterChart').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false }).getPlugin('scatterChart').create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -3932,6 +3946,49 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('25');           
         });
 
+        it('X-axis customization: Test axis display units and precision', () => {
+            dataViewMetadataFourColumn.objects = {
+                categoryAxis: {
+                    show: true,
+                    start: 0,
+                    end: 30,
+                    axisType: AxisType.scalar,
+                    showAxisTitle: true,
+                    axisStyle: true,
+                    labelDisplayUnits: 1000000,
+                    labelPrecision: 5
+                }
+            };
+            var dataChangedOptions = {
+                dataViews: [{
+                    metadata: dataViewMetadataFourColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataFourColumn.columns[1],
+                            values: [1, 2, 3, 4, 5],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadataFourColumn.columns[1],
+                                values: [100, 200, 300, 400, 500]
+                            }, {
+                                source: dataViewMetadataFourColumn.columns[2],
+                                values: [200, 400, 600, 800, 1000]
+                            }, {
+                                source: dataViewMetadataFourColumn.columns[3],
+                                values: [1, 2, 3, 4, 5]
+                            }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);
+
+            var labels = $('.x.axis').children('.tick');
+
+            expect(labels[0].textContent).toBe('0.00000M');
+            expect(labels[labels.length - 1].textContent).toBe('0.00003M');
+        });
+
         it('X-axis customization: Set axis color', () => {
             dataViewMetadataFourColumn.objects = {
                 categoryAxis: {
@@ -3969,7 +4026,7 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);
                  
             var labels = $('.x.axis').children('.tick');
-            expect(labels.find('text').css('fill')).toBe('#ff0000');
+            helpers.assertColorsMatch(labels.find('text').css('fill'), '#ff0000');
         });
 
         it('Y-axis customization: Test forced domain (start and end)',() => {
@@ -4013,6 +4070,49 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('500');
         });
 
+        it('Y-axis customization: Test axis display units and precision', () => {
+            dataViewMetadataFourColumn.objects = {
+                valueAxis: {
+                    show: true,
+                    position: 'Right',
+                    start: 0,
+                    end: 500,
+                    showAxisTitle: true,
+                    axisStyle: true,
+                    labelDisplayUnits: 1000,
+                    labelPrecision: 5
+                }
+            };
+            var dataChangedOptions = {
+                dataViews: [{
+                    metadata: dataViewMetadataFourColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataFourColumn.columns[0],
+                            values: [1, 2, 3, 4, 5],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadataFourColumn.columns[1],
+                                values: [100, 200, 300, 400, 500]
+                            }, {
+                                source: dataViewMetadataFourColumn.columns[2],
+                                values: [200, 400, 600, 800, 1000]
+                            }, {
+                                source: dataViewMetadataFourColumn.columns[3],
+                                values: [1, 2, 3, 4, 5]
+                            }])
+                    }
+                }]
+            };
+            v.onDataChanged(dataChangedOptions);
+
+            var labels = $('.y.axis').children('.tick');
+
+            expect(labels[0].textContent).toBe('0.00000K');
+            expect(labels[labels.length - 1].textContent).toBe('0.50000K');
+        });
+
         it('Y-axis customization: Set axis color', () => {
             dataViewMetadataFourColumn.objects = {
                 valueAxis: {
@@ -4050,7 +4150,7 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);
 
             var labels = $('.y.axis').children('.tick');            
-            expect(labels.find('text').css('fill')).toBe('#ff0000');
+            helpers.assertColorsMatch(labels.find('text').css('fill'), '#ff0000');
         });
     });
 
@@ -4391,11 +4491,11 @@ module powerbitests {
                 for (var i = 0; i < dots.length; i++) {
                     var strokeOpacity = dots.eq(i).css('stroke-opacity');
                     var strokeWidth = dots.eq(i).css('stroke-width');
-                    var strokeFill = ColorUtility.convertFromRGBorHexToHex(dots.eq(i).css('stroke').replace(/\ /g, ""));
-                    var bubbleFill = ColorUtility.convertFromRGBorHexToHex(dots.eq(i).css('fill').replace(/\ /g, ""));
+                    var strokeFill = dots.eq(i).css('stroke');
+                    var bubbleFill = dots.eq(i).css('fill');
                     expect(strokeOpacity).toBeLessThan(1);
                     expect(strokeWidth).toBe('1px');
-                    expect(strokeFill).toBe(bubbleFill);
+                    helpers.assertColorsMatch(strokeFill, bubbleFill);
 
                 }
                 done();
@@ -4449,14 +4549,13 @@ module powerbitests {
                 for (var i = 0; i < dots.length; i++) {
                     var strokeOpacity = dots.eq(i).css('stroke-opacity');
                     var strokeWidth = dots.eq(i).css('stroke-width');
-                    var strokeFill = ColorUtility.convertFromRGBorHexToHex(dots.eq(i).css('stroke'));
+                    var strokeFill = dots.eq(i).css('stroke');
                     expect(strokeOpacity).toBe('1');
                     expect(strokeWidth).toBe('1px');
-                    var bubbleFill = dots.eq(i).css('fill').replace(/\ /g, "");
-                    bubbleFill = ColorUtility.convertFromRGBorHexToHex(bubbleFill);
-                    var colorRgb = jsCommon.color.parseRgb(bubbleFill);
-                    var stroke = jsCommon.color.rgbToHexString(jsCommon.color.darken(colorRgb, ScatterChart.StrokeDarkenColorValue));
-                    expect(strokeFill).toBe(stroke.toLowerCase());
+                    var bubbleFill = dots.eq(i).css('fill');
+                    var colorRgb = jsCommon.Color.parseColorString(bubbleFill);
+                    var stroke = jsCommon.Color.hexString(jsCommon.Color.darken(colorRgb, ScatterChart.StrokeDarkenColorValue));
+                    helpers.assertColorsMatch(strokeFill, stroke);
                 }
                 done();
             }, DefaultWaitForRender);
@@ -4509,11 +4608,11 @@ module powerbitests {
                 for (var i = 0; i < dots.length; i++) {
                     var strokeOpacity = dots.eq(i).css('stroke-opacity');
                     var strokeWidth = dots.eq(i).css('stroke-width');
-                    var strokeFill = ColorUtility.convertFromRGBorHexToHex(dots.eq(i).css('stroke').replace(/\ /g, ""));
-                    var bubbleFill = ColorUtility.convertFromRGBorHexToHex(dots.eq(i).css('fill').replace(/\ /g, ""));
+                    var strokeFill = dots.eq(i).css('stroke');
+                    var bubbleFill = dots.eq(i).css('fill');
                     expect(strokeOpacity).toBeLessThan(1);
                     expect(strokeWidth).toBe('1px');
-                    expect(strokeFill).toBe(bubbleFill);
+                    helpers.assertColorsMatch(strokeFill, bubbleFill);
                 }
                 done();
             }, DefaultWaitForRender);
@@ -4633,16 +4732,16 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            expect(labelDataPoints[0].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[1].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[2].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[3].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[4].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
         });
 
         it("Label data points have correct fill", () => {
@@ -4685,16 +4784,16 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            expect(labelDataPoints[0].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[1].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[2].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[3].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[4].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
         });
     });
 

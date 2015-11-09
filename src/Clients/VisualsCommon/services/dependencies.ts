@@ -30,15 +30,15 @@ module jsCommon {
     /**
      * JavaScript files.
      */    
-    var MSMapcontrol = 'https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1&onscriptload=globalMapControlLoaded';
+    const MSMapcontrol = 'https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1&onscriptload=globalMapControlLoaded';
 
     /**
      * Map loading logic.
      */
-    var MSMapcontrolLoaded = false;
-    var WaitForMSMapLoad: JQueryDeferred<void> = null;
+    let MSMapcontrolLoaded = false;
+    let WaitForMSMapLoad: JQueryDeferred<void> = null;
 
-    var PowerViewPackage: IDependency = {
+    const PowerViewPackage: IDependency = {
         javaScriptFiles: [
             powerbi.build + '/externals/pv/webclient.js'
         ],
@@ -54,7 +54,7 @@ module jsCommon {
         requires(PowerViewPackage, action);
     }
 
-    var MapPackage: IDependency = {
+    const MapPackage: IDependency = {
 		javaScriptFilesWithCallback: [
             { javascriptFile: MSMapcontrol, onLoadCallback: waitForMapControlLoaded }
         ]
@@ -86,7 +86,7 @@ module jsCommon {
 }
 
 /* tslint:disable:no-unused-variable */
-var globalMapControlLoaded = function() {
+let globalMapControlLoaded = function() {
 	// Map requires a function in the global namespace to callback once loaded
 	jsCommon.mapControlLoaded();
 };

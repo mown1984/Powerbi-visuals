@@ -152,6 +152,7 @@ module powerbi.visuals {
         public setWarnings(warnings: IVisualWarning[]): void { }
         public setToolbar($toolbar: JQuery): void { }
         public shouldRetainSelection(): boolean { return false; }
+        public geocoder(): IGeocoder { return services.createGeocoder(); }
 
         private static beautify(format: string): string {
             let key = BeautifiedFormat[format];

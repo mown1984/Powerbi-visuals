@@ -29,6 +29,11 @@
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
 
+    export interface SlicerDefaultValueHandler {
+        getDefaultValue(): data.SQConstantExpr;
+        getIdentityFields(): data.SQExpr[];
+    }
+
     export interface SlicerConstructorOptions {
         behavior?: SlicerWebBehavior;
     }
@@ -59,6 +64,10 @@ module powerbi.visuals {
             background: string;
             textSize: number;
         };
+        selection: {
+            selectAllCheckboxEnabled: boolean;
+            singleSelect: boolean;
+        };
         slicerText: {
             color: string;
             outline: string;
@@ -73,66 +82,23 @@ module powerbi.visuals {
         'font-size': string;
     }
 
-    export class Slicer implements IVisual {
+    export class Slicer implements IVisual, SlicerDefaultValueHandler {
         private element: JQuery;
         private currentViewport: IViewport;
         private dataView: DataView;
         private slicerHeader: D3.Selection;
         private slicerBody: D3.Selection;
+        private slicerContainer: D3.Selection;
         private listView: IListView;
         private slicerData: SlicerData;
         private settings: SlicerSettings;
         private interactivityService: IInteractivityService;
         private behavior: SlicerWebBehavior;
         private hostServices: IVisualHostServices;
-        private static clearTextKey = 'Slicer_Clear';
-        private static selectAllTextKey = 'Slicer_SelectAll';
         private waitingForData: boolean;
         private textProperties: TextProperties = {
             'fontFamily': 'wf_segoe-ui_normal, helvetica, arial, sans-serif',
             'fontSize': '14px',
-        };
-
-        // Based on sprite size defined in CSS sprite sheet for slicer-checkbox
-        private static CheckboxSpritePixelSizeMinimum: number = 8;
-        private static CheckboxSpritePixelSize: number = 13;
-        private static CheckboxSpritePixelSizeRange: number = Slicer.CheckboxSpritePixelSize - Slicer.CheckboxSpritePixelSizeMinimum;
-
-        private static Container: ClassAndSelector = {
-            class: 'slicerContainer',
-            selector: '.slicerContainer'
-        };
-        private static Header: ClassAndSelector = {
-            class: 'slicerHeader',
-            selector: '.slicerHeader'
-        };
-        private static HeaderText: ClassAndSelector = {
-            class: 'headerText',
-            selector: '.headerText'
-        };
-        private static Body: ClassAndSelector = {
-            class: 'slicerBody',
-            selector: '.slicerBody'
-        };
-        private static ItemContainer: ClassAndSelector = {
-            class: 'slicerItemContainer',
-            selector: '.slicerItemContainer'
-        };
-        private static LabelText: ClassAndSelector = {
-            class: 'slicerText',
-            selector: '.slicerText'
-        };
-        private static Input: ClassAndSelector = {
-            class: 'slicerCheckbox',
-            selector: '.slicerCheckbox'
-        };
-        private static Checkbox: ClassAndSelector = {
-            class: 'checkbox',
-            selector: '.checkbox'
-        };
-        private static Clear: ClassAndSelector = {
-            class: 'clear',
-            selector: '.clear'
         };
 
         public static DefaultStyleProperties(): SlicerSettings {
@@ -149,6 +115,10 @@ module powerbi.visuals {
                     background: '#ffffff',
                     textSize: 10,
                 },
+                selection: {
+                    selectAllCheckboxEnabled: false,
+                    singleSelect: true
+                },
                 slicerText: {
                     color: '#666666',
                     outline: 'None',
@@ -164,133 +134,8 @@ module powerbi.visuals {
             }
         }
 
-        public static converter(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService): SlicerData {
-            let slicerData: SlicerData;
-            if (!dataView) {
-                return;
-            }
-
-            let dataViewCategorical = dataView.categorical;
-            if (dataViewCategorical == null || dataViewCategorical.categories == null || dataViewCategorical.categories.length === 0)
-                return;
-
-            let isInvertedSelectionMode = undefined;
-            let objects = dataView.metadata ? <any> dataView.metadata.objects : undefined;
-            let categories = dataViewCategorical.categories[0];
-
-            let numberOfScopeIds: number;
-            if (objects && objects.general && objects.general.filter) {
-                let identityFields = categories.identityFields;
-                if (!identityFields)
-                    return;
-                let filter = <powerbi.data.SemanticFilter>objects.general.filter;
-                let scopeIds = powerbi.data.SQExprConverter.asScopeIdsContainer(filter, identityFields);
-                if (scopeIds) {
-                    isInvertedSelectionMode = scopeIds.isNot;
-                    numberOfScopeIds = scopeIds.scopeIds ? scopeIds.scopeIds.length : 0;
-                }
-                else {
-                    isInvertedSelectionMode = false;
-                }
-            }
-
-            if (interactivityService) {
-                if (isInvertedSelectionMode === undefined) {
-                    // The selection state is read from the Interactivity service in case of SelectAll or Clear when query doesn't update the visual
-                    isInvertedSelectionMode = interactivityService.isSelectionModeInverted();
-                }
-                else {
-                    interactivityService.setSelectionModeInverted(isInvertedSelectionMode);
-                }
-            }
-
-            let categoryValuesLen = categories && categories.values ? categories.values.length : 0;
-            let slicerDataPoints: SlicerDataPoint[] = [];
-
-            slicerDataPoints.push({
-                value: localizedSelectAllText,
-                identity: SelectionId.createWithMeasure(localizedSelectAllText),
-                selected: !!isInvertedSelectionMode,
-                isSelectAllDataPoint: true
-            });                    
-                                     
-            // Pass over the values to see if there's a positive or negative selection
-            let hasSelection: boolean = undefined;
-
-            for (let idx = 0; idx < categoryValuesLen; idx++) {
-                let selected = isCategoryColumnSelected(slicerProps.selectedPropertyIdentifier, categories, idx);
-                if (selected != null) {
-                    hasSelection = selected;
-                    break;
-                }
-            }
-
-            let numberOfCategoriesSelectedInData = 0;
-            for (let idx = 0; idx < categoryValuesLen; idx++) {
-                let categoryIdentity = categories.identity ? categories.identity[idx] : null;
-                let categoryIsSelected = isCategoryColumnSelected(slicerProps.selectedPropertyIdentifier, categories, idx);
-
-                if (hasSelection != null) {
-                    // If the visual is in InvertedSelectionMode, all the categories should be selected by default unless they are not selected
-                    // If the visual is not in InvertedSelectionMode, we set all the categories to be false except the selected category                         
-                    if (isInvertedSelectionMode) {
-                        if (categories.objects == null)
-                            categoryIsSelected = undefined;
-
-                        if (categoryIsSelected != null) {
-                            categoryIsSelected = hasSelection;
-                        }
-                        else if (categoryIsSelected == null)
-                            categoryIsSelected = !hasSelection;
-                    }
-                    else {
-                        if (categoryIsSelected == null) {
-                            categoryIsSelected = !hasSelection;
-                        }
-                    }
-                }
-
-                if (categoryIsSelected)
-                    numberOfCategoriesSelectedInData++;
-
-                slicerDataPoints.push({
-                    value: categories.values[idx],
-                    identity: SelectionId.createWithId(categoryIdentity),
-                    selected: categoryIsSelected
-                });
-            }
-
-            let defaultSettings = this.DefaultStyleProperties();
-            objects = dataView.metadata.objects;
-            if (objects) {
-                defaultSettings.general.outlineColor = DataViewObjects.getFillColor(objects, slicerProps.general.outlineColor, defaultSettings.general.outlineColor);
-                defaultSettings.general.outlineWeight = DataViewObjects.getValue<number>(objects, slicerProps.general.outlineWeight, defaultSettings.general.outlineWeight);
-
-                defaultSettings.header.show = DataViewObjects.getValue<boolean>(objects, slicerProps.header.show, defaultSettings.header.show);
-                defaultSettings.header.fontColor = DataViewObjects.getFillColor(objects, slicerProps.header.fontColor, defaultSettings.header.fontColor);
-                defaultSettings.header.background = DataViewObjects.getFillColor(objects, slicerProps.header.background, defaultSettings.header.background);
-                defaultSettings.header.outline = DataViewObjects.getValue<string>(objects, slicerProps.header.outline, defaultSettings.header.outline);
-                defaultSettings.header.textSize = DataViewObjects.getValue<number>(objects, slicerProps.header.textSize, defaultSettings.header.textSize);
-
-                defaultSettings.slicerText.color = DataViewObjects.getFillColor(objects, slicerProps.Rows.fontColor, defaultSettings.slicerText.color);
-                defaultSettings.slicerText.background = DataViewObjects.getFillColor(objects, slicerProps.Rows.background, defaultSettings.slicerText.background);
-                defaultSettings.slicerText.outline = DataViewObjects.getValue<string>(objects, slicerProps.Rows.outline, defaultSettings.slicerText.outline);
-                defaultSettings.slicerText.textSize = DataViewObjects.getValue<number>(objects, slicerProps.Rows.textSize, defaultSettings.slicerText.textSize);
-            }
-
-            slicerData = {
-                categorySourceName: categories.source.displayName,
-                formatString: valueFormatter.getFormatString(categories.source, slicerProps.formatString),
-                slicerSettings: defaultSettings,
-                slicerDataPoints: slicerDataPoints,
-            };
-
-            // Override hasSelection if a objects contained more scopeIds than selections we found in the data
-            if (numberOfScopeIds != null && numberOfScopeIds > numberOfCategoriesSelectedInData) {
-                slicerData.hasSelectionOverride = true;
-            }
-
-            return slicerData;
+        public static converter(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService, hostServices?: IVisualHostServices): SlicerData {
+            return DataConversion.convert(dataView, localizedSelectAllText, interactivityService, hostServices);
         }
 
         public init(options: VisualInitOptions): void {
@@ -331,80 +176,31 @@ module powerbi.visuals {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let data = this.slicerData;
-            if (!data)
+            return ObjectEnumerator.enumerateObjectInstances(options, this.slicerData, this.settings);
+        }
+
+        // SlicerDefaultValueHandler
+        public getDefaultValue(): data.SQConstantExpr {
+            return DataConversion.getDefaultValue(this.dataView);
+        }
+
+        public getIdentityFields(): data.SQExpr[] {
+            if (!this.dataView) {
+                return;
+            }
+
+            let dataViewCategorical = this.dataView.categorical;
+            if (dataViewCategorical == null || _.isEmpty(dataViewCategorical.categories))
                 return;
 
-            let objectName = options.objectName;
-            switch (objectName) {
-                case 'Rows':
-                    return this.enumerateRows(data);
-                case 'header':
-                    return this.enumerateHeader(data);
-                case 'general':
-                    return this.enumerateGeneral(data);
-            }
-        }
-
-        private enumerateHeader(data: SlicerData): VisualObjectInstance[] {
-            let slicerSettings = this.settings;
-            let fontColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.header && data.slicerSettings.header.fontColor ?
-                data.slicerSettings.header.fontColor : slicerSettings.header.fontColor;
-            let background = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.header && data.slicerSettings.header.background ?
-                data.slicerSettings.header.background : slicerSettings.header.background;
-            return [{
-                selector: null,
-                objectName: 'header',
-                properties: {
-                    show: slicerSettings.header.show,
-                    fontColor: fontColor,
-                    background: background,
-                    outline: slicerSettings.header.outline,
-                    textSize: slicerSettings.header.textSize,
-                }
-            }];
-        }
-
-        private enumerateRows(data: SlicerData): VisualObjectInstance[] {
-            let slicerSettings = this.settings;
-            let fontColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.slicerText && data.slicerSettings.slicerText.color ?
-                data.slicerSettings.slicerText.color : slicerSettings.slicerText.color;
-            let background = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.slicerText && data.slicerSettings.slicerText.background ?
-                data.slicerSettings.slicerText.background : slicerSettings.slicerText.background;
-            return [{
-                selector: null,
-                objectName: 'rows',
-                properties: {
-                    fontColor: fontColor,
-                    background: background,
-                    outline: slicerSettings.slicerText.outline,
-                    textSize: slicerSettings.slicerText.textSize,
-                }
-            }];
-        }
-
-        private enumerateGeneral(data: SlicerData): VisualObjectInstance[] {
-            let slicerSettings = this.settings;
-            let outlineColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.general && data.slicerSettings.general.outlineColor ?
-                data.slicerSettings.general.outlineColor : slicerSettings.general.outlineColor;
-            let outlineWeight = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.general && data.slicerSettings.general.outlineWeight ?
-                data.slicerSettings.general.outlineWeight : slicerSettings.general.outlineWeight;
-
-            return [{
-                selector: null,
-                objectName: 'general',
-                properties: {
-                    outlineColor: outlineColor,
-                    outlineWeight: outlineWeight
-                }
-            }];
+            return dataViewCategorical.categories[0].identityFields;
         }
 
         private updateInternal(resetScrollbarPosition: boolean) {
             this.updateSlicerBodyDimensions();
 
-            let localizedSelectAllText = this.hostServices.getLocalizedString(Slicer.selectAllTextKey);
-            let data = Slicer.converter(this.dataView, localizedSelectAllText, this.interactivityService);
+            let localizedSelectAllText = this.hostServices.getLocalizedString(DisplayNameKeys.SelectAll);
+            let data = Slicer.converter(this.dataView, localizedSelectAllText, this.interactivityService, this.hostServices);
             if (!data) {
                 this.listView.empty();
                 return;
@@ -413,6 +209,8 @@ module powerbi.visuals {
             data.slicerSettings.general.outlineWeight = data.slicerSettings.general.outlineWeight < 0 ? 0 : data.slicerSettings.general.outlineWeight;
             this.slicerData = data;
             this.settings = this.slicerData.slicerSettings;
+
+            this.updateSelectionStyle();
 
             this.listView
                 .viewport(this.getSlicerBodyViewport(this.currentViewport))
@@ -424,29 +222,33 @@ module powerbi.visuals {
                     );
         }
 
+        private updateSelectionStyle(): void {
+            this.slicerContainer.classed('isMultiSelectEnabled', !this.settings.selection.singleSelect);
+        }
+
         private initContainer() {
             let settings = this.settings;
             let slicerBodyViewport = this.getSlicerBodyViewport(this.currentViewport);
 
             let slicerContainerDiv = document.createElement('div');
-            slicerContainerDiv.className = Slicer.Container.class;
-            let slicerContainer: D3.Selection = d3.select(slicerContainerDiv);
+            slicerContainerDiv.className = Selectors.Container.class;
+            let slicerContainer = this.slicerContainer = d3.select(slicerContainerDiv);
 
-            this.slicerHeader = slicerContainer.append('div').classed(Slicer.Header.class, true);
+            this.slicerHeader = slicerContainer.append('div').classed(Selectors.Header.class, true);
 
             this.slicerHeader.append('span')
-                .classed(Slicer.Clear.class, true)
-                .attr('title', this.hostServices.getLocalizedString(Slicer.clearTextKey));
+                .classed(Selectors.Clear.class, true)
+                .attr('title', this.hostServices.getLocalizedString(DisplayNameKeys.Clear));
 
-            this.slicerHeader.append('div').classed(Slicer.HeaderText.class, true)
+            this.slicerHeader.append('div').classed(Selectors.HeaderText.class, true)
                 .style({
-                    'border-style': this.getBorderStyle(settings.header.outline),
+                    'border-style': Styles.getBorderStyle(settings.header.outline),
                     'border-color': settings.general.outlineColor,
-                    'border-width': this.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
+                    'border-width': Styles.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
                     'font-size': PixelConverter.fromPoint(settings.header.textSize),
                 });
 
-            this.slicerBody = slicerContainer.append('div').classed(Slicer.Body.class, true)
+            this.slicerBody = slicerContainer.append('div').classed(Selectors.Body.class, true)
                 .style({
                     'height': PixelConverter.toString(slicerBodyViewport.height),
                     'width': PixelConverter.toString(slicerBodyViewport.width),
@@ -455,20 +257,20 @@ module powerbi.visuals {
             let rowEnter = (rowSelection: D3.Selection) => {
                 let settings = this.settings;
                 let listItemElement = rowSelection.append('li')
-                    .classed(Slicer.ItemContainer.class, true);
+                    .classed(Selectors.ItemContainer.class, true);
 
                 let labelElement = listItemElement.append('div')
-                    .classed(Slicer.Input.class, true);
+                    .classed(Selectors.Input.class, true);
 
                 labelElement.append('input')
                     .attr('type', 'checkbox');
 
                 labelElement.append('span')
-                    .classed(Slicer.Checkbox.class, true)
-                    .style(this.buildCheckboxStyle());
+                    .classed(Selectors.Checkbox.class, true)
+                    .style(Styles.buildCheckboxStyle(this.settings));
 
                 listItemElement.append('span')
-                    .classed(Slicer.LabelText.class, true)
+                    .classed(Selectors.LabelText.class, true)
                     .style({
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                     });
@@ -481,12 +283,12 @@ module powerbi.visuals {
 
                     if (settings.header.show) {
                         this.slicerHeader.style('display', 'block');
-                        this.slicerHeader.select(Slicer.HeaderText.selector)
+                        this.slicerHeader.select(Selectors.HeaderText.selector)
                             .text(this.slicerData.categorySourceName)
                             .style({
-                                'border-style': this.getBorderStyle(settings.header.outline),
+                                'border-style': Styles.getBorderStyle(settings.header.outline),
                                 'border-color': settings.general.outlineColor,
-                                'border-width': this.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
+                                'border-width': Styles.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
                                 'color': settings.header.fontColor,
                                 'background-color': settings.header.background,
                                 'font-size': PixelConverter.fromPoint(settings.header.textSize),
@@ -496,27 +298,27 @@ module powerbi.visuals {
                         this.slicerHeader.style('display', 'none');
                     }
 
-                    let slicerText = rowSelection.selectAll(Slicer.LabelText.selector);
+                    let slicerText = rowSelection.selectAll(Selectors.LabelText.selector);
                     let formatString = data.formatString;
                     slicerText.text((d: SlicerDataPoint) => valueFormatter.format(d.value, formatString));
                     slicerText.style({
                         'color': settings.slicerText.color,
                         'background-color': settings.slicerText.background,
-                        'border-style': this.getBorderStyle(settings.slicerText.outline),
+                        'border-style': Styles.getBorderStyle(settings.slicerText.outline),
                         'border-color': settings.general.outlineColor,
-                        'border-width': this.getBorderWidth(settings.slicerText.outline, settings.general.outlineWeight),
+                        'border-width': Styles.getBorderWidth(settings.slicerText.outline, settings.general.outlineWeight),
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                     });
 
-                    let slicerCheckbox = rowSelection.selectAll(Slicer.Input.selector).selectAll('span');
-                    slicerCheckbox.style(this.buildCheckboxStyle());
+                    let slicerCheckbox = rowSelection.selectAll(Selectors.Input.selector).selectAll('span');
+                    slicerCheckbox.style(Styles.buildCheckboxStyle(this.settings));
 
                     if (this.interactivityService && this.slicerBody) {
                         let slicerBody = this.slicerBody.attr('width', this.currentViewport.width);
-                        let slicerItemContainers = slicerBody.selectAll(Slicer.ItemContainer.selector);
-                        let slicerItemLabels = slicerBody.selectAll(Slicer.LabelText.selector);
-                        let slicerItemInputs = slicerBody.selectAll(Slicer.Input.selector);
-                        let slicerClear = this.slicerHeader.select(Slicer.Clear.selector);
+                        let slicerItemContainers = slicerBody.selectAll(Selectors.ItemContainer.selector);
+                        let slicerItemLabels = slicerBody.selectAll(Selectors.LabelText.selector);
+                        let slicerItemInputs = slicerBody.selectAll(Selectors.Input.selector);
+                        let slicerClear = this.slicerHeader.select(Selectors.Clear.selector);
 
                         let behaviorOptions: SlicerBehaviorOptions = {
                             dataPoints: data.slicerDataPoints,
@@ -528,11 +330,15 @@ module powerbi.visuals {
                             slicerSettings: data.slicerSettings,
                         };
 
-                        this.interactivityService.bind(data.slicerDataPoints, this.behavior, behaviorOptions, { overrideSelectionFromData: true, hasSelectionOverride: data.hasSelectionOverride });
-                        SlicerWebBehavior.styleSlicerInputs(rowSelection.select(Slicer.Input.selector), this.interactivityService.hasSelection());
+                        this.interactivityService.bind(
+                            data.slicerDataPoints,
+                            this.behavior,
+                            behaviorOptions,
+                            { overrideSelectionFromData: true, hasSelectionOverride: data.hasSelectionOverride, slicerDefaultValueHandler: this });
+                        SlicerWebBehavior.styleSlicerInputs(rowSelection.select(Selectors.Input.selector), this.interactivityService.hasSelection());
                     }
                     else {
-                        SlicerWebBehavior.styleSlicerInputs(rowSelection.select(Slicer.Input.selector), false);
+                        SlicerWebBehavior.styleSlicerInputs(rowSelection.select(Selectors.Input.selector), false);
                     }
                 }
             };
@@ -599,32 +405,308 @@ module powerbi.visuals {
                 this.getTextProperties(this.settings.slicerText.textSize)
                 );
         }
+    }
 
-        private getCheckboxScale(): string {
-            let scale = jsCommon.TextSizeDefaults.getScale(this.settings.slicerText.textSize);
-            let size = (Slicer.CheckboxSpritePixelSizeMinimum + (Slicer.CheckboxSpritePixelSizeRange * scale));
-            let relativeZoom = size / Slicer.CheckboxSpritePixelSize;
+    /** Helper module for converting a DataView into SlicerData. */
+    module DataConversion {
+        export function convert(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService, hostServices?: IVisualHostServices): SlicerData {
+            let slicerData: SlicerData;
+            if (!dataView) {
+                return;
+            }
 
-            let rounded = powerbi.Double.toIncrement(relativeZoom, 0.05);
+            let dataViewCategorical = dataView.categorical;
+            if (dataViewCategorical == null || dataViewCategorical.categories == null || dataViewCategorical.categories.length === 0)
+                return;
 
-            return SVGUtil.scale(rounded);
+            let isInvertedSelectionMode = undefined;
+            let objects = dataView.metadata ? <any> dataView.metadata.objects : undefined;
+            let categories = dataViewCategorical.categories[0];
+
+            let numberOfScopeIds: number;
+            let filter: data.SemanticFilter;
+            if (objects && objects.general && objects.general.filter) {
+                let identityFields = categories.identityFields;
+                if (!identityFields)
+                    return;
+                filter = <data.SemanticFilter>objects.general.filter;
+                let scopeIds = powerbi.data.SQExprConverter.asScopeIdsContainer(filter, identityFields);
+                if (scopeIds) {
+                    isInvertedSelectionMode = scopeIds.isNot;
+                    numberOfScopeIds = scopeIds.scopeIds ? scopeIds.scopeIds.length : 0;
+                }
+                else {
+                    isInvertedSelectionMode = false;
+                }
+            }
+
+            let defaultValueScopeIdentity = getDefaultValueScopeIdentity(dataView, filter, interactivityService, categories.identityFields, hostServices);
+
+            if (interactivityService) {
+                if (isInvertedSelectionMode === undefined) {
+                    // The selection state is read from the Interactivity service in case of SelectAll or Clear when query doesn't update the visual
+                    isInvertedSelectionMode = interactivityService.isSelectionModeInverted();
+                }
+                else {
+                    interactivityService.setSelectionModeInverted(isInvertedSelectionMode);
+                }
+            }
+
+            let categoryValuesLen = categories && categories.values ? categories.values.length : 0;
+            let slicerDataPoints: SlicerDataPoint[] = [];                
+                                     
+            // Pass over the values to see if there's a positive or negative selection
+            let hasSelection: boolean = undefined;
+
+            for (let idx = 0; idx < categoryValuesLen; idx++) {
+                let selected = isCategoryColumnSelected(slicerProps.selectedPropertyIdentifier, categories, idx);
+                if (selected != null) {
+                    hasSelection = selected;
+                    break;
+                }
+            }
+
+            let numberOfCategoriesSelectedInData = 0;
+            for (let idx = 0; idx < categoryValuesLen; idx++) {
+                let categoryIdentity = categories.identity ? categories.identity[idx] : null;
+                let categoryIsSelected = isCategoryColumnSelected(slicerProps.selectedPropertyIdentifier, categories, idx);
+                if (defaultValueScopeIdentity && DataViewScopeIdentity.equals(categoryIdentity, defaultValueScopeIdentity))
+                    categoryIsSelected = true;
+
+                if (hasSelection != null) {
+                    // If the visual is in InvertedSelectionMode, all the categories should be selected by default unless they are not selected
+                    // If the visual is not in InvertedSelectionMode, we set all the categories to be false except the selected category                         
+                    if (isInvertedSelectionMode) {
+                        if (categories.objects == null)
+                            categoryIsSelected = undefined;
+
+                        if (categoryIsSelected != null) {
+                            categoryIsSelected = hasSelection;
+                        }
+                        else if (categoryIsSelected == null)
+                            categoryIsSelected = !hasSelection;
+                    }
+                    else {
+                        if (categoryIsSelected == null) {
+                            categoryIsSelected = !hasSelection;
+                        }
+                    }
+                }
+
+                if (categoryIsSelected)
+                    numberOfCategoriesSelectedInData++;
+
+                slicerDataPoints.push({
+                    value: categories.values[idx],
+                    identity: SelectionId.createWithId(categoryIdentity),
+                    selected: categoryIsSelected
+                });
+            }
+
+            let defaultSettings = createDefaultSettings(dataView);
+
+            if (defaultSettings.selection.selectAllCheckboxEnabled) {
+                slicerDataPoints.unshift({
+                    value: localizedSelectAllText,
+                    identity: SelectionId.createWithMeasure(localizedSelectAllText),
+                    selected: !!isInvertedSelectionMode,
+                    isSelectAllDataPoint: true
+                });
+            }
+
+            slicerData = {
+                categorySourceName: categories.source.displayName,
+                formatString: valueFormatter.getFormatString(categories.source, slicerProps.formatString),
+                slicerSettings: defaultSettings,
+                slicerDataPoints: slicerDataPoints,
+            };
+
+            // Override hasSelection if a objects contained more scopeIds than selections we found in the data
+            if (numberOfScopeIds != null && numberOfScopeIds > numberOfCategoriesSelectedInData) {
+                slicerData.hasSelectionOverride = true;
+            }
+
+            return slicerData;
         }
 
-        private buildCheckboxStyle(): CheckboxStyle {
-            let checkboxScale = this.getCheckboxScale();
+        function createDefaultSettings(dataView: DataView): SlicerSettings {
+            let defaultSettings = Slicer.DefaultStyleProperties();
+            let objects = dataView.metadata.objects;
+
+            if (objects) {
+                defaultSettings.general.outlineColor = DataViewObjects.getFillColor(objects, slicerProps.general.outlineColor, defaultSettings.general.outlineColor);
+                defaultSettings.general.outlineWeight = DataViewObjects.getValue<number>(objects, slicerProps.general.outlineWeight, defaultSettings.general.outlineWeight);
+
+                defaultSettings.header.show = DataViewObjects.getValue<boolean>(objects, slicerProps.header.show, defaultSettings.header.show);
+                defaultSettings.header.fontColor = DataViewObjects.getFillColor(objects, slicerProps.header.fontColor, defaultSettings.header.fontColor);
+                defaultSettings.header.background = DataViewObjects.getFillColor(objects, slicerProps.header.background, defaultSettings.header.background);
+                defaultSettings.header.outline = DataViewObjects.getValue<string>(objects, slicerProps.header.outline, defaultSettings.header.outline);
+                defaultSettings.header.textSize = DataViewObjects.getValue<number>(objects, slicerProps.header.textSize, defaultSettings.header.textSize);
+
+                defaultSettings.slicerText.color = DataViewObjects.getFillColor(objects, slicerProps.Rows.fontColor, defaultSettings.slicerText.color);
+                defaultSettings.slicerText.background = DataViewObjects.getFillColor(objects, slicerProps.Rows.background, defaultSettings.slicerText.background);
+                defaultSettings.slicerText.outline = DataViewObjects.getValue<string>(objects, slicerProps.Rows.outline, defaultSettings.slicerText.outline);
+                defaultSettings.slicerText.textSize = DataViewObjects.getValue<number>(objects, slicerProps.Rows.textSize, defaultSettings.slicerText.textSize);
+
+                defaultSettings.selection.selectAllCheckboxEnabled = DataViewObjects.getValue<boolean>(objects, slicerProps.selection.selectAllCheckboxEnabled, defaultSettings.selection.selectAllCheckboxEnabled);
+                defaultSettings.selection.singleSelect = DataViewObjects.getValue<boolean>(objects, slicerProps.selection.singleSelect, defaultSettings.selection.singleSelect);
+            }
+
+            return defaultSettings;
+        }
+
+        function createPropertiesWithDefaultFilter(fieldsExpr: data.SQExpr[]): VisualObjectInstance[]{
+            debug.assertValue(fieldsExpr, 'fieldsExpr');
+
+            let filterPropertyIdentifier = slicerProps.filterPropertyIdentifier;
+            let properties: { [propertyName: string]: DataViewPropertyValue } = {};
+            let filter = powerbi.data.SemanticFilter.getDefaultValueFilter(fieldsExpr[0]);
+            properties[filterPropertyIdentifier.propertyName] = filter;
+
+            return [<VisualObjectInstance> {
+                objectName: filterPropertyIdentifier.objectName,
+                selector: undefined,
+                properties: properties
+            }];
+        }
+
+        function getDefaultValueScopeIdentity(
+            dataView: DataView,
+            filter: data.SemanticFilter,
+            interactivityService: IInteractivityService,
+            identityFields: data.SQExpr[],
+            hostServices: IVisualHostServices): DataViewScopeIdentity {
+            let defaultValueScopeIdentity: DataViewScopeIdentity;
+            let defaultValue = getDefaultValue(dataView);
+            if (defaultValue && interactivityService && !_.isEmpty(identityFields)) {
+                if (!filter || data.SemanticFilter.isDefaultFilter(filter)) {
+                    defaultValueScopeIdentity = data.createDataViewScopeIdentity(data.SQExprBuilder.equal(identityFields[0], defaultValue));
+
+                    // update filter if this is the first time loaded slicer
+                    if (interactivityService.isDefaultValueEnabled() === undefined) {
+                        interactivityService.setDefaultValueMode(true);
+                        if (hostServices)
+                            hostServices.persistProperties(createPropertiesWithDefaultFilter(identityFields));
+                    }
+                }
+            }
+            return defaultValueScopeIdentity;
+        }
+
+        export function getDefaultValue(dataView: DataView): data.SQConstantExpr {
+            if (dataView && dataView.metadata && !_.isEmpty(dataView.metadata.columns)) {
+                return DataViewObjects.getValue<data.SQConstantExpr>(dataView.metadata.columns[0].objects, slicerProps.defaultValue);
+            }
+        }
+    }
+
+    /** Helper class for calculating the current slicer settings. */
+    module ObjectEnumerator {
+        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+            if (!data)
+                return;
+
+            switch (options.objectName) {
+                case 'Rows':
+                    return enumerateRows(data, settings);
+                case 'header':
+                    return enumerateHeader(data, settings);
+                case 'general':
+                    return enumerateGeneral(data, settings);
+                case 'selection':
+                    return enumerateSelection(data, settings);
+            }
+        }
+
+        function enumerateSelection(data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+            let slicerSettings = settings;
+            let selectAllCheckboxEnabled = data && data.slicerSettings && data.slicerSettings.selection && data.slicerSettings.selection.selectAllCheckboxEnabled !== undefined ?
+                data.slicerSettings.selection.selectAllCheckboxEnabled : slicerSettings.selection.selectAllCheckboxEnabled;
+            let singleSelect = data && data.slicerSettings && data.slicerSettings.selection && data.slicerSettings.selection.singleSelect !== undefined ?
+                data.slicerSettings.selection.singleSelect : slicerSettings.selection.singleSelect;
+
+            return [{
+                selector: null,
+                objectName: 'selection',
+                properties: {
+                    selectAllCheckboxEnabled: selectAllCheckboxEnabled,
+                    singleSelect: singleSelect
+                }
+            }];
+        }
+
+        function enumerateHeader(data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+            let slicerSettings = settings;
+            let fontColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.header && data.slicerSettings.header.fontColor ?
+                data.slicerSettings.header.fontColor : slicerSettings.header.fontColor;
+            let background = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.header && data.slicerSettings.header.background ?
+                data.slicerSettings.header.background : slicerSettings.header.background;
+            return [{
+                selector: null,
+                objectName: 'header',
+                properties: {
+                    show: slicerSettings.header.show,
+                    fontColor: fontColor,
+                    background: background,
+                    outline: slicerSettings.header.outline,
+                    textSize: slicerSettings.header.textSize,
+                }
+            }];
+        }
+
+        function enumerateRows(data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+            let slicerSettings = settings;
+            let fontColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.slicerText && data.slicerSettings.slicerText.color ?
+                data.slicerSettings.slicerText.color : slicerSettings.slicerText.color;
+            let background = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.slicerText && data.slicerSettings.slicerText.background ?
+                data.slicerSettings.slicerText.background : slicerSettings.slicerText.background;
+            return [{
+                selector: null,
+                objectName: 'rows',
+                properties: {
+                    fontColor: fontColor,
+                    background: background,
+                    outline: slicerSettings.slicerText.outline,
+                    textSize: slicerSettings.slicerText.textSize,
+                }
+            }];
+        }
+
+        function enumerateGeneral(data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+            let slicerSettings = settings;
+            let outlineColor = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.general && data.slicerSettings.general.outlineColor ?
+                data.slicerSettings.general.outlineColor : slicerSettings.general.outlineColor;
+            let outlineWeight = data !== undefined && data.slicerSettings !== undefined && data.slicerSettings.general && data.slicerSettings.general.outlineWeight ?
+                data.slicerSettings.general.outlineWeight : slicerSettings.general.outlineWeight;
+
+            return [{
+                selector: null,
+                objectName: 'general',
+                properties: {
+                    outlineColor: outlineColor,
+                    outlineWeight: outlineWeight
+                }
+            }];
+        }
+    }
+
+    /** Helper class for managing slicer styles. */
+    module Styles {
+        export function buildCheckboxStyle(settings: SlicerSettings): CheckboxStyle {
+            let checkboxScale = getCheckboxScale(settings);
             let checkboxTransformOrigin = SVGUtil.transformOrigin('left', 'center');
             return {
                 'transform': checkboxScale,
                 'transform-origin': checkboxTransformOrigin,
-                'font-size': PixelConverter.fromPoint(this.settings.slicerText.textSize),
+                'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
             };
         }
 
-        private getBorderStyle(outlineElement: string): string {
+        export function getBorderStyle(outlineElement: string): string {
             return outlineElement === '0px' ? 'none' : 'solid';
         }
 
-        private getBorderWidth(outlineElement: string, outlineWeight: number): string {
+        export function getBorderWidth(outlineElement: string, outlineWeight: number): string {
             switch (outlineElement) {
                 case 'None':
                     return '0px';
@@ -640,9 +722,43 @@ module powerbi.visuals {
                     return outlineWeight + 'px';
                 default:
                     return outlineElement.replace("1", outlineWeight.toString());
-
             }
         }
 
+        function getCheckboxScale(settings: SlicerSettings): string {
+            let scale = jsCommon.TextSizeDefaults.getScale(settings.slicerText.textSize);
+            let size = (CheckboxSprite.MinimumSize + (CheckboxSprite.SizeRange * scale));
+            let relativeZoom = size / CheckboxSprite.Size;
+
+            let rounded = powerbi.Double.toIncrement(relativeZoom, 0.05);
+
+            return SVGUtil.scale(rounded);
+        }
+    }
+
+    /** CSS selectors for slicer elements. */
+    module Selectors {
+        import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
+        export const Container = createClassAndSelector('slicerContainer');
+        export const Header = createClassAndSelector('slicerHeader');
+        export const HeaderText = createClassAndSelector('headerText');
+        export const Body = createClassAndSelector('slicerBody');
+        export const ItemContainer = createClassAndSelector('slicerItemContainer');
+        export const LabelText = createClassAndSelector('slicerText');
+        export const Input = createClassAndSelector('slicerCheckbox');
+        export const Checkbox = createClassAndSelector('checkbox');
+        export const Clear = createClassAndSelector('clear');
+    }
+
+    module DisplayNameKeys {
+        export const Clear = 'Slicer_Clear';
+        export const SelectAll = 'Slicer_SelectAll';
+    }
+
+    module CheckboxSprite {
+        export const MinimumSize = 8;
+        export const Size = 13;
+        export const SizeRange = Size - MinimumSize;
     }
 }

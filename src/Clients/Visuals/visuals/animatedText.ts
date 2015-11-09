@@ -56,10 +56,7 @@ module powerbi.visuals {
         public visualConfiguration: AnimatedTextConfigurationSettings;
         public metaDataColumn: DataViewMetadataColumn;
 
-        private mainText: ClassAndSelector = {
-            class: 'mainText',
-            selector: '.mainText'
-        };
+        private mainText: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('mainText');
 
         public constructor(name: string) {
             this.name = name;

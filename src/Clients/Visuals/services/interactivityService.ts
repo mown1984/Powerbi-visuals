@@ -45,7 +45,10 @@ module powerbi.visuals {
      * Creates a clear an svg rect to catch clear clicks.
      */
     export function appendClearCatcher(selection: D3.Selection): D3.Selection {
-        return selection.append("rect").classed("clearCatcher", true).attr({ width: "100%", height: "100%" });
+        return selection
+            .append("rect")
+            .classed("clearCatcher", true)
+            .attr({ width: "100%", height: "100%" });
     }
 
     export function isCategoryColumnSelected(propertyId: DataViewObjectPropertyIdentifier, categories: DataViewCategoricalColumn, idx: number): boolean {
@@ -74,6 +77,7 @@ module powerbi.visuals {
         isLegend?: boolean;
         overrideSelectionFromData?: boolean;
         hasSelectionOverride?: boolean;
+        slicerDefaultValueHandler?: SlicerDefaultValueHandler;
     }
 
     /**
@@ -98,8 +102,12 @@ module powerbi.visuals {
         /** Checks whether the selection mode is inverted or normal */
         isSelectionModeInverted(): boolean;
 
-        /** Sets whether the seleciton mode is inverted or normal */
+        /** Sets whether the selection mode is inverted or normal */
         setSelectionModeInverted(inverted: boolean): void;
+
+        setDefaultValueMode(applyDefaultValue: boolean): void;
+
+        isDefaultValueEnabled(): boolean;
     }
 
     export interface ISelectionHandler {
@@ -127,6 +135,11 @@ module powerbi.visuals {
         private isInvertedSelectionMode: boolean = false;
         private hasSelectionOverride: boolean;
         private behavior: any;
+        private slicerDefaultValueHandler: SlicerDefaultValueHandler;
+
+        // undefined means no default value is set
+        // True: apply default value. False: apply AnyValue.
+        private applyDefaultValue: boolean;
 
         public selectableDataPoints: SelectableDataPoint[];
         public selectableLegendDataPoints: SelectableDataPoint[];
@@ -157,6 +170,10 @@ module powerbi.visuals {
             }
             if (options && options.hasSelectionOverride != null) {
                 this.hasSelectionOverride = options.hasSelectionOverride;
+            }
+
+            if (options && options.slicerDefaultValueHandler) {
+                this.slicerDefaultValueHandler = options.slicerDefaultValueHandler;
             }
 
             // Bind to the behavior
@@ -208,12 +225,14 @@ module powerbi.visuals {
         // ISelectionHandler Implementation
 
         public handleSelection(dataPoint: SelectableDataPoint, multiSelect: boolean): void {
+            this.applyDefaultValue = false;
             this.select(dataPoint, multiSelect);
             this.sendSelectionToHost();
             this.renderAll();
         }
 
         public handleClearSelection(): void {
+            this.applyDefaultValue = true;
             this.clearSelection();
             this.sendSelectionToHost();
         }
@@ -229,9 +248,15 @@ module powerbi.visuals {
         }
 
         public persistSelectionFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): void {
-            this.hostService.persistProperties({
-                merge: this.createPropertiesWithFilter(filterPropertyIdentifier),
-            });
+            this.hostService.persistProperties(this.createChangeForFilterProperty(filterPropertyIdentifier));
+        }
+
+        public setDefaultValueMode(applyDefaultValue: boolean): void {
+            this.applyDefaultValue = applyDefaultValue;
+        }
+
+        public isDefaultValueEnabled(): boolean {
+            return this.applyDefaultValue;
         }
 
         // Private utility methods
@@ -313,7 +338,7 @@ module powerbi.visuals {
         }
 
         /** Note: Public for UnitTesting */
-        public createPropertiesWithFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): VisualObjectInstance[] {
+        public createChangeForFilterProperty(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): VisualObjectInstancesToPersist {
             let properties: { [propertyName: string]: DataViewPropertyValue } = {};
             let selectors: data.Selector[] = [];
 
@@ -324,14 +349,34 @@ module powerbi.visuals {
                     .value();
             }
 
-            let filter = powerbi.data.Selector.filterFromSelector(selectors, this.isInvertedSelectionMode);
-                properties[filterPropertyIdentifier.propertyName] = filter;
-
-            return [<VisualObjectInstance> {
+            let instance = {
                 objectName: filterPropertyIdentifier.objectName,
                 selector: undefined,
                 properties: properties
-            }];
+            };
+
+            let filter = powerbi.data.Selector.filterFromSelector(selectors, this.isInvertedSelectionMode);
+
+            if (this.slicerDefaultValueHandler && this.slicerDefaultValueHandler.getDefaultValue()) {
+                // we explicitly check for true/false because undefine means no default value
+                if (this.applyDefaultValue === true)
+                    filter = powerbi.data.SemanticFilter.getDefaultValueFilter(this.slicerDefaultValueHandler.getIdentityFields()[0]);
+                else if (_.isEmpty(selectors))
+                    filter = powerbi.data.SemanticFilter.getAnyValueFilter(this.slicerDefaultValueHandler.getIdentityFields()[0]);
+            }
+
+            if (filter == null) {
+                properties[filterPropertyIdentifier.propertyName] = {};
+                return <VisualObjectInstancesToPersist> {
+                    remove: [instance]
+                };
+            }
+            else {
+                properties[filterPropertyIdentifier.propertyName] = filter;
+                return <VisualObjectInstancesToPersist> {
+                    merge: [instance]
+                };
+            }
         }
 
         private sendSelectionToHost() {

@@ -110,6 +110,8 @@ module powerbi {
         }
     }
 
+    const IndexedTokensRegex = /({{)|(}})|{(\d+[^}]*)}/g;
+
     /** Formatting Service */ 
     class FormattingService implements IFormattingService {
 
@@ -140,7 +142,7 @@ module powerbi {
             if (!formatWithIndexedTokens) {
                 return "";
             }
-            let result = formatWithIndexedTokens.replace(/({{)|(}})|{(\d+[^}]*)}/g, (match: string, left: string, right: string, argToken: string) => {
+            let result = formatWithIndexedTokens.replace(IndexedTokensRegex, (match: string, left: string, right: string, argToken: string) => {
                 if (left) {
                     return "{";
                 } else if (right) {
@@ -229,8 +231,8 @@ module powerbi {
      */
     module DateTimeFormat {
 
-        var _currentCachedFormat: string;
-        var _currentCachedProcessedFormat: string;
+        let _currentCachedFormat: string;
+        let _currentCachedProcessedFormat: string;
 
         /** Evaluates if the value can be formatted using the NumberFormat */
         export function canFormat(value: any) {
@@ -356,6 +358,12 @@ module powerbi {
      */
     export module NumberFormat {
 
+        const NonScientificFormatRegex = /^\{.+\}.*/;
+        const NumericalPlaceHolderRegex = /\{.+\}/;
+        const ScientificFormatRegex = /e[+-]*0+/i;
+        const StandardFormatRegex = /^[a-z]\d{0,2}$/i; // a letter + up to 2 digits for precision specifier
+        const TrailingZerosRegex = /0+$/;
+
         export interface NumericFormatMetadata {
             format: string;
             hasEscapes: boolean;
@@ -369,7 +377,7 @@ module powerbi {
             scale: number;
         }
 
-        var _lastCustomFormatMeta: NumericFormatMetadata;
+        let _lastCustomFormatMeta: NumericFormatMetadata;
 
         /** Evaluates if the value can be formatted using the NumberFormat */
         export function canFormat(value: any) {
@@ -379,9 +387,7 @@ module powerbi {
 
         export function isStandardFormat(format: string): boolean {
             debug.assertValue(format, 'format');
-
-            let standardFormatRegex = /^[a-z]\d{0,2}$/gi;  // a letter + up to 2 digits for precision specifier
-            return standardFormatRegex.test(format);
+            return StandardFormatRegex.test(format);
         }
 
         /** Formats the number using specified format expression and culture */
@@ -533,7 +539,7 @@ module powerbi {
 
                 // Scientific format
                 if (formatMeta.hasE && !nonScientificOverrideFormat) {
-                    let scientificMatch = /e[+-]*0+/gi.exec(format);
+                    let scientificMatch = ScientificFormatRegex.exec(format);
                     if (scientificMatch) {
                         // Case 2.1. Scientific custom format
                         let formatM = format.substr(0, scientificMatch.index);
@@ -570,7 +576,7 @@ module powerbi {
                         }
                         valueFormatted = toNonScientific(value, precision);
                     }
-                    result = fuseNumberWithCustomFormat(valueFormatted, format, numberFormatInfo, !!nonScientificOverrideFormat);
+                    result = fuseNumberWithCustomFormat(valueFormatted, format, numberFormatInfo, nonScientificOverrideFormat);
                 }
                 if (formatMeta.hasQuotes) {
                     result = FormattingEncoder.restoreLiterals(result, literals);
@@ -743,15 +749,25 @@ module powerbi {
             return result;
         }
 
-        function fuseNumberWithCustomFormat(value: string, format: string, numberFormatInfo: GlobalizeNumberFormat, suppressModifyValue?: boolean): string {
+        function fuseNumberWithCustomFormat(value: string, format: string, numberFormatInfo: GlobalizeNumberFormat, nonScientificOverrideFormat?: string): string {
+            let suppressModifyValue = !!nonScientificOverrideFormat;
             let formatParts = format.split(".", 2);
             if (formatParts.length === 2) {
                 let wholeFormat = formatParts[0];
                 let fractionFormat = formatParts[1];
+                let displayUnit = "";
 
+                // Remove display unit from value before splitting on "." as localized display units sometimes end with "."
+                if (nonScientificOverrideFormat) {
+                    debug.assert(NonScientificFormatRegex.test(nonScientificOverrideFormat), "Number should always precede the display unit");
+                    displayUnit = nonScientificOverrideFormat.replace(NumericalPlaceHolderRegex, "");
+                    value = value.replace(displayUnit, "");
+                }
+                
                 let valueParts = value.split(".", 2);
-                let wholeValue = valueParts[0];
-                let fractionValue = valueParts.length === 2 ? valueParts[1].replace(/0+$/, "") : "";
+                let wholeValue = valueParts.length === 1 ? valueParts[0] + displayUnit : valueParts[0];
+                let fractionValue = valueParts.length === 2 ? valueParts[1] + displayUnit : "";
+                fractionValue = fractionValue.replace(TrailingZerosRegex, "");
 
                 let wholeFormattedValue = fuseNumberWithCustomFormatLeft(wholeValue, wholeFormat, numberFormatInfo, suppressModifyValue);
                 let fractionFormattedValue = fuseNumberWithCustomFormatRight(fractionValue, fractionFormat, suppressModifyValue);

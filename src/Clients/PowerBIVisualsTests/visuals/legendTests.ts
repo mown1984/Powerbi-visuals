@@ -160,7 +160,7 @@ import Helpers = powerbitests.helpers;
         powerbi.visuals.LegendData.update(legendData, props);
 
         expect(props[powerbi.visuals.legendProps.show]).toBe(true);
-        expect(props[powerbi.visuals.legendProps.position]).toEqual(powerbi.legendPosition.top);
+        expect(props[powerbi.visuals.legendProps.position]).toEqual(powerbi.visuals.legendPosition.top);
     });
 
     it('legend with title',() => {
@@ -439,27 +439,27 @@ import Helpers = powerbitests.helpers;
 
         // Click first legend
         (<any>icons.first()).d3Click(0, 0);
-        expect(icons[0].style.fill).toBe('#ff0000');
-        expect(icons[1].style.fill).toBe('#a6a6a6');
-        expect(icons[2].style.fill).toBe('#a6a6a6');
+        helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
+        helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
+        helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
         
         // Click the last legend item, should just select current and clear others
         (<any>icons.last()).d3Click(0, 0);
-        expect(icons[0].style.fill).toBe('#a6a6a6');
-        expect(icons[1].style.fill).toBe('#a6a6a6');
-        expect(icons[2].style.fill).toBe('#00ff00');
+        helpers.assertColorsMatch(icons[0].style.fill, '#a6a6a6');
+        helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
+        helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
         
         // Control + Click legend item, should multiselect
         (<any>icons.first()).d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
-        expect(icons[0].style.fill).toBe('#ff0000');
-        expect(icons[1].style.fill).toBe('#a6a6a6');
-        //expect(icons[2].style.fill).toBe('#00ff00');
+        helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
+        helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
+        //expect(icons[2].style.fill, '#00ff00');
         
         // Click the clear catcher should clear the legend selection
         (<any>($('.clearCatcher').first())).d3Click(0, 0);
-        expect(icons[0].style.fill).toBe('#ff0000');
-        expect(icons[1].style.fill).toBe('#0000ff');
-        expect(icons[2].style.fill).toBe('#00ff00');
+        helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
+        helpers.assertColorsMatch(icons[1].style.fill, '#0000ff');
+        helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
         
     });
 

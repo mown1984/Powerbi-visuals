@@ -200,6 +200,16 @@ module powerbitests.helpers {
     export function isInRange(val: number, min: number, max: number): Boolean {
         return min <= val && val <= max;
     }
+
+    export function assertColorsMatch(actual: string, expected: string, invert: boolean = false): boolean {
+        let rgbActual = jsCommon.Color.parseColorString(actual);
+        let rgbExpected = jsCommon.Color.parseColorString(expected);
+
+        if (invert)
+            return expect(rgbActual).not.toEqual(rgbExpected);
+        else
+            return expect(rgbActual).toEqual(rgbExpected);
+    }
     
     export class DataViewBuilder {
         private dataView: powerbi.DataView = { metadata: null };

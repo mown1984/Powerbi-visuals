@@ -62,6 +62,9 @@ module powerbi.data {
         roles?: { [roleName: string]: boolean };
         kpiStatusGraphic?: string;
         sort?: SortDirection;
+
+        /** Describes the default value applied to a column, if any. */
+        defaultValue?: SQConstantExpr;
     }
 
     export interface DataViewSplitTransform {
@@ -296,7 +299,7 @@ module powerbi.data {
                         // hasScalarCategoryAxis -> categoryAxis.axisType
                         objectName = 'categoryAxis';
                         upgradedPropertyKey = 'axisType';
-                        upgradedPropertyValue = SQExprBuilder.text(propertyValue ? axisType.scalar : axisType.categorical);
+                        upgradedPropertyValue = SQExprBuilder.text(propertyValue ? 'Scalar' : 'Categorical');
                         break;
 
                     case 'Totals':
@@ -495,9 +498,10 @@ module powerbi.data {
 
             // Don't perform this potentially expensive transform unless we actually have a matrix. 
             // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
-            if (!roleMappings || roleMappings.length !== 1 || !roleMappings[0].matrix)
+            if (!roleMappings || roleMappings.length < 1 || !(roleMappings[0].matrix || (roleMappings[1] && roleMappings[1].matrix)))
                 return prototype;
 
+            let matrixMapping = roleMappings[0].matrix || roleMappings[1].matrix;
             let matrix = inherit(prototype);
 
             function override(metadata: DataViewMetadataColumn) {
@@ -540,7 +544,7 @@ module powerbi.data {
                 matrix.valueSources = valueSources;
 
                 // Only need to reorder if we have more than one value source, and they are all bound to the same role
-                let matrixValues = <DataViewRoleForMapping>roleMappings[0].matrix.values;
+                let matrixValues = <DataViewRoleForMapping>matrixMapping.values;
                 if (projectionOrdering && valueSources.length > 1 && matrixValues && matrixValues.for) {
                     let columnLevels = columns.levels.length;
                     if (columnLevels > 0) {
@@ -695,7 +699,7 @@ module powerbi.data {
 
             let objectsForAllSelectors = DataViewObjectEvaluationUtils.groupObjectsBySelector(objectDefinitions);
             if (selectTransforms)
-                DataViewObjectEvaluationUtils.addDefaultFormatString(objectsForAllSelectors, objectDescriptors, dataView.metadata.columns, selectTransforms);
+            DataViewObjectEvaluationUtils.addImplicitObjects(objectsForAllSelectors, objectDescriptors, dataView.metadata.columns, selectTransforms);
 
             let metadataOnce = objectsForAllSelectors.metadataOnce;
             let dataObjects = objectsForAllSelectors.data;

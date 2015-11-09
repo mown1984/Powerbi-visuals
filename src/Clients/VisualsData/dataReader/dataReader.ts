@@ -42,10 +42,10 @@ module powerbi.data {
         resumeCommunication?(): void;
 
         /** Clear cache */
-        clearCache?(): void;
+        clearCache?(dataSource: DataReaderDataSource): void;
 
         /** rewriteCacheEntries */
-        rewriteCacheEntries?(rewriter: DataReaderCacheRewriter): void;
+        rewriteCacheEntries?(dataSource: DataReaderDataSource, rewriter: DataReaderCacheRewriter): void;
     }
 
     /** Represents a query generator. */

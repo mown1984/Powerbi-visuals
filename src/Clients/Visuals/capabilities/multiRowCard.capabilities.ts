@@ -33,6 +33,7 @@ module powerbi.visuals {
                 name: 'Values',
                 kind: VisualDataRoleKind.GroupingOrMeasure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Fields'),
+                description: data.createDisplayNameGetter('Role_DisplayName_FieldsDescription')
             }
         ],
         objects: {

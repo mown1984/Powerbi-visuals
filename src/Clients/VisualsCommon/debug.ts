@@ -34,7 +34,7 @@
 
 module debug {
 
-    export var assertFailFunction: {
+    export let assertFailFunction: {
         (message: string): void;
     };
 
