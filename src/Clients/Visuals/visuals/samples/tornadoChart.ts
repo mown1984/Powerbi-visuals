@@ -237,11 +237,6 @@ module powerbi.visuals.samples {
             selector: ".category-text"
         };
 
-        private static Legend: ClassAndSelector = {
-            "class": "legendGroup",
-            selector: "#legendGroup"
-        };
-
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Category",
@@ -784,7 +779,6 @@ module powerbi.visuals.samples {
 
         private renderColumns(columnsData: ColumnData[], selectSecondSeries: boolean = false): void {
             let self: TornadoChart = this,
-                columnsSelectionAnimation: D3.UpdateSelection,
                 columnsSelection: D3.UpdateSelection,
                 columnElements: D3.Selection = this.main
                     .select(TornadoChart.Columns.selector)
