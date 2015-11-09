@@ -70,7 +70,6 @@
 /// <reference path="dataView\rules\colorRuleEvaluation.ts"/>
 /// <reference path="dataView\rules\filterRuleEvaluation.ts"/>
 /// <reference path="segmentation\dataViewMerger.ts"/>
-/// <reference path="semanticQuery\exprPatterns\equalsToInRewriter.ts"/>
 /// <reference path="semanticQuery\exprPatterns\filterScopeIdsCollector.ts"/>
 /// <reference path="semanticQuery\exprPatterns\scopeIdentityExtractor.ts"/>
 /// <reference path="semanticQuery\primitiveValueEncoding.ts"/>
@@ -79,5 +78,6 @@
 /// <reference path="semanticQuery\sqExprUtils.ts"/>
 /// <reference path="semanticQuery\semanticQueryRewriter.ts"/>
 /// <reference path="semanticQuery\semanticQuery.ts"/>
+/// <reference path="semanticQuery\exprPatterns\equalsToInRewriter.ts"/>
 /// <reference path="services\formattingService.ts"/>
 /// <reference path="services\serialization\sqExprShortSerializer.ts"/>
