@@ -154,8 +154,6 @@ module powerbi.visuals.samples {
     export class TornadoChart implements IVisual  {
         private static ClassName: string = "tornado-chart";
 
-        private static MaxSeries: number = 2;
-
         private static Properties: any = {
             general: {
                 formatString: <DataViewObjectPropertyIdentifier>{
@@ -265,6 +263,18 @@ module powerbi.visuals.samples {
             selector: ".category-text"
         };
 
+        private static MaxSeries: number = 2;
+
+        private static MinPrecision: number = 0;
+
+        private static MinOpacity: number = 0;
+        private static MinColumnOpacity: number = 0.2;
+        private static MaxOpacity: number = 1;
+
+        private static MaxSizeSections: number = 100;
+
+        private static LabelPadding: number = 2.5;
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Category",
@@ -281,7 +291,7 @@ module powerbi.visuals.samples {
             }],
             dataViewMappings: [{
                 conditions: [
-                    { "Category": { max: 1 }, "Values": { min: 1, max: 1 }, "Series": { min: 0, max: 1 } },
+                    { "Category": { max: 1 }, "Values": { min: 0, max: 1 }, "Series": { min: 0, max: 1 } },
                     { "Category": { max: 1 }, "Values": { min: 2, max: 2 }, "Series": { max: 0 } }
                 ],
                 categorical: {
@@ -396,14 +406,6 @@ module powerbi.visuals.samples {
             "purple", "teal"
         ];
 
-        private MinPrecision: number = 0;
-
-        private MinOpacity: number = 0;
-        private MinColumnOpacity: number;
-        private MaxOpacity: number = 1;
-
-        private MaxSizeSections: number = 100;
-
         private columnPadding: number = 5;
 
         private maxLabelWidth: number = 55;
@@ -451,7 +453,7 @@ module powerbi.visuals.samples {
         private widthLeftSection: number = 0;
         private widthRightSection: number = 0;
 
-        private isSelectColumn: boolean;
+        private isSelectColumn: boolean = false;
 
         private animator: IGenericAnimator;
 
@@ -469,9 +471,6 @@ module powerbi.visuals.samples {
                     this.animator = tornadoChartConstructorOptions.animator;
                 }
             }
-
-            this.isSelectColumn = false;
-            this.MinColumnOpacity = 0.2;
         }
 
         public init(visualInitOptions: VisualInitOptions): void {
@@ -534,7 +533,11 @@ module powerbi.visuals.samples {
                 visualUpdateOptions.suppressAnimations);
 
             this.tornadoChartDataView = this.converter(this.dataView);
-            this.setSize(visualUpdateOptions.viewport);
+
+            this.viewport = {
+                height: visualUpdateOptions.viewport.height,
+                width: visualUpdateOptions.viewport.width
+            };
 
             this.render(this.tornadoChartDataView);
         }
@@ -580,11 +583,6 @@ module powerbi.visuals.samples {
 
             this.axes
                 .attr("transform", elementsTranslate);
-        }
-
-        private updateSectionsWidth(): void {
-            this.widthLeftSection = this.getValueByPercent(this.currentSections.left, this.viewport.width, this.currentSections.isPercent);
-            this.widthRightSection = this.getValueByPercent(this.currentSections.right, this.viewport.width, this.currentSections.isPercent);
         }
 
         private getValueByPercent(percent: number, maxValue: number, isPrecent: boolean = true): number {
@@ -683,8 +681,8 @@ module powerbi.visuals.samples {
                 TornadoChart.Properties.labels.labelPrecision,
                 this.DefaultTornadoChartSettings.precision);
 
-            if (precision <= this.MinPrecision) {
-                return this.MinPrecision;
+            if (precision <= TornadoChart.MinPrecision) {
+                return TornadoChart.MinPrecision;
             }
 
             return precision;
@@ -784,7 +782,7 @@ module powerbi.visuals.samples {
                 : 0;
 
             this.currentSections.right = this.currentSections.isPercent
-                ? this.MaxSizeSections - this.currentSections.left
+                ? TornadoChart.MaxSizeSections - this.currentSections.left
                 : this.viewport.width - this.currentSections.left;
         }
 
@@ -797,9 +795,21 @@ module powerbi.visuals.samples {
             this.renderLegend(tornadoChartDataView);
 
             this.updateViewport();
-            this.updateSections(tornadoChartDataView);
-            this.updateSectionsWidth();
+
+            this.widthLeftSection = this.getValueByPercent(
+                this.currentSections.left,
+                this.viewport.width,
+                this.currentSections.isPercent);
+
             this.updateElements(this.viewport.height, this.viewport.width);
+            this.setSize(this.viewport);
+            this.updateSections(tornadoChartDataView);
+
+            this.widthRightSection = this.getValueByPercent(
+                this.currentSections.right,
+                this.viewport.width,
+                this.currentSections.isPercent);
+
             this.computeHeightColumn(tornadoChartDataView);
 
             this.renderMiddleSection(tornadoChartDataView);
@@ -836,7 +846,7 @@ module powerbi.visuals.samples {
         private computeHeightColumn(tornadoChartDataView: TornadoChartDataView): void {
             let length: number = tornadoChartDataView.categories.length;
 
-            this.heightColumn = (this.viewport.height - length * this.columnPadding) / length;
+            this.heightColumn = (this.viewport.height - ((length - 1) * this.columnPadding)) / length;
         }
 
         private renderMiddleSection(tornadoChartDataView: TornadoChartDataView): void {
@@ -891,7 +901,7 @@ module powerbi.visuals.samples {
                         .select(TornadoChart.Columns.selector)
                         .selectAll(TornadoChart.Column.selector);
 
-                    this.setOpacity(columnsElements, self.MaxOpacity, true);
+                    this.setOpacity(columnsElements, TornadoChart.MaxOpacity, true);
 
                     self.isSelectColumn = false;
                 }
@@ -915,12 +925,12 @@ module powerbi.visuals.samples {
 
             this.setOpacity(columns.filter((item: any) => {
                 return item !== columnElements[index] || item !== columnElements[currentIndexOfColumn];
-            }), this.MinColumnOpacity);
+            }), TornadoChart.MinColumnOpacity);
 
-            this.setOpacity(d3.select(columnElements[currentIndexOfColumn]), this.MaxOpacity);
+            this.setOpacity(d3.select(columnElements[currentIndexOfColumn]), TornadoChart.MaxOpacity);
 
             if (selectSecondSeries) {
-                this.setOpacity(d3.select(columnElements[index]), this.MaxOpacity);
+                this.setOpacity(d3.select(columnElements[index]), TornadoChart.MaxOpacity);
             }
         }
 
@@ -1102,7 +1112,7 @@ module powerbi.visuals.samples {
             valueAfterValueFormatter = TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, this.maxLabelWidth);
             textDataAfterValueFormatter = this.getTextData(valueAfterValueFormatter, true);
 
-            if (columnWidth > textDataAfterValueFormatter.width) {
+            if (columnWidth > textDataAfterValueFormatter.width + TornadoChart.LabelPadding) {
                 dx = dxColumn + columnWidth / 2 - textDataAfterValueFormatter.width / 2;
             } else {
                 if (isColumnPositionLeft) {
@@ -1251,7 +1261,7 @@ module powerbi.visuals.samples {
             if (!settings.showLabels || height > this.heightColumn) {
                 this.setOpacity(labelSelectionAnimation);
             } else {
-                this.setOpacity(labelSelectionAnimation, this.MaxOpacity);
+                this.setOpacity(labelSelectionAnimation, TornadoChart.MaxOpacity);
             }
 
             labelSelection
@@ -1477,7 +1487,7 @@ module powerbi.visuals.samples {
             });
         }
 
-        private setOpacity(element: D3Element, opacityValue: number = this.MinOpacity, disableAnimation: boolean = false): D3Element {
+        private setOpacity(element: D3Element, opacityValue: number = TornadoChart.MinOpacity, disableAnimation: boolean = false): D3Element {
             let elementAnimation: D3.Selection = disableAnimation
                 ? <D3.Selection> element
                 : <D3.Selection> this.animation(element);
