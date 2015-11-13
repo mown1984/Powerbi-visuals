@@ -1001,7 +1001,7 @@ module powerbi.visuals.samples {
             return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
                 if (!previousValue.some((value: WordCloudText) => {
                     if (value.index !== currentValue.index && value.text === currentValue.text) {
-                        value.count++;
+                        value.count += currentValue.count;
 
                         return true;
                     }
