@@ -30,7 +30,7 @@ module powerbi {
 
     import shapes = powerbi.visuals.shapes;
     import ISize = shapes.ISize;
-    import IRect = shapes.IRect;
+    import IRect = powerbi.visuals.IRect;
     import IPoint = shapes.IPoint;
 
     /**

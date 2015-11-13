@@ -32,6 +32,7 @@ module powerbi {
     import DisplayNameGetter = powerbi.data.DisplayNameGetter;
     import Selector = powerbi.data.Selector;
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
+    import IRect = powerbi.visuals.IRect;
 
     /**
      * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
@@ -198,6 +199,9 @@ module powerbi {
 
         displayName?: DisplayNameGetter;
 
+        /** The tooltip text */
+        description?: DisplayNameGetter;
+
         /** Indicates the preferred ValueTypes to be used in this data role.  This is used by authoring tools when adding fields into the visual. */
         preferredTypes?: ValueTypeDescriptor[];
     }
@@ -228,15 +232,6 @@ module powerbi {
     export interface VisualImplicitSortingClause {
         role: string;
         direction: SortDirection;
-    }
-
-    export enum VisualDataRoleKind {
-        /** Indicates that the role should be bound to something that evaluates to a grouping of values. */
-        Grouping,
-        /** Indicates that the role should be bound to something that evaluates to a single value in a scope. */
-        Measure,
-        /** Indicates that the role can be bound to either Grouping or Measure. */
-        GroupingOrMeasure,
     }
 
     /** Defines the capabilities of an IVisual. */
@@ -371,6 +366,9 @@ module powerbi {
 
         /** Sets a toolbar on the host. */
         setToolbar($selector: JQuery): void;
+
+        /** Gets Geocoding Service. */
+        geocoder(): IGeocoder;
     }
 
     export interface IViewport {
@@ -407,6 +405,37 @@ module powerbi {
     export interface DragEventArgs {
         event: DragEvent;
         data: VisualDragPayload;
+    }
+
+    /** Defines geocoding services. */
+    export interface IGeocoder {
+        geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
+        geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
+    }
+
+    export interface IGeocodeCoordinate {
+        latitude: number;
+        longitude: number;
+    }
+
+    export interface IGeocodeBoundaryCoordinate {
+        latitude?: number;
+        longitude?: number;
+        locations?: IGeocodeBoundaryPolygon[]; // one location can have multiple boundary polygons
+    }
+
+    export interface IGeocodeBoundaryPolygon {
+        nativeBing: string;
+        
+        /** array of lat/long pairs as [lat1, long1, lat2, long2,...] */
+        geographic?: Float64Array;
+
+        /** array of absolute pixel position pairs [x1,y1,x2,y2,...]. It can be used by the client for cache the data. */
+        absolute?: Float64Array;
+        absoluteBounds?: IRect;
+
+        /** string of absolute pixel position pairs "x1 y1 x2 y2...". It can be used by the client for cache the data. */
+        absoluteString?: string;
     }
 
     export interface SelectorForColumn {
@@ -476,10 +505,13 @@ module powerbi {
     }
 
     export interface VisualObjectInstancesToPersist {
-        /** Instances which should be merged with existing instances */
+        /** Instances which should be merged with existing instances. */
         merge?: VisualObjectInstance[];
 
         /** Instances which should replace existing instances. */
         replace?: VisualObjectInstance[];
+
+        /** Instances which should be deleted from the existing instances. */
+        remove?: VisualObjectInstance[];
     }
 }

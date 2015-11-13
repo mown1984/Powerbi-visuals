@@ -168,18 +168,18 @@ module powerbitests.mocks {
         return defaultVisualHostServices.getLocalizedString(stringId);
     }    
 
-    export class MockGeocoder implements powerbi.visuals.IGeocoder {
+    export class MockGeocoder implements powerbi.IGeocoder {
         private callNumber = 0;
-        private resultList = [
-            { x: 90, y: -45 },
-            { x: 90, y: 45 },
-            { x: -90, y: -45 },
-            { x: -90, y: 45 },
-            { x: 0, y: 0 },
-            { x: 45, y: -45 },
-            { x: 45, y: 45 },
-            { x: -45, y: -45 },
-            { x: -45, y: 45 },
+        private resultList: powerbi.IGeocodeCoordinate[] = [
+            { longitude: 90, latitude: -45 },
+            { longitude: 90, latitude: 45 },
+            { longitude: -90, latitude: -45 },
+            { longitude: -90, latitude: 45 },
+            { longitude: 0, latitude: 0 },
+            { longitude: 45, latitude: -45 },
+            { longitude: 45, latitude: 45 },
+            { longitude: -45, latitude: -45 },
+            { longitude: -45, latitude: 45 },
         ];
 
         /** With the way our tests run, these values won't be consistent, so you shouldn't validate actual lat/long or pixel lcoations */
@@ -251,11 +251,11 @@ module powerbitests.mocks {
             return result;
         }
 
-        private tryLocationToPixelSingle(location) {
+        private tryLocationToPixelSingle(location: powerbi.IGeocodeCoordinate) {
             var centerX = this.centerX;
             var centerY = this.centerY;
             // Use a really dumb projection with no sort of zooming/panning
-            return { x: centerX * (location.x / 180), y: centerY * (location.y / 90) };
+            return { x: centerX * (location.longitude / 180), y: centerY * (location.latitude / 90) };
         }
 
         public setView(viewOptions): void {

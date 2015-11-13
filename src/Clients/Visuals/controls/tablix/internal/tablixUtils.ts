@@ -166,7 +166,8 @@ module powerbi.visuals.controls.internal {
                 .addClass(className)
                 .css({
                     'display': 'inline-block',
-                    'vertical-align': 'sub'
+                    'vertical-align': 'bottom',
+                    'margin': '0 1px 1px 0',
                 });
         }
 

@@ -111,5 +111,6 @@ module powerbi.data {
         Projections: number[];
         SuppressedProjections?: number[];
         Subtotal?: SubtotalType;
+        ShowItemsWithNoData?: number[];
     }    
 } 

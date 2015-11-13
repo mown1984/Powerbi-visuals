@@ -70,7 +70,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             let width = this.width;
 
             let forcedXMin, forcedXMax;
@@ -87,7 +87,9 @@ module powerbi.visuals {
                 false,
                 forcedXMin,
                 forcedXMax,
-                axisScaleType);
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision);
 
             // create clustered offset scale
             let seriesLength = this.data.series.length;
@@ -99,7 +101,7 @@ module powerbi.visuals {
             return props;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
 
             let height = this.viewportHeight;
@@ -140,7 +142,9 @@ module powerbi.visuals {
             let yInterval = ColumnChart.getTickInterval(yTickValues);
             let yFormatter = ClusteredUtil.createValueFormatter(
                 this.data.valuesMetadata,
-                yInterval);
+                yInterval,
+                axisDisplayUnits,
+                axisPrecision);
             yAxis.tickFormat(yFormatter.format);
 
             let values = yTickValues.map((d: ColumnChartDataPoint) => yFormatter.format(d));            
@@ -411,7 +415,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[]): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             let height = this.height;
             let forcedYMin, forcedYMax;
 
@@ -426,7 +430,10 @@ module powerbi.visuals {
                 this.categoryLayout,
                 true,
                 forcedYMin,
-                forcedYMax
+                forcedYMax,
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision
                 );
 
             // create clustered offset scale
@@ -439,7 +446,7 @@ module powerbi.visuals {
             return props;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
             debug.assert(forcedTickCount === undefined, 'Cannot have clustered bar chart as combo chart.');            
 
@@ -483,7 +490,9 @@ module powerbi.visuals {
             let xInterval = ColumnChart.getTickInterval(xTickValues);
             let xFormatter = ClusteredUtil.createValueFormatter(
                 this.data.valuesMetadata,
-                xInterval);
+                xInterval,
+                axisDisplayUnits,
+                axisPrecision);
             xAxis.tickFormat(xFormatter.format);
 
             let values = xTickValues.map((d: ColumnChartDataPoint) => xFormatter.format(d));            

@@ -27,7 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests {
-    import AxisType = powerbi.axisType;
+    import AxisType = powerbi.visuals.axisType;
+    import AxisScale = powerbi.visuals.axisScale;
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
     import DataViewObjects = powerbi.DataViewObjects;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
@@ -120,6 +121,7 @@ module powerbitests {
             });
 
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+            expect((<powerbi.data.CompiledDataViewRoleForMapping>(<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values).group.select[0]).for.in.removeSort).toBe(true);
         });
 
         it('CustomizeQuery picks top based on data type', () => {
@@ -133,6 +135,7 @@ module powerbitests {
             });
 
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            expect((<powerbi.data.CompiledDataViewRoleForMapping>(<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values).group.select[0]).for.in.removeSort).toBeUndefined();
         });
 
         it('CustomizeQuery no category', () => {
@@ -146,6 +149,7 @@ module powerbitests {
             });
 
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            expect((<powerbi.data.CompiledDataViewRoleForMapping>(<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values).group.select[0]).for.in.removeSort).toBeUndefined();
         });
 
         it('CustomizeQuery explicit scalar axis on non-scalar type', () => {
@@ -161,6 +165,7 @@ module powerbitests {
             });
 
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            expect((<powerbi.data.CompiledDataViewRoleForMapping>(<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values).group.select[0]).for.in.removeSort).toBeUndefined();
         });
 
         it('CustomizeQuery explicit categorical axis on scalar type', () => {
@@ -2802,6 +2807,43 @@ module powerbitests {
                     done();
                 }, DefaultWaitForRender);
             });
+
+            it('check log scale with zero value in domain', (done) => {
+                dataViewMetadata.objects = {
+                    valueAxis: {
+                        show: true,
+                        start: 1,
+                        showAxisTitle: true,
+                        axisStyle: true,
+                        axisScale: AxisScale.log
+                    }
+                };
+                var dataChangedOptions = {
+                    dataViews: [{
+                        metadata: dataViewMetadata,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata.columns[0],
+                                values: [1, 2, 5, 10, 20],
+                            }],
+                            values: DataViewTransform.createValueColumns([
+                                {
+                                    source: dataViewMetadata.columns[1],
+                                    values: [100, 200, 0, 400, 500]
+                                }])
+                        }
+                    }]
+                };
+
+                v.onDataChanged(dataChangedOptions);
+
+                var lineChart = (<any>v).layers[0];
+                setTimeout(() => {
+                    expect($('.lineChart .axisGraphicsContext .y.axis .tick').find('text').first().text()).toBe('1');
+                    expect(LineChart.getTooltipInfoByPointX(lineChart, lineChart.data.series[0], 5)[0].value).toBe('1');
+                    done();
+                }, DefaultWaitForRender);
+            });
         }
 
         describe("areaChart DOM validation", () => areaChartDomValidation(false));
@@ -3301,7 +3343,7 @@ module powerbitests {
                         end: 25,
                         axisType: xType,
                         showAxisTitle: true,
-                        axisStyle: true,
+                        axisStyle: true,                        
                         labelColor: { solid: { color: labelColor } }
                     }
                 };
@@ -3352,7 +3394,7 @@ module powerbitests {
                 expect(+points[lastIndex].x - +points[lastIndex - 1].x).toBeCloseTo(gap, 2);
 
                 var labels = $('.x.axis').children('.tick');
-                expect(labels.find('text').css('fill')).toBe('#ff0000'); 
+                helpers.assertColorsMatch(labels.find('text').css('fill'), '#ff0000'); 
             });
 
             it('enumerateObjectInstances: Verify instances on ordinal category axis', () => {
@@ -3911,16 +3953,16 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            expect(labelDataPoints[0].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[1].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[2].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[3].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[4].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
         });
 
         it("Label data points have correct fill", () => {
@@ -3965,16 +4007,16 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            expect(labelDataPoints[0].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[1].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[2].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[3].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[4].outsideFill).toEqual(labelColor);
-            expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-            expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].outsideFill, labelColor);
+            helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
         });
 
         it("Label data points have correct display units", () => {

@@ -393,6 +393,18 @@ module powerbi.data {
             return new SemanticFilter(from, where);
         }
 
+        public static getDefaultValueFilter(fieldSQExpr: SQExpr): SemanticFilter {
+            debug.assertValue(fieldSQExpr, 'fieldSQExpr');
+
+            return SemanticFilter.fromSQExpr(SQExprBuilder.equal(fieldSQExpr, SQExprBuilder.defaultValue()));
+        }
+
+        public static getAnyValueFilter(fieldSQExpr: SQExpr): SemanticFilter {
+            debug.assertValue(fieldSQExpr, 'fieldSQExpr');
+
+            return SemanticFilter.fromSQExpr(SQExprBuilder.equal(fieldSQExpr, SQExprBuilder.anyValue()));
+        }
+
         public from(): SQFrom {
             return this.fromValue.clone();
         }
@@ -448,6 +460,28 @@ module powerbi.data {
                 SemanticFilter.applyFilter(filters[i], from, where);
 
             return new SemanticFilter(from, where);
+        }
+
+        public static isDefaultFilter(filter: SemanticFilter): boolean {
+            if (!filter || filter.where().length !== 1)
+                return false;
+
+            return SQExprUtils.isDefaultValue(filter.where()[0].condition);
+        }
+
+        public static isAnyFilter(filter: SemanticFilter): boolean {
+            if (!filter || filter.where().length !== 1)
+                return false;
+
+            return SQExprUtils.isAnyValue(filter.where()[0].condition);
+        }
+
+        public static isSameFilter(leftFilter: SemanticFilter, rightFilter: SemanticFilter): boolean {
+            if (jsCommon.JsonComparer.equals<SemanticFilter>(leftFilter, rightFilter)) {
+                return !((SemanticFilter.isDefaultFilter(leftFilter) && SemanticFilter.isAnyFilter(rightFilter))
+                    || (SemanticFilter.isAnyFilter(leftFilter) && SemanticFilter.isDefaultFilter(rightFilter)));
+            }
+            return false;
         }
 
         private static applyFilter(filter: SemanticFilter, from: SQFrom, where: SQFilter[]): void {

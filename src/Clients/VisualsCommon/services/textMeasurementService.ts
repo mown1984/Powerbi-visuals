@@ -60,9 +60,9 @@ module powerbi {
     export module TextMeasurementService {
         const ellipsis = '…';
 
-        var spanElement: JQuery;
-        var svgTextElement: D3.Selection;
-        var canvasCtx: CanvasContext;
+        let spanElement: JQuery;
+        let svgTextElement: D3.Selection;
+        let canvasCtx: CanvasContext;
 
         /**
          * Idempotent function for adding the elements to the DOM. 

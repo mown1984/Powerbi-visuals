@@ -27,52 +27,53 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests {
-    import GeocodingManager = powerbi.visuals.BI.Services.GeocodingManager;
+    import MapUtil = powerbi.visuals.MapUtil;
+    import isCategoryType = powerbi.visuals.services.isCategoryType;
 
     describe("GeocodingManagerTests", () => {
-        describe("GeocodingManager.isCategoryType", () => {
+        describe("isCategoryType", () => {
             it("GeocodingManager.CategoryTypes.Address", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.Address)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.Address)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.City", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.City)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.City)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.Continent", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.Continent)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.Continent)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes Country", () => {
-                expect(GeocodingManager.isCategoryType("Country")).toBeTruthy(); // Country is special
+                expect(isCategoryType("Country")).toBeTruthy(); // Country is special
             });
 
             it("GeocodingManager.CategoryTypes.County", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.County)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.County)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.Longitude", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.Longitude)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.Longitude)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.Latitude", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.Latitude)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.Latitude)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.Place", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.Place)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.Place)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.PostalCode", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.PostalCode)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.PostalCode)).toBeTruthy();
             });
 
             it("GeocodingManager.CategoryTypes.StateOrProvince", () => {
-                expect(GeocodingManager.isCategoryType(GeocodingManager.CategoryTypes.StateOrProvince)).toBeTruthy();
+                expect(isCategoryType(MapUtil.CategoryTypes.StateOrProvince)).toBeTruthy();
             });
            
             it("GeocodingManager.CategoryTypes empty", () => {
-                expect(GeocodingManager.isCategoryType("")).toBeFalsy();
+                expect(isCategoryType("")).toBeFalsy();
             });
         });
     });

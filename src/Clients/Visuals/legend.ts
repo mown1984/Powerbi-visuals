@@ -27,6 +27,9 @@
 /// <reference path="_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
     export enum LegendIcon {
         Box,
         Circle,
@@ -212,30 +215,11 @@ module powerbi.visuals {
             fontSize: '11px'
         };
 
-        private static LegendItem: ClassAndSelector = {
-            class: 'legendItem',
-            selector: '.legendItem'
-        };
-
-        private static LegendText: ClassAndSelector = {
-            class: 'legendText',
-            selector: '.legendText'
-        };
-
-        private static LegendIcon: ClassAndSelector = {
-            class: 'legendIcon',
-            selector: '.legendIcon'
-        };
-
-        private static LegendTitle: ClassAndSelector = {
-            class: 'legendTitle',
-            selector: '.legendTitle'
-        };
-
-        private static NavigationArrow: ClassAndSelector = {
-            class: 'navArrow',
-            selector: '.navArrow'
-        };
+        private static LegendItem: ClassAndSelector = createClassAndSelector('legendItem');
+        private static LegendText: ClassAndSelector = createClassAndSelector('legendText');
+        private static LegendIcon: ClassAndSelector = createClassAndSelector('legendIcon');
+        private static LegendTitle: ClassAndSelector = createClassAndSelector('legendTitle');
+        private static NavigationArrow: ClassAndSelector = createClassAndSelector('navArrow');
 
         constructor(
             element: JQuery,

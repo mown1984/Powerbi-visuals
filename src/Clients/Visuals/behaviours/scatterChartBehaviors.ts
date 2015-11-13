@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface ScatterBehaviorOptions {
         host: ICartesianVisualHost;
@@ -80,14 +82,8 @@ module powerbi.visuals {
         private static DotClassName = 'dot';
         private static DotClassSelector = '.' + ScatterChartMobileBehavior.DotClassName;
 
-        private static Horizontal: ClassAndSelector = {
-            class: 'horizontal',
-            selector: '.horizontal'
-        };
-        private static Vertical: ClassAndSelector = {
-            class: 'vertical',
-            selector: '.vertical'
-        };
+        private static Horizontal: ClassAndSelector = createClassAndSelector('horizontal');
+        private static Vertical: ClassAndSelector = createClassAndSelector('vertical');
 
         private host: ICartesianVisualHost;
         private mainGraphicsContext: D3.Selection;

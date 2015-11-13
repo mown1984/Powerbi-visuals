@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+
     export interface ColumnChartAnimationOptions extends IAnimationOptions {
         viewModel: ColumnChartData;
         series: D3.UpdateSelection;

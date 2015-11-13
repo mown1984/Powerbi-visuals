@@ -38,13 +38,13 @@ module powerbi.visuals {
          * children collection, but we may need to pay the perf penalty.
          */
         index?: number;
-        
+
         /**
          * Global index of the node as a leaf node.
          * If the node is not a leaf, the value is undefined.
          */
         leafIndex?: number;
-        
+
         /**
          * Parent of the node.
          * Undefined for outermost nodes (children of the one root node).
@@ -86,6 +86,7 @@ module powerbi.visuals {
         rowSubtotals: boolean;
         columnSubtotals: boolean;
         autoSizeColumnWidth: boolean;
+        textSize: number;
     }
 
     export interface IMatrixHierarchyNavigator extends controls.ITablixHierarchyNavigator, MatrixDataAdapter {
@@ -822,14 +823,14 @@ module powerbi.visuals {
             return null;
         }
     }
-    
-    
 
     export class Matrix implements IVisual {
         public static formatStringProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'formatString' };
         public static rowSubtotals: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'rowSubtotals' };
         public static columnSubtotals: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'columnSubtotals' };
         public static autoSizeProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'autoSizeColumnWidth' };
+        public static textSizeProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'textSize' };
+
         private static preferredLoadMoreThreshold: number = 0.8;
         
         /**
@@ -909,7 +910,9 @@ module powerbi.visuals {
                     this.hierarchyNavigator.updateRows();
                     this.refreshControl(false);
                 } else {
-                    this.createOrUpdateHierarchyNavigatorAndControl();
+                    this.createOrUpdateHierarchyNavigator();
+                    this.createColumnWidthManager();
+                    this.createTablixControl();
                     this.populateColumnWidths();
                     this.updateInternal(this.dataView, previousDataView);
                 }
@@ -920,15 +923,11 @@ module powerbi.visuals {
         }
 
         private populateColumnWidths(): void {
-            let columnHierarchy: MatrixHierarchy = (<MatrixHierarchyNavigator>this.hierarchyNavigator).getMatrixColumnHierarchy();
-            if (!this.columnWidthManager) 
-                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView, true /* isMatrix */, columnHierarchy.leafNodes);
-            else 
-                this.columnWidthManager.updateDataView(this.dataView, columnHierarchy.leafNodes);
-
-            this.columnWidthManager.deserializeTablixColumnWidths();
-            if (this.columnWidthManager.persistColumnWidthsOnHost())
-                this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+            if (this.columnWidthManager) {
+                this.columnWidthManager.deserializeTablixColumnWidths();
+                if (this.columnWidthManager.persistColumnWidthsOnHost())
+                    this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+            }
         }
 
         public columnWidthChanged(index: number, width: number): void {
@@ -963,16 +962,31 @@ module powerbi.visuals {
             return this.isInteractive ? controls.TablixLayoutKind.Canvas : controls.TablixLayoutKind.DashboardTile;
         }
 
-        private createOrUpdateHierarchyNavigatorAndControl(): void {
+        private createOrUpdateHierarchyNavigator(): void {
             if (!this.tablixControl) {
                 let matrixNavigator = createMatrixHierarchyNavigator(this.dataView.matrix, this.formatter);
                 this.hierarchyNavigator = matrixNavigator;
-
-                // Create the control
-                this.tablixControl = this.createControl(matrixNavigator);
             }
             else {
                 this.hierarchyNavigator.update(this.dataView.matrix);
+            }
+        }
+
+        private createTablixControl(): void {
+            if (!this.tablixControl) {
+                // Create the control
+                this.tablixControl = this.createControl(this.hierarchyNavigator);
+            }
+        }
+
+        private createColumnWidthManager(): void {
+            let columnHierarchy: MatrixHierarchy = (<MatrixHierarchyNavigator>this.hierarchyNavigator).getMatrixColumnHierarchy();
+            if (!this.columnWidthManager) {
+                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView, true /* isMatrix */, columnHierarchy.leafNodes);
+                this.columnWidthManager.columnWidthResizeCallback = (i, w) => this.columnWidthChanged(i, w);
+            }
+            else {
+                this.columnWidthManager.updateDataView(this.dataView, columnHierarchy.leafNodes);
             }
         }
 
@@ -985,20 +999,18 @@ module powerbi.visuals {
                 onColumnHeaderClick: (queryName: string) => this.onColumnHeaderClick(queryName),
             };
             let matrixBinder = new MatrixBinder(this.hierarchyNavigator, matrixBinderOptions);
-            let columnWidthsCallback = () => this.columnWidthManager.getColumnWidths();
-            let columnWidthChangedCallback: ColumnWidthCallbackType = (i, w) => this.columnWidthChanged(i, w);
 
             let layoutManager: controls.internal.TablixLayoutManager = layoutKind === controls.TablixLayoutKind.DashboardTile
                 ? controls.internal.DashboardTablixLayoutManager.createLayoutManager(matrixBinder)
-                : controls.internal.CanvasTablixLayoutManager.createLayoutManager(matrixBinder, columnWidthsCallback, columnWidthChangedCallback);
+                : controls.internal.CanvasTablixLayoutManager.createLayoutManager(matrixBinder, this.columnWidthManager);
 
             let tablixContainer = document.createElement('div');
-            tablixContainer.className = "tablixContainer";
             this.element.append(tablixContainer);
 
             let tablixOptions: controls.TablixOptions = {
                 interactive: this.isInteractive,
                 enableTouchSupport: false,
+                fontSize: this.getFontSize(),
             };
 
             return new controls.TablixControl(matrixNavigator, layoutManager, matrixBinder, tablixContainer, tablixOptions);
@@ -1009,6 +1021,7 @@ module powerbi.visuals {
                 this.tablixControl.layoutManager.adjustContentSize(UrlHelper.hasImageColumn(dataView));
             }
 
+            this.tablixControl.fontSize = this.getFontSize();
             this.verifyHeaderResize();
 
             // Update models before the viewport to make sure column widths are computed correctly
@@ -1080,6 +1093,16 @@ module powerbi.visuals {
             return true;
         }
 
+        private static getTextSize(objects: MatrixDataViewObjects): number {
+            // By default, let tablixControl set default font size
+            return DataViewObjects.getValue<number>(objects, Matrix.textSizeProp, controls.TablixDefaultTextSize);
+        }
+
+        private getFontSize(): string {
+            let objects = this.getMatrixDataViewObjects();
+            return jsCommon.PixelConverter.fromPoint(Matrix.getTextSize(objects));
+        }
+
         private shouldAutoSizeColumnWidth(objects: MatrixDataViewObjects): boolean {
             if (objects && objects.general) {
                 return objects.general.autoSizeColumnWidth !== false;
@@ -1104,7 +1127,9 @@ module powerbi.visuals {
                     properties: {
                         rowSubtotals: Matrix.shouldShowRowSubtotals(objects),
                         columnSubtotals: Matrix.shouldShowColumnSubtotals(objects),
-                        autoSizeColumnWidth: this.shouldAutoSizeColumnWidth(objects)
+                        autoSizeColumnWidth: this.shouldAutoSizeColumnWidth(objects),
+                        textSize: Matrix.getTextSize(objects),
+
                     },
                     objectName: options.objectName
                 });

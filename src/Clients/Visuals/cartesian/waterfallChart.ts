@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface WaterfallChartData extends CartesianData {
         series: WaterfallChartSeries[];
@@ -74,14 +76,8 @@ module powerbi.visuals {
         private static IncreaseLabel = "Waterfall_IncreaseLabel";
         private static DecreaseLabel = "Waterfall_DecreaseLabel";
         private static TotalLabel = "Waterfall_TotalLabel";
-        private static CategoryValueClasses: ClassAndSelector = {
-            class: 'column',
-            selector: '.column'
-        };
-        private static WaterfallConnectorClasses: ClassAndSelector = {
-            class: 'waterfall-connector',
-            selector: '.waterfall-connector'
-        };
+        private static CategoryValueClasses: ClassAndSelector = createClassAndSelector('column');
+        private static WaterfallConnectorClasses: ClassAndSelector = createClassAndSelector('waterfall-connector');
 
         private static defaultTotalColor = "#00b8aa";
         private static validLabelPositions = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd];
@@ -286,7 +282,7 @@ module powerbi.visuals {
 
             var sentimentColors = this.getSentimentColorsFromObjects(null);
             var dataView = dataViews.length > 0 ? dataViews[0] : undefined;
-            var labelFormatString = (dataView && dataView.categorical && dataView.categorical.values) ? valueFormatter.getFormatString(dataView.categorical.values[0].source, waterfallChartProps.general.formatString) : undefined;
+            var labelFormatString = (dataView && dataView.categorical && !_.isEmpty(dataView.categorical.values)) ? valueFormatter.getFormatString(dataView.categorical.values[0].source, waterfallChartProps.general.formatString) : undefined;
 
             this.data = <WaterfallChartData> {
                 series: [{ data: [] }],
@@ -499,7 +495,9 @@ module powerbi.visuals {
                 categoryThickness: categoryThickness,
                 getValueFn: (index, type) => WaterfallChart.lookupXValue(data, index, type),
                 forcedTickCount: options.forcedTickCount,
-                isCategoryAxis: true
+                isCategoryAxis: true,
+                axisDisplayUnits: options.categoryAxisDisplayUnits,
+                axisPrecision: options.categoryAxisPrecision
             };
         }
 
@@ -519,7 +517,9 @@ module powerbi.visuals {
                 outerPadding: 0,
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
-                isCategoryAxis: false
+                isCategoryAxis: false,
+                axisDisplayUnits: options.valueAxisDisplayUnits,
+                axisPrecision: options.valueAxisPrecision
             };
         }
 

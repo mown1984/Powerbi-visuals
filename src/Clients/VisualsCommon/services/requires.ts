@@ -28,7 +28,7 @@
 
 module jsCommon {
 
-    var doc: HTMLDocument = document,
+    let doc: HTMLDocument = document,
         headElement: HTMLElement = doc.head,
         firstScriptInHeadElement: HTMLElement = headElement.getElementsByTagName('script')[0],
         linkElement: HTMLElement = doc.createElement('link'),
