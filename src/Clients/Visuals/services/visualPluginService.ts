@@ -322,6 +322,8 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
                 animator: new BaseAnimator()
             }));
+            // Sankey Diagram
+            createPlugin(plugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {

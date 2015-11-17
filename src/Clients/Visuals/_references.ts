@@ -198,4 +198,6 @@
 
 /// <reference path="visuals/donutChart.ts"/>
 
+/// <reference path="visuals/samples/sankeyDiagram.ts"/>
+
 /// <reference path="plugins.ts"/>

@@ -1669,3 +1669,36 @@ div.ql-toolbar {
         }
     }
 }
+
+.sankeyDiagram {
+    @sankeyDiagramFontSize: 11px;
+
+    font-family: @regularFontFamily;
+    font-size: @sankeyDiagramFontSize;
+
+    .nodes {
+        .node {
+            .nodeRect {
+                stroke-width: 1px;
+                fill-opacity: 0.9;
+                shape-rendering: crispEdges;
+            }
+
+            .nodeLabel {
+                font-size: @sankeyDiagramFontSize;
+            }
+        }
+    }
+
+    .links {
+        .link {
+            fill: none;
+            stroke: black;
+            stroke-opacity: 0.2;
+        }
+
+        .link:hover {
+            stroke-opacity: 0.5;
+        }
+    }
+}
