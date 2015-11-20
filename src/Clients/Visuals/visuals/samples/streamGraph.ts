@@ -52,8 +52,16 @@ module powerbi.visuals.samples {
         scale?: D3.Scale.GenericScale<D3.Scale.LinearScale | D3.Scale.TimeScale | D3.Scale.OrdinalScale>;
     }
 
+    export interface StreamProperties {
+        [objectName: string]: StreamProperty;
+    }
+
+    export interface StreamProperty {
+        [propertyName: string]: DataViewObjectPropertyIdentifier;
+    }
+
     export class StreamGraph implements IVisual {
-        public static Properties: any = {
+        public static Properties: StreamProperties = {
             general: {
                 formatString: <DataViewObjectPropertyIdentifier>{
                     objectName: 'general',
@@ -210,7 +218,7 @@ module powerbi.visuals.samples {
                 valueFormatter: IValueFormatter = ValueFormatter.create({
                     format: ValueFormatter.getFormatString(
                         source,
-                        StreamGraph.Properties.general.formatString),
+                        StreamGraph.Properties["general"]["formatString"]),
                     value: values[0]
                 }),
                 range: any[] = [this.margin.left, this.viewport.width - this.margin.right],
