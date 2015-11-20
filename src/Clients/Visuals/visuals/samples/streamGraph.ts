@@ -155,13 +155,15 @@ module powerbi.visuals.samples {
             for (let i = 0, iLen = values.length; i < iLen; i++) {
                 dataPoints.push([]);
 
-                legendData.dataPoints.push({
-                    label: values[i].source.groupName,
-                    color: colors.getColorByIndex(i).value,
-                    icon: LegendIcon.Box,
-                    selected: false,
-                    identity: null
-                });
+                if (values[i].source.groupName) {
+                    legendData.dataPoints.push({
+                        label: values[i].source.groupName,
+                        color: colors.getColorByIndex(i).value,
+                        icon: LegendIcon.Box,
+                        selected: false,
+                        identity: null
+                    });
+                }
 
                 for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
                     let id: SelectionId = SelectionIdBuilder
