@@ -621,7 +621,7 @@ module powerbi.visuals.samples {
                 .attr("height", (item: HistogramData) => {
                     return this.getColumnHeight(item, yScale);
                 })
-                .attr("fill", this.histogramDataView.settings.fillColor)
+                .style("fill", this.histogramDataView.settings.fillColor)
                 .attr("class", Histogram.Column["class"])
                 .attr("transform", (item: HistogramData, index: number) => {
                     return SVGUtil.translate(
