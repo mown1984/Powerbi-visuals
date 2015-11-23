@@ -183,13 +183,13 @@ module powerbi.visuals.samples {
                 displayName: SankeyDiagram.RoleNames.columns
             }, {
                 name: SankeyDiagram.RoleNames.values,
-                kind: VisualDataRoleKind.GroupingOrMeasure,
+                kind: VisualDataRoleKind.Measure,
                 displayName: SankeyDiagram.RoleNames.values
             }],
             dataViewMappings: [{
                 conditions: [
-                    { "Source": { min: 0, max: 1 }, "Destination": { min: 0, max: 1 }, "Weight": { min: 0, max: 0} },
-                    { "Source": { min: 0, max: 1 }, "Destination": { min: 0, max: 1 }, "Weight": { min: 0, max: 1} }
+                    { "Source": { min: 0, max: 1 }, "Destination": { min: 0, max: 1 }, "Weight": { min: 0, max: 0 } },
+                    { "Source": { min: 0, max: 1 }, "Destination": { min: 0, max: 1 }, "Weight": { min: 1, max: 1 } }
                 ],
                 categorical: {
                     categories: { 
@@ -197,13 +197,11 @@ module powerbi.visuals.samples {
                         dataReductionAlgorithm: { top: {} }
                     },
                     values: {
-                        group: {
-                            by: SankeyDiagram.RoleNames.columns,
-                            select: [{ for: { in: SankeyDiagram.RoleNames.values } }],
-                            dataReductionAlgorithm: { top: {} }
-                        }
-                    },
-                    rowCount: { preferred: { min: 2 }, supported: { min: 1 } }
+                        select: [
+                            { bind: { to: SankeyDiagram.RoleNames.columns } },
+                            { bind: { to: SankeyDiagram.RoleNames.values } }
+                        ]
+                    }
                 }
             }],
             objects: {
@@ -302,8 +300,7 @@ module powerbi.visuals.samples {
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
             if (!visualUpdateOptions ||
-                !visualUpdateOptions.dataViews ||
-                !visualUpdateOptions.dataViews[0]) {
+                !visualUpdateOptions.dataViews) {
                 return;
             }
 
@@ -350,7 +347,9 @@ module powerbi.visuals.samples {
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0] ||
-                !dataView.categorical.categories[0].values) {
+                !dataView.categorical.categories[1] ||
+                !dataView.categorical.categories[0].values ||
+                !dataView.categorical.categories[1].values) {
                 return {
                     nodes: [],
                     links: [],
@@ -365,7 +364,9 @@ module powerbi.visuals.samples {
                 links: SankeyDiagramLink[] = [],
                 dataPoints: SankeyDiagramDataPoint[] = [],
                 categories: any[] = dataView.categorical.categories[0].values,
-                secondCategories: any[] = [],
+                secondCategories: any[] = dataView.categorical.categories[1].values,
+                valuesColumns: DataViewValueColumns = dataView.categorical.values,
+                values: number[] = [],
                 allCategories: any[],
                 valueFormatter: IValueFormatter,
                 objects: DataViewObjects,
@@ -380,37 +381,22 @@ module powerbi.visuals.samples {
                 SankeyDiagram.DefaultSettings.colourOfLabels,
                 objects);
 
-            if (dataView.categorical.categories.length === 2) {
-                secondCategories = dataView.categorical.categories[1].values;
-
-                dataPoints = categories.map((item: any, index: number) => {
-                    return {
-                        source: item,
-                        destination: secondCategories[index],
-                        weigth: 1
-                    };
-                });
-            } else {
-                let values: DataViewValueColumns = dataView.categorical.values;
-
-                values = values || <DataViewValueColumns> [];
-
-                values.forEach((item: DataViewValueColumn ) => {
-                    item.values.forEach((value: any, index: number) => {
-                        if (!value) {
-                            return;
-                        }
-
-                        secondCategories.push(item.source.groupName);
-
-                        dataPoints.push({
-                            source: categories[index],
-                            destination: item.source.groupName,
-                            weigth: value
-                        });
-                    });
-                });
+            if (valuesColumns &&
+                    valuesColumns[0] &&
+                    valuesColumns[0].values &&
+                    valuesColumns[0].values.length > 0) {
+                values = valuesColumns[0].values;
             }
+
+            dataPoints = categories.map((item: any, index: number) => {
+                let weigth: number = values[index] || 1;
+
+                return {
+                    source: item,
+                    destination: secondCategories[index],
+                    weigth: weigth
+                };
+            });
 
             allCategories = categories.concat(secondCategories);
 
