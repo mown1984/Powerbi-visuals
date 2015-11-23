@@ -263,8 +263,6 @@ module powerbi.visuals.samples {
         }
 
         public init(visualsInitOptions: VisualInitOptions): void {
-            let fontSize: string;
-            
             if (this.svg) {
                 this.root = this.svg;
             } else {
@@ -272,11 +270,9 @@ module powerbi.visuals.samples {
                     .append("svg");
             }
 
-            fontSize = this.root.style("font-size");
-
             this.textProperties = {
                 fontFamily: this.root.style("font-family"),
-                fontSize: fontSize.slice(fontSize.length - 2)
+                fontSize: this.root.style("font-size")
             };
 
             let style: IVisualStyle = visualsInitOptions.style;
