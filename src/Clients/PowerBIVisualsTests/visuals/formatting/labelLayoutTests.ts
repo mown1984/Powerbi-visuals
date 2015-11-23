@@ -32,7 +32,7 @@ module powerbitests {
     //import Label = powerbi.Label;
     import LabelParentRect = powerbi.LabelParentRect;
     import LabelParentPoint = powerbi.LabelParentPoint;
-    import IRect = powerbi.visuals.shapes.IRect;
+    import IRect = powerbi.visuals.IRect;
     import IPoint = powerbi.visuals.shapes.IPoint;
     import RectOrientation = powerbi.NewRectOrientation;
     import RectLabelPosition = powerbi.RectLabelPosition;
@@ -142,7 +142,7 @@ module powerbitests {
                 }),
             ];
             let labels = labelLayout.layout(labelDataPoints, viewport);
-            expect(labels[0].fill).toBe(testOutsideFillColor);
+            helpers.assertColorsMatch(labels[0].fill, testOutsideFillColor);
         });
 
         it("Label uses inside fill color", () => {
@@ -174,7 +174,7 @@ module powerbitests {
             expect(labels.length).toBe(2);
             expect(labels[0].boundingBox).toEqual(createRect(105, 85, 40, 10));
             expect(labels[0].isVisible).toBe(true);
-            expect(labels[0].fill).toBe(testOutsideFillColor);
+            helpers.assertColorsMatch(labels[0].fill, testOutsideFillColor);
             expect(labels[1].boundingBox).toEqual(createRect(105, 105, 40, 10));
             expect(labels[1].isVisible).toBe(true);
             expect(labels[1].fill).toBe(testInsideFillColor);

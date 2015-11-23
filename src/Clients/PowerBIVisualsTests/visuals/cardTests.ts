@@ -183,7 +183,7 @@ module powerbitests {
             displayUnits = displayUnits ? displayUnits : defaultLabelSettings.displayUnits;
 
             var properties = objects.instances[0].properties;
-            expect(properties["color"]).toBe(color);
+            helpers.assertColorsMatch(<string>properties["color"], color);
             expect(properties["labelPrecision"]).toBe(precision);
             expect(properties["labelDisplayUnits"]).toBe(displayUnits);
         }
@@ -194,6 +194,12 @@ module powerbitests {
         
         var dataViewMetadata: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
+            groups: [],
+            measures: [0],
+        };
+
+        let dataViewMetadataDecimalFormatString: powerbi.DataViewMetadata = {
+            columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#,0.00" } } }],
             groups: [],
             measures: [0],
         };
@@ -232,9 +238,25 @@ module powerbitests {
             expect(cardBuilder.card.getAdjustedFontHeight(cardBuilder.card.currentViewport.width, "t", cardStyles.maxFontSize)).toBeLessThan(cardStyles.maxFontSize);
         });
 
-        it("Card_onDataChanged (single value)", () => {
+        it("Card_onDataChanged (single value as text)", () => {
             cardBuilder.metadata = dataViewMetadata;
             cardBuilder.singleValue = "7191394482447.7";
+
+            cardBuilder.onDataChanged();
+
+            cardBuilder.onResizing();
+
+            expect($(".card")).toBeInDOM();
+            expect($(".mainText")).toBeInDOM();
+            var titleText = $(".card").find("title").text();
+            var mainText = $(".card").find(".mainText").text();
+            expect(titleText).toBe("7191394482447.7");
+            expect(mainText).toBe("7191394482447.7");
+        });
+
+        it("Card_onDataChanged (single value)", () => {
+            cardBuilder.metadata = dataViewMetadata;
+            cardBuilder.singleValue = 7191394482447.7;
             
             cardBuilder.onDataChanged();
 
@@ -242,8 +264,38 @@ module powerbitests {
             
             expect($(".card")).toBeInDOM();
             expect($(".mainText")).toBeInDOM();
-            var titleText = $(".card").find("title").text();
+            let titleText = $(".card").find("title").text();
+            let mainText = $(".card").find(".mainText").text();
             expect(titleText).toBe("7191394482447.7");
+            expect(mainText).toBe("7T");
+        });
+
+        it("Card_onDataChanged (single value) with lots of decimals", () => {
+            cardBuilder.metadata = dataViewMetadata;
+            cardBuilder.singleValue = 1.742353534535243;
+
+            cardBuilder.onDataChanged();
+
+            cardBuilder.onResizing();
+
+            expect($(".card")).toBeInDOM();
+            expect($(".mainText")).toBeInDOM();
+            let mainText = $(".card").find(".mainText").text();
+            expect(mainText).toBe("2");
+        });
+
+        it("Card_onDataChanged (single value) with lots of decimals and format string", () => {
+            cardBuilder.metadata = dataViewMetadataDecimalFormatString;
+            cardBuilder.singleValue = 1.742353534535243;
+
+            cardBuilder.onDataChanged();
+
+            cardBuilder.onResizing();
+
+            expect($(".card")).toBeInDOM();
+            expect($(".mainText")).toBeInDOM();
+            let mainText = $(".card").find(".mainText").text();
+            expect(mainText).toBe("1.74");
         });
 
         it("Card_onDataChanged (0)", () => {
@@ -457,7 +509,7 @@ module powerbitests {
             cardBuilder.onDataChanged();
             
             setTimeout(() => {
-                expect($(".card .value").css("fill")).toBe("#222222");
+                helpers.assertColorsMatch($(".card .value").css("fill"), "#222222");
                 done();
             }, DefaultWaitForRender);
         });
@@ -704,7 +756,9 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($(".g text").length).toBe(0);
-                expect($(".caption.kpiFiveBarsBig4").length).toBe(1);
+                let kpi = $(".caption .ms-kpi-glyph");
+                expect(kpi.length).toBe(1);
+                expect(kpi.get(0).classList).toContain('big-kpi');
                 done();
             }, DefaultWaitForRender);
         });

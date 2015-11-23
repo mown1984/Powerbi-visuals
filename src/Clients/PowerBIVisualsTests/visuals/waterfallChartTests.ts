@@ -32,7 +32,6 @@ module powerbitests {
     import PrimitiveType = powerbi.PrimitiveType;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import SVGUtil = powerbi.visuals.SVGUtil;
-    import ColorConverter = powerbitests.utils.ColorUtility.convertFromRGBorHexToHex;
     import valueFormatter = powerbi.visuals.valueFormatter;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import waterfallChartProps = powerbi.visuals.waterfallChartProps;
@@ -317,8 +316,8 @@ module powerbitests {
                 chart.setData([dataView]);
 
                 var legendData = chart.calculateLegend();
-                expect(legendData.dataPoints[0].color).toBe(increaseFill);  // first point is an increase.
-                expect(legendData.dataPoints[1].color).toBe(decreaseFill);  // second point is a decrease.
+                helpers.assertColorsMatch(legendData.dataPoints[0].color, increaseFill);  // first point is an increase.
+                helpers.assertColorsMatch(legendData.dataPoints[1].color, decreaseFill);  // second point is a decrease.
             });
 
             it("should clear data if passed empty array", () => {
@@ -585,9 +584,9 @@ module powerbitests {
 
                     // values: [100, -200, 0, 300, null, NaN]
 
-                    expect(getFillColor(rects.eq(0))).toEqual(increaseFill);
-                    expect(getFillColor(rects.eq(1))).toEqual(decreaseFill);
-                    expect(getFillColor(rects.last())).toEqual(totalFill);
+                    helpers.assertColorsMatch(getFillColor(rects.eq(0)), increaseFill);
+                    helpers.assertColorsMatch(getFillColor(rects.eq(1)), decreaseFill);
+                    helpers.assertColorsMatch(getFillColor(rects.last()), totalFill);
 
                     done();
                 }, DefaultWaitForRender);
@@ -646,20 +645,20 @@ module powerbitests {
                 v.onDataChanged({ dataViews: [dataView] });
 
                 let labelDataPoints = callCreateLabelDataPoints(v);
-                expect(labelDataPoints[0].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[1].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[2].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[3].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[4].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[5].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[6].outsideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
-                expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[5].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[6].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[0].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[1].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[2].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[3].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[4].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[5].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[6].outsideFill, powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[5].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[6].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
             });
 
             it("Label data points have correct fill", () => {
@@ -668,20 +667,20 @@ module powerbitests {
                 v.onDataChanged({ dataViews: [dataView] });
 
                 let labelDataPoints = callCreateLabelDataPoints(v);
-                expect(labelDataPoints[0].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[1].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[2].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[3].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[4].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[5].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[6].outsideFill).toEqual(labelColor);
-                expect(labelDataPoints[0].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[1].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[2].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[3].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[4].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[5].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
-                expect(labelDataPoints[6].insideFill).toEqual(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[0].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[1].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[2].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[3].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[4].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[5].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[6].outsideFill, labelColor);
+                helpers.assertColorsMatch(labelDataPoints[0].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[1].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[2].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[3].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[4].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[5].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+                helpers.assertColorsMatch(labelDataPoints[6].insideFill, powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
             });
             
             it("Label data points have correct display units", () => {
@@ -714,7 +713,7 @@ module powerbitests {
         });
 
         function getFillColor(element: JQuery): string {
-            return ColorConverter(element.css("fill"));
+            return element.css("fill");
         }
 
         function getRects(): JQuery {

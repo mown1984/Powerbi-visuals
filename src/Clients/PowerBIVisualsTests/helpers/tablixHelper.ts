@@ -281,6 +281,29 @@ module powerbitests.tablixHelper {
         expect(result).toEqual(expectedValues);
     }
 
+    /**
+     * Verify the font-size style property matches expected value
+     * @param actual: string - font-size property value
+     * @param expected: number - text size in terms of 'pt'
+     */
+    export function validateFontSize(actual: string, expected: number) {
+        let converter = jsCommon.PixelConverter.fromPoint;
+        let actualParsed = Math.round(parseFloat(actual));
+        let expectedParsed = Math.round(parseFloat(converter(expected)));
+
+        expect(actualParsed).toBe(expectedParsed);
+    }
+
+    /**
+     * Verify the heights of cells match expected value
+     * @param cells: JQuery - elements corresponding to individual tabel cells
+     * @param expected: number - height in terms of 'px'
+     */
+    export function validateCellHeights(cells: JQuery, expected: number) {
+        let expectedPx = jsCommon.PixelConverter.toString(expected);
+        cells.each((index: number, elem: Element) => expect($(elem).css('height')).toBe(expectedPx));
+    }
+
     function addError(errorString: string, message: string): string {
         if (!errorString)
             return message;

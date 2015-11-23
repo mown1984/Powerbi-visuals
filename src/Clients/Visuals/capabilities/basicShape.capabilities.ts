@@ -25,6 +25,7 @@
  */
 
 /// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     export var basicShapeCapabilities: VisualCapabilities = {
         objects: {
@@ -37,6 +38,7 @@ module powerbi.visuals {
                     },
                     transparency: {
                         displayName: data.createDisplayNameGetter('Visual_Background_Transparency'),
+                        description: data.createDisplayNameGetter('Visual_Background_TransparencyDescription'),
                         type: { numeric: true }
                     },
                     weight: {
@@ -62,6 +64,7 @@ module powerbi.visuals {
                     },
                     transparency: {
                         displayName: data.createDisplayNameGetter('Visual_Background_Transparency'),
+                        description: data.createDisplayNameGetter('Visual_Background_TransparencyDescription'),
                         type: { numeric: true }
                     },
                 }
@@ -94,5 +97,28 @@ module powerbi.visuals {
         },
         suppressDefaultTitle: true,
         canRotate: false
+    };
+
+    export const basicShapeProps = {
+        general: {
+            shapeType: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'shapeType' },
+        },
+        line: {
+            transparency: <DataViewObjectPropertyIdentifier>{ objectName: 'line', propertyName: 'transparency' },
+            weight: <DataViewObjectPropertyIdentifier>{ objectName: 'line', propertyName: 'weight' },
+            roundEdge: <DataViewObjectPropertyIdentifier>{ objectName: 'line', propertyName: 'roundEdge' },
+            lineColor: <DataViewObjectPropertyIdentifier>{ objectName: 'line', propertyName: 'lineColor' }
+        },
+        fill: {
+            transparency: <DataViewObjectPropertyIdentifier>{ objectName: 'fill', propertyName: 'transparency' },
+            fillColor: <DataViewObjectPropertyIdentifier>{ objectName: 'fill', propertyName: 'fillColor' },
+            show: <DataViewObjectPropertyIdentifier>{ objectName: 'fill', propertyName: 'show' }
+        },
+        lockAspect: {
+            show: <DataViewObjectPropertyIdentifier>{ objectName: 'lockAspect', propertyName: 'show' }
+        },
+        rotation: {
+            angle: <DataViewObjectPropertyIdentifier>{ objectName: 'rotation', propertyName: 'angle' }
+        }
     };
 }

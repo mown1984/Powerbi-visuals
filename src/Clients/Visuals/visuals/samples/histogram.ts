@@ -30,6 +30,7 @@ module powerbi.visuals.samples {
     import VisualDataRoleKind = powerbi.VisualDataRoleKind;
     import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
 
     type D3Element = 

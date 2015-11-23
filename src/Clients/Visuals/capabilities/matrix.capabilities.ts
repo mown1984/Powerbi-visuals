@@ -37,10 +37,12 @@ module powerbi.visuals {
         dataRoles: [
             {
                 name: matrixRoleNames.rows,
-                kind: VisualDataRoleKind.Grouping
+                kind: VisualDataRoleKind.Grouping,
+                description: data.createDisplayNameGetter('Role_DisplayName_RowsDescription')
             }, {
                 name: matrixRoleNames.columns,
-                kind: VisualDataRoleKind.Grouping
+                kind: VisualDataRoleKind.Grouping,
+                description: data.createDisplayNameGetter('Role_DisplayName_ColumnsDescription')
             }, {
                 name: matrixRoleNames.values,
                 kind: VisualDataRoleKind.Measure
@@ -52,6 +54,9 @@ module powerbi.visuals {
                 properties: {
                     formatString: {
                         type: { formatting: { formatString: true } },
+                    },
+                    columnWidth: {
+                        type: { numeric: true }
                     },
                     rowSubtotals: {
                         type: { bool: true },
@@ -65,9 +70,10 @@ module powerbi.visuals {
                         type: { bool: true },
                         displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width')
                     },
-                    columnWidth: {
+                    textSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
                         type: { numeric: true }
-                    }
+                    },
                 },
             }
         },
@@ -102,5 +108,5 @@ module powerbi.visuals {
             custom: {},
         },
         suppressDefaultTitle: true,
-    }; 
+    };
 }

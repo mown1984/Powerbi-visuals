@@ -27,6 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface TextRunStyle {
         fontFamily?: string;
@@ -788,16 +789,9 @@ module powerbi.visuals {
         module Toolbar {
             const DefaultLinkInputValue = 'http://';
 
-            var createSelector = (className: string): ClassAndSelector => {
-                return {
-                    class: className,
-                    selector: '.' + className,
-                };
-            };
-
             export var selectors = {
-                linkTooltip: createSelector('ql-link-tooltip'),
-                toolbarUrlInput: createSelector('toolbar-url-input'),
+                linkTooltip: createClassAndSelector('ql-link-tooltip'),
+                toolbarUrlInput: createClassAndSelector('toolbar-url-input'),
             };
 
             export function buildToolbar(quillWrapper: QuillWrapper, localizationProvider: jsCommon.IStringResourceProvider) {
@@ -854,12 +848,12 @@ module powerbi.visuals {
 
             function linkTooltipTemplateGenerator(removeText: string, doneText: string): JQuery {
                 return $(`
-                        <a href="#" class="url" target="_blank" href="about:blank"></a>
+                        <a href="#" class="url" target="_blank"></a>
                         <input class="input" type="text">
                         <span class="bar">&nbsp;|&nbsp;</span>
-                        <a href="javascript:;" class="change"></a>
-                        <a href="javascript:;" class="remove">${removeText}</a>
-                        <a href="javascript:;" class="done">${doneText}</a>
+                        <a class="change"></a>
+                        <a class="remove">${removeText}</a>
+                        <a class="done">${doneText}</a>
                     `);
             };
 
@@ -1026,9 +1020,10 @@ module powerbi.visuals {
                         let word = quillWrapper.getWord();
                         if (!word) {
                             linkTooltip.addClass('editing blank-editing');
-                            toolbarLinkInput.find('.input')
-                                .val(DefaultLinkInputValue)
-                                .focus();
+                            let inputElem = (<HTMLInputElement>toolbarLinkInput.find('.input').get(0));
+                            inputElem.value = DefaultLinkInputValue;
+                            inputElem.selectionStart = inputElem.selectionEnd = DefaultLinkInputValue.length;
+                            inputElem.focus();
                             return false;
                         }
                     })

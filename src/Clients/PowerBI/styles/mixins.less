@@ -136,6 +136,26 @@
     }
 }
 
+.onFocusHidePlaceholder(@color: @neutralSecondaryColor) {
+    .placeholderColor(@color);
+
+    &:focus::-webkit-input-placeholder { /* WebKit browsers */
+        color: transparent;
+    }
+
+    &:focus:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+        color: transparent;
+    }
+
+    &:focus::-moz-placeholder { /* Mozilla Firefox 19+ */
+        color: transparent;
+    }
+
+    &:focus:-ms-input-placeholder { /* Internet Explorer 10+ */
+        color: transparent;
+    }
+}
+
 .imgResource(@filename) {
     background: url('../images/@{filename}.png') center center no-repeat;
 }

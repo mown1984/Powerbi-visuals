@@ -338,4 +338,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.Histogram.capabilities,
         create: () => new samples.Histogram()
     };
+
+    export var areaRangeChart: IVisualPlugin = {
+        name: 'areaRangeChart',
+        capabilities: samples.AreaRangeChart.capabilities,
+        create: () => new samples.AreaRangeChart()
+    };
 }

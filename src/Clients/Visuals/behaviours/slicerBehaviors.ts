@@ -60,18 +60,18 @@ module powerbi.visuals {
                     selectionHandler.toggleSelectionModeInversion();
                 }
                 else {
-                    selectionHandler.handleSelection(d, true /* isMultiSelect */);
+                    selectionHandler.handleSelection(d, this.isMultiSelect(d3.event));
                 }
                 selectionHandler.persistSelectionFilter(filterPropertyId);
             });
 
             let slicerClear = options.slicerClear;
             if (slicerClear) {
-            slicerClear.on("click", (d: SelectableDataPoint) => {
-                selectionHandler.handleClearSelection();
-                selectionHandler.persistSelectionFilter(filterPropertyId);
-            });
-        }
+                slicerClear.on("click", (d: SelectableDataPoint) => {
+                    selectionHandler.handleClearSelection();
+                    selectionHandler.persistSelectionFilter(filterPropertyId);
+                });
+            }
         }
 
         public renderSelection(hasSelection: boolean): void {
@@ -84,6 +84,14 @@ module powerbi.visuals {
             else {
                 SlicerWebBehavior.styleSlicerInputs(this.slicerItemInputs, hasSelection);
             }
+        }
+
+        private isMultiSelect(event: D3.D3Event): boolean {
+            // If selection is inverted, assume we're always in multi-select mode;
+            // Also, Ctrl can be used to multi-select even in single-select mode.
+            return this.interactivityService.isSelectionModeInverted()
+                || !this.slicerSettings.selection.singleSelect
+                || event.ctrlKey;
         }
 
         public static styleSlicerInputs(slicerItemInputs: D3.Selection, hasSelection: boolean) {

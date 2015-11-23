@@ -51,6 +51,7 @@ module powerbi.visuals.controls {
         private currentPersistedWidths: number[];
         private callHostPersistProperties: boolean;
         private dataViewUpdated: boolean;
+        private columnResizeCallback: ColumnWidthCallbackType;
 
         constructor(dataView: DataView, isMatrix: boolean, matrixLeafNodes?: MatrixVisualNode[]) {
             this.columnWidths = [];
@@ -98,6 +99,20 @@ module powerbi.visuals.controls {
 
         public set suppressOnDataChangedNotification(notify: boolean) {
             this.suppressNotification = notify;
+        }
+
+        public get columnWidthResizeCallback(): ColumnWidthCallbackType {
+            return this.columnResizeCallback;
+        }
+
+        public set columnWidthResizeCallback(colWidthResizeCallback: ColumnWidthCallbackType) {
+            this.columnResizeCallback = colWidthResizeCallback;
+        }
+
+        public getPersistedCellWidth(index: number): number {
+            let widths = this.getColumnWidths();
+            if (!_.isEmpty(widths) && index < widths.length)
+                return widths[index];
         }
 
         public deserializeTablixColumnWidths(): void {

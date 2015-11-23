@@ -34,6 +34,7 @@ module powerbitests {
         var palette: powerbi.IDataColorPalette;
 
         var columnIdentity = powerbi.data.SQExprBuilder.fieldDef({ schema: "s", entity: "e", column: "sales" });
+        var columnIdentity2 = powerbi.data.SQExprBuilder.fieldDef({ schema: "s", entity: "e", column: "profit" });
         var fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
 
         var colors = [
@@ -96,6 +97,33 @@ module powerbitests {
                 var color2 = colorHelper.getColorForSeriesValue(null, [columnIdentity], "value");
 
                 expect(color1).toEqual(color2);
+            });
+        });
+
+        describe("getColorScaleForSeries", () => {
+            it("same series identity returns the same scale", () => {
+                let colorHelper = new ColorHelper(palette, fillProp);
+
+                let scale1 = colorHelper.getColorScaleForSeries([columnIdentity]);
+
+                scale1.getColor('value1');
+                let color2 = scale1.getColor('value2');
+
+                let scale2 = colorHelper.getColorScaleForSeries([columnIdentity]);
+
+                expect(scale2.getColor('value2')).toEqual(color2);
+            });
+
+            it("different series identities return different scales", () => {
+                let colorHelper = new ColorHelper(palette, fillProp);
+
+                let scale1 = colorHelper.getColorScaleForSeries([columnIdentity]);
+                let scale2 = colorHelper.getColorScaleForSeries([columnIdentity2]);
+
+                scale1.getColor('value1');
+                let color2 = scale1.getColor('value2');
+
+                expect(scale2.getColor('value2')).not.toEqual(color2);
             });
         });
 

@@ -29,7 +29,7 @@
 module powerbitests {
     import AxisHelper = powerbi.visuals.AxisHelper;
     import ValueType = powerbi.ValueType;
-    import axisScale = powerbi.axisScale;
+    import axisScale = powerbi.visuals.axisScale;
 
     describe("AxisHelper invertOrdinalScale tests", () => {
         var ordinalScale: D3.Scale.OrdinalScale;

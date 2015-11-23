@@ -28,6 +28,8 @@
 
 module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface LineChartConstructorOptions extends CartesianVisualConstructorOptions {
         chartType?: LineChartType;
@@ -88,21 +90,11 @@ module powerbi.visuals {
     export class LineChart implements ICartesianVisual {
         private static ClassName = 'lineChart';
         private static MainGraphicsContextClassName = 'mainGraphicsContext';
-        private static CategoryClassName = 'cat';
-        private static CategoryClassSelector = '.cat';
-        private static CategoryValuePoint: ClassAndSelector = {
-            class: 'dot',
-            selector: '.dot'
-        };
-
-        private static CategoryPointSelector: ClassAndSelector = {
-            class: 'point',
-            selector: '.point'
-        };
+        private static CategorySelector: ClassAndSelector = createClassAndSelector('cat');
+        private static CategoryValuePoint: ClassAndSelector = createClassAndSelector('dot');
+        private static CategoryPointSelector: ClassAndSelector = createClassAndSelector('point');
+        private static CategoryAreaSelector: ClassAndSelector = createClassAndSelector('catArea');
         private static PointRadius = 5;
-
-        private static CategoryAreaClassName = 'catArea';
-        private static CategoryAreaClassSelector = '.catArea';
         private static HorizontalShift = 0;
         private static CircleRadius = 4;
         private static PathElementName = 'path';
@@ -153,6 +145,7 @@ module powerbi.visuals {
 
             let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
             let categoryItems = dataViewCategories.for.in.items;
+            let dataViewValues = <data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values;
             if (!jsCommon.ArrayExtensions.isUndefinedOrEmpty(categoryItems)) {
                 let categoryType = categoryItems[0].type;
 
@@ -160,8 +153,22 @@ module powerbi.visuals {
                 if (dataViewMapping.metadata)
                     objects = dataViewMapping.metadata.objects;
 
-                if (CartesianChart.getIsScalar(objects, lineChartProps.categoryAxis.axisType, categoryType))
+                if (CartesianChart.getIsScalar(objects, lineChartProps.categoryAxis.axisType, categoryType)) {
                     dataViewCategories.dataReductionAlgorithm = { sample: {} };
+
+                    debug.assert(
+                        dataViewValues &&
+                        dataViewValues.group &&
+                        dataViewValues.group.select &&
+                        dataViewValues.group.select.length === 1 &&
+                        dataViewValues.group.select[0] &&
+                        (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for &&
+                        (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for.in != null,
+                        'CompiledDataViewValues structure is unexpected, this structure should match the declared structure in capabilities.');
+
+                    let yRoleItems = (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for.in;
+                    yRoleItems.removeSort = true;
+                }
             }
         }
 
@@ -539,6 +546,7 @@ module powerbi.visuals {
             }
 
             let valueDomain = AxisHelper.createValueDomain(data.series, false);
+            let hasZeroValueInYDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(valueDomain);
             let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, valueDomain);
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.height,
@@ -552,10 +560,13 @@ module powerbi.visuals {
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: false,
                 shouldClamp: AxisHelper.scaleShouldClamp(combinedDomain, valueDomain),
-                scaleType: options.valueAxisScaleType
+                scaleType: options.valueAxisScaleType,
+                axisDisplayUnits: options.valueAxisDisplayUnits,
+                axisPrecision: options.valueAxisPrecision
             });
 
             let xDomain = AxisHelper.createDomain(data.series, this.xAxisProperties.axisType, this.data.isScalar, options.forcedXDomain);
+            let hasZeroValueInXDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(xDomain);
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.width,
                 dataDomain: xDomain,
@@ -569,12 +580,17 @@ module powerbi.visuals {
                 getValueFn: (index, type) => this.lookupXValue(index, type),
                 categoryThickness: CartesianChart.getCategoryThickness(data.series, origCatgSize, this.getAvailableWidth(), xDomain, isScalar),
                 isCategoryAxis: true,
-                scaleType: options.categoryAxisScaleType
+                scaleType: options.categoryAxisScaleType,
+                axisDisplayUnits: options.categoryAxisDisplayUnits,
+                axisPrecision: options.categoryAxisPrecision
             });
 
             this.xAxisProperties.axisLabel = options.showCategoryAxisLabel ? data.axesLabels.x : null;
             this.yAxisProperties.axisLabel = options.showValueAxisLabel ? data.axesLabels.y : null;
 
+            this.xAxisProperties.hasDisallowedZeroInDomain = hasZeroValueInXDomain;
+            this.yAxisProperties.hasDisallowedZeroInDomain = hasZeroValueInYDomain;
+        
             return [this.xAxisProperties, this.yAxisProperties];
         }
 
@@ -719,10 +735,10 @@ module powerbi.visuals {
             let areas = undefined;
             // Render Areas
             if (renderAreas) {
-                areas = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaClassSelector).data(data.series, (d: LineChartSeries) => d.identity.getKey());
+                areas = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaSelector.selector).data(data.series, (d: LineChartSeries) => d.identity.getKey());
                 areas.enter()
                     .append(LineChart.PathElementName)
-                    .classed(LineChart.CategoryAreaClassName, true);
+                    .classed(LineChart.CategoryAreaSelector.class, true);
                 areas
                     .style('fill', (d: LineChartSeries) => d.color)
                     .style('fill-opacity', (d: LineChartSeries) => (hasSelection && !d.selected) ? LineChart.DimmedAreaFillOpacity : LineChart.AreaFillOpacity)
@@ -767,12 +783,12 @@ module powerbi.visuals {
             }
 
             // Prepare grouping for dots
-            let dotGroups = this.mainGraphicsContext.selectAll(LineChart.CategoryClassSelector)
+            let dotGroups = this.mainGraphicsContext.selectAll(LineChart.CategorySelector.selector)
                 .data(data.series, (d: LineChartSeries) => d.identity.getKey());
 
             dotGroups.enter()
                 .append('g')
-                .classed(LineChart.CategoryClassName, true);
+                .classed(LineChart.CategorySelector.class, true);
 
             dotGroups.exit()
                 .remove();
@@ -844,6 +860,7 @@ module powerbi.visuals {
                 if (renderAreas)
                     TooltipManager.addTooltip(areas, seriesTooltipApplier, true);
                 TooltipManager.addTooltip(dots, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
+                TooltipManager.addTooltip(highlights, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
 
                 // Register interactivity
                 dataPointsToBind = data.series.slice();
@@ -912,17 +929,17 @@ module powerbi.visuals {
             this.toolTipContext.attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
 
             if (EnumExtensions.hasFlag(this.lineType, LineChartType.area)) {
-                let catAreaSelect = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaClassSelector)
+                let catAreaSelect = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaSelector.selector)
                     .data(data.series, (d: LineChartDataPoint) => d.identity.getKey());
 
                 let catAreaEnter =
                     catAreaSelect
                         .enter().append('g')
-                        .classed(LineChart.CategoryAreaClassName, true);
+                        .classed(LineChart.CategoryAreaSelector.class, true);
 
                 catAreaEnter.append(LineChart.PathElementName);
 
-                let catAreaUpdate = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaClassSelector);
+                let catAreaUpdate = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaSelector.selector);
 
                 catAreaUpdate.select(LineChart.PathElementName)
                     .transition()
@@ -935,13 +952,13 @@ module powerbi.visuals {
                 catAreaSelect.exit().remove();
             }
 
-            let catSelect = this.mainGraphicsContext.selectAll(LineChart.CategoryClassSelector)
+            let catSelect = this.mainGraphicsContext.selectAll(LineChart.CategorySelector.selector)
                 .data(data.series, (d: LineChartDataPoint) => d.identity.getKey());
 
             let catEnter = catSelect
                 .enter()
                 .append('g')
-                .classed(LineChart.CategoryClassName, true);
+                .classed(LineChart.CategorySelector.class, true);
 
             catEnter.append(LineChart.PathElementName);
             catEnter.selectAll(LineChart.CategoryValuePoint.selector)
@@ -977,7 +994,7 @@ module powerbi.visuals {
                 this.selectionCircles.pop().remove();
             }
 
-            let catUpdate = this.mainGraphicsContext.selectAll(LineChart.CategoryClassSelector);
+            let catUpdate = this.mainGraphicsContext.selectAll(LineChart.CategorySelector.selector);
 
             let lineSelection = catUpdate.select(LineChart.PathElementName)
                 .classed('line', true)
@@ -1221,7 +1238,7 @@ module powerbi.visuals {
 
             let that = this;
             this.mainGraphicsContext
-                .selectAll(LineChart.CategoryClassSelector)
+                .selectAll(LineChart.CategorySelector.selector)
                 .selectAll(LineChart.PathElementName)
                 .each(function (series: LineChartSeries) {
                     // Get the item color for the handle dots

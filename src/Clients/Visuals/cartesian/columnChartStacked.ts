@@ -72,7 +72,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             let width = this.width;
 
             let forcedXMin, forcedXMax;
@@ -89,12 +89,14 @@ module powerbi.visuals {
                 false,
                 forcedXMin,
                 forcedXMax,
-                axisScaleType);
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision);
 
             return props;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             let height = this.viewportHeight;
             let yProps = this.yProps = StackedUtil.getValueAxis(
                 this.data,
@@ -103,7 +105,9 @@ module powerbi.visuals {
                 [height, 0],
                 forcedTickCount,
                 forcedYDomain,
-                axisScaleType);
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision);
 
             return yProps;
         }
@@ -359,7 +363,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             let height = this.height;
 
             let forcedYMin, forcedYMax;
@@ -376,12 +380,14 @@ module powerbi.visuals {
                 true,
                 forcedYMin,
                 forcedYMax,
-                axisScaleType);
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision);
 
             return props;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
             debug.assert(forcedTickCount === undefined, 'Cannot have stacked bar chart as combo chart.');
 
             let height = this.viewportHeight;
@@ -393,7 +399,9 @@ module powerbi.visuals {
                 [0, this.width],
                 undefined,
                 forcedXDomain,
-                axisScaleType);
+                axisScaleType,
+                axisDisplayUnits,
+                axisPrecision);
 
             xProps.axis.tickSize(-height, 0);
 

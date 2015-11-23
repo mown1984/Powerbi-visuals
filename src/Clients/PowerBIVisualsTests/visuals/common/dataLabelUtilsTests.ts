@@ -160,7 +160,7 @@ module powerbitests {
                 let objectsWithColor = enumerationWithColor.complete().instances;
 
                 expect(objectsWithColor[0].properties["show"]).toBe(true);
-                expect(objectsWithColor[0].properties["color"]).toBe("#FF0000");
+                helpers.assertColorsMatch(<string>objectsWithColor[0].properties["color"], "#FF0000");
             });
 
             it("test category labels objects for donut chart", () => {

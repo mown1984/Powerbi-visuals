@@ -39,6 +39,9 @@ module powerbi.visuals {
                     formatString: {
                         type: { formatting: { formatString: true } },
                     },
+                    columnWidth: {
+                        type: { numeric: true }
+                    },
                     totals: {
                         type: { bool: true },
                         displayName: data.createDisplayNameGetter('Visual_Totals')
@@ -47,11 +50,12 @@ module powerbi.visuals {
                         type: { bool: true },
                         displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width')
                     },
-                    columnWidth: {
+                    textSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
                         type: { numeric: true }
-                    }
+                    },
                 },
-            }
+            },
         },
         dataViewMappings: [{
             table: {

@@ -49,15 +49,15 @@ module powerbitests {
 
             var color1 = scale.getColor("series index N");
             expect(color1).toExist();
-            expect(color0.value).not.toBe(color1.value);
+            helpers.assertColorsMatch(color0.value, color1.value, true);
 
             var color2 = scale.getColor({ seriesProperty: "X" });
             expect(color2).toExist();
-            expect(color1.value).not.toBe(color2.value);
+            helpers.assertColorsMatch(color1.value, color2.value, true);
 
             var color3 = scale.getColor(-1);
             expect(color3).toExist();
-            expect(color2.value).not.toBe(color3.value);
+            helpers.assertColorsMatch(color2.value, color3.value, true);
 
             // Wrap around occurs after 40 (base color count) * 12 (cycles) colors currently. We should have no duplicates
             // until that point.
@@ -65,12 +65,12 @@ module powerbitests {
             for (var i = 4; i < 480; ++i) {
                 var nextColor = scale.getColor(i);
                 expect(nextColor).toExist();
-                expect(nextColor.value).not.toBe(previousColor.value);
+                helpers.assertColorsMatch(nextColor.value, previousColor.value, true);
                 previousColor = nextColor;
             }
 
             // Wrap around should occur now, verify we are back to the start
-            expect(scale.getColor("abc series")).toBe(color0);
+            helpers.assertColorsMatch(scale.getColor("abc series").value, color0.value);
         });
 
         // The Sentiment/KPI color API is just temporary until conditional formatting is avaiable, but while the API is active it needs to be tested.
@@ -82,15 +82,15 @@ module powerbitests {
             expect(sentimentColors.length).toBe(3);
 
             // Check for duplicates
-            expect(sentimentColors[0].value).not.toBe(sentimentColors[1].value);
-            expect(sentimentColors[1].value).not.toBe(sentimentColors[2].value);
-            expect(sentimentColors[0].value).not.toBe(sentimentColors[2].value);
+            helpers.assertColorsMatch(sentimentColors[0].value, sentimentColors[1].value, true);
+            helpers.assertColorsMatch(sentimentColors[1].value, sentimentColors[2].value, true);
+            helpers.assertColorsMatch(sentimentColors[0].value, sentimentColors[2].value, true);
         });
 
         it("Check parameter colors", () => {
             var localDataColors = new powerbi.visuals.DataColorPalette([{ value: "#112233" }]);
             var firstColor = localDataColors.getNewColorScale().getColor(0);
-            expect(firstColor.value).toBe("#112233");
+            helpers.assertColorsMatch(firstColor.value, "#112233");
         });
 
         describe("getColorScaleByKey", () => {
@@ -100,15 +100,15 @@ module powerbitests {
             var color4 = dataColors.getColorScaleByKey("scale1").getColor("a");
 
             it("should return the same color for the same scale and key", () => {
-                expect(color1.value).toEqual(color4.value);
+                helpers.assertColorsMatch(color1.value, color4.value);
             });
 
             it("should return the same color for the first key in each scale", () => {
-                expect(color1.value).toEqual(color3.value);
+                helpers.assertColorsMatch(color1.value, color3.value);
             });
 
             it("should return different colors for different values in the same scale", () => {
-                expect(color1.value).not.toEqual(color2.value);
+                helpers.assertColorsMatch(color1.value, color2.value, true);
             });
         });
 
@@ -116,7 +116,7 @@ module powerbitests {
             var localDataColors = new powerbi.visuals.DataColorPalette(colors);
 
             for (var i = 0; i < colors.length; i++) {
-                expect(localDataColors.getColorByIndex(i)).toEqual(colors[i]);
+                helpers.assertColorsMatch(localDataColors.getColorByIndex(i).value, colors[i].value);
             }
         });
     });
@@ -130,10 +130,10 @@ module powerbitests {
 
         it("should cover all colors and wrap around", () => {
             for (var i = 0; i < colors.length; i++) {
-                expect(scale.getColor(i).value).toEqual(colors[i].value);
+                helpers.assertColorsMatch(scale.getColor(i).value, colors[i].value);
             }
 
-            expect(scale.getColor(colors.length).value).toEqual(colors[0].value);
+            helpers.assertColorsMatch(scale.getColor(colors.length).value, colors[0].value);
         });
 
         it("Check get color same index key returns same color", () => {
@@ -148,11 +148,11 @@ module powerbitests {
 
             var color0_secondGet = scale.getColor(indexKey0);
             expect(color0_secondGet).toExist();
-            expect(color0_secondGet.value).toBe(color0_firstGet.value);
+            helpers.assertColorsMatch(color0_secondGet.value, color0_firstGet.value);
 
             var color1_secondGet = scale.getColor(indexKey1);
             expect(color1_secondGet).toExist();
-            expect(color1_firstGet.value).toBe(color1_secondGet.value);
+            helpers.assertColorsMatch(color1_firstGet.value, color1_secondGet.value);
         });
 
         it("clearAndRotate should clear any allocated colors and return the next color", () => {
@@ -163,9 +163,9 @@ module powerbitests {
 
             var color3 = scale.getColor(0);
 
-            expect(color1.value).toEqual(colors[0].value);
-            expect(color2.value).toEqual(colors[1].value);
-            expect(color3.value).toEqual(colors[2].value);
+            helpers.assertColorsMatch(color1.value, colors[0].value);
+            helpers.assertColorsMatch(color2.value, colors[1].value);
+            helpers.assertColorsMatch(color3.value, colors[2].value);
         });
 
         it("clone should create a copy preserving allocated colors", () => {
@@ -177,10 +177,10 @@ module powerbitests {
             var color3 = scale2.getColor(0);
             var color4 = scale2.getColor(2);
 
-            expect(color1.value).toEqual(colors[0].value);
-            expect(color2.value).toEqual(colors[1].value);
-            expect(color3.value).toEqual(colors[0].value);
-            expect(color4.value).toEqual(colors[2].value);
+            helpers.assertColorsMatch(color1.value, colors[0].value);
+            helpers.assertColorsMatch(color2.value, colors[1].value);
+            helpers.assertColorsMatch(color3.value, colors[0].value);
+            helpers.assertColorsMatch(color4.value, colors[2].value);
         });
     });
 }

@@ -40,18 +40,22 @@ module powerbi.visuals {
                 name: gaugeRoleNames.y,
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Value'),
+                description: data.createDisplayNameGetter('Role_DisplayName_ValueDescription')
             }, {
                 name: gaugeRoleNames.minValue,
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_MinValue'),
+                description: data.createDisplayNameGetter('Role_DisplayName_MinValueDescription')
             }, {
                 name: gaugeRoleNames.maxValue,
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_MaxValue'),
+                description: data.createDisplayNameGetter('Role_DisplayName_MaxValueDescription')
             }, {
                 name: gaugeRoleNames.targetValue,
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_TargetValue'),
+                description: data.createDisplayNameGetter('Role_DisplayName_TargetValueDescription')
             }
         ],
         objects: {
@@ -78,7 +82,47 @@ module powerbi.visuals {
                         type: { numeric: true }
                     },
                 },
-            }
+            },
+            labels: {
+                displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
+                properties: {
+                    show: {
+                        type: { bool: true }
+                    },
+                    color: {
+                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    labelDisplayUnits: {
+                        displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                        type: { formatting: { labelDisplayUnits: true } }
+                    },
+                    labelPrecision: {
+                        displayName: data.createDisplayNameGetter('Visual_Precision'),
+                        type: { numeric: true }
+                    },
+                },
+            },
+            calloutValue: {
+                displayName: data.createDisplayNameGetter('Visual_Gauge_CalloutValue'),
+                properties: {
+                    show: {
+                        type: { bool: true }
+                    },
+                    color: {
+                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    labelDisplayUnits: {
+                        displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                        type: { formatting: { labelDisplayUnits: true } }
+                    },
+                    labelPrecision: {
+                        displayName: data.createDisplayNameGetter('Visual_Precision'),
+                        type: { numeric: true }
+                    },
+                },
+            },
         },
         dataViewMappings: [{
             conditions: [
