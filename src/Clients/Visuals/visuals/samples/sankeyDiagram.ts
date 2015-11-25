@@ -69,7 +69,7 @@ module powerbi.visuals.samples {
         width?: number;
         height?: number;
         colour: string;
-        selectionId: SelectionId;
+        selectionIds: SelectionId[];
     }
 
     export interface SankeyDiagramLink extends SankeyDiagramTooltipData {
@@ -79,6 +79,7 @@ module powerbi.visuals.samples {
         height?: number;
         dySource?: number;
         dyDestination?: number;
+        selectionId: SelectionId;
     }
 
     export interface SankeyDiagramDataView {
@@ -437,7 +438,13 @@ module powerbi.visuals.samples {
 
             allCategories.forEach((item: any, index: number) => {
                 if (!nodes.some((node: SankeyDiagramNode) => {
-                    return item === node.label.name;
+                    if (item === node.label.name) {
+                        node.selectionIds.push(SelectionId.createWithId(identities[index]));
+
+                        return true;
+                    }
+
+                    return false;
                 })) {
                     let formattedValue: string = valueFormatterForCategories.format(item),
                         label: SankeyDiagramLabel,
@@ -466,7 +473,7 @@ module powerbi.visuals.samples {
                         height: 0,
                         colour: SankeyDiagram.DefaultColour,
                         tooltipData: [],
-                        selectionId: selectionId
+                        selectionIds: [selectionId]
                     });
                 }
             });
@@ -477,7 +484,7 @@ module powerbi.visuals.samples {
                 node.colour = this.colours.getColorByIndex(Math.floor(index * shiftOfColour)).value;
             });
 
-            dataPoints.forEach((dataPoint: SankeyDiagramDataPoint) => {
+            dataPoints.forEach((dataPoint: SankeyDiagramDataPoint, index: number) => {
                 let sourceNode: SankeyDiagramNode,
                     destinationNode: SankeyDiagramNode,
                     link: SankeyDiagramLink;
@@ -505,7 +512,8 @@ module powerbi.visuals.samples {
                         valuesFormatterForWeigth,
                         sourceNode.label.formattedName,
                         destinationNode.label.formattedName,
-                        dataPoint.weigth)
+                        dataPoint.weigth),
+                    selectionId: SelectionId.createWithId(identities[index])
                 };
 
                 links.push(link);
@@ -1017,21 +1025,33 @@ module powerbi.visuals.samples {
             nodesSelection: D3.UpdateSelection,
             linksSelection: D3.UpdateSelection): void {
 
-            nodesSelection.on("click", (node: SankeyDiagramNode, index: number) => {
-                let isMultiSelect: boolean = d3.event.altKey || d3.event.ctrlKey || d3.event["shiftKey"];
+            nodesSelection.on("click", (node: SankeyDiagramNode) => {
+                this.selectionManager.clear();
 
-                this.selectionManager.select(node.selectionId, isMultiSelect).then((selectionIds: SelectionId[]) => {
-                    if (selectionIds.length > 0) {
-                        this.setSelection(nodesSelection, linksSelection, selectionIds);
-                    } else {
-                        this.setSelection(nodesSelection, linksSelection);
-                    }
+                node.selectionIds.forEach((selectionId: SelectionId) => {
+                    this.selectionManager.select(selectionId, true).then((selectionIds: SelectionId[]) => {
+                        if (selectionIds.length > 0) {
+                            this.setSelection(nodesSelection, linksSelection, [node], node.links);
+                        } else {
+                            this.setSelection(nodesSelection, linksSelection);
+                        }
+                    });
                 });
 
                 d3.event.stopPropagation();
             });
 
-            linksSelection.on("click", () => {
+            linksSelection.on("click", (link: SankeyDiagramLink) => {
+                this.selectionManager.clear();
+
+                this.selectionManager.select(link.selectionId).then((selectionIds: SelectionId[]) => {
+                    if (selectionIds.length > 0) {
+                        this.setSelection(nodesSelection, linksSelection, [link.source, link.destination], [link]);
+                    } else {
+                        this.setSelection(nodesSelection, linksSelection);
+                    }
+                });
+
                 d3.event.stopPropagation();
             });
 
@@ -1041,31 +1061,28 @@ module powerbi.visuals.samples {
             });
         }
 
-        private setSelection(nodes: D3.UpdateSelection, links: D3.UpdateSelection, selectionIds: SelectionId[] = []): void {
+        private setSelection(
+            nodes: D3.UpdateSelection,
+            links: D3.UpdateSelection,
+            selectedNodes: SankeyDiagramNode[] = [],
+            selectedLinks: SankeyDiagramLink[] = []): void {
+
             nodes.style("opacity", null);
             links.style("stroke-opacity", null);
 
-            if (selectionIds.length === 0) {
+            if (selectedNodes.length === 0) {
                 return;
             }
 
-            let linksOfSelection: SankeyDiagramLink[] = [];
-
             nodes.filter((node: SankeyDiagramNode) => {
-                if (selectionIds.every((selectionId: SelectionId) => {
-                    return selectionId !== node.selectionId;
-                })) {
-                    return true;
-                } else {
-                    linksOfSelection = linksOfSelection.concat(node.links);
-
-                    return false;
-                }
+                return !selectedNodes.some((selectedNode: SankeyDiagramNode) => {
+                    return node === selectedNode;
+                });
             })
             .style("opacity", SankeyDiagram.OpacityOfSelectionNode);
 
             links.filter((link: SankeyDiagramLink) => {
-                return linksOfSelection.some((linkOfSelection: SankeyDiagramLink) => {
+                return selectedLinks.some((linkOfSelection: SankeyDiagramLink) => {
                     return link === linkOfSelection;
                 });
             })
