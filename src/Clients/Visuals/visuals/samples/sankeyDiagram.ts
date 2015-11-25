@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts" />
+// <reference path="../../_references.ts" />
 
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
@@ -281,7 +281,7 @@ module powerbi.visuals.samples {
 
             this.selectionManager = new SelectionManager({ hostServices: visualsInitOptions.host });
 
-            let style: IVisualStyle = visualsInitOptions.style;
+            var style: IVisualStyle = visualsInitOptions.style;
 
             this.colours = style && style.colorPalette
                 ? style.colorPalette.dataColors
@@ -311,7 +311,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let dataView: DataView = visualUpdateOptions.dataViews[0],
+            var dataView: DataView = visualUpdateOptions.dataViews[0],
                 sankeyDiagramDataView: SankeyDiagramDataView;
 
             this.updateViewport(visualUpdateOptions.viewport);
@@ -326,7 +326,7 @@ module powerbi.visuals.samples {
         }
 
         private updateViewport(viewport: IViewport): void {
-            let height: number,
+            var height: number,
                 width: number;
 
             height = viewport.height - this.margin.top - this.margin.bottom;
@@ -367,7 +367,7 @@ module powerbi.visuals.samples {
                 };
             }
 
-            let nodes: SankeyDiagramNode[] = [],
+            var nodes: SankeyDiagramNode[] = [],
                 links: SankeyDiagramLink[] = [],
                 dataPoints: SankeyDiagramDataPoint[] = [],
                 categories: any[] = dataView.categorical.categories[0].values,
@@ -411,7 +411,7 @@ module powerbi.visuals.samples {
             }
 
             dataPoints = categories.map((item: any, index: number) => {
-                let weigth: number = values[index] || 1;
+                var weigth: number = values[index] || 1;
 
                 return {
                     source: item,
@@ -446,7 +446,7 @@ module powerbi.visuals.samples {
 
                     return false;
                 })) {
-                    let formattedValue: string = valueFormatterForCategories.format(item),
+                    var formattedValue: string = valueFormatterForCategories.format(item),
                         label: SankeyDiagramLabel,
                         selectionId: SelectionId,
                         textProperties: TextProperties = {
@@ -485,7 +485,7 @@ module powerbi.visuals.samples {
             });
 
             dataPoints.forEach((dataPoint: SankeyDiagramDataPoint, index: number) => {
-                let sourceNode: SankeyDiagramNode,
+                var sourceNode: SankeyDiagramNode,
                     destinationNode: SankeyDiagramNode,
                     link: SankeyDiagramLink;
 
@@ -558,7 +558,7 @@ module powerbi.visuals.samples {
         }
 
         private getColour(properties: DataViewObjectPropertyIdentifier, defaultColor: string, objects: DataViewObjects): string {
-            let colorHelper: ColorHelper;
+            var colorHelper: ColorHelper;
 
             colorHelper = new ColorHelper(this.colours, properties, defaultColor);
 
@@ -571,7 +571,7 @@ module powerbi.visuals.samples {
             destinationNodeName: string,
             linkWeight: number): TooltipDataItem[] {
 
-            let formattedLinkWeight: string;
+            var formattedLinkWeight: string;
 
             if (valueFormatter && valueFormatter.format) {
                 formattedLinkWeight = valueFormatter.format(linkWeight);
@@ -602,7 +602,7 @@ module powerbi.visuals.samples {
             nodeName: string,
             nodeWeight: number): TooltipDataItem[] {
 
-            let formattedNodeWeigth: string;
+            var formattedNodeWeigth: string;
 
             if (valueFormatter && valueFormatter.format) {
                 formattedNodeWeigth = valueFormatter.format(nodeWeight);
@@ -620,7 +620,7 @@ module powerbi.visuals.samples {
         }
 
         private parseSettings(objects: DataViewObjects): SankeyDiagramSettings {
-            let isVisibleLabels: boolean = false;
+            var isVisibleLabels: boolean = false;
 
             isVisibleLabels = DataViewObjects.getValue(
                 objects,
@@ -643,7 +643,7 @@ module powerbi.visuals.samples {
         }
 
         private findNodePositionByX(sankeyDiagramDataView: SankeyDiagramDataView): void {
-            let nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
+            var nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
                 nextNodes: SankeyDiagramNode[] = [],
                 previousNodes: SankeyDiagramNode[] = [],
                 x: number = 0,
@@ -706,7 +706,7 @@ module powerbi.visuals.samples {
         }
 
         private findNodePositionByY(sankeyDiagramDataView: SankeyDiagramDataView): void {
-            let nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
+            var nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
                 links: SankeyDiagramLink[] = sankeyDiagramDataView.links,
                 currentX: number = 0,
                 index: number = 0,
@@ -719,7 +719,7 @@ module powerbi.visuals.samples {
             });
 
             nodes.forEach((node: SankeyDiagramNode) => {
-                let sumWeightOfLeftNodes: number = 0,
+                var sumWeightOfLeftNodes: number = 0,
                     sumWeightOfRightNodes: number = 0;
 
                 node.links.forEach((link: SankeyDiagramLink) => {
@@ -765,7 +765,7 @@ module powerbi.visuals.samples {
             links: SankeyDiagramLink[],
             scale: number): void {
 
-            let shiftByAxisY: number = 0,
+            var shiftByAxisY: number = 0,
                 currentX: number = 0,
                 index: number = 0;
 
@@ -787,7 +787,7 @@ module powerbi.visuals.samples {
 
             nodes.forEach((node: SankeyDiagramNode) => {
                 node.links = node.links.sort((firstLink: SankeyDiagramLink, secondLink: SankeyDiagramLink) => {
-                    let firstY: number,
+                    var firstY: number,
                         secondY: number;
 
                     firstY = firstLink.source === node
@@ -801,11 +801,11 @@ module powerbi.visuals.samples {
                     return firstY - secondY;
                 });
 
-                let shiftByAxisYOfLeftLink: number = 0,
+                var shiftByAxisYOfLeftLink: number = 0,
                     shiftByAxisYOfRightLink: number = 0;
 
                 node.links.forEach((link: SankeyDiagramLink) => {
-                    let shiftByAxisY: number = 0;
+                    var shiftByAxisY: number = 0;
 
                     link.height = link.weigth * scale;
 
@@ -829,7 +829,7 @@ module powerbi.visuals.samples {
         }
 
         private render(sankeyDiagramDataView: SankeyDiagramDataView): void {
-            let nodesSelection: D3.UpdateSelection,
+            var nodesSelection: D3.UpdateSelection,
                 linksSelection: D3.UpdateSelection;
 
             linksSelection = this.renderLinks(sankeyDiagramDataView);
@@ -839,7 +839,7 @@ module powerbi.visuals.samples {
         }
 
         private renderNodes(sankeyDiagramDataView: SankeyDiagramDataView): D3.UpdateSelection {
-            let nodesEnterSelection: D3.Selection,
+            var nodesEnterSelection: D3.Selection,
                 nodesSelection: D3.UpdateSelection,
                 nodeElements: D3.Selection;
 
@@ -889,7 +889,7 @@ module powerbi.visuals.samples {
                 })
                 .style("fill", (node: SankeyDiagramNode) => node.label.colour)
                 .style("display", (node: SankeyDiagramNode) => {
-                    let isNotVisibleLabel: boolean = false, 
+                    var isNotVisibleLabel: boolean = false, 
                         labelPositionByAxisX: number = this.getCurrentPositionOfLabelByAxisX(node);
 
                     isNotVisibleLabel = 
@@ -912,7 +912,7 @@ module powerbi.visuals.samples {
                     return null;
                 })
                 .text((node: SankeyDiagramNode) => {
-                    let maxWidth: number = sankeyDiagramDataView.settings.scale.x / 2 - node.width - SankeyDiagram.NodePadding;
+                    var maxWidth: number = sankeyDiagramDataView.settings.scale.x / 2 - node.width - SankeyDiagram.NodePadding;
 
                     if (this.getCurrentPositionOfLabelByAxisX(node) > maxWidth) {
                         return TextMeasurementService.getTailoredTextOrDefault({
@@ -943,13 +943,13 @@ module powerbi.visuals.samples {
         }
 
         private isLabelLargerWidth(node: SankeyDiagramNode): boolean {
-            let shiftByAxisX: number = node.x + node.width + SankeyDiagram.LabelPadding;
+            var shiftByAxisX: number = node.x + node.width + SankeyDiagram.LabelPadding;
 
             return shiftByAxisX + node.label.width > this.viewport.width;
         }
 
         private getCurrentPositionOfLabelByAxisX(node: SankeyDiagramNode): number {
-            let labelPositionByAxisX: number = this.getLabelPositionByAxisX(node);
+            var labelPositionByAxisX: number = this.getLabelPositionByAxisX(node);
 
             labelPositionByAxisX = labelPositionByAxisX > 0
                 ? labelPositionByAxisX + node.x + node.label.width + node.width
@@ -959,7 +959,7 @@ module powerbi.visuals.samples {
         }
 
         private renderLinks(sankeyDiagramDataView: SankeyDiagramDataView): D3.UpdateSelection {
-            let linksSelection: D3.UpdateSelection,
+            var linksSelection: D3.UpdateSelection,
                 linksElements: D3.Selection;
 
             linksElements = this.main
@@ -989,7 +989,7 @@ module powerbi.visuals.samples {
         }
 
         private getSvgPath(link: SankeyDiagramLink): string {
-            let x0: number,
+            var x0: number,
                 x1: number,
                 xi: D3.Transition.BaseInterpolate,
                 x2: number,
@@ -1090,7 +1090,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            let enumeration = new ObjectEnumerationBuilder(),
+            var enumeration = new ObjectEnumerationBuilder(),
                 settings: SankeyDiagramSettings;
 
             if (!this.dataView || !this.dataView.settings) {
@@ -1101,7 +1101,7 @@ module powerbi.visuals.samples {
 
             switch (options.objectName) {
                 case "labels": {
-                    let labels: VisualObjectInstance = {
+                    var labels: VisualObjectInstance = {
                         objectName: "labels",
                         displayName: "labels",
                         selector: null,
