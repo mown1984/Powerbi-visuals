@@ -29,7 +29,7 @@
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
- 
+
     export interface DotPlotConstructorOptions {
         animator?: IGenericAnimator;
         svg?: D3.Selection;
@@ -37,7 +37,7 @@ module powerbi.visuals.samples {
         radius?: number;
         strokeWidth?: number;
     }
-    
+
     export interface DotPlotDatapoint {
         x: number;
         y: number;
@@ -47,7 +47,7 @@ module powerbi.visuals.samples {
         identity: SelectionId;
         tooltipInfo?: TooltipDataItem[];
     }
-    
+
     export interface DotPlotData {
         dataPoints: DotPlotDatapoint[];
         legendData: LegendData;
@@ -163,17 +163,24 @@ module powerbi.visuals.samples {
             var legendData: LegendData = {
                 dataPoints: [],
             };
-            
-            if (!dataView.categorical || !dataView.categorical.values || dataView.categorical.values.length < 1) {
+
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                dataView.categorical.values.length < 1 ||
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                !dataView.categorical.categories[0]) {
                 return  {
                     dataPoints: dataPoints,
-                    legendData: legendData, 
+                    legendData: legendData,
                 };
             }
-            
+
             var catDv: DataViewCategorical = dataView.categorical;
             var series: DataViewValueColumns = catDv.values;
-            
+            var category: any[] = catDv.categories[0].values;
+
             if (!series[0].source.type.integer) {
                 var visualMessage: IVisualErrorMessage = {
                     message: 'This visual expects integer Values. Try adding a text field to create a "Count of" value.',
@@ -183,25 +190,27 @@ module powerbi.visuals.samples {
                 var warning: IVisualWarning = {
                     code: 'UnexpectedValueType',
                     getMessages: () => visualMessage,
-                }
+                };
                 host.setWarnings([warning]);
                 return {
                     dataPoints: dataPoints,
                     legendData: legendData,
                 };
             }
-            
+
             for (var i = 0, iLen = series.length; i < iLen; i++) {
-                var counts = [];
+                var counts = {};
                 var values = series[i].values;
                 for (var j = 0, jLen = values.length; j < jLen; j++) {
-                    var idx = values[j]; 
-                    counts[idx] ? counts[idx]++ : counts[idx] = 1;
+                    var idx = category[j];
+                    var value = values[j];
+                    if (!counts[idx]) counts[idx] = 0;
+                    counts[idx] += value;
                 }
-                
+
                 var legendText = series[i].source.displayName;
                 var color = colors.getColorByIndex(i).value;
-                
+
                 var data = d3.entries(counts);
                 var min = d3.min(data, d => d.value);
                 var max = d3.max(data, d => d.value);
@@ -218,7 +227,7 @@ module powerbi.visuals.samples {
 
                 for (var k = 0, kLen = data.length; k < kLen; k++) {
                     var y = dotsScale(data[k].value);
-                    
+
                     for (var level = 0; level < y; level++) {
                         var id = SelectionIdBuilder
                             .builder()
@@ -312,9 +321,9 @@ module powerbi.visuals.samples {
             var dataPoints = data.dataPoints;
 
             var values = dataView.categorical
-                && dataView.categorical.values 
-                && dataView.categorical.values.length > 0 ?
-                dataView.categorical.values[0].values
+                && dataView.categorical.categories 
+                && dataView.categorical.categories.length > 0 ?
+                dataView.categorical.categories[0].values
                 : [];
             var xValues = d3.set(values).values();
 
