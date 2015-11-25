@@ -334,9 +334,12 @@ module powerbi.visuals.samples {
             var yScale: D3.Scale.LinearScale = d3.scale.linear()
                 .domain([0, maxDots])
                 .range([height - radius, this.margin.top]);
-            if(data.legendData.dataPoints.length > 0) {
-                this.legend.drawLegend(data.legendData, viewport);
-            }
+
+            // temporary disabled as this raises the following error on PBI Portal
+            // Uncaught TypeError: Cannot read property 'registerDirectivesForEndPoint' of undefined
+            //if(data.legendData.dataPoints.length > 0) {
+            //    this.legend.drawLegend(data.legendData, viewport);
+            //}
             this.drawAxis(xValues, xScale, height);
             this.drawDotPlot(dataPoints, xScale, yScale);
         }
