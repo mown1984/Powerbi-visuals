@@ -280,11 +280,6 @@ module powerbi.visuals.samples {
 
             this.selectionManager = new SelectionManager({ hostServices: visualsInitOptions.host });
 
-            this.textProperties = {
-                fontFamily: this.root.style("font-family"),
-                fontSize: this.root.style("font-size")
-            };
-
             let style: IVisualStyle = visualsInitOptions.style;
 
             this.colours = style && style.colorPalette
@@ -302,6 +297,11 @@ module powerbi.visuals.samples {
             this.nodes = this.main
                 .append("g")
                 .classed(SankeyDiagram.Nodes["class"], true);
+
+            this.textProperties = {
+                fontFamily: this.root.style("font-family"),
+                fontSize: this.root.style("font-size")
+            };
         }
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
@@ -614,7 +614,10 @@ module powerbi.visuals.samples {
         private parseSettings(objects: DataViewObjects): SankeyDiagramSettings {
             let isVisibleLabels: boolean = false;
 
-            isVisibleLabels = DataViewObjects.getValue(objects, SankeyDiagram.Properties["labels"]["show"], SankeyDiagram.DefaultSettings.isVisibleLabels);
+            isVisibleLabels = DataViewObjects.getValue(
+                objects,
+                SankeyDiagram.Properties["labels"]["show"],
+                SankeyDiagram.DefaultSettings.isVisibleLabels);
 
             return {
                 isVisibleLabels: isVisibleLabels,
@@ -708,6 +711,19 @@ module powerbi.visuals.samples {
             });
 
             nodes.forEach((node: SankeyDiagramNode) => {
+                let sumWeightOfLeftNodes: number = 0,
+                    sumWeightOfRightNodes: number = 0;
+
+                node.links.forEach((link: SankeyDiagramLink) => {
+                    if (link.destination.x > node.x || link.source.x > node.x) {
+                        sumWeightOfRightNodes += link.weigth;
+                    } else if (link.destination.x < node.x || link.source.x < node.x) {
+                        sumWeightOfLeftNodes += link.weigth;
+                    }
+                });
+
+                node.weigth = Math.max(sumWeightOfLeftNodes, sumWeightOfRightNodes);
+
                 if (currentX !== node.x) {
                     index = 0;
                     currentX = node.x;
@@ -753,6 +769,7 @@ module powerbi.visuals.samples {
                 }
 
                 node.height = node.weigth * scale;
+
                 node.y = shiftByAxisY + SankeyDiagram.NodePadding * index;
 
                 shiftByAxisY += node.height;
@@ -762,25 +779,43 @@ module powerbi.visuals.samples {
 
             nodes.forEach((node: SankeyDiagramNode) => {
                 node.links = node.links.sort((firstLink: SankeyDiagramLink, secondLink: SankeyDiagramLink) => {
-                    if (firstLink.source === node) {
-                        return firstLink.destination.y - secondLink.destination.y;
-                    }
+                    let firstY: number,
+                        secondY: number;
 
-                    return firstLink.source.y - secondLink.source.y;
+                    firstY = firstLink.source === node
+                        ? firstLink.destination.y
+                        : firstLink.source.y;
+
+                    secondY = secondLink.source === node
+                        ? secondLink.destination.y
+                        : secondLink.source.y;
+
+                    return firstY - secondY;
                 });
 
-                let shiftByAxisYForLink: number = 0;
+                let shiftByAxisYOfLeftLink: number = 0,
+                    shiftByAxisYOfRightLink: number = 0;
 
                 node.links.forEach((link: SankeyDiagramLink) => {
+                    let shiftByAxisY: number = 0;
+
                     link.height = link.weigth * scale;
 
-                    if (link.source === node) {
-                        link.dySource = shiftByAxisYForLink;
-                    } else if (link.destination === node) {
-                        link.dyDestination = shiftByAxisYForLink;
+                    if (link.source.x < node.x || link.destination.x < node.x) {
+                        shiftByAxisY = shiftByAxisYOfLeftLink;
+
+                        shiftByAxisYOfLeftLink += link.height;
+                    } else if (link.source.x > node.x || link.destination.x > node.x) {
+                        shiftByAxisY = shiftByAxisYOfRightLink;
+
+                        shiftByAxisYOfRightLink += link.height;
                     }
 
-                    shiftByAxisYForLink += link.height;
+                    if (link.source === node) {
+                        link.dySource = shiftByAxisY;
+                    } else if (link.destination === node) {
+                        link.dyDestination = shiftByAxisY;
+                    }
                 });
             });
         }
