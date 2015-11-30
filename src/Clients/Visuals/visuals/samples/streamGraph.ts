@@ -61,7 +61,9 @@ module powerbi.visuals.samples {
     }
 
     export class StreamGraph implements IVisual {
-        public static Properties: StreamProperties = {
+        private static VisualClassName = 'streamGraph';
+
+        private static Properties: StreamProperties = {
             general: {
                 formatString: <DataViewObjectPropertyIdentifier>{
                     objectName: 'general',
@@ -69,6 +71,13 @@ module powerbi.visuals.samples {
                 }
             }
         };
+
+        private static Layer: ClassAndSelector = {
+            'class': 'layer',
+            selector: '.layer'
+        };
+
+        private static MaxNumberOfAxisXValues: number = 5;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [
@@ -119,16 +128,7 @@ module powerbi.visuals.samples {
             }
         };
 
-        private static VisualClassName = 'streamGraph';
-
-        private static Layer: ClassAndSelector = {
-            'class': 'layer',
-            selector: '.layer'
-        };
-
-        private static MaxNumberOfAxisXValues: number = 5;
-
-        private margin: IMargin = { left: 45, right: 25, bottom: 25, top: 25 };
+        private margin: IMargin = { left: 45, right: 30, bottom: 25, top: 25 };
 
         private viewport: IViewport;
 
@@ -141,7 +141,7 @@ module powerbi.visuals.samples {
         private legend: ILegend;
 
         public converter(dataView: DataView, colors: IDataColorPalette): StreamData {
-            let catDv: DataViewCategorical = dataView.categorical,
+            var catDv: DataViewCategorical = dataView.categorical,
                 values: DataViewValueColumns = catDv.values,
                 dataPoints: StreamDataPoint[][] = [],
                 legendData: LegendData = {
@@ -152,7 +152,7 @@ module powerbi.visuals.samples {
                 value: number = 0,
                 valueFormatter: IValueFormatter;
 
-            for (let i = 0, iLen = values.length; i < iLen; i++) {
+            for (var i = 0, iLen = values.length; i < iLen; i++) {
                 dataPoints.push([]);
 
                 if (values[i].source.groupName) {
@@ -165,11 +165,11 @@ module powerbi.visuals.samples {
                     });
                 }
 
-                for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
-                    let id: SelectionId = SelectionIdBuilder
-                            .builder()
-                            .withSeries(dataView.categorical.values, dataView.categorical.values[i])
-                            .createSelectionId(),
+                for (var k = 0, kLen = values[i].values.length; k < kLen; k++) {
+                    var id: SelectionId = SelectionIdBuilder
+                        .builder()
+                        .withSeries(dataView.categorical.values, dataView.categorical.values[i])
+                        .createSelectionId(),
                         y: number = values[i].values[k];
 
                     if (y > value) {
@@ -206,7 +206,7 @@ module powerbi.visuals.samples {
         }
 
         private parseAxisXData(source: DataViewMetadataColumn, values: any[]): StreamAxisXData {
-            let maxNumverOfValues: number = StreamGraph.MaxNumberOfAxisXValues;
+            var maxNumverOfValues: number = StreamGraph.MaxNumberOfAxisXValues;
 
             if (!values || !(values.length > 0)) {
                 return {
@@ -216,7 +216,7 @@ module powerbi.visuals.samples {
                 };
             }
 
-            let scale: D3.Scale.LinearScale | D3.Scale.TimeScale | D3.Scale.OrdinalScale,
+            var scale: D3.Scale.LinearScale | D3.Scale.TimeScale | D3.Scale.OrdinalScale,
                 valueFormatter: IValueFormatter = ValueFormatter.create({
                     format: ValueFormatter.getFormatString(
                         source,
@@ -237,26 +237,9 @@ module powerbi.visuals.samples {
                 scale.domain([values[0], values[values.length - 1]]);
                 scale.range(range);
             } else {
-                let shiftIndex: number = 0;
-
-                filteredValues = [];
-
                 scale = d3.scale.ordinal();
-
-                if (values.length % 2 > 0) {
-                    shiftIndex = Math.floor(values.length / 2);
-                } else {
-                    shiftIndex = values.length - 1;
-                }
-
-                shiftIndex = Math.max(1, shiftIndex);
-
-                for (let index: number = 0; index < values.length; index += shiftIndex) {
-                    filteredValues.push(values[index]);
-                }
-
-                scale.domain(filteredValues);
-                (<D3.Scale.OrdinalScale> scale).rangePoints(range);
+                scale.domain(values);
+                (<D3.Scale.OrdinalScale>scale).rangePoints(range);
             }
 
             return {
@@ -268,7 +251,7 @@ module powerbi.visuals.samples {
         }
 
         public init(options: VisualInitOptions): void {
-            let element: JQuery = options.element;
+            var element: JQuery = options.element;
 
             this.selectionManager = new SelectionManager({ hostServices: options.host });
 
@@ -291,12 +274,12 @@ module powerbi.visuals.samples {
 
             this.viewport = options.viewport;
 
-            let duration: number = options.suppressAnimations ? 0 : 250,
+            var duration: number = options.suppressAnimations ? 0 : 250,
                 dataView: DataView = this.dataView = options.dataViews[0],
                 data: StreamData = this.converter(dataView, this.colors),
                 dataPoints: StreamDataPoint[][] = data.dataPoints;
 
-            if (dataPoints.length === 0 ) {
+            if (dataPoints.length === 0) {
                 this.svg.selectAll(StreamGraph.Layer.selector).remove();
 
                 return;
@@ -304,26 +287,26 @@ module powerbi.visuals.samples {
 
             this.legend.drawLegend(data.legendData, this.viewport);
 
-            let height: number = options.viewport.height - this.margin.top;
+            var height: number = options.viewport.height - this.margin.top;
 
             this.svg.attr({
                 'width': this.viewport.width,
                 'height': height
             });
 
-            let stack: D3.Layout.StackLayout = d3.layout.stack();
+            var stack: D3.Layout.StackLayout = d3.layout.stack();
 
             if (this.getWiggle(dataView)) {
-                stack.offset('wiggle'); 
+                stack.offset('wiggle');
             }
 
-            let layers: StreamDataPoint[][] = stack(dataPoints);
+            var layers: StreamDataPoint[][] = stack(dataPoints);
 
-            let xScale: D3.Scale.LinearScale = d3.scale.linear()
+            var xScale: D3.Scale.LinearScale = d3.scale.linear()
                 .domain([0, dataPoints[0].length - 1])
                 .range([this.margin.left, this.viewport.width - this.margin.right]);
 
-            let yScale: D3.Scale.LinearScale = d3.scale.linear()
+            var yScale: D3.Scale.LinearScale = d3.scale.linear()
                 .domain([0, d3.max(layers, (layer) => {
                     return d3.max(layer, (d) => {
                         return d.y0 + d.y;
@@ -331,15 +314,15 @@ module powerbi.visuals.samples {
                 })])
                 .range([height - this.margin.bottom, this.margin.top]);
 
-            let area: D3.Svg.Area = d3.svg.area()
+            var area: D3.Svg.Area = d3.svg.area()
                 .interpolate('basis')
                 .x(d => xScale(d.x))
                 .y0(d => yScale(d.y0))
                 .y1(d => yScale(d.y0 + d.y));
 
-            let selectionManager: SelectionManager = this.selectionManager;
+            var selectionManager: SelectionManager = this.selectionManager;
 
-            let selection: D3.UpdateSelection = this.svg.selectAll(StreamGraph.Layer.selector)
+            var selection: D3.UpdateSelection = this.svg.selectAll(StreamGraph.Layer.selector)
                 .data(layers);
 
             selection.enter()
@@ -347,7 +330,7 @@ module powerbi.visuals.samples {
                 .classed(StreamGraph.Layer["class"], true);
 
             selection
-                .style("fill",(d, i) => this.colors.getColorByIndex(i).value)
+                .style("fill", (d, i) => this.colors.getColorByIndex(i).value)
                 .on('click', function (d) {
                     selectionManager.select(d[0].identity).then(ids=> {
                         if (ids.length > 0) {
@@ -368,30 +351,41 @@ module powerbi.visuals.samples {
         }
 
         private drawAxis(data: StreamData, yScale: D3.Scale.LinearScale) {
-            let shiftY: number = this.viewport.height - this.margin.bottom - this.margin.top;
+            var shiftY: number = this.viewport.height - this.margin.bottom - this.margin.top,
+                shiftX: number = this.viewport.width - this.margin.left - this.margin.right,
+                textPropertiesFunction = this.getTextPropertiesFunction(),
+                xAxis: D3.Svg.Axis = d3.svg.axis();
 
-            let xAxis: D3.Svg.Axis = d3.svg.axis()
-                .scale(data.axisXData.scale)
+            xAxis.scale(data.axisXData.scale)
                 .orient("bottom")
-                .ticks(StreamGraph.MaxNumberOfAxisXValues)
-                .tickFormat((item: any) => {
+                .tickFormat(((item: any, index: number): any => {
                     if (data.axisXData.valueFormatter) {
-                        return data.axisXData.valueFormatter.format(item);
+                        item = data.axisXData.valueFormatter.format(item);
+                    }
+
+                    if (index != null && xAxis.tickValues() &&
+                        (index === 0 || index === xAxis.tickValues().length - 1)) {
+                        item = TextMeasurementService.getTailoredTextOrDefault(
+                            textPropertiesFunction(item),
+                            (index ? this.margin.right : this.margin.left) * 2);
                     }
 
                     return item;
-                });
+                }).bind(xAxis));
 
-            let yAxis: D3.Svg.Axis = d3.svg.axis()
+            var yAxis: D3.Svg.Axis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
-                .tickFormat((item: any) => {
+                .tickFormat((item: any): any => {
                     if (data.valueFormatter) {
                         return data.valueFormatter.format(item);
                     }
 
                     return item;
                 });
+
+            this.setMaxTicks(xAxis, shiftX, data.axisXData.maxNumverOfValues);
+            this.setMaxTicks(yAxis, shiftY);
 
             this.xAxis.attr("class", "x axis")
                 .attr("transform", SVGUtil.translate(0, shiftY))
@@ -402,12 +396,131 @@ module powerbi.visuals.samples {
                 .call(yAxis);
         }
 
+        private setMaxTicks(axis: D3.Svg.Axis, maxSize: number, maxValue?: number): void {
+            var maxTicks = maxValue === undefined
+                ? this.getTicksByAxis(axis).length
+                : Math.min(maxValue, this.getTicksByAxis(axis).length);
+
+            if (axis.scale().domain.toString() === d3.scale.linear().domain.toString()) {
+                axis.ticks(this.getFittedTickLength(axis, maxSize, maxTicks));
+            }
+            else {
+                axis.tickValues(this.getFittedTickValues(axis, maxSize, maxTicks));
+            }
+        }
+
+        private getFittedTickLength(axis: D3.Svg.Axis, maxSize: number, maxTicks: number): number {
+            for (var ticks: any[] = this.getTicksByAxis(axis), measureTickFunction = this.getMeasureTickFunction(axis, ticks);
+                maxTicks > 0 && maxSize > 0 && (this.measureTicks(ticks, measureTickFunction) > maxSize || axis.scale().ticks([maxTicks]).length > maxTicks);
+                maxTicks--, ticks = this.getTicksByAxis(axis)) {
+                axis.ticks(maxTicks);
+            }
+
+            return maxTicks;
+        }
+
+        private getFittedTickValues(axis: D3.Svg.Axis, maxSize: number, maxTicks: number): any[] {
+            var ticks: any[] = this.getTicksByAxis(axis),
+                measureTickFunction: (any) => number = this.getMeasureTickFunction(axis, ticks);
+
+            for (var currentMaxTicks: number = maxTicks, indexes: number[] = [];
+                maxTicks > 0 && maxSize > 0;
+                currentMaxTicks-- , indexes = []) {
+                switch (currentMaxTicks) {
+                    case 0:
+                        return [];
+                    case 1:
+                        indexes = [0];
+                        break;
+                    case 2:
+                        indexes = [0, ticks.length - 1];
+                        break;
+                    default:
+                        var takeEvery: number = ticks.length / (currentMaxTicks - 1);
+
+                        for (var i = 0; i < currentMaxTicks - 1; i++) {
+                            indexes.push(Math.round(takeEvery * i));
+                        }
+
+                        indexes.push(ticks.length - 1);
+                        break;
+                }
+
+                var ticksIndexes: any[][] = indexes.map(x => [ticks[x], x]),
+                    maxWidthOf2Ticks: number = (maxSize / ticks.length) * 2,
+                    tickPairsWidths: any[] = [];
+
+                ticksIndexes.reduce((a, b) => {
+                    tickPairsWidths.push([measureTickFunction(a[0]) + measureTickFunction(b[0]), (b[1] - a[1]) * maxWidthOf2Ticks]);
+                    return b;
+                });
+
+                if (!tickPairsWidths.some(x => x[0] > x[1])) {
+                    return ticksIndexes.map(x => x[0]);
+                }
+            }
+
+            return [];
+        }
+
+        private measureTicks(ticks: any[], measureTickFunction: (number) => any): number {
+            return ticks.map((x: any) => measureTickFunction(x)).reduce((a: number, b: number) => a + b);
+        }
+
+        private getTicksByAxis(axis: D3.Svg.Axis): any[] {
+            var scale = axis.scale();
+            var result: any = axis.tickValues() === null
+                ? scale.ticks
+                    ? scale.ticks.apply(scale, axis.ticks())
+                    : scale.domain()
+                : axis.tickValues();
+
+            return result.length === undefined ? [result] : result;
+        }
+
+        private getMeasureTickFunction(axis: D3.Svg.Axis, ticks: string[]): (number) => any {
+            var measureFunction = axis.orient() === "top" || axis.orient() === "bottom"
+                ? TextMeasurementService.measureSvgTextWidth
+                : TextMeasurementService.measureSvgTextHeight;
+
+            var textPropertiesFunction: (string) => TextProperties = this.getTextPropertiesFunction(),
+                cache = {};
+
+            return function (x: any): number {
+                return cache[x]
+                    ? cache[x]
+                    : cache[x] = measureFunction(textPropertiesFunction(axis.tickFormat()(x))) + axis.tickPadding();
+            };
+        }
+
+        private getTextPropertiesFunction(): (string) => TextProperties {
+            var fontFamily: string = this.fontFamily,
+                fontSize: string = this.fontSize,
+                fontWeight: string = this.fontWeight;
+
+            return function (text: string): TextProperties {
+                return { text: text, fontFamily: fontFamily, fontSize: fontSize, fontWeight: fontWeight };
+            };
+        }
+
+        private get fontSize(): string {
+            return this.svg.style('font-size');
+        }
+
+        private get fontFamily(): string {
+            return this.svg.style('font-family');
+        }
+
+        private get fontWeight(): string {
+            return this.svg.style('font-weight');
+        }
+
         private getWiggle(dataView: DataView) {
             if (dataView) {
-                let objects = dataView.metadata.objects;
+                var objects = dataView.metadata.objects;
 
                 if (objects) {
-                    let general = objects['general'];
+                    var general = objects['general'];
 
                     if (general) {
                         return <boolean>general['wiggle'];
@@ -419,12 +532,12 @@ module powerbi.visuals.samples {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let instances: VisualObjectInstance[] = [],
+            var instances: VisualObjectInstance[] = [],
                 dataView = this.dataView;
 
             switch (options.objectName) {
                 case 'general':
-                    let general: VisualObjectInstance = {
+                    var general: VisualObjectInstance = {
                         objectName: 'general',
                         displayName: 'General',
                         selector: null,

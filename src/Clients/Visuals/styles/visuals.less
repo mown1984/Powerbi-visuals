@@ -1556,7 +1556,12 @@ div.ql-toolbar {
 }
 
 .streamGraph {
-    .axis{
+    @streamGraphFontSize: 11px;
+
+    font-family: @regularFontFamily;
+    font-size: @streamGraphFontSize;
+
+    .axis {
         path, line {
             fill: none;
             stroke: #666;
@@ -1564,8 +1569,7 @@ div.ql-toolbar {
         }
 
         text {
-            font-family: sans-serif;
-            font-size: 11px;
+            font-size: @streamGraphFontSize;
         }
     }
 }
