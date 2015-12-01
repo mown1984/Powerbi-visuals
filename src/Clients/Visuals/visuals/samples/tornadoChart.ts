@@ -760,7 +760,7 @@ module powerbi.visuals.samples {
                     color: item.fill,
                     icon: LegendIcon.Box,
                     selected: false,
-                    identity: null
+                    identity: item.selectionId
                 };
             });
 
