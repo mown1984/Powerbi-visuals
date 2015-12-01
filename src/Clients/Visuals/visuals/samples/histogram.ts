@@ -83,34 +83,42 @@ module powerbi.visuals.samples {
         right: string;
     }
 
+    interface HistogramProperty {
+        [propertyName: string]: DataViewObjectPropertyIdentifier;
+    }
+
+    interface HistogramProperties {
+        [objectName: string]: HistogramProperty;
+    }
+
     export class Histogram implements IVisual {
         private static ClassName: string = "histogram";
         private static FrequencyText: string = "Frequency";
         private static DensityText: string = "Density";
 
-        private static Properties: any = {
+        private static Properties: HistogramProperties = {
             general: {
-                bins: <DataViewObjectPropertyIdentifier> {
+                bins: {
                     objectName: "general",
                     propertyName: "bins"
                 },
-                frequency: <DataViewObjectPropertyIdentifier> {
+                frequency: {
                     objectName: "general",
                     propertyName: "frequency"
                 },
-                formatString: <DataViewObjectPropertyIdentifier>{
+                formatString: {
                     objectName: "general",
                     propertyName: "formatString"
                 }
             },
             dataPoint: {
-                fill: <DataViewObjectPropertyIdentifier> {
+                fill: {
                     objectName: "dataPoint",
                     propertyName: "fill"
                 }
             },
             labels: {
-                labelPrecision: <DataViewObjectPropertyIdentifier>{
+                labelPrecision: {
                     objectName: "labels",
                     propertyName: "labelPrecision"
                 }
@@ -166,26 +174,25 @@ module powerbi.visuals.samples {
                 displayName: "Frequency"
             }],
             dataViewMappings: [{
-                conditions: [{
-                    "Values": { min: 1, max: 1 },
-                    "Frequency": { min: 0, max: 1 }
-                }],
+                conditions: [{ "Values": { min: 1, max: 1 }, "Frequency": { min: 0, max: 1 } }],
                 categorical: {
-                    categories: { bind: { to: "Values" } },
+                    categories: { 
+                        bind: { to: "Values" },
+                        dataReductionAlgorithm: { top: {} }
+                    },
                     values: { for: { in: "Frequency" } }
                 }
             }],
+            sorting: {
+                implicit: {
+                    clauses: [{ role: "Values", direction: SortDirection.Ascending }]
+                }
+            },
             objects: {
                 general: {
                     displayName: data.createDisplayNameGetter("Visual_General"),
                     properties: {
-                        formatString: {
-                            type: {
-                                formatting: {
-                                    formatString: true
-                                }
-                            },
-                        },
+                        formatString: { type: { formatting: { formatString: true } } },
                         bins: {
                             displayName: "Bins",
                             type: { numeric: true }
@@ -330,7 +337,7 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            let histogramSettings: HistogramSettings,
+            let settings: HistogramSettings,
                 histogramLayout: D3.Layout.HistogramLayout,
                 values: HistogramValue[],
                 numericalValues: number[] = [],
@@ -339,7 +346,9 @@ module powerbi.visuals.samples {
                 yScale: D3.Scale.LinearScale,
                 valueFormatter: IValueFormatter,
                 frequencies: number[] = [],
-                identities: DataViewScopeIdentity[] = [];
+                identities: DataViewScopeIdentity[] = [],
+                shiftByValues: number = 0,
+                sumFrequency: number = 0;
 
             if (dataView.categorical.values &&
                 dataView.categorical.values[0] &&
@@ -352,9 +361,9 @@ module powerbi.visuals.samples {
                 identities = dataView.categorical.categories[0].identity;
             }
 
-            histogramSettings = this.parseSettings(dataView);
+            settings = this.parseSettings(dataView);
 
-            if (!histogramSettings) {
+            if (!settings) {
                 return null;
             }
 
@@ -364,18 +373,33 @@ module powerbi.visuals.samples {
                 identities);
 
             values.forEach((value: HistogramValue) => {
-                for (let i: number = 0; i < value.frequency; i++) {
-                    numericalValues.push(value.value);
-                }
+                numericalValues.push(value.value);
+
+                sumFrequency += value.frequency;
             });
 
             histogramLayout = d3.layout.histogram();
 
-            if (histogramSettings.bins && histogramSettings.bins > this.MinNumberOfBins) {
-                histogramLayout = histogramLayout.bins(histogramSettings.bins);
+            if (settings.bins && settings.bins > this.MinNumberOfBins) {
+                histogramLayout = histogramLayout.bins(settings.bins);
             }
 
-            data = histogramLayout.frequency(histogramSettings.frequency)(numericalValues);
+            data = histogramLayout.frequency(settings.frequency)(numericalValues);
+
+            data.forEach((bin: D3.Layout.Bin) => {
+                let filteredValues: HistogramValue[] = values.slice(shiftByValues, shiftByValues + bin.length),
+                    frequency: number;
+
+                frequency = filteredValues.reduce((previousValue: number, currentValue: HistogramValue): number => {
+                    return previousValue + currentValue.frequency;
+                }, 0);
+
+                bin.y = settings.frequency
+                    ? frequency
+                    : frequency / sumFrequency;
+
+                shiftByValues += bin.length;
+            });
 
             xScale = d3.scale.linear()
                 .domain([
@@ -392,16 +416,18 @@ module powerbi.visuals.samples {
                 .range([this.viewport.height - this.LegendSize, 0]);
 
             valueFormatter = ValueFormatter.create({
-                format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, Histogram.Properties.general.formatString),
-                value: values[0],
-                precision: histogramSettings.precision
+                format: ValueFormatter.getFormatString(
+                    dataView.categorical.categories[0].source, Histogram.Properties["general"]["formatString"]),
+                value: values[0].value,
+                value2: values[values.length - 1],
+                precision: settings.precision
             });
 
             return {
                 xScale: xScale,
                 yScale: yScale,
-                settings: histogramSettings,
-                data: this.getData(values, numericalValues, data, histogramSettings, valueFormatter),
+                settings: settings,
+                data: this.getData(values, numericalValues, data, settings, valueFormatter),
                 formatter: valueFormatter
             };
         }
@@ -410,7 +436,10 @@ module powerbi.visuals.samples {
             let values: HistogramValue[] = [];
 
             sourceValues.forEach((item: number, index: number) => {
-                let frequency: number = 1;
+                let frequency: number = 1,
+                    value: number = Number(item);
+
+                value = isNaN(value) ? 0 : value;
 
                 if (frequencies &&
                         frequencies[index] &&
@@ -420,7 +449,7 @@ module powerbi.visuals.samples {
                 }
 
                 values.push({
-                    value: item,
+                    value: value,
                     frequency: frequency,
                     selectionId: SelectionId.createWithId(identities[index])
                 });
@@ -438,7 +467,7 @@ module powerbi.visuals.samples {
             let minValue: number = d3.min(numericalValues),
                 maxValue: number = d3.max(numericalValues);
 
-            return data.map((bin: HistogramData, index: number) => {
+            return data.map((bin: HistogramData, index: number): HistogramData => {
                 bin.range = this.getRange(minValue, maxValue, bin.dx, index);
                 bin.tooltipInfo = this.getTooltipData(bin.y, bin.range, settings, index === 0, valueFormatter);
                 bin.selectionIds = this.getSelectionIds(values, bin, index);
@@ -451,10 +480,7 @@ module powerbi.visuals.samples {
             let leftBorder: number = minValue + index * step,
                 rightBorder: number = leftBorder + step;
 
-            return [
-                leftBorder,
-                rightBorder
-            ];
+            return [leftBorder, rightBorder];
         }
 
         private getTooltipData(
@@ -498,13 +524,17 @@ module powerbi.visuals.samples {
                 objects: DataViewObjects,
                 colorHelper: ColorHelper;
 
-            colorHelper = new ColorHelper(this.colors, Histogram.Properties.dataPoint.fill, Histogram.DefaultHistogramSettings.fillColor);
+            colorHelper = new ColorHelper(
+                this.colors,
+                Histogram.Properties["dataPoint"]["fill"],
+                Histogram.DefaultHistogramSettings.fillColor);
 
             histogramSettings.displayName = Histogram.DefaultHistogramSettings.displayName;
             histogramSettings.fillColor = Histogram.DefaultHistogramSettings.fillColor;
             histogramSettings.bins = Histogram.DefaultHistogramSettings.bins;
             histogramSettings.frequency = Histogram.DefaultHistogramSettings.frequency;
-            histogramSettings.displayName = dataView.metadata.columns[0].displayName || Histogram.DefaultHistogramSettings.displayName;
+            histogramSettings.displayName = 
+                dataView.metadata.columns[0].displayName || Histogram.DefaultHistogramSettings.displayName;
 
             objects = this.getObjectsFromDataView(dataView);
 
@@ -523,7 +553,7 @@ module powerbi.visuals.samples {
 
             binsNumber = Number(DataViewObjects.getValue<number>(
                 objects,
-                Histogram.Properties.general.bins,
+                Histogram.Properties["general"]["bins"],
                 Histogram.DefaultHistogramSettings.bins));
 
             if (!binsNumber || isNaN(binsNumber) || binsNumber <= this.MinNumberOfBins) {
@@ -536,14 +566,14 @@ module powerbi.visuals.samples {
         private getFrequency(objects: DataViewObjects): boolean {
             return DataViewObjects.getValue<boolean>(
                 objects,
-                Histogram.Properties.general.frequency,
+                Histogram.Properties["general"]["frequency"],
                 Histogram.DefaultHistogramSettings.frequency);
         }
 
         private getPrecision(objects: DataViewObjects): number {
             let precision: number = DataViewObjects.getValue(
                 objects,
-                Histogram.Properties.labels.labelPrecision,
+                Histogram.Properties["labels"]["labelPrecision"],
                 Histogram.DefaultHistogramSettings.precision);
 
             if (precision <= this.MinPrecision) {
