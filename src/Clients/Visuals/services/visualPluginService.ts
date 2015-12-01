@@ -322,6 +322,8 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
                 animator: new BaseAnimator()
             }));
+            // Enhanced Scatter Chart
+            createPlugin(plugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {

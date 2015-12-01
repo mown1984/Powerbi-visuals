@@ -1669,3 +1669,36 @@ div.ql-toolbar {
         }
     }
 }
+
+.enhancedScatterChart {
+    @enhancedScatterChartColor: #777777;
+
+    path {
+        fill: none;
+        stroke-width: 3px;
+    }
+
+    .notSelected {
+        opacity: 0.6;
+    }
+
+    .selected {
+        opacity: 1;
+    }
+
+    .axisGraphicsContext {
+        text {
+            font-family: @regularFontFamily;
+            font-size: 11px;
+            fill: @enhancedScatterChartColor;
+        }
+    }
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: @enhancedScatterChartColor;
+            shape-rendering: crispEdges;
+        }
+    }
+}

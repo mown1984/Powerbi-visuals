@@ -344,4 +344,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.AreaRangeChart.capabilities,
         create: () => new samples.AreaRangeChart()
     };
+
+    export var enhancedScatterChart: IVisualPlugin = {
+        name: 'enhancedScatterChart',
+        capabilities: samples.EnhancedScatterChart.capabilities,
+        create: () => new samples.EnhancedScatterChart()
+    };
 }

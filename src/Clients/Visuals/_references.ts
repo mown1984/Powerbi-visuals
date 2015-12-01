@@ -198,4 +198,6 @@
 
 /// <reference path="visuals/donutChart.ts"/>
 
+/// <reference path="visuals/samples/enhancedScatterChart.ts" />
+
 /// <reference path="plugins.ts"/>
