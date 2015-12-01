@@ -33,14 +33,18 @@ module powerbi.visuals {
                 name: 'Category',
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Legend'),
+                description: data.createDisplayNameGetter('Role_DisplayName_LegendDescription')
             }, {
                 name: 'Series',
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Details'),
+                description: data.createDisplayNameGetter('Role_DisplayName_DetailsDonutChartDescription'),
+
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
+                description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription')
             }
         ],
         objects: {
@@ -54,6 +58,7 @@ module powerbi.visuals {
             },
             legend: {
                 displayName: data.createDisplayNameGetter('Visual_Legend'),
+                description: data.createDisplayNameGetter('Visual_LegendDescription'),
                 properties: {
                     show: {
                         displayName: data.createDisplayNameGetter('Visual_Show'),
@@ -61,20 +66,24 @@ module powerbi.visuals {
                     },
                     position: {
                         displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
-                        type: { formatting: { legendPosition: true } }
+                        description: data.createDisplayNameGetter('Visual_LegendPositionDescription'),
+                        type: { enumeration: legendPosition.type }
                     },
                     showTitle: {
                         displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
+                        description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
                         type: { bool: true }
                     },
                     titleText: {
-                        displayName: data.createDisplayNameGetter('Visual_LegendTitleText'),
+                        displayName: data.createDisplayNameGetter('Visual_LegendName'),
+                        description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                         type: { text: true }
                     }
                 }
             },
             dataPoint: {
                 displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                description: data.createDisplayNameGetter('Visual_DataPointDescription'),
                 properties: {
                     defaultColor: {
                         displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
@@ -92,26 +101,31 @@ module powerbi.visuals {
             },
             labels: {
                 displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
+                description: data.createDisplayNameGetter('Visual_DataPointsLabelsDescription'),
                 properties: {
                     show: {
                         type: { bool: true }
                     },
                     color: {
                         displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
+                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
                         type: { fill: { solid: { color: true } } }
                     },
                     labelDisplayUnits: {
                         displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                        description: data.createDisplayNameGetter('Visual_DisplayUnitsDescription'),
                         type: { formatting: { labelDisplayUnits: true } }
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
+                        description: data.createDisplayNameGetter('Visual_PrecisionDescription'),
                         type: { numeric: true }
                     },
                 },
             },
             categoryLabels: {
                 displayName: data.createDisplayNameGetter('Visual_CategoryLabels'),
+                description: data.createDisplayNameGetter('Visual_CategoryLabelsDescription'),
                 properties: {
                     show: {
                         type: { bool: true }

@@ -178,4 +178,22 @@ module powerbi.visuals {
             return visualMessage;
         }
     }
+
+    export class ZeroValueWarning implements IVisualWarning {
+        public get code(): string {
+            return "ZeroValuesNotSupported";
+        }
+
+        public getMessages(resourceProvider: IStringResourceProvider): IVisualErrorMessage {
+            let messageKey: string = 'VisualWarning_ZeroValues'; 
+
+            let visualMessage: IVisualErrorMessage = {
+                message: resourceProvider.get(messageKey),
+                title: '',
+                detail: '',
+            };
+
+            return visualMessage;
+        }
+    }
 }

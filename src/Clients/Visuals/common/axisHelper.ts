@@ -94,6 +94,10 @@ module powerbi.visuals {
          * (optional) Whether log scale is possible on the current domain.
          */
         isLogScaleAllowed?: boolean;
+        /** 
+         * (optional) Whether domain contains zero value and log scale is enabled.
+         */
+        hasDisallowedZeroInDomain?: boolean;
     }
 
     export interface IMargin {
@@ -158,6 +162,10 @@ module powerbi.visuals {
         categoryThickness?: number;
         /** (optional) the scale type of the axis. e.g. log, linear */
         scaleType?: string;
+        /** (optional) user selected display units */
+        axisDisplayUnits?: number;
+        /** (optional) user selected precision */
+        axisPrecision?: number;
     }
 
     export interface CreateScaleResult {
@@ -640,7 +648,9 @@ module powerbi.visuals {
                 isVertical = !!options.isVertical,
                 useTickIntervalForDisplayUnits = !!options.useTickIntervalForDisplayUnits, // DEPRECATE: same meaning as isScalar?
                 getValueFn = options.getValueFn,
-                categoryThickness = options.categoryThickness;
+                categoryThickness = options.categoryThickness,
+                axisDisplayUnits = options.axisDisplayUnits,
+                axisPrecision = options.axisPrecision;
 
             let formatString = valueFormatter.getFormatString(metaDataColumn, formatStringProp);
             let dataType: ValueType = this.getCategoryValueType(metaDataColumn, isScalar);
@@ -684,7 +694,9 @@ module powerbi.visuals {
                 bestTickCount,
                 tickValues,
                 getValueFn,
-                useTickIntervalForDisplayUnits);
+                useTickIntervalForDisplayUnits,
+                axisDisplayUnits,
+                axisPrecision);
 
             // sets default orientation only, cartesianChart will fix y2 for comboChart
             // tickSize(pixelSpan) is used to create gridLines
@@ -725,7 +737,7 @@ module powerbi.visuals {
                 categoryThickness: categoryThickness,
                 outerPadding: outerPadding,
                 usingDefaultDomain: scaleResult.usingDefaultDomain,
-                isLogScaleAllowed: isLogScaleAllowed
+                isLogScaleAllowed: isLogScaleAllowed,
             };
         }
 
@@ -817,7 +829,9 @@ module powerbi.visuals {
             bestTickCount: number,
             tickValues: any[],
             getValueFn: any,
-            useTickIntervalForDisplayUnits: boolean = false): IValueFormatter {
+            useTickIntervalForDisplayUnits: boolean = false,
+            axisDisplayUnits?: number,
+            axisPrecision?: number): IValueFormatter {
 
             let formatter: IValueFormatter;
             if (dataType.dateTime) {
@@ -845,9 +859,9 @@ module powerbi.visuals {
                     debug.assertFail('getValueFn must be supplied for ordinal tickValues');
                 }
                 if (useTickIntervalForDisplayUnits && isScalar && tickValues.length > 1) {
-                    let domainMin = tickValues[1] - tickValues[0];
+                    let displayUnit = axisDisplayUnits ? axisDisplayUnits: tickValues[1] - tickValues[0];
                     let domainMax = 0; //force tickInterval to be used with display units
-                    formatter = valueFormatter.create({ format: formatString, value: domainMin, value2: domainMax, allowFormatBeautification: true });
+                    formatter = valueFormatter.create({ format: formatString, value: displayUnit, value2: domainMax, allowFormatBeautification: true, precision: axisPrecision });
                 }
                 else {
                     // do not use display units, just the basic value formatter
@@ -1211,11 +1225,13 @@ module powerbi.visuals {
             debug.assert(isLogScalePossible(dataDomain), "dataDomain cannot include 0");
             let scale = d3.scale.log()
                 .range([outerPadding, pixelSpan - outerPadding])
-                .domain([dataDomain[0], dataDomain[1]]);
+                .domain([dataDomain[0], dataDomain[1]])
+                .clamp(true);
             
             if (niceCount) {
                 scale.nice(niceCount);
             }
+
             return scale;
         }
 

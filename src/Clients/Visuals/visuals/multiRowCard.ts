@@ -28,6 +28,8 @@
 
 module powerbi.visuals {
     import getKpiImageMetadata = powerbi.visuals.KpiUtil.getKpiImageMetadata;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface CardItemData {
         caption: string;
@@ -98,48 +100,19 @@ module powerbi.visuals {
             objectName: 'general',
             propertyName: 'formatString',
         };
+
         private static multiRowCardClass = 'multiRowCard';
-        private static Card: ClassAndSelector = {
-            class: 'card',
-            selector: '.card'
-        };
-
-        private static Title: ClassAndSelector = {
-            class: 'title',
-            selector: '.title'
-        };
-
-        private static ImageTitle: ClassAndSelector = {
-            class: 'title',
-            selector: MultiRowCard.Title.selector + ' img'
-        };
-
-        private static KPITitle: ClassAndSelector = {
-            class: 'kpiTitle',
-            selector: MultiRowCard.Title.selector + ' kpiTitle'
-        };
-
-        private static CardItemContainer: ClassAndSelector = {
-            class: 'cardItemContainer',
-            selector: '.cardItemContainer'
-        };
-
-        private static Caption: ClassAndSelector = {
-            class: 'caption',
-            selector: '.caption'
-        };
-
-        private static ImageCaption: ClassAndSelector = {
-            class: '',
-            selector: MultiRowCard.Caption.selector + ' img'
-        };
-
-        private static Details: ClassAndSelector = {
-            class: 'details',
-            selector: '.details'
-        };
+        private static Card: ClassAndSelector = createClassAndSelector('card');
+        private static Title: ClassAndSelector = createClassAndSelector('title');
+        private static CardItemContainer: ClassAndSelector = createClassAndSelector('cardItemContainer');
+        private static Caption: ClassAndSelector = createClassAndSelector('caption');
+        private static Details: ClassAndSelector = createClassAndSelector('details');
         private static TitleUrlSelector: string = MultiRowCard.Title.selector + ' a';
         private static CaptionUrlSelector: string = MultiRowCard.Caption.selector + ' a';
+        private static TitleImageSelector: string = MultiRowCard.Title.selector + ' img';
+        private static CaptionImageSelector: string = MultiRowCard.Caption.selector + ' img';
+        private static KPITitle: ClassAndSelector = createClassAndSelector('kpiTitle');
+
         /**
          * Cards have specific styling so defined inline styles and also to support theming and improve performance.
          */
@@ -290,7 +263,7 @@ module powerbi.visuals {
                     let statusGraphic: string;
 
                     if (statusGraphicInfo) {
-                        columnCaption = statusGraphicInfo.caption;
+                        columnCaption = statusGraphicInfo.class;
                         statusGraphic = statusGraphicInfo.statusGraphic;
                     }
 
@@ -416,7 +389,7 @@ module powerbi.visuals {
                         .text((d: CardData) => d.title);
 
                     rowSelection
-                        .selectAll(MultiRowCard.ImageTitle.selector)
+                        .selectAll(MultiRowCard.TitleImageSelector)
                         .attr('src', (d: CardData) => d.title);
                     setImageStyle(rowSelection.selectAll(MultiRowCard.Title.selector), style.imageTitle);
 
@@ -439,7 +412,7 @@ module powerbi.visuals {
                     });
 
                 cardSelection
-                    .selectAll(MultiRowCard.ImageCaption.selector)
+                    .selectAll(MultiRowCard.CaptionImageSelector)
                     .attr('src', (d: CardItemData) => d.caption)
                     .style(style.imageCaption);
 

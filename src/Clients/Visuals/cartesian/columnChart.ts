@@ -155,8 +155,8 @@ module powerbi.visuals {
     export interface IColumnChartStrategy {
         setData(data: ColumnChartData): void;
         setupVisualProps(columnChartProps: ColumnChartContext): void;
-        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string): IAxisProperties;
-        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string): IAxisProperties;
+        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
+        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
         drawColumns(useAnimation: boolean): ColumnChartDrawInfo;
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
@@ -176,11 +176,6 @@ module powerbi.visuals {
         seriesObjects: DataViewObjects[][];
     }
 
-    export interface ClassAndSelector {
-        class: string;
-        selector: string;
-    }
-
     export interface ColumnChartDrawInfo {
         shapesSelection: D3.Selection;
         viewport: IViewport;
@@ -198,10 +193,7 @@ module powerbi.visuals {
      */
     export class ColumnChart implements ICartesianVisual {
         private static ColumnChartClassName = 'columnChart';
-        public static SeriesClasses: ClassAndSelector = {
-            class: 'series',
-            selector: '.series'
-        };
+        public static SeriesClasses: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('series');
 
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
@@ -253,6 +245,7 @@ module powerbi.visuals {
 
             let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
             let categoryItems = dataViewCategories.for.in.items;
+            let dataViewValues = <data.CompiledDataViewGroupedRoleMapping>dataViewMapping.categorical.values;
             if (!ArrayExtensions.isUndefinedOrEmpty(categoryItems)) {
                 let categoryType = categoryItems[0].type;
 
@@ -260,8 +253,27 @@ module powerbi.visuals {
                 if (dataViewMapping.metadata)
                     objects = dataViewMapping.metadata.objects;
 
-                if (CartesianChart.getIsScalar(objects, columnChartProps.categoryAxis.axisType, categoryType))
+                if (CartesianChart.getIsScalar(objects, columnChartProps.categoryAxis.axisType, categoryType)) {
                     dataViewCategories.dataReductionAlgorithm = { sample: {} };
+
+                    debug.assert(
+                        dataViewValues &&
+                        dataViewValues.group &&
+                        dataViewValues.group.select &&
+                        dataViewValues.group.select.length === 2 &&
+                        dataViewValues.group.select[0] &&
+                        (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for &&
+                        (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for.in &&
+                        (<data.CompiledDataViewRoleBindMapping>dataViewValues.group.select[1]).bind &&
+                        (<data.CompiledDataViewRoleBindMapping>dataViewValues.group.select[1]).bind.to != null,
+                        'CompiledDataViewValues structure is unexpected, this structure should match the declared structure in capabilities.');
+
+                    let yRoleItems = (<data.CompiledDataViewRoleForMapping>dataViewValues.group.select[0]).for.in;
+                    yRoleItems.removeSort = true;
+
+                    let gradientRoleItems = (<data.CompiledDataViewRoleBindMapping>dataViewValues.group.select[1]).bind.to;
+                    gradientRoleItems.removeSort = true;
+                }
             }
         }
 
@@ -1020,8 +1032,21 @@ module powerbi.visuals {
                 options.forcedYDomain = temp;
             }
 
-            this.xAxisProperties = this.columnChart.setXScale(is100Pct, options.forcedTickCount, options.forcedXDomain, isBarChart ? options.valueAxisScaleType : options.categoryAxisScaleType);
-            this.yAxisProperties = this.columnChart.setYScale(is100Pct, options.forcedTickCount, options.forcedYDomain, isBarChart ? options.categoryAxisScaleType : options.valueAxisScaleType);
+            this.xAxisProperties = this.columnChart.setXScale(
+                is100Pct,
+                options.forcedTickCount,
+                options.forcedXDomain,
+                isBarChart ? options.valueAxisScaleType : options.categoryAxisScaleType,
+                isBarChart ? options.valueAxisDisplayUnits : options.categoryAxisDisplayUnits,
+                isBarChart ? options.valueAxisPrecision : options.categoryAxisPrecision);
+
+            this.yAxisProperties = this.columnChart.setYScale(
+                is100Pct,
+                options.forcedTickCount,
+                options.forcedYDomain,
+                isBarChart ? options.categoryAxisScaleType : options.valueAxisScaleType,
+                isBarChart ? options.categoryAxisDisplayUnits : options.valueAxisDisplayUnits,
+                isBarChart ? options.categoryAxisPrecision : options.valueAxisPrecision);
 
             if (options.showCategoryAxisLabel && this.xAxisProperties.isCategoryAxis || options.showValueAxisLabel && !this.xAxisProperties.isCategoryAxis) {
                 this.xAxisProperties.axisLabel = data.axesLabels.x;

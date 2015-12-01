@@ -32,7 +32,8 @@ module powerbi.visuals {
             {
                 name: 'Values',
                 kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Fields')
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Fields'),
+                description: data.createDisplayNameGetter('Role_DisplayName_FieldsDescription')
             }
         ],
         objects: {
@@ -48,14 +49,17 @@ module powerbi.visuals {
                 properties: {
                     color: {
                         displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
+                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
                         type: { fill: { solid: { color: true } } }
                     },
                     labelDisplayUnits: {
                         displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                        description: data.createDisplayNameGetter('Visual_DisplayUnitsDescription'),
                         type: { formatting: { labelDisplayUnits: true } }
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
+                        description: data.createDisplayNameGetter('Visual_PrecisionDescription'),
                         type: { numeric: true }
                     },
                 },

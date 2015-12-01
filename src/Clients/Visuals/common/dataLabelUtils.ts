@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export const enum PointLabelPosition {
         Above,
@@ -102,41 +104,26 @@ module powerbi.visuals {
 
     export module dataLabelUtils {
 
-        export var labelMargin: number = 8;
-        export var maxLabelWidth: number = 50;
-        export var defaultColumnLabelMargin: number = 5;
-        export var defaultColumnHalfLabelHeight: number = 4;
-        export var LabelTextProperties: TextProperties = {
+        export const labelMargin: number = 8;
+        export const maxLabelWidth: number = 50;
+        export const defaultColumnLabelMargin: number = 5;
+        export const defaultColumnHalfLabelHeight: number = 4;
+        export const LabelTextProperties: TextProperties = {
             fontFamily: 'wf_standard-font',
             fontSize: '12px',
             fontWeight: 'normal',
         };
-        export var defaultLabelColor = "#777777";
-        export var defaultInsideLabelColor = "#ffffff"; //white
-        export var hundredPercentFormat = "0.00 %;-0.00 %;0.00 %";
+        export const defaultLabelColor = "#777777";
+        export const defaultInsideLabelColor = "#ffffff"; //white
+        export const hundredPercentFormat = "0.00 %;-0.00 %;0.00 %";
 
-        const defaultDecimalLabelPrecision: number = 2;        
-        const defaultCountLabelPrecision: number = 0;   
+        const defaultDecimalLabelPrecision: number = 2;
+        const defaultCountLabelPrecision: number = 0;
 
-        let labelGraphicsContextClass: ClassAndSelector = {
-            class: 'labels',
-            selector: '.labels',
-        };
-
-        let linesGraphicsContextClass: ClassAndSelector = {
-            class: 'lines',
-            selector: '.lines',
-        };
-
-        let labelsClass: ClassAndSelector = {
-            class: 'data-labels',
-            selector: '.data-labels',
-        };
-
-        let lineClass: ClassAndSelector = {
-            class: 'line-label',
-            selector: '.line-label',
-        };
+        const labelGraphicsContextClass: ClassAndSelector = createClassAndSelector('labels');
+        const linesGraphicsContextClass: ClassAndSelector = createClassAndSelector('lines');
+        const labelsClass: ClassAndSelector = createClassAndSelector('data-labels');
+        const lineClass: ClassAndSelector = createClassAndSelector('line-label');
 
         export function updateLabelSettingsFromLabelsObject(labelsObj: DataLabelObject, labelSettings: VisualDataLabelsSettings): void {
             if (labelsObj) {
@@ -217,10 +204,21 @@ module powerbi.visuals {
             };
         }
 
+        export function getDefaultGaugeLabelSettings(format?: string): VisualDataLabelsSettings {
+            return {
+                show: true,
+                displayUnits: 0,
+                precision: getPrecision(format),
+                labelColor: null,
+                position: null,
+                formatterOptions: null,
+            };
+        }
+
         export function getDefaultFunnelLabelSettings(format?: string): VisualDataLabelsSettings {
             return {
                 show: true,
-                position: powerbi.labelPosition.insideCenter,
+                position: powerbi.visuals.labelPosition.insideCenter,
                 displayUnits: 0,
                 precision: getPrecision(format),
                 labelColor: defaultLabelColor,
@@ -254,7 +252,7 @@ module powerbi.visuals {
 
             if (!labels)
                 return;
-            
+
             if (hasAnimation) {
                 labels
                     .text((d: LabelEnabledDataPoint) => d.labeltext)
@@ -325,7 +323,7 @@ module powerbi.visuals {
 
             if (!labels)
                 return;
-            
+
             labels
                 .attr({ x: (d: LabelEnabledDataPoint) => d.labelX, y: (d: LabelEnabledDataPoint) => d.labelY, dy: '.35em' })
                 .text((d: LabelEnabledDataPoint) => d.labeltext)
@@ -341,17 +339,15 @@ module powerbi.visuals {
             let lines = context.select(linesGraphicsContextClass.selector).selectAll('polyline')
                 .data(filteredData, (d: DonutArcDescriptor) => d.data.identity.getKey());
             let innerLinePointMultiplier = 2.05;
-
-            let midAngle = function (d: DonutArcDescriptor) { return d.startAngle + (d.endAngle - d.startAngle) / 2; };
+            let halfLabelMargin = labelMargin / 2;
 
             lines.enter()
                 .append('polyline')
                 .classed(lineClass.class, true);
 
             lines
-                .attr('points', function (d) {
-                    let textPoint = outerArc.centroid(d);
-                    textPoint[0] = radius * 0.95 * (midAngle(d) < Math.PI ? 1 : -1);
+                .attr('points', function (d: DonutArcDescriptor) {
+                    let textPoint = [getXPositionForDonutLabel(d.data.labelX, halfLabelMargin, radius), d.data.labelY];
                     let midPoint = outerArc.centroid(d);
                     let chartPoint = arc.centroid(d);
                     chartPoint[0] *= innerLinePointMultiplier;
@@ -363,9 +359,18 @@ module powerbi.visuals {
                     'stroke': (d: DonutArcDescriptor) => d.data.labelColor,
                 });
 
-                lines
-                    .exit()
-                    .remove();
+            lines
+                .exit()
+                .remove();
+        }
+
+        function getXPositionForDonutLabel(textPointX: number, lMargin: number, radius: number): number {
+            if (textPointX < 1 && textPointX >= 0)
+                textPointX = 1;
+            else if (textPointX > -1 && textPointX < 0)
+                textPointX = -1;
+            let margin = (radius / (textPointX * 2)) + (textPointX < 0 ? - lMargin : lMargin);
+            return textPointX += margin;
         }
 
         function selectLabels(filteredData: LabelEnabledDataPoint[], context: D3.Selection, isDonut: boolean = false, forAnimation: boolean = false): D3.UpdateSelection {
@@ -686,28 +691,29 @@ module powerbi.visuals {
         export function getDonutChartLabelLayout(labelSettings: VisualDataLabelsSettings, radius: number, outerArc: D3.Svg.Arc, viewport: IViewport, value2: number): ILabelLayout {
 
             let midAngle = function (d: DonutArcDescriptor) { return d.startAngle + (d.endAngle - d.startAngle) / 2; };
-            let spaceAvaliableForLabels = viewport.width / 2 - radius;
-            let minAvailableSpace = Math.min(spaceAvaliableForLabels, maxLabelWidth);
             let measureFormattersCache = dataLabelUtils.createColumnFormatterCacheManager();
 
             return {
                 labelText: (d: DonutArcDescriptor) => {
+                    let labelX = d.data.labelX;
+                    let spaceAvailableForLabels = viewport.width / 2 - Math.abs(getXPositionForDonutLabel(labelX, labelMargin, radius));
                     if (labelSettings.show) {
+                        // Giving 50/50 space when both category and measure are on
+                        let maxDataLabelWidth = spaceAvailableForLabels / 2;
                         let measureFormatter = measureFormattersCache.getOrCreate(d.data.labelFormatString, labelSettings, value2);
                         return labelSettings.showCategory
-                            ? getLabelFormattedText(getLabelFormattedText(d.data.label, minAvailableSpace) + " (" + measureFormatter.format(d.data.measure) + ")", spaceAvaliableForLabels)
-                            : getLabelFormattedText(d.data.measure, minAvailableSpace,/* format */ null, measureFormatter);
+                            ? getLabelFormattedText(d.data.label, maxDataLabelWidth) + getLabelFormattedText(" (" + measureFormatter.format(d.data.measure) + ")", maxDataLabelWidth)
+                            : getLabelFormattedText(d.data.measure, spaceAvailableForLabels,/* format */ null, measureFormatter);
                     }
                     // show only category label
-                    return getLabelFormattedText(d.data.label, minAvailableSpace);
+                    return getLabelFormattedText(d.data.label, spaceAvailableForLabels);
                 },
                 labelLayout: {
                     x: (d: DonutArcDescriptor) => {
-                        return radius * (midAngle(d) < Math.PI ? 1 : -1);
+                        return getXPositionForDonutLabel(d.data.labelX, labelMargin, radius);
                     },
                     y: (d: DonutArcDescriptor) => {
-                        let pos = outerArc.centroid(d);
-                        return pos[1];
+                        return d.data.labelY;
                     },
                 },
                 filter: (d: DonutArcDescriptor) => (d != null && d.data != null && d.data.label != null),
@@ -779,15 +785,15 @@ module powerbi.visuals {
                         let textLength = textMeasurer(properties);
 
                         // Try to honor the position, but if the label doesn't fit where specified, then swap the position.
-                        let labelPosition = labelSettings.position;
-                        if ((labelPosition === powerbi.labelPosition.outsideEnd && outsideAvailableSpace < textLength) || d.value === 0)
-                            labelPosition = powerbi.labelPosition.insideCenter;
-                        else if (labelPosition === powerbi.labelPosition.insideCenter && insideAvailableSpace < textLength) {
-                            labelPosition = powerbi.labelPosition.outsideEnd;
+                        let labelPositionValue = labelSettings.position;
+                        if ((labelPositionValue === labelPosition.outsideEnd && outsideAvailableSpace < textLength) || d.value === 0)
+                            labelPositionValue = labelPosition.insideCenter;
+                        else if (labelPositionValue === labelPosition.insideCenter && insideAvailableSpace < textLength) {
+                            labelPositionValue = labelPosition.outsideEnd;
                         }
 
-                        switch (labelPosition) {
-                            case powerbi.labelPosition.outsideEnd:
+                        switch (labelPositionValue) {
+                            case labelPosition.outsideEnd:
                                 return marginLeft + pixelSpan + (barWidth / 2) + textMinimumPadding + (textLength / 2);
                             default:
                                 // Inside position, change color to white unless value is 0

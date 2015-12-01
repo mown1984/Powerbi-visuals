@@ -31,14 +31,14 @@ gulp.task('help', function (callback) {
     console.log("Commands usage: gulp <name_of_command> --<parameter>.\nFor example: gulp build --debug.\n");
     console.log("List of Gulp commands:\n");
     console.log("	build - to build the project. All js files will be minified.");
-    console.log("	build_debug - build the project in debug mode.\n 			All js files will be unminified");
+    console.log("	build --debug - build the project in debug mode.\n 			All js files will be unminified");
     console.log("	tslint - check the source files for tsLint erros.");
     console.log("	test - run tests.");
-    console.log("	run:performance_tests - run only performance tests.\n\n");
-    console.log("	continuous_build - run the build and then start watchers which\n"+
+    console.log("	test:visuals:performance - run only performance tests.\n\n");
+    console.log("	init - run the build and then start watchers which\n" +
     "				will build project parts after you save\n"+
     "				changes to any file .");
-    console.log("Gulp commands parameters:\n\n 	--debug (--d)  - to build files in debug mode\n\n"+
+    console.log("Gulp commands parameters:\n\n 	--debug (--d)  - build files in debug mode\n 	--release (--r)  - build files in release mode\n"+
 				" 	--openInBrowser (--o)  - in order to run all tests\n 				 (or single test) in browser\n"+
 				" 		For example:\n"+
 				"			gulp test --openInBrowser\" or \"gulp test --o\"\n"+

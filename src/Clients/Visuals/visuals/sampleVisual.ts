@@ -89,6 +89,7 @@ import SelectionManager = utility.SelectionManager;
             objects: {
                 dataPoint: {
                     displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                    description: data.createDisplayNameGetter('Visual_DataPointDescription'),
                     properties: {
                         fill: {
                             displayName: data.createDisplayNameGetter('Visual_Fill'),
@@ -130,7 +131,7 @@ import SelectionManager = utility.SelectionManager;
             let cat = dataView.categorical.categories[0];
             if (!cat) return null;
             let catValues = cat.values;
-            if (!catValues || !dataView.categorical.values) return null;
+            if (!catValues || _.isEmpty(dataView.categorical.values)) return null;
             let values = dataView.categorical.values[0].values;
             let objects = dataView.categorical.categories[0].objects;
             let object1 = objects && objects.length > 0 ? objects[0] : undefined;

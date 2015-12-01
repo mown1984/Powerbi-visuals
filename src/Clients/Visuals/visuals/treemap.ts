@@ -295,7 +295,7 @@ module powerbi.visuals {
                 dataWasCulled = false;
                 let shouldCullValue = undefined;
                 let highlight = undefined;
-                if ((data.categories == null) && values) {
+                if ((data.categories == null) && !_.isEmpty(values)) {
                     // No categories, sliced by series and measures
                     for (let i = 0, ilen = values[0].length; i < ilen; i++) {
                         let value = values[0][i];
@@ -316,7 +316,7 @@ module powerbi.visuals {
                         let key = identity.getKey();
 
                         let color = hasDynamicSeries
-                            ? colorHelper.getColorForSeriesValue(valueColumn.objects && valueColumn.objects[0], data.values.identityFields, converterHelper.getSeriesName(valueColumn.source))
+                            ? colorHelper.getColorForSeriesValue(grouped[i] && grouped[i].objects , data.values.identityFields, converterHelper.getSeriesName(valueColumn.source))
                             : colorHelper.getColorForMeasure(valueColumn.source.objects, valueColumn.source.queryName);
 
                         let highlightedValue = hasHighlights && highlight !== 0 ? highlight : undefined;
@@ -563,7 +563,7 @@ module powerbi.visuals {
             let dataViews = this.dataViews = options.dataViews;
             this.currentViewport = options.viewport;
             var dataViewCategorical = dataViews && dataViews.length > 0 && dataViews[0].categorical ? dataViews[0].categorical : undefined;
-            var labelFormatString = (dataViewCategorical && dataViewCategorical.values) ? valueFormatter.getFormatString(dataViewCategorical.values[0].source, treemapProps.general.formatString) : undefined;
+            var labelFormatString = (dataViewCategorical && !_.isEmpty(dataViewCategorical.values)) ? valueFormatter.getFormatString(dataViewCategorical.values[0].source, treemapProps.general.formatString) : undefined;
             var labelSettings = dataLabelUtils.getDefaultTreemapLabelSettings(labelFormatString);
             var legendObjectProperties = null;
 
@@ -674,6 +674,7 @@ module powerbi.visuals {
                         dataLabelUtils.enumerateCategoryLabels(enumeration, this.data.dataLabelsSettings, false /*withFill*/, false /*isDonutChart*/, true /*isTreeMap*/);
                     else
                         dataLabelUtils.enumerateCategoryLabels(enumeration, null, false /*withFill*/, false /*isDonutChart*/, true /*isTreeMap*/);
+                    break;
             }
 
             return enumeration.complete();

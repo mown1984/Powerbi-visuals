@@ -27,7 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests {
-    import ColorConvertor = powerbitests.utils.ColorUtility.convertFromRGBorHexToHex;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import DonutChart = powerbi.visuals.DonutChart;
     import DonutData = powerbi.visuals.DonutData;
@@ -145,7 +144,7 @@ module powerbitests {
             };
 
             beforeEach(() => {
-                element = powerbitests.helpers.testDom('500', '520');
+                element = powerbitests.helpers.testDom('500', '650');
                 v = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin('donutChart').create();
                 v.init({
                     element: element,
@@ -574,7 +573,7 @@ module powerbitests {
                 setTimeout(() => {
                     var labels = element.find('.donutChart .labels').find('text');
                     var fill = $(labels[0]).css('fill');
-                    expect(ColorConvertor(fill)).toBe(ColorConvertor(labelColor));
+                    helpers.assertColorsMatch(fill, labelColor);
                     expect($(labels[0]).css('opacity')).toBe(opacity);
                     done();
                 }, DefaultWaitForRender);
@@ -608,7 +607,7 @@ module powerbitests {
                 setTimeout(() => {
                     var labels = element.find('.donutChart .labels').find('text');
                     var fill = $(labels[0]).css('fill');
-                    expect(ColorConvertor(fill)).toBe(ColorConvertor(color.solid.color));
+                    helpers.assertColorsMatch(fill, color.solid.color);
                     done();
                 }, DefaultWaitForRender);
             });
@@ -641,12 +640,54 @@ module powerbitests {
                 setTimeout(() => {
                     var labels = element.find('.donutChart .labels').find('text');
                     var fill = $(labels[0]).css('fill');
-                    expect(ColorConvertor(fill)).toBe(ColorConvertor(color.solid.color));
+                    helpers.assertColorsMatch(fill, color.solid.color);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('Long data labels', (done) => {
+            it('Long data labels - big viewport', (done) => {
+                var dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
+                dataViewMetadataWithLabels.objects = {
+                    labels: { show: false },
+                    categoryLabels: { show: true }
+                };
+
+                v.onResizing({ height: 600, width: 1000 });
+
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadataWithLabels,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadataWithLabels.columns[0],
+                                values: ['abcdefghijklmnopqrstuvwxyz', '01234567890123456789', 'abcdefg', 'd', 'e'],
+                                identity: [mocks.dataViewScopeIdentity('abcdefghijklmnopqrstuvwxyz'),
+                                    mocks.dataViewScopeIdentity('01234567890123456789'),
+                                    mocks.dataViewScopeIdentity('abcdefg'),
+                                    mocks.dataViewScopeIdentity('d'),
+                                    mocks.dataViewScopeIdentity('e')],
+                                identityFields: [categoryColumnRef],
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadataWithLabels.columns[1],
+                                values: [110, 120, 130, 140, 150],
+                                subtotal: 650
+                            }])
+                        }
+                    }]
+                });
+                setTimeout(() => {
+                    var labels = element.find('.donutChart .labels').find('text');
+                    expect($(labels[0]).text()).toBe("abcdefghijklmnopqrstuvwxyz");
+                    expect($(labels[1]).text()).toBe("01234567890123456789");
+                    expect($(labels[2]).text()).toBe("abcdefg");
+                    expect($(labels[3]).text()).toBe("d");
+                    expect($(labels[4]).text()).toBe("e");
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('Long data labels - small viewport', (done) => {
                 var dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
                     labels: { show: false },
@@ -658,8 +699,8 @@ module powerbitests {
                         categorical: {
                             categories: [{
                                 source: dataViewMetadataWithLabels.columns[0],
-                                values: ['abcdefghijklmnopqrstuvwxyz', '01234567890123456789', 'abcdefg', 'd', 'e'],
-                                identity: [mocks.dataViewScopeIdentity('abcdefghijklmnopqrstuvwxyz'),
+                                values: ['abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', '01234567890123456789', 'abcdefg', 'd', 'e'],
+                                identity: [mocks.dataViewScopeIdentity('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'),
                                     mocks.dataViewScopeIdentity('01234567890123456789'),
                                     mocks.dataViewScopeIdentity('abcdefg'),
                                     mocks.dataViewScopeIdentity('d'),
@@ -820,7 +861,46 @@ module powerbitests {
                     expect(labels.last().text()).toBe('7,000');
                     done();
                 }, DefaultWaitForRender);
-        });
+            });
+
+            it('Circular margin validation ', (done) => {
+
+                var dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
+                dataViewMetadataWithLabels.objects = {
+                    labels: { show: true, },
+                    categoryLabels: { show: true }
+                };
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadataWithLabels,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadataWithLabels.columns[0],
+                                values: ['a', 'b', 'c'],
+                                identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                                identityFields: [categoryColumnRef],
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadataWithLabels.columns[1],
+                                values: [12345, 15533, 776],
+                            }])
+                        }
+                    }]
+                });
+
+                setTimeout(() => {
+                    var labels = element.find('.donutChart .labels').find('text');
+                    //The first label is most right, the second label is most left
+                    expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
+                    expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[2]).attr('x'));
+                    expect($(labels[2]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
+                    //The last label is top, the second label is button.
+                    expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[0]).attr('y'));
+                    expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
+                    expect($(labels[0]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
+                    done();
+                }, DefaultWaitForRender);
+            });
         });
 
         describe('converter', () => {
@@ -1638,6 +1718,57 @@ module powerbitests {
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
                 expect(actualData.legendData.dataPoints[1].label).toBe('col2');
             });
+
+            it('non-categorical series, formatted color', () => {
+                var dataView: powerbi.DataView = {
+                    categorical: {
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata3Measure.columns[0],
+                                values: [200],
+                                identity: mocks.dataViewScopeIdentity('col1'),
+                            }, {
+                                source: dataViewMetadata3Measure.columns[1],
+                                values: [300],
+                                identity: mocks.dataViewScopeIdentity('col2'),
+                            }
+                        ],
+                            [categoryColumnRef],
+                            dataViewMetadata[1])
+                    },
+                    metadata: dataViewMetadata,
+                };
+
+                var groupedValues = dataView.categorical.values.grouped();
+                groupedValues[0].objects = { dataPoint: { fill: { solid: { color: 'green' } } } };
+                groupedValues[1].objects = { dataPoint: { fill: { solid: { color: 'red' } } } };
+                dataView.categorical.values.grouped = () => groupedValues;
+
+                var actualData = DonutChart.converter(dataView, donutColors);
+                var selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));                        
+
+                var expectSlices: DonutDataPoint[] = [
+                    {
+                        identity: selectionIds[0],
+                        label: 'col1',
+                        measure: 200,
+                        value: 0.4,
+                        index: 0,
+                        tooltipInfo: [{ displayName: "col1", value: "200" }],
+                        color: 'green',
+                        labelFormatString: undefined,
+                    }, {
+                        identity: selectionIds[1],
+                        label: 'col2',
+                        measure: 300,
+                        value: 0.6,
+                        index: 1,
+                        tooltipInfo: [{ displayName: "col2", value: "300" }],
+                        color: 'red',
+                        labelFormatString: undefined,
+                    }].map(buildDataPoint);
+                expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);               
+            });           
 
             it('data with format string', () => {
                 
@@ -2514,7 +2645,7 @@ module powerbitests {
                     categorical: {
                         categories: [{
                             source: dataViewMetadataTwoColumnLabels.columns[0],
-                            values: ['John Domo Who lives far far away', 'Delta Force of the 56th Battalion', 'Jean Tablau from the silicon valley'],
+                            values: ['John Domo Who lives far far away', 'Delta Force of the 56th Battalion 2015', 'Jean Tablau from the silicon valley'],
                             identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
                             identityFields: [categoryColumnRef],
                         }],
@@ -2598,12 +2729,18 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
-                // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
                 if (!interactiveChart && !hasLegendObject) {
                     expect($('.donutChart polyline').filter(function () {
                         return $(this).css('opacity') === '0.5';
-                    }).length).toBe(2);
-                    expect($('.donutChart text').length).toBe(2);
+                    }).length).toBe(3);
+                    expect($('.donutChart text').length).toBe(3);
+                }
+                // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
+                if (interactiveChart) {
+                    expect($('.donutChart polyline').filter(function () {
+                        return $(this).css('opacity') === '0.5';
+                    }).length).toBe(0);
+                    expect($('.donutChart text').length).toBe(0);
                 }
                 done();
             }, DefaultWaitForRender * 2);
@@ -3189,13 +3326,13 @@ module powerbitests {
             setTimeout(() => {
                 expect($('[data-legend-index=0]>.category').text()).toBe("a");
                 expect($('[data-legend-index=0]>.value').text()).toBe("100");
-                expect(ColorConvertor($('[data-legend-index=0]>.percentage').css('color'))).toBe(ColorConvertor($('.slice').eq(0).css('fill')));
+                helpers.assertColorsMatch($('[data-legend-index=0]>.percentage').css('color'), $('.slice').eq(0).css('fill'));
                 expect($('[data-legend-index=1]>.category').text()).toBe("b");
                 expect($('[data-legend-index=1]>.value').text()).toBe("200");
-                expect(ColorConvertor($('[data-legend-index=1]>.percentage').css('color'))).toBe(ColorConvertor($('.slice').eq(1).css('fill')));
+                helpers.assertColorsMatch($('[data-legend-index=1]>.percentage').css('color'), $('.slice').eq(1).css('fill'));
                 expect($('[data-legend-index=2]>.category').text()).toBe("c");
                 expect($('[data-legend-index=2]>.value').text()).toBe("700");
-                expect(ColorConvertor($('[data-legend-index=2]>.percentage').css('color'))).toBe(ColorConvertor($('.slice').eq(2).css('fill')));
+                helpers.assertColorsMatch($('[data-legend-index=2]>.percentage').css('color'), $('.slice').eq(2).css('fill'));
                 expect($('.donutLegend').length).toBe(1);
                 expect($('.legend-item').length).toBe(3);
                 expect($('.donutChart .slice').length).toBe(3);

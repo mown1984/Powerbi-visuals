@@ -30,6 +30,7 @@ module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
 
     type D3Element = 
         D3.UpdateSelection |
@@ -597,7 +598,8 @@ module powerbi.visuals.samples {
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0] ||
                 !dataView.categorical.categories[0].source ||
-                !dataView.categorical.values) {
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0]) {
                 return null;
             }
 

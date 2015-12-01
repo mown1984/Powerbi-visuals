@@ -30,10 +30,11 @@ module powerbitests {
     import SelectableDataPoint = powerbi.visuals.SelectableDataPoint;
     import SelectionId = powerbi.visuals.SelectionId;
     import ISelectionHandler = powerbi.visuals.ISelectionHandler;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
 
     describe('Interactivity service', () => {
         var host: powerbi.IVisualHostServices;
-        var interactivityService: powerbi.visuals.IInteractivityService;
+        var interactivityService: powerbi.visuals.InteractivityService;
         var selectableDataPoints: SelectableDataPoint[];
         var behavior: MockBehavior;
         var filterPropertyId: powerbi.DataViewObjectPropertyIdentifier;
@@ -41,7 +42,7 @@ module powerbitests {
         beforeEach(() => {
             host = powerbitests.mocks.createVisualHostServices();
             host.canSelect = () => true; // Allows for multiselect behavior by default
-            interactivityService = powerbi.visuals.createInteractivityService(host);
+            interactivityService = <powerbi.visuals.InteractivityService>powerbi.visuals.createInteractivityService(host);
             selectableDataPoints = <SelectableDataPoint[]> [
                 { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("0"), mocks.dataViewScopeIdentity("a"), "queryName") },
                 { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("0"), mocks.dataViewScopeIdentity("b"), "queryName") },
@@ -137,42 +138,52 @@ module powerbitests {
             expect(host.onSelect).toHaveBeenCalledWith({ data: [selectableDataPoints[0].identity.getSelector()] });
         });
 
-        it('PersistPropertiesToHost', () => {
+        it('persistSelectionFilter calls persistProperties', () => {
+            interactivityService.bind(selectableDataPoints, behavior, null);
             spyOn(host, "persistProperties");
-            interactivityService.bind(selectableDataPoints, behavior, null);
             behavior.selectIndexAndPersist(0, false);
-            // Verify that the host is called with the object we expect; the creation is validatd in the next test
-            var changes = (<powerbi.visuals.InteractivityService>interactivityService).createPropertiesWithFilter(filterPropertyId);
-            expect(host.persistProperties).toHaveBeenCalledWith({ merge: changes });
-        });
-        
-        it('createPropertiesToHost: selecting a dataPoint should result in a VisualObjectInstance', () => {
-            interactivityService.bind(selectableDataPoints, behavior, null);
-            behavior.selectIndex(0, false);
 
-            var propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
-                objectName: 'general',
-                propertyName: 'property'
-            };
+            let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
 
-            var result = (<powerbi.visuals.InteractivityService>interactivityService).createPropertiesWithFilter(propertyIdentifier);
-            expect(result.length).toBe(1);
-            var firstResult = result[0];
-            expect(firstResult.objectName).toBe('general');
-            expect(firstResult.properties['property']).toBeDefined();
+            interactivityService.persistSelectionFilter(filterPropertyId);
+
+            expect(host.persistProperties).toHaveBeenCalledWith(changes);
         });
 
-        it('createPropertiesToHost: no selection should result in empty VisualObjectInstance',() => {
-            var propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
-                objectName: 'general',
-                propertyName: 'property'
-            };
-            var result = (<powerbi.visuals.InteractivityService>interactivityService).createPropertiesWithFilter(propertyIdentifier);
+        describe('createChangeForFilterProperty', () => {
+            beforeEach(() => {
+                interactivityService.bind(selectableDataPoints, behavior, null);
+            });
 
-            expect(result.length).toBe(1);
-            var firstResult = result[0];
-            expect(firstResult.objectName).toBe('general');
-            expect(firstResult.properties['property']).toBeUndefined();
+            it('select a single data point', () => {
+                behavior.selectIndexAndPersist(0, false);
+                
+                let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
+                
+                expect(changes).toEqual({
+                    merge: [{
+                        objectName: 'general',
+                        selector: undefined,
+                        properties: {
+                            'selected': powerbi.data.Selector.filterFromSelector([selectableDataPoints[0].identity.getSelector()], false),
+                        }
+                    }]
+                });
+            });
+
+            it('no selection should result in empty filter', () => {
+                let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
+
+                expect(changes).toEqual({
+                    remove: [{
+                        objectName: 'general',
+                        selector: undefined,
+                        properties: {
+                            'selected': { },
+                        }
+                    }]
+                });
+            });
         });
 
         it('Multiple single selects', () => {
@@ -253,13 +264,13 @@ module powerbitests {
             legendBehavior.verifySingleSelectedAt(0);
             behavior.verifySelectionState([true, false, true, false, true, false]);
             expect(interactivityService.hasSelection()).toBeTruthy();
-            expect((<powerbi.visuals.InteractivityService>interactivityService).legendHasSelection()).toBeTruthy();
+            expect(interactivityService.legendHasSelection()).toBeTruthy();
 
             behavior.selectIndex(1);
             behavior.verifySingleSelectedAt(1);
             legendBehavior.verifyCleared();
             expect(interactivityService.hasSelection()).toBeTruthy();
-            expect((<powerbi.visuals.InteractivityService>interactivityService).legendHasSelection()).toBeFalsy();
+            expect(interactivityService.legendHasSelection()).toBeFalsy();
         });
 
         it('Slicer selection', () => {
@@ -287,6 +298,31 @@ module powerbitests {
                     selectableDataPoints[0].identity.getSelector(),
                 ]
             }]);
+        });
+
+        it('Slicer selection with default value', () => {
+            let propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
+                objectName: 'general',
+                propertyName: 'property'
+            };
+            selectableDataPoints[5].selected = true;
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerDefaultValueHandler: new MockDefaultValueHandler() });
+            interactivityService.setDefaultValueMode(true);
+            let result = (<powerbi.visuals.InteractivityService>interactivityService).createChangeForFilterProperty(propertyIdentifier);
+
+            expect(powerbi.data.SemanticFilter.isDefaultFilter(<powerbi.data.SemanticFilter>result.merge[0].properties['property'])).toBeTruthy();
+        });
+
+        it('Slicer selection with any value', () => {
+            let propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
+                objectName: 'general',
+                propertyName: 'property'
+            };
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerDefaultValueHandler: new MockDefaultValueHandler() });
+            interactivityService.setDefaultValueMode(false);
+            let result = (<powerbi.visuals.InteractivityService>interactivityService).createChangeForFilterProperty(propertyIdentifier);
+
+            expect(powerbi.data.SemanticFilter.isAnyFilter(<powerbi.data.SemanticFilter>result.merge[0].properties['property'])).toBeTruthy();
         });
     });
 
@@ -366,5 +402,15 @@ module powerbitests {
     function getSelectedIds(interactivityService: powerbi.visuals.IInteractivityService): SelectionId[] {
         // Accessing a private member.
         return interactivityService['selectedIds'];
+    }
+
+    class MockDefaultValueHandler implements powerbi.visuals.SlicerDefaultValueHandler {
+        public getIdentityFields(): powerbi.data.SQExpr[]{
+            return [SQExprBuilder.columnRef(SQExprBuilder.entity('s', 'Entity2'), 'Prop2')];
+        }
+
+        public getDefaultValue(): powerbi.data.SQConstantExpr{
+            return SQExprBuilder.integer(2);
+        }
     }
 }

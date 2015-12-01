@@ -33,6 +33,7 @@ module powerbi.visuals {
                 name: 'Values',
                 kind: VisualDataRoleKind.Grouping,
                 displayName: powerbi.data.createDisplayNameGetter('Role_DisplayName_Field'),
+                description: data.createDisplayNameGetter('Role_DisplayName_FieldDescription')
             }
         ],
         objects: {
@@ -51,6 +52,9 @@ module powerbi.visuals {
                             }
                         }
                     },
+                    defaultValue: {
+                        type: { expression: { defaultValue: true } },
+                    },
                     formatString: {
                         type: { formatting: { formatString: true } },
                     },
@@ -61,6 +65,19 @@ module powerbi.visuals {
                     outlineWeight: {
                         displayName: data.createDisplayNameGetter('Visual_outlineWeight'),
                         type: { numeric: true }
+                    }
+                },
+            },
+            selection: {
+                displayName: data.createDisplayNameGetter('Visual_SelectionControls'),
+                properties: {
+                    selectAllCheckboxEnabled: {
+                        displayName: data.createDisplayNameGetter('Visual_SelectAll'),
+                        type: { bool: true }
+                    },
+                    singleSelect: {
+                        displayName: data.createDisplayNameGetter('Visual_SingleSelect'),
+                        type: { bool: true }
                     }
                 },
             },
@@ -81,7 +98,7 @@ module powerbi.visuals {
                     },
                     outline: {
                         displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { formatting: { outline: true } }
+                        type: { enumeration: outline.type }
                     },
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),
@@ -102,7 +119,7 @@ module powerbi.visuals {
                     },
                     outline: {
                         displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { formatting: { outline: true } }
+                        type: { enumeration: outline.type }
                     },
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),
@@ -134,6 +151,10 @@ module powerbi.visuals {
             outlineColor: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'outlineColor' },
             outlineWeight: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'outlineWeight' }
         },
+        selection: {
+            selectAllCheckboxEnabled: <DataViewObjectPropertyIdentifier>{ objectName: 'selection', propertyName: 'selectAllCheckboxEnabled' },
+            singleSelect: <DataViewObjectPropertyIdentifier>{ objectName: 'selection', propertyName: 'singleSelect' }
+        },
         header: {
             show: <DataViewObjectPropertyIdentifier>{ objectName: 'header', propertyName: 'show' },
             fontColor: <DataViewObjectPropertyIdentifier>{ objectName: 'header', propertyName: 'fontColor' },
@@ -150,7 +171,7 @@ module powerbi.visuals {
         selectedPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selected' },
         filterPropertyIdentifier: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'filter' },
         formatString: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'formatString' },
-
+        defaultValue: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'defaultValue' },
     };
 
 }

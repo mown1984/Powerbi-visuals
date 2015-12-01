@@ -88,5 +88,5 @@ module powerbi {
     }
 
     export var localStorageService: IStorageService = new LocalStorageService();
-    export var ephemeralStorageService: IStorageService = new EphemeralStorageService();
+    export let ephemeralStorageService: IStorageService = new EphemeralStorageService();
 }

@@ -37,7 +37,7 @@ module jsCommon {
             s: string;
         }
 
-        var _regexCache: IRegexInt[];
+        let _regexCache: IRegexInt[];
 
         /** 
          * Translate .NET format into something supported by jQuery.Globalize.

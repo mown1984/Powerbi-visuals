@@ -461,9 +461,91 @@ module powerbitests {
             setTimeout(() => {
                 var labels = $(".labelText");
                 var color = $(labels[0]).css("fill");
-                expect(color === "#008000" || color === "rgb(0, 128, 0)").toBeTruthy();
+                helpers.assertColorsMatch(color, "#008000");
                 done();
 
+            }, DefaultWaitForRender);
+        });
+
+        it("Formatting: dataLabels=off, calloutValue=off", (done) => {
+            gaugeDataBuilder.singleValue = 10;
+            gaugeDataBuilder.values = [[10], [0], [300], [0]];
+            gaugeDataBuilder.dataViewMetadata.objects = {
+                labels: {
+                    show: false
+                },
+                calloutValue: {
+                    show: false
+                }
+            };
+            gaugeDataBuilder.buildDataView();
+            gaugeDataBuilder.onDataChanged();
+            setTimeout(() => {
+                //Callout value
+                expect($(".mainText").length).toBe(0);
+                //Data labels
+                expect($(".labelText").length).toBe(0);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Formatting: dataLabels=on, calloutValue=on", (done) => {
+            gaugeDataBuilder.singleValue = 20;
+            gaugeDataBuilder.values = [[20], [0], [400], [0]];
+            gaugeDataBuilder.dataViewMetadata.objects = {
+                labels: {
+                    show: true,
+                    color: { solid: { color: '#0000cc' } }
+                },
+                calloutValue: {
+                    show: true,
+                    color: { solid: { color: '#000000' } }
+                }
+            };
+            gaugeDataBuilder.buildDataView();
+            gaugeDataBuilder.onDataChanged();
+            setTimeout(() => {
+                //Callout value
+                var mainText = $(".mainText");
+                expect(mainText.length).toBe(1);
+
+                var color = $(mainText).css("fill");
+                helpers.assertColorsMatch(color, "#000000", true);
+
+                //Data labels
+                var labels = $(".labelText");
+                expect(labels.length).toBe(2);
+
+                color = $(labels[0]).css("fill");
+                helpers.assertColorsMatch(color, "#0000cc");
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Formatting: dataLabels=on,units=auto, calloutValue=on,units=1000", (done) => {
+            gaugeDataBuilder.singleValue = 10;
+            gaugeDataBuilder.values = [[1000000], [0], [3000], [0]];
+            gaugeDataBuilder.dataViewMetadata.objects = {
+                labels: {
+                    show: true,
+                    labelDisplayUnits: 0
+                },
+                calloutValue: {
+                    show: true,
+                    labelPrecision: 2,
+                    labelDisplayUnits: 1000
+                }
+            };
+            gaugeDataBuilder.buildDataView();
+            gaugeDataBuilder.onDataChanged();
+            setTimeout(() => {
+                //Callout value
+                expect($(".mainText").text()).toBe("$1,000.00K");
+                //Data labels
+                var labels = $(".labelText");
+                expect($(labels[0]).text()).toBe("$0");
+                expect($(labels[1]).text()).toBe("$3000");
+                done();
             }, DefaultWaitForRender);
         });
     });
@@ -534,7 +616,6 @@ module powerbitests {
         it("Gauge_tooltip_work", () => {
             gaugeDataBuilder.singleValue = 500;
             gaugeDataBuilder.values = [[10], [0], [500], [200]];
-
             gaugeDataBuilder.onDataChanged();
 
             var data = GaugeVisual.converter(gaugeDataBuilder.dataView);
@@ -549,6 +630,21 @@ module powerbitests {
                     target: 200
                 },
                 tooltipInfo: [{ displayName: "col1", value: "$10" }, { displayName: "col4", value: "$200" }],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }
             };
             expect(data).toEqual(expectedValues);
         });
@@ -566,7 +662,22 @@ module powerbitests {
                 total: 0,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
                 targetSettings: { min: 0, max: 0, target: 0 },
-                tooltipInfo: []
+                tooltipInfo: [],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }
             };
             expect(data).toEqual(expectedValues);
         });
@@ -589,7 +700,22 @@ module powerbitests {
                     objects: { general: { formatString: "$0" } },
                 },
                 targetSettings: { min: 100, max: 300, target: 200 },
-                tooltipInfo: [{ displayName: "col1", value: "$200" }, { displayName: "col4", value: "$200" }]
+                tooltipInfo: [{ displayName: "col1", value: "$200" }, { displayName: "col4", value: "$200" }],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: 0,
+                    labelColor: null,
+                    position: null,
+                    formatterOptions: null
+                }
             };
 
             expect(data).toEqual(expectedValues);
@@ -939,7 +1065,22 @@ module powerbitests {
                         max: 1,
                         target: undefined
                     },
-                    tooltipInfo: undefined
+                    tooltipInfo: undefined,
+                    dataLabelsSettings: {
+                        show: true,
+                        displayUnits: 0,
+                        precision: 0,
+                        labelColor: null,
+                        position: null,
+                        formatterOptions: null
+                    }, calloutValueLabelsSettings: {
+                        show: true,
+                        displayUnits: 0,
+                        precision: 0,
+                        labelColor: null,
+                        position: null,
+                        formatterOptions: null
+                    }
                 };
 
                 expect(GaugeVisual.converter(dataView)).toEqual(expectedValues);
@@ -1107,6 +1248,96 @@ module powerbitests {
 
             var viewPortProperty = gaugeVisualDataBuilder.gauge.getGaugeVisualProperties();
             expect(viewPortProperty.margin).toEqual(expectedViewPortProperty.margin);
+        });
+
+        it("Gauge with tick labels which fit and no target put labels on side", (done) => {
+            gaugeVisualDataBuilder.height = "200";
+            gaugeVisualDataBuilder.width = "400";
+
+            gaugeVisualDataBuilder.singleValue = 10;
+            gaugeVisualDataBuilder.values = [[-1], [-2], [0]];
+
+            gaugeVisualDataBuilder.onDataChanged();
+
+            var expectedViewPortProperty = {
+                margin: {
+                    top: 20,
+                    bottom: 20,
+                    left: 45,
+                    right: 45
+                },
+            };
+
+            var viewPortProperty = gaugeVisualDataBuilder.gauge.getGaugeVisualProperties();
+            expect(viewPortProperty.margin).toEqual(expectedViewPortProperty.margin);
+
+            setTimeout(() => {
+                var labels = $(".labelText");
+                expect(labels.eq(0).css('text-anchor')).toBe('end');
+                expect(labels.eq(1).css('text-anchor')).toBe('start');
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Gauge with very long minTick label and no target put labels on bottom", (done) => {
+            gaugeVisualDataBuilder.height = "200";
+            gaugeVisualDataBuilder.width = "400";
+
+            gaugeVisualDataBuilder.singleValue = 10;
+            gaugeVisualDataBuilder.values = [[-8000000000000000000000000], [-16374372492439823424324234], [0]];
+
+            gaugeVisualDataBuilder.onDataChanged();
+
+            var expectedViewPortProperty = {
+                margin: {
+                    top: 20,
+                    bottom: 20,
+                    left: 15,
+                    right: 15
+                },
+            };
+
+            var viewPortProperty = gaugeVisualDataBuilder.gauge.getGaugeVisualProperties();
+            expect(viewPortProperty.margin).toEqual(expectedViewPortProperty.margin);
+
+            setTimeout(() => {
+                var labels = $(".labelText");
+                expect(labels.eq(0).css('text-anchor')).toBe('start');
+                expect(labels.eq(1).css('text-anchor')).toBe('end');
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Gauge with very long maxTick label and no target put labels on bottom", (done) => {
+            gaugeVisualDataBuilder.height = "200";
+            gaugeVisualDataBuilder.width = "400";
+
+            gaugeVisualDataBuilder.singleValue = 10;
+            gaugeVisualDataBuilder.values = [[8000000000000000000000000], [0], [16374372492439823424324234]];
+
+            gaugeVisualDataBuilder.onDataChanged();
+
+            var expectedViewPortProperty = {
+                margin: {
+                    top: 20,
+                    bottom: 20,
+                    left: 15,
+                    right: 15
+                },
+            };
+
+            var viewPortProperty = gaugeVisualDataBuilder.gauge.getGaugeVisualProperties();
+            expect(viewPortProperty.margin).toEqual(expectedViewPortProperty.margin);
+
+            setTimeout(() => {
+                var labels = $(".labelText");
+                expect(labels.eq(0).css('text-anchor')).toBe('start');
+                expect(labels.eq(1).css('text-anchor')).toBe('end');
+
+                done();
+            }, DefaultWaitForRender);
         });
     });
 

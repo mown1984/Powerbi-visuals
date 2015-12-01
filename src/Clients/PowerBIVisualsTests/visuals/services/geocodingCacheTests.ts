@@ -27,12 +27,12 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbitests {
-    import IGeocodeCache = powerbi.visuals.BI.Services.IGeocodingCache;
-    import GeocodeQuery = powerbi.visuals.BI.Services.GeocodingManager.GeocodeQuery;
+    import IGeocodeCache = powerbi.visuals.services.IGeocodingCache;
+    import GeocodeQuery = powerbi.visuals.services.GeocodeQuery;
+    import createGeocodingCache = powerbi.visuals.services.createGeocodingCache;
 
     describe('General GeocodeCache Tests', () => {
         var cache: IGeocodeCache;
-        var createGeocodingCache = powerbi.visuals.BI.Services.createGeocodingCache;
 
         var maxCacheSize = 3000;
         var maxCacheSizeOverflow = 100;
@@ -87,6 +87,8 @@ module powerbitests {
             var newYorkQuery = new GeocodeQuery("New York", "State");
             var newYorkCoords = { latitude: 20, longitude: 20 };
             tinyCache.registerCoordinates(newYorkQuery, newYorkCoords);
+
+            expect(tinyCache).toBeDefined();
         });
     });
 }

@@ -50,7 +50,7 @@ module powerbi.visuals {
                 properties: {
                     imageScalingType: {
                         displayName: data.createDisplayNameGetter('Visual_Image_Scaling_Type'),
-                        type: { formatting: { imageScalingType: true } }
+                        type: { enumeration: imageScalingType.type }
                     },
                 }
             },

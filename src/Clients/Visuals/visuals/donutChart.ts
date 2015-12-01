@@ -27,6 +27,9 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
     export interface DonutConstructorOptions {
         sliceWidthRatio?: number;
         animator?: IDonutChartAnimator;
@@ -128,17 +131,13 @@ module powerbi.visuals {
         private static SemiTransparentOpacity = 0.6;
         private static defaultSliceWidthRatio: number = 0.48;
         private static invisibleArcLengthInPixels: number = 3;
-        private static sliceClass: ClassAndSelector = {
-            class: 'slice',
-            selector: '.slice',
-        };
-        private static sliceHighlightClass: ClassAndSelector = {
-            class: 'slice-highlight',
-            selector: '.slice-highlight',
-        };
+        private static sliceClass: ClassAndSelector = createClassAndSelector('slice');
+        private static sliceHighlightClass: ClassAndSelector = createClassAndSelector('slice-highlight');
         private static twoPi = 2 * Math.PI;
+
         public static EffectiveZeroValue = 0.000000001; // Very small multiplier so that we have a properly shaped zero arc to animate to/from.
         public static PolylineOpacity = 0.5;
+
         private sliceWidthRatio: number;
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
@@ -398,11 +397,13 @@ module powerbi.visuals {
                         precision: true,
                     };
                     dataLabelUtils.enumerateDataLabels(labelSettingOptions);
+                    break;
                 case 'categoryLabels':
                     if (this.data)
                         dataLabelUtils.enumerateCategoryLabels(enumeration, this.data.dataLabelsSettings, false, true);
                     else
                         dataLabelUtils.enumerateCategoryLabels(enumeration, null, false, true);
+                    break;
             }
             return enumeration.complete();
         }
@@ -574,6 +575,12 @@ module powerbi.visuals {
         private updateInternal(data: DonutData, suppressAnimations: boolean, duration: number = 0) {
             let viewport = this.currentViewport;
             duration = duration || AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
+            let outerArc = this.outerArc;
+            for (let i = 0; i < data.dataPoints.length; i++) {
+                let labelPoint = outerArc.centroid(data.dataPoints[i]);
+                data.dataPoints[i].data.labelX = labelPoint[0];
+                data.dataPoints[i].data.labelY = labelPoint[1];
+            }
 
             if (this.animator) {
                 let layout = DonutChart.getLayout(this.radius, this.sliceWidthRatio, viewport);
@@ -1477,7 +1484,7 @@ module powerbi.visuals {
                 this.isMultiMeasure = grouped && grouped.length > 0 && grouped[0].values && grouped[0].values.length > 1;
                 this.isSingleMeasure = grouped && grouped.length === 1 && grouped[0].values && grouped[0].values.length === 1;
 
-                this.hasHighlights = this.seriesCount > 0 && !!dataViewCategorical.values[0].highlights;
+                this.hasHighlights = this.seriesCount > 0 && !_.isEmpty(dataViewCategorical.values) && !!dataViewCategorical.values[0].highlights;
                 this.highlightsOverflow = false;
                 this.total = 0;
                 this.highlightTotal = 0;
@@ -1538,7 +1545,7 @@ module powerbi.visuals {
                 }
 
                 // Create data labels settings
-                this.dataLabelsSettings = this.convertDataLableSettings();
+                this.dataLabelsSettings = this.convertDataLabelSettings();
 
                 let dataViewMetadata = this.dataViewMetadata;
                 if (dataViewMetadata) {
@@ -1593,7 +1600,7 @@ module powerbi.visuals {
                     let value: number = point.measureValue.measure;
                     let highlightedValue: number = this.hasHighlights && point.highlightMeasureValue.value !== 0 ? point.highlightMeasureValue.measure : undefined;
                     let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i, highlightedValue);
-
+                    
                     this.dataPoints.push({
                         identity: point.identity,
                         measure: measure,
@@ -1763,14 +1770,14 @@ module powerbi.visuals {
                     let label = converterHelper.getFormattedLegendLabel(seriesData.source, dataViewCategorical.values, formatStringProp);
                     let identity = SelectionId.createWithId(seriesData.identity);
                     let seriesName = converterHelper.getSeriesName(seriesData.source);
-                    let seriesObjects = seriesData.objects && seriesData.objects[0];
+                    let objects = this.grouped && this.grouped[seriesIndex] && this.grouped[seriesIndex].objects;                    
 
                     debug.assert(seriesData.values.length > 0, 'measure should have data points');
                     debug.assert(!this.hasHighlights || seriesData.highlights.length > 0, 'measure with highlights should have highlight data points');
                     let nonHighlight = seriesData.values[0] || 0;
                     let highlight = this.hasHighlights ? seriesData.highlights[0] || 0 : 0;
 
-                    let color = this.colorHelper.getColorForSeriesValue(seriesObjects, dataViewCategorical.values.identityFields, seriesName);
+                    let color = this.colorHelper.getColorForSeriesValue(objects, dataViewCategorical.values.identityFields, seriesName);
 
                     let dataPoint: ConvertedDataPoint = {
                         identity: identity,
@@ -1803,10 +1810,10 @@ module powerbi.visuals {
                 return dataPoints;
             }
 
-            private convertDataLableSettings(): VisualDataLabelsSettings {
+            private convertDataLabelSettings(): VisualDataLabelsSettings {
                 var dataViewMetadata = this.dataViewMetadata;
                 var values = this.dataViewCategorical.values;
-                var labelFormatString = values ? valueFormatter.getFormatString(values[0].source, donutChartProps.general.formatString) : undefined;
+                var labelFormatString = !_.isEmpty(values) ? valueFormatter.getFormatString(values[0].source, donutChartProps.general.formatString) : undefined;
                 var dataLabelsSettings = dataLabelUtils.getDefaultDonutLabelSettings(labelFormatString);
 
                 if (dataViewMetadata) {

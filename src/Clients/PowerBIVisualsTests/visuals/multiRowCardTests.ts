@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -218,7 +218,7 @@ module powerbitests {
 
             v.onDataChanged({ dataViews: [dataWithTitle] });
             window.setTimeout(() => {
-            
+
             expect($(".card")).toBeInDOM();
             expect($(".card .cardItemContainer")).toBeInDOM();
             expect($(".card .cardItemContainer .caption")).toBeInDOM();
@@ -315,8 +315,8 @@ module powerbitests {
 
                 expect(cardData.length).toBe(2);
                 expect(cardData).toEqual([
-                    { title: "test1", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "kpiFiveBars3", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] },
-                    { title: "test2", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "kpiFiveBars4", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] }
+                    { title: "test1", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "ms-kpi-glyph bars-stacked bars-three", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] },
+                    { title: "test2", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "ms-kpi-glyph bars-stacked bars-four", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] }
                 ]);
                 done();
             }, timeoutAmount);
@@ -368,7 +368,7 @@ module powerbitests {
             window.setTimeout(() => {
 
                 expect($(".card .caption div")).toBeInDOM();
-                expect($(".caption div").last().hasClass('kpiFiveBars4')).toBeTruthy();
+                expect($(".caption div").hasClass('bars-stacked bars-four')).toBeTruthy();
                 done();
             }, timeoutAmount);
         });

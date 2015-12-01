@@ -78,18 +78,12 @@ module powerbi.data {
             propertyName: string): void {
             debug.assertValue(defns, 'defns');
 
-            let defnsForObject = defns[objectName];
-            if (!defnsForObject)
+            let defn = getObjectDefinition(defns, objectName, selector);
+            if (!defn)
                 return;
-            
-            for (let i = 0, len = defnsForObject.length; i < len; i++) {   
-                let defn = defnsForObject[i];             
-                if (Selector.equals(defn.selector, selector)) {   
-                    //note: We decided that delete is acceptable here and that we don't need optimization here                
-                    delete defn.properties[propertyName];
-                    return;
-                }
-            }                   
+
+            //note: We decided that delete is acceptable here and that we don't need optimization here
+            delete defn.properties[propertyName];
         }
 
         export function getValue(
@@ -109,14 +103,25 @@ module powerbi.data {
             propertyId: DataViewObjectPropertyIdentifier,
             selector: Selector): DataViewObjectPropertyDefinitions {
 
-            let defnsForObject = defns[propertyId.objectName];
+            let defn = getObjectDefinition(defns, propertyId.objectName, selector);
+            if (!defn)
+                return;
+
+            return defn.properties;
+        }
+
+        export function getObjectDefinition(
+            defns: DataViewObjectDefinitions,
+            objectName: string,
+            selector: Selector): DataViewObjectDefinition {
+            let defnsForObject = defns[objectName];
             if (!defnsForObject)
                 return;
 
             for (let i = 0, len = defnsForObject.length; i < len; i++) {
                 let defn = defnsForObject[i];
                 if (Selector.equals(defn.selector, selector))
-                    return defn.properties;
+                    return defn;
             }
         }
 

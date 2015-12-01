@@ -25,6 +25,7 @@
  */
 
 @import "sprites.less";
+@import "ms-kpi-glyphs.less";
 @import "../../PowerBI/styles/colorPalette.less";
 @import "../../PowerBI/styles/fonts.less";
 @import "../../PowerBI/styles/mixins.less";
@@ -114,20 +115,6 @@
                 background-color: @neutralDarkColor;
                 box-shadow: none;
             }
-
-            span.checkbox::before {
-                content: '';
-
-                height: 8px;
-                width: 3px;
-                position: absolute;
-                display: inline-block;
-                margin: -2px 0 0px 3px;
-
-                border-right: 2px solid @whiteColor;
-                border-bottom: 2px solid @whiteColor;
-                transform: rotate(45deg);
-            }
         }
 
         &.partiallySelected {
@@ -163,6 +150,23 @@
         margin: 4px 2px;
         float: right;
         cursor: pointer;
+    }
+
+    &.isMultiSelectEnabled .slicerCheckbox.selected:not(.partiallySelected) {
+        /* TODO: Use a checkmark glyph rather than drawing a custom one using transforms and offsets. */
+        span.checkbox::before {
+            content: '';
+
+            height: 8px;
+            width: 3px;
+            position: absolute;
+            display: inline-block;
+            margin: -2px 0 0 3px;
+
+            border-right: 2px solid @whiteColor;
+            border-bottom: 2px solid @whiteColor;
+            transform: rotate(45deg);
+        }
     }
 }
 
@@ -675,6 +679,8 @@
 
 .tablixContainer {
     overflow: auto;
+    /** Preserve previous dashboard tile font-size */
+    font-size: 11px;
 
     .bi-tablix {
         position: relative;
@@ -697,7 +703,6 @@
             margin: 0px;
             font-family: @semiboldFontFamily;
             color: @neutralSecondaryColor;
-            font-size: 14px;
             font-weight: normal;
         }
 
@@ -718,7 +723,6 @@
             border-bottom-width: 1pt;
             border-bottom-style: solid;
             border-bottom-color: #CCCCCC;
-            font-size: 16px;
             /* Having a right padding of 5px is crucial to make sure that we do not fire click events on the table column
                header (and trigger sorting) when resizing a column.  The allowed offset from the parent td's right border
                to trigger resizing is 4px (see TablixResizer.resizeHandleSize) and thus less than the 5px padding.
@@ -736,14 +740,12 @@
             border-bottom-color: #E8E8E8;
             font-family: @semiboldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 14px;
             padding: 0px 0px 0px 10px;
         }
 
         .bi-table-last-row {
             font-family: @semiboldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 14px;
             padding: 0px 0px 0px 10px;
         }
 
@@ -753,7 +755,6 @@
             border-top-color: #CCCCCC;
             font-family: @boldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 14px;
             padding: 0px 5px 0px 10px;
         }
 
@@ -797,7 +798,6 @@
             text-align: right;
             font-family: @semiboldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 14px;
             padding: 0px 5px 0px 10px;
         }
 
@@ -855,7 +855,6 @@
             margin: 0px;
             font-family: @semiboldFontFamily;
             color: @neutralSecondaryColor;
-            font-size: 11px;
             font-weight: normal;
         }
 
@@ -876,7 +875,6 @@
             border-bottom-width: 1pt;
             border-bottom-style: solid;
             border-bottom-color: #CCCCCC;
-            font-size: 11px;
             padding: 0px 5px 0px 10px;
         }
 
@@ -890,14 +888,12 @@
             border-bottom-color: #E8E8E8;
             font-family: @semiboldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 11px;
             padding: 0px 0px 0px 10px;
         }
 
         .bi-table-last-row {
             font-family: @semiboldFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 11px;
             padding: 0px 0px 0px 10px;
         }
 
@@ -908,12 +904,12 @@
             font-family: @regularFontFamily;
             font-weight: bold;
             color: @neutralPrimaryColor;
-            font-size: 11px;
             padding: 0px 5px 0px 10px;
         }
 
         .bi-tablix-header {
             padding: 0px 5px 0px 10px;
+            text-align: left;
         }
 
         .bi-tablix-row-header-leaf {
@@ -948,7 +944,6 @@
             text-align: right;
             font-family: @regularFontFamily;
             color: @neutralPrimaryColor;
-            font-size: 11px;
             padding: 0px 5px 0px 10px;
         }
 
@@ -1070,293 +1065,11 @@
         }
     }
 
-    div {
-        &.kpiTrafficLightSingle0 {
-            .sprite(@kpi-traffic-light-single0)
-        }
-
-        &.kpiTrafficLightSingle1 {
-            .sprite(@kpi-traffic-light-single1)
-        }
-
-        &.kpiTrafficLightSingle2 {
-            .sprite(@kpi-traffic-light-single2)
-        }
-
-        &.kpiThreeFlagsColored0 {
-            .sprite(@kpi-three-flags-colored0)
-        }
-
-        &.kpiThreeFlagsColored1 {
-            .sprite(@kpi-three-flags-colored1)
-        }
-
-        &.kpiThreeFlagsColored2 {
-            .sprite(@kpi-three-flags-colored2)
-        }
-
-        &.kpiThreeStarsColored0 {
-            .sprite(@kpi-three-stars-colored0)
-        }
-
-        &.kpiThreeStarsColored1 {
-            .sprite(@kpi-three-stars-colored1)
-        }
-
-        &.kpiThreeStarsColored2 {
-            .sprite(@kpi-three-stars-colored2)
-        }
-
-        &.kpiThreeSymbolsUnCircledColored0 {
-            .sprite(@kpi-three-symbols-un-circled-colored0)
-        }
-
-        &.kpiThreeSymbolsUnCircledColored1 {
-            .sprite(@kpi-three-symbols-un-circled-colored1)
-        }
-
-        &.kpiThreeSymbolsUnCircledColored2 {
-            .sprite(@kpi-three-symbols-un-circled-colored2)
-        }
-
-        &.kpiRoadSigns0 {
-            .sprite(@kpi-road-signs0);
-        }
-
-        &.kpiRoadSigns1 {
-            .sprite(@kpi-road-signs1);
-        }
-
-        &.kpiRoadSigns2 {
-            .sprite(@kpi-road-signs2);
-        }
-
-        &.kpiTrafficLight0 {
-            .sprite(@kpi-traffic-light0);
-        }
-
-        &.kpiTrafficLight1 {
-            .sprite(@kpi-traffic-light1);
-        }
-
-        &.kpiTrafficLight2 {
-            .sprite(@kpi-traffic-light2);
-        }
-
-        &.kpiShapes0 {
-            .sprite(@kpi-shapes0);
-        }
-
-        &.kpiShapes1 {
-            .sprite(@kpi-shapes1);
-        }
-
-        &.kpiShapes2 {
-            .sprite(@kpi-shapes2);
-        }
-
-        &.kpiFiveBars0 {
-            .sprite(@kpi-five-bars-colored0);
-        }
-
-        &.kpiFiveBars1 {
-            .sprite(@kpi-five-bars-colored1);
-        }
-
-        &.kpiFiveBars2 {
-            .sprite(@kpi-five-bars-colored2);
-        }
-
-        &.kpiFiveBars3 {
-            .sprite(@kpi-five-bars-colored3);
-        }
-
-        &.kpiFiveBars4 {
-            .sprite(@kpi-five-bars-colored4);
-        }
-
-        &.kpiFiveBoxes0 {
-            .sprite(@kpi-five-boxes-colored0);
-        }
-
-        &.kpiFiveBoxes1 {
-            .sprite(@kpi-five-boxes-colored1);
-        }
-
-        &.kpiFiveBoxes2 {
-            .sprite(@kpi-five-boxes-colored2);
-        }
-
-        &.kpiFiveBoxes3 {
-            .sprite(@kpi-five-boxes-colored3);
-        }
-
-        &.kpiFiveBoxes4 {
-            .sprite(@kpi-five-boxes-colored4);
-        }
-
-        &.kpiGauge0 {
-            .sprite(@kpi-gauge-ascending0);
-        }
-
-        &.kpiGauge1 {
-            .sprite(@kpi-gauge-ascending1);
-        }
-
-        &.kpiGauge2 {
-            .sprite(@kpi-gauge-ascending2);
-        }
-
-        &.kpiGauge3 {
-            .sprite(@kpi-gauge-ascending3);
-        }
-
-        &.kpiGauge4 {
-            .sprite(@kpi-gauge-ascending4);
-        }
-
-        &.kpiTrafficLightSingleBig0 {
-            .sprite(@kpi-traffic-light-single0)
-        }
-
-        &.kpiTrafficLightSingleBig1 {
-            .sprite(@kpi-traffic-light-single1)
-        }
-
-        &.kpiTrafficLightSingleBig2 {
-            .sprite(@kpi-traffic-light-single2)
-        }
-
-        &.kpiThreeFlagsBigColored0 {
-            .sprite(@kpi-three-flags-colored0)
-        }
-
-        &.kpiThreeFlagsBigColored1 {
-            .sprite(@kpi-three-flags-colored1)
-        }
-
-        &.kpiThreeFlagsBigColored2 {
-            .sprite(@kpi-three-flags-colored2)
-        }
-
-        &.kpiThreeStarsBigColored0 {
-            .sprite(@kpi-three-stars-colored0)
-        }
-
-        &.kpiThreeStarsBigColored1 {
-            .sprite(@kpi-three-stars-colored1)
-        }
-
-        &.kpiThreeStarsBigColored2 {
-            .sprite(@kpi-three-stars-colored2)
-        }
-
-        &.kpiThreeSymbolsUnCircledBigColored0 {
-            .sprite(@kpi-three-symbols-un-circled-colored0)
-        }
-
-        &.kpiThreeSymbolsUnCircledBigColored1 {
-            .sprite(@kpi-three-symbols-un-circled-colored1)
-        }
-
-        &.kpiThreeSymbolsUnCircledBigColored2 {
-            .sprite(@kpi-three-symbols-un-circled-colored2)
-        }
-
-        &.kpiRoadSignsBig0 {
-            .sprite(@kpi-road-signs0);
-        }
-
-        &.kpiRoadSignsBig1 {
-            .sprite(@kpi-road-signs1);
-        }
-
-        &.kpiRoadSignsBig2 {
-            .sprite(@kpi-road-signs2);
-        }
-
-        &.kpiTrafficLightBig0 {
-            .sprite(@kpi-traffic-light0);
-        }
-
-        &.kpiTrafficLightBig1 {
-            .sprite(@kpi-traffic-light1);
-        }
-
-        &.kpiTrafficLightBig2 {
-            .sprite(@kpi-traffic-light2);
-        }
-
-        &.kpiShapesBig0 {
-            .sprite(@kpi-shapes0);
-        }
-
-        &.kpiShapesBig1 {
-            .sprite(@kpi-shapes1);
-        }
-
-        &.kpiShapesBig2 {
-            .sprite(@kpi-shapes2);
-        }
-
-        &.kpiFiveBarsBig0 {
-            .sprite(@kpi-five-bars-colored0);
-        }
-
-        &.kpiFiveBarsBig1 {
-            .sprite(@kpi-five-bars-colored1);
-        }
-
-        &.kpiFiveBarsBig2 {
-            .sprite(@kpi-five-bars-colored2);
-        }
-
-        &.kpiFiveBarsBig4 {
-            .sprite(@kpi-five-bars-colored3);
-        }
-
-        &.kpiFiveBarsBig5 {
-            .sprite(@kpi-five-bars-colored4);
-        }
-
-        &.kpiFiveBoxesBig0 {
-            .sprite(@kpi-five-boxes-colored0);
-        }
-
-        &.kpiFiveBoxesBig1 {
-            .sprite(@kpi-five-boxes-colored1);
-        }
-
-        &.kpiFiveBoxesBig2 {
-            .sprite(@kpi-five-boxes-colored2);
-        }
-
-        &.kpiFiveBoxesBig3 {
-            .sprite(@kpi-five-boxes-colored3);
-        }
-
-        &.kpiFiveBoxesBig4 {
-            .sprite(@kpi-five-boxes-colored4);
-        }
-
-        &.kpiGaugeBig0 {
-            .sprite(@kpi-gauge-ascending0);
-        }
-
-        &.kpiGaugeBig1 {
-            .sprite(@kpi-gauge-ascending1);
-        }
-
-        &.kpiGaugeBig2 {
-            .sprite(@kpi-gauge-ascending2);
-        }
-
-        &.kpiGaugeBig3 {
-            .sprite(@kpi-gauge-ascending3);
-        }
-
-        &.kpiGaugeBig4 {
-            .sprite(@kpi-gauge-ascending4);
+    .ms-kpi-glyph {
+        font-size: inherit;
+
+        &.big-kpi {
+            font-size: 48px;
         }
     }
 }
@@ -1419,6 +1132,7 @@
     div.tooltip-value-cell {
         display: table-cell;
         word-wrap: break-word;
+        font-family: @regularFontFamily;
         max-width: 260px;
         font-weight: bold;
         color: @whiteColor;
