@@ -262,7 +262,7 @@ module powerbi.visuals.samples {
         private axisX: D3.Selection;
         private axisY: D3.Selection;
 
-        private scaleType: string = powerbi.axisScale.linear;
+        private scaleType: string = axisScale.linear;
 
         public constructor(options?: AreaRangeChartConstructorOptions) {
             if (options) {

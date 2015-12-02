@@ -251,6 +251,27 @@ module powerbitests.tablixHelper {
         expect(result).toEqual(expectedValues);
     }
 
+    export function validateSortIconClassNames(expectedValues: string[], selector: string): void {
+        let rows = $(selector);
+        let pictures = rows.eq(0).find('i');
+
+        let result: string[] = [];
+        let errorString: string = null;
+
+        let ilen = pictures.length;
+        if (ilen !== expectedValues.length)
+            addError(errorString, "Actual column count " + ilen + " does not match expected number of columns " + expectedValues.length + ".");
+
+        for (let i = 0; i < ilen; i++) {
+            result[i] = pictures.eq(i).attr('class');
+            if (result[i] !== expectedValues[i])
+                addError(errorString, "Actual class name " + result[i] + " in column does not match expected value " + expectedValues[i] + ".");
+        }
+
+        expect(errorString).toBeNull();
+        expect(result).toEqual(expectedValues);
+    }
+
     export function validateClassNames(expectedValues: string[][], selector: string, noMarginClass: string): void {
         var rows = $(selector);
 

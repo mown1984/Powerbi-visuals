@@ -28,7 +28,7 @@
 
 module powerbi.visuals.controls.internal {
 
-    var UNSELECTABLE_CLASS_NAME = "unselectable";
+    const UNSELECTABLE_CLASS_NAME = "unselectable";
 
     /** This class is responsible for tablix header resizing */
     export class TablixResizer {

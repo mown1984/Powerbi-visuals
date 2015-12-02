@@ -194,7 +194,7 @@ module powerbi.visuals.samples {
                     color: color,
                     icon: LegendIcon.Box,
                     selected: false,
-                    identity: null
+                    identity: SelectionId.createNull()
                 });
                 for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
                     let id = SelectionIdBuilder

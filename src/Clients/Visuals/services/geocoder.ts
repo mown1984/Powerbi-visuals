@@ -40,12 +40,12 @@ module powerbi.visuals.services {
     export interface BingAjaxService {
         (url: string, settings: JQueryAjaxSettings): any;
     }
-    export var safeCharacters: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+    export const safeCharacters: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
     
     /** Note: Used for test mockup */
-    export var BingAjaxCall: BingAjaxService = $.ajax;
+    export let BingAjaxCall: BingAjaxService = $.ajax;
 
-    export var CategoryTypeArray = [
+    export const CategoryTypeArray = [
         "Address",
         "City",
         "Continent",
@@ -62,7 +62,7 @@ module powerbi.visuals.services {
         return CategoryTypeArray.indexOf(value) > -1;
     }
 
-    export var BingEntities = {
+    export const BingEntities = {
         Continent: "Continent",
         Sovereign: "Sovereign",
         CountryRegion: "CountryRegion",
@@ -103,11 +103,11 @@ module powerbi.visuals.services {
     }
 
     // Static variables for caching, maps, etc
-    var geocodeQueue: IGeocodeQueueItem[];
-    var activeRequests;
-    var categoryToBingEntity: { [key: string]: string; };
-    var categoryToBingEntityGeodata: { [key: string]: string; };
-    var geocodingCache: IGeocodingCache;
+    let geocodeQueue: IGeocodeQueueItem[];
+    let activeRequests;
+    let categoryToBingEntity: { [key: string]: string; };
+    let categoryToBingEntityGeodata: { [key: string]: string; };
+    let geocodingCache: IGeocodingCache;
 
     export class GeocodeQuery implements IGeocodeQuery {
         public query: string;
@@ -359,7 +359,7 @@ module powerbi.visuals.services {
             });
     }
 
-    var dequeueTimeoutId;
+    let dequeueTimeoutId;
 
     function completeRequest(item: IGeocodeQueueItem, error: Error, coordinate: IGeocodeCoordinate | IGeocodeBoundaryCoordinate = null) {
         dequeueTimeoutId = setTimeout(() => dequeue(1), Settings.UseDoubleArrayGeodataResult ? Settings.UseDoubleArrayDequeueTimeout : 0);

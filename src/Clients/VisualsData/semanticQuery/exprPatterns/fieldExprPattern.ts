@@ -359,6 +359,13 @@ module powerbi.data {
                 return fieldExpr.hierarchyLevel.level;
         }
 
+        export function getColumnRef(fieldExpr: FieldExprPattern): FieldExprPropertyPattern {
+            if (fieldExpr.columnHierarchyLevelVariation)
+                return fieldExpr.columnHierarchyLevelVariation.source;
+
+            return fieldExpr.column || fieldExpr.measure || fieldExpr.columnAggr;
+        }
+
         export function getFieldExprName(fieldExpr: FieldExprPattern): string {
             let name = getPropertyName(fieldExpr);
 

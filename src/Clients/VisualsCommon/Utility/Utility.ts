@@ -81,6 +81,10 @@ module jsCommon {
             return StringExtensions.normalizeCase(a).indexOf(normalizedSearchString) === 0;
         }
 
+        export function startsWith(a: string, b: string): boolean {
+            return a.indexOf(b) === 0;
+        }
+
         /** Determines whether a string contains a specified substring (while ignoring case). */
         export function containsIgnoreCase(source: string, substring: string): boolean {
             if (source == null)

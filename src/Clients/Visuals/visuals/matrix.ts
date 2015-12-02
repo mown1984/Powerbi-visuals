@@ -117,7 +117,7 @@ module powerbi.visuals {
     /**
      * Factory method used by unit tests.
      */
-    export function createMatrixHierarchyNavigator(matrix: DataViewMatrix, formatter: ICustomValueFormatter): IMatrixHierarchyNavigator {
+    export function createMatrixHierarchyNavigator(matrix: DataViewMatrix, formatter: ICustomValueColumnFormatter): IMatrixHierarchyNavigator {
         return new MatrixHierarchyNavigator(matrix, formatter);
     }
 
@@ -126,9 +126,9 @@ module powerbi.visuals {
         private matrix: DataViewMatrix;
         private rowHierarchy: MatrixHierarchy;
         private columnHierarchy: MatrixHierarchy;
-        private formatter: ICustomValueFormatter;
+        private formatter: ICustomValueColumnFormatter;
 
-        constructor(matrix: DataViewMatrix, formatter: ICustomValueFormatter) {
+        constructor(matrix: DataViewMatrix, formatter: ICustomValueColumnFormatter) {
             this.matrix = matrix;
             this.rowHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(matrix.rows);
             this.columnHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(matrix.columns);
@@ -279,7 +279,7 @@ module powerbi.visuals {
         public getIntersection(rowItem: MatrixVisualNode, columnItem: MatrixVisualNode): MatrixVisualBodyItem {
             debug.assertValue(rowItem, 'rowItem');
             debug.assertValue(columnItem, 'columnItem');
-            var TablixUtils = controls.internal.TablixUtils;
+            let TablixUtils = controls.internal.TablixUtils;
             let isSubtotalItem = rowItem.isSubtotal === true || columnItem.isSubtotal === true;
 
             if (!rowItem.values)
@@ -295,12 +295,11 @@ module powerbi.visuals {
                 };
 
             let valueSource = this.matrix.valueSources[intersection.valueSourceIndex || 0];
-            let formatString = valueFormatter.getFormatString(valueSource, Matrix.formatStringProp);
-            let formattedValue = this.formatter(intersection.value, formatString);
+            let formattedValue = this.formatter(intersection.value, valueSource, Matrix.formatStringProp);
 
-            if (TablixUtils.isValidStatusGraphic(valueSource.kpiStatusGraphic, formattedValue))
+            if (TablixUtils.isValidStatusGraphic(valueSource.kpi, formattedValue))
                 return {
-                    domContent: TablixUtils.createKpiDom(valueSource.kpiStatusGraphic, intersection.value),
+                    domContent: TablixUtils.createKpiDom(valueSource.kpi, intersection.value),
                     isSubtotal: isSubtotalItem,
                 };
 
@@ -418,7 +417,7 @@ module powerbi.visuals {
                     let source = level.sources[node.levelSourceIndex ? node.levelSourceIndex : 0];
                     let formatString = valueFormatter.getFormatString(source, Matrix.formatStringProp);
                     if (formatString)
-                        node.name = this.formatter(node.value, formatString);
+                        node.name = this.formatter(node.value, source, Matrix.formatStringProp);
                     node.queryName = source.queryName;
                 }
 
@@ -842,7 +841,7 @@ module powerbi.visuals {
         private currentViewport: IViewport;
         private style: IVisualStyle;
         private dataView: DataView;
-        private formatter: ICustomValueFormatter;
+        private formatter: ICustomValueColumnFormatter;
         private isInteractive: boolean;
         private hostServices: IVisualHostServices;
         private hierarchyNavigator: IMatrixHierarchyNavigator;
@@ -859,6 +858,11 @@ module powerbi.visuals {
 
             let dataViewMatrix: data.CompiledDataViewMatrixMapping = <data.CompiledDataViewMatrixMapping>dataViewMapping.matrix;
 
+            //If Columns Hierarchy is not empty, set Window DataReduction Count to 100
+            if (!_.isEmpty(dataViewMatrix.columns.for.in.items)) {
+                dataViewMatrix.rows.dataReductionAlgorithm.window.count = 100;
+            }
+
             let objects: MatrixDataViewObjects = <MatrixDataViewObjects>dataViewMapping.metadata.objects;
             (<data.CompiledDataViewRoleForMappingWithReduction>dataViewMatrix.rows).for.in.subtotalType = Matrix.shouldShowRowSubtotals(objects) ? data.CompiledSubtotalType.After : data.CompiledSubtotalType.None;
             dataViewMatrix.columns.for.in.subtotalType = Matrix.shouldShowColumnSubtotals(objects) ? data.CompiledSubtotalType.After : data.CompiledSubtotalType.None;
@@ -872,7 +876,7 @@ module powerbi.visuals {
             this.element = options.element;
             this.style = options.style;
             this.updateViewport(options.viewport);
-            this.formatter = valueFormatter.formatRaw;
+            this.formatter = valueFormatter.formatValueColumn;
             this.isInteractive = options.interactivity && options.interactivity.selection != null;
             this.hostServices = options.host;
 
@@ -935,10 +939,8 @@ module powerbi.visuals {
             this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
         }
 
-        private persistColumnWidths(objectInstances: VisualObjectInstance[]): void {
-            this.hostServices.persistProperties({
-                merge: objectInstances
-            });
+        private persistColumnWidths(objectInstances: VisualObjectInstancesToPersist): void {
+            this.hostServices.persistProperties(objectInstances);
         }
 
         private updateViewport(newViewport: IViewport) {

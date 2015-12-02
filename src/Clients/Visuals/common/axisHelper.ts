@@ -34,8 +34,8 @@ module powerbi.visuals {
      * Default ranges are for when we have a field chosen for the axis,
      * but no values are returned by the query.
      */
-    export var fallBackDomain = [0, 10];
-    export var fallbackDateDomain = [new Date(2014, 1, 1).getTime(), new Date(2015, 1, 1).getTime()];
+    export const fallBackDomain = [0, 10];
+    export const fallbackDateDomain = [new Date(2014, 1, 1).getTime(), new Date(2015, 1, 1).getTime()];
 
     export interface IAxisProperties {
         /** 
@@ -175,7 +175,7 @@ module powerbi.visuals {
     }
 
     export module AxisHelper {
-        let XLabelMaxAllowedOverflow = 25;
+        let XLabelMaxAllowedOverflow = 35;
         let TextHeightConstant = 10;
         let MinTickCount = 2;
         let DefaultBestTickCount = 3;
@@ -432,11 +432,16 @@ module powerbi.visuals {
             let labelOffset = xAxisProperties.outerPadding && xAxisProperties.categoryThickness ? xAxisProperties.categoryThickness / 2 : 0;
             let xLabelOuterPadding = 0;
 
-            if (xAxisProperties.outerPadding !== undefined) {
-                xLabelOuterPadding = xAxisProperties.outerPadding;
-            }
-            else if (xAxisProperties.xLabelMaxWidth !== undefined) {
-                xLabelOuterPadding = Math.max(0, (viewport.width - xAxisProperties.xLabelMaxWidth * xLabels.length) / 2);
+            // TODO: #6153261 - improve clarity of the outerPadding property.
+            // only Ordinal scales actually use outpadding, Scalar/Continuous axes do not have outer padding and only use this property to incorporate rectangle half-width.
+            let scaleIsOrdinal = isOrdinalScale(xAxisProperties.scale);
+            if (scaleIsOrdinal) {
+                if (xAxisProperties.outerPadding !== undefined) {
+                    xLabelOuterPadding = xAxisProperties.outerPadding;
+                }
+                else if (xAxisProperties.xLabelMaxWidth !== undefined) {
+                    xLabelOuterPadding = Math.max(0, (viewport.width - xAxisProperties.xLabelMaxWidth * xLabels.length) / 2);
+                }
             }
 
             if (getRecommendedNumberOfTicksForXAxis(viewport.width) !== 0
@@ -560,27 +565,28 @@ module powerbi.visuals {
 
         export function invertOrdinalScale(scale: D3.Scale.OrdinalScale, x: number) {
             let leftEdges = scale.range();
+            if (leftEdges.length < 2)
+                return 0;
+
             let width = scale.rangeBand();
+            let halfInnerPadding = (leftEdges[1] - width) / 2;
             let j;
-            for (j = 0; x > (leftEdges[j] + width) && (leftEdges.length - 1) > j; j++)
+            for (j = 0; x > (leftEdges[j] + width + halfInnerPadding) && (leftEdges.length - 1) > j; j++)
                 ;
             return scale.domain()[j];
         }
 
-        export function getOrdinalScaleClosestDataPointIndex(scale: D3.Scale.OrdinalScale, x: number) {
-            let index: number = 0;
-            let range = scale.range();
-            let distance: number = Math.abs(x - range[0]);
-
-            for (let j = 1; j < range.length; j++) {
-                let currentDistance = Math.abs(x - range[j]);
-                if (distance > currentDistance) {
-                    distance = currentDistance;
-                    index = j;
+        export function findClosestXAxisIndex(categoryValue: number, categoryAxisValues: CartesianDataPoint[]): number {
+            let closestValueIndex: number = -1;
+            let minDistance = Number.MAX_VALUE;
+            for (let i in categoryAxisValues) {
+                let distance = Math.abs(categoryValue - categoryAxisValues[i].categoryValue);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestValueIndex = parseInt(i, 10);
                 }
             }
-
-            return index;
+            return closestValueIndex;
         }
 
         export function diffScaled(
@@ -903,14 +909,16 @@ module powerbi.visuals {
             return formattedTickValues;
         }
 
-        export function getMinTickValueInterval(formatString: string, columnType: ValueType): number {
+        export function getMinTickValueInterval(formatString: string, columnType: ValueType, is100Pct?: boolean): number {
             let isCustomFormat = formatString && !powerbi.NumberFormat.isStandardFormat(formatString);
             if (isCustomFormat) {
-                let precision = powerbi.NumberFormat.getCustomFormatMetadata(formatString, isCustomFormat).precision;
+                let precision = powerbi.NumberFormat.getCustomFormatMetadata(formatString, true /*calculatePrecision*/).precision;
                 if (formatString.indexOf('%') > -1)
                     precision += 2; //percent values are multiplied by 100 during formatting
                 return Math.pow(10, -precision);
             }
+            else if (is100Pct)
+                return 0.01;
             else if (columnType.integer)
                 return 1;
 
@@ -1030,7 +1038,7 @@ module powerbi.visuals {
                 return moreWordBreakChars.length > Math.floor(labels.length / 2);
             }
 
-            export var DefaultRotation = {
+            export const DefaultRotation = {
                 sine: Math.sin(Math.PI * (35 / 180)),
                 cosine: Math.cos(Math.PI * (35 / 180)),
                 tangent: Math.tan(Math.PI * (35 / 180)),
@@ -1038,7 +1046,7 @@ module powerbi.visuals {
                 dy: '-0.5em',
             };
 
-            export var DefaultRotationWithScrollbar = {
+            export const DefaultRotationWithScrollbar = {
                 sine: Math.sin(Math.PI * (90 / 180)),
                 cosine: Math.cos(Math.PI * (90 / 180)),
                 tangent: Math.tan(Math.PI * (90 / 180)),
@@ -1212,6 +1220,7 @@ module powerbi.visuals {
         }
 
         //this function can return different scales e.g. log, linear
+        // NOTE: export only for testing, do not access directly
         export function createNumericalScale(axisScaleType: string, pixelSpan: number, dataDomain: any[], dataType:ValueType, outerPadding: number = 0, niceCount?: number): D3.Scale.GenericScale<any> {                      
             if (axisScaleType === axisScale.log && isLogScalePossible(dataDomain,dataType)) {
                 return createLogScale(pixelSpan, dataDomain, outerPadding, niceCount);
@@ -1235,6 +1244,7 @@ module powerbi.visuals {
             return scale;
         }
 
+        // NOTE: export only for testing, do not access directly
         export function createLinearScale(pixelSpan: number, dataDomain: any[], outerPadding: number = 0, niceCount?: number): D3.Scale.LinearScale {
             let scale = d3.scale.linear()
                 .range([outerPadding, pixelSpan - outerPadding])

@@ -69,9 +69,14 @@ module powerbi.data {
     export interface QueryGeneratorOptions {
         query: SemanticQuery;
         mappings: CompiledDataViewMapping[];
-        projections: QueryProjectionsByRole;
+        additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
+    }
+
+    export interface AdditionalQueryProjection {
+        queryName: string;
+        selector: Selector;
     }
 
     export interface QueryGeneratorResult {

@@ -28,14 +28,13 @@
 
 module powerbi {
     import SemanticFilter = powerbi.data.SemanticFilter;
-    import SQExpr = powerbi.data.SQExpr;
 
     /** Describes a structural type in the client type system. Leaf properties should use ValueType. */
     export interface StructuralTypeDescriptor {
         fill?: FillTypeDescriptor;
         fillRule?: FillRuleTypeDescriptor;
         filter?: FilterTypeDescriptor;
-        expression?: SQExprTypeDescriptor;
+        expression?: DefaultValueTypeDescriptor;
         //border?: BorderTypeDescriptor;
         //etc.
     }
@@ -44,14 +43,14 @@ module powerbi {
         FillDefinition |
         FillRuleDefinition |
         SemanticFilter |
-        SQExpr;
+        DefaultValueDefinition;
 
     /** Defines instances of structural types. */
     export type StructuralObjectValue =
         Fill |
         FillRule |
         SemanticFilter |
-        SQExpr;
+        DefaultValueDefinition;
 
     export module StructuralTypeDescriptor {
         export function isValid(type: StructuralTypeDescriptor): boolean {

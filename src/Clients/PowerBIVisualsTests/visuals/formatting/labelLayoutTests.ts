@@ -323,6 +323,42 @@ module powerbitests {
         it("Right positioning", () => {
             expect(DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.Right, offset)).toEqual(createRect(60, 45, 40, 10));
         });
+
+        it("Center positioning", () => {
+            expect(DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.Center, offset)).toEqual(createRect(30, 45, 40, 10));
+        });
+
+        it("Above Left positioning", () => {
+            let labelRect = DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.AboveLeft, offset);
+            expect(labelRect.left).toBeCloseTo(1, 0);
+            expect(labelRect.top).toBeCloseTo(35, 0);
+            expect(labelRect.width).toBe(40);
+            expect(labelRect.height).toBe(10);
+        });
+
+        it("Below Left positioning", () => {
+            let labelRect = DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.BelowLeft, offset);
+            expect(labelRect.left).toBeCloseTo(1, 0);
+            expect(labelRect.top).toBeCloseTo(55, 0);
+            expect(labelRect.width).toBe(40);
+            expect(labelRect.height).toBe(10);
+        });
+
+        it("Above Right positioning", () => {
+            let labelRect = DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.AboveRight, offset);
+            expect(labelRect.left).toBeCloseTo(59, 0);
+            expect(labelRect.top).toBeCloseTo(35, 0);
+            expect(labelRect.width).toBe(40);
+            expect(labelRect.height).toBe(10);
+        });
+    
+        it("Below Right positioning", () => {
+            let labelRect = DataLabelPointPositioner.getLabelRect(pointLabelDataPoint, PointLabelPosition.BelowRight, offset);
+            expect(labelRect.left).toBeCloseTo(59, 0);
+            expect(labelRect.top).toBeCloseTo(55, 0);
+            expect(labelRect.width).toBe(40);
+            expect(labelRect.height).toBe(10);
+        });
     });
 
     function createLabelDataPoint(text: string, isParentRect?: boolean, parentRect?: LabelParentRect, parentPoint?: LabelParentPoint): LabelDataPoint {
@@ -334,6 +370,7 @@ module powerbitests {
             outsideFill: testOutsideFillColor,
             isParentRect: !!isParentRect,
             parentShape: isParentRect ? parentRect : parentPoint,
+            identity:null,
         };
     }
 

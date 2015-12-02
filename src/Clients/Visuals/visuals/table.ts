@@ -58,9 +58,9 @@ module powerbi.visuals {
     export class TableHierarchyNavigator implements controls.ITablixHierarchyNavigator, TableDataAdapter {
 
         private tableDataView: DataViewVisualTable;
-        private formatter: ICustomValueFormatter;
+        private formatter: ICustomValueColumnFormatter;
 
-        constructor(tableDataView: DataViewVisualTable, formatter: ICustomValueFormatter) {
+        constructor(tableDataView: DataViewVisualTable, formatter: ICustomValueColumnFormatter) {
             debug.assertValue(tableDataView, 'tableDataView');
             debug.assertValue(formatter, 'formatter');
 
@@ -192,11 +192,11 @@ module powerbi.visuals {
                 value = (<DataViewVisualTableRow>rowItem).values[columnIndex];
             }
 
-            let formattedValue = this.formatter(value, valueFormatter.getFormatString(columnItem, Table.formatStringProp));
+            let formattedValue = this.formatter(value, columnItem, Table.formatStringProp);
             let domContent: JQuery;
             let textContent: string;
-            if (TablixUtils.isValidStatusGraphic(columnItem.kpiStatusGraphic, formattedValue))
-                domContent = TablixUtils.createKpiDom(columnItem.kpiStatusGraphic, formattedValue);
+            if (TablixUtils.isValidStatusGraphic(columnItem.kpi, formattedValue))
+                domContent = TablixUtils.createKpiDom(columnItem.kpi, formattedValue);
             else
                 textContent = formattedValue;
 
@@ -272,7 +272,7 @@ module powerbi.visuals {
 
     export interface TableBinderOptions {
         onBindRowHeader?(item: any): void;
-        onColumnHeaderClick?(queryName: string): void;
+        onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
     }
     
     /**
@@ -280,7 +280,7 @@ module powerbi.visuals {
      */
     export class TableBinder implements controls.ITablixBinder {
 
-        private static columnHeaderClassName = 'bi-table-column-header';
+        private static sortIcon = 'bi-table-column-header';
         private static rowClassName = 'bi-table-row';
         private static lastRowClassName = 'bi-table-last-row';
         private static footerClassName = 'bi-table-footer';
@@ -316,17 +316,27 @@ module powerbi.visuals {
          */
         public bindColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
 
-            let classNames = TableBinder.columnHeaderClassName;
+            let sortDirection: SortDirection = SortDirection.Descending;
+            let classNames = TableBinder.sortIcon;
+            if (item.sort) {
+                classNames += ' sorted';
+                sortDirection = item.sort;
+            }
+
             if (item.isMeasure)
                 classNames += ' ' + TableBinder.numericCellClassName;
 
             cell.extension.setContainerStyle(classNames);
             cell.extension.disableDragResize();
             cell.extension.contentHost.textContent = item.displayName;
+            controls.internal.TablixUtils.appendSortImageToColumnHeader(sortDirection, cell);
 
             if (this.options.onColumnHeaderClick) {
                 let handler = (e: MouseEvent) => {
-                    this.options.onColumnHeaderClick(item.queryName ? item.queryName : item.displayName);
+                    let sortDirection: SortDirection = SortDirection.Descending;
+                    if (item.sort === SortDirection.Descending)
+                        sortDirection = SortDirection.Ascending;
+                    this.options.onColumnHeaderClick(item.queryName ? item.queryName : item.displayName, sortDirection);
                 };
                 cell.extension.registerClickHandler(handler);
             }
@@ -461,7 +471,7 @@ module powerbi.visuals {
         private element: JQuery;
         private currentViewport: IViewport;
         private style: IVisualStyle;
-        private formatter: ICustomValueFormatter;
+        private formatter: ICustomValueColumnFormatter;
         private isInteractive: boolean;
         private getLocalizedString: (stringId: string) => string;
         private dataView: DataView;
@@ -494,7 +504,7 @@ module powerbi.visuals {
             this.element = options.element;
             this.style = options.style;
             this.updateViewport(options.viewport);
-            this.formatter = valueFormatter.formatRaw;
+            this.formatter = valueFormatter.formatValueColumn;
             this.isInteractive = options.interactivity && options.interactivity.selection != null;
             this.getLocalizedString = options.host.getLocalizedString;
             this.hostServices = options.host;
@@ -579,10 +589,8 @@ module powerbi.visuals {
             this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
         }
 
-        private persistColumnWidths(objectInstances: VisualObjectInstance[]): void {
-            this.hostServices.persistProperties({
-                merge: objectInstances
-            });
+        private persistColumnWidths(objectInstances: VisualObjectInstancesToPersist): void {
+            this.hostServices.persistProperties(objectInstances);
         }
 
         private updateViewport(newViewport: IViewport) {
@@ -609,7 +617,7 @@ module powerbi.visuals {
             this.visualTable = Table.converter(this.dataView.table);
             if (!this.tablixControl) {
                 let dataNavigator = new TableHierarchyNavigator(this.visualTable, this.formatter);
-                this.hierarchyNavigator = dataNavigator;                
+                this.hierarchyNavigator = dataNavigator;
             }
             else {
                 this.hierarchyNavigator.update(this.visualTable);
@@ -638,7 +646,7 @@ module powerbi.visuals {
 
             let tableBinderOptions: TableBinderOptions = {
                 onBindRowHeader: (item: any) => this.onBindRowHeader(item),
-                onColumnHeaderClick: (queryName: string) => this.onColumnHeaderClick(queryName),
+                onColumnHeaderClick: (queryName: string, sortDirection: SortDirection) => this.onColumnHeaderClick(queryName, sortDirection),
             };
             let tableBinder = new TableBinder(tableBinderOptions);
 
@@ -765,9 +773,10 @@ module powerbi.visuals {
             }
         }
 
-        private onColumnHeaderClick(queryName: string) {
+        private onColumnHeaderClick(queryName: string, sortDirection: SortDirection) {
             let sortDescriptors: SortableFieldDescriptor[] = [{
                 queryName: queryName,
+                sortDirection: sortDirection
             }];
             let args: CustomSortEventArgs = {
                 sortDescriptors: sortDescriptors

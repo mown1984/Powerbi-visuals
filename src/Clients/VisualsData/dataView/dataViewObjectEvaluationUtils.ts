@@ -244,7 +244,7 @@ module powerbi.data {
             objectsForAllSelectors: DataViewObjectDefinitionsByRepetition,
             defaultValueProp: DataViewObjectPropertyIdentifier,
             queryName: string,
-            defaultValue: SQConstantExpr): void {
+            defaultValue: DefaultValueDefinition): void {
             if (!defaultValue)
                 return;
 

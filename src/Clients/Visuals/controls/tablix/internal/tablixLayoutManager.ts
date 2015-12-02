@@ -124,7 +124,7 @@ module powerbi.visuals.controls.internal {
             if (!this.hasImageContent)
                 return this._cellHeight;
 
-            var width = this._viewport.width;
+            let width = this._viewport.width;
             if (width <= 250) {
                 // Small
                 return 20;
