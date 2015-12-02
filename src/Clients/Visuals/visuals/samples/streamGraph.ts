@@ -161,7 +161,7 @@ module powerbi.visuals.samples {
                         color: colors.getColorByIndex(i).value,
                         icon: LegendIcon.Box,
                         selected: false,
-                        identity: null
+                        identity: SelectionId.createNull()
                     });
                 }
 
