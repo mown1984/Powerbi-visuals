@@ -198,4 +198,6 @@
 
 /// <reference path="visuals/donutChart.ts"/>
 
+/// <reference path="visuals/samples/globeMap.ts" />
+
 /// <reference path="plugins.ts"/>
