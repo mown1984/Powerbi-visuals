@@ -233,7 +233,7 @@ module powerbitests {
                 expect($(".slicerText").length).toBe(0);
             });
 
-            it("Resize", () => {
+            xit("Resize", () => {
                 let viewport = {
                     height: 200,
                     width: 300
