@@ -352,4 +352,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.AreaRangeChart.capabilities,
         create: () => new samples.AreaRangeChart()
     };
+
+    export var boxAndWhiskerDiagram: IVisualPlugin = {
+        name: 'boxAndWhiskerDiagram',
+        capabilities: samples.BoxAndWhiskerDiagram.capabilities,
+        create: () => new samples.BoxAndWhiskerDiagram()
+    };
 }

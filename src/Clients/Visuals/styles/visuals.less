@@ -1849,3 +1849,25 @@ div.ql-toolbar {
     }
 }
 
+.boxAndWhiskerDiagram {
+    @strokeWidth: 1px;
+    
+    font-family: @regularFontFamily;
+
+    .nodes .node{
+        .box {
+            shape-rendering: crispEdges;
+            stroke-width: @strokeWidth;
+        }
+    }
+
+    .whiskers {
+        .whisker {
+            stroke-width: @strokeWidth;
+        }
+
+        .whisker-center {
+            stroke-dasharray: 3, 3;
+        }
+    }
+}

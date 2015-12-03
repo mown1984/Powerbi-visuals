@@ -204,4 +204,6 @@
 
 /// <reference path="visuals/scriptVisual.ts"/>
 
+/// <reference path="visuals/samples/boxAndWhiskerDiagram.ts" />
+
 /// <reference path="plugins.ts"/>
