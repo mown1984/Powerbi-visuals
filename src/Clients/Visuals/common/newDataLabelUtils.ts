@@ -28,15 +28,18 @@
 
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
 
     export module NewDataLabelUtils {
+        export const DefaultLabelFontSizeInPt = 9;
         export let startingLabelOffset = 8;
         export let maxLabelOffset = 8;
         export let maxLabelWidth: number = 50;
         export let hundredPercentFormat = '0.00 %;-0.00 %;0.00 %';
         export let LabelTextProperties: TextProperties = {
             fontFamily: 'wf_standard-font',
-            fontSize: '12px',
+            fontSize: PixelConverter.fromPoint(DefaultLabelFontSizeInPt),
             fontWeight: 'normal',
         };
         export let defaultLabelColor = "#777777";
@@ -44,18 +47,14 @@ module powerbi.visuals {
         let horizontalLabelBackgroundMargin = 4;
         let verticalLabelBackgroundMargin = 2;
         let labelBackgroundRounding = 4;
+        let defaultLabelPrecision: number = undefined;
+        let defaultCountLabelPrecision: number = 0;
 
-        export let labelGraphicsContextClass: ClassAndSelector = {
-            class: 'labelGraphicsContext',
-            selector: '.labelGraphicsContext'
-        };
+        export let labelGraphicsContextClass: ClassAndSelector = createClassAndSelector('labelGraphicsContext');
+        export let labelBackgroundGraphicsContextClass: ClassAndSelector = createClassAndSelector('labelBackgroundGraphicsContext');
+        let labelsClass: ClassAndSelector = createClassAndSelector('label');
 
-        let labelsClass: ClassAndSelector = {
-            class: 'label',
-            selector: '.label'
-        };
-
-        export function drawDefaultLabels(context: D3.Selection, dataLabels: Label[]): D3.UpdateSelection {
+        export function drawDefaultLabels(context: D3.Selection, dataLabels: Label[], numeric: boolean = false): D3.UpdateSelection {
             let labels = context.selectAll(labelsClass.selector)
                 .data(_.filter(dataLabels, (d: Label) => d.isVisible), (d: Label, index: number) => { return d.identity ? d.identity.getKeyWithoutHighlight() : index; });
 
@@ -63,9 +62,7 @@ module powerbi.visuals {
                 .append("text")
                 .classed(labelsClass.class, true);
 
-            labels
-                .text((d: Label) => d.text)
-                .attr({
+            let labelAttr = {
                     x: (d: Label) => {
                         return (d.boundingBox.left + (d.boundingBox.width / 2));
                     },
@@ -73,8 +70,18 @@ module powerbi.visuals {
                         return d.boundingBox.top + d.boundingBox.height;
                     },
                     dy: "-0.15em",
-                })
-                .style('fill', (d: Label) => d.fill);
+            };
+            if (numeric) { // For numeric labels, we use a tighter bounding box, so remove the dy because it doesn't need to be centered
+                labelAttr.dy = undefined;
+            }
+
+            labels
+                .text((d: Label) => d.text)
+                .attr(labelAttr)
+                .style({
+                    'fill': (d: Label) => d.fill,
+                    'font-size': (d: Label) => PixelConverter.fromPoint(d.fontSize || DefaultLabelFontSizeInPt)
+                });
 
             labels.exit()
                 .remove();
@@ -82,7 +89,7 @@ module powerbi.visuals {
             return labels;
         }
 
-        export function animateDefaultLabels(context: D3.Selection, dataLabels: Label[], duration: number): D3.UpdateSelection {
+        export function animateDefaultLabels(context: D3.Selection, dataLabels: Label[], duration: number, numeric: boolean = false, easeType: string = 'cubic-in-out'): D3.UpdateSelection {
             let labels = context.selectAll(labelsClass.selector)
                 .data(_.filter(dataLabels, (d: Label) => d.isVisible), (d: Label, index: number) => { return d.identity ? d.identity.getKeyWithoutHighlight() : index; });
 
@@ -90,20 +97,29 @@ module powerbi.visuals {
                 .append("text")
                 .classed(labelsClass.class, true);
 
+            let labelAttr = {
+                x: (d: Label) => {
+                    return (d.boundingBox.left + (d.boundingBox.width / 2));
+                },
+                y: (d: Label) => {
+                    return d.boundingBox.top + d.boundingBox.height;
+                },
+                dy: "-0.15em",
+            };
+            if (numeric) { // For numeric labels, we use a tighter bounding box, so remove the dy because it doesn't need to be centered
+                labelAttr.dy = undefined;
+            }
+
             labels
                 .text((d: Label) => d.text)
-                .style('fill', (d: Label) => d.fill)
+                .style({
+                    'fill': (d: Label) => d.fill,
+                    'font-size': (d: Label) => PixelConverter.fromPoint(d.fontSize || DefaultLabelFontSizeInPt),
+                })
                 .transition()
+                .ease(easeType)
                 .duration(duration)
-                .attr({
-                    x: (d: Label) => {
-                        return (d.boundingBox.left + (d.boundingBox.width / 2));
-                    },
-                    y: (d: Label) => {
-                        return d.boundingBox.top + d.boundingBox.height;
-                    },
-                    dy: "-0.15em",
-                });
+                .attr(labelAttr);
 
             labels.exit()
                 .remove();
@@ -145,24 +161,32 @@ module powerbi.visuals {
             return labelRects;
         }
 
-        export function getLabelFormattedText(label: string | number, maxWidth?: number, format?: string, formatter?: IValueFormatter): string {
-            let properties: TextProperties = {
-                text: formatter
-                    ? formatter.format(label)
-                    : formattingService.formatValue(label, format),
-                fontFamily: LabelTextProperties.fontFamily,
-                fontSize: LabelTextProperties.fontSize,
-                fontWeight: LabelTextProperties.fontWeight,
-            };
-            maxWidth = maxWidth ? maxWidth : maxLabelWidth;
-
-            return TextMeasurementService.getTailoredTextOrDefault(properties, maxWidth);
+        export function getLabelFormattedText(label: string | number, format?: string, formatter?: IValueFormatter): string {
+            return formatter ? formatter.format(label) : formattingService.formatValue(label, format);
         }
-
+        
         export function getDisplayUnitValueFromAxisFormatter(axisFormatter: IValueFormatter, labelSettings: VisualDataLabelsSettings): number {
             if (axisFormatter && axisFormatter.displayUnit && labelSettings.displayUnits === 0)
                 return axisFormatter.displayUnit.value;
             return null;
+        }
+
+        function getLabelPrecision(precision: number, format: string): number {
+            debug.assertAnyValue(format, 'format');
+
+            if (precision !== defaultLabelPrecision)
+                return precision;
+
+            if (format) {
+                // Calculate precision from positive format by default
+                let positiveFormat = format.split(";")[0];
+                let formatMetadata = NumberFormat.getCustomFormatMetadata(positiveFormat, true /*calculatePrecision*/);
+                if (formatMetadata.hasDots) {
+                    return formatMetadata.precision;
+                }
+            }
+            // For count fields we do not want a precision by default
+            return defaultCountLabelPrecision;
         }
 
         export function createColumnFormatterCacheManager(): IColumnFormatterCacheManager {
@@ -171,30 +195,30 @@ module powerbi.visuals {
                 cache: { defaultFormatter: null, },
                 getOrCreate(formatString: string, labelSetting: VisualDataLabelsSettings, value2?: number) {
                     if (formatString) {
-                        var cacheKeyObject = {
+                        let cacheKeyObject = {
                             formatString: formatString,
                             displayUnits: labelSetting.displayUnits,
-                            precision: labelSetting.precision,
+                            precision: getLabelPrecision(labelSetting.precision, formatString),
                             value2: value2
                         };
-                        var cacheKey = JSON.stringify(cacheKeyObject);
+                        let cacheKey = JSON.stringify(cacheKeyObject);
                         if (!this.cache[cacheKey])
-                            this.cache[cacheKey] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
+                            this.cache[cacheKey] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2, cacheKeyObject.precision));
                         return this.cache[cacheKey];
                     }
                     if (!this.cache.defaultFormatter) {
-                        this.cache.defaultFormatter = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
+                        this.cache.defaultFormatter = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2, labelSetting.precision));
                     }
                     return this.cache.defaultFormatter;
                 }
             };
         }
 
-        function getOptionsForLabelFormatter(labelSetting: VisualDataLabelsSettings, formatString: string, value2?: number): ValueFormatterOptions {
+        function getOptionsForLabelFormatter(labelSetting: VisualDataLabelsSettings, formatString: string, value2?: number, precision?: number): ValueFormatterOptions {
             return {
                 displayUnitSystemType: DisplayUnitSystemType.DataLabels,
                 format: formatString,
-                precision: labelSetting.precision,
+                precision: precision,
                 value: labelSetting.displayUnits,
                 value2: value2,
                 allowFormatBeautification: true,

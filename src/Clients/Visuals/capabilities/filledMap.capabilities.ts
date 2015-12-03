@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var filledMapCapabilities: VisualCapabilities = {
+    export const filledMapCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: 'Category',
@@ -57,7 +57,7 @@ module powerbi.visuals {
                 description: data.createDisplayNameGetter('Role_DisplayName_LongitudeFilledMapDescription'),
                 preferredTypes: [
                     { geography: { longitude: true } }
-                ]
+                ],
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
@@ -70,7 +70,8 @@ module powerbi.visuals {
                 name: 'Size',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
-                description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription')
+                description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }
         ],
         objects: {
@@ -104,6 +105,10 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_LegendName'),
                         description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                         type: { text: true }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
                     }
                 }
             },

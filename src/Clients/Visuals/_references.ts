@@ -41,6 +41,7 @@
 /// <reference path="types/labelPosition.ts"/>
 /// <reference path="types/legendPosition.ts"/>
 /// <reference path="types/outline.ts"/>
+/// <reference path="types/slicerOrientation.ts"/>
 /// <reference path="types/yAxisPosition.ts"/>
 
 /// <reference path="animators/animatorCommon.ts"/>
@@ -59,6 +60,7 @@
 /// <reference path="capabilities/funnelChart.capabilities.ts"/>
 /// <reference path="capabilities/gauge.capabilities.ts"/>
 /// <reference path="capabilities/imageVisual.capabilities.ts"/>
+/// <reference path="capabilities/scriptVisual.capabilities.ts"/>
 /// <reference path="capabilities/samples/consoleWriter.capabilities.ts"/>
 /// <reference path="visuals/samples/consoleWriter.ts"/>
 /// <reference path="capabilities/lineChart.capabilities.ts"/>
@@ -91,7 +93,6 @@
 
 /// <reference path="contracts/contracts.ts"/>
 
-/// <reference path="common/aspectRatioHelper.ts"/>
 /// <reference path="common/axisHelper.ts"/>
 /// <reference path="common/basicShapeUtils.ts"/>
 /// <reference path="common/cartesianHelper.ts"/>
@@ -109,12 +110,15 @@
 /// <reference path="common/selectionId.ts"/>
 /// <reference path="common/selectionManager.ts"/>
 /// <reference path="common/shapes.ts"/>
+/// <reference path="common/slicerUtil.ts"/>
 /// <reference path="common/svgUtil.ts"/>
 /// <reference path="common/textUtil.ts"/>
 /// <reference path="common/urlHelper.ts"/>
 /// <reference path="common/gradientHelper.ts"/>
 /// <reference path="common/visualBackgroundHelper.ts"/>
 /// <reference path="common/objectEnumerationBuilder.ts"/>
+
+/// <reference path="converter/slicer.converter.ts"/>
 
 /// <reference path="formatting/dataLabelManager.ts"/>
 /// <reference path="formatting/labelLayout.ts"/>
@@ -197,5 +201,7 @@
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
+
+/// <reference path="visuals/scriptVisual.ts"/>
 
 /// <reference path="plugins.ts"/>

@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var scatterChartCapabilities: VisualCapabilities = {
+    export const scatterChartCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: 'Category',
@@ -43,22 +43,26 @@ module powerbi.visuals {
                 name: 'X',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_X'),
-                description: data.createDisplayNameGetter('Role_DisplayName_XScatterChartDescription')
+                description: data.createDisplayNameGetter('Role_DisplayName_XScatterChartDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Y'),
-                description: data.createDisplayNameGetter('Role_DisplayName_YScatterChartDescription')
+                description: data.createDisplayNameGetter('Role_DisplayName_YScatterChartDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }, {
                 name: 'Size',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Size'),
-                description: data.createDisplayNameGetter('Role_DisplayName_SizeDescription')
+                description: data.createDisplayNameGetter('Role_DisplayName_SizeDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }, {
                 name: 'Gradient',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Gradient'),
-                description: data.createDisplayNameGetter('Role_DisplayName_GradientDescription')
+                description: data.createDisplayNameGetter('Role_DisplayName_GradientDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }, {
                 name: 'Play',
                 kind: VisualDataRoleKind.Grouping,
@@ -143,8 +147,8 @@ module powerbi.visuals {
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
-                        type: { numeric: true },
-                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto')
+                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
+                        type: { numeric: true }
                     }
                 }
             },
@@ -193,8 +197,8 @@ module powerbi.visuals {
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
-                        type: { numeric: true },
-                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto')
+                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
+                        type: { numeric: true }
                     }
                 }
             },
@@ -220,6 +224,14 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_LegendName'),
                         description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                         type: { text: true }
+                    },
+                    labelColor: {
+                        displayName: data.createDisplayNameGetter('Visual_LegendTitleColor'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
                     }
                 }
             },
@@ -235,6 +247,10 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
                         description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
                         type: { fill: { solid: { color: true } } }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
                     },
                 },
             },
@@ -335,7 +351,7 @@ module powerbi.visuals {
         },
     };
 
-    export var scatterChartProps = {
+    export const scatterChartProps = {
         general: {
             formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
         },
@@ -354,6 +370,9 @@ module powerbi.visuals {
         },
         currentFrameIndex: {
             index: <DataViewObjectPropertyIdentifier>{ objectName: 'currentFrameIndex', propertyName: 'index' },
+        },
+        legend: {
+            labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
         },
     };
 }

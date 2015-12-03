@@ -28,7 +28,7 @@
 
 module powerbi.visuals {   
 
-    export module CartesianHelper {        
+    export module CartesianHelper {
         export function getCategoryAxisProperties(dataViewMetadata: DataViewMetadata, axisTitleOnByDefault?: boolean): DataViewObject {
             let toReturn: DataViewObject = {};
             if (!dataViewMetadata)
@@ -50,7 +50,7 @@ module powerbi.visuals {
                         axisStyle: categoryAxisObject['axisStyle'],
                         labelColor: categoryAxisObject['labelColor'],
                         labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],
-                        labelPrecision: categoryAxisObject['labelPrecision']
+                        labelPrecision: categoryAxisObject['labelPrecision'],
                     };
                 }
             }
@@ -69,10 +69,10 @@ module powerbi.visuals {
                 if (valueAxisObject) {
                     toReturn = {
                         show: valueAxisObject['show'],
-                        position: valueAxisObject['position'],   
-                        axisScale: valueAxisObject['axisScale'],                      
+                        position: valueAxisObject['position'],
+                        axisScale: valueAxisObject['axisScale'],
                         start: valueAxisObject['start'],
-                        end: valueAxisObject['end'],                        
+                        end: valueAxisObject['end'],
                         showAxisTitle: valueAxisObject['showAxisTitle'] == null ? axisTitleOnByDefault : valueAxisObject['showAxisTitle'],
                         axisStyle: valueAxisObject['axisStyle'],
                         labelColor: valueAxisObject['labelColor'],
@@ -87,7 +87,7 @@ module powerbi.visuals {
                         secAxisStyle: valueAxisObject['secAxisStyle'],
                         secLabelColor: valueAxisObject['secLabelColor'],
                         secLabelDisplayUnits: valueAxisObject['secLabelDisplayUnits'],
-                        secLabelPrecision: valueAxisObject['secLabelPrecision'],     
+                        secLabelPrecision: valueAxisObject['secLabelPrecision'],
                     };
                 }
             }

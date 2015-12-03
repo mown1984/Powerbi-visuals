@@ -315,6 +315,13 @@ module powerbi.visuals.samples {
 
         // This extracts fill color of the label from the DataView
         private getLabelFill(dataView: DataView): Fill {
+            if (dataView && dataView.metadata && dataView.metadata.objects) {
+                var label = dataView.metadata.objects['label'];
+                if (label) {
+                    return <Fill>label['fill'];
+                }
+            }
+
             return dataView.metadata && DataViewObjects.getValue(dataView.metadata.objects, AsterPlot.properties.labelFill, { solid: { color: '#333' } });
         }
         

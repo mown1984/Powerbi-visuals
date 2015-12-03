@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var multiRowCardCapabilities: VisualCapabilities = {
+    export const multiRowCardCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: 'Values',
@@ -55,5 +55,6 @@ module powerbi.visuals {
             },
         }],
         suppressDefaultTitle: true,
+        supportsSelection: false,
     };
 }
