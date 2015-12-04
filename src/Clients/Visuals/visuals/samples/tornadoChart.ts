@@ -32,7 +32,7 @@ module powerbi.visuals.samples {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
 
-    type D3Element = 
+    type D3Element =
         D3.UpdateSelection |
         D3.Selection |
         D3.Selectors |
@@ -127,7 +127,143 @@ module powerbi.visuals.samples {
         textProperties: TextProperties;
     }
 
-    export class TornadoChartWarning implements IVisualWarning {
+    class TornadoChartScrolling {
+        public isScrollable: boolean;
+        public scrollViewport: IViewport;
+
+        private static ScrollBarWidth = 10;
+        private static ScrollBarMinLength = 15;
+        private isYScrollBarVisible: boolean;
+        private brushGraphicsContextY: D3.Selection;
+        private scrollYBrush: D3.Svg.Brush = d3.svg.brush();
+
+        private getRoot: () => D3.Selection;
+        private getViewport: () => IViewport;
+        private getMargin: () => IMargin;
+
+        private get root(): D3.Selection {
+            return this.getRoot();
+        }
+
+        private get viewport(): IViewport {
+            return this.getViewport();
+        }
+
+        private get margin(): IMargin {
+            return this.getMargin();
+        }
+
+        constructor(getRoot: () => D3.Selection, getViewport: () => IViewport, getMargin: () => IMargin, isScrollable: boolean) {
+            this.getRoot = getRoot;
+            this.getViewport = getViewport;
+            this.getMargin = getMargin;
+            this.isScrollable = isScrollable;
+        }
+
+        public renderY(data: any, prefferedHeight, onScroll): void {
+            this.isYScrollBarVisible = prefferedHeight > this.viewport.height
+                && this.viewport.height > 0
+                && this.viewport.width > 0;
+
+            this.brushGraphicsContextY = this.createOrRemoveScrollbar(this.isYScrollBarVisible, this.brushGraphicsContextY, 'y brush');
+            this.updateScrollViewport();
+
+            if (!this.isYScrollBarVisible) {
+                onScroll.call(this, _.cloneDeep(data), 0, 1);
+                return;
+            }
+
+            let scrollSpaceLength: number = this.viewport.height;
+            let extentData: any = this.getExtentData(prefferedHeight, scrollSpaceLength);
+
+            let onRender = () => {
+                let scrollPosition = extentData.toScrollPosition(this.scrollYBrush.extent(), scrollSpaceLength);
+                onScroll.call(this, _.cloneDeep(data), scrollPosition[0], scrollPosition[1]);
+                this.setScrollBarSize(this.brushGraphicsContextY, extentData.value[1], true);
+            };
+
+            let scrollYScale: D3.Scale.OrdinalScale = d3.scale.ordinal().rangeBands([0, scrollSpaceLength]);
+            this.scrollYBrush.y(scrollYScale).extent(extentData.value);
+
+            this.renderScrollbar(
+                this.scrollYBrush,
+                this.brushGraphicsContextY,
+                this.viewport.width,
+                this.margin.top,
+                onRender);
+
+            onRender();
+        }
+
+        private updateScrollViewport() {
+            this.scrollViewport = { height: this.viewport.height, width: this.viewport.width };
+
+            if (this.isYScrollBarVisible && this.isScrollable) {
+                this.scrollViewport.width -= TornadoChartScrolling.ScrollBarWidth;
+            }
+        }
+
+        private createOrRemoveScrollbar(isVisible, brushGraphicsContext, brushClass) {
+            if (isVisible && this.isScrollable) {
+                return brushGraphicsContext || this.root.append("g").classed(brushClass, true);
+            }
+
+            return brushGraphicsContext ? void brushGraphicsContext.remove() : undefined;
+        }
+
+        private renderScrollbar(brush: D3.Svg.Brush,
+            brushGraphicsContext: D3.Selection,
+            brushX: number,
+            brushY: number,
+            onRender: () => void): void {
+            brush.on("brush", () => window.requestAnimationFrame(() => onRender()));
+
+            brushGraphicsContext.attr({
+                "transform": visuals.SVGUtil.translate(brushX, brushY),
+                "drag-resize-disabled": "true" /*disables resizing of the visual when dragging the scrollbar in edit mode*/
+            });
+
+            brushGraphicsContext.call(brush); /*call the brush function, causing it to create the rectangles   */
+            /* Disabling the zooming feature */
+            brushGraphicsContext.selectAll(".resize rect").remove();
+            brushGraphicsContext.select(".background").style('cursor', 'default');
+            brushGraphicsContext.selectAll(".extent").style({
+                "fill-opacity": 0.125,
+                "cursor": "default",
+            });
+        }
+
+        private setScrollBarSize(brushGraphicsContext: D3.Selection, minExtent: number, isVertical: boolean): void {
+            brushGraphicsContext.selectAll("rect").attr(isVertical ? "width" : "height", TornadoChartScrolling.ScrollBarWidth);
+            brushGraphicsContext.selectAll("rect").attr(isVertical ? "height" : "width", minExtent);
+        }
+
+        private getExtentData(svgLength: number, scrollSpaceLength: number): any {
+            let value: number = scrollSpaceLength * scrollSpaceLength / svgLength;
+
+            let scaleMultipler: number = TornadoChartScrolling.ScrollBarMinLength <= value
+                ? 1
+                : value / TornadoChartScrolling.ScrollBarMinLength;
+
+            value = Math.max(value, TornadoChartScrolling.ScrollBarMinLength);
+
+            let toScrollPosition = (extent: number[], scrollSpaceLength: number) => {
+                let scrollSize: number = extent[1] - extent[0];
+                let scrollPosition: number = extent[0] / (scrollSpaceLength - scrollSize);
+
+                scrollSize *= scaleMultipler;
+
+                let start: number = (scrollPosition * (scrollSpaceLength - scrollSize));
+                let end: number  = (start + scrollSize);
+
+                return [start / scrollSpaceLength, end / scrollSpaceLength];
+            };
+
+            return { value: [0, value], toScrollPosition: toScrollPosition };
+        }
+    }
+
+    export class TornadoChartWarning implements IVisualWarning  {
         public get code(): string {
             return "TornadoChartWarning";
         }
@@ -152,7 +288,7 @@ module powerbi.visuals.samples {
         return new TornadoChartWarning();
     }
 
-    export class TornadoChart implements IVisual  {
+    export class TornadoChart implements IVisual {
         private static ClassName: string = "tornado-chart";
 
         private static Properties: any = {
@@ -163,41 +299,41 @@ module powerbi.visuals.samples {
                 }
             },
             labels: {
-                show: <DataViewObjectPropertyIdentifier> {
+                show: <DataViewObjectPropertyIdentifier>{
                     objectName: "labels",
                     propertyName: "show"
                 },
-                labelPrecision: <DataViewObjectPropertyIdentifier> {
+                labelPrecision: <DataViewObjectPropertyIdentifier>{
                     objectName: "labels",
                     propertyName: "labelPrecision"
                 },
-                insideFill: <DataViewObjectPropertyIdentifier> {
+                insideFill: <DataViewObjectPropertyIdentifier>{
                     objectName: "labels",
                     propertyName: "insideFill"
                 },
-                outsideFill: <DataViewObjectPropertyIdentifier> {
+                outsideFill: <DataViewObjectPropertyIdentifier>{
                     objectName: "labels",
                     propertyName: "outsideFill"
                 }
             },
             dataPoint: {
-                fill: <DataViewObjectPropertyIdentifier> {
+                fill: <DataViewObjectPropertyIdentifier>{
                     objectName: "dataPoint",
                     propertyName: "fill"
                 }
             },
             legend: {
-                show: <DataViewObjectPropertyIdentifier> {
+                show: <DataViewObjectPropertyIdentifier>{
                     objectName: "legend",
                     propertyName: "show"
                 }
             },
             categories: {
-                show: <DataViewObjectPropertyIdentifier> {
+                show: <DataViewObjectPropertyIdentifier>{
                     objectName: "categories",
                     propertyName: "show"
                 },
-                fill: <DataViewObjectPropertyIdentifier> {
+                fill: <DataViewObjectPropertyIdentifier>{
                     objectName: "categories",
                     propertyName: "fill"
                 }
@@ -275,6 +411,8 @@ module powerbi.visuals.samples {
         private static MaxSizeSections: number = 100;
 
         private static LabelPadding: number = 2.5;
+
+        private static CategoryMinHeight: number = 25;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
@@ -370,7 +508,7 @@ module powerbi.visuals.samples {
                             description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
                             type: { bool: true }
                         },
-                    titleText: {
+                        titleText: {
                             displayName: data.createDisplayNameGetter('Visual_LegendName'),
                             description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                             type: { text: true }
@@ -427,7 +565,7 @@ module powerbi.visuals.samples {
 
         private margin: IMargin = {
             top: 10,
-            right: 10,
+            right: 5,
             bottom: 10,
             left: 10
         };
@@ -459,6 +597,8 @@ module powerbi.visuals.samples {
         private animator: IGenericAnimator;
 
         private hostService: IVisualHostServices;
+
+        private scrolling: TornadoChartScrolling;
 
         constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions) {
             if (tornadoChartConstructorOptions) {
@@ -499,6 +639,7 @@ module powerbi.visuals.samples {
             this.textOptions.fontSize = Number(fontSize.slice(0, fontSize.length - 2));
             this.textOptions.fontFamily = this.root.style("font-family");
 
+            this.scrolling = new TornadoChartScrolling(() => this.root, () => this.viewport, () => this.margin, true);
             this.main = this.root.append("g");
 
             this.columns = this.main
@@ -543,32 +684,19 @@ module powerbi.visuals.samples {
             this.render(this.tornadoChartDataView);
         }
 
-        private setSize(viewport: IViewport): void {
-            let height: number,
-                width: number;
-
-            height =
-                viewport.height -
-                this.margin.top -
-                this.margin.bottom;
-
-            width =
-                viewport.width -
-                this.margin.left -
-                this.margin.right;
-
-            this.viewport = {
-                height: height,
-                width: width
+        private subtractMargin(viewport: IViewport): IViewport {
+            return <IViewport>{
+                height: viewport.height - this.margin.top - this.margin.bottom,
+                width: viewport.width - this.margin.left - this.margin.right
             };
         }
 
-        private updateElements(height: number, width: number): void {
+        private updateElements(): void {
             let elementsTranslate: string = SVGUtil.translate(this.widthLeftSection, 0);
 
             this.root.attr({
-                "height": height,
-                "width": width
+                "height": this.viewport.height,
+                "width": this.viewport.width
             });
 
             this.main.attr("transform", SVGUtil.translate(
@@ -695,8 +823,8 @@ module powerbi.visuals.samples {
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
                 !dataView.metadata.objects) {
-                    return null;
-                }
+                return null;
+            }
 
             return dataView.metadata.objects;
         }
@@ -785,7 +913,7 @@ module powerbi.visuals.samples {
 
             this.currentSections.right = this.currentSections.isPercent
                 ? TornadoChart.MaxSizeSections - this.currentSections.left
-                : this.viewport.width - this.currentSections.left;
+                : this.scrolling.scrollViewport.width - this.currentSections.left;
         }
 
         private render(tornadoChartDataView: TornadoChartDataView): void {
@@ -798,22 +926,49 @@ module powerbi.visuals.samples {
 
             this.updateViewport();
 
+            let viewport: IViewport = this.subtractMargin(this.viewport);
+            if (viewport.width <= 0 || viewport.height <= 0) {
+                return;
+            }
+
             this.widthLeftSection = this.getValueByPercent(
                 this.currentSections.left,
                 this.viewport.width,
                 this.currentSections.isPercent);
 
-            this.updateElements(this.viewport.height, this.viewport.width);
-            this.setSize(this.viewport);
+            this.updateElements();
+            this.viewport = viewport;
+
+            this.scrolling.renderY(
+                tornadoChartDataView,
+                tornadoChartDataView.categories.length * TornadoChart.CategoryMinHeight,
+                this.renderWithScrolling.bind(this));
+        }
+
+        private renderWithScrolling(tornadoChartDataView: TornadoChartDataView, scrollStart: number, scrollEnd: number) {
+            let startIndex: number = scrollStart * tornadoChartDataView.categories.length;
+            let endIndex: number = scrollEnd * tornadoChartDataView.categories.length;
+
+            let startIndexRound: number = Math.floor(startIndex);
+            let endIndexRound: number = Math.floor(endIndex);
+
+            let maxValues: number = Math.floor(this.scrolling.scrollViewport.height / TornadoChart.CategoryMinHeight);
+
+            if (scrollEnd - scrollStart < 1 && maxValues < endIndexRound - startIndexRound) {
+                if (startIndex - startIndexRound > endIndex - endIndexRound) {
+                    startIndexRound++;
+                }
+                else {
+                    endIndex--;
+                }
+            }
+
+            tornadoChartDataView.categories = tornadoChartDataView.categories.slice(startIndexRound, endIndexRound);
+            tornadoChartDataView.series.forEach(x => x.values = x.values.slice(startIndexRound, endIndexRound));
+
             this.updateSections(tornadoChartDataView);
-
-            this.widthRightSection = this.getValueByPercent(
-                this.currentSections.right,
-                this.viewport.width,
-                this.currentSections.isPercent);
-
+            this.widthRightSection = this.getValueByPercent(this.currentSections.right, this.viewport.width, this.currentSections.isPercent);
             this.computeHeightColumn(tornadoChartDataView);
-
             this.renderMiddleSection(tornadoChartDataView);
             this.renderAxes(tornadoChartDataView);
             this.renderCategories(tornadoChartDataView);
@@ -848,7 +1003,7 @@ module powerbi.visuals.samples {
         private computeHeightColumn(tornadoChartDataView: TornadoChartDataView): void {
             let length: number = tornadoChartDataView.categories.length;
 
-            this.heightColumn = (this.viewport.height - ((length - 1) * this.columnPadding)) / length;
+            this.heightColumn = (this.scrolling.scrollViewport.height - ((length - 1) * this.columnPadding)) / length;
         }
 
         private renderMiddleSection(tornadoChartDataView: TornadoChartDataView): void {
@@ -882,10 +1037,10 @@ module powerbi.visuals.samples {
                 });
 
             (columnElements[0] && columnElements[0].length === columnsData.length
-                ? <D3.UpdateSelection> this.animation(columnsSelection)
+                ? <D3.UpdateSelection>this.animation(columnsSelection)
                 : columnsSelection)
-                .attr("width", (item: ColumnData) => item.width)
-                .attr("height", (item: ColumnData) => item.height)
+                .attr("width", (item: ColumnData) => Math.max(item.width, 0))
+                .attr("height", (item: ColumnData) => Math.max(item.height, 0))
                 .attr("fill", (item: ColumnData) => item.color)
                 .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle));
 
@@ -938,7 +1093,7 @@ module powerbi.visuals.samples {
 
         private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-               return (<ColumnData> tooltipEvent.data).tooltipData;
+                return (<ColumnData>tooltipEvent.data).tooltipData;
             });
         }
 
@@ -1189,7 +1344,7 @@ module powerbi.visuals.samples {
 
             x = this.widthRightSection / 2;
             y1 = 0;
-            y2 = this.viewport.height;
+            y2 = this.scrolling.scrollViewport.height;
 
             return [{
                 x1: x,
@@ -1339,7 +1494,8 @@ module powerbi.visuals.samples {
 
             let legendData: LegendData = {
                 title: tornadoChartDataView.legend.title,
-                dataPoints: tornadoChartDataView.legend.dataPoints
+                dataPoints: tornadoChartDataView.legend.dataPoints,
+                fontSize: this.textOptions.fontSize * 3 / 4
             };
 
             if (this.legendObjectProperties) {
