@@ -346,15 +346,21 @@ module powerbi.visuals.samples {
             var height: number,
                 width: number;
 
-            height = viewport.height - this.margin.top - this.margin.bottom;
-            width = viewport.width - this.margin.left - this.margin.right;
+            height = this.getPositiveNumber(viewport.height);
+            width = this.getPositiveNumber(viewport.width);
 
             this.viewport = {
-                height: height,
-                width: width
+                height: this.getPositiveNumber(height - this.margin.top - this.margin.bottom),
+                width: this.getPositiveNumber(width - this.margin.left - this.margin.right)
             };
 
-            this.updateElements(viewport.height, viewport.width);
+            this.updateElements(height, width);
+        }
+
+        private getPositiveNumber(value: number): number {
+            return value < 0 || isNaN(value) || value === Infinity || value === -Infinity
+                ? 0
+                : value;
         }
 
         private updateElements(height: number, width: number): void {
@@ -727,7 +733,7 @@ module powerbi.visuals.samples {
         }
 
         private getScaleByAxisX(numberOfColumns: number = 1): number {
-            return (this.viewport.width - this.nodeWidth) / numberOfColumns;
+            return this.getPositiveNumber((this.viewport.width - this.nodeWidth) / numberOfColumns);
         }
 
         private findNodePositionByY(sankeyDiagramDataView: SankeyDiagramDataView): void {
@@ -782,7 +788,7 @@ module powerbi.visuals.samples {
         }
 
         private getScaleByAxisY(numberOfRows: number, sumValueOfNodes: number): number {
-            return (this.viewport.height - numberOfRows * SankeyDiagram.NodePadding) / sumValueOfNodes;
+            return this.getPositiveNumber((this.viewport.height - numberOfRows * SankeyDiagram.NodePadding) / sumValueOfNodes);
         }
 
         private scaleByAxisY(
