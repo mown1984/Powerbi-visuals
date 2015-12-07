@@ -341,7 +341,7 @@ module powerbi.visuals {
                 animator: new BaseAnimator()
             }));
             // Histogram
-            createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new Histogram({
+            createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new samples.Histogram({
                 animator: new BaseAnimator()
             }));
             // Area Range Chart

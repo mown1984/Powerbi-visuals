@@ -343,8 +343,8 @@ module powerbi.visuals.plugins {
 
     export var histogram: IVisualPlugin = {
         name: "histogram",
-        capabilities: Histogram.capabilities,
-        create: () => new Histogram()
+        capabilities: samples.Histogram.capabilities,
+        create: () => new samples.Histogram()
     };
 
     export var areaRangeChart: IVisualPlugin = {

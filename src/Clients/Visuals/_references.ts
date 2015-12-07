@@ -192,7 +192,6 @@
 /// <reference path="visuals/samples/radarChart.ts"/>
 /// <reference path="visuals/samples/dotPlot.ts"/>
 /// <reference path="visuals/samples/areaRangeChart.ts"/>
-/// <reference path="visuals/histogram.ts"/>
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
 
@@ -201,6 +200,11 @@
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
+/// <reference path="visuals/samples/radarChart.ts"/>
+/// <reference path="visuals/samples/dotPlot.ts"/>
+/// <reference path="visuals/samples/sunburst.ts"/>
+
+/// <reference path="visuals/samples/histogram.ts"/>
 
 /// <reference path="visuals/scriptVisual.ts"/>
 
