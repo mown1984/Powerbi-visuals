@@ -205,14 +205,21 @@ module powerbi.visuals.samples {
             };
 
             for (let i = 0, iLen = values.length; i < iLen; i++) {
-                let color = colors.getColorByIndex(i).value;
+                let color = colors.getColorByIndex(i).value,
+                    queryName: string;
+
+                if (values[i].source && values[i].source.queryName) {
+                    queryName = values[i].source.queryName;
+                }
+
                 dataPoints.push([]);
+
                 legendData.dataPoints.push({
                     label: values[i].source.displayName,
                     color: color,
                     icon: LegendIcon.Box,
                     selected: false,
-                    identity: SelectionId.createNull()
+                    identity: SelectionId.createWithMeasure(queryName)
                 });
                 for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
                     let id = SelectionIdBuilder
@@ -266,7 +273,7 @@ module powerbi.visuals.samples {
             this.colors = options.style.colorPalette.dataColors;
             this.mainGroupElement = this.svg.append('g');
 
-            this.legend = createLegend(element, false, null);
+            this.legend = createLegend(element, false, null, true, LegendPosition.Top);
 
             this.segments = this.mainGroupElement
                 .append('g')
@@ -309,7 +316,9 @@ module powerbi.visuals.samples {
                 width: options.viewport.width > 0 ? options.viewport.width : 0
             };
 
+            this.legend.changeOrientation(LegendPosition.Top);
             this.legend.drawLegend(data.legendData, this.viewport);
+
             this.svg
                 .attr({
                     'height': this.viewport.height,
