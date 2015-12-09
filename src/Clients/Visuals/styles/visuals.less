@@ -25,7 +25,7 @@
  */
 
 @import "sprites.less";
-@import "ms-kpi-glyphs.less";
+@import "../../StyleLibrary/less/powervisuals-glyphs.less";
 @import "../../PowerBI/styles/colorPalette.less";
 @import "../../PowerBI/styles/fonts.less";
 @import "../../PowerBI/styles/mixins.less";
@@ -37,12 +37,11 @@
 @import (optional) "partitionMap.less";
 @import (optional) "sunburstChart.less";
 
-.slicerContainer {
+@defaultShapeRendering: crispEdges;
 
-    .slicerHeader {
-        margin: 0 0 0 8px;
-        box-sizing: border-box;
-    }
+.slicerHeader {
+    margin: 0 0 0 8px;
+    box-sizing: border-box;
 
     .headerText {
         color: @neutralPrimaryColor;
@@ -55,6 +54,26 @@
         float: none;
     }
 
+    .clear {
+        .sprite(@slicer-reset);
+        margin: 4px 2px;
+        float: right;
+        cursor: pointer;
+        display: block;
+        visibility: hidden;
+    }
+}
+
+.slicerContainer, .horizontalSlicerContainer {
+    &.hasSelection, &:hover {
+        .clear {
+            visibility: visible;
+        }   
+    }
+}
+
+.slicerContainer {
+
     .slicerItemContainer {
         margin: 2px 0 0 8px;
         box-sizing: border-box;
@@ -64,6 +83,11 @@
         * {
             display: table-cell;
             vertical-align: bottom;
+        }
+
+        img {
+            max-width:100px;
+            width:100%;
         }
 
         &:hover {
@@ -125,13 +149,11 @@
 
             span.checkbox::before {
                 content: '';
-
                 height: 3px;
                 width: 3px;
                 position: absolute;
                 display: inline-block;
                 margin: 3px 0 0px 3px;
-
                 background-color: @neutralTertiaryAltColor;
                 box-shadow: 0px 0px 2px @neutralTertiaryAltColor;
                 border: none;
@@ -144,30 +166,104 @@
         font-size: 14px;
     }
 
-    .clear {
-        .sprite(@slicer-reset);
-        // The total margin is referred in the slicer.ts file. Any changes to these values should also be updated in the ts file
-        margin: 4px 2px;
-        float: right;
-        cursor: pointer;
-    }
-
     &.isMultiSelectEnabled .slicerCheckbox.selected:not(.partiallySelected) {
         /* TODO: Use a checkmark glyph rather than drawing a custom one using transforms and offsets. */
         span.checkbox::before {
             content: '';
-
             height: 8px;
             width: 3px;
             position: absolute;
             display: inline-block;
             margin: -2px 0 0 3px;
-
             border-right: 2px solid @whiteColor;
             border-bottom: 2px solid @whiteColor;
             transform: rotate(45deg);
         }
     }
+}
+
+.horizontalSlicerContainer {
+
+    .navigationArrow {
+        visibility: hidden;
+        background-color: white;
+
+        &.show {
+            visibility: visible;
+        }
+
+        &.right {
+            .sprite(@horizontal-slicer-right-arrow);
+        }
+
+        &.left {
+            .sprite(@horizontal-slicer-left-arrow);
+        }
+    }
+
+    .flexDisplay {
+        display: -ms-flexbox;
+        display: -moz-box;
+        display: flex;
+        -ms-flex-direction: row;
+        -moz-box-orient: horizontal;
+        flex-direction: row;
+    }
+
+    .slicerBody {
+        align-items: center;
+        -ms-flex-align: center;
+    }
+
+    .slicerItemsContainer {
+        vertical-align: top;
+    }
+
+    .slicerText {
+        display: -ms-flexbox;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+
+        &.selected, &.partiallySelected {
+            color: @whiteColor !important;
+        }
+
+        &:hover {
+            background-color: @neutralLightColor !important;
+        }
+
+        &.selected {
+            background-color: rgba(51,51,51,1.0) !important;
+        }
+
+        &.partiallySelected {
+            background-color: rgba(51,51,51,0.6) !important;
+        }
+
+        &.selected:hover, &.partiallySelected:hover {
+            background-color: @neutralTertiaryAltColor !important;
+        }
+
+        > span {
+            text-align: center;
+        }
+    }
+}
+
+.overflowingText {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
 }
 
 .visual svg {
@@ -243,7 +339,7 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
     }
 
@@ -302,7 +398,7 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
     }
 }
@@ -327,14 +423,14 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
     }
 
     .waterfall-connector {
         stroke: @chartConnectorColor;
         stroke-width: 1px;
-        shape-rendering: crispEdges;
+        shape-rendering: @defaultShapeRendering;
     }
 }
 
@@ -359,13 +455,21 @@
     }
 
     .hover-line {
-        stroke: @chartAxisGridLineColor;
-        fill: rgba(235, 94, 94, 1.0);
+        stroke: @interactiveHoverLineColor;
+        pointer-events: none;
 
         .interactive {
-            stroke: @interactiveHoverLineColor;
             stroke-width: 3px;
             opacity: 1;
+        }
+
+        .selection-circle {
+            stroke: @chartAxisGridLineColor;
+        }
+
+        .circle-item {
+            stroke: none;
+            pointer-events: none;
         }
     }
 
@@ -385,7 +489,7 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
 
         .line {
@@ -398,7 +502,7 @@
 
 .funnelChart {
     line {
-        shape-rendering: crispEdges;
+        shape-rendering: @defaultShapeRendering;
     }
 
     .percentBars {
@@ -415,21 +519,15 @@
     }
 
     .axis {
-        path, line {
+        font-family: @regularFontFamily;
+        font-size: 11px;
+
+        path {
             fill: none;
-            stroke: #000;
         }
 
-        .data-labels {
-            font-size: 12px;
-        }
-
-        .tick line {
-            display: none;
-        }
-
-        .domain {
-            display: none;
+        .tick text {
+            fill: @neutralSecondaryAltColor;
         }
     }
 }
@@ -526,7 +624,7 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
     }
 }
@@ -559,8 +657,14 @@
         .axis path, .axis line {
             fill: none;
             stroke: @neutralSecondaryAltColor;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
+    }
+
+    .play-axis-container {
+        position: absolute;
+        left: 16px;
+        bottom: 35px;
     }
 
     .button-container {
@@ -614,6 +718,10 @@
         right: 16px;
         color: @neutralSecondaryAltColor2;
         opacity: 0.5;
+        pointer-events: none;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 }
 
@@ -728,6 +836,15 @@
                to trigger resizing is 4px (see TablixResizer.resizeHandleSize) and thus less than the 5px padding.
             */
             padding: 0px 5px 0px 10px;
+        }
+
+        .bi-table-column-header i {
+            visibility:hidden;
+        }
+
+        .bi-table-column-header.sorted i,
+        .bi-table-column-header:hover i {
+            visibility:visible;
         }
 
         .bi-table-cell-numeric {
@@ -1054,6 +1171,7 @@
         .labels {
             font-family: @regularFontFamily;
             fill: @whiteColor;
+            pointer-events: none;
 
             .majorLabel {
                 font-size: 12px;
@@ -1065,7 +1183,7 @@
         }
     }
 
-    .ms-kpi-glyph {
+    .powervisuals-glyph {
         font-size: inherit;
 
         &.big-kpi {
@@ -1114,9 +1232,25 @@
         max-width: 390px;
     }
 
+    div.tooltip-header {
+        word-wrap: break-word;
+        max-width: 260px;
+        font-weight: bold;
+        color: @whiteColor;
+        letter-spacing: 1px;
+        padding-bottom: 4px;
+    }
+
     .tooltip-row {
         display: table-row;
         line-height: 16px;
+    }
+
+    div.tooltip-color-cell {
+        display: table-cell;
+        vertical-align: top;
+        max-width: 13px;
+        padding-right: 4px;
     }
 
     div.tooltip-title-cell {
@@ -1173,8 +1307,6 @@
         font-size: 12px;
         text-anchor: middle;
         font-family: @regularSecondaryFontFamily;
-        /* Enables tooltip when hovering on data label inside visual */
-        pointer-events: none;
     }
 }
 
@@ -1480,10 +1612,21 @@ div.ql-toolbar {
 
     &.sad {
         .owlGaugeBg {
-            .st0{ fill:#EF4137; }
-            .st1{ fill:#FAAF42; }
-            .st2{ fill:#F15B2A; }
-            .st3{ fill:#F15B2A; }
+            .st0 {
+                fill: #EF4137;
+            }
+
+            .st1 {
+                fill: #FAAF42;
+            }
+
+            .st2 {
+                fill: #F15B2A;
+            }
+
+            .st3 {
+                fill: #F15B2A;
+            }
         }
 
         .owlGaugeTail {
@@ -1493,10 +1636,21 @@ div.ql-toolbar {
 
     &.meh {
         .owlGaugeBg {
-            .st0{ fill:#F18D05; }
-            .st1{ fill:#FAAF42; }
-            .st2{ fill:#F15B2A; }
-            .st3{ fill:#F15B2A; }
+            .st0 {
+                fill: #F18D05;
+            }
+
+            .st1 {
+                fill: #FAAF42;
+            }
+
+            .st2 {
+                fill: #F15B2A;
+            }
+
+            .st3 {
+                fill: #F15B2A;
+            }
         }
 
         .owlGaugeTail {
@@ -1506,10 +1660,21 @@ div.ql-toolbar {
 
     &.happy {
         .owlGaugeBg {
-            .st0{ fill:#32742C; }
-            .st1{ fill:#D0D102; }
-            .st2{ fill:#61AE24; }
-            .st3{ fill:#23AA65; }
+            .st0 {
+                fill: #32742C;
+            }
+
+            .st1 {
+                fill: #D0D102;
+            }
+
+            .st2 {
+                fill: #61AE24;
+            }
+
+            .st3 {
+                fill: #23AA65;
+            }
         }
 
         .owlGaugeTail {
@@ -1518,7 +1683,7 @@ div.ql-toolbar {
     }
 
     > svg {
-        position:absolute;
+        position: absolute;
         transition: all 0.25s;
     }
 
@@ -1549,12 +1714,26 @@ div.ql-toolbar {
     }
 
     @keyframes owlTailAmbientAnimation {
-        0% { transform: rotate(2deg); }
-        50% { transform: rotate(-2deg); }
-        100% { transform: rotate(2deg); }
+        0% {
+            transform: rotate(2deg);
+        }
+
+        50% {
+            transform: rotate(-2deg);
+        }
+
+        100% {
+            transform: rotate(2deg);
+        }
     }
 }
-    
+
+
+.visual-sandbox {
+    border: none;
+    overflow: hidden;
+}
+
 .streamGraph {
     .axis{
         path, line {
@@ -1607,6 +1786,22 @@ div.ql-toolbar {
         }
     }
 }
+
+.timeline {
+    .axis{
+        path, line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
+    }
+}
+
 .sunBurstPercentage{
     font-weight:bold;
     opacity:0;

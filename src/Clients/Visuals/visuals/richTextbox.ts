@@ -424,8 +424,8 @@ module powerbi.visuals {
         
         /**
          * These fonts are embedded using CSS, or are aliases to other fonts.
-         */        
-        var fontMap = {
+         */
+        const fontMap = {
             'Segoe (Bold)': 'wf_segoe-ui_bold',
             'Segoe UI': 'wf_segoe-ui_normal',
             'Segoe UI Light': 'wf_segoe-ui_light',
@@ -433,7 +433,7 @@ module powerbi.visuals {
             'Body': 'wf_segoe-ui_normal',
         };
 
-        var fonts: ListValueOption[] = [
+        const fonts: ListValueOption[] = [
             'Arial',
             'Arial Black',
             'Arial Unicode MS',
@@ -460,14 +460,14 @@ module powerbi.visuals {
             'Wingdings 2',
             'Wingdings 3',
         ].map((font) => <ListValueOption> { label: font, value: getFontFamily(font) });
-        export var defaultFont = getFontFamily('Segoe UI Light');
+        export let defaultFont = getFontFamily('Segoe UI Light');
 
-        var fontSizes: ListValueOption[] = [
+        const fontSizes: ListValueOption[] = [
             '8', '9', '10', '10.5', '11', '12', '14', '16', '18', '20', '24', '28', '32', '36', '40', '42', '44', '54', '60', '66', '72', '80', '88', '96'
         ].map((size) => <ListValueOption> { label: size, value: size + 'px' });
-        export var defaultFontSize = '14px';
+        export const defaultFontSize = '14px';
 
-        var textAlignments: ListValueOption[] = [
+        const textAlignments: ListValueOption[] = [
             'Left',
             'Center',
             'Right',
@@ -772,8 +772,9 @@ module powerbi.visuals {
                 this.editor.root.addEventListener('blur', (event) => {
                     let target: HTMLElement = <HTMLElement>(event.relatedTarget || document.activeElement);
 
+                    // The browser will handle moving the cursor and setting focus properly for these types of elements.
                     if (target &&
-                        target.tagName === 'SELECT' || target.tagName === 'INPUT' || target.classList.contains('ql-editor')) {
+                        target.tagName === 'SELECT' || target.tagName === 'INPUT' || target.getAttribute('contentEditable')) {
                         return;
                     }
 
@@ -789,7 +790,7 @@ module powerbi.visuals {
         module Toolbar {
             const DefaultLinkInputValue = 'http://';
 
-            export var selectors = {
+            export const selectors = {
                 linkTooltip: createClassAndSelector('ql-link-tooltip'),
                 toolbarUrlInput: createClassAndSelector('toolbar-url-input'),
             };

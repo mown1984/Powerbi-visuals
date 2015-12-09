@@ -579,8 +579,6 @@ module powerbi {
                 fontWeight: powerbi.visuals.dataLabelUtils.LabelTextProperties.fontWeight,
             };
 
-            let textHeight = TextMeasurementService.estimateSvgTextHeight(baseProperties);
-
             //sets the _cell size to be twice of the Max with and Max height of the elements 
             this._cellSize = { width: 0, height: 0 };
             for (let i = 0, len = elements.length; i < len; i++) {
@@ -591,10 +589,12 @@ module powerbi {
 
                 let properties: TextProperties = Prototype.inherit(baseProperties);
                 properties.text = child.labeltext;
+                properties.fontSize = (child.data) ? child.data.labelFontSize :
+                    child.labelFontSize ? child.labelFontSize : powerbi.visuals.dataLabelUtils.LabelTextProperties.fontSize;
 
                 child.size = {
                     width: TextMeasurementService.measureSvgTextWidth(properties),
-                    height: textHeight,
+                    height: TextMeasurementService.estimateSvgTextHeight(properties),
                 };
 
                 let w = child.size.width * 2;

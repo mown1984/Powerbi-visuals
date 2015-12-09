@@ -28,6 +28,7 @@
 
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     export interface WaterfallChartData extends CartesianData {
@@ -159,20 +160,20 @@ module powerbi.visuals {
                     label: increaseLabel,
                     color: increaseColor,
                     icon: LegendIcon.Box,
-                    identity: SelectionId.createNull(),
-                    selected: false
+                    identity: SelectionIdBuilder.builder().withMeasure('increase').createSelectionId(),
+                    selected: false,
                 }, {
                     label: decreaseLabel,
                     color: decreaseColor,
                     icon: LegendIcon.Box,
-                    identity: SelectionId.createNull(),
-                    selected: false
+                    identity: SelectionIdBuilder.builder().withMeasure('decrease').createSelectionId(),
+                    selected: false,
                 }, {
                     label: totalLabel,
                     color: totalColor,
                     icon: LegendIcon.Box,
-                    identity: SelectionId.createNull(),
-                    selected: false
+                    identity: SelectionIdBuilder.builder().withMeasure('total').createSelectionId(),
+                    selected: false,
                 }];
 
             /**
@@ -280,21 +281,20 @@ module powerbi.visuals {
         public setData(dataViews: DataView[]): void {
             debug.assertValue(dataViews, "dataViews");
 
-            var sentimentColors = this.getSentimentColorsFromObjects(null);
-            var dataView = dataViews.length > 0 ? dataViews[0] : undefined;
-            var labelFormatString = (dataView && dataView.categorical && !_.isEmpty(dataView.categorical.values)) ? valueFormatter.getFormatString(dataView.categorical.values[0].source, waterfallChartProps.general.formatString) : undefined;
+            let sentimentColors = this.getSentimentColorsFromObjects(null);
+            let dataView = dataViews.length > 0 ? dataViews[0] : undefined;
 
             this.data = <WaterfallChartData> {
                 series: [{ data: [] }],
                 categories: [],
                 valuesMetadata: null,
-                legend: { dataPoints: [] },
+                legend: { dataPoints: [], },
                 hasHighlights: false,
                 categoryMetadata: null,
                 scalarCategoryAxis: false,
                 positionMax: 0,
                 positionMin: 0,
-                dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(/* show */ false, /* labelColor */ undefined, /* format */ labelFormatString),
+                dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(/* show */ false, /* labelColor */ undefined),
                 sentimentColors: sentimentColors,
                 axesLabels: { x: null, y: null },
             };
@@ -305,17 +305,7 @@ module powerbi.visuals {
 
                         let labelsObj = <DataLabelObject>objects['labels'];
                         if (labelsObj) {
-                            if (labelsObj.show !== undefined)
-                                this.data.dataLabelsSettings.show = labelsObj.show;
-                            if (labelsObj.color !== undefined) {
-                                this.data.dataLabelsSettings.labelColor = labelsObj.color.solid.color;
-                            }
-                            if (labelsObj.labelDisplayUnits !== undefined) {
-                                this.data.dataLabelsSettings.displayUnits = labelsObj.labelDisplayUnits;
-                            }
-                            if (labelsObj.labelPrecision !== undefined) {
-                                this.data.dataLabelsSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
-                            }
+                            dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, this.data.dataLabelsSettings);
                         }
                         sentimentColors = this.getSentimentColorsFromObjects(objects);
                     }
@@ -338,6 +328,7 @@ module powerbi.visuals {
                         show: true,
                         displayUnits: true,
                         precision: true,
+                        fontSize: true,
                     };
                     dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                     break;
@@ -433,7 +424,7 @@ module powerbi.visuals {
                 labelText: (d: WaterfallChartDataPoint) => {
                     //total value has no identity
                     let formatter = formattersCache.getOrCreate(d.labelFormatString, labelSettings, value2);
-                    return dataLabelUtils.getLabelFormattedText(formatter.format(d.value));
+                    return dataLabelUtils.getLabelFormattedText({ label: formatter.format(d.value) });
                 },
                 labelLayout: dataLabelUtils.getLabelLayoutXYForWaterfall(xAxisProperties, categoryWidth, yAxisProperties, yAxisCreationOptions.dataDomain),
                 filter: (d: WaterfallChartDataPoint) => {
@@ -444,7 +435,7 @@ module powerbi.visuals {
                         if (d.isLabelInside)
                             return dataLabelUtils.defaultInsideLabelColor;
                         return d.labelFill;
-                    }
+                    },
                 },
             };
 
@@ -635,7 +626,7 @@ module powerbi.visuals {
             // This should always be the last line in the render code.
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
 
-            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions, labelDataPoints: labelDataPoints };
+            return { dataPoints: dataPoints, behaviorOptions: behaviorOptions, labelDataPoints: labelDataPoints, labelsAreNumeric: true };
         }
 
         public onClearSelection(): void {
@@ -707,11 +698,12 @@ module powerbi.visuals {
                     let properties: TextProperties = {
                         text: text,
                         fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
-                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontSize: PixelConverter.fromPoint(labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt),
                         fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
                     };
+
                     let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
 
                     labelDataPoints.push({
                         isPreferred: true,
@@ -727,7 +719,9 @@ module powerbi.visuals {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,
                             validPositions: dataPoint.value === 0 ? WaterfallChart.validZeroLabelPosition : WaterfallChart.validLabelPositions,
-                        }
+                        },
+                        fontSize: labelSettings.fontSize,
+                        identity: undefined,
                     });
                 }
             }

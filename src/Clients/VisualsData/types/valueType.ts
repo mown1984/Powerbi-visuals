@@ -51,6 +51,11 @@ module powerbi {
         formatting?: FormattingTypeDescriptor;
         extendedType?: ExtendedType;
         enumeration?: IEnumType;
+        scripting?: ScriptTypeDescriptor;
+    }
+
+    export interface ScriptTypeDescriptor {
+        source?: boolean;
     }
 
     export interface TemporalTypeDescriptor {
@@ -83,6 +88,7 @@ module powerbi {
         formatString?: boolean;
         alignment?: boolean;
         labelDisplayUnits?: boolean;
+        fontSize?: boolean;
     }
 
     /** Describes a data value type, including a primitive type and extended type if any (derived from data category). */
@@ -97,6 +103,7 @@ module powerbi {
         private miscType: MiscellaneousType;
         private formattingType: FormattingType;
         private enumType: IEnumType;
+        private scriptingType: ScriptType;
 
         /** Do not call the ValueType constructor directly. Use the ValueType.fromXXX methods. */
         constructor(type: ExtendedType, category?: string, enumType?: IEnumType) {
@@ -122,6 +129,9 @@ module powerbi {
             if (EnumExtensions.hasFlag(type, ExtendedType.Enumeration)) {
                 this.enumType = enumType;
             }
+            if (EnumExtensions.hasFlag(type, ExtendedType.Scripting)) {
+                this.scriptingType = new ScriptType(type);
+            }
         }
 
         /** Creates or retrieves a ValueType object based on the specified ValueTypeDescriptor. */
@@ -139,6 +149,9 @@ module powerbi {
             if (descriptor.none) return ValueType.fromExtendedType(ExtendedType.None);
 
             // Extended types
+            if (descriptor.scripting) {
+                if (descriptor.scripting.source) return ValueType.fromExtendedType(ExtendedType.ScriptSource);
+            }
             if (descriptor.enumeration) return ValueType.fromEnum(descriptor.enumeration);
             if (descriptor.temporal) {
                 if (descriptor.temporal.year) return ValueType.fromExtendedType(ExtendedType.Year_Integer);
@@ -167,6 +180,7 @@ module powerbi {
                 if (descriptor.formatting.formatString) return ValueType.fromExtendedType(ExtendedType.FormatString);
                 if (descriptor.formatting.alignment) return ValueType.fromExtendedType(ExtendedType.Alignment);
                 if (descriptor.formatting.labelDisplayUnits) return ValueType.fromExtendedType(ExtendedType.LabelDisplayUnits);
+                if (descriptor.formatting.fontSize) return ValueType.fromExtendedType(ExtendedType.FontSize);
             }
             if (descriptor.extendedType) {
                 return ValueType.fromExtendedType(descriptor.extendedType);
@@ -292,6 +306,23 @@ module powerbi {
         public get enum(): IEnumType {
             return this.enumType;
         }
+
+        public get scripting(): ScriptType {
+            return this.scriptingType;
+        }
+    }
+
+    export class ScriptType implements ScriptTypeDescriptor {
+        private underlyingType: ExtendedType;
+
+        constructor(type: ExtendedType) {
+            debug.assert(!!type && EnumExtensions.hasFlag(type, ExtendedType.Scripting), 'type');
+            this.underlyingType = type;
+        }
+
+        public get source(): boolean {
+            return matchesExtendedTypeWithAnyPrimitive(this.underlyingType, ExtendedType.ScriptSource);
+        }
     }
 
     export class TemporalType implements TemporalTypeDescriptor {
@@ -395,6 +426,10 @@ module powerbi {
         public get labelDisplayUnits(): boolean {
             return matchesExtendedTypeWithAnyPrimitive(this.underlyingType, ExtendedType.LabelDisplayUnits);
         }
+
+        public get fontSize(): boolean {
+            return matchesExtendedTypeWithAnyPrimitive(this.underlyingType, ExtendedType.FontSize);
+        }
     }
 
     /** Defines primitive value types. Must be consistent with types defined by server conceptual schema. */
@@ -423,6 +458,7 @@ module powerbi {
         Geography = 1 << 10,
         Miscellaneous = 1 << 11,
         Formatting = 1 << 12,
+        Scripting = 1 << 13,        
 
         // Primitive types (0-255 range [0xFF] | flags)
         // The member names and base values must match those in PrimitiveType.
@@ -479,9 +515,11 @@ module powerbi {
         FormatString = Text | Formatting | (301 << 16),
         Alignment = Text | Formatting | (306 << 16),
         LabelDisplayUnits = Text | Formatting | (307 << 16),
+        FontSize = Double | Formatting | (308 << 16),
         // Enumeration
         Enumeration = Text | 400 << 16,
-
+        // Scripting
+        ScriptSource = Text | Scripting | (500 << 16),        
         // NOTE: To avoid confusion, underscores should be used only to delimit primitive type variants of an extended type
         // (e.g. Year_Integer or Latitude_Double above)
     }

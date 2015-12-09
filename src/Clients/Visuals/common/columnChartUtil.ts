@@ -32,8 +32,8 @@ module powerbi.visuals {
     const rectName = 'rect';
 
     export module ColumnUtil {
-        export var DimmedOpacity = 0.4;
-        export var DefaultOpacity = 1.0;
+        export const DimmedOpacity = 0.4;
+        export const DefaultOpacity = 1.0;
 
         export function getTickCount(min: number, max: number, valuesMetadata: DataViewMetadataColumn[], maxTickCount: number, is100Pct: boolean, forcedTickCount?: number): number {
             return forcedTickCount !== undefined
@@ -394,19 +394,20 @@ module powerbi.visuals {
             let useLogScale = axisScaleType && axisScaleType === axisScale.log && isLogScaleAllowed;
 
             let scale = useLogScale ? d3.scale.log() : d3.scale.linear();
+            let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomainNorm);
 
             scale.range(scaleRange)
                 .domain(combinedDomain)
                 .nice(bestTickCount || undefined)
-                .clamp(AxisHelper.scaleShouldClamp(combinedDomain, valueDomainNorm));     
+                .clamp(shouldClamp);
 
             ColumnUtil.normalizeInfinityInScale(scale);
 
             let dataType: ValueType = AxisHelper.getCategoryValueType(data.valuesMetadata[0], true);
             let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], columnChartProps.general.formatString);
-            let minTickInterval = AxisHelper.getMinTickValueInterval(formatString, dataType);
+            let minTickInterval = AxisHelper.getMinTickValueInterval(formatString, dataType, is100Pct);
             let yTickValues: any[] = AxisHelper.getRecommendedTickValuesForAQuantitativeRange(bestTickCount, scale, minTickInterval);
-
+            
             if (useLogScale) {
                 yTickValues = yTickValues.filter((d) => { return AxisHelper.powerOfTen(d); });
             }

@@ -29,6 +29,7 @@
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
 
     export interface DonutConstructorOptions {
         sliceWidthRatio?: number;
@@ -123,9 +124,6 @@ module powerbi.visuals {
         private static DrillDownAnimationDuration = 1000;
         private static OuterArcRadiusRatio = 0.9;
         private static InnerArcRadiusRatio = 0.8;
-        private static FontsizeThreshold = 150;
-        private static SmallFontSize = '8px';
-        private static NormalFontSize = '11px';
         private static InteractiveLegendContainerHeight = 70;
         private static OpaqueOpacity = 1.0;
         private static SemiTransparentOpacity = 0.6;
@@ -138,6 +136,7 @@ module powerbi.visuals {
         public static EffectiveZeroValue = 0.000000001; // Very small multiplier so that we have a properly shaped zero arc to animate to/from.
         public static PolylineOpacity = 0.5;
 
+        private dataViews: DataView[];
         private sliceWidthRatio: number;
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
@@ -189,7 +188,7 @@ module powerbi.visuals {
             }
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean): DonutData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService): DonutData {
             let converter = new DonutChartConversion.DonutChartConverter(dataView, colors, defaultDataPointColor);
             converter.convert();
             let d3PieLayout = d3.layout.pie()
@@ -197,8 +196,14 @@ module powerbi.visuals {
                 .value((d: DonutDataPoint) => {
                     return d.percentage;
                 });
+
+            if (interactivityService) {
+                interactivityService.applySelectionStateToData(converter.dataPoints);
+                interactivityService.applySelectionStateToData(converter.legendData.dataPoints);
+            }
+
             let culledDataPoints = (!disableGeometricCulling && viewport) ? DonutChart.cullDataByViewport(converter.dataPoints, converter.maxValue, viewport) : converter.dataPoints;
-            let data: DonutData = {
+            return {
                 dataPointsToDeprecate: culledDataPoints,
                 dataPoints: d3PieLayout(culledDataPoints),
                 unCulledDataPoints: converter.dataPoints,
@@ -210,8 +215,6 @@ module powerbi.visuals {
                 maxValue: converter.maxValue,
                 visibleGeometryCulled: converter.dataPoints.length !== culledDataPoints.length,
             };
-
-            return data;
         }
 
         public init(options: VisualInitOptions) {
@@ -232,7 +235,7 @@ module powerbi.visuals {
                 dataPointsToEnumerate: [],
                 dataPoints: [],
                 unCulledDataPoints: [],
-                legendData: { title: "", dataPoints: [] },
+                legendData: { title: "", dataPoints: [], fontSize: SVGLegend.DefaultFontSizeInPt},
                 hasHighlights: false,
                 dataLabelsSettings: dataLabelUtils.getDefaultDonutLabelSettings(),
             };
@@ -295,10 +298,14 @@ module powerbi.visuals {
                 });
         }
 
-        public onDataChanged(options: VisualDataChangedOptions): void {
+        public update(options: VisualUpdateOptions): void {
             debug.assertValue(options, 'options');
 
-            let dataViews = options.dataViews;
+            // Viewport resizing
+            let viewport = options.viewport;
+            this.parentViewport = viewport;
+
+            let dataViews = this.dataViews = options.dataViews;
             if (dataViews && dataViews.length > 0 && dataViews[0].categorical) {
                 let dataViewMetadata = dataViews[0].metadata;
                 let showAllDataPoints = undefined;
@@ -312,13 +319,11 @@ module powerbi.visuals {
                     }
                 }
 
-                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling);
+                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling, this.interactivityService);
                 this.data.showAllDataPoints = showAllDataPoints;
                 this.data.defaultDataPointColor = defaultDataPointColor;
                 if (!(this.options.interactivity && this.options.interactivity.isInteractiveLegend))
                     this.renderLegend();
-                if (this.interactivityService)
-                    this.interactivityService.applySelectionStateToData(this.data.dataPoints.map((d) => d.data));
             }
 
             else {
@@ -334,9 +339,7 @@ module powerbi.visuals {
             }
 
             this.initViewportDependantProperties();
-
             this.updateInternal(this.data, options.suppressAnimations);
-
             this.hasSetData = true;
 
             if (dataViews) {
@@ -350,37 +353,35 @@ module powerbi.visuals {
                     warnings.unshift(new GeometryCulledWarning());
                 }
 
-                if (warnings && warnings.length > 0)
                     this.hostService.setWarnings(warnings);
             }
         }
 
-        public onResizing(viewport: IViewport): void {
-            let duration = 0;
+        public onDataChanged(options: VisualDataChangedOptions): void {
+            debug.assertValue(options, 'options');
 
-            this.parentViewport = viewport;
-            if (this.currentViewport && (this.currentViewport.height === viewport.height && this.currentViewport.width === viewport.width))
-                return;
-            this.parentViewport = viewport;
-            if (this.hasSetData)
-                this.renderLegend();
-            this.initViewportDependantProperties(duration);
-            let d3PieLayout = d3.layout.pie()
-                .sort(null)
-                .value((d: DonutDataPoint) => {
-                    return d.percentage;
+            this.update({
+                dataViews: options.dataViews,
+                suppressAnimations: options.suppressAnimations,
+                viewport: this.currentViewport,
                 });
-            this.data.dataPoints = d3PieLayout(DonutChart.cullDataByViewport(this.data.unCulledDataPoints, this.data.maxValue, viewport));
-            if (this.data.dataPoints.length !== this.data.unCulledDataPoints.length)
-                this.data.visibleGeometryCulled = true;
-            else
-                this.data.visibleGeometryCulled = false;
-            this.updateInternal(this.data, true /* suppressAnimations */, duration);
-            this.previousRadius = this.radius;
+        }
+
+        public onResizing(viewport: IViewport): void {
+            this.update({
+                dataViews: this.dataViews,
+                suppressAnimations: true,
+                viewport: viewport,
+            });
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             let enumeration = new ObjectEnumerationBuilder();
+
+            let dataLabelsSettings = this.data && this.data.dataLabelsSettings
+                ? this.data.dataLabelsSettings
+                : dataLabelUtils.getDefaultDonutLabelSettings();
+
             switch (options.objectName) {
                 case 'legend':
                     this.enumerateLegend(enumeration);
@@ -391,18 +392,16 @@ module powerbi.visuals {
                 case 'labels':
                     let labelSettingOptions: VisualDataLabelsSettingsOptions = {
                         enumeration: enumeration,
-                        dataLabelsSettings: this.data ? this.data.dataLabelsSettings : dataLabelUtils.getDefaultDonutLabelSettings(),
+                        dataLabelsSettings: dataLabelsSettings,
                         show: true,
                         displayUnits: true,
                         precision: true,
+                        fontSize: true,
                     };
                     dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                     break;
                 case 'categoryLabels':
-                    if (this.data)
-                        dataLabelUtils.enumerateCategoryLabels(enumeration, this.data.dataLabelsSettings, false, true);
-                    else
-                        dataLabelUtils.enumerateCategoryLabels(enumeration, null, false, true);
+                    dataLabelUtils.enumerateCategoryLabels(enumeration, dataLabelsSettings, false /* withFill */, true /* isShowCategory */);
                     break;
             }
             return enumeration.complete();
@@ -453,6 +452,8 @@ module powerbi.visuals {
             let show = DataViewObjects.getValue(legendObjectProperties, donutChartProps.legend.show, this.legend.isVisible());
             let showTitle = DataViewObjects.getValue(legendObjectProperties, donutChartProps.legend.showTitle, true);
             let titleText = DataViewObjects.getValue(legendObjectProperties, donutChartProps.legend.titleText, this.data.legendData.title);
+            let labelColor = DataViewObject.getValue(legendObjectProperties, legendProps.labelColor, this.data.legendData.labelColor);
+            let labelFontSize = DataViewObject.getValue(legendObjectProperties, legendProps.fontSize, this.data.legendData.fontSize);
 
             enumeration.pushInstance({
                 selector: null,
@@ -461,7 +462,9 @@ module powerbi.visuals {
                     show: show,
                     position: LegendPosition[this.legend.getOrientation()],
                     showTitle: showTitle,
-                    titleText: titleText
+                    titleText: titleText,
+                    labelColor: labelColor,
+                    fontSize: labelFontSize
                 }
             });
         }
@@ -583,7 +586,7 @@ module powerbi.visuals {
             }
 
             if (this.animator) {
-                let layout = DonutChart.getLayout(this.radius, this.sliceWidthRatio, viewport);
+                let layout = DonutChart.getLayout(this.radius, this.sliceWidthRatio, viewport, data.dataLabelsSettings);
                 let result: DonutChartAnimationResult;
                 let shapes: D3.UpdateSelection;
                 let highlightShapes: D3.UpdateSelection;
@@ -911,7 +914,7 @@ module powerbi.visuals {
 
             // For interactive chart, there shouldn't be slice labels (as you have the legend).
             if (!this.isInteractive) {
-                let layout = DonutChart.getLayout(radius, sliceWidthRatio, this.currentViewport);
+                let layout = DonutChart.getLayout(radius, sliceWidthRatio, this.currentViewport, data.dataLabelsSettings);
                 DonutChart.drawDefaultCategoryLabels(this.mainGraphicsContext, data, layout, sliceWidthRatio, radius, this.currentViewport);
             }
             let highlightSlices = undefined;
@@ -1051,11 +1054,11 @@ module powerbi.visuals {
                 this.interactivityService.clearSelection();
         }
 
-        public static getLayout(radius: number, sliceWidthRatio: number, viewport: IViewport): DonutLayout {
+        public static getLayout(radius: number, sliceWidthRatio: number, viewport: IViewport, labelSettings: VisualDataLabelsSettings): DonutLayout {
             let innerRadius = radius * sliceWidthRatio;
             let arc = d3.svg.arc().innerRadius(innerRadius);
             let arcWithRadius = arc.outerRadius(radius * DonutChart.InnerArcRadiusRatio);
-            let fontSize = viewport.height < DonutChart.FontsizeThreshold ? DonutChart.SmallFontSize : DonutChart.NormalFontSize;
+            let fontSize = PixelConverter.fromPoint(labelSettings.fontSize);
             return {
                 fontSize: fontSize,
                 shapeLayout: {
@@ -1446,6 +1449,7 @@ module powerbi.visuals {
             private grouped: DataViewValueColumnGroup[];
             private isMultiMeasure: boolean;
             private isSingleMeasure: boolean;
+            private isDynamicSeries: boolean;
             private seriesCount: number;
             private categoryIdentities: DataViewScopeIdentity[];
             private categoryValues: any[];
@@ -1483,6 +1487,7 @@ module powerbi.visuals {
                 let grouped = this.grouped = dataViewCategorical && dataViewCategorical.values ? dataViewCategorical.values.grouped() : undefined;
                 this.isMultiMeasure = grouped && grouped.length > 0 && grouped[0].values && grouped[0].values.length > 1;
                 this.isSingleMeasure = grouped && grouped.length === 1 && grouped[0].values && grouped[0].values.length === 1;
+                this.isDynamicSeries = !!(dataViewCategorical.values && dataViewCategorical.values.source);
 
                 this.hasHighlights = this.seriesCount > 0 && !_.isEmpty(dataViewCategorical.values) && !!dataViewCategorical.values[0].highlights;
                 this.highlightsOverflow = false;
@@ -1515,20 +1520,17 @@ module powerbi.visuals {
             public convert(): void {
                 let convertedData: ConvertedDataPoint[];
                 if (this.total !== 0) {
-                    // If category exists, we render labels using category values. If not, we render labels
-                    // using measure labels.
+                    // We render based on categories, series, or measures in that order of preference
                     if (this.categoryValues) {
                         convertedData = this.convertCategoricalWithSlicing();
                     }
-                    else {
-                        if (this.isSingleMeasure || this.isMultiMeasure) {
-                            // Either single- or multi-measure (no category or series)
-                            convertedData = this.convertMeasures();
-                        }
-                        else {
+                    else if (this.isDynamicSeries) {
                             // Series but no category.
                             convertedData = this.convertSeries();
                         }
+                    else {
+                        // No category or series; only measures.
+                        convertedData = this.convertMeasures();
                     }
                 }
                 else {
@@ -1613,11 +1615,12 @@ module powerbi.visuals {
                         tooltipInfo: tooltipInfo,
                         color: point.color,
                         labelColor: this.dataLabelsSettings.labelColor,
-                        labelFormatString: valuesMetadata.format
+                        labelFormatString: valuesMetadata.format,
+                        labelFontSize: this.dataLabelsSettings.fontSize,
                     });
                 }
 
-                this.legendData = { title: this.getLegendTitle(), dataPoints: this.legendDataPoints };
+                this.legendData = this.convertLegendData();
             }
 
             private getLegendTitle(): string {
@@ -1811,10 +1814,8 @@ module powerbi.visuals {
             }
 
             private convertDataLabelSettings(): VisualDataLabelsSettings {
-                var dataViewMetadata = this.dataViewMetadata;
-                var values = this.dataViewCategorical.values;
-                var labelFormatString = !_.isEmpty(values) ? valueFormatter.getFormatString(values[0].source, donutChartProps.general.formatString) : undefined;
-                var dataLabelsSettings = dataLabelUtils.getDefaultDonutLabelSettings(labelFormatString);
+                let dataViewMetadata = this.dataViewMetadata;
+                let dataLabelsSettings = dataLabelUtils.getDefaultDonutLabelSettings();
 
                 if (dataViewMetadata) {
                     let objects: DataViewObjects = dataViewMetadata.objects;
@@ -1822,17 +1823,7 @@ module powerbi.visuals {
                         // Handle lables settings
                         let labelsObj = <DataLabelObject>objects['labels'];
                         if (labelsObj) {
-                            if (labelsObj.show !== undefined)
-                                dataLabelsSettings.show = labelsObj.show;
-                            if (labelsObj.color !== undefined) {
-                                dataLabelsSettings.labelColor = labelsObj.color.solid.color;
-                            }
-                            if (labelsObj.labelDisplayUnits !== undefined) {
-                                dataLabelsSettings.displayUnits = labelsObj.labelDisplayUnits;
-                            }
-                            if (labelsObj.labelPrecision !== undefined) {
-                                dataLabelsSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
-                            }
+                            dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, dataLabelsSettings);
                         }
 
                         let categoryLabelsObject = objects['categoryLabels'];
@@ -1846,6 +1837,15 @@ module powerbi.visuals {
                 }
 
                 return dataLabelsSettings;
+            }
+
+            private convertLegendData(): LegendData {
+               return {
+                    dataPoints: this.legendDataPoints,
+                    labelColor: LegendData.DefaultLegendLabelFillColor,
+                    title: this.getLegendTitle(),
+                    fontSize: SVGLegend.DefaultFontSizeInPt,
+                };
             }
         }
     }

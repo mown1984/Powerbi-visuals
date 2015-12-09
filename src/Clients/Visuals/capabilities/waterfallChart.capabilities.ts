@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var waterfallChartCapabilities: VisualCapabilities = {
+    export const waterfallChartCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: 'Category',
@@ -36,6 +36,7 @@ module powerbi.visuals {
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }
         ],
         objects: {
@@ -69,7 +70,15 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_LegendName'),
                         description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                         type: { text: true }
-                    }
+                    },
+                    labelColor: {
+                        displayName: data.createDisplayNameGetter('Visual_LegendTitleColor'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
+                    },
                 }
             },
             labels: {
@@ -93,7 +102,12 @@ module powerbi.visuals {
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
                         description: data.createDisplayNameGetter('Visual_PrecisionDescription'),
+                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
                         type: { numeric: true }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
                     },
                 }
             },
@@ -130,7 +144,7 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_Axis_Style'),
                         type: { enumeration: axisStyle.type }
                     },
-                    labelColor: {
+                   labelColor: {
                         displayName: data.createDisplayNameGetter('Visual_Axis_LabelColor'),
                         type: { fill: { solid: { color: true } } }
                     }
@@ -177,8 +191,8 @@ module powerbi.visuals {
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
-                        type: { numeric: true },
-                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto')
+                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
+                        type: { numeric: true }
                     }
 
                 }
@@ -203,7 +217,7 @@ module powerbi.visuals {
         },
     };
 
-    export var waterfallChartProps = {
+    export const waterfallChartProps = {
         general: {
             formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
         },
@@ -211,6 +225,9 @@ module powerbi.visuals {
             increaseFill: <DataViewObjectPropertyIdentifier>{ objectName: 'sentimentColors', propertyName: 'increaseFill' },
             decreaseFill: <DataViewObjectPropertyIdentifier>{ objectName: 'sentimentColors', propertyName: 'decreaseFill' },
             totalFill: <DataViewObjectPropertyIdentifier>{ objectName: 'sentimentColors', propertyName: 'totalFill' },
+        },
+        legend: {
+            labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
         },
     };
 }

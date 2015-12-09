@@ -27,13 +27,13 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var matrixRoleNames = {
+    export const matrixRoleNames = {
         rows: 'Rows',
         columns: 'Columns',
         values: 'Values',
     };
 
-    export var matrixCapabilities: VisualCapabilities = {
+    export const matrixCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: matrixRoleNames.rows,
@@ -87,7 +87,7 @@ module powerbi.visuals {
                 rows: {
                     for: { in: 'Rows' },
                     /* Explicitly override the server data reduction to make it appropriate for matrix. */
-                    dataReductionAlgorithm: { window: { count: 100 } }
+                    dataReductionAlgorithm: { window: { count: 500 } }
                 },
                 columns: {
                     for: { in: 'Columns' },
@@ -108,5 +108,6 @@ module powerbi.visuals {
             custom: {},
         },
         suppressDefaultTitle: true,
+        supportsSelection: false,
     };
 }

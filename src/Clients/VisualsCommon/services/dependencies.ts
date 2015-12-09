@@ -50,7 +50,7 @@ module jsCommon {
         ]
     };
 
-    export function ensurePowerView(action: () => void = () => { }): void {
+    export function ensurePowerView(action: () => void = _.noop): void {
         requires(PowerViewPackage, action);
     }
 

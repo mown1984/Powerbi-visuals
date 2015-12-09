@@ -29,6 +29,7 @@
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
 
     export const enum PointLabelPosition {
         Above,
@@ -39,15 +40,30 @@ module powerbi.visuals {
         position: PointLabelPosition;
     }
 
+    export interface LabelFormattedTextOptions {
+        label: any;
+        maxWidth?: number;
+        format?: string;
+        formatter?: IValueFormatter;
+        fontSize?: number;
+    }
+
     export interface VisualDataLabelsSettings {
         show: boolean;
+        showLabelPerSeries?: boolean;
+        isSeriesExpanded?: boolean;
         displayUnits?: number;
         showCategory?: boolean;
         position?: any;
         precision?: number;
         labelColor: string;
+        categoryLabelColor?: string;
+        fontSize?: number;
     }
 
+    /*
+    Options for setting the labels card on the property pane
+    */
     export interface VisualDataLabelsSettingsOptions {
         show: boolean;
         enumeration: ObjectEnumerationBuilder;
@@ -57,6 +73,8 @@ module powerbi.visuals {
         position?: boolean;
         positionObject?: string[];
         selector?: powerbi.data.Selector;
+        fontSize?: boolean;
+        showAll?: boolean;
     }
 
     export interface LabelEnabledDataPoint {
@@ -70,6 +88,7 @@ module powerbi.visuals {
         //taken from column metadata
         labelFormatString?: string;
         isLabelInside?: boolean;
+        labelFontSize?: number;
     }
 
     export interface IColumnFormatterCache {
@@ -100,24 +119,28 @@ module powerbi.visuals {
         labelDisplayUnits: number;
         labelPrecision?: number;
         labelPosition: any;
+        fontSize?: number;
+        showAll?: boolean;
+        showSeries?: boolean;
     }
 
     export module dataLabelUtils {
-
+        export const minLabelFontSize: number = 8;
         export const labelMargin: number = 8;
         export const maxLabelWidth: number = 50;
         export const defaultColumnLabelMargin: number = 5;
         export const defaultColumnHalfLabelHeight: number = 4;
+        export const DefaultFontSizeInPt = 9;
         export const LabelTextProperties: TextProperties = {
             fontFamily: 'wf_standard-font',
-            fontSize: '12px',
+            fontSize: PixelConverter.fromPoint(DefaultFontSizeInPt),
             fontWeight: 'normal',
         };
         export const defaultLabelColor = "#777777";
         export const defaultInsideLabelColor = "#ffffff"; //white
         export const hundredPercentFormat = "0.00 %;-0.00 %;0.00 %";
 
-        const defaultDecimalLabelPrecision: number = 2;
+        export const defaultLabelPrecision: number = undefined;
         const defaultCountLabelPrecision: number = 0;
 
         const labelGraphicsContextClass: ClassAndSelector = createClassAndSelector('labels');
@@ -129,6 +152,8 @@ module powerbi.visuals {
             if (labelsObj) {
                 if (labelsObj.show !== undefined)
                     labelSettings.show = labelsObj.show;
+                if (labelsObj.showSeries !== undefined)
+                    labelSettings.show = labelsObj.showSeries;
                 if (labelsObj.color !== undefined) {
                     labelSettings.labelColor = labelsObj.color.solid.color;
                 }
@@ -136,106 +161,129 @@ module powerbi.visuals {
                     labelSettings.displayUnits = labelsObj.labelDisplayUnits;
                 }
                 if (labelsObj.labelPrecision !== undefined) {
-                    labelSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : 0;
+                    labelSettings.precision = (labelsObj.labelPrecision >= 0) ? labelsObj.labelPrecision : defaultLabelPrecision;
+                }
+                if (labelsObj.fontSize !== undefined)
+                    labelSettings.fontSize = labelsObj.fontSize;
+                if (labelsObj.showAll !== undefined) {
+                    labelSettings.showLabelPerSeries = labelsObj.showAll;
                 }
             }
         }
         
-        export function getDefaultLabelSettings(show: boolean = false, labelColor?: string, format?: string): VisualDataLabelsSettings {
+        export function getDefaultLabelSettings(show: boolean = false, labelColor?: string, fontSize?: number): VisualDataLabelsSettings {
             return {
                 show: show,
                 position: PointLabelPosition.Above,
                 displayUnits: 0,
-                precision: getPrecision(format),
+                precision: defaultLabelPrecision,
                 labelColor: labelColor || defaultLabelColor,
                 formatterOptions: null,
+                fontSize: fontSize || DefaultFontSizeInPt,
             };
         }
 
-        export function getDefaultTreemapLabelSettings(format?: string): VisualDataLabelsSettings {
-            return {
-                show: false,
-                displayUnits: 0,
-                precision: getPrecision(format),
-                labelColor: defaultInsideLabelColor,
-                showCategory: true,
-                formatterOptions: null,
-            };
-        }
-
-        export function getDefaultColumnLabelSettings(isLabelPositionInside: boolean, format?: string): VisualDataLabelsSettings {
-            var labelSettings = getDefaultLabelSettings(false, undefined, format);
-            labelSettings.position = null;
-            labelSettings.labelColor = isLabelPositionInside ? defaultInsideLabelColor : defaultLabelColor;
+        export function getDefaultCardLabelSettings(labelColor: string, categoryLabelColor: string, fontSize?: number): VisualDataLabelsSettings {
+            let labelSettings = getDefaultLabelSettings(true, labelColor, fontSize);
+            labelSettings.showCategory = true;
+            labelSettings.categoryLabelColor = categoryLabelColor;
             return labelSettings;
         }
 
-        export function getDefaultPointLabelSettings(format?: string): PointDataLabelsSettings {
+        export function getDefaultTreemapLabelSettings(): VisualDataLabelsSettings {
             return {
                 show: false,
-                position: PointLabelPosition.Above,
                 displayUnits: 0,
-                precision: getPrecision(format),
-                labelColor: defaultLabelColor,
-                formatterOptions: null,
-            };
-        }
-
-        export function getDefaultMapLabelSettings(format?: string): PointDataLabelsSettings {
-            return {
-                show: false,
-                position: PointLabelPosition.Above,
-                displayUnits: 0,
-                precision: getPrecision(format),
+                precision: defaultLabelPrecision,
                 labelColor: defaultInsideLabelColor,
-                formatterOptions: null,
-            };
-        }
-
-        export function getDefaultDonutLabelSettings(format?: string): VisualDataLabelsSettings {
-            return {
-                show: false,
-                displayUnits: 0,
-                precision: getPrecision(format),
-                labelColor: defaultLabelColor,
-                position: null,
                 showCategory: true,
                 formatterOptions: null,
             };
         }
 
-        export function getDefaultGaugeLabelSettings(format?: string): VisualDataLabelsSettings {
+        export function getDefaultColumnLabelSettings(isLabelPositionInside: boolean): VisualDataLabelsSettings {
+            let labelSettings = getDefaultLabelSettings(false, undefined);
+            labelSettings.position = null;
+            labelSettings.labelColor = undefined;
+            return labelSettings;
+        }
+
+        export function getDefaultPointLabelSettings(): PointDataLabelsSettings {
+            return {
+                show: false,
+                position: PointLabelPosition.Above,
+                displayUnits: 0,
+                precision: defaultLabelPrecision,
+                labelColor: defaultLabelColor,
+                formatterOptions: null,
+                fontSize: DefaultFontSizeInPt,
+            };
+        }
+
+        export function getDefaultMapLabelSettings(): PointDataLabelsSettings {
+            return {
+                show: false,
+                position: PointLabelPosition.Above,
+                displayUnits: 0,
+                precision: defaultLabelPrecision,
+                labelColor: defaultInsideLabelColor,
+                formatterOptions: null,
+                fontSize: DefaultFontSizeInPt,
+            };
+        }
+
+        export function getDefaultDonutLabelSettings(): VisualDataLabelsSettings {
+            return {
+                show: false,
+                displayUnits: 0,
+                precision: defaultLabelPrecision,
+                labelColor: defaultLabelColor,
+                position: null,
+                showCategory: true,
+                formatterOptions: null,
+                fontSize: DefaultFontSizeInPt,
+            };
+        }
+
+        export function getDefaultGaugeLabelSettings(): VisualDataLabelsSettings {
             return {
                 show: true,
                 displayUnits: 0,
-                precision: getPrecision(format),
+                precision: defaultLabelPrecision,
                 labelColor: null,
                 position: null,
+                fontSize: dataLabelUtils.minLabelFontSize,
                 formatterOptions: null,
             };
         }
 
-        export function getDefaultFunnelLabelSettings(format?: string): VisualDataLabelsSettings {
+        export function getDefaultFunnelLabelSettings(): VisualDataLabelsSettings {
             return {
                 show: true,
                 position: powerbi.visuals.labelPosition.insideCenter,
                 displayUnits: 0,
-                precision: getPrecision(format),
+                precision: defaultLabelPrecision,
                 labelColor: defaultLabelColor,
                 formatterOptions: null,
+                fontSize: DefaultFontSizeInPt,
             };
         }
 
-        function getPrecision(format: string): number {
+        export function getLabelPrecision(precision: number, format: string): number {
             debug.assertAnyValue(format, 'format');
 
+            if (precision !== defaultLabelPrecision)
+                return precision;
+
             if (format) {
-                let formatMetadata = NumberFormat.getCustomFormatMetadata(format);
+                // Calculate precision from positive format by default
+                let positiveFormat = format.split(";")[0];
+                let formatMetadata = NumberFormat.getCustomFormatMetadata(positiveFormat, true /*calculatePrecision*/);
                 if (formatMetadata.hasDots) {
-                    return defaultDecimalLabelPrecision;
+                    return formatMetadata.precision;
                 }
             }
-
+            // For count fields we do not want a precision by default
             return defaultCountLabelPrecision;
         }
 
@@ -427,18 +475,16 @@ module powerbi.visuals {
             });
         }
 
-        export function getLabelFormattedText(label: string | number, maxWidth?: number, format?: string, formatter?: IValueFormatter): string {
+        export function getLabelFormattedText(options: LabelFormattedTextOptions): string {
             let properties: TextProperties = {
-                text: formatter
-                    ? formatter.format(label)
-                    : formattingService.formatValue(label, format),
+                text: options.formatter
+                    ? options.formatter.format(options.label)
+                    : formattingService.formatValue(options.label, options.format),
                 fontFamily: LabelTextProperties.fontFamily,
-                fontSize: LabelTextProperties.fontSize,
+                fontSize: PixelConverter.fromPoint(options.fontSize),
                 fontWeight: LabelTextProperties.fontWeight,
             };
-            maxWidth = maxWidth ? maxWidth : maxLabelWidth;
-
-            return TextMeasurementService.getTailoredTextOrDefault(properties, maxWidth);
+            return TextMeasurementService.getTailoredTextOrDefault(properties, options.maxWidth ? options.maxWidth : maxLabelWidth);
         }
 
         export function getLabelLayoutXYForWaterfall(xAxisProperties: IAxisProperties, categoryWidth: number, yAxisProperties: IAxisProperties, dataDomain: number[]): LabelPosition {
@@ -525,7 +571,10 @@ module powerbi.visuals {
             
             return {
                 labelText: (d: MapVisualDataPoint) => {
-                    return getLabelFormattedText(d.labeltext);
+                    return getLabelFormattedText({
+                        label: d.labeltext,
+                        fontSize: labelSettings.fontSize
+                    });
                 },
                 labelLayout: {
                     x: (d: MapVisualDataPoint) => d.x,
@@ -539,6 +588,7 @@ module powerbi.visuals {
                 },
                 style: {
                     'fill': (d: MapVisualDataPoint) => d.labelFill,
+                    'font-size': PixelConverter.fromPoint(labelSettings.fontSize),
                 },
             };
         }
@@ -562,7 +612,10 @@ module powerbi.visuals {
                     let formatString = (formatOverride != null) ? formatOverride : d.labelFormatString;
                     let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, d.labelSettings);
                     let formatter = formattersCache.getOrCreate(formatString, d.labelSettings, value2);
-                    return getLabelFormattedText(formatter.format(d.value), maxLabelWidth);
+                    return getLabelFormattedText({
+                        label: formatter.format(d.value),
+                        maxWidth: maxLabelWidth
+                    });
                 },
                 labelLayout: labelLayoutXY,
                 filter: (d: ColumnChartDataPoint) => dataLabelUtils.getColumnChartLabelFilter(d, hasSelection, data.hasHighlights, axisOptions, visualWidth),
@@ -648,7 +701,10 @@ module powerbi.visuals {
 
             return {
                 labelText: (d: ScatterChartDataPoint) => {
-                    return getLabelFormattedText(d.category, maxLabelWidth * 2.0);
+                    return getLabelFormattedText({
+                        label: d.category,
+                        maxWidth: maxLabelWidth * 2.0
+                    });
                 },
                 labelLayout: {
                     x: (d: ScatterChartDataPoint) => xScale(d.x),
@@ -673,7 +729,7 @@ module powerbi.visuals {
                 labelText: (d: LineChartDataPoint) => {
                     let value2: number = getDisplayUnitValueFromAxisFormatter(axisFormatter, d.labelSettings);
                     let formatter = formattersCache.getOrCreate(d.labelFormatString, d.labelSettings, value2);
-                    return getLabelFormattedText(formatter.format(d.value));
+                    return getLabelFormattedText({ label: formatter.format(d.value) });
                 },
                 labelLayout: {
                     x: (d: LineChartDataPoint) => xScale(isScalar ? d.categoryValue : d.categoryIndex),
@@ -684,12 +740,12 @@ module powerbi.visuals {
                 },
                 style: {
                     'fill': (d: LineChartDataPoint) => d.labelFill,
+                    'font-size': (d: LineChartDataPoint) => PixelConverter.fromPoint(d.labelSettings.fontSize),
                 },
             };
         }
 
         export function getDonutChartLabelLayout(labelSettings: VisualDataLabelsSettings, radius: number, outerArc: D3.Svg.Arc, viewport: IViewport, value2: number): ILabelLayout {
-
             let midAngle = function (d: DonutArcDescriptor) { return d.startAngle + (d.endAngle - d.startAngle) / 2; };
             let measureFormattersCache = dataLabelUtils.createColumnFormatterCacheManager();
 
@@ -701,12 +757,35 @@ module powerbi.visuals {
                         // Giving 50/50 space when both category and measure are on
                         let maxDataLabelWidth = spaceAvailableForLabels / 2;
                         let measureFormatter = measureFormattersCache.getOrCreate(d.data.labelFormatString, labelSettings, value2);
-                        return labelSettings.showCategory
-                            ? getLabelFormattedText(d.data.label, maxDataLabelWidth) + getLabelFormattedText(" (" + measureFormatter.format(d.data.measure) + ")", maxDataLabelWidth)
-                            : getLabelFormattedText(d.data.measure, spaceAvailableForLabels,/* format */ null, measureFormatter);
+                        let categoryText: string;
+                        if (labelSettings.showCategory) {
+                            categoryText = getLabelFormattedText({
+                                label: d.data.label,
+                                maxWidth: maxDataLabelWidth,
+                                fontSize: labelSettings.fontSize
+                            }) +
+                            getLabelFormattedText({
+                                label: " (" + measureFormatter.format(d.data.measure) + ")",
+                                maxWidth: maxDataLabelWidth,
+                                fontSize: labelSettings.fontSize
+                            });
+                        }
+                        else {
+                            categoryText = getLabelFormattedText({
+                                label: d.data.measure,
+                                maxWidth: spaceAvailableForLabels,
+                                formatter: measureFormatter,
+                                fontSize: labelSettings.fontSize
+                            });
+                        }
+                        return categoryText;
                     }
                     // show only category label
-                    return getLabelFormattedText(d.data.label, spaceAvailableForLabels);
+                    return getLabelFormattedText({
+                        label: d.data.label,
+                        maxWidth: spaceAvailableForLabels,
+                        fontSize: labelSettings.fontSize
+                    });
                 },
                 labelLayout: {
                     x: (d: DonutArcDescriptor) => {
@@ -720,13 +799,14 @@ module powerbi.visuals {
                 style: {
                     'fill': (d: DonutArcDescriptor) => d.data.labelColor,
                     'text-anchor': (d: DonutArcDescriptor) => midAngle(d) < Math.PI ? 'start' : 'end',
+                    'font-size': (d: DonutArcDescriptor) => PixelConverter.fromPoint(d.data.labelFontSize),
                 },
             };
         }
 
         export function getFunnelChartLabelLayout(
             data: FunnelData,
-            axisOptions: FunnelAxisOptions, innerTextHeightDelta: number,
+            axisOptions: FunnelAxisOptions,
             textMinimumPadding: number,
             labelSettings: VisualDataLabelsSettings,
             currentViewport: IViewport): ILabelLayout {
@@ -734,9 +814,10 @@ module powerbi.visuals {
             let yScale = axisOptions.yScale;
             let xScale = axisOptions.xScale;
             let marginLeft = axisOptions.margin.left;
+            let innerTextHeightRate = 0.7;
+            let rangeBand = axisOptions.xScale.rangeBand();
 
             //the bars are tranform, verticalRange mean horizontal range, xScale is y, yscale is x
-            let halfRangeBandPlusDelta = axisOptions.xScale.rangeBand() / 2 + innerTextHeightDelta;
             let pixelSpan = axisOptions.verticalRange / 2;
             let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], funnelChartProps.general.formatString);
             let textMeasurer: ITextAsSVGMeasurer = TextMeasurementService.measureSvgTextWidth;
@@ -760,11 +841,23 @@ module powerbi.visuals {
                     let maximumTextSize = Math.max(insideAvailableSpace, outsideAvailableSpace);
                     let formatter = formattersCache.getOrCreate(labelFormatString, labelSettings, value2);
                     let labelText = formatter.format(FunnelChart.getFunnelSliceValue(d, true /* asOriginal */));
-                    return getLabelFormattedText(labelText, maximumTextSize);
+                    return getLabelFormattedText({
+                        label: labelText,
+                        maxWidth: maximumTextSize,
+                        fontSize: labelSettings.fontSize
+                    });
                 },
                 labelLayout: {
-                    y: (d, i) => {
-                        return xScale(i) + halfRangeBandPlusDelta;
+                    y: (d: FunnelSlice, i) => {
+                        let properties: TextProperties = {
+                            text: d.labeltext,
+                            fontFamily: LabelTextProperties.fontFamily,
+                            fontSize: PixelConverter.fromPoint(labelSettings.fontSize),
+                            fontWeight: LabelTextProperties.fontWeight,
+                        };
+                        //in order to make it center aligned we should 'correct' the height to not calculate text margin
+                        let labelHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                        return xScale(i) + (rangeBand / 2) + (labelHeight / 2);
                     },
                     x: (d: FunnelSlice) => {
                         let barWidth = Math.abs(yScale(d.value) - yScale(0));
@@ -776,9 +869,12 @@ module powerbi.visuals {
                         let formatter = formattersCache.getOrCreate(labelFormatString, labelSettings, value2);
                         let labelText = formatter.format(FunnelChart.getFunnelSliceValue(d, true /* asOriginal */));
                         let properties: TextProperties = {
-                            text: getLabelFormattedText(labelText, maximumTextSize),
+                            text: getLabelFormattedText({
+                                label: labelText,
+                                maxWidth: maximumTextSize
+                            }),
                             fontFamily: LabelTextProperties.fontFamily,
-                            fontSize: LabelTextProperties.fontSize,
+                            fontSize: PixelConverter.fromPoint(labelSettings.fontSize),
                             fontWeight: LabelTextProperties.fontWeight,
                         };
 
@@ -801,13 +897,26 @@ module powerbi.visuals {
                                 return marginLeft + pixelSpan;
                         }
                     },
+                    dy: '-0.15em',
                 },
                 filter: (d: FunnelSlice) => {
-                    return d != null && d.value != null && data.hasHighlights === !!d.highlight;
+                    if (!(d != null && d.value != null && data.hasHighlights === !!d.highlight))
+                        return false;
+
+                    let properties: TextProperties = {
+                        text: d.labeltext,
+                        fontFamily: LabelTextProperties.fontFamily,
+                        fontSize: PixelConverter.fromPoint(labelSettings.fontSize),
+                        fontWeight: LabelTextProperties.fontWeight,
+                    };
+
+                    let labelHeight = TextMeasurementService.estimateSvgTextHeight(properties) * innerTextHeightRate;
+                    return labelHeight < rangeBand;
                 },
                 style: {
                     'fill': (d: FunnelSlice) => d.labelFill,
                     'fill-opacity': (d: FunnelSlice) => ColumnUtil.getFillOpacity(d.selected, false, false, false),
+                    'font-size': (d: FunnelSlice) => PixelConverter.fromPoint(labelSettings.fontSize),
                 },
             };
         }
@@ -827,7 +936,10 @@ module powerbi.visuals {
                 properties: {},
             };
 
-            if (options.show) {
+            if (options.show && options.selector) {
+                instance.properties['showSeries'] = options.dataLabelsSettings.show;
+            }
+            else if (options.show) {
                 instance.properties['show'] = options.dataLabelsSettings.show;
             }
 
@@ -837,7 +949,8 @@ module powerbi.visuals {
                 instance.properties['labelDisplayUnits'] = options.dataLabelsSettings.displayUnits;
             }
             if (options.precision) {
-                instance.properties['labelPrecision'] = options.dataLabelsSettings.precision;
+                let precision = options.dataLabelsSettings.precision;
+                instance.properties['labelPrecision'] = precision === defaultLabelPrecision ? null : precision;
             }
             if (options.position) {
                 instance.properties['labelPosition'] = options.dataLabelsSettings.position;
@@ -847,31 +960,39 @@ module powerbi.visuals {
                     instance.validValues = { 'labelPosition': options.positionObject };
                 }
             }
+            if (options.fontSize)
+                instance.properties['fontSize'] = options.dataLabelsSettings.fontSize;
+            if (options.showAll) {
+                instance.properties['showAll'] = options.dataLabelsSettings.showLabelPerSeries;
+            }
 
             return options.enumeration.pushInstance(instance);
         }
 
-        export function enumerateCategoryLabels(enumeration: ObjectEnumerationBuilder, dataLabelsSettings: VisualDataLabelsSettings, withFill: boolean, isDonutChart: boolean = false, isTreeMap: boolean = false): void {
+        export function enumerateCategoryLabels(enumeration: ObjectEnumerationBuilder, dataLabelsSettings: VisualDataLabelsSettings, withFill: boolean, isShowCategory: boolean = false, fontSize?: number): void {
             let labelSettings = (dataLabelsSettings)
                 ? dataLabelsSettings
-                : (isDonutChart)
-                ? getDefaultDonutLabelSettings()
-                : (isTreeMap)
-                ? getDefaultTreemapLabelSettings()
                 : getDefaultPointLabelSettings();
 
             let instance: VisualObjectInstance = {
                 objectName: 'categoryLabels',
                 selector: null,
                 properties: {
-                    show: isDonutChart || isTreeMap
+                    show: isShowCategory
                     ? labelSettings.showCategory
-                    : labelSettings.show,
+                        : labelSettings.show,
+                    fontSize: dataLabelsSettings ? dataLabelsSettings.fontSize : DefaultFontSizeInPt,
                 },
             };
             
             if (withFill) {
-                instance.properties['color'] = labelSettings.labelColor;
+                instance.properties['color'] = labelSettings.categoryLabelColor
+                    ? labelSettings.categoryLabelColor
+                    : labelSettings.labelColor;
+            }
+
+            if (fontSize) {
+                instance.properties['fontSize'] = fontSize;
             }
             
             enumeration.pushInstance(instance);
@@ -889,30 +1010,30 @@ module powerbi.visuals {
                 cache: { defaultFormatter: null, },
                 getOrCreate(formatString: string, labelSetting: VisualDataLabelsSettings, value2?: number) {
                     if (formatString) {
-                        var cacheKeyObject = {
+                        let cacheKeyObject = {
                             formatString: formatString,
                             displayUnits: labelSetting.displayUnits,
-                            precision: labelSetting.precision,
+                            precision: getLabelPrecision(labelSetting.precision, formatString),
                             value2: value2
                         };
-                        var cacheKey = JSON.stringify(cacheKeyObject);
+                        let cacheKey = JSON.stringify(cacheKeyObject);
                         if (!this.cache[cacheKey])
-                            this.cache[cacheKey] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
+                            this.cache[cacheKey] = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2, cacheKeyObject.precision));
                         return this.cache[cacheKey];
                     }
                     if (!this.cache.defaultFormatter) {
-                        this.cache.defaultFormatter = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2));
+                        this.cache.defaultFormatter = valueFormatter.create(getOptionsForLabelFormatter(labelSetting, formatString, value2, labelSetting.precision));
                     }
                     return this.cache.defaultFormatter;
                 }
             };
         }
-
-        function getOptionsForLabelFormatter(labelSetting: VisualDataLabelsSettings, formatString: string, value2?: number): ValueFormatterOptions {
+        
+        export function getOptionsForLabelFormatter(labelSetting: VisualDataLabelsSettings, formatString: string, value2?: number, precision?: number): ValueFormatterOptions {
             return {
                 displayUnitSystemType: DisplayUnitSystemType.DataLabels,
                 format: formatString,
-                precision: labelSetting.precision,
+                precision: precision,
                 value: labelSetting.displayUnits,
                 value2: value2,
                 allowFormatBeautification: true,

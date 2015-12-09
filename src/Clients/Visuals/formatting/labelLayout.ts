@@ -32,6 +32,7 @@ module powerbi {
     import ISize = shapes.ISize;
     import IRect = powerbi.visuals.IRect;
     import IPoint = shapes.IPoint;
+    import SelectableDataPoint = powerbi.visuals.SelectableDataPoint;
 
     /**
      * Defines possible data label positions relative to rectangles
@@ -78,19 +79,34 @@ module powerbi {
         /** Position is not defined. */
         None = 0,
 
-        Above = 1,
+        Above = 1 << 0,
 
-        Below = 2,
+        Below = 1 << 1,
 
-        Left = 4,
+        Left = 1 << 2,
 
-        Right = 8,
+        Right = 1 << 3,
+
+        BelowRight = 1 << 4,
+
+        BelowLeft = 1 << 5,
+
+        AboveRight = 1 << 6,
+
+        AboveLeft = 1 << 7,
+
+        Center = 1 << 8,
 
         All = 
         Above |
         Below |
         Left |
-        Right,
+        Right |
+        BelowRight |        
+        BelowLeft |       
+        AboveRight |        
+        AboveLeft |
+        Center,
     }
     
     /**
@@ -160,12 +176,16 @@ module powerbi {
 
         /** The parent geometry for the data label */
         parentShape: LabelParentRect | LabelParentPoint;
-        
+
         /** The identity of the data point associated with the data label */
-        identity?: powerbi.visuals.SelectionId;
+        identity: powerbi.visuals.SelectionId;
+
+        /** The font size of the data point associated with the data label */
+        fontSize?: number;
+
     }
 
-    export interface Label {
+    export interface Label extends SelectableDataPoint {
         /** Text to be displayed in the label */
         text: string;
 
@@ -177,9 +197,9 @@ module powerbi {
 
         /** The fill color of the data label */
         fill: string;
-        
-        /** The identity of the data point associated with the data label */
-        identity?: powerbi.visuals.SelectionId;
+
+        /** The text size of the data label */
+        fontSize?: number;
     }
     
     interface GridSubsection {
@@ -296,8 +316,10 @@ module powerbi {
         maximumOffset: number;
         /** The amount to increase the offset each attempt while laying out labels */
         offsetIterationDelta?: number;
-        /** Padding used for checking whether a label is inside a parent shape */
-        padding?: number;
+        /** Horizontal padding used for checking whether a label is inside a parent shape */
+        horizontalPadding?: number;
+        /** Vertical padding used for checking whether a label is inside a parent shape */
+        verticalPadding?: number;
     }
 
     export class LabelLayout {
@@ -308,11 +330,14 @@ module powerbi {
         /** The amount of offset to start with when the data label is not centered */
         private startingOffset: number;
         /** Padding used for checking whether a label is inside a parent shape */
-        private padding: number;
+        private horizontalPadding: number;
+        /** Padding used for checking whether a label is inside a parent shape */
+        private verticalPadding: number;
 
         // Default values
         private static defaultOffsetIterationDelta = 2;
-        private static defaultPadding = 2;
+        private static defaultHorizontalPadding = 2;
+        private static defaultVerticalPadding = 2;
 
         constructor(options: DataLabelLayoutOptions) {
             this.startingOffset = options.startingOffset;
@@ -324,11 +349,17 @@ module powerbi {
             else {
                 this.offsetIterationDelta = LabelLayout.defaultOffsetIterationDelta;
             }
-            if (options.padding != null) {
-                this.padding = options.padding;
+            if (options.horizontalPadding != null) {
+                this.horizontalPadding = options.horizontalPadding;
             }
             else {
-                this.padding = LabelLayout.defaultPadding;
+                this.horizontalPadding = LabelLayout.defaultHorizontalPadding;
+            }
+            if (options.verticalPadding != null) {
+                this.verticalPadding = options.verticalPadding;
+            }
+            else {
+                this.verticalPadding = LabelLayout.defaultVerticalPadding;
             }
         }
 
@@ -351,23 +382,46 @@ module powerbi {
          *     preferred position if it will be a smaller offset)
          */
         public layout(labelDataPoints: LabelDataPoint[], viewport: IViewport): Label[] {
-            let grid = new LabelArrangeGrid(labelDataPoints, viewport);
-            
             // Clear data labels for a new layout
             for (let labelPoint of labelDataPoints) {
                 labelPoint.hasBeenRendered = false;
             }
 
-            let currentOffset = this.startingOffset;
-            let currentCenteredOffset = 0;
+            let resultingDataLabels: Label[] = [];
+            let preferredLabels: LabelDataPoint[] = [];
+            let grid = new LabelArrangeGrid(labelDataPoints, viewport);
+            for (let i = labelDataPoints.length - 1; i >= 0 ; i--) {
+                let labelPoint = labelDataPoints[i];
+                if (labelPoint.isPreferred) {
+                    let label = labelDataPoints.splice(i, 1);
+                    preferredLabels = label.concat(preferredLabels);
+                }
+            }
+
+            // first iterate all the preferred labels
+            if (preferredLabels.length > 0)
+                resultingDataLabels = this.positionDataLabels(preferredLabels, viewport, grid);
+            
+            // While there are invisible not preferred labels and label distance is less than the max
+            // allowed distance
+            if (labelDataPoints.length > 0) {
+                let labels = this.positionDataLabels(labelDataPoints, viewport,grid);
+                resultingDataLabels = resultingDataLabels.concat(labels);
+            }
+            // TODO: Add reference lines if we want them
+
+            return resultingDataLabels;
+        }
+
+        private positionDataLabels(labelDataPoints: LabelDataPoint[], viewport: IViewport, grid: LabelArrangeGrid): Label[] {
             let resultingDataLabels: Label[] = [];
             let offsetDelta = this.offsetIterationDelta;
+            let currentOffset = this.startingOffset;
+            let currentCenteredOffset = 0;
 
-            // While there are invisible preferred labels and label distance is less than the max
-            // allowed distance
             while (currentOffset <= this.maximumOffset) {
                 for (let labelPoint of labelDataPoints) {
-                    if (labelPoint.hasBeenRendered || !labelPoint.isPreferred) {
+                    if (labelPoint.hasBeenRendered) {
                         continue;
                     }
                     let dataLabel;
@@ -384,9 +438,6 @@ module powerbi {
                 currentOffset += offsetDelta;
                 currentCenteredOffset += offsetDelta;
             }
-
-            // TODO: Add reference lines if we want them
-
             return resultingDataLabels;
         }
 
@@ -394,13 +445,13 @@ module powerbi {
             // Iterate over all positions that are valid for the data point
             for (let position of (<LabelParentRect>labelPoint.parentShape).validPositions) {
                 let isPositionInside = position & RectLabelPosition.InsideAll;
-                if (isPositionInside && !DataLabelRectPositioner.canFitWithinParent(labelPoint, this.padding)) {
+                if (isPositionInside && !DataLabelRectPositioner.canFitWithinParent(labelPoint, this.horizontalPadding, this.verticalPadding)) {
                     continue;
                 }
 
                 let resultingBoundingBox = LabelLayout.tryPositionRect(grid, position, labelPoint, currentLabelOffset, currentCenteredLabelOffset);
                 if (resultingBoundingBox) {
-                    if (isPositionInside && !DataLabelRectPositioner.isLabelWithinParent(resultingBoundingBox, labelPoint, this.padding)) {
+                    if (isPositionInside && !DataLabelRectPositioner.isLabelWithinParent(resultingBoundingBox, labelPoint, this.horizontalPadding, this.verticalPadding)) {
                         continue;
                     }
                     grid.add(resultingBoundingBox);
@@ -411,6 +462,8 @@ module powerbi {
                         isVisible: true,
                         fill: isPositionInside ? labelPoint.insideFill : labelPoint.outsideFill,
                         identity: labelPoint.identity,
+                        fontSize: labelPoint.fontSize,
+                        selected: false,
                     };
                 }
             }
@@ -459,9 +512,11 @@ module powerbi {
                         boundingBox: resultingBoundingBox,
                         text: labelPoint.text,
                         isVisible: true,
-                        fill: labelPoint.outsideFill, // If we ever support "inside" for point-based labels, this needs to be updated
-                        isInsideParent: false,
+                        fill: position === NewPointLabelPosition.Center ? labelPoint.insideFill : labelPoint.outsideFill, // If we ever support "inside" for point-based labels, this needs to be updated
+                        isInsideParent: position === NewPointLabelPosition.Center,
                         identity: labelPoint.identity,
+                        fontSize: labelPoint.fontSize,
+                        selected: false,
                     };
                 }
             }
@@ -562,14 +617,14 @@ module powerbi {
             return null;
         }
 
-        export function canFitWithinParent(labelDataPoint: LabelDataPoint, labelPadding: number): boolean {
-            return (labelDataPoint.textSize.width + 2 * labelPadding < (<LabelParentRect>labelDataPoint.parentShape).rect.width) ||
-                (labelDataPoint.textSize.height + 2 * labelPadding < (<LabelParentRect>labelDataPoint.parentShape).rect.height);
+        export function canFitWithinParent(labelDataPoint: LabelDataPoint, horizontalPadding: number, verticalPadding: number): boolean {
+            return (labelDataPoint.textSize.width + 2 * horizontalPadding < (<LabelParentRect>labelDataPoint.parentShape).rect.width) ||
+                (labelDataPoint.textSize.height + 2 * verticalPadding < (<LabelParentRect>labelDataPoint.parentShape).rect.height);
         }
 
-        export function isLabelWithinParent(labelRect: IRect, labelPoint: LabelDataPoint, labelPadding: number): boolean {
+        export function isLabelWithinParent(labelRect: IRect, labelPoint: LabelDataPoint, horizontalPadding: number, verticalPadding: number): boolean {
             let parentRect = (<LabelParentRect>labelPoint.parentShape).rect;
-            let labelRectWithPadding = shapes.Rect.inflateBy(labelRect, labelPadding);
+            let labelRectWithPadding = shapes.Rect.inflate(labelRect, { left: horizontalPadding, right: horizontalPadding, top: verticalPadding, bottom: verticalPadding });
             return shapes.Rect.containsPoint(parentRect, {
                 x: labelRectWithPadding.left,
                 y: labelRectWithPadding.top,
@@ -671,6 +726,9 @@ module powerbi {
     }
 
     export module DataLabelPointPositioner {
+        const cos45 = Math.cos(45);
+        const sin45 = Math.sin(45);
+
         export function getLabelRect(labelDataPoint: LabelDataPoint, position: NewPointLabelPosition, offset: number): IRect {
             let parentPoint = <LabelParentPoint>labelDataPoint.parentShape;
             switch (position) {
@@ -685,6 +743,21 @@ module powerbi {
                 }
                 case NewPointLabelPosition.Right: {
                     return DataLabelPointPositioner.right(labelDataPoint.textSize, parentPoint.point, parentPoint.radius + offset);
+                }
+                case NewPointLabelPosition.BelowLeft: {
+                    return DataLabelPointPositioner.belowLeft(labelDataPoint.textSize, parentPoint.point, parentPoint.radius + offset);
+                }
+                case NewPointLabelPosition.BelowRight: {
+                    return DataLabelPointPositioner.belowRight(labelDataPoint.textSize, parentPoint.point, parentPoint.radius + offset);
+                }
+                case NewPointLabelPosition.AboveLeft: {
+                    return DataLabelPointPositioner.aboveLeft(labelDataPoint.textSize, parentPoint.point, parentPoint.radius + offset);
+                }
+                case NewPointLabelPosition.AboveRight: {
+                    return DataLabelPointPositioner.aboveRight(labelDataPoint.textSize, parentPoint.point, parentPoint.radius + offset);
+                }
+                case NewPointLabelPosition.Center: {
+                    return DataLabelPointPositioner.center(labelDataPoint.textSize, parentPoint.point);
                 }
                 default: {
                     debug.assertFail("Unsupported label position");
@@ -723,6 +796,50 @@ module powerbi {
         export function right(labelSize: ISize, parentPoint: IPoint, offset: number): IRect {
             return {
                 left: parentPoint.x + offset,
+                top: parentPoint.y - (labelSize.height / 2),
+                width: labelSize.width,
+                height: labelSize.height
+            };
+        }
+
+        export function belowLeft(labelSize: ISize, parentPoint: IPoint, offset: number): IRect {
+            return {
+                left: parentPoint.x - (sin45 * offset) - labelSize.width,
+                top: parentPoint.y + (cos45 * offset),
+                width: labelSize.width,
+                height: labelSize.height
+            };
+        }
+
+        export function belowRight(labelSize: ISize, parentPoint: IPoint, offset: number): IRect {
+            return {
+                left: parentPoint.x + (sin45 * offset),
+                top: parentPoint.y + (cos45 * offset),
+                width: labelSize.width,
+                height: labelSize.height
+            };
+        }
+
+        export function aboveLeft(labelSize: ISize, parentPoint: IPoint, offset: number): IRect {
+            return {
+                left: parentPoint.x - (sin45 * offset) - labelSize.width,
+                top: parentPoint.y - (cos45 * offset) - labelSize.height,
+                width: labelSize.width,
+                height: labelSize.height
+            };
+        }
+
+        export function aboveRight(labelSize: ISize, parentPoint: IPoint, offset: number): IRect {
+            return {
+                left: parentPoint.x + (sin45 * offset),
+                top: parentPoint.y - (cos45 * offset) - labelSize.height,
+                width: labelSize.width,
+                height: labelSize.height
+            };
+        }
+        export function center(labelSize: ISize, parentPoint: IPoint): IRect {
+            return {
+                left: parentPoint.x - (labelSize.width / 2),
                 top: parentPoint.y - (labelSize.height / 2),
                 width: labelSize.width,
                 height: labelSize.height

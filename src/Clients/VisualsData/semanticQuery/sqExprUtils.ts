@@ -29,7 +29,7 @@
 module powerbi.data {
     import StringExtensions = jsCommon.StringExtensions;
 
-    module SQExprHierarchyToHierarchyLevelConverter {
+    export module SQExprHierarchyToHierarchyLevelConverter {
         export function convert(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): SQExpr[] {
             debug.assertValue(sqExpr, 'sqExpr');
             debug.assertValue(federatedSchema, 'federatedSchema');
@@ -37,8 +37,9 @@ module powerbi.data {
             if (sqExpr instanceof SQHierarchyExpr) {
                 let hierarchyExpr = <SQHierarchyExpr>sqExpr;
 
-                let conceptualHierarcy = SQExprUtils.getConceptualHierarchy(hierarchyExpr, federatedSchema);
-                return _.map(conceptualHierarcy.levels, hierarchyLevel => SQExprBuilder.hierarchyLevel(sqExpr, hierarchyLevel.name));
+                let conceptualHierarchy = SQExprUtils.getConceptualHierarchy(hierarchyExpr, federatedSchema);
+                if (conceptualHierarchy)
+                    return _.map(conceptualHierarchy.levels, hierarchyLevel => SQExprBuilder.hierarchyLevel(sqExpr, hierarchyLevel.name));
             }
         }
     }
@@ -55,18 +56,18 @@ module powerbi.data {
                 let column = conceptualProperty.column;
                 if (column && column.variations && column.variations.length > 0) {
                     let variations = column.variations;
-                    // for SU10, we support only one variation
+                    // for SU11, we support only one variation
                     debug.assert(variations.length === 1, "variations.length");
                     let variation = variations[0];
 
-                    let columnExpr = <SQColumnRefExpr>expr;
-                    let entityExpr = <SQEntityExpr>columnExpr.source;
+                    let fieldExpr = SQExprConverter.asFieldPattern(expr);
+                    let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
 
                     exprs = [];
                     if (variation.defaultHierarchy) {
                         let hierarchyExpr = SQExprBuilder.hierarchy(
                             SQExprBuilder.propertyVariationSource(
-                                SQExprBuilder.entity(entityExpr.schema, entityExpr.entity),
+                                SQExprBuilder.entity(fieldExprItem.schema, fieldExprItem.entity, fieldExprItem.entityVar),
                                 variation.name, conceptualProperty.name),
                             variation.defaultHierarchy.name);
 
@@ -199,6 +200,11 @@ module powerbi.data {
         }
 
         export function discourageAggregation(expr: SQExpr, schema: FederatedConceptualSchema): boolean {
+            let capabilities = getSchemaCapabilities(expr, schema);
+            return capabilities && capabilities.discourageQueryAggregateUsage;
+        }
+
+        export function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities {
             debug.assertValue(expr, 'expr');
             debug.assertValue(schema, 'schema');
 
@@ -209,7 +215,7 @@ module powerbi.data {
             let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(field);
             let conceptualSchema = schema.schema(fieldExprItem.schema);
             if (conceptualSchema)
-                return conceptualSchema.capabilities && conceptualSchema.capabilities.discourageQueryAggregateUsage;
+                return conceptualSchema.capabilities;
         }
 
         export function getKpiStatus(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr {
@@ -228,18 +234,17 @@ module powerbi.data {
             }
         }
 
-        export function getKpiStatusGraphic(expr: SQExpr, schema: FederatedConceptualSchema): string {
+        export function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata {
             let property = expr.getConceptualProperty(schema);
             if (!property)
                 return;
 
-            if (property.measure &&
-                property.measure.kpi)
-                return property.measure.kpi.statusGraphic;
+            if (property.measure && property.measure.kpi)
+                return property.measure.kpi.statusMetadata;
 
-            let kpi = getKpiStatusProperty(expr, schema);
-            if (kpi)
-                return kpi.measure.kpi.statusGraphic;
+            let kpiStatusProperty = getKpiStatusProperty(expr, schema);
+            if (kpiStatusProperty)
+                return kpiStatusProperty.kpi.measure.kpi.statusMetadata;
         }
 
         export function getConceptualHierarchy(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): ConceptualHierarchy {
@@ -267,15 +272,23 @@ module powerbi.data {
                 expr;
         }
 
-        /** Return column reference expression for hierarchy level expression. */
-        // We handle a case when hierarchyLevelExpr has reference to a variation
-        // TODO: Will have to add code for case when hierarchyLevelExpr has reference to a column
-        export function getSourceVariationExpr(hierarchyLevelExpr: data.SQHierarchyLevelExpr): SQColumnRefExpr{
+        // Return column reference expression for hierarchy level expression.
+        export function getSourceVariationExpr(hierarchyLevelExpr: data.SQHierarchyLevelExpr): SQColumnRefExpr {
             let fieldExprPattern: data.FieldExprPattern = data.SQExprConverter.asFieldPattern(hierarchyLevelExpr);
             if (fieldExprPattern.columnHierarchyLevelVariation) {
                 let entity: data.SQExpr = SQExprBuilder.entity(fieldExprPattern.columnHierarchyLevelVariation.source.schema, fieldExprPattern.columnHierarchyLevelVariation.source.entity);
 
                 return SQExprBuilder.columnRef(entity, fieldExprPattern.columnHierarchyLevelVariation.source.name);
+            }
+        }
+
+        // Return hierarchy expression for hierarchy level expression.
+        export function getSourceHierarchy(hierarchyLevelExpr: data.SQHierarchyLevelExpr): SQHierarchyExpr {
+            let fieldExprPattern: data.FieldExprPattern = data.SQExprConverter.asFieldPattern(hierarchyLevelExpr);
+            let hierarchyLevel = fieldExprPattern.hierarchyLevel;
+            if (hierarchyLevel) {
+                let entity: data.SQExpr = SQExprBuilder.entity(hierarchyLevel.schema, hierarchyLevel.entity, hierarchyLevel.entityVar);
+                return SQExprBuilder.hierarchy(entity, hierarchyLevel.name);
             }
         }
 
@@ -286,7 +299,7 @@ module powerbi.data {
 
             let kpi = property.kpi;
             if (kpi && kpi.measure.kpi.status === property)
-                return kpi;
+                return property;
         }
 
         function getMetadataForUnderlyingType(expr: SQExpr, schema: FederatedConceptualSchema): SQExprMetadata {
@@ -314,6 +327,45 @@ module powerbi.data {
                 if (property && property.column)
                     return property.column.defaultValue;
             }
+        }
+
+        export function getDefaultValues(fieldSQExprs: SQExpr[], schema: FederatedConceptualSchema): SQConstantExpr[] {
+            if (_.isEmpty(fieldSQExprs) || !schema)
+                return;
+
+            return _.map(fieldSQExprs, (col) => getDefaultValue(col, schema));
+        }
+
+        /** Return compare or and expression for key value pairs. */
+        export function getDataViewScopeIdentityComparisonExpr(fieldsExpr: SQExpr[], values: SQConstantExpr[]): SQExpr {
+            debug.assert(fieldsExpr.length === values.length, "fileds and values need to be the same size");
+
+            let compareExprs: SQCompareExpr[] = [];
+            for (let i = 0; i < fieldsExpr.length; i++) {
+                compareExprs.push(SQExprBuilder.compare(QueryComparisonKind.Equal, fieldsExpr[i], values[i]));
+            }
+
+            if (_.isEmpty(compareExprs))
+                return;
+
+            let resultExpr: SQExpr;
+            for (let compareExpr of compareExprs) {
+                resultExpr = SQExprBuilder.and(resultExpr, compareExpr);
+            }
+
+            return resultExpr;
+        }
+
+        export function getHierarchySourceAsVariationSource(hierarchyLevelExpr: SQHierarchyLevelExpr): SQPropertyVariationSourceExpr {
+
+            // Make sure the hierarchy level source is a hierarchy
+            if (!(hierarchyLevelExpr.arg instanceof SQHierarchyExpr))
+                return;
+                        
+            // Check if the hierarchy source if a variation
+            let hierarchyRef = <SQHierarchyExpr>hierarchyLevelExpr.arg;
+            if (hierarchyRef.arg instanceof SQPropertyVariationSourceExpr)
+                return <SQPropertyVariationSourceExpr>hierarchyRef.arg;
         }
 
         class SQExprDefaultNameGenerator extends DefaultSQExprVisitorWithArg<string, string> {
@@ -366,6 +418,10 @@ module powerbi.data {
                 return expr.right.accept(this);
             }
 
+            public visitAnd(expr: SQAndExpr): boolean {
+                return expr.left.accept(this) && expr.right.accept(this);
+            }
+
             public visitDefaultValue(expr: SQDefaultValueExpr): boolean {
                 return true;
             }
@@ -383,6 +439,10 @@ module powerbi.data {
                     return false;
 
                 return expr.right.accept(this);
+            }
+
+            public visitAnd(expr: SQAndExpr): boolean {
+                return expr.left.accept(this) && expr.right.accept(this);
             }
 
             public visitAnyValue(expr: SQAnyValueExpr): boolean {
