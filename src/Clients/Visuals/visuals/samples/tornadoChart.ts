@@ -27,6 +27,7 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbi.visuals.samples {
+    import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
@@ -66,6 +67,11 @@ module powerbi.visuals.samples {
         selectionId: SelectionId;
     }
 
+    export interface TornadoChartCategory {
+        value: string;
+        selectionId: SelectionId;
+    }
+
     export interface TornadoChartSettings {
         precision: number;
         formatter?: IValueFormatter;
@@ -79,15 +85,18 @@ module powerbi.visuals.samples {
 
     export interface TornadoChartDataView {
         displayName: string;
-        categories: string[];
+        categories: TornadoChartCategory[];
         series: TornadoChartSeries[];
         settings: TornadoChartSettings;
         legend: LegendData;
     }
 
-    interface LabelData {
+    interface TornadoChartPoint {
         x: number;
         y: number;
+    }
+
+    interface LabelData extends TornadoChartPoint {
         dx: number;
         dy: number;
         value: number | string;
@@ -97,9 +106,7 @@ module powerbi.visuals.samples {
         width: number;
     }
 
-    interface ColumnData {
-        x: number;
-        y: number;
+    interface ColumnData extends TornadoChartPoint {
         dx: number;
         dy: number;
         px: number;
@@ -109,6 +116,7 @@ module powerbi.visuals.samples {
         width: number;
         label: LabelData;
         color: string;
+        selectionId: SelectionId;
         tooltipData: TooltipDataItem[];
     }
 
@@ -160,7 +168,7 @@ module powerbi.visuals.samples {
             this.isScrollable = isScrollable;
         }
 
-        public renderY(data: any, prefferedHeight, onScroll): void {
+        public renderY(data: TornadoChartDataView, prefferedHeight: number, onScroll: () => {}): void {
             this.isYScrollBarVisible = prefferedHeight > this.viewport.height
                 && this.viewport.height > 0
                 && this.viewport.width > 0;
@@ -169,7 +177,7 @@ module powerbi.visuals.samples {
             this.updateScrollViewport();
 
             if (!this.isYScrollBarVisible) {
-                onScroll.call(this, _.cloneDeep(data), 0, 1);
+                onScroll.call(this, jQuery.extend(true, {}, data), 0, 1);
                 return;
             }
 
@@ -178,7 +186,7 @@ module powerbi.visuals.samples {
 
             let onRender = () => {
                 let scrollPosition = extentData.toScrollPosition(this.scrollYBrush.extent(), scrollSpaceLength);
-                onScroll.call(this, _.cloneDeep(data), scrollPosition[0], scrollPosition[1]);
+                onScroll.call(this, jQuery.extend(true, {}, data), scrollPosition[0], scrollPosition[1]);
                 this.setScrollBarSize(this.brushGraphicsContextY, extentData.value[1], true);
             };
 
@@ -226,7 +234,7 @@ module powerbi.visuals.samples {
             brushGraphicsContext.call(brush); /*call the brush function, causing it to create the rectangles   */
             /* Disabling the zooming feature */
             brushGraphicsContext.selectAll(".resize rect").remove();
-            brushGraphicsContext.select(".background").style('cursor', 'default');
+            brushGraphicsContext.select(".background").remove();
             brushGraphicsContext.selectAll(".extent").style({
                 "fill-opacity": 0.125,
                 "cursor": "default",
@@ -254,7 +262,7 @@ module powerbi.visuals.samples {
                 scrollSize *= scaleMultipler;
 
                 let start: number = (scrollPosition * (scrollSpaceLength - scrollSize));
-                let end: number  = (start + scrollSize);
+                let end: number = (start + scrollSize);
 
                 return [start / scrollSpaceLength, end / scrollSpaceLength];
             };
@@ -263,7 +271,7 @@ module powerbi.visuals.samples {
         }
     }
 
-    export class TornadoChartWarning implements IVisualWarning  {
+    export class TornadoChartWarning implements IVisualWarning {
         public get code(): string {
             return "TornadoChartWarning";
         }
@@ -420,14 +428,14 @@ module powerbi.visuals.samples {
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
             }, {
-                name: "Series",
-                kind: VisualDataRoleKind.Grouping,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Legend')
-            }, {
-                name: "Values",
-                kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
-            }],
+                    name: "Series",
+                    kind: VisualDataRoleKind.Grouping,
+                    displayName: data.createDisplayNameGetter('Role_DisplayName_Legend')
+                }, {
+                    name: "Values",
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
+                }],
             dataViewMappings: [{
                 conditions: [
                     { "Category": { max: 1 }, "Values": { min: 0, max: 1 }, "Series": { min: 0, max: 1 } },
@@ -592,11 +600,11 @@ module powerbi.visuals.samples {
         private widthLeftSection: number = 0;
         private widthRightSection: number = 0;
 
-        private isSelectColumn: boolean = false;
-
         private animator: IGenericAnimator;
 
         private hostService: IVisualHostServices;
+
+        private selectionManager: SelectionManager;
 
         private scrolling: TornadoChartScrolling;
 
@@ -619,6 +627,7 @@ module powerbi.visuals.samples {
                 fontSize: string;
 
             this.hostService = visualInitOptions.host;
+            this.selectionManager = new SelectionManager({ hostServices: this.hostService });
 
             this.element = visualInitOptions.element;
 
@@ -715,7 +724,7 @@ module powerbi.visuals.samples {
         }
 
         private getValueByPercent(percent: number, maxValue: number, isPrecent: boolean = true): number {
-            return isPrecent 
+            return isPrecent
                 ? (percent * maxValue) / 100
                 : percent;
         }
@@ -731,14 +740,14 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            let categories: string[],
+            let categories: TornadoChartCategory[],
                 values: DataViewValueColumns = dataView.categorical.values,
                 series: TornadoChartSeries[],
                 displayName: string,
                 objects: DataViewObjects,
                 settings: TornadoChartSettings;
 
-            categories = dataView.categorical.categories[0].values;
+            categories = this.parseCategories(dataView);
             displayName = dataView.categorical.categories[0].source.displayName;
 
             objects = this.getObjectsFromDataView(dataView);
@@ -829,6 +838,13 @@ module powerbi.visuals.samples {
             return dataView.metadata.objects;
         }
 
+        private parseCategories(dataView: DataView): TornadoChartCategory[] {
+            return dataView.categorical.categories[0].values.map((x, i) => <TornadoChartCategory>{
+                value: x,
+                selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[i])
+            });
+        }
+
         private parseSeries(dataViewValueColumns: DataViewValueColumns): TornadoChartSeries[] {
             if (dataViewValueColumns.length > TornadoChart.MaxSeries) {
                 this.hostService.setWarnings([getTornadoChartWarning()]);
@@ -838,8 +854,8 @@ module powerbi.visuals.samples {
 
             let isGrouped: boolean = !!dataViewValueColumns.source,
                 grouped: DataViewValueColumnGroup[] = [];
-            
-            if (dataViewValueColumns.grouped){
+
+            if (dataViewValueColumns.grouped) {
                 grouped = dataViewValueColumns.grouped();
             }
 
@@ -978,7 +994,7 @@ module powerbi.visuals.samples {
             let legendMargins: IViewport = this.legend.getMargins(),
                 legendPosition: LegendPosition;
 
-            legendPosition = LegendPosition[<string> this.legendObjectProperties[legendProps.position]];
+            legendPosition = LegendPosition[<string>this.legendObjectProperties[legendProps.position]];
 
             switch (legendPosition) {
                 case LegendPosition.Top:
@@ -1014,8 +1030,7 @@ module powerbi.visuals.samples {
         }
 
         private renderColumns(columnsData: ColumnData[], selectSecondSeries: boolean = false): void {
-            let self: TornadoChart = this,
-                columnsSelection: D3.UpdateSelection,
+            let columnsSelection: D3.UpdateSelection,
                 columnElements: D3.Selection = this.main
                     .select(TornadoChart.Columns.selector)
                     .selectAll(TornadoChart.Column.selector);
@@ -1030,11 +1045,13 @@ module powerbi.visuals.samples {
                 .attr("x", (item: ColumnData) => item.x)
                 .attr("y", (item: ColumnData) => item.y)
                 .on("click", (item: ColumnData, index: number) => {
-                    this.setSelection(index, columnsSelection, selectSecondSeries);
+                    this.selectionManager
+                        .select(item.selectionId, false)
+                        .then(() => this.setSelection(columnsSelection, selectSecondSeries));
 
-                    this.isSelectColumn = true;
                     d3.event.stopPropagation();
                 });
+            this.setSelection(columnsSelection, selectSecondSeries);
 
             (columnElements[0] && columnElements[0].length === columnsData.length
                 ? <D3.UpdateSelection>this.animation(columnsSelection)
@@ -1052,43 +1069,38 @@ module powerbi.visuals.samples {
 
             this.renderTooltip(columnsSelection);
 
-            d3.selection().on("click", () => {
-                if (self.isSelectColumn) {
-                    let columnsElements: D3.Selection = this.main
-                        .select(TornadoChart.Columns.selector)
-                        .selectAll(TornadoChart.Column.selector);
+            this.root.on("click", () => {
+                let mousePosition: number[] = d3.mouse(this.root.node());
+                let rect: ClientRect = this.root.node().getBoundingClientRect();
+                let scrollWidth: TornadoChartPoint = {
+                    x: this.viewport.height - this.scrolling.scrollViewport.height,
+                    y: this.viewport.width - this.scrolling.scrollViewport.width
+                };
 
-                    this.setOpacity(columnsElements, TornadoChart.MaxOpacity, true);
-
-                    self.isSelectColumn = false;
+                if ((!scrollWidth.y || (rect.width -
+                    (this.viewport.width - this.scrolling.scrollViewport.width) - this.margin.right > mousePosition[0]))
+                    && (!scrollWidth.x || (rect.height -
+                        (this.viewport.height - this.scrolling.scrollViewport.height) - this.margin.bottom > mousePosition[1]))) {
+                    this.selectionManager.clear();
+                    this.setSelection(columnsSelection, selectSecondSeries);
                 }
             });
         }
 
-        private setSelection(
-            currentIndexOfColumn: number,
-            columns: D3.UpdateSelection,
-            selectSecondSeries: boolean = false): void {
-            let columnElements = columns[0],
-                quantityOfColumns: number = columnElements.length,
-                shift: number = Math.floor(quantityOfColumns / 2),
-                index: number = currentIndexOfColumn;
+        private setSelection(columns: D3.UpdateSelection, selectSecondSeries: boolean = false): void {
+            let selectionIds: SelectionId[] = this.selectionManager.getSelectionIds();
 
-            if (selectSecondSeries) {
-                index = currentIndexOfColumn < shift
-                    ? currentIndexOfColumn + shift
-                    : currentIndexOfColumn - shift;
+            if (!selectionIds.length) {
+                this.setOpacity(columns, TornadoChart.MaxOpacity);
+                return;
             }
 
-            this.setOpacity(columns.filter((item: any) => {
-                return item !== columnElements[index] || item !== columnElements[currentIndexOfColumn];
-            }), TornadoChart.MinColumnOpacity);
+            let selectedColumns: D3.UpdateSelection = columns.filter((x: ColumnData) => {
+                return selectionIds.some((y: SelectionId) => y.getKey() === x.selectionId.getKey());
+            });
 
-            this.setOpacity(d3.select(columnElements[currentIndexOfColumn]), TornadoChart.MaxOpacity);
-
-            if (selectSecondSeries) {
-                this.setOpacity(d3.select(columnElements[index]), TornadoChart.MaxOpacity);
-            }
+            this.setOpacity(columns, TornadoChart.MinColumnOpacity);
+            this.setOpacity(selectedColumns, TornadoChart.MaxOpacity);
         }
 
         private renderTooltip(selection: D3.UpdateSelection): void {
@@ -1098,7 +1110,7 @@ module powerbi.visuals.samples {
         }
 
         private generateColumnDataBySeries(tornadoChartDataView: TornadoChartDataView): ColumnData[] {
-            let categories: string[] = tornadoChartDataView.categories,
+            let categories: TornadoChartCategory[] = tornadoChartDataView.categories,
                 series: TornadoChartSeries[] = tornadoChartDataView.series,
                 settings: TornadoChartSettings = tornadoChartDataView.settings,
                 displayName: string = tornadoChartDataView.displayName,
@@ -1153,14 +1165,12 @@ module powerbi.visuals.samples {
             shiftToRight: boolean,
             shiftToMiddle: boolean,
             valueFormatter: IValueFormatter,
-            categories: string[],
+            categories: TornadoChartCategory[],
             seriesName: string,
             displayName: string,
             labelInsideFillColour: string,
             labelOutsideFillColour: string): ColumnData[] {
             return tornadoChartSeries.values.map((value: number, index: number) => {
-                let categoryValue: string = categories[index];
-
                 return this.generateColumnData(
                     value ? value : 0,
                     minValue,
@@ -1171,7 +1181,7 @@ module powerbi.visuals.samples {
                     tornadoChartSeries.fill,
                     index,
                     valueFormatter,
-                    categoryValue,
+                    categories[index],
                     seriesName,
                     displayName,
                     labelInsideFillColour,
@@ -1189,7 +1199,7 @@ module powerbi.visuals.samples {
             color: string,
             index: number,
             valueFormatter: IValueFormatter,
-            categoryValue: string,
+            categoryValue: TornadoChartCategory,
             seriesName: string,
             displayName: string,
             labelInsideFillColour: string,
@@ -1206,7 +1216,7 @@ module powerbi.visuals.samples {
             widthOfColumn = this.getColumnWidth(value, minValue, maxValue, width);
             shift = width - widthOfColumn;
 
-            dx = shift * Number(shiftToMiddle) + width * Number(shiftToRight); 
+            dx = shift * Number(shiftToMiddle) + width * Number(shiftToRight);
             dy = (this.heightColumn + this.columnPadding) * index;
 
             label = this.getLabelData(
@@ -1231,13 +1241,14 @@ module powerbi.visuals.samples {
                 dx: dx,
                 dy: dy,
                 px: widthOfColumn / 2,
-                py: this.heightColumn / 2, 
+                py: this.heightColumn / 2,
                 angle: angle,
                 width: widthOfColumn,
                 height: this.heightColumn,
                 label: label,
                 color: color,
-                tooltipData: this.getTooltipData(displayName, categoryValue, seriesName, label.value.toString())
+                selectionId: categoryValue.selectionId,
+                tooltipData: this.getTooltipData(displayName, categoryValue.value, seriesName, label.value.toString())
             };
         }
 
@@ -1295,13 +1306,13 @@ module powerbi.visuals.samples {
         }
 
         private getTooltipData(displayName: string, categoryValue: string, seriesName, value: string): TooltipDataItem[] {
-             return [{
+            return [{
                 displayName: displayName,
                 value: categoryValue
             }, {
-                displayName: seriesName,
-                value: value
-            }];
+                    displayName: seriesName,
+                    value: value
+                }];
         }
 
         private renderAxes(tornadoChartDataView: TornadoChartDataView): void {
@@ -1326,7 +1337,7 @@ module powerbi.visuals.samples {
                 .append("svg:line")
                 .classed(TornadoChart.Axis["class"], true);
 
-            (<D3.UpdateSelection> this.animation(axesSelection))
+            (<D3.UpdateSelection>this.animation(axesSelection))
                 .attr("x1", (item: LineData) => item.x1)
                 .attr("y1", (item: LineData) => item.y1)
                 .attr("x2", (item: LineData) => item.x2)
@@ -1397,6 +1408,7 @@ module powerbi.visuals.samples {
                         return "none";
                     }
                 })
+                .attr("pointer-events", "none")
                 .classed(TornadoChart.Label["class"], true);
 
             labelSelection
@@ -1404,13 +1416,13 @@ module powerbi.visuals.samples {
                 .text((item: ColumnData) => item.label.source);
 
             labelSelectionAnimation = labelElements[0] && labelElements[0].length === columnsData.length
-                ? (<D3.UpdateSelection> this.animation(labelSelection))
+                ? (<D3.UpdateSelection>this.animation(labelSelection))
                 : labelSelection;
 
             labelSelectionAnimation
                 .attr("transform", (item: ColumnData) => SVGUtil.translate(item.label.dx, item.label.dy));
 
-            (<D3.UpdateSelection> this.animation(labelSelection
+            (<D3.UpdateSelection>this.animation(labelSelection
                 .select(TornadoChart.LabelText.selector)))
                 .attr("fill", (item: ColumnData) => item.label.colour)
                 .text((item: ColumnData) => item.label.value);
@@ -1471,13 +1483,13 @@ module powerbi.visuals.samples {
 
             categoriesSelection
                 .select(TornadoChart.CategoryTitle.selector)
-                .text((item: string) => item);
+                .text((item: TornadoChartCategory) => item.value);
 
             categoriesSelection
                 .select(TornadoChart.CategoryText.selector)
                 .attr("fill", colour)
-                .text((item: string) => {
-                    let textData: TextData = self.getTextData(item);
+                .text((item: TornadoChartCategory) => {
+                    let textData: TextData = self.getTextData(item.value);
 
                     return TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, self.widthLeftSection);
                 });
@@ -1503,7 +1515,7 @@ module powerbi.visuals.samples {
 
                 LegendData.update(legendData, this.legendObjectProperties);
 
-                position = <string> this.legendObjectProperties[legendProps.position];
+                position = <string>this.legendObjectProperties[legendProps.position];
 
                 if (position) {
                     this.legend.changeOrientation(LegendPosition[position]);
@@ -1647,8 +1659,8 @@ module powerbi.visuals.samples {
 
         private setOpacity(element: D3Element, opacityValue: number = TornadoChart.MinOpacity, disableAnimation: boolean = false): D3Element {
             let elementAnimation: D3.Selection = disableAnimation
-                ? <D3.Selection> element
-                : <D3.Selection> this.animation(element);
+                ? <D3.Selection>element
+                : <D3.Selection>this.animation(element);
 
             return elementAnimation.style(
                 "fill-opacity",
@@ -1660,7 +1672,7 @@ module powerbi.visuals.samples {
                 return element;
             }
 
-            return (<D3.Selection> element)
+            return (<D3.Selection>element)
                 .transition()
                 .duration(this.durationAnimations);
         }
