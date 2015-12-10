@@ -234,7 +234,7 @@ module powerbi.visuals.plugins {
 
     export let stackedAreaChart: IVisualPlugin = {
         name: 'stackedAreaChart',
-        watermarkKey: 'area',//todo: wating for stacked area watermark
+        watermarkKey: 'stackedarea',
         capabilities: capabilities.lineChart,
         create: () => new CartesianChart({ chartType: CartesianChartType.StackedArea }),
         customizeQuery: LineChart.customizeQuery,
@@ -269,7 +269,7 @@ module powerbi.visuals.plugins {
     export let textbox: IVisualPlugin = {
         name: 'textbox',
         capabilities: capabilities.textbox,
-        create: () => new RichTextbox()
+        create: () => new Textbox()
     };
 
     export let waterfallChart: IVisualPlugin = {
@@ -309,7 +309,13 @@ module powerbi.visuals.plugins {
         capabilities: OwlGauge.capabilities,
         create: () => new OwlGauge()
     };
-    
+
+    export var sunburst: IVisualPlugin = {
+        name: 'sunburst',
+        capabilities: samples.Sunburst.capabilities,
+        create: () => new samples.Sunburst()
+    };
+
     export let streamGraph: IVisualPlugin = {
         name: 'streamGraph',
         watermarkKey: 'lineChart',
@@ -317,12 +323,6 @@ module powerbi.visuals.plugins {
         create: () => new samples.StreamGraph()
     };
 
-    export var sunburst: IVisualPlugin = {
-        name: 'sunburst',
-        capabilities: samples.Sunburst.capabilities,
-        create: () => new samples.Sunburst()
-    };
-    
     export var radarChart: IVisualPlugin = {
         name: 'radarChart',
         capabilities: samples.RadarChart.capabilities,
@@ -338,7 +338,7 @@ module powerbi.visuals.plugins {
     export let scriptVisual: IVisualPlugin = {
         name: 'scriptVisual',
         capabilities: capabilities.scriptVisual,
-        create: () => new ScriptVisual()
+        create: () => new ScriptVisual({ canRefresh: false })
     };
 
     export var histogram: IVisualPlugin = {

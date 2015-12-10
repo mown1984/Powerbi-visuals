@@ -321,8 +321,12 @@ module powerbitests.tablixHelper {
      * @param expected: number - height in terms of 'px'
      */
     export function validateCellHeights(cells: JQuery, expected: number) {
-        let expectedPx = jsCommon.PixelConverter.toString(expected);
-        cells.each((index: number, elem: Element) => expect($(elem).css('height')).toBe(expectedPx));
+        cells.each((index: number, elem: Element) => {
+            let height = parseInt($(elem).css('height').replace('px', ''), 10);
+
+            // To prevent tests from being fragile, compare the height within an acceptable range (+-5px)
+            expect(helpers.isCloseTo(height, expected, /*tolerance*/ 5)).toBeTruthy();
+        });
     }
 
     function addError(errorString: string, message: string): string {

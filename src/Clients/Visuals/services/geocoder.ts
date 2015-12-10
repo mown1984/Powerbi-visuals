@@ -113,24 +113,24 @@ module powerbi.visuals.services {
         public query: string;
         public category: string;
         public key: string;
-        private _cacheHits: number;
+        private cacheHits: number;
 
         constructor(query: string = "", category: string = "") {
             this.query = query;
             this.category = category;
             this.key = (this.query + "/" + this.category).toLowerCase();
-            this._cacheHits = 0;
+            this.cacheHits = 0;
             if (!geocodingCache) {
                 geocodingCache = createGeocodingCache(Settings.MaxCacheSize, Settings.MaxCacheSizeOverflow);
             }
         }
 
         public incrementCacheHit(): void {
-            this._cacheHits++;
+            this.cacheHits++;
         }
 
         public getCacheHits(): number {
-            return this._cacheHits;
+            return this.cacheHits;
         }
 
         public getBingEntity(): string {

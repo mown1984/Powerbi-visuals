@@ -838,13 +838,28 @@
             padding: 0px 5px 0px 10px;
         }
 
-        .bi-table-column-header i {
-            visibility:hidden;
+        .bi-sort-icon-container {
+            float: right;
         }
 
-        .bi-table-column-header.sorted i,
-        .bi-table-column-header:hover i {
-            visibility:visible;
+        .bi-table-column-header{
+             div.future {
+              display: none;
+             }
+
+             div.sorted {
+              display: inline-block;
+             }
+
+             &>div:hover {
+                div.sorted {
+                    display: none;
+                }
+
+                div.future {
+                    display: inline-block;
+                }
+            }
         }
 
         .bi-table-cell-numeric {
@@ -993,6 +1008,20 @@
             border-bottom-style: solid;
             border-bottom-color: #CCCCCC;
             padding: 0px 5px 0px 10px;
+        }
+
+        .bi-sort-icon-container {
+            float: right;
+        }
+
+        .bi-table-column-header{
+             div.future {
+              display: none;
+             }
+
+             div.sorted {
+              display: inline-block;
+             }
         }
 
         .bi-table-cell-numeric {
@@ -1190,6 +1219,46 @@
             font-size: 48px;
         }
     }
+
+    /* Adding custom styles to the listView jQuery Scrollbar. */
+    .scroll-wrapper {
+        width: 100%;
+        height: 100%;
+        display: block;
+
+        .scroll-content {
+            height: inherit;
+        }
+
+        .scroll-element {
+            &.scroll-x {
+                height: 8px !important;
+            }
+
+            &.scroll-y {
+                width: 8px !important;
+            }
+
+            .scroll-element_track {
+                background-color: transparent !important;
+            }
+
+            .scroll-element_outer, .scroll-bar {
+                .no-border-radius;
+            }
+
+            .scroll-bar {
+                background-color: @neutralTertiaryAltColor !important;
+                opacity: 0;
+            }
+        }
+    }
+
+    /* Only show the scrollbars on hover or when being dragged. */
+    .scroll-wrapper:hover .scroll-element .scroll-bar,
+    .scroll-wrapper .scroll-element.scroll-draggable .scroll-bar {
+        opacity: 1;
+    }
 }
 
 .interactive-legend {
@@ -1303,10 +1372,21 @@
 }
 
 .labelGraphicsContext {
-    .label {
+    .label{
         font-size: 12px;
         text-anchor: middle;
         font-family: @regularSecondaryFontFamily;
+    } 
+   .catagorylabel{
+        font-size: 12px;
+        text-anchor: middle;
+        font-family: @regularSecondaryFontFamily;
+    }
+}
+
+    .leader-lines {
+    .line-label{
+        opacity: 0.5;
     }
 }
 
@@ -1603,7 +1683,7 @@ div.ql-toolbar {
     }
 }
 
-.clearCatcher {
+.clearCatcher, .backgroundRect{
     fill-opacity: 0;
 }
 
@@ -1728,18 +1808,12 @@ div.ql-toolbar {
     }
 }
 
-
-.visual-sandbox {
-    border: none;
-    overflow: hidden;
-}
-
 .streamGraph {
-    .axis{
+    .axis {
         path, line {
             fill: none;
             stroke: black;
-            shape-rendering: crispEdges;
+            shape-rendering: @defaultShapeRendering;
         }
 
         text {
@@ -1747,6 +1821,21 @@ div.ql-toolbar {
             font-size: 11px;
         }
     }
+}
+
+.visual-sandbox {
+    border: none;
+    overflow: hidden;
+}
+
+.x-ref-line {
+    stroke-width: 3px;
+    stroke-opacity: 0.5;
+}
+
+.y1-ref-line {
+    stroke-width: 3px;
+    stroke-opacity: 0.5;
 }
 
 .radarChart {
@@ -1864,4 +1953,3 @@ div.ql-toolbar {
         }
     }
 }
-

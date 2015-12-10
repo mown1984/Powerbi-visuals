@@ -220,6 +220,7 @@ module powerbi.visuals {
         private categoryAxisType: string;
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
+        private tooltipsEnabled: boolean;
         private element: JQuery;
         private seriesLabelFormattingEnabled: boolean;
 
@@ -232,6 +233,7 @@ module powerbi.visuals {
             this.categoryAxisType = null;
             this.animator = options.animator;
             this.isScrollable = options.isScrollable;
+            this.tooltipsEnabled = options.tooltipsEnabled;
             this.interactivityService = options.interactivityService;
             this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
         }
@@ -1181,7 +1183,8 @@ module powerbi.visuals {
             let columnChartDrawInfo = this.columnChart.drawColumns(!suppressAnimations /* useAnimations */);
             let data = this.data;
 
-            TooltipManager.addTooltip(columnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+            if (this.tooltipsEnabled)
+                TooltipManager.addTooltip(columnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
             let allDataPoints: ColumnChartDataPoint[] = [];
             let behaviorOptions: ColumnBehaviorOptions = undefined;
             if (this.interactivityService) {

@@ -198,6 +198,7 @@ module powerbitests.mocks {
             var result = {
                 locations: [{
                     absoluteString: "84387.1,182914 84397.3,182914 84401.3,182914 84400.9,182898 84417.4,182898 84421.3,182885 84417.4,182877 84418.2,182865 84387.2,182865 84387.1,182914", // A valid map string taken from a piece of Redmond's path
+                    absolute: [84387.1, 182914, 84397.3, 182914, 84401.3, 182914, 84400.9, 182898, 84417.4, 182898, 84421.3, 182885, 84417.4, 182877, 84418.2, 182865, 84387.2, 182865, 84387.1, 182914],
                     geographic: [undefined, undefined, undefined], // This needs to be an array with length > 2 for checks in map; contents aren't used.
                     absoluteBounds: {
                         width: 34.2,
