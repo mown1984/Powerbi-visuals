@@ -546,6 +546,45 @@ module powerbitests {
         },
         valueSources: [measureSource1]
     };
+    let matrixOneMeasureOneRowGroupOneGroupInstanceDataView: powerbi.DataView = {
+        metadata: { columns: [rowGroupSource1, measureSource1] },
+        matrix: matrixOneMeasureOneRowGroupOneGroupInstance
+    };
+
+    // ------------------------
+    // | RowGroup1 | Measure1 |
+    // |-----------+----------|
+    // |   Group 1 |      100 |
+    // |-----------+----------|
+    // |   Group 2 |      200 |
+    // ------------------------
+    let matrixOneMeasureOneRowGroupTwoGroupInstances: DataViewMatrix = {
+        rows: {
+            root: {
+                children: [{
+                    level: 0,
+                    value: "Group 1",
+                    values: { 0: { value: 100 } }
+                }, {
+                    level: 0,
+                    value: "Group 2",
+                    values: { 0: { value: 200 } }
+                }]
+            },
+            levels: [{ sources: [rowGroupSource1] }]
+        },
+        columns: {
+            root: {
+                children: [{ level: 0 }]
+            },
+            levels: [{ sources: [measureSource1] }]
+        },
+        valueSources: [measureSource1]
+    };
+    let matrixOneMeasureOneRowGroupTwoGroupInstancesDataView: powerbi.DataView = {
+        metadata: { columns: [rowGroupSource1, measureSource1] },
+        matrix: matrixOneMeasureOneRowGroupTwoGroupInstances
+    };
 
     // ----------------------------------------
     // | RowGroup1                 | Measure1 |
@@ -3128,12 +3167,16 @@ module powerbitests {
         });
 
         it("loadMoreData calls control refresh", () => {
-            let nav = { updateRows() { } };
-            let control = { refresh() { } };
-            let navSpy = spyOn(nav, "updateRows");
+            //Passing a Dataview with Create Operation to ensure previousDataView is not null when performing Append Operation
+            v.onDataChanged({
+                dataViews: [matrixOneMeasureDataView],
+                operationKind: powerbi.VisualDataChangeOperationKind.Create
+            });
+
+            let nav: any = v["hierarchyNavigator"];
+            let control = v["tablixControl"];
+            let navSpy = spyOn(nav, "update");
             let controlSpy = spyOn(control, "refresh");
-            v["hierarchyNavigator"] = nav;
-            v["tablixControl"] = control;
 
             v.onDataChanged({
                 dataViews: [matrixOneMeasureDataView],
@@ -3144,8 +3187,25 @@ module powerbitests {
             expect(controlSpy).toHaveBeenCalled();
         });
 
-        it("needsMoreData waitingForData", () => {
+        it("loadMore would refresh the tablix model", (done) => {
+            v.onDataChanged({
+                dataViews: [matrixOneMeasureOneRowGroupOneGroupInstanceDataView],
+                operationKind: powerbi.VisualDataChangeOperationKind.Create
+            });
 
+            v.onDataChanged({
+                dataViews: [matrixOneMeasureOneRowGroupTwoGroupInstancesDataView],
+                operationKind: powerbi.VisualDataChangeOperationKind.Append
+            });
+
+            //Checking it's rendering 2 rows
+            setTimeout(() => {
+                expect($('.bi-matrix-body-cell').length).toBe(matrixOneMeasureOneRowGroupTwoGroupInstancesDataView.matrix.rows.root.children.length);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("needsMoreData waitingForData", () => {
             let matrix = matrixThreeRowGroups;
 
             v.onDataChanged({
@@ -3710,7 +3770,7 @@ module powerbitests {
                     }, DefaultWaitForRender);
                 });
 
-                xit("3x8 matrix with specified text size adjusted row height", (done) => {
+                it("3x8 matrix with specified text size adjusted row height", (done) => {
                     let matrix = matrixThreeRowGroups;
                     v.onDataChanged({
                         dataViews: [{

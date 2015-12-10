@@ -1569,7 +1569,7 @@ module powerbitests {
                     }, DefaultWaitForRender);
                 });
 
-                xit("2x8 table with specified text size adjusted row height", (done) => {
+                it("2x8 table with specified text size adjusted row height", (done) => {
                     let dataView = tableTwoGroupsIncreasedFontSize;
                     v.onDataChanged({ dataViews: [dataView] });
 
@@ -1636,7 +1636,7 @@ module powerbitests {
                         validateTable(expectedCells);
 
                         let expectedClassNames: string[][] = [
-                            ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName, ""],
+                            ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ""],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
@@ -1671,7 +1671,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden + NumericCellClassName, ""],
+                    ["", ColumnHeaderClassNameIconHidden, ""],
                     ["", LastRowClassName + NumericCellClassName]
                 ];
 
@@ -1840,7 +1840,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName, ""],
+                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ""],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
@@ -1884,7 +1884,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden, ""],
+                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ""],
                     ["", RowClassName + NumericCellClassName, RowClassName],
                     ["", RowClassName + NumericCellClassName, RowClassName],
                     ["", LastRowClassName + NumericCellClassName, LastRowClassName],
@@ -2143,7 +2143,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let expectedCells: string[] =
-                    ["powervisuals-glyph caret-down"];
+                    ['powervisuals-glyph caret-down', 'powervisuals-glyph caret-up'];
 
                 validateSortIcons(expectedCells);
                 done();
@@ -2157,7 +2157,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let expectedCells: string[] =
-                    ["powervisuals-glyph caret-up"];
+                    ['powervisuals-glyph caret-up', 'powervisuals-glyph caret-down'];
 
                 validateSortIcons(expectedCells);
                 done();
@@ -2426,7 +2426,7 @@ module powerbitests {
                         validateTable(expectedCells);
 
                         let expectedClassNames: string[][] = [
-                            ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName],
+                            ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                             ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
@@ -2459,7 +2459,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden + NumericCellClassName],
+                    ["", ColumnHeaderClassNameIconHidden],
                     ["", LastRowClassName + NumericCellClassName]
                 ];
 
@@ -2625,7 +2625,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden + NumericCellClassName],
+                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
                     ["", RowClassName, RowClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName, RowClassName + NumericCellClassName],
@@ -2669,7 +2669,7 @@ module powerbitests {
                 validateTable(expectedCells);
 
                 let expectedClassNames: string[][] = [
-                    ["", ColumnHeaderClassNameIconHidden + NumericCellClassName, ColumnHeaderClassNameIconHidden],
+                    ["", ColumnHeaderClassNameIconHidden, ColumnHeaderClassNameIconHidden],
                     ["", RowClassName + NumericCellClassName, RowClassName],
                     ["", RowClassName + NumericCellClassName, RowClassName],
                     ["", LastRowClassName + NumericCellClassName, LastRowClassName],
@@ -2766,6 +2766,16 @@ module powerbitests {
 
                 validateChildTag(expectedChildTags, $(".bi-dashboard-tablix tr"));
 
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("dashboard table has no sort icons", (done) => {
+            let dataView = tableOneMeasurSortAscending;
+            v.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                let sortIcons = element.find(".caret-down, .caret-up");
+                expect(sortIcons.length).toEqual(0);
                 done();
             }, DefaultWaitForRender);
         });
