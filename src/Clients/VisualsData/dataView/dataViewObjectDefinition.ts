@@ -84,10 +84,9 @@ module powerbi.data {
             if (!defn)
                 return;
 
-            //note: We decided that delete is acceptable here and that we don't need optimization here
-            delete defn.properties[propertyName];
+            DataViewObjectDefinition.deleteSingleProperty(defn, propertyName);
         }
-
+        
         export function getValue(
             defns: DataViewObjectDefinitions,
             propertyId: DataViewObjectPropertyIdentifier,
@@ -202,5 +201,17 @@ module powerbi.data {
 
             return value;
         }
+    }
+
+    export module DataViewObjectDefinition {
+
+        export function deleteSingleProperty(
+            defn: DataViewObjectDefinition,
+            propertyName: string): void {
+
+            //note: We decided that delete is acceptable here and that we don't need optimization here
+            delete defn.properties[propertyName];
+        }
+
     }
 }

@@ -171,10 +171,24 @@ module powerbi.visuals.controls.internal {
                 });
         }
 
-        export function appendSortImageToColumnHeader(sort: SortDirection, cell: controls.ITablixCell): void {
+        export function appendSortImageToColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
+            if (item.sort) {
+                let itemSort = item.sort;
+                createSortImageHTML(itemSort, cell, true);
+                createSortImageHTML(reverseSort(itemSort), cell, false);
+            }
+            else {
+                createSortImageHTML(SortDirection.Descending, cell, false);
+            }
+        }
+
+        function createSortImageHTML(sort: SortDirection, cell: controls.ITablixCell, isSorted: boolean): void {
+            let imgSortContainer: HTMLDivElement = TablixUtils.createDiv();
             let imgSort: HTMLPhraseElement = <HTMLPhraseElement>document.createElement('i');
             imgSort.className = (sort === SortDirection.Ascending) ? "powervisuals-glyph caret-up" : "powervisuals-glyph caret-down";
-            cell.extension.contentHost.appendChild(imgSort);
+            imgSortContainer.className = TableBinder.sortIconContainerClassName + " " + (isSorted ? "sorted" : "future");
+            imgSortContainer.appendChild(imgSort);
+            cell.extension.contentElement.insertBefore(imgSortContainer, cell.extension.contentHost);
         }
 
         export function isValidStatusGraphic(kpi: DataViewKpiColumnMetadata, kpiValue: string): boolean {
@@ -183,6 +197,24 @@ module powerbi.visuals.controls.internal {
             }
 
             return !!KpiUtil.getClassForKpi(kpi, kpiValue);
+        }
+
+        export function reverseSort(sortDirection: SortDirection): SortDirection {
+            return sortDirection === SortDirection.Descending ? SortDirection.Ascending : SortDirection.Descending;
+        }
+
+        function checkSortIconExists(cell: controls.ITablixCell): boolean {
+            for (let element of cell.extension.contentElement.children) {
+                if (element.className.indexOf(TableBinder.sortIconContainerClassName) > -1)
+                    return true;
+            }
+            return false;
+        }
+
+        export function removeSortIcons(cell: controls.ITablixCell): void {
+            if (!checkSortIconExists(cell))
+                return;
+            $((<HTMLElement>cell.extension.contentElement)).find('.' + TableBinder.sortIconContainerClassName).remove();
         }
     }
 }

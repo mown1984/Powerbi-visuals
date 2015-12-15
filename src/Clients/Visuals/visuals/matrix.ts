@@ -74,8 +74,7 @@ module powerbi.visuals {
      * Interface for refreshing Matrix Data View.
      */
     export interface MatrixDataAdapter {
-        update(dataViewMatrix?: DataViewMatrix): void;
-        updateRows(): void;
+        update(dataViewMatrix?: DataViewMatrix, updateColumns?: boolean): void;
     }
 
     export interface MatrixDataViewObjects extends DataViewObjects {
@@ -122,7 +121,6 @@ module powerbi.visuals {
     }
 
     class MatrixHierarchyNavigator implements IMatrixHierarchyNavigator {
-
         private matrix: DataViewMatrix;
         private rowHierarchy: MatrixHierarchy;
         private columnHierarchy: MatrixHierarchy;
@@ -284,7 +282,7 @@ module powerbi.visuals {
 
             if (!rowItem.values)
                 return {
-                    content: '',
+                    textContent: '',
                     isSubtotal: isSubtotalItem,
                 };
 
@@ -369,23 +367,18 @@ module powerbi.visuals {
         /**
          * Implementation for MatrixDataAdapter interface.
          */
-        public update(dataViewMatrix?: DataViewMatrix): void {
+        public update(dataViewMatrix?: DataViewMatrix, updateColumns: boolean = true): void {
             if (dataViewMatrix) {
                 this.matrix = dataViewMatrix;
                 this.rowHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(dataViewMatrix.rows);
-                this.columnHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(dataViewMatrix.columns);
+                if (updateColumns)
+                    this.columnHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(dataViewMatrix.columns);
             }
             this.updateHierarchy(this.rowHierarchy);
-            this.updateHierarchy(this.columnHierarchy);
-
-            MatrixHierarchyNavigator.updateStaticColumnHeaders(this.columnHierarchy);
-        }
-
-        /**
-         * Implementation for MatrixDataAdapter interface.
-         */
-        public updateRows(): void {
-            this.updateHierarchy(this.rowHierarchy);
+            if (updateColumns) {
+                this.updateHierarchy(this.columnHierarchy);
+                MatrixHierarchyNavigator.updateStaticColumnHeaders(this.columnHierarchy);
+            }
         }
 
         private static wrapMatrixHierarchy(hierarchy: DataViewHierarchy): MatrixHierarchy {
@@ -905,14 +898,19 @@ module powerbi.visuals {
                 this.columnWidthManager.suppressOnDataChangedNotification = false;
                 return;
             }
-
             let previousDataView = this.dataView;
             if (options.dataViews && options.dataViews.length > 0) {
                 this.dataView = options.dataViews[0];
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
-                    this.hierarchyNavigator.updateRows();
-                    this.refreshControl(false);
+                    let rootChanged = previousDataView.matrix.rows.root !== this.dataView.matrix.rows.root;
+
+                    this.hierarchyNavigator.update(this.dataView.matrix, rootChanged);
+                    //If Root for Rows or Columns has changed by the DataViewTransform (e.g. when having reorders in values)
+                    if (rootChanged)
+                        this.tablixControl.updateModels(/*resetScrollOffsets*/false, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
+
+                    this.refreshControl(/*clear*/false);
                 } else {
                     this.createOrUpdateHierarchyNavigator();
                     this.createColumnWidthManager();
@@ -950,7 +948,7 @@ module powerbi.visuals {
                 this.tablixControl.viewport = this.currentViewport;
                 this.verifyHeaderResize();
 
-                this.refreshControl(false);
+                this.refreshControl(/*clear*/false);
             }
         }
 

@@ -42,7 +42,6 @@ module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-    import PixelConverter = jsCommon.PixelConverter;
 
     const dataTypeNumber = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double);
     const dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
@@ -425,6 +424,56 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("check default legend font size", (done) => {
+            let labelFontSize = powerbi.visuals.SVGLegend.DefaultFontSizeInPt;
+
+            let dataViewGradientMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1' },
+                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col3', isMeasure: true, roles: { 'Gradient': true } }
+                ],
+                objects: {
+                    legend:
+                    {
+                        titleText: 'my title text',
+                        show: true,
+                        showTitle: true,
+                    }
+                }
+            };
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewGradientMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewGradientMetadata.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewGradientMetadata.columns[1],
+                            values: [5, 990, 5],
+                        }])
+                    }
+                }],
+            });
+
+            let legend = element.find('.legend');
+            let legendGroup = legend.find('#legendGroup');
+            let legendTitle = legendGroup.find('.legendTitle');
+            let legendText = legendGroup.find('.legendItem').find('.legendText');
+
+            setTimeout(() => {
+                helpers.assertFontSizeMatch(legendTitle.css('font-size'), labelFontSize);
+                helpers.assertFontSizeMatch(legendText.css('font-size'), labelFontSize);
+                
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it("check color for legend title and legend items treemap chart", (done) => {
             let labelFontSize = 13;
 
@@ -469,8 +518,8 @@ module powerbitests {
             let legendText = legendGroup.find('.legendItem').find('.legendText');
 
             setTimeout(() => {
-                expect(Math.round(parseInt(legendTitle.css('font-size'), 10))).toBe(Math.round(parseInt(PixelConverter.fromPoint(labelFontSize), 10)));
-                expect(Math.round(parseInt(legendText.css('font-size'), 10))).toBe(Math.round(parseInt(PixelConverter.fromPoint(labelFontSize), 10)));
+                helpers.assertFontSizeMatch(legendTitle.css('font-size'), labelFontSize);
+                helpers.assertFontSizeMatch(legendText.css('font-size'), labelFontSize);
 
                 done();
             }, DefaultWaitForRender);

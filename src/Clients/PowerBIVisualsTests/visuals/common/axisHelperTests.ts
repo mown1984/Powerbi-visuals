@@ -32,33 +32,43 @@ module powerbitests {
     import axisScale = powerbi.visuals.axisScale;
 
     describe("AxisHelper invertOrdinalScale tests", () => {
-        var ordinalScale: D3.Scale.OrdinalScale;
-
-        beforeEach(() => {
-            ordinalScale = OrdinalScaleBuilder.buildOrdinalScale();
-        });
+        var domain: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        var pixelSpan: number = 100;
 
         it("invertOrdinalScale in middle", () => {
-            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 50);
+            var ordinalScale: D3.Scale.OrdinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0.4);
+            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 49);
             expect(invertedValue).toBe(4);
+            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 51);
+            expect(invertedValue).toBe(5);
+            ////
+            ordinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0); //zero
+            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 49);
+            expect(invertedValue).toBe(4);
+            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 51);
+            expect(invertedValue).toBe(5);
         });
 
         it("invertOrdinalScale at start", () => {
+            var ordinalScale: D3.Scale.OrdinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0.4);
             var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 0);
             expect(invertedValue).toBe(0);
         });
 
         it("invertOrdinalScale at end", () => {
+            var ordinalScale: D3.Scale.OrdinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0.4);
             var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 99);
             expect(invertedValue).toBe(9);
         });
 
         it("invertOrdinalScale at before start", () => {
-            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, -4);
+            var ordinalScale: D3.Scale.OrdinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0.4);
+            var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, -45);
             expect(invertedValue).toBe(0);
         });
 
         it("invertOrdinalScale at after end", () => {
+            var ordinalScale: D3.Scale.OrdinalScale = AxisHelper.createOrdinalScale(pixelSpan, domain, 0.4);
             var invertedValue = AxisHelper.invertOrdinalScale(ordinalScale, 1222);
             expect(invertedValue).toBe(9);
         });
@@ -1091,26 +1101,7 @@ module powerbitests {
             expect(newDomain[1]).toBe(undefined);
         });
     });
-
-    module OrdinalScaleBuilder {
-        var range: number[] = [0, 99];
-
-        var domain: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-        function createOrdinalScale(): D3.Scale.OrdinalScale {
-            return d3.scale.ordinal();
-        }
-
-        export function buildOrdinalScale(): D3.Scale.OrdinalScale {
-            var ordinalScale = createOrdinalScale();
-
-            ordinalScale.rangeRoundBands(range, 0.1);
-            ordinalScale.domain(domain);
-
-            return ordinalScale;
-        }
-    }
-
+    
     module AxisPropertiesBuilder {
         var dataStrings = ["Sun", "Mon", "Holiday"];
 

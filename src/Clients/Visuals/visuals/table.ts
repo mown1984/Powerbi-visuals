@@ -27,6 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import TablixUtils = controls.internal.TablixUtils;
 
     export interface DataViewVisualTable extends DataViewTable {
         visualRows?: DataViewVisualTableRow[];
@@ -175,7 +176,6 @@ module powerbi.visuals {
          * Returns the intersection between a row and a column item.
          */
         public getIntersection(rowItem: any, columnItem: DataViewMetadataColumn): TableCell {
-            let TablixUtils = controls.internal.TablixUtils;
             let value: any;
             let isTotal: boolean = false;
             let isBottomMost: boolean = false;
@@ -273,6 +273,7 @@ module powerbi.visuals {
     export interface TableBinderOptions {
         onBindRowHeader?(item: any): void;
         onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
+        layoutKind?: controls.TablixLayoutKind;
     }
     
     /**
@@ -280,7 +281,8 @@ module powerbi.visuals {
      */
     export class TableBinder implements controls.ITablixBinder {
 
-        private static sortIcon = 'bi-table-column-header';
+        public static sortIconContainerClassName = "bi-sort-icon-container";
+        public static columnHeaderClassName = 'bi-table-column-header';
         private static rowClassName = 'bi-table-row';
         private static lastRowClassName = 'bi-table-last-row';
         private static footerClassName = 'bi-table-footer';
@@ -314,28 +316,18 @@ module powerbi.visuals {
         /**
          * Column Header.
          */
+
         public bindColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
-
-            let sortDirection: SortDirection = SortDirection.Descending;
-            let classNames = TableBinder.sortIcon;
-            if (item.sort) {
-                classNames += ' sorted';
-                sortDirection = item.sort;
-            }
-
-            if (item.isMeasure)
-                classNames += ' ' + TableBinder.numericCellClassName;
-
-            cell.extension.setContainerStyle(classNames);
+            cell.extension.setContainerStyle(TableBinder.columnHeaderClassName);
             cell.extension.disableDragResize();
             cell.extension.contentHost.textContent = item.displayName;
-            controls.internal.TablixUtils.appendSortImageToColumnHeader(sortDirection, cell);
+
+            if (this.sortIconsEnabled())
+                TablixUtils.appendSortImageToColumnHeader(item, cell);
 
             if (this.options.onColumnHeaderClick) {
                 let handler = (e: MouseEvent) => {
-                    let sortDirection: SortDirection = SortDirection.Descending;
-                    if (item.sort === SortDirection.Descending)
-                        sortDirection = SortDirection.Ascending;
+                    let sortDirection: SortDirection = TablixUtils.reverseSort(item.sort);
                     this.options.onColumnHeaderClick(item.queryName ? item.queryName : item.displayName, sortDirection);
                 };
                 cell.extension.registerClickHandler(handler);
@@ -345,6 +337,9 @@ module powerbi.visuals {
         public unbindColumnHeader(item: any, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
             cell.extension.contentHost.textContent = '';
+
+            if (this.sortIconsEnabled())
+                TablixUtils.removeSortIcons(cell);
 
             if (this.options.onColumnHeaderClick) {
                 cell.extension.unregisterClickHandler();
@@ -440,6 +435,10 @@ module powerbi.visuals {
             // show up in the visual because for actual cell content we use the textContent property instead.
             if (allValuesEmpty)
                 cell.extension.contentHost.innerHTML = TableBinder.nonBreakingSpace;
+        }
+
+        private sortIconsEnabled(): boolean {
+            return this.options.layoutKind === controls.TablixLayoutKind.Canvas;
         }
     }
 
@@ -562,7 +561,7 @@ module powerbi.visuals {
                     let visualTable = Table.converter(this.dataView.table);
                     this.hierarchyNavigator.update(visualTable);
                     this.tablixControl.updateModels(/*resetScrollOffsets*/false, visualTable.visualRows);
-                    this.refreshControl(false);
+                    this.refreshControl(/*clear*/false);
                 } else {
                     this.createOrUpdateHierarchyNavigator();
                     this.createColumnWidthManager();
@@ -647,6 +646,7 @@ module powerbi.visuals {
             let tableBinderOptions: TableBinderOptions = {
                 onBindRowHeader: (item: any) => this.onBindRowHeader(item),
                 onColumnHeaderClick: (queryName: string, sortDirection: SortDirection) => this.onColumnHeaderClick(queryName, sortDirection),
+                layoutKind: layoutKind,
             };
             let tableBinder = new TableBinder(tableBinderOptions);
 

@@ -56,6 +56,7 @@ module powerbitests {
     import VisualBuilder = powerbitests.helpers.VisualBuilder;
     import Spy = jasmine.Spy;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+    import PixelConverter = jsCommon.PixelConverter;
 
     let minHeightFunnelCategoryLabelsVisible: number = visualPluginFactory.MobileVisualPluginService.MinHeightFunnelCategoryLabelsVisible;
     let categoryLabelsVisibleGreaterThanMinHeight: number = minHeightFunnelCategoryLabelsVisible + 1;
@@ -263,6 +264,7 @@ module powerbitests {
                 highlightsOverflow: false,
                 canShowDataLabels: true,
                 dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
+                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -348,6 +350,7 @@ module powerbitests {
                 highlightsOverflow: false,
                 canShowDataLabels: true,
                 dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
+                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -459,6 +462,7 @@ module powerbitests {
                 highlightsOverflow: false,
                 canShowDataLabels: true,
                 dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
+                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -554,6 +558,7 @@ module powerbitests {
                 highlightsOverflow: false,
                 canShowDataLabels: true,
                 dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
+                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -1709,6 +1714,94 @@ module powerbitests {
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
                 expect($(".funnelChart .labels text").length).toBe(6);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Ensure percent bars hide when settings are off", (done) => {
+            let categoryValues: any[] = [
+                "John Domo",
+                "Delta Force",
+                "Bugs Bunny",
+                "Mickey Mouse",
+                "Donald Duck",
+                "VRM Jones"
+            ];
+
+            let percentBarOffMetadata: DataViewMetadata = powerbi.Prototype.inherit(dataViewMetadata);
+            percentBarOffMetadata.objects = { percentBarLabel: { show: false } };
+            
+            dataViewBuilder.setMetadata(percentBarOffMetadata);
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(percentBarOffMetadata.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setIdentityFields([categoryColumnRef])
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(percentBarOffMetadata.columns[1])
+                .setValues([50, 200, 300, 400, 500, 600])
+                .setSubtotal(2000)
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                FunnelChartHelpers.validatePercentBars(false, dataView);
+                expect($(".funnelChart g").length).toBe(10);
+                expect($(".funnelChart .axis").find("text").length).toBe(6);
+                expect($(".funnelChart .labels text").length).toBe(6);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Ensure percent bars font size", (done) => {
+            let fontSize = 15;
+            let categoryValues: any[] = [
+                "John Domo",
+                "Delta Force",
+                "Bugs Bunny",
+                "Mickey Mouse",
+                "Donald Duck",
+                "VRM Jones"
+            ];
+
+            let percentBarOnMetadata: DataViewMetadata = powerbi.Prototype.inherit(dataViewMetadata);
+            percentBarOnMetadata.objects = { percentBarLabel: { show: true, fontSize: fontSize  } };
+
+            dataViewBuilder.setMetadata(percentBarOnMetadata);
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(percentBarOnMetadata.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setIdentityFields([categoryColumnRef])
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(percentBarOnMetadata.columns[1])
+                .setValues([50, 200, 300, 400, 500, 600])
+                .setSubtotal(2000)
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                FunnelChartHelpers.validatePercentBars(true, dataView, fontSize);
 
                 done();
             }, DefaultWaitForRender);
@@ -3231,13 +3324,16 @@ module powerbitests {
     export module FunnelChartHelpers {
         let PercentBarValueFormatRegex: RegExp = /^[0-9\,]+(\.[0-9]{1})?%$/gi;
 
-        function validatePercentValues(dataView: DataView): void {
+        function validatePercentValues(dataView: DataView, fontSize?: number): void {
             let values: any[] = dataView.categorical.values[0].values;
             let highlights: any[] = dataView.categorical.values[0].highlights;
             let hasHighlights: boolean = !!highlights;
             
-            let topPercent: string = $(FunnelChart.Selectors.percentBar.text.selector)[0].textContent;
-            let bottomPercent: string = $(FunnelChart.Selectors.percentBar.text.selector)[1].textContent;
+            let topElement = $(FunnelChart.Selectors.percentBar.text.selector).first();
+            let bottomElement = $(FunnelChart.Selectors.percentBar.text.selector).last();
+
+            let topPercent: string = topElement.text();
+            let bottomPercent: string = bottomElement.text();
 
             [topPercent, bottomPercent].map((percent: string) => {
                 let validFormat = !!percent.match(PercentBarValueFormatRegex);
@@ -3253,6 +3349,11 @@ module powerbitests {
 
                 expect(topPercent).toBe("100%");
                 expect(bottomPercent).toBe(bottomPercentText);
+
+                if (fontSize) {
+                    expect(topElement.css('font-size')).toBe(PixelConverter.fromPoint(fontSize));
+                    expect(bottomElement.css('font-size')).toBe(PixelConverter.fromPoint(fontSize));
+                }
             });
         }
 
@@ -3265,11 +3366,11 @@ module powerbitests {
             expect($(FunnelChart.Selectors.percentBar.text.selector).length).toBe(count);
         }
 
-        export function validatePercentBars(shown: boolean, dataView: DataView): void {
+        export function validatePercentBars(shown: boolean, dataView: DataView, fontSize?: number): void {
             validatePercentBarComponents(shown);
 
             if (shown) {
-                validatePercentValues(dataView);
+                validatePercentValues(dataView, fontSize);
             }
         }
 
