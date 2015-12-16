@@ -59,7 +59,7 @@ module powerbi.visuals.sampleDataViews {
 
         public getDataViews(): DataView[] {
             // 1 paragraphs, with formatting
-            var paragraphs: ParagraphContext[] = [
+            var paragraphs: Paragraph[] = [
                 {
                     horizontalTextAlignment: "center",
                     textRuns: [{
@@ -72,7 +72,7 @@ module powerbi.visuals.sampleDataViews {
         }
 
         
-        private buildParagraphsDataView(paragraphs: powerbi.visuals.ParagraphContext[]): powerbi.DataView[] {
+        private buildParagraphsDataView(paragraphs: Paragraph[]): powerbi.DataView[] {
             return [{ metadata: { columns: [], objects: { general: { paragraphs: paragraphs } } } }];
         }
 

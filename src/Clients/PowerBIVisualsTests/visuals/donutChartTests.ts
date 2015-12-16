@@ -3706,7 +3706,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('pie chart labels visibility - validate font-family', (done) => {
+        xit('pie chart labels visibility - validate font-family', (done) => {
             
             //category labels on
             let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);

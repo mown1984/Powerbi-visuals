@@ -81,7 +81,7 @@ module powerbitests {
             jasmine.clock().uninstall();
         });
 
-        it("DOM validation", () => {
+        xit("DOM validation", () => {
             spyOn(powerbi.visuals.valueFormatter, "format").and.callThrough();
 
             helpers.fireOnDataChanged(visual, interactiveDataViewOptions);
@@ -140,7 +140,7 @@ module powerbitests {
             expect(slicerText.first().children().last().text()).toBe("All");
         });
 
-        it("Validate scroll behavior", () => {
+        xit("Validate scroll behavior", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
@@ -167,7 +167,7 @@ module powerbitests {
             expect(slicerText.last().text()).toBe("Kiwi");
         });
 
-        it("Validate scroll behavior with mouseWheel", () => {
+        xit("Validate scroll behavior with mouseWheel", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
