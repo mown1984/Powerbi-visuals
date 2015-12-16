@@ -285,9 +285,11 @@ module powerbi.data {
                         let hierarchy = schema.schema(schemaName)
                             .findHierarchy(fieldExprItem.entity, hierarchyLevelField.name);
 
-                        let hierarchyLevel: ConceptualHierarchyLevel = hierarchy.levels.withName(hierarchyLevelField.level);
-                        if (hierarchyLevel && hierarchyLevel.column && hierarchyLevel.column.column)
-                            return hierarchyLevel.column.column.defaultValue;
+                        if (hierarchy) {
+                            let hierarchyLevel: ConceptualHierarchyLevel = hierarchy.levels.withName(hierarchyLevelField.level);
+                            if (hierarchyLevel && hierarchyLevel.column && hierarchyLevel.column.column)
+                                return hierarchyLevel.column.column.defaultValue;
+                        }
                     }
                 }
             }

@@ -41,11 +41,12 @@ module powerbi.visuals {
         filledMapDataLabelsEnabled?: boolean;
         disableZooming?: boolean;
         disablePanning?: boolean;
+        isLegendScrollable?: boolean;
     }
 
     export interface IMapControlFactory {
         createMapControl(element: HTMLElement, options?: Microsoft.Maps.MapOptions): Microsoft.Maps.Map;
-        ensureMap(action: () => void): void;
+        ensureMap(locale: string, action: () => void): void;
     }
 
     /** Note: public for UnitTest */
@@ -980,6 +981,8 @@ module powerbi.visuals {
         private filledMapDataLabelsEnabled: boolean;
         private disableZooming: boolean;
         private disablePanning: boolean;
+        private locale: string;
+        private isLegendScrollable: boolean;
 
         constructor(options: MapConstructionOptions) {
             if (options.filledMap) {
@@ -996,6 +999,7 @@ module powerbi.visuals {
             this.tooltipsEnabled = options.tooltipsEnabled;
             this.disableZooming = options.disableZooming;
             this.disablePanning = options.disablePanning;
+            this.isLegendScrollable = !!options.behavior;
         }
 
         public init(options: VisualInitOptions) {
@@ -1008,16 +1012,18 @@ module powerbi.visuals {
             if (this.behavior)
                 this.interactivityService = createInteractivityService(options.host);
             this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
-            this.legend = powerbi.visuals.createLegend(element, options.interactivity && options.interactivity.isInteractiveLegend, this.interactivityService);
+            this.legend = powerbi.visuals.createLegend(element, options.interactivity && options.interactivity.isInteractiveLegend, this.interactivityService, this.isLegendScrollable);
             this.legendHeight = 0;
             this.legendData = { dataPoints: [] };
             this.geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(options.host.getLocalizedString);
             this.host = options.host;
+            if (options.host.locale)
+                this.locale = options.host.locale();
             this.geocoder = options.host.geocoder();
 
             this.resetBounds();
 
-            this.mapControlFactory.ensureMap(() => {
+            this.mapControlFactory.ensureMap(this.locale, () => {
                 Microsoft.Maps.loadModule('Microsoft.Maps.Overlays.Style', {
                     callback: () => {
                         this.initialize(element[0]);
@@ -1656,7 +1662,7 @@ module powerbi.visuals {
                         warnings.push(new FilledMapWithoutValidGeotagCategoryWarning());
                     }
 
-                    this.mapControlFactory.ensureMap(() => {
+                    this.mapControlFactory.ensureMap(this.locale, () => {
                         // NOTE: We calculate the legend first so that colors are guaranteed to be assigned in series order.
                         let legendDataPoints = Map.calculateSeriesLegend(grouped, i, sizeIndex, this.colors, this.defaultDataPointColor, seriesSource, this.interactivityService);
                         if (legendDataPoints.length === 1)
@@ -1871,6 +1877,7 @@ module powerbi.visuals {
 
         private clearDataPoints(): void {
             this.dataPointRenderer.clearDataPoints();
+            this.legend.drawLegend({ dataPoints: [] }, this.currentViewport);
         }
 
         private getDefaultMapControlFactory(): IMapControlFactory {

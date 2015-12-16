@@ -2039,6 +2039,7 @@ module powerbitests {
 
                 setTimeout(() => {
                     expect($('.legendItem')).toBeInDOM();
+                    
                     //change legend position
                     dataView.metadata.objects = { legend: { show: true } };
                     v.onDataChanged({
@@ -2047,6 +2048,7 @@ module powerbitests {
 
                     setTimeout(() => {
                         expect($('.legendItem')).toBeInDOM();
+                        
                         //change legend position
                         dataView.metadata.objects = { legend: { show: true, position: 'Right' } };
                         v.onDataChanged({
@@ -2480,6 +2482,7 @@ module powerbitests {
                         ]
                     });
                 (<any>$('.majorLabel')).first().d3Click(0, 0);
+                
                 // Select the first nested shape
                 (<any>$('.nodeGroup')).first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
@@ -2812,6 +2815,7 @@ module powerbitests {
                 v.onResizing({ width: 300, height: 300 });
 
                 setTimeout(() => {
+                    
                     // Select a major label
                     expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                     expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);

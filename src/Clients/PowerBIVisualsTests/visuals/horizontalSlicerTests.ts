@@ -81,7 +81,7 @@ module powerbitests {
             jasmine.clock().uninstall();
         });
 
-        xit("DOM validation", () => {
+        it("DOM validation", () => {
             spyOn(powerbi.visuals.valueFormatter, "format").and.callThrough();
 
             helpers.fireOnDataChanged(visual, interactiveDataViewOptions);
@@ -140,7 +140,7 @@ module powerbitests {
             expect(slicerText.first().children().last().text()).toBe("All");
         });
 
-        xit("Validate scroll behavior", () => {
+        it("Validate scroll behavior", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
@@ -167,7 +167,7 @@ module powerbitests {
             expect(slicerText.last().text()).toBe("Kiwi");
         });
 
-        xit("Validate scroll behavior with mouseWheel", () => {
+        it("Validate scroll behavior with mouseWheel", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
@@ -197,6 +197,7 @@ module powerbitests {
         });
 
         it("Validate scroll behavior with 1 visible item", () => {
+            
             // smaller dataset          
             let dataview2 = slicerHelper.buildSequenceDataView(0, 3);
             dataview2.metadata.objects = slicerHelper.buildDefaultDataViewObjects(SlicerOrientation.Horizontal);

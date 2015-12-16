@@ -258,7 +258,6 @@ module powerbi.visuals {
             let series = data.series;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
             let shapeLayout = this.layout.shapeLayout;
-            let validLabelPositions = series && series.length > 1 ? ColumnChart.stackedValidLabelPositions : ColumnChart.clusteredValidLabelPositions;
 
             for (let currentSeries of series) {
                 let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
@@ -313,7 +312,7 @@ module powerbi.visuals {
                         parentShape: {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,
-                            validPositions: validLabelPositions,
+                            validPositions: ColumnChart.stackedValidLabelPositions,
                         },
                         identity: dataPoint.identity,
                         fontSize: labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt,
@@ -558,7 +557,6 @@ module powerbi.visuals {
             let series = data.series;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
             let shapeLayout = this.layout.shapeLayout;
-            let validLabelPositions = series && series.length > 1 ? ColumnChart.stackedValidLabelPositions : ColumnChart.clusteredValidLabelPositions;
 
             for (let currentSeries of series) {
                 let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
@@ -613,7 +611,7 @@ module powerbi.visuals {
                         parentShape: {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.HorizontalLeftBased : NewRectOrientation.HorizontalRightBased,
-                            validPositions: validLabelPositions,
+                            validPositions: ColumnChart.stackedValidLabelPositions,
                         },
                         identity: dataPoint.identity,
                         fontSize: labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt,

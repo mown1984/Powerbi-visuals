@@ -32,6 +32,7 @@ module powerbitests {
     import visualBackgroundHelper = visuals.visualBackgroundHelper;
     import ObjectEnumerationBuilder = visuals.ObjectEnumerationBuilder;
     import VisualObjectInstance = powerbi.VisualObjectInstance;
+    
     //import VisualObjectInstanceContainer = powerbi.VisualObjectInstanceContainer;
 
     describe("VisualBackgroundHelper", () => {
@@ -42,45 +43,22 @@ module powerbitests {
                 expect(enumeration.complete()).toBeUndefined();
             });
 
-            it('imageUrl', () => {
+            it('image', () => {
                 let enumeration = new ObjectEnumerationBuilder();
                 let background: visuals.VisualBackground = {
-                    imageUrl: 'someUrl',
-                    imageName: 'someName',
-                };
-
-                let instance: VisualObjectInstance = {
-                    selector: null,
-                    properties: {
-                        imageUrl: {
-                            imageUrl: 'someUrl',
-                            imageName: 'someName',
-                        },
-                        imageFit: visualBackgroundHelper.getDefaultImageFit(),
-                        transparency: visualBackgroundHelper.getDefaultTransparency(),
+                    image: {
+                        url: 'someUrl',
+                        name: 'someName',
                     },
-                    objectName: 'plotArea',
-                };
-                visualBackgroundHelper.enumeratePlot(enumeration, background, true);
-                expect(enumeration.complete()).toEqual({
-                    instances: [instance],
-                });
-            });
-
-            it('imageFit', () => {
-                let enumeration = new ObjectEnumerationBuilder();
-                let background: visuals.VisualBackground = {
-                    imageFit: imageScalingType.fit,
                 };
 
                 let instance: VisualObjectInstance = {
                     selector: null,
                     properties: {
-                        imageUrl: {
-                            imageUrl: visualBackgroundHelper.getDefaultImageUrl(),
-                            imageName: visualBackgroundHelper.getDefaultImageName(),
+                        image: {
+                            url: 'someUrl',
+                            name: 'someName',
                         },
-                        imageFit: imageScalingType.fit,
                         transparency: visualBackgroundHelper.getDefaultTransparency(),
                     },
                     objectName: 'plotArea',
@@ -100,11 +78,6 @@ module powerbitests {
                 let instance: VisualObjectInstance = {
                     selector: null,
                     properties: {
-                        imageUrl: {
-                            imageUrl: visualBackgroundHelper.getDefaultImageUrl(),
-                            imageName: visualBackgroundHelper.getDefaultImageName(),
-                        },
-                        imageFit: visualBackgroundHelper.getDefaultImageFit(),
                         transparency: 20,
                     },
                     objectName: 'plotArea',
@@ -118,9 +91,11 @@ module powerbitests {
             it('all together', () => {
                 let enumeration = new ObjectEnumerationBuilder();
                 let background: visuals.VisualBackground = {
-                    imageUrl: 'someUrl',
-                    imageName: 'someName',
-                    imageFit: imageScalingType.fit,
+                    image: {
+                        url: 'someUrl',
+                        name: 'someName',
+                        scaling: imageScalingType.fit,
+                    },
                     transparency: 20,
 
                 };
@@ -128,11 +103,11 @@ module powerbitests {
                 let instance: VisualObjectInstance = {
                     selector: null,
                     properties: {
-                        imageUrl: {
-                            imageUrl: 'someUrl',
-                            imageName: 'someName',
+                        image: {
+                            url: 'someUrl',
+                            name: 'someName',
+                            scaling: imageScalingType.fit,
                         },
-                        imageFit: imageScalingType.fit,
                         transparency: 20,
                     },
                     objectName: 'plotArea',
@@ -146,9 +121,11 @@ module powerbitests {
             it('adding to instance', () => {
                 let enumeration = new ObjectEnumerationBuilder();
                 let background: visuals.VisualBackground = {
-                    imageUrl: 'someUrl',
-                    imageName: 'someName',
-                    imageFit: imageScalingType.fit,
+                    image: {
+                        url: 'someUrl',
+                        name: 'someName',
+                        scaling: 'fit'
+                    },
                     transparency: 20,
 
                 };
@@ -174,10 +151,13 @@ module powerbitests {
             });
 
             it('create and remove background element', () => {
+                
                 // Create element
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'someUrl',
-                    imageName: 'someName',
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
                 };
                 visualBackgroundHelper.renderBackgroundImage(
                     backgroundData,
@@ -203,8 +183,10 @@ module powerbitests {
 
             it('imageUrl', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
                 };
                 visualBackgroundHelper.renderBackgroundImage(
                     backgroundData,
@@ -221,9 +203,11 @@ module powerbitests {
 
             it('image fit - normal', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
-                    imageFit: imageScalingType.normal,
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                        scaling: imageScalingType.normal,
+                    },
                 };
                 visualBackgroundHelper.renderBackgroundImage(
                     backgroundData,
@@ -240,9 +224,11 @@ module powerbitests {
 
             it('image fit - fit', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
-                    imageFit: imageScalingType.fit,
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                        scaling: imageScalingType.fit,
+                    },
                 };
                 visualBackgroundHelper.renderBackgroundImage(
                     backgroundData,
@@ -262,9 +248,11 @@ module powerbitests {
 
             it('image fit - fill', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
-                    imageFit: imageScalingType.fill,
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                        scaling: imageScalingType.fill,
+                    },
                 };
                 visualBackgroundHelper.renderBackgroundImage(
                     backgroundData,
@@ -281,8 +269,10 @@ module powerbitests {
 
             it('transparency', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
                     transparency: 20,
                 };
                 visualBackgroundHelper.renderBackgroundImage(
@@ -298,8 +288,10 @@ module powerbitests {
 
             it('size & position', () => {
                 let backgroundData: visuals.VisualBackground = {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
                     transparency: 20,
                 };
                 visualBackgroundHelper.renderBackgroundImage(

@@ -194,6 +194,7 @@ module powerbitests.mocks {
         }
 
         public geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): any {
+            
             // Only the absoluteString is actually used for drawing, but a few other aspects of the geoshape result are checked for simple things like existence and length
             var result = {
                 locations: [{
@@ -242,6 +243,7 @@ module powerbitests.mocks {
         public tryLocationToPixel(location) {
             var result;
             if (location.length) {
+                
                 // It's an array of locations; iterate through the array
                 result = [];
                 for (var i = 0, ilen = location.length; i < ilen; i++) {
@@ -249,6 +251,7 @@ module powerbitests.mocks {
                 }
             }
             else {
+                
                 // It's just a single location
                 result = this.tryLocationToPixelSingle(location);
             }
@@ -258,11 +261,13 @@ module powerbitests.mocks {
         private tryLocationToPixelSingle(location: powerbi.IGeocodeCoordinate) {
             var centerX = this.centerX;
             var centerY = this.centerY;
+            
             // Use a really dumb projection with no sort of zooming/panning
             return { x: centerX * (location.longitude / 180), y: centerY * (location.latitude / 90) };
         }
 
         public setView(viewOptions): void {
+            
             // No op placeholder; we don't need to bother with zoom/pan for mocking.  Spies can confirm anything about params we care about
         }
     }
@@ -354,6 +359,7 @@ module powerbitests.mocks {
         }
 
         public renderSelection(hasSelection: boolean): void {
+            
             // Stub method to spy on
         }
 

@@ -799,7 +799,7 @@ module powerbi.visuals {
                 }
             }
 
-            this.mainGraphicsContext
+            this.mainGraphicsSVG
                 .attr('height', height)
                 .attr('width', width);
             let areas = undefined;
@@ -1024,7 +1024,7 @@ module powerbi.visuals {
 
             this.mainGraphicsContext.attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
 
-            this.mainGraphicsContext.attr('height', this.getAvailableHeight())
+            this.mainGraphicsSVG.attr('height', this.getAvailableHeight())
                 .attr('width', this.getAvailableWidth());
             this.hoverLineContext.attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
 

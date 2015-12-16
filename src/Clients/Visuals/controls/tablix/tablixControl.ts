@@ -72,6 +72,13 @@ module powerbi.visuals.controls {
         private static TablixContainerClassName = 'tablixContainer';
         private static TablixFixSizedClassName = "bi-tablix-fixed-size";
         private static DefaultFontSize = jsCommon.PixelConverter.fromPoint(controls.TablixDefaultTextSize);
+        /*
+        * This is workaround for the infinite loop in rendering
+        * BugID: 6518621
+        * ToDo: Investigate the underlying cause for rendering to never report completion
+        * Rendering typically require 3-5 iterations to complete, so 10 is enough
+        */
+        private static MaxRenderIterationCount = 10;
 
         private hierarchyTablixNavigator: ITablixHierarchyNavigator;
         private binder: ITablixBinder;
@@ -546,7 +553,7 @@ module powerbi.visuals.controls {
             let priorRowHierarchyHeight: number = this.gridDimensions.rowHierarchyHeight;
             let priorRowHierarchyContentHeight: number = this.gridDimensions.rowHierarchyContentHeight;
 
-            while (!done) {
+            while (!done && this.renderIterationCount < TablixControl.MaxRenderIterationCount) {
                 let hScrollbarVisibility = this.columnDim.scrollbar.visible;
                 let vScrollbarVisibility = this.rowDim.scrollbar.visible;
 

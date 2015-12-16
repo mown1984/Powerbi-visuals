@@ -84,6 +84,7 @@ module powerbi.data {
 
             return evaluateFill(evalContext, <FillDefinition>propertyDefinition, structuralType)
                 || evaluateFillRule(evalContext, <FillRuleDefinition>propertyDefinition, structuralType)
+                || evaluateImage(evalContext, <ImageDefinition>propertyDefinition, structuralType)
                 || evaluateParagraphs(evalContext, <ParagraphsDefinition>propertyDefinition, structuralType)
                 || propertyDefinition;
         }
@@ -141,6 +142,25 @@ module powerbi.data {
                 step.value = value;
 
             return step;
+        }
+
+        function evaluateImage(evalContext: IEvalContext, definition: ImageDefinition, type: StructuralTypeDescriptor): ImageValue {
+            debug.assertValue(evalContext, 'evalContext');
+            debug.assertAnyValue(definition, 'definition');
+            debug.assertValue(type, 'type');
+
+            if (!type.image || !definition)
+                return;
+
+            let value: ImageValue = {
+                name: evaluateValue(evalContext, definition.name, textType),
+                url: evaluateValue(evalContext, definition.url, ValueType.fromDescriptor(ImageDefinition.urlType)),
+            };
+
+            if (definition.scaling)
+                value.scaling = evaluateValue(evalContext, definition.scaling, textType);
+
+            return value;
         }
 
         function evaluateParagraphs(evalContext: IEvalContext, definition: ParagraphsDefinition, type: StructuralTypeDescriptor): Paragraphs {

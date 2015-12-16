@@ -35,6 +35,7 @@ module powerbi {
         fillRule?: FillRuleTypeDescriptor;
         filter?: FilterTypeDescriptor;
         expression?: DefaultValueTypeDescriptor;
+        image?: ImageTypeDescriptor;
         paragraphs?: ParagraphsTypeDescriptor;
         //border?: BorderTypeDescriptor;
         //etc.
@@ -45,6 +46,7 @@ module powerbi {
         FillRuleDefinition |
         SemanticFilter |
         DefaultValueDefinition |
+        ImageDefinition |
         ParagraphsDefinition;
 
     /** Defines instances of structural types. */
@@ -53,6 +55,7 @@ module powerbi {
         FillRule |
         SemanticFilter |
         DefaultValueDefinition |
+        ImageValue |
         Paragraphs;
 
     export module StructuralTypeDescriptor {
@@ -63,6 +66,7 @@ module powerbi {
                 type.fillRule ||
                 type.filter ||
                 type.expression ||
+                type.image ||
                 type.paragraphs) {
                 return true;
             }

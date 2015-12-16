@@ -1613,8 +1613,10 @@ module powerbitests {
             let metadata = _.cloneDeep(dataViewMetadata);
             metadata.objects = {
                 plotArea: {
-                    imageUrl: 'data:image/gif;base64,R0lGO',
-                    imageName: 'someName',
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    }
                 },
             };
             v.onDataChanged({
@@ -3552,6 +3554,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
+                
                 // Dots show up in reverse order (e.g. dots.eq(0) is category 'e'; 1,d; 2,c; etc.)
                 let dots = element.find('.dot');
                 expect(dots.length).toBe(5);
@@ -3566,6 +3569,7 @@ module powerbitests {
                 };
 
                 spyOn(hostServices, 'onSelect').and.callThrough();
+                
                 // Allow multiselection
                 spyOn(hostServices, 'canSelect').and.returnValue(true);
 
@@ -4081,6 +4085,7 @@ module powerbitests {
     });
 
     function validateInteraction(x: number, y: number, scatterChart: any, cartesianChart: any): void {
+        
         //test crosshair position
         let behavior = (<any >cartesianChart).behavior.behaviors[0];
         expect(behavior.crosshair.select(".horizontal").attr('y1')).toBe(y.toString());
@@ -4095,6 +4100,7 @@ module powerbitests {
         //test style => dot 3 should be selected
         expect(scatterChart.mainGraphicsContext.selectAll('circle.dot').filter(function (d, i) { return (d.x !== 140) && (d.y !== 240); }).attr('class')).toBe("dot notSelected");
         expect(scatterChart.mainGraphicsContext.selectAll('circle.dot').filter(function (d, i) { return (d.x === 140) && (d.y === 240); }).attr('class')).toBe("dot selected");
+        
         //test legend
         expect($('.interactive-legend').find('.title').text().trim()).toMatch("d");
         expect($('.interactive-legend').find('.item').find('.itemName')[0].innerText.trim()).toBe('col2');
@@ -4685,6 +4691,7 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.scatterChart .mainGraphicsContext .dot').first().css('fill-opacity')).toBeGreaterThan(0);
+                
                 // null size should be hollow
                 expect($('.scatterChart .mainGraphicsContext .dot').eq(2).css('fill-opacity')).toBe('0');
 
@@ -4740,6 +4747,7 @@ module powerbitests {
         });        
 
         it('scatter chart without size verify label fill when fill point is on', (done) => {
+            
             // Category and series are the same field
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -4814,6 +4822,7 @@ module powerbitests {
         });
 
         it('scatter chart without size verify label fill when fill point is off', (done) => {
+            
             // Category and series are the same field
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -4888,6 +4897,7 @@ module powerbitests {
         });
 
         it('scatter chart without size verify bubble stroke style', (done) => {
+            
             // Category and series are the same field
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -5513,6 +5523,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let preferredLabels = (<any>v).layers[0].getPreferredLabelsKeys(scatterChartData.dataPoints);
+                
                 //The order will be the quadrants order - label at the first quadrant will be first in preferredLabels
                 expect(preferredLabels[2]).toEqual(dataPoints[0].identity.getKey());
                 expect(preferredLabels[1]).toEqual(dataPoints[2].identity.getKey());
@@ -5675,6 +5686,7 @@ module powerbitests {
                             values: datalabelTextArray,
                             identity: categoryIdentities,
                         }],
+                        
                         //this values creates a crowded group of points which will make the label layout logic to draw 4 labels with an increased radius and draw leader lines for it.
                         values: DataViewTransform.createValueColumns([{
                             source: metadata.columns[1],

@@ -233,7 +233,7 @@ module powerbitests {
                 expect($(".slicerText").length).toBe(0);
             });
 
-            xit("Resize", () => {
+            it("Resize", () => {
                 let viewport = {
                     height: 200,
                     width: 300
@@ -289,13 +289,15 @@ module powerbitests {
                 helpers.fireOnDataChanged(visual, dvOptionsFilter);
             }
             function scrollBy(itemCount: number): void {
+                
                 // Get 'real' row height
                 let rowHeight = $('.slicerItemContainer').eq(0).outerHeight(true);
+                
                 // Scrolling
                 $(".slicerBody .scrollbar-inner.scroll-content").scrollTop(itemCount * rowHeight);
             }
 
-            xit("Scrolling", (done) => {
+            it("Scrolling", (done) => {
                 loadFirstSegment();
 
                 expect($(".slicerText").eq(0).text()).toBe(dv1.categorical.categories[0].values[0]); // Fruit 0
@@ -308,7 +310,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            xit("Selecting an item -> No Scroll Reset", (done) => {
+            it("Selecting an item -> No Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -323,7 +325,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            xit("Appending -> No Scroll Reset", (done) => {
+            it("Appending -> No Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -339,7 +341,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            xit("Filtering -> Scroll Reset", (done) => {
+            it("Filtering -> Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -439,6 +441,7 @@ module powerbitests {
             });
 
             it("Switch slicer orientation", () => {
+                
                 // Switch to Horizontal
                 dataView.metadata.objects["general"] = { orientation: SlicerOrientation.Horizontal };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
@@ -559,6 +562,7 @@ module powerbitests {
             });
 
             it("Single-select mode", () => {
+                
                 // Switch to single-select
                 (<any>dataView.metadata.objects).selection.singleSelect = true;
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
@@ -854,6 +858,7 @@ module powerbitests {
     }
 
     function reconfigureSlicer(options: VisualDataChangedOptions, changeConfigCallback: () => void): void {
+        
         // Executes a callback that changes the slicer's configuration options,
         // and then sets the necessary test infrastructure back up.
         changeConfigCallback();

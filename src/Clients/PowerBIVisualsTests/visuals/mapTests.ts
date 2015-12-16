@@ -40,7 +40,7 @@ module powerbitests {
 
     powerbitests.mocks.setLocale();
 
-    describe("Map",() => {
+    describe("Map", () => {
         let element: JQuery;
         let mockGeotaggingAnalyzerService;
 
@@ -73,7 +73,8 @@ module powerbitests {
         });
 
             it('Capabilities DataRole preferredTypes', () => {
-            //Map's Category, X and Y fieldWells have preferences for geographic locations, longitude and latitude respectively
+            
+                //Map's Category, X and Y fieldWells have preferences for geographic locations, longitude and latitude respectively
             expect(powerbi.visuals.mapCapabilities.dataRoles.map(r => !!r.preferredTypes)).toEqual([
                 true,
                 false,
@@ -148,7 +149,7 @@ module powerbitests {
             expect(groupSizeTotals[2]).toBe(null);
         });
 
-        it('createMapDataPoint',() => {
+        it('createMapDataPoint', () => {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let group = "Arizona";
             let value = 100;
@@ -390,7 +391,7 @@ module powerbitests {
         });
         });
 
-        it('calculateRadius',() => {
+        it('calculateRadius', () => {
             var range: powerbi.visuals.SimpleRange = { min: -100, max: 100 };
 
             // Null should be the minimum size
@@ -808,6 +809,7 @@ module powerbitests {
             let enumeratedDataPoints = enumerationBuilder.complete();
 
             expect(enumeratedDataPoints.instances.length).toBe(legendDataPoints.length);
+            
             // ensure first object is 'fill' and not 'defaultColor'
             expect(enumeratedDataPoints.instances[0]['properties']['fill']).toBeDefined();
         });
@@ -1341,6 +1343,11 @@ module powerbitests {
             return this;
         }
 
+        public withNullCategory(): MapDataBuilder {
+            this.categoryValues[1] = null;
+            return this;
+        }
+
         public withNullValue(): MapDataBuilder {
             this.sizeValues[0].values[1] = null;
             return this;
@@ -1431,7 +1438,7 @@ module powerbitests {
                 createMapControl: (element, options) => {
                     return <any>(new mocks.MockMapControl(this._element[0], 500, 500));
                 },
-                ensureMap: (action: () => void) => {
+                ensureMap: (locale: string, action: () => void) => {
                     Microsoft.Maps = <any>mocks.MockMaps; // Hook the mock up to Microsoft.Maps for use in Map code
                     action();
                 },

@@ -660,9 +660,7 @@ module powerbi.visuals {
                 if (dataView.metadata) {
                     // flatten background data
                     this.background = {
-                        imageUrl: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.imageUrl, visualBackgroundHelper.getDefaultImageUrl()),
-                        imageName: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.imageName, visualBackgroundHelper.getDefaultImageName()),
-                        imageFit: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.imageFit, visualBackgroundHelper.getDefaultImageFit()),
+                        image: DataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image),
                         transparency: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()),
                     };
                 }
@@ -2043,7 +2041,7 @@ module powerbi.visuals {
             if (layerNumber === 1 && !yAxisWillMerge) {
                 visualOptions.forcedYDomain = valueAxisProperties ? [valueAxisProperties['secStart'], valueAxisProperties['secEnd']] : null;
                 visualOptions.valueAxisScaleType = valueAxisProperties && valueAxisProperties['secAxisScale'] != null ? <string>valueAxisProperties['secAxisScale'] : axisScale.linear;
-                visualOptions.valueAxisDisplayUnits = valueAxisProperties && valueAxisProperties['secLabelDisplayUnits'] != null ? <number>valueAxisProperties['secLabelDisplayUnits'] : 0;               
+                visualOptions.valueAxisDisplayUnits = valueAxisProperties && valueAxisProperties['secLabelDisplayUnits'] != null ? <number>valueAxisProperties['secLabelDisplayUnits'] : 0;
                 visualOptions.valueAxisPrecision = valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['secLabelPrecision']) : null;
                 if (mergeResult && mergeResult.forceStartToZero) {
                     if (!visualOptions.forcedYDomain) {

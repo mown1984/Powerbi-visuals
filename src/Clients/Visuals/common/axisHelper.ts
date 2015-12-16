@@ -846,7 +846,12 @@ module powerbi.visuals {
                     // so formatting works correctly.
                     if (bestTickCount === 1)
                         value = value2 = new Date(dataDomain[0]);
-                    formatter = valueFormatter.create({ format: formatString, value: value, value2: value2, tickCount: bestTickCount });
+                    formatter = valueFormatter.create({
+                        format: formatString,
+                        value: value,
+                        value2: value2,
+                        tickCount: bestTickCount,
+                    });
                 }
                 else {
                     if (getValueFn == null) {
@@ -854,7 +859,12 @@ module powerbi.visuals {
                     }
                     let minDate: Date = getValueFn(0, dataType);
                     let maxDate: Date = getValueFn(scaleDomain.length - 1, dataType);
-                    formatter = valueFormatter.create({ format: formatString, value: minDate, value2: maxDate, tickCount: bestTickCount });
+                    formatter = valueFormatter.create({
+                        format: formatString,
+                        value: minDate,
+                        value2: maxDate,
+                        tickCount: bestTickCount,
+                    });
                 }
             }
             else {
@@ -864,7 +874,13 @@ module powerbi.visuals {
                 if (useTickIntervalForDisplayUnits && isScalar && tickValues.length > 1) {
                     let displayUnit = axisDisplayUnits ? axisDisplayUnits: tickValues[1] - tickValues[0];
                     let domainMax = 0; //force tickInterval to be used with display units
-                    formatter = valueFormatter.create({ format: formatString, value: displayUnit, value2: domainMax, allowFormatBeautification: true, precision: axisPrecision });
+                    formatter = valueFormatter.create({
+                        format: formatString,
+                        value: displayUnit,
+                        value2: domainMax,
+                        allowFormatBeautification: true,
+                        precision: axisPrecision,
+                    });
                 }
                 else {
                     // do not use display units, just the basic value formatter

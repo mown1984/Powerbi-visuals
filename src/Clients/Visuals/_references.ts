@@ -80,8 +80,6 @@
 /// <reference path="capabilities/sunburst.capabilities.ts"/>
 /// <reference path="pluginsCapabilities.ts"/>
 
-/// <reference path="behaviours/cartesianChartBehaviors.ts"/>
-/// <reference path="behaviours/playChartBehaviors.ts"/>
 /// <reference path="behaviours/columnChartBehaviors.ts"/>
 /// <reference path="behaviours/dataDotChartBehavior.ts"/>
 /// <reference path="behaviours/donutChartBehaviors.ts"/>
@@ -206,8 +204,6 @@
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
-/// <reference path="visuals/samples/radarChart.ts"/>
-/// <reference path="visuals/samples/dotPlot.ts"/>
 
 /// <reference path="visuals/samples/histogram.ts"/>
 
