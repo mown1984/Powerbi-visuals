@@ -33,6 +33,7 @@
 /// <reference path="types\fill.ts"/>
 /// <reference path="types\fillRule.ts"/>
 /// <reference path="types\filter.ts"/>
+/// <reference path="types\image.ts"/>
 /// <reference path="types\paragraphs.ts"/>
 /// <reference path="types\structuralType.ts"/>
 /// <reference path="types\valueType.ts"/>

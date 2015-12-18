@@ -289,8 +289,10 @@ module powerbitests {
                 helpers.fireOnDataChanged(visual, dvOptionsFilter);
             }
             function scrollBy(itemCount: number): void {
+                
                 // Get 'real' row height
                 let rowHeight = $('.slicerItemContainer').eq(0).outerHeight(true);
+                
                 // Scrolling
                 $(".slicerBody .scrollbar-inner.scroll-content").scrollTop(itemCount * rowHeight);
             }
@@ -439,6 +441,7 @@ module powerbitests {
             });
 
             it("Switch slicer orientation", () => {
+                
                 // Switch to Horizontal
                 dataView.metadata.objects["general"] = { orientation: SlicerOrientation.Horizontal };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
@@ -559,6 +562,7 @@ module powerbitests {
             });
 
             it("Single-select mode", () => {
+                
                 // Switch to single-select
                 (<any>dataView.metadata.objects).selection.singleSelect = true;
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
@@ -854,6 +858,7 @@ module powerbitests {
     }
 
     function reconfigureSlicer(options: VisualDataChangedOptions, changeConfigCallback: () => void): void {
+        
         // Executes a callback that changes the slicer's configuration options,
         // and then sets the necessary test infrastructure back up.
         changeConfigCallback();

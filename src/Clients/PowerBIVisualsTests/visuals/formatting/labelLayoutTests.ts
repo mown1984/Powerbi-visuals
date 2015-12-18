@@ -29,6 +29,7 @@
 module powerbitests {
     import LabelArrangeGrid = powerbi.LabelArrangeGrid;
     import LabelDataPoint = powerbi.LabelDataPoint;
+    
     //import Label = powerbi.Label;
     import LabelParentRect = powerbi.LabelParentRect;
     import LabelParentPoint = powerbi.LabelParentPoint;

@@ -75,6 +75,7 @@ module powerbitests {
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
                 },
                 {
+                    
                     // for secondary grouping (legend/series)
                     displayName: 'col5',
                     queryName: 'col5',
@@ -1687,6 +1688,7 @@ module powerbitests {
             });
 
             it('verify viewport when filtering data', (done) => {
+                
                 // Clone in order to keep the original as it is
                 let dataViewMeta = _.clone(dataViewMetadata);
                 dataViewMeta.objects = {
@@ -2732,6 +2734,7 @@ module powerbitests {
             });
 
             it('line chart validate word breaking axis labels', (done) => {
+                
                 // Word break will only tend to trigger when graphs are wider than they are high
                 v.update({
                     viewport: { height: 320, width: 640 },
@@ -2911,8 +2914,10 @@ module powerbitests {
                 let metadata = _.cloneDeep(dataViewMetadata);
                 metadata.objects = {
                     plotArea: {
-                        imageUrl: 'data:image/gif;base64,R0lGO',
-                        imageName: 'someName',
+                        image: {
+                            url: 'data:image/gif;base64,R0lGO',
+                            name: 'someName',
+                        },
                     },
                 };
                 v.onDataChanged({
@@ -3291,6 +3296,7 @@ module powerbitests {
                 });
 
                 let labelDataPoints = callCreateLabelDataPoints(v);
+                
                 // Important labels (first, last, highest, lowest) should be first
                 expect(labelDataPoints[0].text).toEqual("20");
                 expect(labelDataPoints[1].text).toEqual("0");
@@ -3368,6 +3374,7 @@ module powerbitests {
         });
 
         it('verify legend formatted as date', () => {
+            
             // verify legend was changed to correct values
             let legend = $('.interactive-legend');
             let title = legend.find('.title');
@@ -3564,6 +3571,7 @@ module powerbitests {
 
             let mainGraphicsContext: any = $('.mainGraphicsContext');
             expect(mainGraphicsContext.length).toBe(1);
+            
             // instead of clicking on the graph, which can be unstable due to different user's configurations
             // we will validate that the code knows how to deal with such a click
             let calculatedIndex = lineChart.findIndex(250);
@@ -3708,6 +3716,7 @@ module powerbitests {
         it('Check enumeration without dataChanged triggered', (done) => {  
             v.enumerateObjectInstances({ objectName: 'categoryAxis' });
             v.enumerateObjectInstances({ objectName: 'valueAxis' });
+            
             //no expects, just need this code coverage to see if exception is thrown           
             done();
         });
@@ -4664,6 +4673,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
+            
             // Important labels (first, last, highest, lowest) should be first
             expect(labelDataPoints[0].text).toEqual("500.00");
             expect(labelDataPoints[1].text).toEqual("700.00");
@@ -4823,6 +4833,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
+            
             // When we don't have labelPrecision the format comes from the model but the trailing zeros are not being forced
             // Important labels (first, last, highest, lowest) should be first
             expect(labelDataPoints[0].text).toEqual("5K");
@@ -4874,6 +4885,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
+            
             // Important labels (first, last, highest, lowest) should be first
             expect(labelDataPoints[0].text).toEqual("500");
             expect(labelDataPoints[1].text).toEqual("700");

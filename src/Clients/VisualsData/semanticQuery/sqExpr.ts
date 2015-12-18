@@ -1380,9 +1380,11 @@ module powerbi.data {
                     let targetEntityExpr = SQExprBuilder.entity(schemaName, targetEntity);
                     let schemaHierarchy = this.schema.schema(schemaName).findHierarchy(targetEntity, hierarchy.hierarchy);
 
-                    for (let level of schemaHierarchy.levels)
-                        if (level.name === ref)
-                            return new SQColumnRefExpr(targetEntityExpr, level.column.name);
+                    if (schemaHierarchy) {
+                        for (let level of schemaHierarchy.levels)
+                            if (level.name === ref)
+                                return new SQColumnRefExpr(targetEntityExpr, level.column.name);
+                    }
                 }
             }
             else {

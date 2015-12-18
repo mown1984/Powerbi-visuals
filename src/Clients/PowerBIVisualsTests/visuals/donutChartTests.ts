@@ -922,6 +922,7 @@ module powerbitests {
             });
 
             it('Data labels with multiple formats', (done) => {
+                
                 //override view port size
                 element = powerbitests.helpers.testDom('1500', '1500');
                 v.init({
@@ -1016,10 +1017,12 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
+                    
                     //The first label is most right, the second label is most left
                     expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
                     expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[2]).attr('x'));
                     expect($(labels[2]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
+                    
                     //The last label is top, the second label is button.
                     expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[0]).attr('y'));
                     expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
@@ -1246,6 +1249,7 @@ module powerbitests {
                             strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1412,6 +1416,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1468,6 +1473,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1476,6 +1482,7 @@ module powerbitests {
             it('categorical, no slicing, formatted color and default color', () => {
 
                 let hexGreen = "#00FF00";
+                
                 //red will be used as the default color
                 let hexDefaultColorRed = "FF0000";
 
@@ -1531,6 +1538,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1625,6 +1633,7 @@ module powerbitests {
                             strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints.length).toBe(3);
@@ -1704,12 +1713,14 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
             });
 
             it('non-categorical multi-measure, with slicing', () => {
+                
                 // Explicitly set the color for the first measure.
                 let columnWithColor = powerbi.Prototype.inherit(dataViewMetadata3Measure.columns[0]);
                 columnWithColor.objects = { dataPoint: { fill: { solid: { color: 'red' } } } };
@@ -1773,6 +1784,7 @@ module powerbitests {
                             strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
@@ -1807,6 +1819,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
@@ -1863,6 +1876,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -1920,6 +1934,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -1962,6 +1977,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -2078,6 +2094,7 @@ module powerbitests {
             });
 
             it('with highlights', () => {
+                
                 // categorical, multi-measure slices, with highlights
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2179,6 +2196,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints.length).toBe(3);
@@ -2189,6 +2207,7 @@ module powerbitests {
 
             //validate tooltip on highlighted values, the first tooptip is regular because highlighted value is 0, another tooltips are highlighted tooltips 
             it('with highlights - special case tooltip validation',() => {
+                
                 // categorical, multi-measure slices, zero-highlight as special case
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2220,6 +2239,7 @@ module powerbitests {
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200)" }]);
                 expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }]);
                 expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0" }]);
+                
                 //tooltips with highlighted values
                 expect(actualData.dataPoints[3].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightName, value: "75" }]);
                 expect(actualData.dataPoints[4].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150" }, { displayName: highlightName, value: "$10" }]);
@@ -2295,6 +2315,7 @@ module powerbitests {
             });
 
             it('with highlights that overflow', () => {
+                
                 // categorical, no slicing - with OverFlow
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2451,6 +2472,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -2512,6 +2534,7 @@ module powerbitests {
                         strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -2838,6 +2861,7 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
+                
                 // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
                 if (!interactiveChart && !hasLegendObject) {
                     expect($('.donutChart polyline').length).toBe(3);
@@ -2964,6 +2988,7 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
                 if (interactiveChart) {
+                    
                     // Culling is disabled on interactive charts
                     expect($('.donutChart .slice').length).toBe(3);
                 }
@@ -3007,6 +3032,7 @@ module powerbitests {
                     }).length).toBe(3);
                     expect($(labelsElement).length).toBe(3);
                 }
+                
                 // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
                 if (interactiveChart) {
                     expect($('.donutChart .donutChart polyline').filter(function () {
@@ -3044,8 +3070,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
+                
                 // verify the calculateRadius() was called during the rendering on the visual 
                 expect(pieChart.calculateRadius).toHaveBeenCalled();
+                
                 // call calculateRadius() and test for the result, based on whether the chart is interactive or not
                 let radiusResult = pieChart.calculateRadius();
                 let height = $('.donutChart').height();
@@ -3139,6 +3167,7 @@ module powerbitests {
 
         it('pie chart selecting a slice triggers select', () => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 return;
@@ -3175,6 +3204,7 @@ module powerbitests {
 
         it('pie chart highlighted slice select', (done) => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 done();
@@ -3221,6 +3251,7 @@ module powerbitests {
 
         it('pie chart selecting a highlighted slice triggers select', () => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 return;
@@ -3819,6 +3850,7 @@ module powerbitests {
                                     expect($('.legendTitle').text()).toBe(testTitle);
                                     expect($('#legendGroup').attr('transform')).not.toBeDefined();
                                 }
+                                
                                 //hide legend
                                 dataView.metadata.objects = { legend: { show: false, position: 'Right' } };
                                 v.onDataChanged({
@@ -3985,6 +4017,7 @@ module powerbitests {
             v.onResizing({ height: 600, width: 600 });
 
             setTimeout(() => {
+                
                 // interactive-legend is the type of interactive legend for all visuals except donut, for this visual we have special legend called donutLegend
                 expect($('.interactive-legend')).not.toBeInDOM();
                 expect($('.donutLegend')).toBeInDOM();
@@ -4018,6 +4051,7 @@ module powerbitests {
             let dragToCoordinates = { x: centerCoordinates.x, y: centerCoordinates.y + 20 };
 
             let currentRotation = pieChart.interactivityState.currentRotate; 
+            
             // simulate dragging using setting d3.event
             setD3Event(dragFromCoordinates.x, dragFromCoordinates.y);
             pieChart.interactiveDragStart(); // call dragStart
@@ -4076,6 +4110,7 @@ module powerbitests {
             pieLegend.dragLegend(swipeLeft);
 
             setTimeout(() => {
+                
                 // items should be rotated
                 let rotatedLegendItems = $('.legend-item');
                 if (swipeLeft) {
@@ -4227,6 +4262,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
+                
                 // Check legend is hidden
                 expect($('.legend').attr('orientation')).toBe(LegendPosition.None.toString());
                 let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });

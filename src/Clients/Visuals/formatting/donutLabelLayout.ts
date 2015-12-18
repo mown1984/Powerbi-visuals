@@ -44,6 +44,7 @@ module powerbi {
         outerArcRadiusRatio: number;
         innerArcRadiusRatio: number;
     }
+
     export interface DonutLabelDataPoint extends LabelDataPoint {
         donutArcDescriptor: DonutArcDescriptor;
         /** Whether the label is truncated (Donut) */

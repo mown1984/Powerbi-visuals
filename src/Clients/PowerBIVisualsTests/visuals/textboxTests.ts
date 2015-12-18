@@ -493,6 +493,7 @@ module powerbitests {
 
                     describe('with focus outside editor', () => {
                         beforeEach(() => {
+                            
                             // Set focus to document body
                             (<HTMLElement>document.activeElement).blur();
                             expect(document.activeElement).toBe(document.body);
@@ -605,7 +606,7 @@ module powerbitests {
                             let content = getEditModeParagraphDivs($element).eq(0);
                             let anchors = content.find("a");
 
-                            expect(content.get(0).innerText).toEqual("foo http://another-url.com bar");
+                            expect(content.get(0).innerText).toEqual("foo http://another-url.com   bar");
                             expect(anchors.length).toBe(1);
                             expect(anchors.eq(0).text()).toBe("http://another-url.com");
                             expect(anchors.eq(0).attr("href")).toBe("http://another-url.com");
@@ -1005,6 +1006,7 @@ module powerbitests {
                 }
 
                 function setSelectValue($select: JQuery, value: any): void {
+                    
                     // See powerbi.visuals.RichText.Toolbar.setSelectValue() for description.
                     // NOTE: For unit tests case we have to use document.createEvent() because PhantomJS does
                     // not appear to support new UIEvent (https://github.com/ariya/phantomjs/issues/11289).

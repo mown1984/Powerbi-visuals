@@ -28,9 +28,7 @@
 
 module powerbi.visuals {
     export interface VisualBackground {
-        imageFit?: string;
-        imageUrl?: string;
-        imageName?: string;
+        image?: ImageValue;
         transparency?: number;
     }
 
@@ -55,18 +53,6 @@ module powerbi.visuals {
             };
         }
 
-        export function getDefaultImageFit(): string {
-            return imageScalingType.normal;
-        }
-
-        export function getDefaultImageName(): string {
-            return null;
-        }
-
-        export function getDefaultImageUrl(): string {
-            return null;
-        }
-
         export function enumeratePlot(enumeration: ObjectEnumerationBuilder, background: VisualBackground, backgroundImageEnabled: boolean): void {
             // featureSwitch
             if (!background || !backgroundImageEnabled)
@@ -75,15 +61,13 @@ module powerbi.visuals {
             let backgroundObject: VisualObjectInstance = {
                 selector: null,
                 properties: {
-                    imageUrl: {
-                        imageUrl: background.imageUrl ? background.imageUrl : getDefaultImageUrl(),
-                        imageName: background.imageName ? background.imageName : getDefaultImageName(),
-                    },
-                    imageFit: background.imageFit ? background.imageFit : getDefaultImageFit(),
-                    transparency: background.transparency ? background.transparency : getDefaultTransparency(),
+                    transparency: background.transparency || getDefaultTransparency(),
                 },
                 objectName: 'plotArea',
             };
+
+            if (background.image)
+                backgroundObject.properties['image'] = background.image;
 
             enumeration.pushInstance(backgroundObject);
         }
@@ -95,8 +79,9 @@ module powerbi.visuals {
             availableHeight: number,
             marginLeft: number,
             marginBottom: number): void {
-            let imageUrl = background && background.imageUrl;
-            let imageFit = background && background.imageFit;
+            let image = background && background.image;
+            let imageUrl = image && image.url;
+            let imageFit = image && image.scaling;
             let imageTransparency = background && background.transparency;
             let backgroundImage = visualElement.children('.background-image');
 

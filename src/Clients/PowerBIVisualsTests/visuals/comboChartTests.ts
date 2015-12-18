@@ -197,6 +197,7 @@ module powerbitests {
                         let catCountFinal = $(".lineChart").find(".cat").length;
                         expect(catCountFinal).toBe(3);
                         let y2tickCountFinal = $($(".y.axis")[1]).find(".tick").length;
+                        
                         // y2 axis (line value axis) should be shifted to y1 in this case
                         expect(y2tickCountFinal).toEqual(0);
 
@@ -768,6 +769,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let axisLabels = $(".axisGraphicsContext .y.axis").last().find(".tick");
+                
                 //Verify begin&end labels
                 expect(axisLabels[0].textContent).toBe("0K");
                 expect(axisLabels[axisLabels.length - 1].textContent).toBe("7K");
@@ -785,6 +787,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let axisLabels = $(".axisGraphicsContext .y.axis").last().find(".tick");
+                
                 //Verify begin&end axis labels
                 expect(axisLabels[0].textContent).toBe("-7K");
                 expect(axisLabels[axisLabels.length - 1].textContent).toBe("-2K");
@@ -1561,6 +1564,7 @@ module powerbitests {
         }
 
         export function buildDataViewSuperLongLabels(isGeneral = false): powerbi.DataView {
+            
             // must share the same values as the general dataView, only category labels should change.
             let dataView: powerbi.DataView = buildDataViewDefault(isGeneral);
 

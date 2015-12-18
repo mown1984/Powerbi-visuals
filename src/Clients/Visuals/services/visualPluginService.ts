@@ -73,7 +73,7 @@ module powerbi.visuals {
 
         sunburstVisualEnabled?: boolean;
 
-        tooltipsOnDashboard?: boolean;
+        matrixFormattingEnabled?: boolean;
 
         filledMapDataLabelsEnabled?: boolean;
 
@@ -175,7 +175,7 @@ module powerbi.visuals {
         }
 
         function createDashboardPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
-            let tooltipsOnDashboard: boolean = featureSwitches && featureSwitches.tooltipsOnDashboard;
+            let tooltipsOnDashboard: boolean = true;
             let lineChartLabelDensityEnabled: boolean = featureSwitches && featureSwitches.lineChartLabelDensityEnabled;
             
             // Bar Chart
@@ -298,6 +298,7 @@ module powerbi.visuals {
             let seriesLabelFormattingEnabled: boolean = featureSwitches ? featureSwitches.seriesLabelFormattingEnabled : false;
             let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
             let isLabelInteractivityEnabled: boolean = featureSwitches ? featureSwitches.isLabelInteractivityEnabled : false;
+            let formattingPropertiesEnabled = featureSwitches ? featureSwitches.matrixFormattingEnabled : false;
             let fillMapDataLabelsEnabled: boolean = featureSwitches ? featureSwitches.filledMapDataLabelsEnabled : false;
             let referenceLinesEnabled: boolean = featureSwitches ? featureSwitches.referenceLinesEnabled : false;
             let backgroundImageEnabled: boolean = featureSwitches ? featureSwitches.backgroundImageEnabled : false;
@@ -507,6 +508,7 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
                 behavior: new MapBehavior(),
                 tooltipsEnabled: true,
+                isLegendScrollable: true,
             }));
             // Filled Map
             createPlugin(plugins, powerbi.visuals.plugins.filledMap, () => new Map({
@@ -514,11 +516,16 @@ module powerbi.visuals {
                 behavior: new MapBehavior,
                 tooltipsEnabled: true,
                 filledMapDataLabelsEnabled: fillMapDataLabelsEnabled,
+                isLegendScrollable: true,
             }));
             // Slicer
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
             }));
+            // Matrix
+            createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix(formattingPropertiesEnabled));
+            // Table
+            createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table(formattingPropertiesEnabled));
             // Radar Chart
             createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
                 animator: new BaseAnimator()

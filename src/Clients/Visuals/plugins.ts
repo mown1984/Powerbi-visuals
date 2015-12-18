@@ -218,6 +218,13 @@ module powerbi.visuals.plugins {
         create: () => new Treemap()
     };
 
+    export let sunburst: IVisualPlugin = {
+        name: 'sunburst',
+        watermarkKey: 'defaultWatermark',
+        capabilities: capabilities.sunburst,
+        create: () => new samples.Sunburst()
+    };
+
     export let pieChart: IVisualPlugin = {
         name: 'pieChart',
         watermarkKey: 'pie',
@@ -310,17 +317,18 @@ module powerbi.visuals.plugins {
         create: () => new OwlGauge()
     };
 
-    export var sunburst: IVisualPlugin = {
-        name: 'sunburst',
-        capabilities: samples.Sunburst.capabilities,
-        create: () => new samples.Sunburst()
-    };
-
     export let streamGraph: IVisualPlugin = {
         name: 'streamGraph',
         watermarkKey: 'lineChart',
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
+    };
+
+    export let scriptVisual: IVisualPlugin = {
+        name: 'scriptVisual',
+        watermarkKey: 'scriptvisual',
+        capabilities: capabilities.scriptVisual,
+        create: () => new ScriptVisual({ canRefresh: false })
     };
 
     export var radarChart: IVisualPlugin = {
@@ -333,12 +341,6 @@ module powerbi.visuals.plugins {
         name: 'dotPlot',
         capabilities: samples.DotPlot.capabilities,
         create: () => new samples.DotPlot()
-    };
-
-    export let scriptVisual: IVisualPlugin = {
-        name: 'scriptVisual',
-        capabilities: capabilities.scriptVisual,
-        create: () => new ScriptVisual({ canRefresh: false })
     };
 
     export var histogram: IVisualPlugin = {

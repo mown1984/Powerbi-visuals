@@ -351,15 +351,8 @@ module powerbi.visuals {
                             displayName: data.createDisplayNameGetter('Visual_Background_Transparency'),
                             type: { numeric: true },
                         },
-                        imageUrl: {
-                            type: { misc: { imageUrl: true } },
-                        },
-                        imageName: {
-                            type: { text: true }
-                        },
-                        imageFit: {
-                            displayName: data.createDisplayNameGetter('PagePropertyPane_PageBackgroundImageFit'),
-                            type: { enumeration: imageScalingType.type }
+                        image: {
+                            type: { image: {} },
                         },
                     },
                 },
@@ -411,10 +404,8 @@ module powerbi.visuals {
             labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
         },
         plotArea: {
+            image: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'image' },
             transparency: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'transparency' },
-            imageUrl: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'imageUrl' },
-            imageName: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'imageName' },
-            imageFit: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'imageFit' },
         },
     };
 }

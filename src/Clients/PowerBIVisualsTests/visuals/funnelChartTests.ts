@@ -398,6 +398,7 @@ module powerbitests {
             //first tooltip is regular because highlighted value is 0
             expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
             expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }]);
+            
             //tooltips with highlighted value
             expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
             expect(actualData.slices[3].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }]);
@@ -1350,6 +1351,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                
                 // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
@@ -1842,6 +1844,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                
                 // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
@@ -1944,6 +1947,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                
                 // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
@@ -1952,8 +1956,10 @@ module powerbitests {
                 expect(labels.length).toBe(3);
                 expect($(labels[2]).text()).toEqual("$0K");
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
+                
                 //last value is 0, should be default color 
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
+                
                 // Check that all labels are centering 
                 expect($(labels[2]).attr("x")).toEqual($(labels[0]).attr("x"));
                 expect($(labels[2]).attr("x")).toEqual($(labels[1]).attr("x"));
@@ -1992,6 +1998,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                
                 // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
@@ -2009,6 +2016,7 @@ module powerbitests {
                 // The third label should be the same as the fill color and should be outside the bar.
                 let thirdBarY: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("y");
                 let thirdBarHeight: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("height");
+                
                 //Data labels precision = 0
                 expect($(labels[2]).text()).toEqual("$0K");
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
@@ -2061,6 +2069,7 @@ module powerbitests {
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
                 helpers.assertColorsMatch($(labels[1]).css("fill"), defaultInsideLabelColor);
                 helpers.assertColorsMatch($(labels[2]).css("fill"), defaultInsideLabelColor);
+                
                 //Check that the labels position is inside
                 expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarTranslated);
                 expect($(labels[0]).attr("x")).toBeLessThan(firstBar);
@@ -2109,9 +2118,11 @@ module powerbitests {
             setTimeout(() => {
                 let labels: JQuery = $(".funnelChart .labels text");
                 expect(labels.length).toBe(3);
+                
                 //inside labels are white
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
                 helpers.assertColorsMatch($(labels[1]).css("fill"), defaultInsideLabelColor);
+                
                 //outside labels are changed
                 helpers.assertColorsMatch($(labels[2]).css("fill"), color);
                 done();
@@ -2451,6 +2462,7 @@ module powerbitests {
             dataView.categorical.values[0].source["objects"]["general"]["formatString"] = "$0.00";
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                
                 // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
