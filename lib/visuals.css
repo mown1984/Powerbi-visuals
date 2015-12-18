@@ -2716,6 +2716,7 @@ body {
 .richtextbox {
   color: #333333;
   pointer-events: all;
+  white-space: pre-wrap;
 }
 .richtextbox a {
   color: #0000EE;
