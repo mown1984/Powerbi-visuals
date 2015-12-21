@@ -32,8 +32,8 @@ module powerbi.visuals {
     const rectName = 'rect';
 
     export module ColumnUtil {
-        export var DimmedOpacity = 0.4;
-        export var DefaultOpacity = 1.0;
+        export const DimmedOpacity = 0.4;
+        export const DefaultOpacity = 1.0;
 
         export function getTickCount(min: number, max: number, valuesMetadata: DataViewMetadataColumn[], maxTickCount: number, is100Pct: boolean, forcedTickCount?: number): number {
             return forcedTickCount !== undefined
@@ -389,24 +389,25 @@ module powerbi.visuals {
             let valueDomainNorm = [normalizedRange.min, normalizedRange.max];
             let axisType = ValueType.fromDescriptor({ numeric: true });
 
-            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomainNorm);  
-            let isLogScaleAllowed = AxisHelper.isLogScalePossible(combinedDomain, axisType);                                  
+            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomainNorm);
+            let isLogScaleAllowed = AxisHelper.isLogScalePossible(combinedDomain, axisType);
             let useLogScale = axisScaleType && axisScaleType === axisScale.log && isLogScaleAllowed;
 
             let scale = useLogScale ? d3.scale.log() : d3.scale.linear();
+            let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomainNorm);
 
             scale.range(scaleRange)
                 .domain(combinedDomain)
                 .nice(bestTickCount || undefined)
-                .clamp(AxisHelper.scaleShouldClamp(combinedDomain, valueDomainNorm));     
+                .clamp(shouldClamp);
 
             ColumnUtil.normalizeInfinityInScale(scale);
 
             let dataType: ValueType = AxisHelper.getCategoryValueType(data.valuesMetadata[0], true);
             let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], columnChartProps.general.formatString);
-            let minTickInterval = AxisHelper.getMinTickValueInterval(formatString, dataType);
+            let minTickInterval = AxisHelper.getMinTickValueInterval(formatString, dataType, is100Pct);
             let yTickValues: any[] = AxisHelper.getRecommendedTickValuesForAQuantitativeRange(bestTickCount, scale, minTickInterval);
-
+            
             if (useLogScale) {
                 yTickValues = yTickValues.filter((d) => { return AxisHelper.powerOfTen(d); });
             }
@@ -424,7 +425,7 @@ module powerbi.visuals {
                 axisPrecision);
             d3Axis.tickFormat(yFormatter.format);
 
-            let values = yTickValues.map((d: ColumnChartDataPoint) => yFormatter.format(d));            
+            let values = yTickValues.map((d: ColumnChartDataPoint) => yFormatter.format(d));
 
             return {
                 axis: d3Axis,
@@ -443,7 +444,13 @@ module powerbi.visuals {
             // TODO: Passing 0 in createFormatter below is a temporary workaround. As long as we fix createFormatter
             // to pass scaleInterval parameter instead min and max, we can remove it.
             if (is100Pct)
-                return valueFormatter.create({ format: constants.percentFormat, value: interval, value2: /* temporary workaround */ 0, allowFormatBeautification: true, precision: axisPrecision });
+                return valueFormatter.create({
+                    format: constants.percentFormat,
+                    value: interval,
+                    value2: /* temporary workaround */ 0,
+                    allowFormatBeautification: true,
+                    precision: axisPrecision,
+                });
 
             // Default to apply formatting from the first measure.
             return valueFormatter.create({

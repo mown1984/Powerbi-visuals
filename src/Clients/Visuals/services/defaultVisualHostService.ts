@@ -28,12 +28,12 @@
 
 module powerbi.visuals {
 
-    var BeautifiedFormat: { [x: string]: string } = {
+    const BeautifiedFormat: { [x: string]: string } = {
         '0.00 %;-0.00 %;0.00 %': 'Percentage',
         '0.0 %;-0.0 %;0.0 %': 'Percentage1',
     };
 
-    var defaultLocalizedStrings = {
+    const defaultLocalizedStrings = {
         'NullValue': '(Blank)',
         'BooleanTrue': 'True',
         'BooleanFalse': 'False',
@@ -172,5 +172,5 @@ module powerbi.visuals {
         }
     }
 
-    export var defaultVisualHostServices: IVisualHostServices = new DefaultVisualHostServices();
+    export const defaultVisualHostServices: IVisualHostServices = new DefaultVisualHostServices();
 } 

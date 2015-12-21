@@ -46,6 +46,9 @@ module powerbi.data {
 
         /** rewriteCacheEntries */
         rewriteCacheEntries?(dataSource: DataReaderDataSource, rewriter: DataReaderCacheRewriter): void;
+
+        /** Sets the result into the local cache */
+        setLocalCacheResult?(options: DataReaderExecutionOptions, dataAsObject: DataReaderData): void;
     }
 
     /** Represents a query generator. */
@@ -69,9 +72,14 @@ module powerbi.data {
     export interface QueryGeneratorOptions {
         query: SemanticQuery;
         mappings: CompiledDataViewMapping[];
-        projections: QueryProjectionsByRole;
+        additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
+    }
+
+    export interface AdditionalQueryProjection {
+        queryName: string;
+        selector: Selector;
     }
 
     export interface QueryGeneratorResult {

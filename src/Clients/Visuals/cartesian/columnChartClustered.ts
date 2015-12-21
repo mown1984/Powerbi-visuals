@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import PixelConverter = jsCommon.PixelConverter;
+
     export class ClusteredColumnChartStrategy implements IColumnChartStrategy {
         private static classes = {
             item: {
@@ -51,7 +53,6 @@ module powerbi.visuals {
         private columnSelectionLineHandle: D3.Selection;
         private animator: IColumnChartAnimator;
         private interactivityService: IInteractivityService;
-        private static validLabelPositions: RectLabelPosition[] = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd, RectLabelPosition.InsideCenter, RectLabelPosition.InsideBase];
         private layout: IColumnLayout;
 
         public setupVisualProps(columnChartProps: ColumnChartContext): void {
@@ -318,9 +319,12 @@ module powerbi.visuals {
 
             for (let currentSeries of series) {
                 let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
+                if (!labelSettings.show)
+                    continue;
+
                 let axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yProps.formatter, labelSettings);
                 for (let dataPoint of currentSeries.data) {
-                    if ((this.interactivityService && this.interactivityService.hasSelection() && !dataPoint.selected) || (data.hasHighlights && !dataPoint.highlight)) {
+                    if ((data.hasHighlights && !dataPoint.highlight) || dataPoint.value == null) {
                         continue;
                     }
 
@@ -341,11 +345,11 @@ module powerbi.visuals {
                     let properties: TextProperties = {
                         text: text,
                         fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
-                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontSize: PixelConverter.fromPoint(labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt),
                         fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
                     };
                     let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
 
                     labelDataPoints.push({
                         isPreferred: true,
@@ -356,13 +360,14 @@ module powerbi.visuals {
                         },
                         outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
                         insideFill: NewDataLabelUtils.defaultInsideLabelColor,
-                        isParentRect: true,
+                        parentType: LabelDataPointParentType.Rectangle,
                         parentShape: {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,
-                            validPositions: ClusteredColumnChartStrategy.validLabelPositions,
+                            validPositions: ColumnChart.clusteredValidLabelPositions,
                         },
                         identity: dataPoint.identity,
+                        fontSize: labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt,
                     });
                 }
             }
@@ -395,7 +400,6 @@ module powerbi.visuals {
         private columnSelectionLineHandle: D3.Selection;
         private animator: IColumnChartAnimator;
         private interactivityService: IInteractivityService;
-        private static validLabelPositions: RectLabelPosition[] = [RectLabelPosition.OutsideEnd, RectLabelPosition.InsideEnd, RectLabelPosition.InsideCenter, RectLabelPosition.InsideBase];
 
         private layout: IColumnLayout;
 
@@ -665,9 +669,12 @@ module powerbi.visuals {
 
             for (let currentSeries of series) {
                 let labelSettings = currentSeries.labelSettings ? currentSeries.labelSettings : data.labelSettings;
+                if (!labelSettings.show)
+                    continue;
+
                 let axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yProps.formatter, labelSettings);
                 for (let dataPoint of currentSeries.data) {
-                    if ((this.interactivityService && this.interactivityService.hasSelection() && !dataPoint.selected) || (data.hasHighlights && !dataPoint.highlight)) {
+                    if ((this.interactivityService && this.interactivityService.hasSelection() && !dataPoint.selected) || (data.hasHighlights && !dataPoint.highlight) || dataPoint.value == null) {
                         continue;
                     }
 
@@ -680,11 +687,11 @@ module powerbi.visuals {
                     let properties: TextProperties = {
                         text: text,
                         fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily,
-                        fontSize: NewDataLabelUtils.LabelTextProperties.fontSize,
+                        fontSize: PixelConverter.fromPoint(labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt),
                         fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight,
                     };
                     let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                    let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
 
                     // Calculate parent rectangle
                     let parentRect: IRect = {
@@ -703,13 +710,14 @@ module powerbi.visuals {
                         },
                         outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
                         insideFill: NewDataLabelUtils.defaultInsideLabelColor,
-                        isParentRect: true,
+                        parentType: LabelDataPointParentType.Rectangle,
                         parentShape: {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.HorizontalLeftBased : NewRectOrientation.HorizontalRightBased,
-                            validPositions: ClusteredBarChartStrategy.validLabelPositions,
+                            validPositions: ColumnChart.clusteredValidLabelPositions,
                         },
                         identity: dataPoint.identity,
+                        fontSize: labelSettings.fontSize || NewDataLabelUtils.DefaultLabelFontSizeInPt,
                     });
                 }
             }
