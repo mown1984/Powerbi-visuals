@@ -360,4 +360,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.Timeline.capabilities,
         create: () => new samples.Timeline()
     };
+
+    export var tornadoChart: IVisualPlugin = {
+        name: "tornadoChart",
+        capabilities: samples.TornadoChart.capabilities,
+        create: () => new samples.TornadoChart()
+    };
 }

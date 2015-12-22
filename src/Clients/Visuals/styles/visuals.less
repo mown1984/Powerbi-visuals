@@ -1900,6 +1900,7 @@ div.ql-toolbar {
     opacity:0;
 }
 
+
 .histogram {
     @histogramAxesColor: @neutralSecondaryAltColor;
     @histogramLegendTextColor: @blackColor;
@@ -1950,6 +1951,21 @@ div.ql-toolbar {
     .chart {
         path, line {
             stroke-width: 1;
+        }
+    }
+}
+
+.tornado-chart {
+    @tornadoChartAxisColor: @neutralSecondaryAltColor;
+
+    font-family: @regularFontFamily;
+    font-size: 11px;
+
+    .axes {
+        .axis {
+            fill: none;
+            stroke: @tornadoChartAxisColor;
+            stroke-width: 1px;
         }
     }
 }

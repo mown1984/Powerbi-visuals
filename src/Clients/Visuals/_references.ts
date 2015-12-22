@@ -199,6 +199,8 @@
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
 
+/// <reference path="visuals/samples/tornadoChart.ts" />
+
 /// <reference path="tooltip.ts"/>
 
 /// <reference path="styles/visualStyles.ts"/>

@@ -542,6 +542,10 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
                 animator: new BaseAnimator()
             }));
+            // Tornado Chart
+            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
+                animator: new BaseAnimator()
+            }));
             if (scriptVisualEnabled) {
                 // R visual
                 createPlugin(
