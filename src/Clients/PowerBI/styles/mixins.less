@@ -35,7 +35,7 @@
 @import "colorPalette.less";
 @import "fonts.less";
 
-@dashboardTileHeaderHeight: 50px;
+@dashboardTileHeaderHeight: 50px; /* updates to tile header height should be reflected in tileSize.ts */
 @dashboardTilePadding: 10px;
 
 .unselectable {
@@ -116,6 +116,12 @@
     opacity: 0;
 }
 
+.no-border-radius {
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+}
+
 .placeholderColor(@color: @neutralSecondaryColor) {
     &::-webkit-input-placeholder { /* WebKit browsers */
         color: @color;
@@ -133,26 +139,6 @@
 
     &:-ms-input-placeholder { /* Internet Explorer 10+ */
         color: @color;
-    }
-}
-
-.onFocusHidePlaceholder(@color: @neutralSecondaryColor) {
-    .placeholderColor(@color);
-
-    &:focus::-webkit-input-placeholder { /* WebKit browsers */
-        color: transparent;
-    }
-
-    &:focus:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
-        color: transparent;
-    }
-
-    &:focus::-moz-placeholder { /* Mozilla Firefox 19+ */
-        color: transparent;
-    }
-
-    &:focus:-ms-input-placeholder { /* Internet Explorer 10+ */
-        color: transparent;
     }
 }
 
