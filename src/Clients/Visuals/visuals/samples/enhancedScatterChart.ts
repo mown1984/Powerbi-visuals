@@ -133,12 +133,11 @@ module powerbi.visuals.samples {
         private mainGraphicsContext: D3.Selection;
         private clearCatcher: D3.Selection;
         private mainGraphicsG: D3.Selection;
-        private currentViewport: IViewport;
+
         private style: IVisualStyle;
         private data: EnhancedScatterChartData;
         private dataView: DataView;
 
-        private margin: IMargin;
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
         private colors: IDataColorPalette;
@@ -157,7 +156,7 @@ module powerbi.visuals.samples {
         private legendObjectProperties: DataViewObject;
         private hostServices: IVisualHostServices;
         private layerLegendData: LegendData;
-        private legendMargins: IViewport;
+
         private cartesianSmallViewPortProperties: CartesianSmallViewPortProperties;
         private hasCategoryAxis: boolean;
         private yAxisIsCategorical: boolean;
@@ -180,6 +179,35 @@ module powerbi.visuals.samples {
         private behavior: IInteractiveBehavior;
         private animator: IGenericAnimator;
         private keyArray: string[];
+
+        private _margin: IMargin;
+        private get margin(): IMargin {
+            return this._margin || { left: 0, right: 0, top: 0, bottom: 0 };
+        }
+
+        private set margin(value: IMargin) {
+            this._margin = $.extend({}, value);
+            this._viewportIn = EnhancedScatterChart.substractMargin(this.viewport, this.margin);
+        }
+
+        private _viewport: IViewport;
+        private get viewport(): IViewport {
+            return this._viewport || { width: 0, height: 0 };
+        }
+
+        private set viewport(value: IViewport) {
+            this._viewport = $.extend({}, value);
+            this._viewportIn = EnhancedScatterChart.substractMargin(this.viewport, this.margin);
+        }
+
+        private _viewportIn: IViewport;
+        private get viewportIn(): IViewport {
+            return this._viewportIn || this.viewport;
+        }
+
+        private get legendViewport(): IViewport {
+            return this.legend.getMargins();
+        }
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [
@@ -253,21 +281,21 @@ module powerbi.visuals.samples {
                     'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
                     'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
                 }, {
-                    'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                    'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 1 }, 'Shape': { max: 1 },
-                    'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                }, {
-                    'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                    'Size': { max: 1 }, 'Gradient': { max: 0 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
-                    'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                }, {
-                    'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                    'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
-                    'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                }],
+                        'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                        'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 1 }, 'Shape': { max: 1 },
+                        'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                    }, {
+                        'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                        'Size': { max: 1 }, 'Gradient': { max: 0 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
+                        'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                    }, {
+                        'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                        'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
+                        'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                    }],
                 categorical: {
                     categories: {
                         for: { in: 'Category' },
@@ -486,6 +514,13 @@ module powerbi.visuals.samples {
             }
         };
 
+        private static substractMargin(viewport: IViewport, margin: IMargin): IViewport {
+            return {
+                width: Math.max(viewport.width - (margin.left + margin.right), 0),
+                height: Math.max(viewport.height - (margin.top + margin.bottom), 0)
+            };
+        }
+
         private static getCustomSymbolType(shape: any): (number) => string {
             var customSymbolTypes = d3.map({
                 "circle": (size) => {
@@ -596,7 +631,7 @@ module powerbi.visuals.samples {
             this.animator = new BaseAnimator();
             this.behavior = new CartesianChartBehavior([new ScatterChartWebBehavior()]);
             var element = this.element = options.element;
-            var viewport = this.currentViewport = options.viewport;
+            this.viewport = options.viewport;
             this.style = options.style;
             this.hostServices = options.host;
             this.colors = this.style.colorPalette.dataColors;
@@ -611,7 +646,7 @@ module powerbi.visuals.samples {
             element.addClass(EnhancedScatterChart.ClassName);
 
             this.yAxisOrientation = yAxisPosition.left;
-            this.adjustMargins(viewport);
+            this.adjustMargins();
 
             var showLinesOnX = this.scrollY = true;
 
@@ -658,17 +693,12 @@ module powerbi.visuals.samples {
             this.keyArray = [];
         }
 
-        private adjustMargins(viewport: IViewport): void {
-            var margin = this.margin;
-
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
-
+        private adjustMargins(): void {
             // Adjust margins if ticks are not going to be shown on either axis
             var xAxis = this.element.find('.x.axis');
 
-            if (AxisHelper.getRecommendedNumberOfTicksForXAxis(width) === 0
-                && AxisHelper.getRecommendedNumberOfTicksForYAxis(height) === 0) {
+            if (AxisHelper.getRecommendedNumberOfTicksForXAxis(this.viewportIn.width) === 0
+                && AxisHelper.getRecommendedNumberOfTicksForYAxis(this.viewportIn.height) === 0) {
                 this.margin = {
                     top: 0,
                     right: 0,
@@ -1269,7 +1299,7 @@ module powerbi.visuals.samples {
                     this.dataView = dataView;
 
                     if (dataView.categorical && dataView.categorical.values) {
-                        this.data = EnhancedScatterChart.converter(dataView, this.currentViewport, this.colors, this.interactivityService, this.categoryAxisProperties, this.valueAxisProperties);
+                        this.data = EnhancedScatterChart.converter(dataView, this.viewport, this.colors, this.interactivityService, this.categoryAxisProperties, this.valueAxisProperties);
                     }
 
                 }
@@ -1281,8 +1311,7 @@ module powerbi.visuals.samples {
             debug.assertValue(options, 'options');
 
             var dataViews = this.dataViews = options.dataViews;
-
-            this.currentViewport = options.viewport;
+            this.viewport = options.viewport;
 
             if (!dataViews) return;
 
@@ -1357,11 +1386,11 @@ module powerbi.visuals.samples {
                 legendData.dataPoints = [];
             }
 
-            this.legend.drawLegend(legendData, this.currentViewport);
+            this.legend.drawLegend(legendData, this.viewport);
         }
         private hideLegends(): boolean {
             if (this.cartesianSmallViewPortProperties) {
-                if (this.cartesianSmallViewPortProperties.hideLegendOnSmallViewPort && (this.currentViewport.height < this.cartesianSmallViewPortProperties.MinHeightLegendVisible)) {
+                if (this.cartesianSmallViewPortProperties.hideLegendOnSmallViewPort && (this.viewport.height < this.cartesianSmallViewPortProperties.MinHeightLegendVisible)) {
                     return true;
                 }
             }
@@ -1386,52 +1415,46 @@ module powerbi.visuals.samples {
             return this.options.style.maxMarginFactor || 0.25;
         }
 
-        private adjustViewportbyBackdrop(viewport: IViewport): IViewport {
+        private adjustViewportbyBackdrop(): void {
             var img = new Image();
             var that = this;
             img.src = this.data.backdrop.url;
-            img.onload = function() {
+            img.onload = function () {
                 if (that.oldBackdrop !== this.src) {
                     that.render(true);
                     that.oldBackdrop = this.src;
                 }
             };
 
-            var margin = this.margin;
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
-            var newViewport = viewport;
             if (img.width > 0 && img.height > 0) {
-                if (img.width * height < width * img.height) {
-                    var deltaWidth = width - height * img.width / img.height;
-                    newViewport = { width: viewport.width - deltaWidth, height: viewport.height };
+                if (img.width * this.viewportIn.height < this.viewportIn.width * img.height) {
+                    var deltaWidth = this.viewportIn.width - this.viewportIn.height * img.width / img.height;
+                    this.viewport = { width: this.viewport.width - deltaWidth, height: this.viewport.height };
                 } else {
-                    var deltaHeight = height - width * img.height / img.width;
-                    newViewport = { width: viewport.width, height: viewport.height - deltaHeight };
+                    var deltaHeight = this.viewportIn.height - this.viewportIn.width * img.height / img.width;
+                    this.viewport = { width: this.viewport.width, height: this.viewport.height - deltaHeight };
                 }
             }
-            this.currentViewport = newViewport;
-            return newViewport;
         }
 
-        public render(suppressAnimations: boolean): CartesianVisualRenderResult {
-            var legendMargins = this.legendMargins = this.legend.getMargins();
-            var viewport: IViewport = {
-                height: this.currentViewport.height - legendMargins.height,
-                width: this.currentViewport.width - legendMargins.width
-            };
+        public render(suppressAnimations: boolean): void {
+            this.viewport.height -= this.legendViewport.height;
+            this.viewport.width -= this.legendViewport.width;
+
+            if (this.viewportIn.width === 0 || this.viewportIn.height === 0) {
+                return;
+            }
 
             var maxMarginFactor = this.getMaxMarginFactor();
-            this.leftRightMarginLimit = viewport.width * maxMarginFactor;
-            var bottomMarginLimit = this.bottomMarginLimit = Math.max(25, Math.ceil(viewport.height * maxMarginFactor));
+            this.leftRightMarginLimit = this.viewport.width * maxMarginFactor;
+            var bottomMarginLimit = this.bottomMarginLimit = Math.max(25, Math.ceil(this.viewport.height * maxMarginFactor));
 
-            var margin = this.margin;
             // reset defaults
-            margin.top = 8;
-            margin.bottom = bottomMarginLimit;
-            margin.right = 0;
+            this.margin.top = 8;
+            this.margin.bottom = bottomMarginLimit;
+            this.margin.right = 0;
 
-            this.calculateAxes(viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
 
             this.yAxisIsCategorical = this.yAxisProperties.isCategoryAxis;
             this.hasCategoryAxis = this.yAxisIsCategorical ? this.yAxisProperties && this.yAxisProperties.values.length > 0 : this.xAxisProperties && this.xAxisProperties.values.length > 0;
@@ -1439,7 +1462,6 @@ module powerbi.visuals.samples {
             var renderXAxis = this.shouldRenderAxis(this.xAxisProperties);
             var renderY1Axis = this.shouldRenderAxis(this.yAxisProperties);
 
-            var width = viewport.width - (margin.left + margin.right);
             var mainAxisScale;
             this.isXScrollBarVisible = false;
             this.isYScrollBarVisible = false;
@@ -1447,7 +1469,7 @@ module powerbi.visuals.samples {
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
 
-            this.calculateAxes(viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
 
             var doneWithMargins = false,
                 maxIterations = 2,
@@ -1456,7 +1478,7 @@ module powerbi.visuals.samples {
             while (!doneWithMargins && numIterations < maxIterations) {
                 numIterations++;
                 var tickLabelMargins = AxisHelper.getTickLabelMargins(
-                    { width: width, height: viewport.height }, this.leftRightMarginLimit,
+                    { width: this.viewportIn.width, height: this.viewport.height }, this.leftRightMarginLimit,
                     TextMeasurementService.measureSvgTextWidth, TextMeasurementService.measureSvgTextHeight, { x: this.xAxisProperties, y1: this.yAxisProperties },
                     this.bottomMarginLimit, EnhancedScatterChart.TextProperties,
                     this.isXScrollBarVisible || this.isYScrollBarVisible, showY1OnRight,
@@ -1468,11 +1490,17 @@ module powerbi.visuals.samples {
                     xMax = tickLabelMargins.xMax;
 
                 maxMainYaxisSide += 10;
-                if (showY1OnRight && renderY1Axis)
-                    maxSecondYaxisSide += 15;
+                maxSecondYaxisSide += 10;
                 xMax += 12;
+                if (showY1OnRight && renderY1Axis) {
+                    maxSecondYaxisSide += 20;
+                }
 
-                if (this.hideAxisLabels(legendMargins)) {
+                if (!showY1OnRight && renderY1Axis) {
+                    maxMainYaxisSide += 20;
+                }
+
+                if (this.hideAxisLabels()) {
                     this.xAxisProperties.axisLabel = null;
                     this.yAxisProperties.axisLabel = null;
                 }
@@ -1491,17 +1519,14 @@ module powerbi.visuals.samples {
                 if (axisLabels.y2 != null)
                     maxSecondYaxisSide += 20;
 
-                margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
-                margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
-                margin.bottom = xMax;
-                this.margin = margin;
-
-                width = viewport.width - (margin.left + margin.right);
+                this.margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
+                this.margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
+                this.margin.bottom = xMax;
 
                 // re-calculate the axes with the new margins
                 var previousTickCountY1 = this.yAxisProperties.values.length;
 
-                this.calculateAxes(viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+                this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
 
                 // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again
                 // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
@@ -1511,7 +1536,7 @@ module powerbi.visuals.samples {
             // we have to do the above process again since changes are made to viewport.
             
             if (this.data.backdrop && this.data.backdrop.show && (this.data.backdrop.url !== undefined)) {
-                viewport = this.adjustViewportbyBackdrop(viewport);
+                this.adjustViewportbyBackdrop();
 
                 doneWithMargins = false;
                 maxIterations = 2;
@@ -1520,7 +1545,7 @@ module powerbi.visuals.samples {
                 while (!doneWithMargins && numIterations < maxIterations) {
                     numIterations++;
                     var tickLabelMargins = AxisHelper.getTickLabelMargins(
-                        { width: width, height: viewport.height }, this.leftRightMarginLimit,
+                        { width: this.viewportIn.width, height: this.viewport.height }, this.leftRightMarginLimit,
                         TextMeasurementService.measureSvgTextWidth, TextMeasurementService.measureSvgTextHeight, { x: this.xAxisProperties, y1: this.yAxisProperties },
                         this.bottomMarginLimit, EnhancedScatterChart.TextProperties,
                         this.isXScrollBarVisible || this.isYScrollBarVisible, showY1OnRight,
@@ -1536,7 +1561,7 @@ module powerbi.visuals.samples {
                         maxSecondYaxisSide += 15;
                     xMax += 12;
 
-                    if (this.hideAxisLabels(legendMargins)) {
+                    if (this.hideAxisLabels()) {
                         this.xAxisProperties.axisLabel = null;
                         this.yAxisProperties.axisLabel = null;
                     }
@@ -1555,17 +1580,14 @@ module powerbi.visuals.samples {
                     if (axisLabels.y2 != null)
                         maxSecondYaxisSide += 20;
 
-                    margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
-                    margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
-                    margin.bottom = xMax;
-                    this.margin = margin;
-
-                    width = viewport.width - (margin.left + margin.right);
+                    this.margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
+                    this.margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
+                    this.margin.bottom = xMax;
 
                     // re-calculate the axes with the new margins
                     var previousTickCountY1 = this.yAxisProperties.values.length;
 
-                    this.calculateAxes(viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+                    this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
 
                     // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again
                     // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
@@ -1574,18 +1596,15 @@ module powerbi.visuals.samples {
                 }
             }
 
-            this.renderChart(mainAxisScale, this.xAxisProperties, this.yAxisProperties, width, tickLabelMargins, chartHasAxisLabels, axisLabels, viewport, suppressAnimations);
+            this.renderChart(mainAxisScale, this.xAxisProperties, this.yAxisProperties, tickLabelMargins, chartHasAxisLabels, axisLabels, suppressAnimations);
 
-            this.updateAxis(viewport);
+            this.updateAxis();
 
             if (!this.data)
                 return;
 
             var data = this.data;
             var dataPoints = this.data.dataPoints;
-
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
             
             //this.calculateAxes(viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, {fontFamily: 'wf_segoe-ui_normal',fontSize: '11'}, true);
             var xScale = this.xAxisProperties.scale;
@@ -1593,10 +1612,10 @@ module powerbi.visuals.samples {
 
             var hasSelection = this.interactivityService && this.interactivityService.hasSelection();
 
-            this.mainGraphicsContext.attr('width', width)
-                .attr('height', height);
+            this.mainGraphicsContext.attr('width', this.viewportIn.width)
+                .attr('height', this.viewportIn.height);
 
-            var sortedData = dataPoints.sort(function(a, b) {
+            var sortedData = dataPoints.sort(function (a, b) {
                 return b.radius.sizeMeasure ? (b.radius.sizeMeasure.values[b.radius.index] - a.radius.sizeMeasure.values[a.radius.index]) : 0;
             });
 
@@ -1604,8 +1623,8 @@ module powerbi.visuals.samples {
             var scatterMarkers = this.drawScatterMarkers(sortedData, hasSelection, data.sizeRange, duration);
 
             if (this.data.dataLabelsSettings.show) {
-                var layout = dataLabelUtils.getScatterChartLabelLayout(xScale, yScale, this.data.dataLabelsSettings, viewport, data.sizeRange);
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.currentViewport, !suppressAnimations, duration);
+                var layout = dataLabelUtils.getScatterChartLabelLayout(xScale, yScale, this.data.dataLabelsSettings, this.viewport, data.sizeRange);
+                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.viewport, !suppressAnimations, duration);
             }
             else {
                 dataLabelUtils.cleanDataLabels(this.mainGraphicsG);
@@ -1641,7 +1660,6 @@ module powerbi.visuals.samples {
                     this.interactivityService.bind(dataPoints, this.behavior, cbehaviorOptions);
                 }
             }
-            return { dataPoints: data.dataPoints, behaviorOptions, labelDataPoints: null };
         }
 
         private darkenZeroLine(g: D3.Selection): void {
@@ -1672,13 +1690,9 @@ module powerbi.visuals.samples {
             return { solid: { color: '#333' } };
         }
 
-        private renderCrossHair(viewport: IViewport) {
-            var margin = this.margin;
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
+        private renderCrossHair() {
             var xScale = <D3.Scale.LinearScale>this.xAxisProperties.scale;
             var yScale = <D3.Scale.LinearScale>this.yAxisProperties.scale;
-            var that = this;
             this.mainGraphicsG.selectAll(".crosshairCanvas").remove();
             if (this.data.crosshair) {
                 var canvas = this.mainGraphicsG.append("g").attr("class", "crosshairCanvas").attr("id", "crosshairCanvas");
@@ -1710,9 +1724,34 @@ module powerbi.visuals.samples {
 
                 var textRect = crossHair.append("rect").attr("id", "crosshair_rect"); // text label for cross hair
 
+                var addCrossHair = (xCoord, yCoord) => {
+                    // Update horizontal cross hair
+                    hLine.attr("x1", 0)
+                        .attr("y1", yCoord)
+                        .attr("x2", this.viewportIn.width)
+                        .attr("y2", yCoord)
+                        .style("display", "block");
+                    // Update vertical cross hair
+                    vLine.attr("x1", xCoord)
+                        .attr("y1", 0)
+                        .attr("x2", xCoord)
+                        .attr("y2", this.viewportIn.height)
+                        .style("display", "block");
+                    // Update text label
+                    text.attr("transform", "translate(" + (xCoord + 5) + "," + (yCoord - 5) + ")")
+                    //.text("(" + xCoord + " , " + yCoord + ")");
+                        .text("(" + Math.round(xScale.invert(xCoord) * 100) / 100 + " , " + Math.round(yScale.invert(yCoord) * 100) / 100 + ")");
+                    var bbox = (<SVGTextElement>text.node()).getBBox();
+                    textRect.attr("x", (xCoord + 5) + bbox.x)
+                        .attr("y", (yCoord - 5) + bbox.y)
+                        .attr("width", bbox.width)
+                        .attr("height", bbox.height)
+                        .style({ 'fill': 'white', 'fill-opacity': 0.5 });
+                };
+
                 var rect = canvas.append("rect")
-                    .style('visibility', function() {
-                        if (that.data.crosshair === true) {
+                    .style('visibility', () => {
+                        if (this.data.crosshair === true) {
                             return 'visible';
                         } else {
                             return 'hidden';
@@ -1721,82 +1760,53 @@ module powerbi.visuals.samples {
                     .style('fill-opacity', 0)
                     .attr('x', 0)
                     .attr('y', 0)
-                    .attr('width', width)
-                    .attr('height', height);
+                    .attr('width', this.viewportIn.width)
+                    .attr('height', this.viewportIn.height);
 
-                rect.on("mousemove", function(e) {
-                        //var xCoord = d3.mouse(this)[0],
-                        //    yCoord = d3.mouse(this)[1];
-                        var xScale = 1;
-                        var yScale = 1;
-                        var container = d3.select(".displayArea");
-                        if (container) {
-                            var transform = container.style("transform");
-                            if (transform && transform.indexOf('(') >= 0) {
-                                var str = transform.split("(")[1];
-                                xScale = Number(str.split(", ")[0]);
-                                yScale = Number(str.split(", ")[3]);
-                            }
+                rect.on("mousemove", function (e) {
+                    //var xCoord = d3.mouse(this)[0],
+                    //    yCoord = d3.mouse(this)[1];
+                    var xScale = 1;
+                    var yScale = 1;
+                    var container = d3.select(".displayArea");
+                    if (container) {
+                        var transform = container.style("transform");
+                        if (transform && transform.indexOf('(') >= 0) {
+                            var str = transform.split("(")[1];
+                            xScale = Number(str.split(", ")[0]);
+                            yScale = Number(str.split(", ")[3]);
                         }
+                    }
 
-                        var xCoord = (d3.event.x - this.getBoundingClientRect().left) / xScale;
-                        var yCoord = (d3.event.y - this.getBoundingClientRect().top) / yScale;
-                        addCrossHair(xCoord, yCoord);
-                    })
-                    .on("mouseover", function() {
+                    var xCoord = (d3.event.x - this.getBoundingClientRect().left) / xScale;
+                    var yCoord = (d3.event.y - this.getBoundingClientRect().top) / yScale;
+                    addCrossHair(xCoord, yCoord);
+                })
+                    .on("mouseover", () => {
                         vLine.style("display", "block");
                         hLine.style("display", "block");
                         text.style("display", "block");
                     })
-                    .on("mouseout", function() {
+                    .on("mouseout", () => {
                         vLine.style("display", "none");
                         hLine.style("display", "none");
                         text.style("display", "none");
                     });
-
-                function addCrossHair(xCoord, yCoord) {
-                    // Update horizontal cross hair
-                    hLine.attr("x1", 0)
-                        .attr("y1", yCoord)
-                        .attr("x2", width)
-                        .attr("y2", yCoord)
-                        .style("display", "block");
-                    // Update vertical cross hair
-                    vLine.attr("x1", xCoord)
-                        .attr("y1", 0)
-                        .attr("x2", xCoord)
-                        .attr("y2", height)
-                        .style("display", "block");
-                    // Update text label
-                    text.attr("transform", "translate(" + (xCoord + 5) + "," + (yCoord - 5) + ")")
-                        //.text("(" + xCoord + " , " + yCoord + ")");
-                        .text("(" + Math.round(xScale.invert(xCoord)*100)/100 + " , " + Math.round(yScale.invert(yCoord)*100)/100 + ")");
-                    var bbox = (<SVGTextElement>text.node()).getBBox();
-                    textRect.attr("x", (xCoord + 5)+bbox.x)
-                    .attr("y", (yCoord - 5)+bbox.y)
-                    .attr("width", bbox.width)
-                    .attr("height", bbox.height)
-                    .style({'fill':'white', 'fill-opacity':0.5});
-                }
             }
         }
 
-        private renderBackground(viewport: IViewport){
-            var that = this;
-            var margin = this.margin;
-            var width = viewport.width- (margin.left + margin.right);
-            var height = viewport.height- (margin.top + margin.bottom);
-            if(this.data.backdrop && this.data.backdrop.show && (this.data.backdrop.url!==undefined)){
+        private renderBackground() {
+            if (this.data.backdrop && this.data.backdrop.show && (this.data.backdrop.url !== undefined)) {
                 this.backgroundGraphicsContext
-                    .attr("xlink:href", that.data.backdrop.url)
-                    .attr('x',0)
-                    .attr('y',0)
-                    .attr('width', width)
-                    .attr('height', height);
+                    .attr("xlink:href", this.data.backdrop.url)
+                    .attr('x', 0)
+                    .attr('y', 0)
+                    .attr('width', this.viewportIn.width)
+                    .attr('height', this.viewportIn.height);
             } else {
                 this.backgroundGraphicsContext
-                    .attr('width',0)
-                    .attr('height',0);
+                    .attr('width', 0)
+                    .attr('height', 0);
             }
         }
 
@@ -1804,11 +1814,9 @@ module powerbi.visuals.samples {
             mainAxisScale: any,
             xAxis: IAxisProperties,
             yAxis: IAxisProperties,
-            width: number,
             tickLabelMargins: any,
             chartHasAxisLabels: boolean,
             axisLabels: ChartAxesLabels,
-            viewport: IViewport,
             suppressAnimations: boolean,
             scrollScale?: any,
             extent?: number[]) {
@@ -1817,7 +1825,7 @@ module powerbi.visuals.samples {
             var leftRightMarginLimit = this.leftRightMarginLimit;
             var duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
 
-            this.renderBackground(viewport);
+            this.renderBackground();
             //hide show x-axis here
             if (this.shouldRenderAxis(xAxis)) {
                 xAxis.axis.orient("bottom");
@@ -1869,7 +1877,7 @@ module powerbi.visuals.samples {
                 var yAxisOrientation = this.yAxisOrientation;
 
                 yAxis.axis
-                    .tickSize(-width)
+                    .tickSize(-this.viewportIn.width)
                     .tickPadding(10)
                     .orient(yAxisOrientation.toLowerCase());
 
@@ -1915,22 +1923,22 @@ module powerbi.visuals.samples {
                 var hideYAxisTitle = !this.shouldRenderAxis(yAxis, "showAxisTitle");
                 var hideY2AxisTitle = this.valueAxisProperties && this.valueAxisProperties["secShowAxisTitle"] != null && this.valueAxisProperties["secShowAxisTitle"] === false;
 
-                this.renderAxesLabels(axisLabels, this.legendMargins.height, viewport, hideXAxisTitle, hideYAxisTitle, hideY2AxisTitle);
+                this.renderAxesLabels(axisLabels, this.legendViewport.height, hideXAxisTitle, hideYAxisTitle, hideY2AxisTitle);
             }
             else {
                 this.axisGraphicsContext.selectAll('.xAxisLabel').remove();
                 this.axisGraphicsContext.selectAll('.yAxisLabel').remove();
             }
-            this.renderCrossHair(viewport);
+            this.renderCrossHair();
         }
 
-        private renderAxesLabels(axisLabels: ChartAxesLabels, legendMargin: number, viewport: IViewport, hideXAxisTitle: boolean, hideYAxisTitle: boolean, hideY2AxisTitle: boolean): void {
+        private renderAxesLabels(axisLabels: ChartAxesLabels, legendMargin: number, hideXAxisTitle: boolean, hideYAxisTitle: boolean, hideY2AxisTitle: boolean): void {
             this.axisGraphicsContext.selectAll('.xAxisLabel').remove();
             this.axisGraphicsContext.selectAll('.yAxisLabel').remove();
 
             var margin = this.margin;
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height;
+            var width = this.viewportIn.width;
+            var height = this.viewport.height;
             var fontSize = EnhancedScatterChart.FontSize;
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
@@ -1940,11 +1948,11 @@ module powerbi.visuals.samples {
                     .style("text-anchor", "middle")
                     .text(axisLabels.x)
                     .call((text: D3.Selection) => {
-                        text.each(function() {
+                        text.each(function () {
                             var text = d3.select(this);
                             text.attr({
                                 "class": "xAxisLabel",
-                                "transform": SVGUtil.translate(width / 2, height - fontSize)
+                                "transform": SVGUtil.translate(width / 2, height - fontSize - 2)
                             });
                         });
                     });
@@ -1959,7 +1967,7 @@ module powerbi.visuals.samples {
                     .style("text-anchor", "middle")
                     .text(axisLabels.y)
                     .call((text: D3.Selection) => {
-                        text.each(function() {
+                        text.each(function () {
                             var text = d3.select(this);
                             text.attr({
                                 "class": "yAxisLabel",
@@ -1981,7 +1989,7 @@ module powerbi.visuals.samples {
                     .style("text-anchor", "middle")
                     .text(axisLabels.y2)
                     .call((text: D3.Selection) => {
-                        text.each(function() {
+                        text.each(function () {
                             var text = d3.select(this);
                             text.attr({
                                 "class": "yAxisLabel",
@@ -1999,52 +2007,48 @@ module powerbi.visuals.samples {
             }
         }
 
-        private updateAxis(viewport: IViewport): void {
-            this.adjustMargins(viewport);
-            var margin = this.margin;
-
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
+        private updateAxis(): void {
+            this.adjustMargins();
 
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
 
             this.xAxisGraphicsContext
-                .attr('transform', SVGUtil.translate(0, height));
+                .attr('transform', SVGUtil.translate(0, this.viewportIn.height));
 
             this.y1AxisGraphicsContext
-                .attr('transform', SVGUtil.translate(showY1OnRight ? width : 0, 0));
+                .attr('transform', SVGUtil.translate(showY1OnRight ? this.viewportIn.width : 0, 0));
 
             this.svg.attr({
-                'width': viewport.width,
-                'height': viewport.height
+                'width': this.viewport.width,
+                'height': this.viewport.height
             });
 
             this.svgScrollable.attr({
-                'width': viewport.width,
-                'height': viewport.height
+                'width': this.viewport.width,
+                'height': this.viewport.height
             });
 
             this.svgScrollable.attr({
                 'x': 0
             });
 
-            this.axisGraphicsContext.attr('transform', SVGUtil.translate(margin.left, margin.top));
-            this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(margin.left, margin.top));
+            this.axisGraphicsContext.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top));
+            this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top));
 
             if (this.isXScrollBarVisible) {
                 this.svgScrollable.attr({
                     'x': this.margin.left
                 });
-                this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, margin.top));
-                this.svgScrollable.attr('width', width);
-                this.svg.attr('width', viewport.width)
-                    .attr('height', viewport.height + this.ScrollBarWidth);
+                this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, this.margin.top));
+                this.svgScrollable.attr('width', this.viewportIn.width);
+                this.svg.attr('width', this.viewport.width)
+                    .attr('height', this.viewport.height + this.ScrollBarWidth);
             }
             else if (this.isYScrollBarVisible) {
-                this.svgScrollable.attr('height', height + margin.top);
-                this.svg.attr('width', viewport.width + this.ScrollBarWidth)
-                    .attr('height', viewport.height);
+                this.svgScrollable.attr('height', this.viewportIn.height + this.margin.top);
+                this.svg.attr('width', this.viewport.width + this.ScrollBarWidth)
+                    .attr('height', this.viewport.height);
             }
         }
 
@@ -2093,9 +2097,11 @@ module powerbi.visuals.samples {
             }
         }
 
-        private hideAxisLabels(legendMargins: IViewport): boolean {
+        private hideAxisLabels(): boolean {
             if (this.cartesianSmallViewPortProperties) {
-                if (this.cartesianSmallViewPortProperties.hideAxesOnSmallViewPort && ((this.currentViewport.height + legendMargins.height) < this.cartesianSmallViewPortProperties.MinHeightAxesVisible) && !this.options.interactivity.isInteractiveLegend) {
+                if (this.cartesianSmallViewPortProperties.hideAxesOnSmallViewPort
+                    && ((this.viewport.height + this.legendViewport.height) < this.cartesianSmallViewPortProperties.MinHeightAxesVisible)
+                    && !this.options.interactivity.isInteractiveLegend) {
                     return true;
                 }
             }
@@ -2106,7 +2112,6 @@ module powerbi.visuals.samples {
             var xScale = this.xAxisProperties.scale;
             var yScale = this.yAxisProperties.scale;
             var shouldEnableFill = (!sizeRange || !sizeRange.min) && this.data.fillPoint;
-            var that = this;
 
             var markers;
             var useCustomColor = this.data.useCustomColor;
@@ -2120,9 +2125,9 @@ module powerbi.visuals.samples {
                     .style({
                         'stroke-opacity': (d: EnhancedScatterChartDataPoint) => ScatterChart.getBubbleOpacity(d, hasSelection),
                         'stroke-width': '1px',
-                        'stroke': function(d: EnhancedScatterChartDataPoint) {
+                        'stroke': (d: EnhancedScatterChartDataPoint) => {
                             var color = useCustomColor ? d.colorFill : d.fill;
-                            if (that.data.outline) {
+                            if (this.data.outline) {
                                 return d3.rgb(color).darker();
                             } else {
                                 return d3.rgb(color);
@@ -2132,48 +2137,48 @@ module powerbi.visuals.samples {
                         'fill-opacity': (d: EnhancedScatterChartDataPoint) => (d.size != null || shouldEnableFill) ? ScatterChart.getBubbleOpacity(d, hasSelection) : 0,
                     })
                     .attr("d", (d: EnhancedScatterChartDataPoint) => {
-                        var r = ScatterChart.getBubbleRadius(d.radius, sizeRange, that.currentViewport);
+                        var r = ScatterChart.getBubbleRadius(d.radius, sizeRange, this.viewport);
                         var area = 4 * r * r;
                         return d.shapeSymbolType(area);
                     })
                     .transition()
-                    .duration(function(d) {
-                        if (that.keyArray.indexOf(d.identity.getKey()) >= 0) {
+                    .duration((d) => {
+                        if (this.keyArray.indexOf(d.identity.getKey()) >= 0) {
                             return duration;
                         } else {
                             return 0;
                         }
                     })
-                    .attr("transform", function(d) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ") rotate(" + d.rotation + ")"; });
+                    .attr("transform", function (d) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ") rotate(" + d.rotation + ")"; });
             } else {
                 this.mainGraphicsContext.selectAll(EnhancedScatterChart.DotClasses.selector).remove();
                 markers = this.mainGraphicsContext.selectAll(EnhancedScatterChart.ImageClasses.selector).data(scatterData, (d: EnhancedScatterChartDataPoint) => d.identity.getKey());
                 markers.enter().append("svg:image")
                     .classed(EnhancedScatterChart.ImageClasses.class, true).attr('id', 'markerimage');
                 markers
-                    .attr("xlink:href", function(d) {
+                    .attr("xlink:href", (d) => {
                         if (d.svgurl !== undefined && d.svgurl != null && d.svgurl !== "") {
                             return d.svgurl;
                         } else {
-                            return that.svgDefaultImage;
+                            return this.svgDefaultImage;
                         }
                     })
-                    .attr("width", function(d) {
-                        return ScatterChart.getBubbleRadius(d.radius, sizeRange, that.currentViewport) * 2;
+                    .attr("width", (d) => {
+                        return ScatterChart.getBubbleRadius(d.radius, sizeRange, this.viewport) * 2;
                     })
-                    .attr("height", function(d) {
-                        return ScatterChart.getBubbleRadius(d.radius, sizeRange, that.currentViewport) * 2;
+                    .attr("height", (d) => {
+                        return ScatterChart.getBubbleRadius(d.radius, sizeRange, this.viewport) * 2;
                     })
                     .transition()
-                    .duration(function(d) {
-                        if (that.keyArray.indexOf(d.identity.getKey()) >= 0) {
+                    .duration((d) => {
+                        if (this.keyArray.indexOf(d.identity.getKey()) >= 0) {
                             return duration;
                         } else {
                             return 0;
                         }
                     })
-                    .attr("transform", function(d) {
-                        var radius = ScatterChart.getBubbleRadius(d.radius, sizeRange, that.currentViewport);
+                    .attr("transform", (d) => {
+                        var radius = ScatterChart.getBubbleRadius(d.radius, sizeRange, this.viewport);
                         return "translate(" + (xScale(d.x) - radius) + "," + (yScale(d.y) - radius) + ") rotate(" + d.rotation + "," + radius + "," + radius + ")";
                     });
             }
@@ -2188,16 +2193,14 @@ module powerbi.visuals.samples {
         }
 
         public calculateAxes(
-            viewport: IViewport,
-            margin: IMargin,
             categoryAxisProperties: DataViewObject,
             valueAxisProperties: DataViewObject,
             textProperties: TextProperties,
             scrollbarVisible: boolean): IAxisProperties[] {
 
             var visualOptions: CalculateScaleAndDomainOptions = {
-                viewport: viewport,
-                margin: margin,
+                viewport: this.viewport,
+                margin: this.margin,
                 forcedXDomain: [categoryAxisProperties ? categoryAxisProperties['start'] : null, categoryAxisProperties ? categoryAxisProperties['end'] : null],
                 forceMerge: valueAxisProperties && valueAxisProperties['secShow'] === false,
                 showCategoryAxisLabel: false,
@@ -2214,7 +2217,7 @@ module powerbi.visuals.samples {
 
             visualOptions.showValueAxisLabel = true;
 
-            var width = viewport.width - (margin.left + margin.right);
+            var width = this.viewport.width - (this.margin.left + this.margin.right);
 
             var axes = this.calculateAxesProperties(visualOptions);
             axes[0].willLabelsFit = AxisHelper.LabelLayoutStrategy.willLabelsFit(
@@ -2225,7 +2228,7 @@ module powerbi.visuals.samples {
 
             // If labels do not fit and we are not scrolling, try word breaking
             axes[0].willLabelsWordBreak = (!axes[0].willLabelsFit && !scrollbarVisible) && AxisHelper.LabelLayoutStrategy.willLabelsWordBreak(
-                axes[0], margin, width, TextMeasurementService.measureSvgTextWidth,
+                axes[0], this.margin, width, TextMeasurementService.measureSvgTextWidth,
                 TextMeasurementService.estimateSvgTextHeight, TextMeasurementService.getTailoredTextOrDefault,
                 textProperties);
             return axes;
@@ -2234,14 +2237,9 @@ module powerbi.visuals.samples {
         public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] {
             var data = this.data;
             var dataPoints = data.dataPoints;
-            var viewport = this.currentViewport = options.viewport;
-            var margin = options.margin;
+            this.margin = options.margin;
+            this.viewport = options.viewport;
 
-            this.currentViewport = viewport;
-            this.margin = margin;
-
-            var width = viewport.width - (margin.left + margin.right);
-            var height = viewport.height - (margin.top + margin.bottom);
             var minY = 0,
                 maxY = 10,
                 minX = 0,
@@ -2257,7 +2255,7 @@ module powerbi.visuals.samples {
             var combinedXDomain = AxisHelper.combineDomain(options.forcedXDomain, xDomain);
 
             this.xAxisProperties = AxisHelper.createAxis({
-                pixelSpan: width,
+                pixelSpan: this.viewportIn.width,
                 dataDomain: combinedXDomain,
                 metaDataColumn: data.xCol,
                 formatStringProp: scatterChartProps.general.formatString,
@@ -2269,13 +2267,13 @@ module powerbi.visuals.samples {
                 isCategoryAxis: true, //scatter doesn't have a categorical axis, but this is needed for the pane to react correctly to the x-axis toggle one/off
                 scaleType: options.categoryAxisScaleType
             });
-            this.xAxisProperties.axis.tickSize(-height, 0);
+            this.xAxisProperties.axis.tickSize(-this.viewportIn.height, 0);
             this.xAxisProperties.axisLabel = this.data.axesLabels.x;
 
             var combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [minY, maxY]);
 
             this.yAxisProperties = AxisHelper.createAxis({
-                pixelSpan: height,
+                pixelSpan: this.viewportIn.height,
                 dataDomain: combinedDomain,
                 metaDataColumn: data.yCol,
                 formatStringProp: scatterChartProps.general.formatString,
