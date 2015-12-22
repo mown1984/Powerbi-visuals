@@ -70,7 +70,7 @@ module powerbi.visuals.samples {
         category: string;
         colorFill?: string;
         svgurl?: string;
-        shapeType?: string;
+        shapeSymbolType?: (number) => string;
         rotation: number;
         backdrop?: string;
         xStart?: number;
@@ -180,6 +180,7 @@ module powerbi.visuals.samples {
         private behavior: IInteractiveBehavior;
         private animator: IGenericAnimator;
         private keyArray: string[];
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
@@ -244,7 +245,7 @@ module powerbi.visuals.samples {
                     displayName: 'Y End',
                 }
             ],
-            
+
             dataViewMappings: [{
                 conditions: [{
                     'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 },
@@ -484,6 +485,111 @@ module powerbi.visuals.samples {
                 }
             }
         };
+
+        private static getCustomSymbolType(shape: any): (number) => string {
+            var customSymbolTypes = d3.map({
+                "circle": (size) => {
+                    var r = Math.sqrt(size / Math.PI);
+                    return "M0," + r + "A" + r + "," + r + " 0 1,1 0," + (-r) + "A" + r + "," + r + " 0 1,1 0," + r + "Z";
+                },
+
+                "cross": function (size) {
+                    var r = Math.sqrt(size / 5) / 2;
+                    return "M" + -3 * r + "," + -r
+                        + "H" + -r + "V" + -3 * r + "H" + r + "V" + -r + "H" + 3 * r + "V" + r + "H" + r + "V" + 3 * r + "H" + -r + "V" + r + "H" + -3 * r + "Z";
+                },
+
+                "diamond": (size) => {
+                    var ry = Math.sqrt(size / (2 * Math.tan(Math.PI / 6))),
+                        rx = ry * Math.tan(Math.PI / 6);
+                    return "M0," + -ry
+                        + "L" + rx + ",0"
+                        + " 0," + ry
+                        + " " + -rx + ",0"
+                        + "Z";
+                },
+
+                "square": (size) => {
+                    var r = Math.sqrt(size) / 2;
+                    return "M" + -r + "," + -r
+                        + "L" + r + "," + -r
+                        + " " + r + "," + r
+                        + " " + -r + "," + r
+                        + "Z";
+                },
+
+                "triangle-up": (size) => {
+                    var rx = Math.sqrt(size / Math.sqrt(3)),
+                        ry = rx * Math.sqrt(3) / 2;
+                    return "M0," + -ry
+                        + "L" + rx + "," + ry
+                        + " " + -rx + "," + ry
+                        + "Z";
+                },
+
+                "triangle-down": (size) => {
+                    var rx = Math.sqrt(size / Math.sqrt(3)),
+                        ry = rx * Math.sqrt(3) / 2;
+                    return "M0," + ry
+                        + "L" + rx + "," + -ry
+                        + " " + -rx + "," + -ry
+                        + "Z";
+                },
+
+                'star': (size) => {
+                    var outerRadius = Math.sqrt(size / 2);
+                    var innerRadius = Math.sqrt(size / 10);
+                    var results = "";
+                    var angle = Math.PI / 5;
+                    for (var i = 0; i < 10; i++) {
+                        // Use outer or inner radius depending on what iteration we are in.
+                        var r = (i & 1) === 0 ? outerRadius : innerRadius;
+                        var currX = Math.cos(i * angle) * r;
+                        var currY = Math.sin(i * angle) * r;
+                        // Our first time we simply append the coordinates, subsequet times
+                        // we append a ", " to distinguish each coordinate pair.
+                        if (i === 0) {
+                            results = "M" + currX + "," + currY + "L";
+                        } else {
+                            results += " " + currX + "," + currY;
+                        }
+                    }
+                    return results + "Z";
+                },
+
+                'hexagon': (size) => {
+                    var r = Math.sqrt(size / (6 * Math.sqrt(3)));
+                    var r2 = Math.sqrt(size / (2 * Math.sqrt(3)));
+
+                    return "M0," + (2 * r) + "L" + (-r2) + "," + r + " " + (-r2) + "," + (-r) + " 0," + (-2 * r) + " " + r2 + "," + (-r) + " " + r2 + "," + r + "Z";
+                },
+
+                'x': (size) => {
+                    var r = Math.sqrt(size / 10);
+                    return "M0," + r + "L" + (-r) + "," + 2 * r + " " + (-2 * r) + "," + r + " " + (-r) + ",0 " + (-2 * r) + "," + (-r) + " " + (-r) + "," + (-2 * r) + " 0," + (-r) + " " + r + "," + (-2 * r) + " " + (2 * r) + "," + (-r) + " " + r + ",0 " + (2 * r) + "," + r + " " + r + "," + (2 * r) + "Z";
+                },
+
+                'uparrow': (size) => {
+                    var r = Math.sqrt(size / 12);
+                    return "M" + r + "," + (3 * r) + "L" + (-r) + "," + (3 * r) + " " + (-r) + "," + (-r) + " " + (-2 * r) + "," + (-r) + " 0," + (-3 * r) + " " + (2 * r) + "," + (-r) + " " + r + "," + (-r) + "Z";
+                },
+
+                'downarrow': (size) => {
+                    var r = Math.sqrt(size / 12);
+                    return "M0," + (3 * r) + "L" + (-2 * r) + "," + r + " " + (-r) + "," + r + " " + (-r) + "," + (-3 * r) + " " + r + "," + (-3 * r) + " " + r + "," + r + " " + (2 * r) + "," + r + "Z";
+                }
+            });
+
+            var defaultValue = customSymbolTypes.entries()[0].value;
+            if (!shape) {
+                return defaultValue;
+            } else if (isNaN(shape)) {
+                return customSymbolTypes[shape && shape.toString().toLowerCase()] || defaultValue;
+            } else {
+                var result = customSymbolTypes.entries()[Math.floor(shape)];
+                return result ? result.value : defaultValue;
+            }
+        }
 
         public init(options: VisualInitOptions): void {
             this.options = options;
@@ -1030,11 +1136,11 @@ module powerbi.visuals.samples {
                     var measureYStart = ScatterChart.getMeasureValue(indicies.yStart, seriesValues);
                     var measureYEnd = ScatterChart.getMeasureValue(indicies.yEnd, seriesValues);
 
-                    var xVal = measureX && measureX.values ? measureX.values[categoryIdx] : null;
-                    var yVal = measureY && measureY.values ? measureY.values[categoryIdx] : 0;
+                    var xVal = measureX && measureX.values && !isNaN(measureX.values[categoryIdx]) ? measureX.values[categoryIdx] : null;
+                    var yVal = measureY && measureY.values && !isNaN(measureY.values[categoryIdx]) ? measureY.values[categoryIdx] : 0;
                     var size = measureSize && measureSize.values ? measureSize.values[categoryIdx] : null;
                     var colorFill = measureColorFill && measureColorFill.values ? measureColorFill.values[categoryIdx] : null;
-                    var shape = measureShape && measureShape.values ? measureShape.values[categoryIdx] : "circle";
+                    var shapeSymbolType = EnhancedScatterChart.getCustomSymbolType(measureShape && measureShape.values && measureShape.values[categoryIdx]);
                     var image = measureImage && measureImage.values ? measureImage.values[categoryIdx] : null;
                     var rotation = measureRotation && measureRotation.values ? measureRotation.values[categoryIdx] : 0;
                     var backdrop = measureBackdrop && measureBackdrop.values ? measureBackdrop.values[categoryIdx] : null;
@@ -1122,7 +1228,7 @@ module powerbi.visuals.samples {
                         tooltipInfo: tooltipInfo,
                         labelFill: labelSettings.labelColor,
                         colorFill: colorFill,
-                        shapeType: shape,
+                        shapeSymbolType: shapeSymbolType,
                         svgurl: image,
                         rotation: rotation,
                         backdrop: backdrop,
@@ -1619,25 +1725,24 @@ module powerbi.visuals.samples {
                     .attr('height', height);
 
                 rect.on("mousemove", function(e) {
-                    //var xCoord = d3.mouse(this)[0],
-                    //    yCoord = d3.mouse(this)[1];
-                    var xScale = 1;
-                    var yScale = 1;
-                    var container = d3.select(".displayArea");
-                    if (container) {
-                        var transform = container.style("transform");
-                        if (transform && transform.indexOf('(') >= 0) {
-                            var str = transform.split("(")[1];
-                            xScale = Number(str.split(", ")[0]);
-                            yScale = Number(str.split(", ")[3]);
+                        //var xCoord = d3.mouse(this)[0],
+                        //    yCoord = d3.mouse(this)[1];
+                        var xScale = 1;
+                        var yScale = 1;
+                        var container = d3.select(".displayArea");
+                        if (container) {
+                            var transform = container.style("transform");
+                            if (transform && transform.indexOf('(') >= 0) {
+                                var str = transform.split("(")[1];
+                                xScale = Number(str.split(", ")[0]);
+                                yScale = Number(str.split(", ")[3]);
+                            }
                         }
-                    }
 
-                    var xCoord = (d3.event.x - this.getBoundingClientRect().left) / xScale;
-                    var yCoord = (d3.event.y - this.getBoundingClientRect().top) / yScale;
-                    addCrossHair(xCoord, yCoord);
-
-                })
+                        var xCoord = (d3.event.x - this.getBoundingClientRect().left) / xScale;
+                        var yCoord = (d3.event.y - this.getBoundingClientRect().top) / yScale;
+                        addCrossHair(xCoord, yCoord);
+                    })
                     .on("mouseover", function() {
                         vLine.style("display", "block");
                         hLine.style("display", "block");
@@ -1649,30 +1754,31 @@ module powerbi.visuals.samples {
                         text.style("display", "none");
                     });
 
-            function addCrossHair(xCoord, yCoord) {
-                // Update horizontal cross hair
-                hLine.attr("x1", 0)
-                    .attr("y1", yCoord)
-                    .attr("x2", width)
-                    .attr("y2", yCoord)
-                    .style("display", "block");
-                // Update vertical cross hair
-                vLine.attr("x1", xCoord)
-                    .attr("y1", 0)
-                    .attr("x2", xCoord)
-                    .attr("y2", height)
-                    .style("display", "block");
-                // Update text label
-                text.attr("transform", "translate(" + (xCoord + 5) + "," + (yCoord - 5) + ")")
-                    //.text("(" + xCoord + " , " + yCoord + ")");
-                    .text("(" + Math.round(xScale.invert(xCoord)*100)/100 + " , " + Math.round(yScale.invert(yCoord)*100)/100 + ")");
-                var bbox = (<SVGTextElement>text.node()).getBBox();
-                textRect.attr("x", (xCoord + 5)+bbox.x)
-                .attr("y", (yCoord - 5)+bbox.y)
-                .attr("width", bbox.width)
-                .attr("height", bbox.height)
-                .style({'fill':'white', 'fill-opacity':0.5});
-            }}
+                function addCrossHair(xCoord, yCoord) {
+                    // Update horizontal cross hair
+                    hLine.attr("x1", 0)
+                        .attr("y1", yCoord)
+                        .attr("x2", width)
+                        .attr("y2", yCoord)
+                        .style("display", "block");
+                    // Update vertical cross hair
+                    vLine.attr("x1", xCoord)
+                        .attr("y1", 0)
+                        .attr("x2", xCoord)
+                        .attr("y2", height)
+                        .style("display", "block");
+                    // Update text label
+                    text.attr("transform", "translate(" + (xCoord + 5) + "," + (yCoord - 5) + ")")
+                        //.text("(" + xCoord + " , " + yCoord + ")");
+                        .text("(" + Math.round(xScale.invert(xCoord)*100)/100 + " , " + Math.round(yScale.invert(yCoord)*100)/100 + ")");
+                    var bbox = (<SVGTextElement>text.node()).getBBox();
+                    textRect.attr("x", (xCoord + 5)+bbox.x)
+                    .attr("y", (yCoord - 5)+bbox.y)
+                    .attr("width", bbox.width)
+                    .attr("height", bbox.height)
+                    .style({'fill':'white', 'fill-opacity':0.5});
+                }
+            }
         }
 
         private renderBackground(viewport: IViewport){
@@ -1682,15 +1788,15 @@ module powerbi.visuals.samples {
             var height = viewport.height- (margin.top + margin.bottom);
             if(this.data.backdrop && this.data.backdrop.show && (this.data.backdrop.url!==undefined)){
                 this.backgroundGraphicsContext
-                .attr("xlink:href", that.data.backdrop.url)
-                .attr('x',0)
-                .attr('y',0)
-                .attr('width', width)
-                .attr('height', height);
-            }else{
+                    .attr("xlink:href", that.data.backdrop.url)
+                    .attr('x',0)
+                    .attr('y',0)
+                    .attr('width', width)
+                    .attr('height', height);
+            } else {
                 this.backgroundGraphicsContext
-                .attr('width',0)
-                .attr('height',0);
+                    .attr('width',0)
+                    .attr('height',0);
             }
         }
 
@@ -1746,13 +1852,13 @@ module powerbi.visuals.samples {
                 } else {
                     xAxisTextNodes
                         .call(AxisHelper.LabelLayoutStrategy.rotate,
-                        bottomMarginLimit,
-                        TextMeasurementService.svgEllipsis,
-                        !xAxis.willLabelsFit,
-                        bottomMarginLimit === tickLabelMargins.xMax,
-                        xAxis,
-                        this.margin,
-                        this.isXScrollBarVisible || this.isYScrollBarVisible);
+                            bottomMarginLimit,
+                            TextMeasurementService.svgEllipsis,
+                            !xAxis.willLabelsFit,
+                            bottomMarginLimit === tickLabelMargins.xMax,
+                            xAxis,
+                            this.margin,
+                            this.isXScrollBarVisible || this.isYScrollBarVisible);
                 }
             }
             else {
@@ -1792,9 +1898,9 @@ module powerbi.visuals.samples {
                 if (tickLabelMargins.yLeft >= leftRightMarginLimit) {
                     y1AxisGraphicsElement.selectAll('text')
                         .call(AxisHelper.LabelLayoutStrategy.clip,
-                        // Can't use padding space to render text, so subtract that from available space for ellipses calculations
-                        leftRightMarginLimit - 10,
-                        TextMeasurementService.svgEllipsis);
+                            // Can't use padding space to render text, so subtract that from available space for ellipses calculations
+                            leftRightMarginLimit - 10,
+                            TextMeasurementService.svgEllipsis);
                 }
 
                 // TODO: clip (svgEllipsis) the Y2 labels
@@ -2003,7 +2109,6 @@ module powerbi.visuals.samples {
             var that = this;
 
             var markers;
-            var shapeTypesList = ["circle", "cross", "diamond", "square", "triangle-up", "triangle-down", "star", "hexagon", "x", "uparrow", "downarrow"];
             var useCustomColor = this.data.useCustomColor;
             if (this.data.useShape) {
                 this.mainGraphicsContext.selectAll(EnhancedScatterChart.ImageClasses.selector).remove();
@@ -2026,15 +2131,10 @@ module powerbi.visuals.samples {
                         'fill': (d: EnhancedScatterChartDataPoint) => useCustomColor ? d.colorFill : d.fill,
                         'fill-opacity': (d: EnhancedScatterChartDataPoint) => (d.size != null || shouldEnableFill) ? ScatterChart.getBubbleOpacity(d, hasSelection) : 0,
                     })
-                    .attr("d", function(d) {
+                    .attr("d", (d: EnhancedScatterChartDataPoint) => {
                         var r = ScatterChart.getBubbleRadius(d.radius, sizeRange, that.currentViewport);
                         var area = 4 * r * r;
-                        var shapeType = d.shapeType.toLowerCase();
-                        if (shapeTypesList.indexOf(shapeType) >= 0) {
-                            return that.getCustomSymbol(shapeType, area);
-                        } else {
-                            return that.getCustomSymbol('circle', area);
-                        }
+                        return d.shapeSymbolType(area);
                     })
                     .transition()
                     .duration(function(d) {
@@ -2085,97 +2185,6 @@ module powerbi.visuals.samples {
             }
             //console.log(this.keyArray);
             return markers;
-        }
-
-        private getCustomSymbol(type: string, size: number): string {
-            var customSymbolTypes = d3.map({
-                "circle": function(size) {
-                    var r = Math.sqrt(size / Math.PI);
-                    return "M0," + r + "A" + r + "," + r + " 0 1,1 0," + (-r) + "A" + r + "," + r + " 0 1,1 0," + r + "Z";
-                },
-                "cross": function(size) {
-                    var r = Math.sqrt(size / 5) / 2;
-                    return "M" + -3 * r + "," + -r
-                        + "H" + -r + "V" + -3 * r + "H" + r + "V" + -r + "H" + 3 * r + "V" + r + "H" + r + "V" + 3 * r + "H" + -r + "V" + r + "H" + -3 * r + "Z";
-                },
-                "diamond": function(size) {
-                    var ry = Math.sqrt(size / (2 * Math.tan(Math.PI / 6))),
-                        rx = ry * Math.tan(Math.PI / 6);
-                    return "M0," + -ry
-                        + "L" + rx + ",0"
-                        + " 0," + ry
-                        + " " + -rx + ",0"
-                        + "Z";
-                },
-                "square": function(size) {
-                    var r = Math.sqrt(size) / 2;
-                    return "M" + -r + "," + -r
-                        + "L" + r + "," + -r
-                        + " " + r + "," + r
-                        + " " + -r + "," + r
-                        + "Z";
-                },
-                "triangle-down": function(size) {
-                    var rx = Math.sqrt(size / Math.sqrt(3)),
-                        ry = rx * Math.sqrt(3) / 2;
-                    return "M0," + ry
-                        + "L" + rx + "," + -ry
-                        + " " + -rx + "," + -ry
-                        + "Z";
-                },
-                "triangle-up": function(size) {
-                    var rx = Math.sqrt(size / Math.sqrt(3)),
-                        ry = rx * Math.sqrt(3) / 2;
-                    return "M0," + -ry
-                        + "L" + rx + "," + ry
-                        + " " + -rx + "," + ry
-                        + "Z";
-                },
-                'star': function(size) {
-                    var outerRadius = Math.sqrt(size / 2);
-                    var innerRadius = Math.sqrt(size / 10);
-                    var results = "";
-                    var angle = Math.PI / 5;
-                    for (var i = 0; i < 10; i++) {
-                        // Use outer or inner radius depending on what iteration we are in.
-                        var r = (i & 1) === 0 ? outerRadius : innerRadius;
-                        var currX = Math.cos(i * angle) * r;
-                        var currY = Math.sin(i * angle) * r;
-                        // Our first time we simply append the coordinates, subsequet times
-                        // we append a ", " to distinguish each coordinate pair.
-                        if (i === 0) {
-                            results = "M" + currX + "," + currY + "L";
-                        } else {
-                            results += " " + currX + "," + currY;
-                        }
-                    }
-                    return results + "Z";
-                },
-                'hexagon': function(size) {
-                    var r = Math.sqrt(size / (6 * Math.sqrt(3)));
-                    var r2 = Math.sqrt(size / (2 * Math.sqrt(3)));
-
-                    return "M0," + (2 * r) + "L" + (-r2) + "," + r + " " + (-r2) + "," + (-r) +
-                        " 0," + (-2 * r) + " " + r2 + "," + (-r) + " " + r2 + "," + r + "Z";
-                },
-                'x': function(size) {
-                    var r = Math.sqrt(size / 10);
-                    return "M0," + r + "L" + (-r) + "," + 2 * r + " " + (-2 * r) + "," + r + " " + (-r) +
-                        ",0 " + (-2 * r) + "," + (-r) + " " + (-r) + "," + (-2 * r) + " 0," + (-r) + " " + r +
-                        "," + (-2 * r) + " " + (2 * r) + "," + (-r) + " " + r + ",0 " + (2 * r) + "," + r + " " + r + "," + (2 * r) + "Z";
-                },
-                'downarrow': function(size) {
-                    var r = Math.sqrt(size / 12);
-                    return "M0," + (3 * r) + "L" + (-2 * r) + "," + r + " " + (-r) + "," + r + " " + (-r) +
-                        "," + (-3 * r) + " " + r + "," + (-3 * r) + " " + r + "," + r + " " + (2 * r) + "," + r + "Z";
-                },
-                'uparrow': function(size) {
-                    var r = Math.sqrt(size / 12);
-                    return "M" + r + "," + (3 * r) + "L" + (-r) + "," + (3 * r) + " " + (-r) + "," + (-r) +
-                        " " + (-2 * r) + "," + (-r) + " 0," + (-3 * r) + " " + (2 * r) + "," + (-r) + " " + r + "," + (-r) + "Z";
-                }
-            });
-            return customSymbolTypes.get(type)(size);
         }
 
         public calculateAxes(
