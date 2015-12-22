@@ -146,7 +146,8 @@ module powerbi.visuals.samples {
                 dataPoints: StreamDataPoint[][] = [],
                 legendData: LegendData = {
                     dataPoints: [],
-                    title: values[0].source.displayName
+                    title: values[0].source.displayName,
+                    fontSize: parseInt(this.fontSize, 10) * 3 / 4
                 },
                 categoriesValues: any[] = [],
                 value: number = 0,
@@ -161,7 +162,7 @@ module powerbi.visuals.samples {
                         color: colors.getColorByIndex(i).value,
                         icon: LegendIcon.Box,
                         selected: false,
-                        identity: SelectionId.createNull()
+                        identity: SelectionId.createWithId(values[i].identity)
                     });
                 }
 
@@ -264,7 +265,7 @@ module powerbi.visuals.samples {
 
             this.colors = options.style.colorPalette.dataColors;
 
-            this.legend = createLegend(element, false, null);
+            this.legend = createLegend(element, false, null, true);
         }
 
         public update(options: VisualUpdateOptions): void {
@@ -285,6 +286,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
+            this.legend.changeOrientation(LegendPosition.Top);
             this.legend.drawLegend(data.legendData, this.viewport);
 
             var height: number = options.viewport.height - this.margin.top;
