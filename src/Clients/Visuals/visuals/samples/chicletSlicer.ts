@@ -558,7 +558,7 @@ module powerbi.visuals.samples {
         private hostServices: IVisualHostServices;
         private waitingForData: boolean;
         private textProperties: TextProperties = {
-            'fontFamily': 'wf_segoe-ui_normal, helvetica, arial, sans-serif',
+            'fontFamily': 'Tahoma, Verdana, Geneva, sans-serif',
             'fontSize': '14px',
         };
         private static ItemContainer: ClassAndSelector = createClassAndSelector('slicerItemContainer');

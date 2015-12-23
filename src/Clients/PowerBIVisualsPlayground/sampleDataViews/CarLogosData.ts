@@ -39,11 +39,11 @@ module powerbi.visuals.sampleDataViews {
         private sampleData: number[] = [5, 10, 15, 20, 25];
         private categoryValues: string[] = ["BMW", "Mercedes", "Honda", "Toyota", "Ferrari"];
         private carImages: string[] = [
-            "http://www.carfolio.com/images/dbimages/zgas/manufacturers/id/843/bmw-logo.png",
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Mercedes_benz_logo1989.png/120px-Mercedes_benz_logo1989.png",
-            "http://www.rayten.com/wp-content/uploads/2012/02/Honda-logo-1.png",
-            "http://auto-koller.com/images/logos/Toyota_Transparent.gif",
-            "http://a.dlron.us/assets/logos/transparent/Ferrari.png"
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/bmw.png",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/mercedes.png",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/honda.png",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/toyota.gif",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/ferrari.png"
         ];
 
         public getDataViews(): DataView[] {
