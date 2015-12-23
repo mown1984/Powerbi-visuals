@@ -200,6 +200,8 @@
 /// <reference path="visuals/samples/dotPlot.ts"/>
 /// <reference path="visuals/samples/timeline.ts"/>
 /// <reference path="visuals/samples/areaRangeChart.ts"/>
+/// <reference path="visuals/samples/chicletSlicer.ts"/>
+
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
 
