@@ -366,4 +366,11 @@ module powerbi.visuals.plugins {
         capabilities: samples.TornadoChart.capabilities,
         create: () => new samples.TornadoChart()
     };
+
+    export let kpi: IVisualPlugin = {
+        name: 'kpi',
+        watermarkKey: 'kpi',
+        capabilities: capabilities.kpi,
+        create: () => new KPIStatusWithHistory()
+    };
 }
