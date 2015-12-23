@@ -47,7 +47,12 @@ module powerbitests {
         };
         let originalRequestAnimationFrameCallback: (callback: Function) => number;
         let slicerText: JQuery;
-        let dataView: powerbi.DataView = slicerHelper.buildDefaultDataView();
+        let field = powerbi.data.SQExprBuilder.fieldDef({
+            schema: 's',
+            entity: "Entity2",
+            column: "PropertyName"
+        });
+        let dataView: powerbi.DataView = slicerHelper.buildDefaultDataView(field);
         dataView.metadata.objects = slicerHelper.buildDefaultDataViewObjects(SlicerOrientation.Horizontal);
         let interactiveDataViewOptions: powerbi.VisualDataChangedOptions = {
             dataViews: [dataView]
@@ -64,7 +69,7 @@ module powerbitests {
                 orientation: SlicerOrientation.Horizontal,
             };
 
-            visual = slicerHelper.initSlicer(element, slicerRenderOptions);
+            visual = slicerHelper.initSlicer(element, slicerRenderOptions, field);
 
             originalRequestAnimationFrameCallback = window.requestAnimationFrame;
             window.requestAnimationFrame = (callback: () => void) => {
@@ -81,7 +86,7 @@ module powerbitests {
             jasmine.clock().uninstall();
         });
 
-        xit("DOM validation", () => {
+        it("DOM validation", () => {
             spyOn(powerbi.visuals.valueFormatter, "format").and.callThrough();
 
             helpers.fireOnDataChanged(visual, interactiveDataViewOptions);
@@ -140,7 +145,7 @@ module powerbitests {
             expect(slicerText.first().children().last().text()).toBe("All");
         });
 
-        xit("Validate scroll behavior", () => {
+        it("Validate scroll behavior", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
@@ -167,7 +172,7 @@ module powerbitests {
             expect(slicerText.last().text()).toBe("Kiwi");
         });
 
-        xit("Validate scroll behavior with mouseWheel", () => {
+        it("Validate scroll behavior with mouseWheel", () => {
             visual.onResizing(viewport);
             slicerText = getSlicerTextContainer();
             expect($(".horizontalSlicerContainer .slicerBody .navigationArrow.left.show")).not.toBeInDOM();
@@ -199,7 +204,7 @@ module powerbitests {
         it("Validate scroll behavior with 1 visible item", () => {
             
             // smaller dataset          
-            let dataview2 = slicerHelper.buildSequenceDataView(0, 3);
+            let dataview2 = slicerHelper.buildSequenceDataView(field, 0, 3);
             dataview2.metadata.objects = slicerHelper.buildDefaultDataViewObjects(SlicerOrientation.Horizontal);
 
             helpers.fireOnDataChanged(visual, { dataViews: [dataview2] });

@@ -3962,7 +3962,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth on to off then resize", (done) => {
+        it("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".bi-tablix tr";
             let matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
             let objects = {
@@ -4019,7 +4019,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth off to on", (done) => {
+        it("autoSizeColumnwidth off to on", (done) => {
             let selector = ".bi-tablix tr";
             let matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
             let objects = {
@@ -4075,7 +4075,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("multiple onDataChangedCalls to add matrix columns + resize", (done) => {
+        it("multiple onDataChangedCalls to add matrix columns + resize", (done) => {
             let selector = ".bi-tablix tr";
             let matrix0 = matrixOneMeasure;
             let objects = {

@@ -62,7 +62,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("Scroll to last to check if items come in view HTML", (done) => {
+        it("Scroll to last to check if items come in view HTML", (done) => {
             listViewBuilder.isSpy = true;
             listViewBuilder.buildHtmlListView();
             setTimeout(() => {
@@ -79,7 +79,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("Reset scrollbar position when ResetScrollbar flag is set", (done) => {
+        it("Reset scrollbar position when ResetScrollbar flag is set", (done) => {
             listViewBuilder.data = [
                 { first: "Mickey", second: "Mouse" },
                 { first: "Mini", second: "Mouse" },
