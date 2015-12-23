@@ -177,7 +177,7 @@ module powerbitests {
                     });
             });
             
-            it("Resize", () => {
+            xit("Resize", () => {
                 let viewport = {
                     height: 200,
                     width: 300
@@ -244,7 +244,7 @@ module powerbitests {
                 $(".slicerBody .scrollbar-inner.scroll-content").scrollTop(itemCount * rowHeight);
             }
 
-            it("Scrolling", (done) => {
+            xit("Scrolling", (done) => {
                 loadFirstSegment();
 
                 expect($(".slicerText").eq(0).text()).toBe(dv1.categorical.categories[0].values[0]); // Fruit 0
@@ -257,7 +257,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it("Selecting an item -> No Scroll Reset", (done) => {
+            xit("Selecting an item -> No Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -272,7 +272,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it("Appending -> No Scroll Reset", (done) => {
+            xit("Appending -> No Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -288,7 +288,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it("Filtering -> Scroll Reset", (done) => {
+            xit("Filtering -> Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10

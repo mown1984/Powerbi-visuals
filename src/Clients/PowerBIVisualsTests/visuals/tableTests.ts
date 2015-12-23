@@ -1184,7 +1184,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off", (done) => {
+        xit("ColumnWidthChangedCallback ColumnAutoSizeProperty off", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1218,7 +1218,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off then resize", (done) => {
+        xit("ColumnWidthChangedCallback ColumnAutoSizeProperty off then resize", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1257,7 +1257,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("ColumnWidthManager ColumnAutoSizeProperty off malformed selector", (done) => {
+        xit("ColumnWidthManager ColumnAutoSizeProperty off malformed selector", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1355,7 +1355,7 @@ module powerbitests {
             tablixHelper.validateClassNames(expectedValues, ".bi-tablix tr", NoMarginClass);
         }
 
-        it("resize with autoSizeColumnwidth on", (done) => {
+        xit("resize with autoSizeColumnwidth on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
@@ -1400,7 +1400,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("autoSizeColumnwidth on to off then resize", (done) => {
+        xit("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".bi-tablix tr";
             let dataView: DataView = {
                 metadata: {
@@ -1444,7 +1444,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("autoSizeColumnwidth off to on", (done) => {
+        xit("autoSizeColumnwidth off to on", (done) => {
             let selector = ".bi-tablix tr";
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {

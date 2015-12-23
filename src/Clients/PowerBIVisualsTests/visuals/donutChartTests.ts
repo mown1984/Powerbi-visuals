@@ -43,7 +43,7 @@ module powerbitests {
     let donutColors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
     const labelsElement = '.donutChart .label';
-    const fontFamily = 'wf_standard-font';
+    const fontFamily = 'Tahoma';
 
     powerbitests.mocks.setLocale();
 
