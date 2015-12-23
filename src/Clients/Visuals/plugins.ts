@@ -355,6 +355,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.AreaRangeChart()
     };
 
+    export var chicletSlicer: IVisualPlugin = {
+        name: 'chicletSlicer',
+        capabilities: samples.ChicletSlicer.capabilities,
+        create: () => new samples.ChicletSlicer()
+    };
+
     export var timeline: IVisualPlugin = {
         name: 'timeline',
         capabilities: samples.Timeline.capabilities,
