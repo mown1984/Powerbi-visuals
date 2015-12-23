@@ -121,6 +121,20 @@ module powerbi.visuals.samples {
             selector: '.img'
         };
 
+        private static get AxisLabelsTextProperties(): TextProperties {
+            return {
+                fontFamily: 'wf_segoe-ui_normal',
+                fontSize: jsCommon.PixelConverter.toString(11),
+            };
+        }
+
+        private static get LegendTextProperties(): TextProperties {
+            return {
+                fontFamily: "wf_segoe-ui_normal",
+                fontSize: jsCommon.PixelConverter.toString(jsCommon.PixelConverter.toPoint(12)),
+            };
+        }
+
         private legend: ILegend;
         private svgScrollable: D3.Selection;
         private axisGraphicsContext: D3.Selection;
@@ -170,12 +184,6 @@ module powerbi.visuals.samples {
         private svgDefaultImage: string;
         private crosshairCanvas: D3.Selection;
         private oldBackdrop: string;
-        private static FontSize = 11;
-        private static FontSizeString = jsCommon.PixelConverter.toString(EnhancedScatterChart.FontSize);
-        private static TextProperties: TextProperties = {
-            fontFamily: 'wf_segoe-ui_normal',
-            fontSize: EnhancedScatterChart.FontSizeString,
-        };
         private behavior: IInteractiveBehavior;
         private animator: IGenericAnimator;
         private keyArray: string[];
@@ -1358,7 +1366,11 @@ module powerbi.visuals.samples {
         }
 
         private renderLegend(): void {
-            var legendData: LegendData = { title: "", dataPoints: [] };
+            var legendData: LegendData = {
+                title: "",
+                dataPoints: [],
+                fontSize: parseInt(EnhancedScatterChart.LegendTextProperties.fontSize, 0)
+            };
 
             this.layerLegendData = this.data.legendData;
             if (this.layerLegendData) {
@@ -1454,7 +1466,7 @@ module powerbi.visuals.samples {
             this.margin.bottom = bottomMarginLimit;
             this.margin.right = 0;
 
-            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.AxisLabelsTextProperties, true);
 
             this.yAxisIsCategorical = this.yAxisProperties.isCategoryAxis;
             this.hasCategoryAxis = this.yAxisIsCategorical ? this.yAxisProperties && this.yAxisProperties.values.length > 0 : this.xAxisProperties && this.xAxisProperties.values.length > 0;
@@ -1469,7 +1481,7 @@ module powerbi.visuals.samples {
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
 
-            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+            this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.AxisLabelsTextProperties, true);
 
             var doneWithMargins = false,
                 maxIterations = 2,
@@ -1480,7 +1492,7 @@ module powerbi.visuals.samples {
                 var tickLabelMargins = AxisHelper.getTickLabelMargins(
                     { width: this.viewportIn.width, height: this.viewport.height }, this.leftRightMarginLimit,
                     TextMeasurementService.measureSvgTextWidth, TextMeasurementService.measureSvgTextHeight, { x: this.xAxisProperties, y1: this.yAxisProperties },
-                    this.bottomMarginLimit, EnhancedScatterChart.TextProperties,
+                    this.bottomMarginLimit, EnhancedScatterChart.AxisLabelsTextProperties,
                     this.isXScrollBarVisible || this.isYScrollBarVisible, showY1OnRight,
                     renderXAxis, renderY1Axis, false);
 
@@ -1526,7 +1538,7 @@ module powerbi.visuals.samples {
                 // re-calculate the axes with the new margins
                 var previousTickCountY1 = this.yAxisProperties.values.length;
 
-                this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+                this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.AxisLabelsTextProperties, true);
 
                 // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again
                 // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
@@ -1547,7 +1559,7 @@ module powerbi.visuals.samples {
                     var tickLabelMargins = AxisHelper.getTickLabelMargins(
                         { width: this.viewportIn.width, height: this.viewport.height }, this.leftRightMarginLimit,
                         TextMeasurementService.measureSvgTextWidth, TextMeasurementService.measureSvgTextHeight, { x: this.xAxisProperties, y1: this.yAxisProperties },
-                        this.bottomMarginLimit, EnhancedScatterChart.TextProperties,
+                        this.bottomMarginLimit, EnhancedScatterChart.AxisLabelsTextProperties,
                         this.isXScrollBarVisible || this.isYScrollBarVisible, showY1OnRight,
                         renderXAxis, renderY1Axis, false);
 
@@ -1587,7 +1599,7 @@ module powerbi.visuals.samples {
                     // re-calculate the axes with the new margins
                     var previousTickCountY1 = this.yAxisProperties.values.length;
 
-                    this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.TextProperties, true);
+                    this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, EnhancedScatterChart.AxisLabelsTextProperties, true);
 
                     // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again
                     // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
@@ -1939,7 +1951,7 @@ module powerbi.visuals.samples {
             var margin = this.margin;
             var width = this.viewportIn.width;
             var height = this.viewport.height;
-            var fontSize = EnhancedScatterChart.FontSize;
+            var fontSize = parseInt(EnhancedScatterChart.AxisLabelsTextProperties.fontSize, 0);
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
 
@@ -2265,7 +2277,8 @@ module powerbi.visuals.samples {
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: true, //scatter doesn't have a categorical axis, but this is needed for the pane to react correctly to the x-axis toggle one/off
-                scaleType: options.categoryAxisScaleType
+                scaleType: options.categoryAxisScaleType,
+                formatString: undefined
             });
             this.xAxisProperties.axis.tickSize(-this.viewportIn.height, 0);
             this.xAxisProperties.axisLabel = this.data.axesLabels.x;
@@ -2283,7 +2296,8 @@ module powerbi.visuals.samples {
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: false,
-                scaleType: options.valueAxisScaleType
+                scaleType: options.valueAxisScaleType,
+                formatString: undefined
             });
             this.yAxisProperties.axisLabel = this.data.axesLabels.y;
 
