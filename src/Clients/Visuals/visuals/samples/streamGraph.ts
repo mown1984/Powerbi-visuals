@@ -294,7 +294,7 @@ module powerbi.visuals.samples {
             
             var dataPoints: StreamDataPoint[][] = data.dataPoints;
 
-			this.legend.changeOrientation(LegendPosition.Top);			
+            this.legend.changeOrientation(LegendPosition.Top);		
             this.legend.drawLegend(data.legendData, this.viewport);
 
             var height: number = Math.max(0, options.viewport.height - this.margin.top);
