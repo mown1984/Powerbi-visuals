@@ -218,5 +218,5 @@
 /// <reference path="visuals/scriptVisual.ts"/>
 
 /// <reference path="visuals/samples/sankeyDiagram.ts"/>
-
+/// <reference path="visuals/samples/wordCloud.ts"/>
 /// <reference path="plugins.ts"/>

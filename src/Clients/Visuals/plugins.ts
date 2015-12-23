@@ -385,4 +385,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.SankeyDiagram.capabilities,
         create: () => new samples.SankeyDiagram()
     };
+
+    export var wordCloud: IVisualPlugin = {
+        name: "wordCloud",
+        capabilities: samples.WordCloud.capabilities,
+        create: () => new samples.WordCloud()
+    };
 }

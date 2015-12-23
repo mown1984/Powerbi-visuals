@@ -556,6 +556,10 @@ module powerbi.visuals {
             }));
             // Sankey Diagram
             createPlugin(plugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
+            // Word Cloud
+            createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
+                animator: new BaseAnimator()
+            }));
             if (scriptVisualEnabled) {
                 // R visual
                 createPlugin(
