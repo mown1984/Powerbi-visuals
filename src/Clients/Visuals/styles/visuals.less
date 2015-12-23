@@ -86,8 +86,8 @@
         }
 
         img {
-            max-width:100px;
-            width:100%;
+            max-width: 100px;
+            width: 100%;
         }
 
         &:hover {
@@ -203,10 +203,8 @@
 
     .flexDisplay {
         display: -ms-flexbox;
-        display: -moz-box;
         display: flex;
         -ms-flex-direction: row;
-        -moz-box-orient: horizontal;
         flex-direction: row;
     }
 
@@ -671,8 +669,6 @@
         height: 24px;
         width: 24px;
         overflow: hidden;
-        -moz-border-radius: 13px;
-        -webkit-border-radius: 13px;
         border-radius: 13px;
         border: 1px solid @neutralSecondaryColor;
         margin: 10px;
@@ -798,7 +794,6 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            -o-user-select: none;
             user-select: none;
             cursor: default;
         }
@@ -838,13 +833,28 @@
             padding: 0px 5px 0px 10px;
         }
 
-        .bi-table-column-header i {
-            visibility:hidden;
+        .bi-sort-icon-container {
+            float: right;
         }
 
-        .bi-table-column-header.sorted i,
-        .bi-table-column-header:hover i {
-            visibility:visible;
+        .bi-table-column-header{
+             div.future {
+              display: none;
+             }
+
+             div.sorted {
+              display: inline-block;
+             }
+
+             &>div:hover {
+                div.sorted {
+                    display: none;
+                }
+
+                div.future {
+                    display: inline-block;
+                }
+            }
         }
 
         .bi-table-cell-numeric {
@@ -959,7 +969,6 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            -o-user-select: none;
             user-select: none;
             cursor: default;
         }
@@ -993,6 +1002,20 @@
             border-bottom-style: solid;
             border-bottom-color: #CCCCCC;
             padding: 0px 5px 0px 10px;
+        }
+
+        .bi-sort-icon-container {
+            float: right;
+        }
+
+        .bi-table-column-header{
+             div.future {
+              display: none;
+             }
+
+             div.sorted {
+              display: inline-block;
+             }
         }
 
         .bi-table-cell-numeric {
@@ -1096,8 +1119,6 @@
     color: #333;
     background: rgba(255,255,255,1);
     /* css3 */
-    -webkit-border-radius: 0px;
-    -moz-border-radius: 0px;
     border-radius: 0px;
 }
 
@@ -1189,6 +1210,44 @@
         &.big-kpi {
             font-size: 48px;
         }
+    }
+    /* Adding custom styles to the listView jQuery Scrollbar. */
+    .scroll-wrapper {
+        width: 100%;
+        height: 100%;
+        display: block;
+
+        .scroll-content {
+            height: inherit;
+        }
+
+        .scroll-element {
+            &.scroll-x {
+                height: 8px !important;
+            }
+
+            &.scroll-y {
+                width: 8px !important;
+            }
+
+            .scroll-element_track {
+                background-color: transparent !important;
+            }
+
+            .scroll-element_outer, .scroll-bar {
+                .no-border-radius;
+            }
+
+            .scroll-bar {
+                background-color: @neutralTertiaryAltColor !important;
+                opacity: 0;
+            }
+        }
+    }
+    /* Only show the scrollbars on hover or when being dragged. */
+    .scroll-wrapper:hover .scroll-element .scroll-bar,
+    .scroll-wrapper .scroll-element.scroll-draggable .scroll-bar {
+        opacity: 1;
     }
 }
 
@@ -1307,6 +1366,18 @@
         font-size: 12px;
         text-anchor: middle;
         font-family: @regularSecondaryFontFamily;
+    } 
+
+    .catagorylabel {
+        font-size: 12px;
+        text-anchor: middle;
+        font-family: @regularSecondaryFontFamily;
+    }
+}
+
+    .leader-lines {
+    .line-label{
+        opacity: 0.5;
     }
 }
 
@@ -1322,6 +1393,7 @@
 .richtextbox {
     color: @neutralPrimaryColor;
     pointer-events: all;
+    white-space: pre-wrap;
 
     a {
         color: @defaultLinkColor;
@@ -1339,12 +1411,10 @@
 }
 
 div.ql-toolbar {
-    padding: 4px;
-    background: @neutralPrimaryColor;
-    color: @whiteColor;
     white-space: nowrap;
     overflow-x: hidden;
     font-size: 14px;
+
     // TODO: fix SELECT dropdown arrow in IE
     /*
     select::-ms-expand {
@@ -1352,20 +1422,11 @@ div.ql-toolbar {
     }
     */
     .ql-format-group {
-        display: inline-block;
         vertical-align: middle;
-        margin: 0px 2px;
     }
 
     select.ql-picker {
-        margin: 3px;
         padding: 3px;
-        background: @neutralPrimaryColorAlt;
-        border: 1px solid @blackColor;
-    }
-
-    select.ql-font {
-        width: 122px;
     }
 
     label {
@@ -1374,8 +1435,16 @@ div.ql-toolbar {
 
     .ql-format-button {
         margin: 3px;
+        padding: 4px;
+        font-size: @largeFontSize;
         display: inline-block;
         vertical-align: middle;
+
+        &:hover,
+        &.ql-active {
+            background: @themePrimaryColor;
+            color: @neutralPrimaryColor;
+        }
     }
 
     .toolbar-url-input {
@@ -1383,7 +1452,11 @@ div.ql-toolbar {
         vertical-align: middle;
 
         .ql-link div {
-            height: 100%;
+            height: 24px;
+            width: 24px;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .ql-link-tooltip {
@@ -1434,98 +1507,76 @@ div.ql-toolbar {
         }
     }
 
-    .ql-format-button:hover {
-        background: @themePrimaryColor;
-        color: @neutralPrimaryColor;
+    &.stackedToolbar {
+        box-shadow: none;
+        position: inherit;
+        
+        .ql-link-tooltip {
+            a {
+                margin: 0;
+            }
+
+            .url {
+                max-width: 135px;
+                overflow: hidden;
+                display: inline-block;
+            }
+
+            &.editing .url {
+                display: none;
+            }
+
+            .input {
+                width: 175px;
+                margin: 0;
+            }
+        }
+
+        .ql-format-group {
+            margin-top: 8px;
+            display: block;
+            float: left;
+        }
+
+        label {
+            display: none;
+        }
+
+        select.ql-font {
+            width: 180px;
+        }
+
+        select.ql-size {
+            width: 60px;
+            margin-left: 10px;
+        }
     }
 
-    .ql-format-button.ql-active {
-        background: @themePrimaryColor;
-        color: @neutralPrimaryColor;
+    &.overlayedToolbar {
+        padding: 4px;
+
+        select.ql-picker {
+            margin: 3px;
+        }
+
+        .ql-format-group {
+            display: inline-block;
+            margin: 0px 2px;
+        }
+
+        select.ql-font {
+            width: 122px;
+        }
     }
 
-    .ql-format-button[data-value="left"] {
-        .sprite(@left-align-text-white);
-    }
+    &.darkToolbar {
+        background: @neutralPrimaryColor;
+        color: @whiteColor;
 
-    .ql-format-button[data-value="left"].ql-active {
-        .sprite(@left-align-text-black);
-    }
-
-    .ql-format-button[data-value="left"]:hover {
-        .sprite(@left-align-text-black);
-    }
-
-    .ql-format-button[data-value="right"] {
-        .sprite(@right-align-text-white);
-    }
-
-    .ql-format-button[data-value="right"].ql-active {
-        .sprite(@right-align-text-black);
-    }
-
-    .ql-format-button[data-value="right"]:hover {
-        .sprite(@right-align-text-black);
-    }
-
-    .ql-format-button[data-value="center"] {
-        .sprite(@center-align-text-white);
-    }
-
-    .ql-format-button[data-value="center"].ql-active {
-        .sprite(@center-align-text-black);
-    }
-
-    .ql-format-button[data-value="center"]:hover {
-        .sprite(@center-align-text-black);
-    }
-
-    .ql-format-button.ql-bold {
-        .sprite(@bold-text-white);
-    }
-
-    .ql-format-button.ql-bold.ql-active {
-        .sprite(@bold-text-black);
-    }
-
-    .ql-format-button.ql-bold:hover {
-        .sprite(@bold-text-black);
-    }
-
-    .ql-format-button.ql-italic {
-        .sprite(@italic-text-white);
-    }
-
-    .ql-format-button.ql-italic.ql-active {
-        .sprite(@italic-text-black);
-    }
-
-    .ql-format-button.ql-italic:hover {
-        .sprite(@italic-text-black);
-    }
-
-    .ql-format-button.ql-underline {
-        .sprite(@underline-text-white);
-    }
-
-    .ql-format-button.ql-underline.ql-active {
-        .sprite(@underline-text-black);
-    }
-
-    .ql-format-button.ql-underline:hover {
-        .sprite(@underline-text-black);
-    }
-
-    .ql-format-button.ql-link {
-        .sprite(@insert-link-white);
-    }
-
-    .ql-format-button.ql-link.ql-active {
-        .sprite(@insert-link-black);
-    }
-
-    .ql-format-button.ql-link:hover {
-        .sprite(@insert-link-black);
+        select.ql-picker {
+            background: @neutralPrimaryColorAlt;
+            border: 1px solid @blackColor;
+        }
     }
 }
 
@@ -1603,7 +1654,7 @@ div.ql-toolbar {
     }
 }
 
-.clearCatcher {
+.clearCatcher, .backgroundRect {
     fill-opacity: 0;
 }
 
@@ -1728,25 +1779,43 @@ div.ql-toolbar {
     }
 }
 
+.streamGraph {
+    @streamGraphFontSize: 11px;
+
+    font-family: @regularFontFamily;
+    font-size: @streamGraphFontSize;
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: #666;
+            shape-rendering: @defaultShapeRendering;
+        }
+
+        text {
+            font-size: @streamGraphFontSize;
+        }
+    }
+}
 
 .visual-sandbox {
     border: none;
     overflow: hidden;
+
+    //adding this because cors block fonts for sandboxed visuals.
+    .tooltip-container .tooltip-row{
+        font-size: 9px;
+    }
 }
 
-.streamGraph {
-    .axis{
-        path, line {
-            fill: none;
-            stroke: black;
-            shape-rendering: crispEdges;
-        }
+.x-ref-line {
+    stroke-width: 3px;
+    stroke-opacity: 0.5;
+}
 
-        text {
-            font-family: sans-serif;
-            font-size: 11px;
-        }
-    }
+.y1-ref-line {
+    stroke-width: 3px;
+    stroke-opacity: 0.5;
 }
 
 .radarChart {
@@ -1811,6 +1880,7 @@ div.ql-toolbar {
     opacity:0;
 }
 
+
 .histogram {
     @histogramAxesColor: @neutralSecondaryAltColor;
     @histogramLegendTextColor: @blackColor;
@@ -1861,6 +1931,21 @@ div.ql-toolbar {
     .chart {
         path, line {
             stroke-width: 1;
+        }
+    }
+}
+
+.tornado-chart {
+    @tornadoChartAxisColor: @neutralSecondaryAltColor;
+
+    font-family: @regularFontFamily;
+    font-size: 11px;
+
+    .axes {
+        .axis {
+            fill: none;
+            stroke: @tornadoChartAxisColor;
+            stroke-width: 1px;
         }
     }
 }

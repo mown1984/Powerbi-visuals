@@ -94,7 +94,8 @@ module powerbi.visuals {
         private data: WaterfallChartData;
         private element: JQuery;
         private isScrollable: boolean;
-        
+        private tooltipsEnabled: boolean;
+
         /**
          * Note: If we overflowed horizontally then this holds the subset of data we should render.
          */
@@ -112,6 +113,7 @@ module powerbi.visuals {
 
         constructor(options: WaterfallChartConstructorOptions) {
             this.isScrollable = options.isScrollable;
+            this.tooltipsEnabled = options.tooltipsEnabled;
             this.interactivityService = options.interactivityService;
         }
 
@@ -451,18 +453,12 @@ module powerbi.visuals {
 
         private static lookupXValue(data: WaterfallChartData, index: number, type: ValueType): any {
             let dataPoints: WaterfallChartDataPoint[] = data.series[0].data;
-            let point = dataPoints[index];
 
-            if (point && point.categoryValue) {
-                if (index === dataPoints.length - 1)
-                    return point.categoryValue;
-                else if (AxisHelper.isDateTime(type))
-                    return new Date(point.categoryValue);
-                else
-                    return point.categoryValue;
-            }
-
-            return index;
+            if (index === dataPoints.length - 1)
+                // Total
+                return dataPoints[index].categoryValue;
+            else
+                return CartesianHelper.lookupXValue(data, index, type, false);
         }
 
         public static getXAxisCreationOptions(data: WaterfallChartData, width: number, layout: CategoryLayout, options: CalculateScaleAndDomainOptions): CreateAxisOptions {
@@ -480,7 +476,7 @@ module powerbi.visuals {
                 pixelSpan: width,
                 dataDomain: domain,
                 metaDataColumn: data.categoryMetadata,
-                formatStringProp: WaterfallChart.formatStringProp,
+                formatString: valueFormatter.getFormatString(data.categoryMetadata, WaterfallChart.formatStringProp),
                 isScalar: false,
                 outerPadding: outerPadding,
                 categoryThickness: categoryThickness,
@@ -504,7 +500,7 @@ module powerbi.visuals {
                 isScalar: true,
                 isVertical: true,
                 metaDataColumn: data.valuesMetadata,
-                formatStringProp: WaterfallChart.formatStringProp,
+                formatString: valueFormatter.getFormatString(data.valuesMetadata, WaterfallChart.formatStringProp),
                 outerPadding: 0,
                 forcedTickCount: options.forcedTickCount,
                 useTickIntervalForDisplayUnits: true,
@@ -576,7 +572,8 @@ module powerbi.visuals {
             let bars = this.createRects(dataPoints);
             let connectors = this.createConnectors(dataPoints);
 
-            TooltipManager.addTooltip(bars, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+            if (this.tooltipsEnabled) 
+                TooltipManager.addTooltip(bars, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
 
             let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
 
@@ -714,7 +711,7 @@ module powerbi.visuals {
                         },
                         outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultLabelColor,
                         insideFill: NewDataLabelUtils.defaultInsideLabelColor,
-                        isParentRect: true,
+                        parentType: LabelDataPointParentType.Rectangle,
                         parentShape: {
                             rect: parentRect,
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,

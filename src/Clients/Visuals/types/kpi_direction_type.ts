@@ -27,17 +27,13 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export const richTextboxCapabilities: VisualCapabilities = {
-        objects: {
-            general: {
-                properties: {
-                    paragraphs: {
-                        type: { /* ParagraphContext */ }
-                    }
-                }
-            }
-        },
-        suppressDefaultTitle: true,
-        supportsSelection: false,
-    };
+    export module kpiDirection {
+        export const positive: string = 'Positive';
+        export const negative: string = 'Negative';
+
+        export const type: IEnumType = createEnumType([
+            { value: positive, displayName: resources => resources.get('Visual_KPI_Direction_Positive') },
+            { value: negative, displayName: resources => resources.get('Visual_KPI_Direction_Negative') }
+        ]);
+    }
 }

@@ -31,7 +31,6 @@ module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import ColumnChart = powerbi.visuals.ColumnChart;
     import DataViewObjects = powerbi.DataViewObjects;
-    import ClusteredUtil = powerbi.visuals.ClusteredUtil;
     import StackedUtil = powerbi.visuals.StackedUtil;
     import ColumnUtil = powerbi.visuals.ColumnUtil;
     import AxisHelper = powerbi.visuals.AxisHelper;
@@ -53,7 +52,7 @@ module powerbitests {
 
     powerbitests.mocks.setLocale();
 
-    describe("ColumnChart",() => {
+    describe("ColumnChart", () => {
         let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
         let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
@@ -65,31 +64,31 @@ module powerbitests {
         let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'B' };
         let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
 
-        it('ColumnChart registered capabilities',() => {
+        it('ColumnChart registered capabilities', () => {
             expect(JSON.stringify(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').capabilities)).toBe(JSON.stringify(powerbi.visuals.getColumnChartCapabilities()));
         });
 
-        it('ColumnChart registered customizeQuery',() => {
+        it('ColumnChart registered customizeQuery', () => {
             expect(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').customizeQuery).toBe(ColumnChart.customizeQuery);
         });
 
-        it('Capabilities should include dataViewMappings',() => {
+        it('Capabilities should include dataViewMappings', () => {
             expect(powerbi.visuals.getColumnChartCapabilities().dataViewMappings).toBeDefined();
         });
 
-        it('Capabilities should include dataRoles',() => {
+        it('Capabilities should include dataRoles', () => {
             expect(powerbi.visuals.getColumnChartCapabilities().dataRoles).toBeDefined();
         });
 
-        it('Capabilities should not suppressDefaultTitle',() => {
+        it('Capabilities should not suppressDefaultTitle', () => {
             expect(powerbi.visuals.getColumnChartCapabilities().suppressDefaultTitle).toBeUndefined();
         });
 
-        it('FormatString property should match calculated',() => {
+        it('FormatString property should match calculated', () => {
             expect(powerbi.data.DataViewObjectDescriptors.findFormatString(powerbi.visuals.getColumnChartCapabilities().objects)).toEqual(powerbi.visuals.columnChartProps.general.formatString);
         });
 
-        it('CustomizeQuery scalar type, no scalar axis flag',() => {
+        it('CustomizeQuery scalar type, no scalar axis flag', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: null
@@ -104,7 +103,7 @@ module powerbitests {
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
         });
 
-        it('CustomizeQuery non-scalar type, scalar axis flag',() => {
+        it('CustomizeQuery non-scalar type, scalar axis flag', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: 'Scalar',
@@ -119,7 +118,7 @@ module powerbitests {
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
         });
 
-        it('CustomizeQuery scalar type, scalar axis flag',() => {
+        it('CustomizeQuery scalar type, scalar axis flag', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: 'Scalar',
@@ -134,7 +133,7 @@ module powerbitests {
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
         });
 
-        it('CustomizeQuery no category',() => {
+        it('CustomizeQuery no category', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: 'Scalar',
@@ -149,7 +148,7 @@ module powerbitests {
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
         });
 
-        it('Sortable roles with scalar axis',() => {
+        it('Sortable roles with scalar axis', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: 'Scalar',
@@ -162,7 +161,7 @@ module powerbitests {
             })).toBeNull();
         });
 
-        it('Sortable roles with categorical axis',() => {
+        it('Sortable roles with categorical axis', () => {
             let objects: DataViewObjects = {
                 categoryAxis: {
                     axisType: 'Categorical',
@@ -232,7 +231,7 @@ module powerbitests {
             interactivityService['selectedIds'] = [selectionIds[0]];
 
             // We should see the selection state applied to resulting data
-            let data = ColumnChart.converter(dataView, colors, undefined, undefined, undefined, undefined, undefined, interactivityService);
+            let data = ColumnChart.converter(dataView, colors, undefined, undefined, undefined, undefined, interactivityService);
 
             expect(data.series[0].data[0].selected).toBe(true);
             expect(data.series[0].data[1].selected).toBe(false);
@@ -240,7 +239,7 @@ module powerbitests {
 
             let seriesSelectionId = SelectionId.createWithMeasure(measureColumn.queryName);
             interactivityService['selectedIds'] = [seriesSelectionId];
-            data = ColumnChart.converter(dataView, colors, undefined, undefined, undefined, undefined, undefined, interactivityService);
+            data = ColumnChart.converter(dataView, colors, undefined, undefined, undefined, undefined, interactivityService);
 
             expect(data.series[0].data[0].selected).toBe(true);
             expect(data.series[0].data[1].selected).toBe(true);
@@ -331,7 +330,7 @@ module powerbitests {
             });
         });
 
-        it('has positive measure (100%)',() => {
+        it('has positive measure (100%)', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -411,7 +410,7 @@ module powerbitests {
             });
         });
 
-        it('has positive measure - two series (100%)',() => {
+        it('has positive measure - two series (100%)', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -543,7 +542,7 @@ module powerbitests {
             });
         });
 
-        it('has negative measure',() => {
+        it('has negative measure', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -622,7 +621,7 @@ module powerbitests {
             });
         });
 
-        it('has positive and negative measure - two series',() => {
+        it('has positive and negative measure - two series', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -658,7 +657,7 @@ module powerbitests {
             });
         });
 
-        it('has negative measure (100%)',() => {
+        it('has negative measure (100%)', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -736,7 +735,7 @@ module powerbitests {
             });
         });
 
-        it('is missing a measure',() => {
+        it('is missing a measure', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -815,7 +814,7 @@ module powerbitests {
             });
         });
 
-        it('is missing a category',() => {
+        it('is missing a category', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity(null),
@@ -895,7 +894,7 @@ module powerbitests {
             });
         });
 
-        it('multiple measures',() => {
+        it('multiple measures', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1038,7 +1037,7 @@ module powerbitests {
             ]);
         });
 
-        it('converter: dynamic series',() => {
+        it('converter: dynamic series', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1187,7 +1186,7 @@ module powerbitests {
             ]);
         });
 
-        it('converter: dynamic series falsy group instances',() => {
+        it('converter: dynamic series falsy group instances', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1230,7 +1229,7 @@ module powerbitests {
             ]);
         });
 
-        it('converter: dynamic series + fill color',() => {
+        it('converter: dynamic series + fill color', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1418,7 +1417,7 @@ module powerbitests {
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
                         
-            let data = ColumnChart.converter(dataView, colors, null, null, null, metadata);
+            let data = ColumnChart.converter(dataView, colors, null, null, metadata);
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic1.queryName, seriesIdentities[0], buildSelector(categoryColumn.queryName, categoryIdentities[0])), measureColumnDynamic1.queryName),
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[0], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
@@ -1532,7 +1531,7 @@ module powerbitests {
             ]);
         });
 
-        it('converter: dynamic series, formatted color + default color',() => {
+        it('converter: dynamic series, formatted color + default color', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1572,7 +1571,7 @@ module powerbitests {
                 columns: null,
                 objects: { dataPoint: { defaultColor: { solid: { color: hexDefaultColorRed } } } }
             };
-            let data = ColumnChart.converter(dataView, colors, undefined, undefined, undefined, metadata);
+            let data = ColumnChart.converter(dataView, colors, undefined, undefined, metadata);
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic1.queryName, seriesIdentities[0], buildSelector(categoryColumn.queryName, categoryIdentities[0])), measureColumnDynamic1.queryName),
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(measureColumnDynamic2.queryName, seriesIdentities[0], buildSelector(categoryColumn.queryName, categoryIdentities[1])), measureColumnDynamic2.queryName),
@@ -1686,7 +1685,7 @@ module powerbitests {
             ]);
         });
 
-        it('validate highlighted tooltip',() => {
+        it('validate highlighted tooltip', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -1709,6 +1708,7 @@ module powerbitests {
             // We should not summarize the X-axis values with DisplayUnits per-PowerView behavior, so ensure that we are using the 'Verbose' mode for the formatter.
             spyOn(powerbi.visuals.valueFormatter, 'create').and.callThrough();
             let data = ColumnChart.converter(dataView, colors);
+            
             //first tooltip is regular because highlighted value is null
             expect(data.series[0].data[0].tooltipInfo).toEqual([{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }]);
             expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }]);
@@ -1722,7 +1722,7 @@ module powerbitests {
             expect(data.series[0].data[5].tooltipInfo).toEqual([{ displayName: "year", value: "2013" }, { displayName: "sales", value: "$300" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "$0" }]);
         });
 
-        it('null measures legend',() => {
+        it('null measures legend', () => {
             let dataView: powerbi.DataViewCategorical = {
                 categories: [{
                     source: categoryColumn,
@@ -1747,7 +1747,7 @@ module powerbitests {
             ]);
         });
 
-        it('multiple measures (100%)',() => {
+        it('multiple measures (100%)', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2010"),
                 mocks.dataViewScopeIdentity("2011"),
@@ -1970,7 +1970,7 @@ module powerbitests {
             });
         });
 
-        it('no category single measure',() => {
+        it('no category single measure', () => {
             let dataView: powerbi.DataViewCategorical = {
                 values: DataViewTransform.createValueColumns([{
                     source: measureColumn,
@@ -2021,7 +2021,7 @@ module powerbitests {
             ]);
         });
 
-        it('no category multiple measure',() => {
+        it('no category multiple measure', () => {
             let dataView: powerbi.DataViewCategorical = {
                 values: DataViewTransform.createValueColumns([
                     {
@@ -2197,7 +2197,7 @@ module powerbitests {
             ]);
         });
 
-        it('no category multiple measure + fill color',() => {
+        it('no category multiple measure + fill color', () => {
             let dataView: powerbi.DataViewCategorical = {
                 values: DataViewTransform.createValueColumns([
                     {
@@ -2256,7 +2256,7 @@ module powerbitests {
             ]);
         });
 
-        it('category and measure + fill color',() => {
+        it('category and measure + fill color', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -2345,7 +2345,7 @@ module powerbitests {
             ]);
         });
 
-        it('Gradient measure: should not become a series',() => {
+        it('Gradient measure: should not become a series', () => {
             let dataView: powerbi.DataViewCategorical = {
                 categories: [{
                     source: categoryColumn,
@@ -2433,7 +2433,7 @@ module powerbitests {
             expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: 'year', value: '2012' }, { displayName: 'sales', value: '$200' }]);
         });
 
-        it('single measure with infinite value',() => {
+        it('single measure with infinite value', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -2518,7 +2518,7 @@ module powerbitests {
             ]);
         });
 
-        it('single measure with negative infinite value',() => {
+        it('single measure with negative infinite value', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -2604,7 +2604,7 @@ module powerbitests {
             ]);
         });
 
-        it('single measure with NaN value',() => {
+        it('single measure with NaN value', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -2715,7 +2715,7 @@ module powerbitests {
             expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: "year", value: "2012" }, { displayName: "tax", value: "$200" }]);
         });
 
-        it('dataView that should pivot categories',() => {
+        it('dataView that should pivot categories', () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: '', index: 0 },
@@ -2825,7 +2825,7 @@ module powerbitests {
             ]);
         });
 
-        it('dataView with Series & Category role that should pivot categories',() => {
+        it('dataView with Series & Category role that should pivot categories', () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1', queryName: 'selectCol1', roles: { "Series": true, "Category": true } },
@@ -2859,7 +2859,7 @@ module powerbitests {
             let series1Color = colors.getColorScaleByKey(SQExprShortSerializer.serialize(categoryColRefExpr)).getColor('a').value;
             let series2Color = colors.getColorScaleByKey(SQExprShortSerializer.serialize(categoryColRefExpr)).getColor('b').value;
 
-            let data = ColumnChart.converter(dataView.categorical, colors, undefined, undefined, undefined, metadata);
+            let data = ColumnChart.converter(dataView.categorical, colors, undefined, undefined, metadata);
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], 'selectCol2', 'selectCol1'),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], 'selectCol2', 'selectCol1'),
@@ -2947,7 +2947,7 @@ module powerbitests {
             expect(data.series).toEqual(item);
         });
 
-        it('100% stacked -- rounding (-1)',() => {
+        it('100% stacked -- rounding (-1)', () => {
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithMeasure("measure0"),
                 SelectionId.createWithMeasure("measure1"),
@@ -3007,7 +3007,7 @@ module powerbitests {
             });
         });
 
-        it('100% stacked -- rounding (+1)',() => {
+        it('100% stacked -- rounding (+1)', () => {
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithMeasure("measure0"),
                 SelectionId.createWithMeasure("measure1"),
@@ -3067,7 +3067,7 @@ module powerbitests {
             });
         });
 
-        it('100% stacked -- rounding (+1 and -1)',() => {
+        it('100% stacked -- rounding (+1 and -1)', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
@@ -3169,35 +3169,6 @@ module powerbitests {
             });
         });
 
-        it('createValueFormatter: value (hundreds)',() => {
-            let columns = [measureColumn, measure2Column];
-            let min = 0,
-                max = 200,
-                value = 100;
-
-            expect(ClusteredUtil.createValueFormatter(columns, max - min).format(value)).toBe('$100');
-            expect(StackedUtil.createValueFormatter(columns, /*is100Pct*/ false, max - min).format(value)).toBe('$100');
-        });
-
-        it('createValueFormatter: value (millions)',() => {
-            let columns = [measureColumn, measure2Column];
-            let min = 0,
-                max = 2e6,
-                value = 1e6;
-
-            expect(ClusteredUtil.createValueFormatter(columns, max - min).format(value)).toBe('$1M');
-            expect(StackedUtil.createValueFormatter(columns, /*is100Pct*/ false, max - min).format(value)).toBe('$1M');
-        });
-
-        it('createValueFormatter: 100% stacked',() => {
-            let columns = [measureColumn, measure2Column];
-            let min = 0,
-                max = 1,
-                value = .5;
-
-            expect(StackedUtil.createValueFormatter(columns, /*is100Pct*/ true, max - min).format(value)).toBe('50%');
-        });
-
         let categoricalData: powerbi.visuals.ColumnChartData = {
             categories: [],
             categoryFormatter: null,
@@ -3247,7 +3218,7 @@ module powerbitests {
             type: ValueType.fromDescriptor({ dateTime: true })
         };
 
-        it('getLayout: no category metadata',() => {
+        it('getLayout: no category metadata', () => {
             expect(CartesianChart.getLayout(
                 categoricalData,
                 {
@@ -3262,7 +3233,7 @@ module powerbitests {
             });
         });
 
-        it('getLayout: text (one)',() => {
+        it('getLayout: text (one)', () => {
             categoricalData.categories = ['A'];
             categoricalData.categoryMetadata = metadataColumnText;
             expect(CartesianChart.getLayout(
@@ -3279,7 +3250,7 @@ module powerbitests {
             });
         });
 
-        it('getLayout: text (few)',() => {
+        it('getLayout: text (few)', () => {
             categoricalData.categories = ['A', 'B', 'C', 'D', 'E', 'F'];
             categoricalData.categoryMetadata = metadataColumnText;
             expect(CartesianChart.getLayout(
@@ -3296,7 +3267,7 @@ module powerbitests {
             });
         });
 
-        it('getLayout: text (too many)',() => {
+        it('getLayout: text (too many)', () => {
             let cats = [];
             for (let i = 0, len = 200; i < len; i++) {
                 cats.push(Math.round(Math.random()).toString());
@@ -3317,11 +3288,12 @@ module powerbitests {
             });
         });
 
-        it('getLayout: number (few)',() => {
+        it('getLayout: number (few)', () => {
             let series: powerbi.visuals.ColumnChartDataPoint[] = [];
             for (let i = 0, len = 10; i < len; i++) {
                 let identity: powerbi.visuals.SelectionId = SelectionId.createWithId(mocks.dataViewScopeIdentity("" + i));
                 let dataPoint: powerbi.visuals.ColumnChartDataPoint = {
+                    
                     // use pow to create x values that get farther apart (testing minInterval)
                     categoryValue: i * 10 + Math.pow(i * 10, 1.8),
                     value: i % 5,
@@ -3360,7 +3332,7 @@ module powerbitests {
             });
         });
 
-        it('getLayout: number (many)',() => {
+        it('getLayout: number (many)', () => {
             let series: powerbi.visuals.ColumnChartDataPoint[] = [];
             for (let i = 0, len = 100; i < len; i++) {
                 let identity: powerbi.visuals.SelectionId = SelectionId.createWithId(mocks.dataViewScopeIdentity("" + i));
@@ -3402,11 +3374,12 @@ module powerbitests {
             });
         });
 
-        it('getLayout: datetime',() => {
+        it('getLayout: datetime', () => {
             let series: powerbi.visuals.ColumnChartDataPoint[] = [];
             for (let i = 0, len = 25; i < len; i++) {
                 let identity: powerbi.visuals.SelectionId = SelectionId.createWithId(mocks.dataViewScopeIdentity("" + i));
                 let dataPoint: powerbi.visuals.ColumnChartDataPoint = {
+                    
                     // use fractional pow to create x values that get closer together (testing minInterval)
                     categoryValue: new Date(2000, 1, 1).getTime() + Math.pow(i, 0.66) * 86000000,
                     value: i % 5,
@@ -3443,13 +3416,14 @@ module powerbitests {
             expect(layout.isScalar).toBeTruthy();
         });
 
-        it('getLayout: datetime with highlights',() => {
+        it('getLayout: datetime with highlights', () => {
             let series: powerbi.visuals.ColumnChartDataPoint[] = [];
             let idx = 0;
             for (let i = 0, len = 10; i < len; i++) {
                 let identity: powerbi.visuals.SelectionId = SelectionId.createWithId(mocks.dataViewScopeIdentity("" + i));
                 idx = Math.floor(i / 2);
                 let dataPoint: powerbi.visuals.ColumnChartDataPoint = {
+                    
                     // use fractional pow to create x values that get closer together (testing minInterval)
                     categoryValue: new Date(2000, 1, 1).getTime() + Math.pow(idx, 0.66) * 86000000,
                     value: i % 5,
@@ -3487,75 +3461,6 @@ module powerbitests {
             expect(layout.categoryCount).toEqual(idx + 1);
             expect(layout.categoryThickness).toBeCloseTo(61, 0);
             expect(layout.isScalar).toBeTruthy();
-        });
-
-        it('getForcedTickValues: 0 forced tick count',() => {
-            let expected = [];
-            let actual = ColumnChart.getForcedTickValues(0, 100, 0);
-            expect(actual).toEqual(expected);
-        });
-
-        it('getForcedTickValues: 0 min',() => {
-            let expected = [0, 50, 100];
-            let actual = ColumnChart.getForcedTickValues(0, 100, 3);
-            expect(actual).toEqual(expected);
-        });
-
-        it('getForcedTickValues: 0 max',() => {
-            let expected = [-200, -150, -100, -50, 0];
-            let actual = ColumnChart.getForcedTickValues(-200, 0, 5);
-            expect(actual).toEqual(expected);
-        });
-
-        it('getForcedTickValues: 0 between min and max',() => {
-            let expected = [-20, 40, 100, 0];
-            let actual = ColumnChart.getForcedTickValues(-20, 100, 3);
-            expect(actual).toEqual(expected);
-        });
-
-        it('getTickCount: 6 max tick count without forced tick count',() => {
-            let valuesMetadata: powerbi.DataViewMetadataColumn[] = [];
-            valuesMetadata.push(measure2Column);
-            let actual = ColumnUtil.getTickCount(0, 3, valuesMetadata, 6, false);
-            expect(actual).toEqual(6);
-        });
-
-        it('getTickCount: 6 max tick count with 2 forced tick count',() => {
-            let valuesMetadata: powerbi.DataViewMetadataColumn[] = [];
-            valuesMetadata.push(measureColumn);
-            let actual = ColumnUtil.getTickCount(0, 3, valuesMetadata, 6, false, 2);
-            expect(actual).toEqual(2);
-        });
-
-        it('getTickCount: 0 max tick count with 2 forced tick count',() => {
-            let valuesMetadata: powerbi.DataViewMetadataColumn[] = [];
-            valuesMetadata.push(measureColumn);
-            let actual = ColumnUtil.getTickCount(0, 3, valuesMetadata, 0, false, 2);
-            expect(actual).toEqual(0);
-        });
-
-        it('getTickInterval: empty tick value',() => {
-            let tickValues = [];
-            let tickInterval = ColumnChart.getTickInterval(tickValues);
-            expect(tickInterval).toBe(0);
-        });
-
-        it('getTickInterval: single tick value',() => {
-            let tickValues = [2.35];
-            let tickInterval = ColumnChart.getTickInterval(tickValues);
-            expect(tickInterval).toBe(2.35);
-        });
-
-        it('getTickInterval: sorted tick values',() => {
-            let tickValues = [48000, 48500, 49000, 49500, 50000];
-            let tickInterval = ColumnChart.getTickInterval(tickValues);
-            expect(tickInterval).toBe(500);
-        });
-
-        it('getTickInterval: unsorted tick values',() => {
-            let tickValues = [48500, 49000, 48000, 49500, 50000];
-            let tickInterval = ColumnChart.getTickInterval(tickValues);
-            expect(tickInterval).toBe(500);
         });
     });
 
@@ -3645,7 +3550,7 @@ module powerbitests {
             });
         });
 
-        it('clustered column chart dom validation',(done) => {
+        it('clustered column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -3688,7 +3593,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart dom validation - datetime',(done) => {
+        it('clustered column chart dom validation - datetime', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("1999/3/1"),
                 mocks.dataViewScopeIdentity("1999/6/20"),
@@ -3731,8 +3636,10 @@ module powerbitests {
                     expect(powerbitests.helpers.isInRange(width, 11, 15)).toBe(true);
                 }
                 else {
+                    
                     // 179.(6) in Mac OS and 178.8 in Windows
                     expect(powerbitests.helpers.isInRange(x, 180, 185)).toBe(true);
+                    
                     // 48.6 in Mac OS and 48 in Windows
                     expect(powerbitests.helpers.isInRange(width, 48, 51)).toBe(true);
                 }
@@ -3740,7 +3647,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart dom validation - null datetime',(done) => {
+        it('clustered column chart dom validation - null datetime', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("1999/3/1"),
                 mocks.dataViewScopeIdentity(null),
@@ -3778,14 +3685,16 @@ module powerbitests {
                 let x = +$('.column')[1].attributes.getNamedItem('x').value;
                 let width = +$('.column')[1].attributes.getNamedItem('width').value;
                 if (scalarSetting) {
-                    expect($('.column').length).toBe(4);                    
+                    expect($('.column').length).toBe(4);
                     expect(powerbitests.helpers.isInRange(x, 371, 375)).toBe(true);
                     expect(powerbitests.helpers.isInRange(width, 48, 51)).toBe(true);
                 }
                 else {
                     expect($('.column').length).toBe(6);
+                    
                     // 179.(6) in Mac OS and 178.8 in Windows
                     expect(powerbitests.helpers.isInRange(x, 180, 185)).toBe(true);
+                    
                     // 48.6 in Mac OS and 48 in Windows
                     expect(powerbitests.helpers.isInRange(width, 48, 51)).toBe(true);
                 }
@@ -3793,7 +3702,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart partial highlight dom validation',(done) => {
+        it('clustered column chart partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -3839,7 +3748,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it('clustered column chart negative partial highlight dom validation',(done) => {
+        it('clustered column chart negative partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -3885,7 +3794,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart partial highlights with overflow dom validation',(done) => {
+        it('clustered column chart partial highlights with overflow dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -3933,7 +3842,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart partial highlights with positive/negative mix dom validation',(done) => {
+        it('clustered column chart partial highlights with positive/negative mix dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -3981,7 +3890,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart missing measure in first series to not be dropped in dom',(done) => {
+        it('clustered column chart missing measure in first series to not be dropped in dom', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4021,7 +3930,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart missing measure dom validation',(done) => {
+        it('clustered column chart missing measure dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4061,7 +3970,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart with near zero measures dom validation',(done) => {
+        it('clustered column chart with near zero measures dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4097,7 +4006,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty clustered column chart dom validation',(done) => {
+        it('empty clustered column chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: metadata(dataViewMetadataTwoColumn),
@@ -4123,7 +4032,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart with small interval dom validation',(done) => {
+        it('clustered column chart with small interval dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -4157,7 +4066,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart should be cleared when empty dataview is applied',(done) => {
+        it('clustered column chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -4204,7 +4113,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart with no animator should filter 0/null columns',(done) => {
+        it('clustered column chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -4235,7 +4144,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered column chart zero line axis is darkened',(done) => {
+        it('clustered column chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -4268,6 +4177,130 @@ module powerbitests {
                 });
 
                 done();
+            }, DefaultWaitForRender);
+        });
+
+        it('clustered column chart reference line dom validation', (done) => {
+            let categoryValues = ['a', 'b', 'c', 'd', 'e'];
+            let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
+
+            let refLineColor1 = '#ff0000';
+            let refLineColor2 = '#ff00ff';
+
+            let dataView: powerbi.DataView = {
+                metadata: metadata(dataViewMetadataThreeColumn),
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataThreeColumn[0],
+                        values: categoryValues,
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataThreeColumn[1],
+                            values: [10, 0, -30, null, 0]
+                        }, {
+                            source: dataViewMetadataThreeColumn[2],
+                            values: [0, -20, null, 88, 10]
+                        }])
+                }
+            };
+
+            let yAxisReferenceLine: powerbi.DataViewObject = {
+                show: true,
+                value: 20,
+                lineColor: { solid: { color: refLineColor1 } },
+                transparency: 60,
+                style: powerbi.visuals.lineStyle.dashed,
+                position: powerbi.visuals.referenceLinePosition.back,
+                dataLabelShow: true,
+                dataLabelColor: { solid: { color: refLineColor1 } },
+                dataLabelDecimalPoints: 0,
+                dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+            };
+
+            dataView.metadata.objects = {
+                y1AxisReferenceLine: [
+                    {
+                        id: '0',
+                        object: yAxisReferenceLine,
+                    }
+                ]
+            };
+
+            v.onDataChanged({
+                dataViews: [dataView]
+            });
+            
+            setTimeout(() => {
+                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+
+                let yLine = $('.y1-ref-line');
+                let yLabel = $('.labelGraphicsContext .label').eq(0);
+                helpers.verifyReferenceLine(
+                    yLine,
+                    yLabel,
+                    graphicsContext,
+                    {
+                        inFront: false,
+                        isHorizontal: true,
+                        color: refLineColor1,
+                        style: powerbi.visuals.lineStyle.dashed,
+                        opacity: 0.4,
+                        label: {
+                            color: refLineColor1,
+                            horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                            text: '20',
+                            verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                        },
+                    });
+                
+                yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
+                yAxisReferenceLine['transparency'] = 0;
+                yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
+                yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                setTimeout(() => {
+                    yLine = $('.y1-ref-line');
+                    yLabel = $('.labelGraphicsContext .label').eq(0);
+                    helpers.verifyReferenceLine(
+                        yLine,
+                        yLabel,
+                        graphicsContext,
+                        {
+                            inFront: true,
+                            isHorizontal: true,
+                            color: refLineColor2,
+                            style: powerbi.visuals.lineStyle.dotted,
+                            opacity: 1.0,
+                            label: {
+                                color: refLineColor2,
+                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                text: '20',
+                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                            },
+                        });
+
+                    yAxisReferenceLine['show'] = false;
+                    yAxisReferenceLine['dataLabelShow'] = false;
+
+                    v.onDataChanged({
+                        dataViews: [dataView]
+                    });
+
+                    setTimeout(() => {
+                        expect($('.y1-ref-line').length).toBe(0);
+                        expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
+
+                        done();
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
@@ -4311,6 +4344,7 @@ module powerbitests {
 
                 setTimeout(() => {
                     expect($('.legend').attr('orientation')).toBe(LegendPosition.Top.toString());
+                    
                     //change legend position
                     dataView.metadata.objects = { legend: { show: true, position: 'Right' } };
                     v.onDataChanged({
@@ -4336,6 +4370,7 @@ module powerbitests {
                                 expect($('.legend').attr('orientation')).toBe(LegendPosition.Right.toString());
                                 expect($('.legendTitle').text()).toBe(testTitle);
                                 expect($('#legendGroup').attr('transform')).not.toBeDefined();
+                                
                                 //hide legend
                                 dataView.metadata.objects = { legend: { show: false, position: 'Right' } };
                                 v.onDataChanged({
@@ -4353,11 +4388,11 @@ module powerbitests {
         }
     }
 
-    describe("Clustered ColumnChart DOM validation",() => clusterColumnChartDomValidation(false, false));
-    describe("Clustered ColumnChart DOM validation - Scalar",() => clusterColumnChartDomValidation(false, true));
+    describe("Clustered ColumnChart DOM validation", () => clusterColumnChartDomValidation(false, false));
+    describe("Clustered ColumnChart DOM validation - Scalar", () => clusterColumnChartDomValidation(false, true));
 
-    describe("Interactive Clustered ColumnChart DOM validation",() => clusterColumnChartDomValidation(true, false));
-    describe("Interactive Clustered ColumnChart DOM validation - Scalar",() => clusterColumnChartDomValidation(true, true));
+    describe("Interactive Clustered ColumnChart DOM validation", () => clusterColumnChartDomValidation(true, false));
+    describe("Interactive Clustered ColumnChart DOM validation - Scalar", () => clusterColumnChartDomValidation(true, true));
 
     function stackedColumnChartDomValidation(interactiveChart: boolean) {
         let v: powerbi.IVisual, element: JQuery;
@@ -4412,7 +4447,7 @@ module powerbitests {
             });
         });
 
-        it('single measure column chart dom validation',(done) => {
+        it('single measure column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4448,7 +4483,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('single measure column chart with too many values for view dom validation',(done) => {
+        it('single measure column chart with too many values for view dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -4524,7 +4559,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart dom validation',(done) => {
+        it('stacked column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4566,7 +4601,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with partial highlight dom validation',(done) => {
+        it('stacked column chart with partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4615,7 +4650,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it('stacked column chart with negative partial highlight dom validation',(done) => {
+        it('stacked column chart with negative partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4664,7 +4699,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with partial highlight with overflow dom validation',(done) => {
+        it('stacked column chart with partial highlight with overflow dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4709,7 +4744,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with partial highlight with postitive/negative mix dom validation',(done) => {
+        it('stacked column chart with partial highlight with postitive/negative mix dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4749,7 +4784,100 @@ module powerbitests {
                 expect($('.highlight').length).toBe(0);
                 let legendSelector: string = interactiveChart ? '.interactive-legend' : '.legend';
                 expect($(legendSelector).length).toBe(1);
-                expect($(legendSelector + (interactiveChart?' .item':'Item')).length).toBe(2);
+                expect($(legendSelector + (interactiveChart ? ' .item' : 'Item')).length).toBe(2);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('stacked column chart with partial highlight with overflow with single series', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("abc"),
+                mocks.dataViewScopeIdentity("def"),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataFourColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataFourColumn.columns[0],
+                            values: ['abc', 'def'],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadataFourColumn.columns[1],
+                                min: 123,
+                                max: 234,
+                                subtotal: 357,
+                                values: [123, 234],
+                                highlights: [154, null],
+                            },
+                        ])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                expect($('.columnChart')).toBeInDOM();
+                expect($('.column').length).toBe(3);
+                expect($('.highlight').length).toBe(1);
+
+                // Thinner bar
+                expect(+$('.highlight')[0].attributes.getNamedItem('height').value)
+                    .toBeGreaterThan(+$('.column')[0].attributes.getNamedItem('height').value);
+                expect(+$('.highlight')[0].attributes.getNamedItem('y').value)
+                    .toBeLessThan(+$('.column')[0].attributes.getNamedItem('y').value);
+                expect(+$('.highlight')[0].attributes.getNamedItem('width').value)
+                    .toBeLessThan(+$('.column')[0].attributes.getNamedItem('width').value);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('stacked column chart with partial highlight with overflow with more than one series is back to stacked', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("abc"),
+                mocks.dataViewScopeIdentity("def"),
+            ];
+
+            // Now add another series and make sure we get a stacked as expected...
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataFourColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataFourColumn.columns[0],
+                            values: ['abc', 'def'],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadataFourColumn.columns[1],
+                                min: 123,
+                                max: 234,
+                                subtotal: 357,
+                                values: [123, 234],
+                                highlights: [154, null],
+                            },
+                            {
+                                source: dataViewMetadataFourColumn.columns[2],
+                                min: 12,
+                                max: 88,
+                                subtotal: 100,
+                                values: [12, 88],
+                                highlights: [6, null]
+                            },
+                        ])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                expect($('.column').length).toBe(2);
+                expect($('.highlight').length).toBe(0);
+                let legendSelector: string = interactiveChart ? '.interactive-legend' : '.legend';
+                expect($(legendSelector).length).toBe(1);
+                expect($(legendSelector + (interactiveChart ? ' .item' : 'Item')).length).toBe(2);
+
                 done();
             }, DefaultWaitForRender);
         });
@@ -4795,7 +4923,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with near zero measures dom validation',(done) => {
+        it('stacked column chart with near zero measures dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4831,7 +4959,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart optimal ticks dom validation',(done) => {
+        it('stacked column chart optimal ticks dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -4863,7 +4991,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty stacked column chart dom validation',(done) => {
+        it('empty stacked column chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumn,
@@ -4889,7 +5017,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with small interval dom validation',(done) => {
+        it('stacked column chart with small interval dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -4923,7 +5051,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart should be cleared when empty dataview is applied',(done) => {
+        it('stacked column chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -4970,7 +5098,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart with no animator should filter 0/null columns',(done) => {
+        it('stacked column chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -5001,7 +5129,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked column chart zero line axis is darkened',(done) => {
+        it('stacked column chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -5036,11 +5164,56 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+
+        it('background image', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("abc"),
+                mocks.dataViewScopeIdentity("def"),
+            ];
+            let metadata = _.cloneDeep(dataViewMetadataTwoColumn);
+            metadata.objects = {
+                plotArea: {
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
+                },
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: metadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['abc', 'def'],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            min: 100000,
+                            max: 200000,
+                            subtotal: 300000,
+                            values: [100000, 200000]
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let backgroundImage = $('.columnChart .background-image');
+                expect(backgroundImage.length).toBeGreaterThan(0);
+                expect(backgroundImage.css('height')).toBeDefined();
+                expect(backgroundImage.css('width')).toBeDefined();
+                expect(backgroundImage.css('left')).toBeDefined();
+                expect(backgroundImage.css('bottom')).toBeDefined();
+                done();
+            }, DefaultWaitForRender);
+        });
     }
 
-    describe("Stacked ColumnChart DOM validation",() => stackedColumnChartDomValidation(false));
+    describe("Stacked ColumnChart DOM validation", () => stackedColumnChartDomValidation(false));
 
-    describe("Interactive Stacked ColumnChart DOM validation",() => stackedColumnChartDomValidation(true));
+    describe("Interactive Stacked ColumnChart DOM validation", () => stackedColumnChartDomValidation(true));
 
     function hundredPercentStackedColumnChartDomValidation(interactiveChart: boolean) {
         let v: powerbi.IVisual, element: JQuery;
@@ -5098,7 +5271,7 @@ module powerbitests {
             });
         });
 
-        it('single measure hundred percent column chart dom validation',(done) => {
+        it('single measure hundred percent column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5131,7 +5304,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('single measure partial highlight hundred percent column chart dom validation',(done) => {
+        it('single measure partial highlight hundred percent column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5171,7 +5344,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it('multi measure hundred percent column chart dom validation',(done) => {
+        it('multi measure hundred percent column chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5211,7 +5384,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty hundred percent column chart dom validation',(done) => {
+        it('empty hundred percent column chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumn,
@@ -5236,7 +5409,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent column chart should be cleared when empty dataview is applied',(done) => {
+        it('hundred percent column chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -5283,7 +5456,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent column chart with no animator should filter 0/null columns',(done) => {
+        it('hundred percent column chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -5314,7 +5487,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent column chart zero line axis is darkened',(done) => {
+        it('hundred percent column chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -5352,9 +5525,9 @@ module powerbitests {
 
     }
 
-    describe("Hundred Percent Stacked ColumnChart DOM validation",() => hundredPercentStackedColumnChartDomValidation(false));
+    describe("Hundred Percent Stacked ColumnChart DOM validation", () => hundredPercentStackedColumnChartDomValidation(false));
 
-    describe("Interactive Hundred Percent Stacked ColumnChart DOM validation",() => hundredPercentStackedColumnChartDomValidation(true));
+    describe("Interactive Hundred Percent Stacked ColumnChart DOM validation", () => hundredPercentStackedColumnChartDomValidation(true));
 
     function stackedBarChartDomValidation(interactiveChart: boolean) {
         let v: powerbi.IVisual, element: JQuery;
@@ -5411,7 +5584,7 @@ module powerbitests {
             });
         });
 
-        it('single measure bar chart long labels dom validation',(done) => {
+        it('single measure bar chart long labels dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("this is the label that never ends, it just goes on and on my friends. Some axis started rendering it not knowing what it was, and now it keeps on rendering forever just because this the label that never ends..."),
                 mocks.dataViewScopeIdentity("def"),
@@ -5454,7 +5627,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('single measure bar chart dom validation',(done) => {
+        it('single measure bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5488,7 +5661,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart dom validation',(done) => {
+        it('stacked bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5527,7 +5700,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart partial highlight dom validation',(done) => {
+        it('stacked bar chart partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5573,7 +5746,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it('stacked bar chart negative partial highlight dom validation',(done) => {
+        it('stacked bar chart negative partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5619,7 +5792,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart partial highlight with overflow dom validation',(done) => {
+        it('stacked bar chart partial highlight with overflow dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5661,7 +5834,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart partial highlight with positive/negative mix dom validation',(done) => {
+        it('stacked bar chart partial highlight with positive/negative mix dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5703,7 +5876,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('incremental render bar chart one to multiple series bar chart dom validation',(done) => {
+        it('incremental render bar chart one to multiple series bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5785,7 +5958,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart missing measure dom validation',(done) => {
+        it('stacked bar chart missing measure dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5824,7 +5997,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart with near zero measures dom validation',(done) => {
+        it('stacked bar chart with near zero measures dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5860,7 +6033,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart optimal ticks dom validation',(done) => {
+        it('stacked bar chart optimal ticks dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -5892,7 +6065,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty stacked bar chart dom validation',(done) => {
+        it('empty stacked bar chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumn,
@@ -5918,7 +6091,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart with small interval dom validation',(done) => {
+        it('stacked bar chart with small interval dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -5952,7 +6125,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart should be cleared when empty dataview is applied',(done) => {
+        it('stacked bar chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -5999,7 +6172,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart with no animator should filter 0/null columns',(done) => {
+        it('stacked bar chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6030,7 +6203,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('stacked bar chart zero line axis is darkened',(done) => {
+        it('stacked bar chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6067,9 +6240,9 @@ module powerbitests {
         });
     }
 
-    describe("Stacked BarChart DOM validation",() => stackedBarChartDomValidation(false));
+    describe("Stacked BarChart DOM validation", () => stackedBarChartDomValidation(false));
 
-    describe("Interactive Stacked BarChart DOM validation",() => stackedBarChartDomValidation(true));
+    describe("Interactive Stacked BarChart DOM validation", () => stackedBarChartDomValidation(true));
 
     function hundredPercentStackedBarChartDomValidation(interactiveChart: boolean) {
         let v: powerbi.IVisual, element: JQuery;
@@ -6127,7 +6300,7 @@ module powerbitests {
             });
         });
 
-        it('single measure hundred percent bar chart dom validation',(done) => {
+        it('single measure hundred percent bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6160,7 +6333,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('single measure partial highlight hundred percent bar chart dom validation',(done) => {
+        it('single measure partial highlight hundred percent bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6199,7 +6372,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('multi measure hundred percent bar chart dom validation',(done) => {
+        it('multi measure hundred percent bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6239,7 +6412,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty hundred percent bar chart dom validation',(done) => {
+        it('empty hundred percent bar chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumn,
@@ -6264,7 +6437,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent bar chart should be cleared when empty dataview is applied',(done) => {
+        it('hundred percent bar chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -6311,7 +6484,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent bar chart with no animator should filter 0/null columns',(done) => {
+        it('hundred percent bar chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6342,7 +6515,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('hundred percent bar chart zero line axis is darkened',(done) => {
+        it('hundred percent bar chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6379,9 +6552,9 @@ module powerbitests {
         });
     }
 
-    describe("Hundred Percent Stacked BarChart DOM validation",() => hundredPercentStackedBarChartDomValidation(false));
+    describe("Hundred Percent Stacked BarChart DOM validation", () => hundredPercentStackedBarChartDomValidation(false));
 
-    describe("Interactive Hundred Percent Stacked BarChart DOM validation",() => hundredPercentStackedBarChartDomValidation(true));
+    describe("Interactive Hundred Percent Stacked BarChart DOM validation", () => hundredPercentStackedBarChartDomValidation(true));
 
     function clusterdBarChartDomValidation(interactiveChart: boolean) {
         let v: powerbi.IVisual, element: JQuery;
@@ -6445,7 +6618,7 @@ module powerbitests {
             });
         });
 
-        it('clustered bar chart dom validation',(done) => {
+        it('clustered bar chart dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6497,7 +6670,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart partial highlight dom validation',(done) => {
+        it('clustered bar chart partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6544,7 +6717,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it('clustered bar chart negative partial highlight dom validation',(done) => {
+        it('clustered bar chart negative partial highlight dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6590,7 +6763,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart partial highlight with overflow dom validation',(done) => {
+        it('clustered bar chart partial highlight with overflow dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6638,7 +6811,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart partial highlight with postiive/negative mix dom validation',(done) => {
+        it('clustered bar chart partial highlight with postiive/negative mix dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6686,7 +6859,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart missing measure dom validation',(done) => {
+        it('clustered bar chart missing measure dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6726,7 +6899,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart with near zero measures dom validation',(done) => {
+        it('clustered bar chart with near zero measures dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -6762,7 +6935,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('empty clustered bar chart dom validation',(done) => {
+        it('empty clustered bar chart dom validation', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumn,
@@ -6788,7 +6961,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart with small interval dom validation',(done) => {
+        it('clustered bar chart with small interval dom validation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -6822,7 +6995,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart should be cleared when empty dataview is applied',(done) => {
+        it('clustered bar chart should be cleared when empty dataview is applied', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
@@ -6869,7 +7042,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart with no animator should filter 0/null columns',(done) => {
+        it('clustered bar chart with no animator should filter 0/null columns', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6900,7 +7073,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('clustered bar chart zero line axis is darkened',(done) => {
+        it('clustered bar chart zero line axis is darkened', (done) => {
             let categoryValues = ['a', 'b', 'c', 'd', 'e'];
             let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
             v.onDataChanged({
@@ -6935,12 +7108,136 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+
+        it('clustered bar chart reference line dom validation', (done) => {
+            let categoryValues = ['a', 'b', 'c', 'd', 'e'];
+            let categoryIdentities = categoryValues.map(d => mocks.dataViewScopeIdentity(d));
+
+            let refLineColor1 = '#ff0000';
+            let refLineColor2 = '#ff00ff';
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadataFourColumn,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataFourColumn.columns[0],
+                        values: categoryValues,
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataFourColumn.columns[1],
+                            values: [10, 0, -30, null, 0]
+                        }, {
+                            source: dataViewMetadataFourColumn.columns[2],
+                            values: [0, -20, null, 88, 10]
+                        }])
+                }
+            };
+
+            let yAxisReferenceLine: powerbi.DataViewObject = {
+                show: true,
+                value: 20,
+                lineColor: { solid: { color: refLineColor1 } },
+                transparency: 60,
+                style: powerbi.visuals.lineStyle.dashed,
+                position: powerbi.visuals.referenceLinePosition.back,
+                dataLabelShow: true,
+                dataLabelColor: { solid: { color: refLineColor1 } },
+                dataLabelDecimalPoints: 0,
+                dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+            };
+
+            dataView.metadata.objects = {
+                y1AxisReferenceLine: [
+                    {
+                        id: '0',
+                        object: yAxisReferenceLine,
+                    }
+                ]
+            };
+
+            v.onDataChanged({
+                dataViews: [dataView]
+            });
+
+            setTimeout(() => {
+                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+
+                let yLine = $('.y1-ref-line');
+                let yLabel = $('.labelGraphicsContext .label').eq(0);
+                helpers.verifyReferenceLine(
+                    yLine,
+                    yLabel,
+                    graphicsContext,
+                    {
+                        inFront: false,
+                        isHorizontal: false,
+                        color: refLineColor1,
+                        style: powerbi.visuals.lineStyle.dashed,
+                        opacity: 0.4,
+                        label: {
+                            color: refLineColor1,
+                            horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                            text: '20',
+                            verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                        },
+                    });
+
+                yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
+                yAxisReferenceLine['transparency'] = 0;
+                yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
+                yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                setTimeout(() => {
+                    yLine = $('.y1-ref-line');
+                    yLabel = $('.labelGraphicsContext .label').eq(0);
+                    helpers.verifyReferenceLine(
+                        yLine,
+                        yLabel,
+                        graphicsContext,
+                        {
+                            inFront: true,
+                            isHorizontal: false,
+                            color: refLineColor2,
+                            style: powerbi.visuals.lineStyle.dotted,
+                            opacity: 1.0,
+                            label: {
+                                color: refLineColor2,
+                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                text: '20',
+                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                            },
+                        });
+
+                    yAxisReferenceLine['show'] = false;
+                    yAxisReferenceLine['dataLabelShow'] = false;
+
+                    v.onDataChanged({
+                        dataViews: [dataView]
+                    });
+
+                    setTimeout(() => {
+                        expect($('.y1-ref-line').length).toBe(0);
+                        expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
+
+                        done();
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
     }
 
-    describe("Clustered BarChart DOM validation",() => clusterdBarChartDomValidation(false));
-    describe("Interactive Clustered BarChart DOM validation",() => clusterdBarChartDomValidation(true));
+    describe("Clustered BarChart DOM validation", () => clusterdBarChartDomValidation(false));
+    describe("Interactive Clustered BarChart DOM validation", () => clusterdBarChartDomValidation(true));
 
-    describe("Enumerate Objects",() => {
+    describe("Enumerate Objects", () => {
         let v: powerbi.IVisual, element: JQuery;
         let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
@@ -6962,7 +7259,7 @@ module powerbitests {
             });
         });
 
-        it('enumerateObjectInstances: category+measure',(done) => {
+        it('enumerateObjectInstances: category+measure', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("red"),
                 mocks.dataViewScopeIdentity("def"),
@@ -7012,7 +7309,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('enumerateObjectInstances: Verify instances on ordinal category axis',(done) => {
+        it('enumerateObjectInstances: Verify instances on ordinal category axis', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("red"),
                 mocks.dataViewScopeIdentity("def"),
@@ -7060,7 +7357,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('enumerateObjectInstances: Verify instances on numerical category axis',(done) => {
+        it('enumerateObjectInstances: Verify instances on numerical category axis', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("5000"),
                 mocks.dataViewScopeIdentity("10000"),
@@ -7107,7 +7404,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('enumerateObjectInstances: category+multi-measure',(done) => {
+        it('enumerateObjectInstances: category+multi-measure', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("red"),
                 mocks.dataViewScopeIdentity("def"),
@@ -7149,7 +7446,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('enumerateObjectInstances: single-measure (no category)',(done) => {
+        it('enumerateObjectInstances: single-measure (no category)', (done) => {
             v.onDataChanged({
                 dataViews: [{
                     metadata: { columns: [categoryColumn, measureColumn] },
@@ -7214,6 +7511,7 @@ module powerbitests {
 
             setTimeout(() => {
                 var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'labels' });
+                
                 //expect 3 instances - 1 label settings + 2 containers
                 expect(points.instances.length).toBe(3);
                 expect(points.containers.length).toBe(2);
@@ -7374,7 +7672,7 @@ module powerbitests {
         });
     });
 
-    describe("Column chart labels",() => {
+    describe("Column chart labels", () => {
         let v: powerbi.IVisual, element: JQuery;
         let dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
             columns: [
@@ -7407,7 +7705,7 @@ module powerbitests {
             });
         });
 
-        it('Check margins for long labels, when you have a few columns that do not take up the whole width, and get centered',(done) => {
+        it('Check margins for long labels, when you have a few columns that do not take up the whole width, and get centered', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("this is the label that never ends, it just goes on and on my friends. Some axis started rendering it not knowing what it was, and now it keeps on rendering forever just because this the label that never ends..."),
                 mocks.dataViewScopeIdentity("def"),
@@ -7435,13 +7733,14 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
+                
                 //expect($('.columnChart .axisGraphicsContext').attr('transform')).toBe('translate(36,8)');
                 done();
             }, DefaultWaitForRender);
         });
     });
     
-    describe("BarChart Interactivity",() => {
+    describe("BarChart Interactivity", () => {
         let v: powerbi.IVisual, element: JQuery;
         let dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
             columns: [
@@ -7464,10 +7763,10 @@ module powerbitests {
         beforeEach(() => {
 
             element = powerbitests.helpers.testDom('200', '300');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false}).getPlugin('barChart').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false }).getPlugin('barChart').create();
         });
 
-        it('Bar chart with dragDataPoint enabled',() => {
+        it('Bar chart with dragDataPoint enabled', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -7526,7 +7825,7 @@ module powerbitests {
             });
         });
 
-        it('Bar chart without dragDataPoint enabled',() => {
+        it('Bar chart without dragDataPoint enabled', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -7566,7 +7865,7 @@ module powerbitests {
             expect(trigger).not.toBeDefined();
         });
         
-        it('Bar chart without selection enabled',() => {
+        it('Bar chart without selection enabled', () => {
             let hostServices = mocks.createVisualHostServices();
             v = powerbi.visuals.visualPluginFactory.create().getPlugin('barChart').create();
             v.init({
@@ -7686,6 +7985,7 @@ module powerbitests {
                     ]
                 });
             trigger3(mockEvent);
+            
             //expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
             expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
             expect(bars[2].style.fillOpacity).toBe(DimmedOpacity);
@@ -7725,7 +8025,7 @@ module powerbitests {
                 });
         });
 
-        it('Bar chart repeated single selection',() => {
+        it('Bar chart repeated single selection', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -7836,7 +8136,7 @@ module powerbitests {
                 });
         });
 
-        it('Bar chart single and multi selection',() => {
+        it('Bar chart single and multi selection', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -8042,7 +8342,7 @@ module powerbitests {
                 });
         });
 
-        it('Bar chart external clear selection',() => {
+        it('Bar chart external clear selection', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -8247,7 +8547,7 @@ module powerbitests {
             });
         });
 
-        it('Drag and click interaction validation',() => {
+        it('Drag and click interaction validation', () => {
 
             // drag and click on chart (not on bar) are implemented the same
             let barChart = (<any>v).layers[0];
@@ -8266,7 +8566,7 @@ module powerbitests {
             expect(selectedIndex).toBe(expectedSelectedIndex);
         });
 
-        it('Columns Opacity validation',(done) => {
+        it('Columns Opacity validation', (done) => {
             let barChart = (<any>v).layers[0];
             let selectedIndex = 2;
             barChart.selectColumn(selectedIndex);
@@ -8286,13 +8586,14 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('Update legend is not called twice on same column',() => {
+        it('Update legend is not called twice on same column', () => {
             let barChart = (<any>v).layers[0];
             let cartesianVisualHost = barChart.cartesianVisualHost;
             spyOn(cartesianVisualHost, 'updateLegend').and.callThrough();
 
             // first column is selected. try to select it again
             barChart.selectColumn(0);
+            
             // update legend should not be called again
             expect(cartesianVisualHost.updateLegend).not.toHaveBeenCalled();
         });
@@ -8320,12 +8621,12 @@ module powerbitests {
     }
 
     let x = 250, y = 200;
-    describe("Stacked Bar Chart Interactivity",() => columnChartInteractivity('barChart', '.bar', x, y));
-    describe("Clustered Bar Chart Interactivity",() => columnChartInteractivity('clusteredBarChart', '.bar', x, y));
-    describe("Hundred Percent Stacked Bar Chart Interactivity",() => columnChartInteractivity('hundredPercentStackedBarChart', '.bar', x, y));
-    describe("Stacked Column Chart Interactivity",() => columnChartInteractivity('columnChart', '.column', x, y));
-    describe("Clustered Column Chart Interactivity",() => columnChartInteractivity('clusteredColumnChart', '.column', x, y));
-    describe("Hundred Percent Stacked Column Chart Interactivity",() => columnChartInteractivity('hundredPercentStackedColumnChart', '.column', x, y));
+    describe("Stacked Bar Chart Interactivity", () => columnChartInteractivity('barChart', '.bar', x, y));
+    describe("Clustered Bar Chart Interactivity", () => columnChartInteractivity('clusteredBarChart', '.bar', x, y));
+    describe("Hundred Percent Stacked Bar Chart Interactivity", () => columnChartInteractivity('hundredPercentStackedBarChart', '.bar', x, y));
+    describe("Stacked Column Chart Interactivity", () => columnChartInteractivity('columnChart', '.column', x, y));
+    describe("Clustered Column Chart Interactivity", () => columnChartInteractivity('clusteredColumnChart', '.column', x, y));
+    describe("Hundred Percent Stacked Column Chart Interactivity", () => columnChartInteractivity('hundredPercentStackedColumnChart', '.column', x, y));
 
     function columnChartWebAnimations(chartType: string) {
         let hostServices = powerbitests.mocks.createVisualHostServices();
@@ -8374,7 +8675,7 @@ module powerbitests {
             });
         });
 
-        it('highlight Animation',(done) => {
+        it('highlight Animation', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
                 mocks.dataViewScopeIdentity("def"),
@@ -8582,14 +8883,14 @@ module powerbitests {
         });
     }
 
-    describe("Stacked Bar Chart Web Animations",() => columnChartWebAnimations('barChart'));
-    describe("Clustered Bar Chart Web Animations",() => columnChartWebAnimations('clusteredBarChart'));
-    describe("Hundred Percent Stacked Bar Chart Web Animations",() => columnChartWebAnimations('hundredPercentStackedBarChart'));
-    describe("Stacked Column Chart Web Animations",() => columnChartWebAnimations('columnChart'));
-    describe("Clustered Column Chart Web Animations",() => columnChartWebAnimations('clusteredColumnChart'));
-    describe("Hundred Percent Stacked Column Chart Web Animations",() => columnChartWebAnimations('hundredPercentStackedColumnChart'));
+    describe("Stacked Bar Chart Web Animations", () => columnChartWebAnimations('barChart'));
+    describe("Clustered Bar Chart Web Animations", () => columnChartWebAnimations('clusteredBarChart'));
+    describe("Hundred Percent Stacked Bar Chart Web Animations", () => columnChartWebAnimations('hundredPercentStackedBarChart'));
+    describe("Stacked Column Chart Web Animations", () => columnChartWebAnimations('columnChart'));
+    describe("Clustered Column Chart Web Animations", () => columnChartWebAnimations('clusteredColumnChart'));
+    describe("Hundred Percent Stacked Column Chart Web Animations", () => columnChartWebAnimations('hundredPercentStackedColumnChart'));
 
-    it('tooltip has category formatted date values',() => {
+    it('tooltip has category formatted date values', () => {
         let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), objects: { general: { formatString: "d" } } };
         let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) };
 
@@ -8787,7 +9088,7 @@ module powerbitests {
             v = getChartWithTooManyValues(chartType, element);
         });
 
-        it('DOM Validation',(done) => {
+        it('DOM Validation', (done) => {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('rect' + columnSelector).length).toBe(4);
@@ -8802,22 +9103,6 @@ module powerbitests {
 
                 v.onResizing({ height: 500, width: 500 });
                 expect($('.brush')).not.toBeInDOM();
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it('Scrollbar OnMousedown Validation',(done) => {
-            let transform = SVGUtil.parseTranslateTransform($('.svgScrollable .axisGraphicsContext').first().attr('transform'));
-            let cartesianChart = (<any>v);
-            let brush = v['brush'];
-            let brushExtent = [40, 55];
-            brush.extent(brushExtent);
-            cartesianChart.setMinBrush(100, 10);
-
-            setTimeout(() => {
-                let scrolledTransform = SVGUtil.parseTranslateTransform($('.svgScrollable .axisGraphicsContext').first().attr('transform'));
-                expect(transform.y).toEqual(scrolledTransform.y);
-                expect(scrolledTransform.y).toBe('8');
                 done();
             }, DefaultWaitForRender);
         });
@@ -8846,8 +9131,8 @@ module powerbitests {
         });
     }
 
-    describe("Bar chart scrollbar",() => barChartScrollbarValidation('barChart', '.bar'));
-    describe("ClusteredBarChart scrollbar",() => barChartScrollbarValidation('clusteredBarChart', '.bar'));
+    describe("Bar chart scrollbar", () => barChartScrollbarValidation('barChart', '.bar'));
+    describe("ClusteredBarChart scrollbar", () => barChartScrollbarValidation('clusteredBarChart', '.bar'));
 
     function columnChartScrollbarValidation(chartType: string, columnSelector: string) {
         let element: JQuery;
@@ -8858,7 +9143,7 @@ module powerbitests {
             v = getChartWithTooManyValues(chartType, element);
         });
 
-        it('DOM Validation',(done) => {
+        it('DOM Validation', (done) => {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('rect' + columnSelector).length).toBe(4);
@@ -8870,28 +9155,13 @@ module powerbitests {
 
                 // Windows and Mac OS differ
                 expect(powerbitests.helpers.isTranslateCloseTo($('.brush').attr('transform'), 22, 90)).toBe(true);
-                let width = parseInt($('.brush .extent')[0].attributes.getNamedItem('width').value, 0);
+                let width = parseInt($('.brush .extent')[0].attributes.getNamedItem('width').value, 10);
+                
                 // Windows and Mac OS differ
                 expect(powerbitests.helpers.isInRange(width, 13, 15)).toBe(true);
                 expect($('.brush .extent')[0].attributes.getNamedItem('x').value).toBe('0');
                 v.onResizing({ height: 500, width: 500 });
                 expect($('.brush')).not.toBeInDOM();
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it('Scrollbar On Mousedown Validation',(done) => {
-            let transform = SVGUtil.parseTranslateTransform($('.svgScrollable .axisGraphicsContext').first().attr('transform'));
-            let cartesianChart = (<any>v);
-            let brush = v['brush'];
-            let brushExtent = [25, 35];
-            brush.extent(brushExtent);
-            cartesianChart.setMinBrush(100, 10);
-
-            setTimeout(() => {
-                let scrolledTransform = SVGUtil.parseTranslateTransform($('.svgScrollable .axisGraphicsContext').first().attr('transform'));
-                expect(transform.x).toEqual(scrolledTransform.x);
-                expect(scrolledTransform.x).toBe('0');
                 done();
             }, DefaultWaitForRender);
         });
@@ -8920,10 +9190,10 @@ module powerbitests {
         });
     }
 
-    describe("ColumnChart scrollbar",() => columnChartScrollbarValidation('columnChart', '.column'));
-    describe("ClusteredcolumnChart Scrollbar",() => columnChartScrollbarValidation('clusteredColumnChart', '.column'));
+    describe("ColumnChart scrollbar", () => columnChartScrollbarValidation('columnChart', '.column'));
+    describe("ClusteredcolumnChart Scrollbar", () => columnChartScrollbarValidation('clusteredColumnChart', '.column'));
 
-    describe("Column chart X axis label rotation/cutoff",() => {
+    describe("Column chart X axis label rotation/cutoff", () => {
         let v: powerbi.IVisual, element: JQuery;
         let dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
             columns: [
@@ -8946,7 +9216,7 @@ module powerbitests {
             v = powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').create();
         });
 
-        it('long label cutoff at the left edge',() => {
+        it('long label cutoff at the left edge', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -8986,15 +9256,15 @@ module powerbitests {
             let actualLongLabelTextContent = element.find('.x.axis text')[0].textContent;
             expect(actualLongLabelTextContent).toContain('…');
         });
-    });    
+    });
 
-    describe("X Axis Customization: Column Chart",() => {
+    describe("X Axis Customization: Column Chart", () => {
         let v: powerbi.IVisual, element: JQuery;
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let unitLength: number;
         let bars;
         let labels;
-        let columnWidth: number;        
+        let columnWidth: number;
         let dataChangedOptions;
         let lastIndex;
 
@@ -9111,7 +9381,7 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('0.20000M');
         }); 
 
-        it('X Axis Customization: Verify Scalar and Categorical axis type',() => {
+        it('X Axis Customization: Verify Scalar and Categorical axis type', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("20000"),
@@ -9164,7 +9434,7 @@ module powerbitests {
             expect(lastItemGap).toBeCloseTo(firstItemGap, 2);
         });
 
-        it('Basic scale check',() => {
+        it('Basic scale check', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9218,9 +9488,9 @@ module powerbitests {
             //Verify begin&end labels
             expect(labels[0].textContent).toBe('0K');
             expect(labels[labels.length - 1].textContent).toBe('100K');
-        });      
+        });
 
-        it('Big Range scale check',() => {
+        it('Big Range scale check', () => {
 
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("50"),
@@ -9278,7 +9548,7 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('50K');
         });
 
-        it('Negative And Positive scale values check',() => {
+        it('Negative And Positive scale values check', () => {
 
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("-50"),
@@ -9380,9 +9650,69 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);            
             expect($('.x.axis').children('.tick').find('text').css('fill')).toBe(labelColor);
         });
+
+        it('Null category value for categorical Datetime axis type', () => {
+            let dataViewMetadataDatetimeColumn: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime)
+                    },
+                    {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+            };
+
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("2011"),
+                mocks.dataViewScopeIdentity("2012"),
+                mocks.dataViewScopeIdentity("2013"),
+                mocks.dataViewScopeIdentity("2014"),
+            ];
+            dataViewMetadataDatetimeColumn.objects = {
+                categoryAxis: {
+                    show: true,
+                    axisType: AxisType.categorical,
+                    showAxisTitle: true,
+                    axisStyle: true
+                }
+            };
+            dataChangedOptions = {
+                dataViews: [{
+                    metadata: dataViewMetadataDatetimeColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataDatetimeColumn.columns[0],
+                            values: [null, new Date(1325404800000), new Date(1357027200000), new Date(1388563200000)],
+                            identity: categoryIdentities
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataDatetimeColumn.columns[1],
+                            min: 50000,
+                            max: 200000,
+                            subtotal: 500000,
+                            values: [100000, 200000, 150000, 50000]
+                        }])
+                    }
+                }]
+            };
+
+            v.onDataChanged(dataChangedOptions);
+
+            let axisLabels = $('.x.axis .tick text');
+            expect(axisLabels.length).toBe(4);
+            expect(axisLabels.eq(0).text()).toBe('(Blank)');
+            expect(axisLabels.eq(1).text()).toBe('1/1/2012');
+            expect(axisLabels.eq(2).text()).toBe('1/1/2013');
+            expect(axisLabels.eq(3).text()).toBe('1/1/2014');
+        });
     });
 
-    describe("Y Axis Customization: Column Chart",() => {
+    describe("Y Axis Customization: Column Chart", () => {
         let v: powerbi.IVisual, element: JQuery;
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let bars;
@@ -9441,7 +9771,7 @@ module powerbitests {
             });
         });       
 
-        it('verify begin & end',() => {
+        it('verify begin & end', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9475,7 +9805,7 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('200K');
         });
 
-        it('verify begin & end - Big Scale',() => {
+        it('verify begin & end - Big Scale', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9593,7 +9923,7 @@ module powerbitests {
         });        
     });
     
-    describe("X Axis Customization: Bar Chart",() => {
+    describe("X Axis Customization: Bar Chart", () => {
         let v: powerbi.IVisual, element: JQuery;
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let bars;
@@ -9717,7 +10047,7 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('0.20000M');
         }); 
 
-        it('verify begin & end',() => {
+        it('verify begin & end', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9751,7 +10081,7 @@ module powerbitests {
             expect(labels[labels.length - 1].textContent).toBe('200K');
         });
 
-        it('verify begin & end - Big Range',() => {
+        it('verify begin & end - Big Range', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9786,7 +10116,7 @@ module powerbitests {
         });
     });
 
-    describe("Y Axis Customization: Bar Chart",() => {
+    describe("Y Axis Customization: Bar Chart", () => {
         let v: powerbi.IVisual, element: JQuery;
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let unitLength: number;
@@ -9849,8 +10179,7 @@ module powerbitests {
             });
         });
         
-
-        it('Basic scale check',() => {
+        it('Basic scale check', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -9894,7 +10223,7 @@ module powerbitests {
         });
     });
 
-    describe("Bar chart legend",() => {
+    describe("Bar chart legend", () => {
         let v: powerbi.IVisual, element: JQuery;
         let dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
             columns: [
@@ -9933,7 +10262,7 @@ module powerbitests {
             v = powerbi.visuals.visualPluginFactory.create().getPlugin('barChart').create();
         });
 
-        it('hide legend when there is only one legend and no group',() => {
+        it('hide legend when there is only one legend and no group', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -9974,7 +10303,7 @@ module powerbitests {
             expect(title.length).toBe(0);
         });
 
-        it('show legend when there is one legend and the legend is in a group',() => {
+        it('show legend when there is one legend and the legend is in a group', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
                 element: element,
@@ -10078,42 +10407,42 @@ module powerbitests {
 
     function getMetadataForLegendTest(baseMetadata: powerbi.DataViewMetadata, labelColor: string,labelFontSize: number): powerbi.VisualDataChangedOptions {
 
-        let identities = [mocks.dataViewScopeIdentity('identity'),
-        ];
+            let identities = [mocks.dataViewScopeIdentity('identity'),
+            ];
 
         let dataViewMetadata = Prototype.inherit(baseMetadata);
-        dataViewMetadata.objects = {
-            legend:
-            {
-                titleText: 'my title text',
-                show: true,
-                showTitle: true,
-                labelColor: { solid: { color: labelColor } },
+            dataViewMetadata.objects = {
+                legend:
+                {
+                    titleText: 'my title text',
+                    show: true,
+                    showTitle: true,
+                    labelColor: { solid: { color: labelColor } },
                 fontSize: labelFontSize,
-            }
-        };
+                }
+            };
 
         return {
-            dataViews: [{
-                metadata: dataViewMetadata,
-                categorical: {
-                    categories: [
-                        {
-                            source: dataViewMetadata.columns[0],
-                            values: ['a', 'b', 'c', 'd', 'e'],
-                            identity: identities,
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [
+                            {
+                                source: dataViewMetadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e'],
+                                identity: identities,
 
-                        }],
+                            }],
 
-                    values: DataViewTransform.createValueColumns([
-                        {
-                            source: dataViewMetadata.columns[1],
-                            values: [0.5, 2, 1, 1.5, 9],
-                            identity: identities[0],
-                        },
-                    ]),
-                },
-            }]
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata.columns[1],
+                                values: [0.5, 2, 1, 1.5, 9],
+                                identity: identities[0],
+                            },
+                        ]),
+                    },
+                }]
         };
     }
 
@@ -10195,7 +10524,7 @@ module powerbitests {
         expect($('.yAxisLabel').length).toBe(0);
     });
 
-    it('Bar Chart: Hide X and Y axis title',() => {
+    it('Bar Chart: Hide X and Y axis title', () => {
         let element = powerbitests.helpers.testDom('500', '500');
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let categoryIdentities = [mocks.dataViewScopeIdentity("John Domo")];
@@ -10389,7 +10718,7 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("John Domo"),
             ];
             let dataView: powerbi.DataView = {
-                metadata: metadata(dataViewMetadataThreeColumn, 1000, 1,15),
+                metadata: metadata(dataViewMetadataThreeColumn, 1000, 1, 15),
                 categorical: {
                     categories: [{
                         source: dataViewMetadataThreeColumn[0],
@@ -10571,6 +10900,7 @@ module powerbitests {
             ];
 
             let dataView: powerbi.DataView = {
+                
                 //setting display units to 1, in order to avoid auto scaling
                 metadata: metadata(columnsWithMultipleFormats, 1, 0),
                 categorical: {
@@ -10603,9 +10933,9 @@ module powerbitests {
     describe("Column chart format validation", () => columnChartDataLabelsFormatValidation('columnChart'));
     describe("Stacked Bar format validation", () => columnChartDataLabelsFormatValidation('barChart'));
     describe("Clustered Bar Chart Labels Color", () => columnChartDataLabelsFormatValidation('clusteredBarChart'));
-    describe("Clustered Column Chart Labels Color",() => columnChartDataLabelsFormatValidation('clusteredColumnChart'));
+    describe("Clustered Column Chart Labels Color", () => columnChartDataLabelsFormatValidation('clusteredColumnChart'));
 
-    describe("Log scale checks",() => {
+    describe("Log scale checks", () => {
         let v: powerbi.IVisual, element: JQuery;
         let hostServices = powerbitests.mocks.createVisualHostServices();
 
@@ -10662,7 +10992,7 @@ module powerbitests {
             });
         });
 
-        it('Log scale ticks',() => {
+        it('Log scale ticks', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -10708,7 +11038,7 @@ module powerbitests {
             }
         });
 
-        it('Log scale starts from zero',() => {
+        it('Log scale starts from zero', () => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("500"),
                 mocks.dataViewScopeIdentity("2000"),
@@ -11381,4 +11711,39 @@ module powerbitests {
     describe("Stacked Bar chart label data point creation", () => columnChartLabelDataPointCreation('barChart', true));
     describe("Clustered Bar chart label data point creation", () => columnChartLabelDataPointCreation('clusteredBarChart', false));
     describe("Clustered Column chart label data point creation", () => columnChartLabelDataPointCreation('clusteredColumnChart', false));
+
+    describe("ColumnChart capabilities which should not support format painter style copy", () => {
+        let capabilitiesObjects: powerbi.VisualCapabilities;
+        beforeEach(() => {
+            capabilitiesObjects = powerbi.visuals.getColumnChartCapabilities().objects;
+        });
+
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["legend"].properties["titleText"].suppressFormatPainterCopy).toBe(true);
+        });
+
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["categoryAxis"].properties["start"].suppressFormatPainterCopy).toBe(true);
+        });
+
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["categoryAxis"].properties["end"].suppressFormatPainterCopy).toBe(true);
+        });
+        
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["valueAxis"].properties["start"].suppressFormatPainterCopy).toBe(true);
+        });
+
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["valueAxis"].properties["end"].suppressFormatPainterCopy).toBe(true);
+        });
+        
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["labels"].properties["labelDisplayUnits"].suppressFormatPainterCopy).toBe(true);
+        });
+
+        it("should not support format painter copy", () => {
+            expect(capabilitiesObjects["labels"].properties["labelPrecision"].suppressFormatPainterCopy).toBe(true);
+        });
+    });
 }

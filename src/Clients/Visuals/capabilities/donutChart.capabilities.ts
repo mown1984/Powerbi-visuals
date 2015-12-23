@@ -78,7 +78,8 @@ module powerbi.visuals {
                     titleText: {
                         displayName: data.createDisplayNameGetter('Visual_LegendName'),
                         description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
-                        type: { text: true }
+                        type: { text: true },
+                        suppressFormatPainterCopy: true
                     },
                     labelColor: {
                         displayName: data.createDisplayNameGetter('Visual_LegendTitleColor'),
@@ -109,8 +110,7 @@ module powerbi.visuals {
                 }
             },
             labels: {
-                displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
-                description: data.createDisplayNameGetter('Visual_DataPointsLabelsDescription'),
+                displayName: data.createDisplayNameGetter('Visual_DetailLabels'),
                 properties: {
                     show: {
                         type: { bool: true }
@@ -123,29 +123,27 @@ module powerbi.visuals {
                     labelDisplayUnits: {
                         displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
                         description: data.createDisplayNameGetter('Visual_DisplayUnitsDescription'),
-                        type: { formatting: { labelDisplayUnits: true } }
+                        type: { formatting: { labelDisplayUnits: true } },
+                        suppressFormatPainterCopy: true,
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
                         description: data.createDisplayNameGetter('Visual_PrecisionDescription'),
                         placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
-                        type: { numeric: true }
+                        type: { numeric: true },
+                        suppressFormatPainterCopy: true,
                     },
                     fontSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
+                        type: { formatting: { fontSize: true } },
+                        suppressFormatPainterCopy: true,
+                    },
+                    labelStyle: {
+                        displayName: data.createDisplayNameGetter('Visual_LabelStyle'),
+                        type: { enumeration: labelStyle.type }
                     },
                 },
             },
-            categoryLabels: {
-                displayName: data.createDisplayNameGetter('Visual_CategoryLabels'),
-                description: data.createDisplayNameGetter('Visual_CategoryLabelsDescription'),
-                properties: {
-                    show: {
-                        type: { bool: true }
-                    },
-                },
-            }
         },
         dataViewMappings: [{
             conditions: [

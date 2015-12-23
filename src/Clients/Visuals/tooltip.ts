@@ -70,7 +70,7 @@ module powerbi.visuals {
         index: number;
         coordinates: number[];
         elementCoordinates: number[];
-        context: any;
+        context: HTMLElement;
         isTouchEvent: boolean;
     }
 
@@ -435,7 +435,7 @@ module powerbi.visuals {
 
         function showTooltipEventHandler(tooltipEvent: TooltipEvent, getTooltipInfoDelegate: (tooltipEvent: TooltipEvent) => TooltipDataItem[]) {
             let tooltipInfo: TooltipDataItem[] = tooltipData || getTooltipInfoDelegate(tooltipEvent);
-            if (tooltipInfo) {
+            if (!_.isEmpty(tooltipInfo)) {
                 let coordinates: number[] = mouseCoordinates || tooltipEvent.coordinates;
                 let clickedArea: TouchUtils.Rectangle = getClickedArea(coordinates[0], coordinates[1], tooltipEvent.isTouchEvent);
                 ToolTipInstance.show(tooltipInfo, clickedArea);

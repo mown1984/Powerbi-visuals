@@ -38,8 +38,12 @@ module powerbitests {
     import buildSelector = powerbitests.helpers.buildSelectorForColumn;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import PixelConverter = jsCommon.PixelConverter;
+    import LabelStyle = powerbi.visuals.labelStyle;
 
     let donutColors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+    const labelsElement = '.donutChart .label';
+    const fontFamily = 'Tahoma';
 
     powerbitests.mocks.setLocale();
 
@@ -168,8 +172,10 @@ module powerbitests {
             function getOptionsForValueWarning(values: number[]) {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: true }
+                    labels: {
+                        show: true,
+                        labelStyle: LabelStyle.both
+                    },
                 };
 
                 let options = {
@@ -269,8 +275,7 @@ module powerbitests {
             it('Layout - with labels and without',(done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelPrecision: 0 },
-                    categoryLabels: { show: false }
+                    labels: { show: true, labelPrecision: 0, labelStyle: LabelStyle.data },
                 };
 
                 let dataViews = [{
@@ -295,8 +300,8 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dataLabelsWidth = v['radius'];
-                    dataViewMetadataWithLabels.objects['labels']['show'] = false;
-                    dataViewMetadataWithLabels.objects['categoryLabels']['show'] = true;
+                    dataViewMetadataWithLabels.objects['labels']['show'] = true;
+                    dataViewMetadataWithLabels.objects['labels']['labelStyle'] = LabelStyle.category;
                     dataViews[0].metadata = dataViewMetadataWithLabels;
                     v.onDataChanged({
                         dataViews: dataViews,
@@ -304,7 +309,6 @@ module powerbitests {
                     setTimeout(() => {
                         let categoryLabelsWidth = v['radius'];
                         dataViewMetadataWithLabels.objects['labels']['show'] = false;
-                        dataViewMetadataWithLabels.objects['categoryLabels']['show'] = false;
                         dataViews[0].metadata = dataViewMetadataWithLabels;
                         v.onDataChanged({
                             dataViews: dataViews,
@@ -323,8 +327,7 @@ module powerbitests {
 
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelPrecision: 0 },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelPrecision: 0, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -345,7 +348,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("a (100)");
                     expect($(labels[1]).text()).toBe("b (200)");
                     expect($(labels[2]).text()).toBe("c (700)");
@@ -357,8 +360,7 @@ module powerbitests {
 
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -379,7 +381,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("a (12.35K)");
                     expect($(labels[1]).text()).toBe("b (15.53K)");
                     expect($(labels[2]).text()).toBe("c (0.78K)");
@@ -391,8 +393,7 @@ module powerbitests {
 
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelDisplayUnits: 1000, labelPrecision: 0 },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelDisplayUnits: 1000, labelPrecision: 0, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -413,7 +414,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("a (12K)");
                     expect($(labels[1]).text()).toBe("b (16K)");
                     expect($(labels[2]).text()).toBe("c (1K)");
@@ -425,8 +426,7 @@ module powerbitests {
 
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelDisplayUnits: 1000000, labelPrecision: 3 },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelDisplayUnits: 1000000, labelPrecision: 3, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -447,7 +447,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("a (0.012M)");
                     expect($(labels[1]).text()).toBe("b (0.016M)");
                     expect($(labels[2]).text()).toBe("c (0.001M)");
@@ -458,8 +458,7 @@ module powerbitests {
             it('Show the correct text - measure', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelPrecision: 0, },
-                    categoryLabels: { show: false }
+                    labels: { show: true, labelPrecision: 0, labelStyle: LabelStyle.data },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -480,7 +479,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("100");
                     expect($(labels[1]).text()).toBe("200");
                     expect($(labels[2]).text()).toBe("700");
@@ -491,8 +490,7 @@ module powerbitests {
             it('Show the correct text - category', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: false },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.category },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -513,7 +511,7 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("a");
                     expect($(labels[1]).text()).toBe("b");
                     expect($(labels[2]).text()).toBe("c");
@@ -525,7 +523,6 @@ module powerbitests {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
                     labels: { show: false },
-                    categoryLabels: { show: false }
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -545,7 +542,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let label = element.find('.donutChart .labels').find('text');
+                    let label = element.find(labelsElement);
                     expect($(label[0]).length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
@@ -554,8 +551,7 @@ module powerbitests {
             it('Verify data labels - default style', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: false }
+                    labels: { show: true, labelStyle: LabelStyle.data },
                 };
 
                 let labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
@@ -578,7 +574,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     let fill = $(labels[0]).css('fill');
                     helpers.assertColorsMatch(fill, labelColor);
                     expect($(labels[0]).css('opacity')).toBe(opacity);
@@ -591,8 +587,7 @@ module powerbitests {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
 
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: false },
+                    labels: { show: true, labelStyle: LabelStyle.data },
                     legend: {
                         titleText: 'my title text',
                         show: true,
@@ -633,8 +628,7 @@ module powerbitests {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
 
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: false },
+                    labels: { show: true, labelStyle: LabelStyle.data },
                     legend: {
                         titleText: 'my title text',
                         show: true,
@@ -674,8 +668,7 @@ module powerbitests {
                 let color = { solid: { color: "rgb(255, 0, 0)" } }; // Red
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, color: color },
-                    categoryLabels: { show: false }
+                    labels: { show: true, color: color, labelStyle: LabelStyle.data },
                 };
                 
                 v.onDataChanged({
@@ -696,7 +689,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     let fill = $(labels[0]).css('fill');
                     helpers.assertColorsMatch(fill, color.solid.color);
                     done();
@@ -707,8 +700,7 @@ module powerbitests {
                 let color = { solid: { color: "rgb(255, 0, 0)" } }; // Red
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: false, color: color },
-                    categoryLabels: { show: true }
+                    labels: { show: true, color: color, labelStyle: LabelStyle.category },
                 };
 
                 v.onDataChanged({
@@ -729,7 +721,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     let fill = $(labels[0]).css('fill');
                     helpers.assertColorsMatch(fill, color.solid.color);
                     done();
@@ -739,8 +731,7 @@ module powerbitests {
             it('Long data labels - big viewport', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: false },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.category },
                 };
 
                 v.onResizing({ height: 600, width: 1000 });
@@ -768,7 +759,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toBe("abcdefghijklmnopqrstuvwxyz");
                     expect($(labels[1]).text()).toBe("01234567890123456789");
                     expect($(labels[2]).text()).toBe("abcdefg");
@@ -781,9 +772,9 @@ module powerbitests {
             it('Long data labels - small viewport', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: false },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.category },
                 };
+                v.onResizing({ height: 600, width:600 });
                 v.onDataChanged({
                     dataViews: [{
                         metadata: dataViewMetadataWithLabels,
@@ -807,7 +798,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect($(labels[0]).text()).toContain('…');
                     expect($(labels[1]).text()).toContain('…');
                     expect($(labels[2]).text()).toBe("abcdefg");
@@ -820,8 +811,7 @@ module powerbitests {
             it('data labels visibility after resizing', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, labelPrecision: 0 },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelPrecision: 0, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -849,7 +839,7 @@ module powerbitests {
                     width: 600,
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect(labels.length).toBe(3);
                     done();
                 }, DefaultWaitForRender);
@@ -858,8 +848,7 @@ module powerbitests {
             it('Data lables with null', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: false },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.category },
                 };
 
                 v.onDataChanged({
@@ -880,7 +869,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect(labels.length).toBe(3);
                     done();
                 }, DefaultWaitForRender);
@@ -889,8 +878,7 @@ module powerbitests {
             it('Verify font size', (done) => {
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, fontSize: 15, },
-                    categoryLabels: { show: true }
+                    labels: { show: true, fontSize: 15, labelStyle: LabelStyle.both },
                 };
 
                 v.onDataChanged({
@@ -911,13 +899,14 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect(labels.first().css('font-size')).toBe(15 * 4 / 3 + 'px');
                     done();
                 }, DefaultWaitForRender);
             });
 
             it('Data labels with multiple formats', (done) => {
+                
                 //override view port size
                 element = powerbitests.helpers.testDom('1500', '1500');
                 v.init({
@@ -952,8 +941,7 @@ module powerbitests {
                             format: '#,0'
                         }],
                     objects: {
-                        labels: { show: true, labelPrecision: 0, labelDisplayUnits: null },
-                        categoryLabels: { show: false }
+                        labels: { show: true, labelPrecision: 0, labelDisplayUnits: null, labelStyle: LabelStyle.data },
                     }
                 };
 
@@ -978,7 +966,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
                     expect(labels.first().text()).toBe('%1,000');
                     expect(labels.last().text()).toBe('7,000');
                     done();
@@ -989,8 +977,7 @@ module powerbitests {
 
                 let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
                 dataViewMetadataWithLabels.objects = {
-                    labels: { show: true, },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.both },
                 };
                 v.onDataChanged({
                     dataViews: [{
@@ -1011,11 +998,13 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let labels = element.find('.donutChart .labels').find('text');
+                    let labels = element.find(labelsElement);
+                    
                     //The first label is most right, the second label is most left
                     expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
                     expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[2]).attr('x'));
                     expect($(labels[2]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
+                    
                     //The last label is top, the second label is button.
                     expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[0]).attr('y'));
                     expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
@@ -1097,6 +1086,7 @@ module powerbitests {
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         measure: 0,
@@ -1105,6 +1095,7 @@ module powerbitests {
                         label: 'b',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                         color: sliceColors[1],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: Number.MAX_VALUE,
@@ -1113,6 +1104,7 @@ module powerbitests {
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "+Infinity" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
 
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
@@ -1156,6 +1148,7 @@ module powerbitests {
                             label: 'a',
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
                             color: sliceColors[0],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[1],
                             measure: 0,
@@ -1164,6 +1157,7 @@ module powerbitests {
                             label: 'b',
                             tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                             color: sliceColors[1],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[2],
                             measure: 700,
@@ -1172,6 +1166,7 @@ module powerbitests {
                             label: 'c',
                             tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
                             color: sliceColors[2],
+                            strokeWidth: 0,
                     }].map(buildDataPoint);
 
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
@@ -1215,6 +1210,7 @@ module powerbitests {
                             label: 'a',
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
                             color: sliceColors[0],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[1],
                             measure: 0,
@@ -1222,7 +1218,8 @@ module powerbitests {
                             index: 1,
                             label: 'b',
                             tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
-                            color: sliceColors[1]
+                            color: sliceColors[1],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[2],
                             measure: 700,
@@ -1231,8 +1228,10 @@ module powerbitests {
                             label: 'c',
                             tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
                             color: sliceColors[2],
+                            strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1279,6 +1278,7 @@ module powerbitests {
                         label: 'col2',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[0])), null),
                         measure: -300,
@@ -1287,6 +1287,7 @@ module powerbitests {
                         label: 'col3',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[0].source.queryName, v[0].identity, buildSelector(categoryQueryName, categoryIdentities[1])), null),
                         measure: 0,
@@ -1295,6 +1296,7 @@ module powerbitests {
                         label: 'col2',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                         color: sliceColors[1],
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[1])), null),
                         measure: 300,
@@ -1303,6 +1305,7 @@ module powerbitests {
                         label: 'col3',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }],
                         color: sliceColors[1],
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[0].source.queryName, v[0].identity, buildSelector(categoryQueryName, categoryIdentities[2])), null),
                         measure: 150,
@@ -1311,6 +1314,7 @@ module powerbitests {
                         label: 'col2',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[2])), null),
                         measure: -50,
@@ -1319,6 +1323,7 @@ module powerbitests {
                         label: 'col3',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
 
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
@@ -1372,6 +1377,7 @@ module powerbitests {
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         measure: 0,
@@ -1380,6 +1386,7 @@ module powerbitests {
                         label: 'b',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                         color: sliceColors[1],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: 700,
@@ -1388,8 +1395,10 @@ module powerbitests {
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1424,7 +1433,8 @@ module powerbitests {
                         index: 0,
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
-                        color: redHexColor
+                        color: redHexColor,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         measure: 0,
@@ -1432,7 +1442,8 @@ module powerbitests {
                         index: 1,
                         label: 'b',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
-                        color: redHexColor
+                        color: redHexColor,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: 700,
@@ -1440,9 +1451,11 @@ module powerbitests {
                         index: 2,
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
-                        color: redHexColor
+                        color: redHexColor,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1451,6 +1464,7 @@ module powerbitests {
             it('categorical, no slicing, formatted color and default color', () => {
 
                 let hexGreen = "#00FF00";
+                
                 //red will be used as the default color
                 let hexDefaultColorRed = "FF0000";
 
@@ -1484,7 +1498,8 @@ module powerbitests {
                         index: 0,
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
-                        color: hexDefaultColorRed
+                        color: hexDefaultColorRed,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         measure: 0,
@@ -1492,7 +1507,8 @@ module powerbitests {
                         index: 1,
                         label: 'b',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
-                        color: hexGreen
+                        color: hexGreen,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: 700,
@@ -1500,9 +1516,11 @@ module powerbitests {
                         index: 2,
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
-                        color: hexDefaultColorRed
+                        color: hexDefaultColorRed,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -1549,6 +1567,7 @@ module powerbitests {
                             index: 0,
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200" }],
                             color: sliceColors[0],
+                            strokeWidth: 0,
                         }, {
                             identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), 'col3'),
                             measure: -300,
@@ -1557,6 +1576,7 @@ module powerbitests {
                             index: 0,
                             tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }],
                             color: sliceColors[0],
+                            strokeWidth: 0,
                         }, {
                             identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col2'),
                             measure: 0,
@@ -1565,6 +1585,7 @@ module powerbitests {
                             index: 1,
                             tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                             color: sliceColors[1],
+                            strokeWidth: 0,
                         }, {
                             identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col3'),
                             measure: 300,
@@ -1573,6 +1594,7 @@ module powerbitests {
                             index: 1,
                             tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }],
                             color: sliceColors[1],
+                            strokeWidth: 0,
                         }, {
                             identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col2'),
                             label: 'col2',
@@ -1581,6 +1603,7 @@ module powerbitests {
                             index: 2,
                             tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }],
                             color: sliceColors[2],
+                            strokeWidth: 0,
                         }, {
                             identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col3'),
                             label: 'col3',
@@ -1589,8 +1612,10 @@ module powerbitests {
                             index: 2,
                             tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }],
                             color: sliceColors[2],
+                            strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints.length).toBe(3);
@@ -1667,14 +1692,17 @@ module powerbitests {
                         index: 0,
                         tooltipInfo: [{ displayName: "col1", value: "+Infinity" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
             });
 
             it('non-categorical multi-measure, with slicing', () => {
+                
                 // Explicitly set the color for the first measure.
                 let columnWithColor = powerbi.Prototype.inherit(dataViewMetadata3Measure.columns[0]);
                 columnWithColor.objects = { dataPoint: { fill: { solid: { color: 'red' } } } };
@@ -1717,6 +1745,7 @@ module powerbitests {
                             index: 0,
                             tooltipInfo: [{ displayName: "col1", value: "200" }],
                             color: sliceColors[0],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[1],
                             label: 'col2',
@@ -1725,6 +1754,7 @@ module powerbitests {
                             index: 1,
                             tooltipInfo: [{ displayName: "col2", value: "-300" }],
                             color: sliceColors[1],
+                            strokeWidth: 0,
                         }, {
                             identity: selectionIds[2],
                             label: 'col3',
@@ -1733,8 +1763,10 @@ module powerbitests {
                             index: 2,
                             tooltipInfo: [{ displayName: "col3", value: "500" }],
                             color: sliceColors[2],
+                            strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
@@ -1766,8 +1798,10 @@ module powerbitests {
                         index: 0,
                         tooltipInfo: [{ displayName: "col1", value: "200" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('');
                 expect(actualData.legendData.dataPoints[0].label).toBe('col1');
@@ -1811,6 +1845,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "+Infinity" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         label: 'B',
@@ -1820,8 +1855,10 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -1866,6 +1903,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         label: 'B',
@@ -1875,8 +1913,10 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -1916,8 +1956,10 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
@@ -1961,6 +2003,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
                         color: 'green',
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         label: 'B',
@@ -1970,6 +2013,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
                         color: 'red',
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);               
             });           
@@ -2014,6 +2058,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "$200" }],
                         color: sliceColors[0],
                         categoryLabel: 'A',
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         label: 'B',
@@ -2024,12 +2069,14 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
                         color: sliceColors[1],
                         categoryLabel: 'B',
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
 
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
             });
 
-            it('with highlights',() => {
+            it('with highlights', () => {
+                
                 // categorical, multi-measure slices, with highlights
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2074,6 +2121,7 @@ module powerbitests {
                             index: 0,
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200" }, { displayName: highlightDisplayName, value: "-100" }],
                             color: sliceColors[0],
+                        strokeWidth: 0,
                         }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), 'col3'),
                         measure: -300,
@@ -2084,6 +2132,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }, { displayName: highlightDisplayName, value: "-150" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col2'),
                         measure: 0,
@@ -2094,6 +2143,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col3'),
                             measure: 300,
@@ -2104,6 +2154,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightDisplayName, value: "75" }],
                             color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col2'),
                         label: 'col2',
@@ -2113,6 +2164,7 @@ module powerbitests {
                         index: 2,
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }, { displayName: highlightDisplayName, value: "15" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                         }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col3'),
                         label: 'col3',
@@ -2123,8 +2175,10 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }, { displayName: highlightDisplayName, value: "50" }],
                             color: sliceColors[2],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints.length).toBe(3);
@@ -2135,6 +2189,7 @@ module powerbitests {
 
             //validate tooltip on highlighted values, the first tooptip is regular because highlighted value is 0, another tooltips are highlighted tooltips 
             it('with highlights - special case tooltip validation',() => {
+                
                 // categorical, multi-measure slices, zero-highlight as special case
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2166,6 +2221,7 @@ module powerbitests {
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200)" }]);
                 expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }]);
                 expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0" }]);
+                
                 //tooltips with highlighted values
                 expect(actualData.dataPoints[3].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightName, value: "75" }]);
                 expect(actualData.dataPoints[4].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150" }, { displayName: highlightName, value: "$10" }]);
@@ -2211,8 +2267,7 @@ module powerbitests {
 
                 //data labels are on
                 dataViewMetadata1Category2Measure.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: false }
+                    labels: { show: true, labelStyle: LabelStyle.data },
                 };
                 actualData = DonutChart.converter(dataView, donutColors);
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual(tooltipInfo1);
@@ -2221,8 +2276,7 @@ module powerbitests {
 
                 //data labels and category labels are on
                 dataViewMetadata1Category2Measure.objects = {
-                    labels: { show: true },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.both },
                 };
                 actualData = DonutChart.converter(dataView, donutColors);
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual(tooltipInfo1);
@@ -2231,16 +2285,16 @@ module powerbitests {
 
                 //data labels off and category labels are on
                 dataViewMetadata1Category2Measure.objects = {
-                    labels: { show: false },
-                    categoryLabels: { show: true }
+                    labels: { show: true, labelStyle: LabelStyle.category },
                 };
                 actualData = DonutChart.converter(dataView, donutColors);
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual(tooltipInfo1);
                 expect(actualData.dataPoints[1].data.tooltipInfo).toEqual(tooltipInfo2);
                 expect(actualData.dataPoints[2].data.tooltipInfo).toEqual(tooltipInfo3);
             });
-
+     
             it('with highlights that overflow', () => {
+                
                 // categorical, no slicing - with OverFlow
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -2285,6 +2339,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200)" }, { displayName: highlightName, value: "($100)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), 'col3'),
                         measure: -150,
@@ -2296,6 +2351,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }, { displayName: highlightName, value: "-150" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col2'),
                         label: 'col2',
@@ -2307,6 +2363,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col3'),
                         label: 'col3',
@@ -2318,6 +2375,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightName, value: "75" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col2'),
                         measure: 250,
@@ -2329,6 +2387,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150" }, { displayName: highlightName, value: "$250" }],
                         color: sliceColors[2],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), 'col3'),
                         measure: 50,
@@ -2340,6 +2399,7 @@ module powerbitests {
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }, { displayName: highlightName, value: "50" }],
                         color: sliceColors[2],
                         labelFormatString: undefined,
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
             });
@@ -2379,6 +2439,7 @@ module powerbitests {
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: 300,
@@ -2387,8 +2448,10 @@ module powerbitests {
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -2429,6 +2492,7 @@ module powerbitests {
                         label: 'a',
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
                         color: sliceColors[0],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[1],
                         measure: 0,
@@ -2437,6 +2501,7 @@ module powerbitests {
                         label: 'b',
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
                         color: sliceColors[1],
+                        strokeWidth: 0,
                     }, {
                         identity: selectionIds[2],
                         measure: 300,
@@ -2445,8 +2510,10 @@ module powerbitests {
                         label: 'c',
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }],
                         color: sliceColors[2],
+                        strokeWidth: 0,
                     }].map(buildDataPoint);
                 expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
@@ -2489,7 +2556,7 @@ module powerbitests {
             expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: 'c', value: '3' }]);
         });
 
-        function buildDataPoint(data: { identity: SelectionId; measure: number; highlightRatio?: number; measureFormat?: string; value: number; index: any; label: string; tooltipInfo?: powerbi.visuals.TooltipDataItem[]; highlightedTooltipInfo?: powerbi.visuals.TooltipDataItem[]; color?: string; labelFormatString?: string }): DonutDataPoint {
+        function buildDataPoint(data: { identity: SelectionId; measure: number; highlightRatio?: number; measureFormat?: string; value: number; index: any; label: string; tooltipInfo?: powerbi.visuals.TooltipDataItem[]; highlightedTooltipInfo?: powerbi.visuals.TooltipDataItem[]; color?: string; strokeWidth: number; labelFormatString?: string; }): DonutDataPoint {
             return <DonutDataPoint> {
                 identity: data.identity,
                 measure: data.measure,
@@ -2501,9 +2568,8 @@ module powerbitests {
                 highlightRatio: data.highlightRatio || 0,
                 tooltipInfo: data.tooltipInfo,
                 color: data.color,
-                labelColor: powerbi.visuals.dataLabelUtils.defaultLabelColor,
-                labelFormatString: data.labelFormatString,
-                labelFontSize: powerbi.visuals.dataLabelUtils.DefaultFontSizeInPt,
+                strokeWidth: data.strokeWidth,
+                labelFormatString: data.labelFormatString
             };
         }
     });
@@ -2532,7 +2598,11 @@ module powerbitests {
             dataViewMetadataTwoColumn.objects = { legend: { show: true } };
         }
         else {
-            dataViewMetadataTwoColumn.objects = undefined;
+            dataViewMetadataTwoColumn.objects = {
+                labels: {
+                    show: true, labelStyle: LabelStyle.category
+                }
+            };
         }
 
         let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
@@ -2774,6 +2844,7 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
+                
                 // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
                 if (!interactiveChart && !hasLegendObject) {
                     expect($('.donutChart polyline').length).toBe(3);
@@ -2806,7 +2877,7 @@ module powerbitests {
                 expect($('.donutChart .slice').length).toBe(3);
                 if (!interactiveChart && !hasLegendObject) {
                     expect($('.donutChart polyline').length).toBe(3);
-                    expect($('.donutChart .labels text').length).toBe(3);
+                    expect($(labelsElement).length).toBe(3);
                 }
                 done();
             }, DefaultWaitForRender);
@@ -2834,7 +2905,7 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
                 if (!interactiveChart && !hasLegendObject) {
-                    expect($('.donutChart .labels text').length).toBe(3);
+                    expect($(labelsElement).length).toBe(3);
                 }
                 done();
             }, DefaultWaitForRender);
@@ -2844,8 +2915,9 @@ module powerbitests {
 
             //make sure category labels on
             let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
-            dataViewMetadataTwoColumnLabels.objects = { categoryLabels: { show: true }, labels: { show: false } };
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.category } };
 
+            v.onResizing({ height: 600, width: 400 });
             v.onDataChanged({
                 dataViews: [{
                     metadata: dataViewMetadataTwoColumnLabels,
@@ -2899,6 +2971,7 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
                 if (interactiveChart) {
+                    
                     // Culling is disabled on interactive charts
                     expect($('.donutChart .slice').length).toBe(3);
                 }
@@ -2913,8 +2986,7 @@ module powerbitests {
 
         it('pie chart opacity validation with overlapping slices', (done) => {
             dataViewMetadataTwoColumn.objects = {
-                labels: { show: false },
-                categoryLabels: { show: true }
+                labels: { show: true, labelStyle: LabelStyle.category },
             };
             v.onDataChanged({
                 dataViews: [{
@@ -2937,17 +3009,18 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
                 if (!interactiveChart && !hasLegendObject) {
-                    expect($('.donutChart polyline').filter(function () {
+                    expect($('.donutChart .line-label').filter(function () {
                         return $(this).css('opacity') === '0.5';
                     }).length).toBe(3);
-                    expect($('.donutChart text').length).toBe(3);
+                    expect($(labelsElement).length).toBe(3);
                 }
+                
                 // lines are not present on interactive legend mode, and currently if regular legend is on we hide labels
                 if (interactiveChart) {
-                    expect($('.donutChart polyline').filter(function () {
+                    expect($('.donutChart .donutChart polyline').filter(function () {
                         return $(this).css('opacity') === '0.5';
                     }).length).toBe(0);
-                    expect($('.donutChart text').length).toBe(0);
+                    expect($(labelsElement).length).toBe(0);
                 }
                 done();
             }, DefaultWaitForRender * 2);
@@ -2979,8 +3052,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
+                
                 // verify the calculateRadius() was called during the rendering on the visual 
                 expect(pieChart.calculateRadius).toHaveBeenCalled();
+                
                 // call calculateRadius() and test for the result, based on whether the chart is interactive or not
                 let radiusResult = pieChart.calculateRadius();
                 let height = $('.donutChart').height();
@@ -3074,6 +3149,7 @@ module powerbitests {
 
         it('pie chart selecting a slice triggers select', () => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 return;
@@ -3110,6 +3186,7 @@ module powerbitests {
 
         it('pie chart highlighted slice select', (done) => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 done();
@@ -3156,6 +3233,7 @@ module powerbitests {
 
         it('pie chart selecting a highlighted slice triggers select', () => {
             if (interactiveChart) {
+                
                 // not applicable to interactive charts
                 expect($('.donutChart')).toBeInDOM();
                 return;
@@ -3260,7 +3338,7 @@ module powerbitests {
                         expect($(labels[2]).css('opacity')).toBe('0');
                     }
                     else {
-                        expect($('.labels').find('text').length).toBe(3);
+                        expect($(labelsElement).length).toBe(3);
                     }
                 }
 
@@ -3274,6 +3352,375 @@ module powerbitests {
                     });
                     done();
                 }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart stroke validation', (done) => {
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100, 50,20],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let slices = $('.donutChart .slice');
+                for (let i = 0; i < slices.length; i++) {
+                    expect(slices[i].style.strokeWidth).toBe("0px");
+                }
+                    done();
+                }, DefaultWaitForRender);
+        });
+
+        it('pie chart stroke validation - categorical multi-measure', (done) => {
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata1Category2Measure,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata1Category2Measure.columns[1],
+                                values: [200, 100, 150]
+                            }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [300, 200, 50]
+                            }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let slices = $('.donutChart .slice');
+                expect(slices.length).toBe(6);
+                for (let i = 0; i < slices.length; i++) {
+                    if(i % 2 === 0)
+                        expect(slices[i].style.strokeWidth).toBe("0px");
+                    else
+                        expect(slices[i].style.strokeWidth).toBe("1px");
+                }
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart stroke validation - categorical multi-measure with small values', (done) => {
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata1Category2Measure,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata1Category2Measure.columns[1],
+                                values: [1, 1000, 1500]
+                            }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [1000, 1, 50]
+                            }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let slices = $('.donutChart .slice');
+                if (!interactiveChart) {
+                    //The slices with very small values are not drawn
+                    expect(slices.length).toBe(4);
+                    for (let i = 0; i < slices.length - 1; i++) {
+                        expect(slices[i].style.strokeWidth).toBe("0px");
+                    }
+                    //only last slice get stroke width 1 
+                    expect(slices[slices.length - 1].style.strokeWidth).toBe("1px");
+                }
+                else {
+                    expect(slices.length).toBe(6);
+                    for (let i = 0; i < slices.length; i++) {
+                        if (i % 2 === 0)
+                            expect(slices[i].style.strokeWidth).toBe("0px");
+                        else
+                            expect(slices[i].style.strokeWidth).toBe("1px");
+                    }
+                }
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart stroke validation - with highlight', (done) => {
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100, 50, 20],
+                            highlights: [50, 20, 5],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let slices = $('.donutChart .slice');
+                let highlightSlices = $('.donutChart .slice-highlight');
+                for (let i = 0; i < slices.length; i++) {
+                    expect(slices[i].style.strokeWidth).toBe("0px");
+                    expect(highlightSlices[i].style.strokeWidth).toBe("0px");
+                }
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart stroke validation - categorical multi-measure with highlight', (done) => {
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata1Category2Measure,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category2Measure.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata1Category2Measure.columns[1],
+                                values: [200, 100, 150],
+                                highlights: [100, 60, 130],
+                            }, {
+                                source: dataViewMetadata1Category2Measure.columns[2],
+                                values: [300, 200, 50],
+                                highlights: [50, 20, 5],
+                            }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let slices = $('.donutChart .slice');
+                let highlightSlices = $('.donutChart .slice-highlight');
+                expect(slices.length).toBe(6);
+                expect(highlightSlices.length).toBe(6);
+                for (let i = 0; i < slices.length; i++) {
+                    if (i % 2 === 0) {
+                        expect(slices[i].style.strokeWidth).toBe("0px");
+                        expect(highlightSlices[i].style.strokeWidth).toBe("0px");
+                    }
+                    else {
+                        expect(slices[i].style.strokeWidth).toBe("1px");
+                        expect(highlightSlices[i].style.strokeWidth).toBe("1px");
+                    }
+                }
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart labels visibility - moving guide line up or down by 25% of the slice perimeter where labels are truncated ', (done) => {
+            
+            //category labels on
+            let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.data } };
+            v.onResizing({ height: 600, width: 600 });
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumnLabels,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumnLabels.columns[0],
+                            values: ['John Domo Who lives far far away', 'Delta Force of the 56th Battalion 2015', 'Jean Tablau from the silicon valley'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumnLabels.columns[1],
+                            values: [300, 300, 400],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let labelsBefore = element.find(labelsElement);
+                let labelsBeforeY1 = $(labelsBefore[0]).attr('y');
+                let labelsBeforeY2 = $(labelsBefore[1]).attr('y');
+                let labelsBeforeY3 = $(labelsBefore[2]).attr('y');
+                
+                //add data labels 
+                dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.both } };
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadataTwoColumnLabels,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadataTwoColumnLabels.columns[0],
+                                values: ['John Domo Who lives far far away', 'Delta Force of the 56th Battalion 2015', 'Jean Tablau from the silicon valley'],
+                                identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                                identityFields: [categoryColumnRef],
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadataTwoColumnLabels.columns[1],
+                                values: [300, 300, 400],
+                            }])
+                        }
+                    }]
+                });
+                if (!interactiveChart) {
+                    let labelsAfter = element.find(labelsElement);
+                    let labelsAfterY1 = $(labelsAfter[0]).attr('y');
+                    let labelsAfterY2 = $(labelsAfter[1]).attr('y');
+                    let labelsAfterY3 = $(labelsAfter[2]).attr('y');
+
+                    //labels move up or down by 25% of the slice perimeter, that whole label will be fit.
+                    expect(+labelsBeforeY1).toBeGreaterThan(+labelsAfterY1);
+                    expect(+labelsBeforeY2).toBeLessThan(labelsAfterY2);
+                    expect(+labelsBeforeY3).toBeGreaterThan(+labelsAfterY3);
+                }
+                else
+                    expect($(labelsBefore).length).toBe(0);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart labels visibility - moving guide line up or down by 25% of the slice perimeter where labels have conflict', (done) => {
+            
+            //category labels on
+            let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.data } };
+            v.onResizing({ height: 600, width: 600 });
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumnLabels,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumnLabels.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Jean Tablau'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumnLabels.columns[1],
+                            values: [3, 14, 400],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let labels = element.find(labelsElement);
+                if (!interactiveChart) 
+                    expect($(labels).length).toBe(3);
+                else
+                    expect($(labels).length).toBe(0);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart labels visibility - validate that labels are not cut off', (done) => {
+            
+            //category labels on
+            let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.category } };
+            v.onResizing({ height: 600, width: 600 });
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumnLabels,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumnLabels.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Jean Tablau'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumnLabels.columns[1],
+                            values: [300, 140, 400],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let labelsBefore = element.find(labelsElement);
+                let labelsBeforeY3 = $(labelsBefore[2]).attr('y');
+
+                v.onResizing({ height: 600, width: 350 });
+
+                if (!interactiveChart) {
+                    let labelsAfter = element.find(labelsElement);
+                    let labelsAfterY3 = $(labelsAfter[2]).attr('y');
+
+                    //'Jean Tablau' moved up 
+                    expect(+labelsBeforeY3).toBeGreaterThan(+labelsAfterY3);
+                }
+                else
+                    expect($(labelsBefore).length).toBe(0);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('pie chart labels visibility - validate font-family', (done) => {
+            
+            //category labels on
+            let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.category } };
+            v.onResizing({ height: 600, width: 600 });
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumnLabels,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumnLabels.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Jean Tablau'],
+                            identity: [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')],
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumnLabels.columns[1],
+                            values: [300, 140, 400],
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                let labels = element.find(labelsElement);
+                if (!interactiveChart) {
+                    let labelsFontFamily = $(labels).css('font-family');
+                    let fonts = labelsFontFamily.split(',');
+                    expect(fonts[0]).toEqual(fontFamily);
+                } else
+                    expect($(labels).length).toBe(0);
+                done();
             }, DefaultWaitForRender);
         });
 
@@ -3385,6 +3832,7 @@ module powerbitests {
                                     expect($('.legendTitle').text()).toBe(testTitle);
                                     expect($('#legendGroup').attr('transform')).not.toBeDefined();
                                 }
+                                
                                 //hide legend
                                 dataView.metadata.objects = { legend: { show: false, position: 'Right' } };
                                 v.onDataChanged({
@@ -3507,7 +3955,7 @@ module powerbitests {
             });
 
             let dataViewMetadataTwoColumnLabels = powerbi.Prototype.inherit(dataViewMetadataTwoColumn);
-            dataViewMetadataTwoColumnLabels.objects = { categoryLabels: { show: true }, labels: { show: false }, legend: { show: true, position: 'Top' } };
+            dataViewMetadataTwoColumnLabels.objects = { labels: { show: true, labelStyle: LabelStyle.category }, legend: { show: true, position: 'Top' } };
             let categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'p' });
 
             v.onDataChanged({
@@ -3551,6 +3999,7 @@ module powerbitests {
             v.onResizing({ height: 600, width: 600 });
 
             setTimeout(() => {
+                
                 // interactive-legend is the type of interactive legend for all visuals except donut, for this visual we have special legend called donutLegend
                 expect($('.interactive-legend')).not.toBeInDOM();
                 expect($('.donutLegend')).toBeInDOM();
@@ -3584,6 +4033,7 @@ module powerbitests {
             let dragToCoordinates = { x: centerCoordinates.x, y: centerCoordinates.y + 20 };
 
             let currentRotation = pieChart.interactivityState.currentRotate; 
+            
             // simulate dragging using setting d3.event
             setD3Event(dragFromCoordinates.x, dragFromCoordinates.y);
             pieChart.interactiveDragStart(); // call dragStart
@@ -3642,6 +4092,7 @@ module powerbitests {
             pieLegend.dragLegend(swipeLeft);
 
             setTimeout(() => {
+                
                 // items should be rotated
                 let rotatedLegendItems = $('.legend-item');
                 if (swipeLeft) {
@@ -3695,8 +4146,7 @@ module powerbitests {
 
         it('Check enumeration for categorical', (done) => {
             dataViewMetadataTwoColumn.objects = {
-                labels: { show: false },
-                categoryLabels: { show: true }
+                labels: { show: true, labelStyle: LabelStyle.category },
             };
             let dataChangedOptions = {
                 dataViews: [{
@@ -3793,6 +4243,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
+                
                 // Check legend is hidden
                 expect($('.legend').attr('orientation')).toBe(LegendPosition.None.toString());
                 let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });

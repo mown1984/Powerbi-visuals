@@ -39,8 +39,12 @@
 /// <reference path="types/basicShapeType.ts"/>
 /// <reference path="types/imageScalingType.ts"/>
 /// <reference path="types/labelPosition.ts"/>
+/// <reference path="types/labelStyle.ts"/>
 /// <reference path="types/legendPosition.ts"/>
+/// <reference path="types/kpi_direction_type.ts"/>
+/// <reference path="types/lineStyle.ts"/>
 /// <reference path="types/outline.ts"/>
+/// <reference path="types/referenceLinePosition.ts"/>
 /// <reference path="types/slicerOrientation.ts"/>
 /// <reference path="types/yAxisPosition.ts"/>
 
@@ -66,7 +70,7 @@
 /// <reference path="capabilities/lineChart.capabilities.ts"/>
 /// <reference path="capabilities/map.capabilities.ts"/>
 /// <reference path="capabilities/multiRowCard.capabilities.ts"/>
-/// <reference path="capabilities/richTextbox.capabilities.ts"/>
+/// <reference path="capabilities/textbox.capabilities.ts"/>
 /// <reference path="capabilities/sampleVisual.capabilities.ts"/>
 /// <reference path="capabilities/scatterChart.capabilities.ts"/>
 /// <reference path="capabilities/slicer.capabilities.ts"/>
@@ -75,10 +79,10 @@
 /// <reference path="capabilities/treemap.capabilities.ts"/>
 /// <reference path="capabilities/card.capabilities.ts"/>
 /// <reference path="capabilities/waterfallChart.capabilities.ts"/>
+/// <reference path="capabilities/sunburst.capabilities.ts"/>
+/// <reference path="capabilities/kpiStatusWithHistory.capabilities.ts"/>
 /// <reference path="pluginsCapabilities.ts"/>
 
-/// <reference path="behaviours/cartesianChartBehaviors.ts"/>
-/// <reference path="behaviours/playChartBehaviors.ts"/>
 /// <reference path="behaviours/columnChartBehaviors.ts"/>
 /// <reference path="behaviours/dataDotChartBehavior.ts"/>
 /// <reference path="behaviours/donutChartBehaviors.ts"/>
@@ -103,6 +107,7 @@
 /// <reference path="common/newDataLabelUtils.ts"/>
 /// <reference path="common/dataRoleHelper.ts"/>
 /// <reference path="common/kpiUtil.ts"/>
+/// <reference path="common/referenceLineHelper.ts"/>
 
 /// <reference path="common/invalidDataValuesChecker.ts"/>
 /// <reference path="common/listView.ts"/>
@@ -120,6 +125,7 @@
 
 /// <reference path="converter/slicer.converter.ts"/>
 
+/// <reference path="formatting/filledMapLabelLayout.ts" />
 /// <reference path="formatting/dataLabelManager.ts"/>
 /// <reference path="formatting/labelLayout.ts"/>
 /// <reference path="formatting/dateTimeSequence.ts"/>
@@ -170,13 +176,14 @@
 /// <reference path="visuals/funnelChart.ts"/>
 /// <reference path="visuals/gauge.ts"/>
 /// <reference path="visuals/imageVisual.ts"/>
+/// <reference path="visuals/kpiStatusWithHistory.ts"/>
 /// <reference path="iVisualStyle.ts"/>
 
 /// <reference path="cartesian/lineChart.ts"/>
 
 /// <reference path="visuals/map.ts"/>
 /// <reference path="visuals/multiRowCard.ts"/>
-/// <reference path="visuals/richTextbox.ts"/>
+/// <reference path="visuals/textbox.ts"/>
 /// <reference path="visuals/sampleVisual.ts"/>
 /// <reference path="cartesian/scatterChart.ts"/>
 /// <reference path="cartesian/playChart.ts"/>
@@ -196,14 +203,13 @@
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
 
+/// <reference path="visuals/samples/tornadoChart.ts" />
+
 /// <reference path="tooltip.ts"/>
 
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
-/// <reference path="visuals/samples/radarChart.ts"/>
-/// <reference path="visuals/samples/dotPlot.ts"/>
-/// <reference path="visuals/samples/sunburst.ts"/>
 
 /// <reference path="visuals/samples/histogram.ts"/>
 
