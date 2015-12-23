@@ -282,7 +282,7 @@ module powerbi.visuals.samples {
 
         constructor(constructorOptions?: SankeyDiagramConstructorOptions) {
             if (constructorOptions) {
-                this.svg = constructorOptions.svg || undefined;
+                this.svg = constructorOptions.svg;
                 this.margin = constructorOptions.margin || this.margin;
                 this.curvatureOfLinks = constructorOptions.curvatureOfLinks || this.curvatureOfLinks;
             }
