@@ -40,7 +40,7 @@ module jsCommon {
         const SPACE = ' ';
         const BREAKERS_REGEX = /[\s\n]+/g;
 
-        function search(index: number, content: string, backward: boolean) {
+        function search(index: number, content: string, backward: boolean): number {
             if (backward) {
                 for (let i = index - 1; i > -1; i--) {
                     if (hasBreakers(content[i]))
@@ -100,9 +100,9 @@ module jsCommon {
         }
 
         export function getMaxWordWidth(content: string, textWidthMeasurer: ITextAsSVGMeasurer, properties: TextProperties): number {
-            var words = split(content);
-            var maxWidth = 0;
-            for (var w of words) {
+            let words = split(content);
+            let maxWidth = 0;
+            for (let w of words) {
                 properties.text = w;
                 maxWidth = Math.max(maxWidth, textWidthMeasurer(properties));
             }

@@ -29,8 +29,24 @@
 
 /// <reference path="iVisual.ts"/>
 
-/// <reference path="geocodingManager.ts"/>
+/// <reference path="common/point.ts"/>
+/// <reference path="common/rect.ts"/>
 /// <reference path="legend.ts"/>
+
+/// <reference path="types/axisScale.ts"/>
+/// <reference path="types/axisStyle.ts"/>
+/// <reference path="types/axisType.ts"/>
+/// <reference path="types/basicShapeType.ts"/>
+/// <reference path="types/imageScalingType.ts"/>
+/// <reference path="types/labelPosition.ts"/>
+/// <reference path="types/labelStyle.ts"/>
+/// <reference path="types/legendPosition.ts"/>
+/// <reference path="types/kpi_direction_type.ts"/>
+/// <reference path="types/lineStyle.ts"/>
+/// <reference path="types/outline.ts"/>
+/// <reference path="types/referenceLinePosition.ts"/>
+/// <reference path="types/slicerOrientation.ts"/>
+/// <reference path="types/yAxisPosition.ts"/>
 
 /// <reference path="animators/animatorCommon.ts"/>
 /// <reference path="animators/columnChartAnimator.ts"/>
@@ -48,21 +64,23 @@
 /// <reference path="capabilities/funnelChart.capabilities.ts"/>
 /// <reference path="capabilities/gauge.capabilities.ts"/>
 /// <reference path="capabilities/imageVisual.capabilities.ts"/>
+/// <reference path="capabilities/scriptVisual.capabilities.ts"/>
 /// <reference path="capabilities/samples/consoleWriter.capabilities.ts"/>
 /// <reference path="visuals/samples/consoleWriter.ts"/>
 /// <reference path="capabilities/lineChart.capabilities.ts"/>
 /// <reference path="capabilities/map.capabilities.ts"/>
 /// <reference path="capabilities/multiRowCard.capabilities.ts"/>
-/// <reference path="capabilities/richTextbox.capabilities.ts"/>
+/// <reference path="capabilities/textbox.capabilities.ts"/>
 /// <reference path="capabilities/sampleVisual.capabilities.ts"/>
 /// <reference path="capabilities/scatterChart.capabilities.ts"/>
-/// <reference path="capabilities/playChart.capabilities.ts"/>
 /// <reference path="capabilities/slicer.capabilities.ts"/>
 /// <reference path="capabilities/table.capabilities.ts"/>
 /// <reference path="capabilities/matrix.capabilities.ts"/>
 /// <reference path="capabilities/treemap.capabilities.ts"/>
 /// <reference path="capabilities/card.capabilities.ts"/>
 /// <reference path="capabilities/waterfallChart.capabilities.ts"/>
+/// <reference path="capabilities/sunburst.capabilities.ts"/>
+/// <reference path="capabilities/kpiStatusWithHistory.capabilities.ts"/>
 /// <reference path="pluginsCapabilities.ts"/>
 
 /// <reference path="behaviours/columnChartBehaviors.ts"/>
@@ -79,7 +97,6 @@
 
 /// <reference path="contracts/contracts.ts"/>
 
-/// <reference path="common/aspectRatioHelper.ts"/>
 /// <reference path="common/axisHelper.ts"/>
 /// <reference path="common/basicShapeUtils.ts"/>
 /// <reference path="common/cartesianHelper.ts"/>
@@ -90,12 +107,15 @@
 /// <reference path="common/newDataLabelUtils.ts"/>
 /// <reference path="common/dataRoleHelper.ts"/>
 /// <reference path="common/kpiUtil.ts"/>
+/// <reference path="common/referenceLineHelper.ts"/>
 
 /// <reference path="common/invalidDataValuesChecker.ts"/>
 /// <reference path="common/listView.ts"/>
+/// <reference path="common/mapUtil.ts"/>
 /// <reference path="common/selectionId.ts"/>
 /// <reference path="common/selectionManager.ts"/>
 /// <reference path="common/shapes.ts"/>
+/// <reference path="common/slicerUtil.ts"/>
 /// <reference path="common/svgUtil.ts"/>
 /// <reference path="common/textUtil.ts"/>
 /// <reference path="common/urlHelper.ts"/>
@@ -103,6 +123,9 @@
 /// <reference path="common/visualBackgroundHelper.ts"/>
 /// <reference path="common/objectEnumerationBuilder.ts"/>
 
+/// <reference path="converter/slicer.converter.ts"/>
+
+/// <reference path="formatting/filledMapLabelLayout.ts" />
 /// <reference path="formatting/dataLabelManager.ts"/>
 /// <reference path="formatting/labelLayout.ts"/>
 /// <reference path="formatting/dateTimeSequence.ts"/>
@@ -114,6 +137,7 @@
 /// <reference path="services/colorAllocatorFactory.ts"/>
 /// <reference path="services/defaultVisualHostService.ts"/>
 /// <reference path="services/interactivityService.ts"/>
+/// <reference path="services/geocoder.ts"/>
 /// <reference path="services/geocodingCache.ts"/>
 /// <reference path="services/visualPluginService.ts"/>
 
@@ -152,13 +176,14 @@
 /// <reference path="visuals/funnelChart.ts"/>
 /// <reference path="visuals/gauge.ts"/>
 /// <reference path="visuals/imageVisual.ts"/>
+/// <reference path="visuals/kpiStatusWithHistory.ts"/>
 /// <reference path="iVisualStyle.ts"/>
 
 /// <reference path="cartesian/lineChart.ts"/>
 
 /// <reference path="visuals/map.ts"/>
 /// <reference path="visuals/multiRowCard.ts"/>
-/// <reference path="visuals/richTextbox.ts"/>
+/// <reference path="visuals/textbox.ts"/>
 /// <reference path="visuals/sampleVisual.ts"/>
 /// <reference path="cartesian/scatterChart.ts"/>
 /// <reference path="cartesian/playChart.ts"/>
@@ -170,20 +195,26 @@
 /// <reference path="visuals/card.ts"/>
 /// <reference path="visuals/owlGauge.ts"/>
 /// <reference path="visuals/samples/streamGraph.ts"/>
+/// <reference path="visuals/samples/sunburst.ts"/>
+/// <reference path="visuals/samples/radarChart.ts"/>
+/// <reference path="visuals/samples/dotPlot.ts"/>
+/// <reference path="visuals/samples/timeline.ts"/>
+/// <reference path="visuals/samples/areaRangeChart.ts"/>
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
+
+/// <reference path="visuals/samples/tornadoChart.ts" />
 
 /// <reference path="tooltip.ts"/>
 
 /// <reference path="styles/visualStyles.ts"/>
 
 /// <reference path="visuals/donutChart.ts"/>
-/// <reference path="visuals/samples/radarChart.ts"/>
-/// <reference path="visuals/samples/dotPlot.ts"/>
-/// <reference path="visuals/samples/sunburst.ts"/>
-/// <reference path="visuals/samples/areaRangeChart.ts"/>
 
-/// <reference path="visuals/histogram.ts"/>
+/// <reference path="visuals/samples/histogram.ts"/>
+
+/// <reference path="visuals/scriptVisual.ts"/>
+
+/// <reference path="visuals/samples/sankeyDiagram.ts"/>
 /// <reference path="visuals/samples/wordCloud.ts"/>
-
 /// <reference path="plugins.ts"/>

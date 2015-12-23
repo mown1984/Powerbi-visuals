@@ -27,23 +27,28 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export var donutChartCapabilities: VisualCapabilities = {
+    export const donutChartCapabilities: VisualCapabilities = {
         dataRoles: [
             {
                 name: 'Category',
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Legend'),
+                description: data.createDisplayNameGetter('Role_DisplayName_LegendDescription')
             }, {
                 name: 'Series',
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Details'),
+                description: data.createDisplayNameGetter('Role_DisplayName_DetailsDonutChartDescription'),
+
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
+                description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription'),
+                requiredTypes: [{ numeric: true }, { integer: true }],
             }
         ],
-        objects: {
+        objects:{ 
             general: {
                 displayName: data.createDisplayNameGetter('Visual_General'),
                 properties: {
@@ -54,6 +59,7 @@ module powerbi.visuals {
             },
             legend: {
                 displayName: data.createDisplayNameGetter('Visual_Legend'),
+                description: data.createDisplayNameGetter('Visual_LegendDescription'),
                 properties: {
                     show: {
                         displayName: data.createDisplayNameGetter('Visual_Show'),
@@ -61,20 +67,33 @@ module powerbi.visuals {
                     },
                     position: {
                         displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
-                        type: { formatting: { legendPosition: true } }
+                        description: data.createDisplayNameGetter('Visual_LegendPositionDescription'),
+                        type: { enumeration: legendPosition.type }
                     },
                     showTitle: {
                         displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
+                        description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
                         type: { bool: true }
                     },
                     titleText: {
-                        displayName: data.createDisplayNameGetter('Visual_LegendTitleText'),
-                        type: { text: true }
+                        displayName: data.createDisplayNameGetter('Visual_LegendName'),
+                        description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
+                        type: { text: true },
+                        suppressFormatPainterCopy: true
+                    },
+                    labelColor: {
+                        displayName: data.createDisplayNameGetter('Visual_LegendTitleColor'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } }
                     }
                 }
             },
             dataPoint: {
                 displayName: data.createDisplayNameGetter('Visual_DataPoint'),
+                description: data.createDisplayNameGetter('Visual_DataPointDescription'),
                 properties: {
                     defaultColor: {
                         displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
@@ -91,33 +110,40 @@ module powerbi.visuals {
                 }
             },
             labels: {
-                displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
+                displayName: data.createDisplayNameGetter('Visual_DetailLabels'),
                 properties: {
                     show: {
                         type: { bool: true }
                     },
                     color: {
                         displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
+                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
                         type: { fill: { solid: { color: true } } }
                     },
                     labelDisplayUnits: {
                         displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
-                        type: { formatting: { labelDisplayUnits: true } }
+                        description: data.createDisplayNameGetter('Visual_DisplayUnitsDescription'),
+                        type: { formatting: { labelDisplayUnits: true } },
+                        suppressFormatPainterCopy: true,
                     },
                     labelPrecision: {
                         displayName: data.createDisplayNameGetter('Visual_Precision'),
-                        type: { numeric: true }
+                        description: data.createDisplayNameGetter('Visual_PrecisionDescription'),
+                        placeHolderText: data.createDisplayNameGetter('Visual_Precision_Auto'),
+                        type: { numeric: true },
+                        suppressFormatPainterCopy: true,
+                    },
+                    fontSize: {
+                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                        type: { formatting: { fontSize: true } },
+                        suppressFormatPainterCopy: true,
+                    },
+                    labelStyle: {
+                        displayName: data.createDisplayNameGetter('Visual_LabelStyle'),
+                        type: { enumeration: labelStyle.type }
                     },
                 },
             },
-            categoryLabels: {
-                displayName: data.createDisplayNameGetter('Visual_CategoryLabels'),
-                properties: {
-                    show: {
-                        type: { bool: true }
-                    },
-                },
-            }
         },
         dataViewMappings: [{
             conditions: [
@@ -148,7 +174,7 @@ module powerbi.visuals {
         },
     };
 
-    export var donutChartProps = {
+    export const donutChartProps = {
         general: {
             formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
         },
@@ -162,6 +188,7 @@ module powerbi.visuals {
             position: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'position' },
             showTitle: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'showTitle' },
             titleText: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'titleText' },
-        },
+            labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
+        }, 
     };
 }

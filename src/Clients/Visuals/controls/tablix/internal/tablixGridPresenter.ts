@@ -28,7 +28,7 @@
 
 module powerbi.visuals.controls.internal {
 
-    var UNSELECTABLE_CLASS_NAME = "unselectable";
+    const UNSELECTABLE_CLASS_NAME = "unselectable";
 
     /** This class is responsible for tablix header resizing */
     export class TablixResizer {
@@ -272,7 +272,7 @@ module powerbi.visuals.controls.internal {
         public initialize(owner: TablixCell) {
             this._owner = owner;
         }
-        
+
         public get owner(): TablixCell {
             return this._owner;
         }
@@ -287,7 +287,7 @@ module powerbi.visuals.controls.internal {
             tableCell.style.verticalAlign = "top";
             tableCell.style.lineHeight = "normal";
         }
-                
+
         public get tableCell(): HTMLTableCellElement {
             return this._tableCell;
         }
@@ -328,6 +328,32 @@ module powerbi.visuals.controls.internal {
             this._tableCell.style.textAlign = value;
         }
 
+        public setColumnSeparator(separatorColor: string, separatorWeight: number): void {
+            this._tableCell.style.borderLeft = separatorWeight + TablixUtils.UnitOfMeasurement + " " + TablixUtils.DefaultColumnSeparatorStyle + " " + separatorColor;
+        }
+
+        public setFontColor(fontColor: string): void {
+            this._tableCell.style.color = fontColor;
+        }
+
+        public setBackgroundColor(backgroundColor: string): void {
+            this._tableCell.style.backgroundColor = backgroundColor;
+        }
+
+        public setRowSeparator(): void {
+            this._tableCell.style.borderBottom = TablixUtils.DefaultRowSeparatorWeight + TablixUtils.UnitOfMeasurement + " " + TablixUtils.DefaultRowSeparatorStyle + " " + TablixUtils.DefaultRowSeparatorColor;
+        }
+
+        public setOutline(borderStyle, borderColor, borderWeight): void {
+            this._tableCell.style.borderStyle = borderStyle;
+            this._tableCell.style.borderColor = borderColor;
+            this._tableCell.style.borderWidth = borderWeight;
+        }
+
+        public setLeadingSpace(leadingSpaces: number): void {
+            this._tableCell.style.paddingTop = leadingSpaces + TablixUtils.UnitOfMeasurement;
+        }
+   
         public onClear(): void {
             this._contentHost.className = "";
             this._contentHostStyle = "";
@@ -365,11 +391,16 @@ module powerbi.visuals.controls.internal {
                 this._tableCell.className = this._containerStyle + " " + TablixCellPresenter._noMarginsStyleName;
             }
         }
-                
+
         public clearContainerStyle() {
             this._containerStyle = undefined;
             if (this._tableCell.className !== TablixCellPresenter._noMarginsStyleName)
                 this._tableCell.className = TablixCellPresenter._noMarginsStyleName;
+
+            //clear all the inline styling after unbinding the cells
+            this._tableCell.style.border = "";
+            this._tableCell.style.background = "";
+            this._tableCell.style.color = "";
         }
 
         public enableHorizontalResize(enable: boolean, handler: ITablixResizeHandler): void {
@@ -458,11 +489,11 @@ module powerbi.visuals.controls.internal {
         public onRemoveCell(cell: TablixCell): void {
             this._tableRow.removeChild(cell._presenter.tableCell);
         }
-        
+
         public getHeight(): number {
             return this.getCellHeight(this._row.getTablixCell());
         }
-    
+
         public getCellHeight(cell: ITablixCell): number {
             debug.assertFail("PureVirtualMethod: TablixRowPresenter.getCellHeight");
             return -1;
@@ -553,18 +584,20 @@ module powerbi.visuals.controls.internal {
     }
 
     export class CanvasColumnPresenter extends TablixColumnPresenter {
-        private columnWidthCallback: () => number;
+        private _gridPresenter: CanvasTablixGridPresenter;
+        private _columnIndex: number;
 
-        constructor(widthCallback: () => number) {
+        constructor(gridPresenter: CanvasTablixGridPresenter, index: number) {
             super();
-            this.columnWidthCallback = widthCallback;
+            this._gridPresenter = gridPresenter;
+            this._columnIndex = index;
         }
         public getCellWidth(cell: ITablixCell): number {
-            if (this.columnWidthCallback) {
-                let value = this.columnWidthCallback();
-                if (value != null)
-                    return value;
-            }
+            let persistedWidth = this._gridPresenter.getPersistedCellWidth(this._columnIndex);
+
+            // Because persistedWidth could be 0 check specifically for null or undefined 
+            if (_.isNumber(persistedWidth))
+                return persistedWidth;
 
             if (!(<TablixCell>cell)._presenter)
                 return 0;
@@ -573,11 +606,11 @@ module powerbi.visuals.controls.internal {
         }
 
         public getCellContentWidth(cell: ITablixCell): number {
-            if (this.columnWidthCallback) {
-                let value = this.columnWidthCallback();
-                if (value != null)
-                    return value;
-            }
+            let persistedWidth = this._gridPresenter.getPersistedCellWidth(this._columnIndex);
+
+            // Because persistedWidth could be 0 check specifically for null or undefined 
+            if (_.isNumber(persistedWidth))
+                return persistedWidth;
 
             if (!(<TablixCell>cell)._presenter)
                 return 0;
@@ -591,8 +624,9 @@ module powerbi.visuals.controls.internal {
         protected _owner: TablixGrid;
 
         private _footerTable: HTMLTableElement;
+        private _columnWidthManager: TablixColumnWidthManager;
 
-        constructor() {
+        constructor(columnWidthManager?: TablixColumnWidthManager) {
             // Main Table
             this._table = TablixUtils.createTable();
             this._table.className = UNSELECTABLE_CLASS_NAME;
@@ -600,6 +634,9 @@ module powerbi.visuals.controls.internal {
             // Footer Table
             this._footerTable = TablixUtils.createTable();
             this._footerTable.className = UNSELECTABLE_CLASS_NAME;
+
+            // ColumnWidthManager
+            this._columnWidthManager = columnWidthManager;
         }
 
         public initialize(owner: TablixGrid, gridHost: HTMLElement, footerHost: HTMLElement, control: TablixControl) {
@@ -698,6 +735,16 @@ module powerbi.visuals.controls.internal {
                 this._footerTable.style.width = "auto";
             }
         }
+
+        public invokeColumnResizeCallBack(columnIndex: number, width: number): void {
+            if (this._columnWidthManager)
+                this._columnWidthManager.columnWidthResizeCallback(columnIndex, width);
+        }
+
+        public getPersistedCellWidth(columnIndex: number): number {
+            if (this._columnWidthManager)
+                return this._columnWidthManager.getPersistedCellWidth(columnIndex);
+        }
     }
 
     export class DashboardTablixGridPresenter extends TablixGridPresenter {
@@ -731,11 +778,9 @@ module powerbi.visuals.controls.internal {
     }
 
     export class CanvasTablixGridPresenter extends TablixGridPresenter {
-        private columnWidthsCallback: () => number[];
 
-        constructor(columnWidthsCallback: () => number[]) {
-            super();
-            this.columnWidthsCallback = columnWidthsCallback;
+        constructor(columnWidthManager: TablixColumnWidthManager) {
+            super(columnWidthManager);
         }
 
         public createRowPresenter(): TablixRowPresenter {
@@ -743,17 +788,7 @@ module powerbi.visuals.controls.internal {
         }
 
         public createColumnPresenter(index: number): TablixColumnPresenter {
-            return new CanvasColumnPresenter(() => {
-                if (!this.columnWidthsCallback)
-                    return null;
-
-                let columnWidth: number;
-                let localColumnWidth = this.columnWidthsCallback();
-                if (localColumnWidth && localColumnWidth.length > index)
-                    columnWidth = localColumnWidth[index];
-
-                return columnWidth;
-            });
+            return new CanvasColumnPresenter(this, index);
         }
 
         public getWidth(): number {

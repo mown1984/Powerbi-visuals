@@ -50,6 +50,32 @@ module powerbi.data {
             return entity.hierarchies.withName(name);
         }
 
+        public findHierarchyByVariation(
+            variationEntityName: string,
+            variationColumnName: string,
+            variationName: string,
+            hierarchyName: string): ConceptualHierarchy {
+
+            let variationEntity = this.entities.withName(variationEntityName);
+            if (!variationEntity || _.isEmpty(variationEntity.properties))
+                return;
+
+            let variationProperty = variationEntity.properties.withName(variationColumnName);
+            if (!variationProperty)
+                return;
+
+            let variationColumn = variationProperty.column;
+            if (!variationColumn || _.isEmpty(variationColumn.variations))
+                return;
+
+            let variation = variationColumn.variations.withName(variationName);
+            let targetEntity = variation && variation.navigationProperty && variation.navigationProperty.targetEntity;
+            if (!targetEntity || _.isEmpty(targetEntity.hierarchies))
+                return;
+
+            return targetEntity.hierarchies.withName(hierarchyName);
+        }
+
         /**
         * Returns the first property of the entity whose kpi is tied to kpiProperty
         */
@@ -74,12 +100,14 @@ module powerbi.data {
 
     export interface ConceptualCapabilities {
         discourageQueryAggregateUsage: boolean;
+        normalizedFiveStateKpiRange: boolean;
         supportsMedian: boolean;
         supportsPercentile: boolean;
     }
 
     export interface ConceptualEntity {
         name: string;
+        displayName: string;
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
@@ -89,8 +117,8 @@ module powerbi.data {
     }
 
     export interface ConceptualProperty {
-        displayName: string;
         name: string;
+        displayName: string;
         type: ValueType;
         kind: ConceptualPropertyKind;
         hidden?: boolean;
@@ -103,12 +131,14 @@ module powerbi.data {
 
     export interface ConceptualHierarchy {
         name: string;
+        displayName: string;
         levels: jsCommon.ArrayNamedItems<ConceptualHierarchyLevel>;
         hidden?: boolean;
     }
 
     export interface ConceptualHierarchyLevel {
         name: string;
+        displayName: string;
         column: ConceptualProperty;
         hidden?: boolean;
     }
@@ -144,7 +174,7 @@ module powerbi.data {
     }
 
     export interface ConceptualPropertyKpi {
-        statusGraphic: string;
+        statusMetadata: DataViewKpiColumnMetadata;
         status?: ConceptualProperty;
         goal?: ConceptualProperty;
     }

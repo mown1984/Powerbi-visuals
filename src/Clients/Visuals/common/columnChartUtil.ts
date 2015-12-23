@@ -27,17 +27,13 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    var rectName = 'rect';
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+
+    const rectName = 'rect';
 
     export module ColumnUtil {
-        export var DimmedOpacity = 0.4;
-        export var DefaultOpacity = 1.0;
-
-        export function getTickCount(min: number, max: number, valuesMetadata: DataViewMetadataColumn[], maxTickCount: number, is100Pct: boolean, forcedTickCount?: number): number {
-            return forcedTickCount !== undefined
-                ? (maxTickCount !== 0 ? forcedTickCount : 0)
-                : AxisHelper.getBestNumberOfTicks(min, max, valuesMetadata, maxTickCount);
-        }
+        export const DimmedOpacity = 0.4;
+        export const DefaultOpacity = 1.0;
 
         export function applyUserMinMax(isScalar: boolean, dataView: DataViewCategorical, xAxisCardProperties: DataViewObject): DataViewCategorical {
             if (isScalar) {
@@ -45,10 +41,10 @@ module powerbi.visuals {
                 let max = xAxisCardProperties['end'];
 
                 return ColumnUtil.transformDomain(dataView, min, max);
-            }       
-            
-            return dataView;              
-        }       
+            }
+
+            return dataView;
+        }
 
         export function transformDomain(dataView: DataViewCategorical, min: DataViewPropertyValue, max: DataViewPropertyValue): DataViewCategorical {
             if (!dataView.categories || !dataView.values || dataView.categories.length === 0 || dataView.values.length === 0)
@@ -78,12 +74,11 @@ module powerbi.visuals {
             //don't allow this
             if (min > max)
                 return dataView;
-            
 
             //build measure array
             for (let j = 0, len = dataView.values.length; j < len; j++) {
                 newValues.push([]);
-            }                        
+            }
 
             for (let t = 0, len = categoryValues.length; t < len; t++) {
                 if (categoryValues[t] >= min && categoryValues[t] <= max) {
@@ -99,7 +94,7 @@ module powerbi.visuals {
                         }
                     }
                 }
-            }            
+            }
 
             //don't write directly to dataview
             let resultDataView = Prototype.inherit(dataView);
@@ -129,27 +124,30 @@ module powerbi.visuals {
             isVertical: boolean,
             forcedXMin?: DataViewPropertyValue,
             forcedXMax?: DataViewPropertyValue,
-            axisScaleType?: string): IAxisProperties {
+            axisScaleType?: string,
+            axisDisplayUnits?: number,
+            axisPrecision?: number): IAxisProperties {
 
             let categoryThickness = layout.categoryThickness;
             let isScalar = layout.isScalar;
             let outerPaddingRatio = layout.outerPaddingRatio;
-            let dw = new DataWrapper(data, isScalar);
             let domain = AxisHelper.createDomain(data.series, data.categoryMetadata ? data.categoryMetadata.type : ValueType.fromDescriptor({ text: true }), isScalar, [forcedXMin, forcedXMax]);
 
             let axisProperties = AxisHelper.createAxis({
                 pixelSpan: size,
                 dataDomain: domain,
                 metaDataColumn: data.categoryMetadata,
-                formatStringProp: columnChartProps.general.formatString,
+                formatString: valueFormatter.getFormatString(data.categoryMetadata, columnChartProps.general.formatString),
                 outerPadding: categoryThickness * outerPaddingRatio,
                 isCategoryAxis: true,
                 isScalar: isScalar,
                 isVertical: isVertical,
                 categoryThickness: categoryThickness,
                 useTickIntervalForDisplayUnits: true,
-                getValueFn: (index, type) => dw.lookupXValue(index, type),
-                scaleType: axisScaleType
+                getValueFn: (index, type) => CartesianHelper.lookupXValue(data, index, type, isScalar),
+                scaleType: axisScaleType,
+                axisDisplayUnits: axisDisplayUnits,
+                axisPrecision: axisPrecision
             });
 
             // intentionally updating the input layout by ref
@@ -306,10 +304,6 @@ module powerbi.visuals {
 
     export module ClusteredUtil {
 
-        export function createValueFormatter(valuesMetadata: DataViewMetadataColumn[], interval: number): IValueFormatter {
-            return StackedUtil.createValueFormatter(valuesMetadata, /*is100pct*/ false, interval);
-        }
-
         export function clearColumns(
             mainGraphicsContext: D3.Selection,
             itemCS: ClassAndSelector): void {
@@ -330,13 +324,10 @@ module powerbi.visuals {
     }
 
     export module StackedUtil {
-        let constants = {
-            percentFormat: '0%',
-            roundingError: 0.0001,
-        };
+        const PctRoundingError = 0.0001;
 
-        export function getSize(scale: D3.Scale.GenericScale<any>, size: number): number {
-            return AxisHelper.diffScaled(scale, 0, size);
+        export function getSize(scale: D3.Scale.GenericScale<any>, size: number, zeroVal: number = 0): number {
+            return AxisHelper.diffScaled(scale, zeroVal, size);
         }
 
         export function calcValueDomain(data: ColumnChartSeries[], is100pct: boolean): NumberRange {
@@ -353,94 +344,14 @@ module powerbi.visuals {
             let max = d3.max<ColumnChartSeries, number>(data, d => d3.max<ColumnChartDataPoint, number>(d.data, e => e.position));
 
             if (is100pct) {
-                min = Double.roundToPrecision(min, constants.roundingError);
-                max = Double.roundToPrecision(max, constants.roundingError);
+                min = Double.roundToPrecision(min, PctRoundingError);
+                max = Double.roundToPrecision(max, PctRoundingError);
             }
 
             return {
                 min: min,
                 max: max,
             };
-        }
-
-        export function getValueAxis(
-            data: ColumnChartData,
-            is100Pct: boolean,
-            size: number,
-            scaleRange: number[],
-            forcedTickCount?: number,
-            forcedYDomain?: any[],
-            axisScaleType?: string): IAxisProperties {
-            let valueDomain = calcValueDomain(data.series, is100Pct),
-                min = valueDomain.min,
-                max = valueDomain.max;
-
-            let maxTickCount = AxisHelper.getRecommendedNumberOfTicksForYAxis(size);
-            let bestTickCount = ColumnUtil.getTickCount(min, max, data.valuesMetadata, maxTickCount, is100Pct, forcedTickCount);
-            let normalizedRange = AxisHelper.normalizeLinearDomain({ min: min, max: max });
-            let valueDomainNorm = [normalizedRange.min, normalizedRange.max];
-            let axisType = ValueType.fromDescriptor({ numeric: true });
-
-            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomainNorm);  
-            let isLogScaleAllowed = AxisHelper.isLogScalePossible(combinedDomain, axisType);                                  
-            let useLogScale = axisScaleType && axisScaleType === axisScale.log && isLogScaleAllowed;
-
-            let scale = useLogScale ? d3.scale.log() : d3.scale.linear();
-
-            scale.range(scaleRange)
-                .domain(combinedDomain)
-                .nice(bestTickCount || undefined)
-                .clamp(AxisHelper.scaleShouldClamp(combinedDomain, valueDomainNorm));     
-
-            ColumnUtil.normalizeInfinityInScale(scale);
-
-            let dataType: ValueType = AxisHelper.getCategoryValueType(data.valuesMetadata[0], true);
-            let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], columnChartProps.general.formatString);
-            let minTickInterval = AxisHelper.getMinTickValueInterval(formatString, dataType);
-            let yTickValues: any[] = AxisHelper.getRecommendedTickValuesForAQuantitativeRange(bestTickCount, scale, minTickInterval);
-
-            if (useLogScale) {
-                yTickValues = yTickValues.filter((d) => { return AxisHelper.powerOfTen(d); });
-            }
-
-            let d3Axis = d3.svg.axis()
-                .scale(scale)
-                .tickValues(yTickValues);
-
-            let yInterval = ColumnChart.getTickInterval(yTickValues);
-            let yFormatter = StackedUtil.createValueFormatter(
-                data.valuesMetadata,
-                is100Pct,
-                yInterval);
-            d3Axis.tickFormat(yFormatter.format);
-
-            let values = yTickValues.map((d: ColumnChartDataPoint) => yFormatter.format(d));            
-
-            return {
-                axis: d3Axis,
-                scale: scale,
-                formatter: yFormatter,
-                values: values,
-                axisType: axisType,
-                axisLabel: null,
-                isCategoryAxis: false,
-                isLogScaleAllowed: isLogScaleAllowed
-            };
-        }
-
-        export function createValueFormatter(valuesMetadata: DataViewMetadataColumn[], is100Pct: boolean, interval: number): IValueFormatter {
-            // TODO: Passing 0 in createFormatter below is a temporary workaround. As long as we fix createFormatter
-            // to pass scaleInterval parameter instead min and max, we can remove it.
-            if (is100Pct)
-                return valueFormatter.create({ format: constants.percentFormat, value: interval, value2: /* temporary workaround */ 0, allowFormatBeautification: true });
-
-            // Default to apply formatting from the first measure.
-            return valueFormatter.create({
-                format: valueFormatter.getFormatString(valuesMetadata[0], columnChartProps.general.formatString),
-                value: interval,
-                value2: /* temporary workaround */ 0,
-                allowFormatBeautification: true
-            });
         }
 
         export function getStackedMultiplier(
@@ -483,48 +394,6 @@ module powerbi.visuals {
                 .data([]);
 
             bars.exit().remove();
-        }
-    }
-
-    export class DataWrapper {
-        private data: CartesianData;
-        private isScalar: boolean;
-
-        public constructor(columnChartData: CartesianData, isScalar: boolean) {
-            this.data = columnChartData;
-            this.isScalar = isScalar;
-        }
-
-        public lookupXValue(index: number, type: ValueType): any {
-            debug.assertValue(this.data, 'this.data');
-
-            let isDateTime = AxisHelper.isDateTime(type);
-            if (isDateTime && this.isScalar)
-                return new Date(index);
-
-            let data = this.data;
-            if (type.text) {
-                debug.assert(index < data.categories.length, 'category index out of range');
-                return data.categories[index];
-            }
-            else {
-                let firstSeries = data.series[0];
-                if (firstSeries) {
-                    let seriesValues = firstSeries.data;
-                    if (seriesValues) {
-                        if (this.data.hasHighlights)
-                            index = index * 2;
-                        let dataPoint = seriesValues[index];
-                        if (dataPoint) {
-                            if (isDateTime)
-                                return new Date(dataPoint.categoryValue);
-                            return dataPoint.categoryValue;
-                        }
-                    }
-                }
-            }
-
-            return index;
         }
     }
 }

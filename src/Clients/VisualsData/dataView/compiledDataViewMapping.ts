@@ -34,6 +34,19 @@ module powerbi.data {
         single?: CompiledDataViewSingleMapping;
         tree?: CompiledDataViewTreeMapping;
         matrix?: CompiledDataViewMatrixMapping;
+        scriptResult?: CompiledDataViewScriptResultMapping;
+    }
+
+    export interface CompiledDataViewMappingScriptDefinition {
+        source: DataViewObjectPropertyIdentifier;
+        provider: DataViewObjectPropertyIdentifier;
+        imageFormat: string;
+        scriptInput?: ScriptInput;
+    }
+
+    export interface CompiledDataViewScriptResultMapping {
+        dataInput: CompiledDataViewMapping;
+        script: CompiledDataViewMappingScriptDefinition;
     }
 
     export interface CompiledDataViewMappingMetadata {
@@ -41,8 +54,8 @@ module powerbi.data {
         objects?: DataViewObjects;
     }
 
-    export interface CompiledDataViewCategoricalMapping extends HasDataVolume {
-        categories?: CompiledDataViewRoleMappingWithReduction;
+    export interface CompiledDataViewCategoricalMapping extends HasDataVolume, HasReductionAlgorithm {
+        categories?: CompiledDataViewRoleMappingWithReduction | CompiledDataViewListRoleMappingWithReduction;
         values?: CompiledDataViewRoleMapping | CompiledDataViewGroupedRoleMapping | CompiledDataViewListRoleMapping;
         includeEmptyGroups?: boolean;
     }
@@ -55,17 +68,13 @@ module powerbi.data {
         role: CompiledDataViewRole;
     }
 
-    export interface CompiledDataViewValuesRoleMapping {
-        roles: CompiledDataViewRole[];
-    }
-
     export interface CompiledDataViewTableMapping extends HasDataVolume {
         rows: CompiledDataViewRoleMappingWithReduction | CompiledDataViewListRoleMappingWithReduction;
     }
 
-    export interface CompiledDataViewTreeMapping {
-        nodes?: CompiledDataViewGroupingRoleMapping;
-        values?: CompiledDataViewValuesRoleMapping;
+    export interface CompiledDataViewTreeMapping extends HasDataVolume {
+        nodes?: CompiledDataViewRoleForMappingWithReduction;
+        values?: CompiledDataViewRoleForMapping;
     }
 
     export interface CompiledDataViewMatrixMapping extends HasDataVolume {
@@ -97,11 +106,12 @@ module powerbi.data {
     }
 
     export interface CompiledDataViewGroupedRoleMapping {
-        group: {
-            by: CompiledDataViewRole;
-            select: CompiledDataViewRoleMapping[];
-            dataReductionAlgorithm?: ReductionAlgorithm;
-        };
+        group: CompiledDataViewGroupedRoleGroupItemMapping;
+    }
+
+    export interface CompiledDataViewGroupedRoleGroupItemMapping extends HasReductionAlgorithm {
+        by: CompiledDataViewRole;
+        select: CompiledDataViewRoleMapping[];
     }
 
     export interface CompiledDataViewListRoleMapping {
@@ -111,7 +121,7 @@ module powerbi.data {
     export interface CompiledDataViewListRoleMappingWithReduction extends CompiledDataViewListRoleMapping, HasReductionAlgorithm {
     }
 
-    export enum CompiledSubtotalType {
+    export const enum CompiledSubtotalType {
         None = 0,
         Before = 1,
         After = 2
@@ -121,9 +131,12 @@ module powerbi.data {
         role: string;
         items: CompiledDataViewRoleItem[];
         subtotalType?: CompiledSubtotalType;
+        showAll?: boolean;
+        activeItem?: string;
     }
 
     export interface CompiledDataViewRoleItem {
+        queryName: string;
         type?: ValueType;
     }
 } 

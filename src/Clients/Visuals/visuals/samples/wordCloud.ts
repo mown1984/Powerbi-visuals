@@ -32,6 +32,7 @@
 module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
 
     export enum WordCloudScaleType {
         logn,
