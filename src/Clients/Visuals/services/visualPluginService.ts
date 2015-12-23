@@ -550,6 +550,8 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
                 animator: new BaseAnimator()
             }));
+            // Sankey Diagram
+            createPlugin(plugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
             if (scriptVisualEnabled) {
                 // R visual
                 createPlugin(

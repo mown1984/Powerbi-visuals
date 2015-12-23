@@ -215,4 +215,6 @@
 
 /// <reference path="visuals/scriptVisual.ts"/>
 
+/// <reference path="visuals/samples/sankeyDiagram.ts"/>
+
 /// <reference path="plugins.ts"/>

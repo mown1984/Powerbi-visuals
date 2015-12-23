@@ -373,4 +373,10 @@ module powerbi.visuals.plugins {
         capabilities: capabilities.kpi,
         create: () => new KPIStatusWithHistory()
     };
+
+    export var sankeyDiagram: IVisualPlugin = {
+        name: "sankeyDiagram",
+        capabilities: samples.SankeyDiagram.capabilities,
+        create: () => new samples.SankeyDiagram()
+    };
 }
