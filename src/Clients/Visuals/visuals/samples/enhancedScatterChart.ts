@@ -1369,7 +1369,7 @@ module powerbi.visuals.samples {
             var legendData: LegendData = {
                 title: "",
                 dataPoints: [],
-                fontSize: parseInt(EnhancedScatterChart.LegendTextProperties.fontSize, 0)
+                fontSize: parseInt(EnhancedScatterChart.LegendTextProperties.fontSize, 10)
             };
 
             this.layerLegendData = this.data.legendData;
@@ -1951,7 +1951,7 @@ module powerbi.visuals.samples {
             var margin = this.margin;
             var width = this.viewportIn.width;
             var height = this.viewport.height;
-            var fontSize = parseInt(EnhancedScatterChart.AxisLabelsTextProperties.fontSize, 0);
+            var fontSize = parseInt(EnhancedScatterChart.AxisLabelsTextProperties.fontSize, 10);
             var yAxisOrientation = this.yAxisOrientation;
             var showY1OnRight = yAxisOrientation === yAxisPosition.right;
 
@@ -2145,7 +2145,7 @@ module powerbi.visuals.samples {
                                 return d3.rgb(color);
                             }
                         },
-                        'fill': (d: EnhancedScatterChartDataPoint) => useCustomColor ? d.colorFill : d.fill,
+                        'fill': (d: EnhancedScatterChartDataPoint) => d3.rgb(useCustomColor ? d.colorFill : d.fill),
                         'fill-opacity': (d: EnhancedScatterChartDataPoint) => (d.size != null || shouldEnableFill) ? ScatterChart.getBubbleOpacity(d, hasSelection) : 0,
                     })
                     .attr("d", (d: EnhancedScatterChartDataPoint) => {
