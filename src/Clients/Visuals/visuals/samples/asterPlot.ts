@@ -118,6 +118,8 @@ module powerbi.visuals.samples {
         private selectionManager: SelectionManager;
         private dataView: DataView;
 
+        private static CenterTextFontHeightCoefficient = 0.4;
+        private static CenterTextFontWidthCoefficient = 1.9;
         private static GetCenterTextProperties(fontSize: number, text?: string): TextProperties {
             return {
                 fontFamily: 'Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif',
@@ -307,7 +309,8 @@ module powerbi.visuals.samples {
             return '';
         }
         private drawCenterText(innerRadius: number) {
-            var centerTextProperties: TextProperties = AsterPlot.GetCenterTextProperties(innerRadius * 0.4, this.getCenterText(this.dataView));
+            var centerTextProperties: TextProperties
+                = AsterPlot.GetCenterTextProperties(innerRadius * AsterPlot.CenterTextFontHeightCoefficient, this.getCenterText(this.dataView));
             this.centerText
                 .style({
                     'line-height': 1,
@@ -319,7 +322,9 @@ module powerbi.visuals.samples {
                     'dy': '0.35em',
                     'text-anchor': 'middle'
                 })
-                .text(TextMeasurementService.getTailoredTextOrDefault(centerTextProperties, innerRadius * 1.9));
+                .text(TextMeasurementService.getTailoredTextOrDefault(
+                    centerTextProperties,
+                    innerRadius * AsterPlot.CenterTextFontWidthCoefficient));
         }
 
         private getShowOuterline(dataView: DataView): boolean {
