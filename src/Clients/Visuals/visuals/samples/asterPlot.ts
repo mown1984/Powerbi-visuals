@@ -118,6 +118,15 @@ module powerbi.visuals.samples {
         private selectionManager: SelectionManager;
         private dataView: DataView;
 
+        private static GetCenterTextProperties(fontSize: number, text?: string): TextProperties {
+            return {
+                fontFamily: 'Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif',
+                fontWeight: 'bold',
+                fontSize: jsCommon.PixelConverter.toString(fontSize),
+                text: text
+            };
+        }
+
         public static converter(dataView: DataView, colors: IDataColorPalette): AsterDatapoint[] {
             if (!dataView.categorical
                 || !dataView.categorical.categories
@@ -298,20 +307,19 @@ module powerbi.visuals.samples {
             return '';
         }
         private drawCenterText(innerRadius: number) {
-            var text = this.getCenterText(this.dataView);
-
+            var centerTextProperties: TextProperties = AsterPlot.GetCenterTextProperties(innerRadius * 0.4, this.getCenterText(this.dataView));
             this.centerText
                 .style({
                     'line-height': 1,
-                    'font-weight': 'bold',
-                    'font-size': innerRadius * 0.4 + 'px',
+                    'font-weight': centerTextProperties.fontWeight,
+                    'font-size': centerTextProperties.fontSize,
                     'fill': this.getLabelFill(this.dataView).solid.color
                 })
                 .attr({
                     'dy': '0.35em',
                     'text-anchor': 'middle'
                 })
-                .text(text);
+                .text(TextMeasurementService.getTailoredTextOrDefault(centerTextProperties, innerRadius * 1.9));
         }
 
         private getShowOuterline(dataView: DataView): boolean {
