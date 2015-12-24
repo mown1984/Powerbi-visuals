@@ -25,6 +25,7 @@
  */
 var gulp = require("gulp"),
     merge = require("merge2"),
+    path = require("path"),
     concat = require("gulp-concat"),
     sourcemaps = require("gulp-sourcemaps"),
     uglify = require("gulp-uglifyjs"),
@@ -110,7 +111,8 @@ module.exports.load = function (options) {
     };
 
     function getBuildPaths(projectPath, outFileName, includePaths) {
-        var paths = [];
+        // include _references.ts first
+        var paths = [path.join(projectPath, "_references.ts")];
 
         if (includePaths && includePaths.length > 0) {
             paths = paths.concat(includePaths.map(function (path) {
