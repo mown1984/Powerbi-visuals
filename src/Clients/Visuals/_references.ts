@@ -220,4 +220,6 @@
 /// <reference path="visuals/samples/sankeyDiagram.ts"/>
 /// <reference path="visuals/samples/wordCloud.ts"/>
 /// <reference path="visuals/samples/enhancedScatterChart.ts" />
+/// <reference path="visuals/samples/gantt.ts" />
+
 /// <reference path="plugins.ts"/>
