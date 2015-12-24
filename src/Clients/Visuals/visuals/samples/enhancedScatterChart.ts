@@ -289,21 +289,21 @@ module powerbi.visuals.samples {
                     'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
                     'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
                 }, {
-                        'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                        'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 1 }, 'Shape': { max: 1 },
-                        'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                    }, {
-                        'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                        'Size': { max: 1 }, 'Gradient': { max: 0 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
-                        'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                    }, {
-                        'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
-                        'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
-                        'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
-                        'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
-                    }],
+                    'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                    'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 1 }, 'Shape': { max: 1 },
+                    'Image': { max: 0 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                }, {
+                    'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                    'Size': { max: 1 }, 'Gradient': { max: 0 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
+                    'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                }, {
+                    'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 },
+                    'Size': { max: 1 }, 'Gradient': { max: 1 }, 'ColorFill': { max: 0 }, 'Shape': { max: 0 },
+                    'Image': { max: 1 }, 'Rotation': { max: 1 }, 'Backdrop': { max: 1 }, 'X Start': { max: 1 },
+                    'X End': { max: 1 }, 'Y Start': { max: 1 }, 'Y End': { max: 1 }
+                }],
                 categorical: {
                     categories: {
                         for: { in: 'Category' },
