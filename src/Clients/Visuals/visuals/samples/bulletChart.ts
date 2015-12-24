@@ -151,6 +151,7 @@ module powerbi.visuals.samples {
             "font-family": "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
         };
 
+        private static ClassName: string = "bulletChart";
         private static ColumnClassName: string = "column";
 
         public static capabilities: VisualCapabilities = {
@@ -550,7 +551,7 @@ module powerbi.visuals.samples {
             this.clearCatcher = appendClearCatcher(body);
             this.bulletBody = this.clearCatcher
                 .append('div')
-                .classed('bullet-body', true);
+                .classed(BulletChart.ClassName, true);
 
             this.scrollContainer = this.bulletBody.append('div')
                 .classed('bullet-scroll-region', true);
