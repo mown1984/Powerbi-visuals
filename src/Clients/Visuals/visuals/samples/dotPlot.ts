@@ -398,7 +398,6 @@ module powerbi.visuals.samples {
         }
 
         private setSelection(selection: D3.UpdateSelection, selectionIds?: SelectionId[]): void {
-            console.log(selectionIds);
             selection.transition()
                 .duration(this.durationAnimations)
                 .style("fill-opacity", this.MaxOpacity);
@@ -409,7 +408,7 @@ module powerbi.visuals.samples {
 
             selection
                 .filter((dotSelectionData: DotPlotDatapoint) => {
-                    return !selectionIds.some((selectionId:  SlectionId) => { return dotSelectionData.identity == selectionId}) ;
+                    return !selectionIds.some((selectionId: SelectionId) => {return dotSelectionData.identity === selectionId;});
                 })
                 .transition()
                 .duration(this.durationAnimations)
