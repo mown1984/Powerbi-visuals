@@ -248,7 +248,16 @@ module powerbi.visuals.samples {
                 })
                 .attr('fill', d => d.data.color)
                 .transition().duration(duration)
-                .attr('d', arc);
+                .attrTween('d', function (data) {
+                    if (!this.oldData) {
+                        this.oldData = data;
+                        return () => arc(data);
+                    }
+
+                    var interpolation = d3.interpolate(this.oldData, data);
+                    this.oldData = interpolation(0);
+                    return (x) => arc(interpolation(x));
+                });
 
             selection.exit().remove();
 
@@ -310,11 +319,22 @@ module powerbi.visuals.samples {
         }
 
         private getOuterThickness(dataView: DataView): number {
-            return dataView.metadata && DataViewObjects.getValue(dataView.metadata.objects, AsterPlot.properties.lineThickness, 1);
+            if (dataView && dataView.metadata && dataView.metadata.objects) {
+                return DataViewObjects.getValue(dataView.metadata.objects, { objectName: 'outerLine', propertyName: 'thickness' }, 1);
+            }
+
+            return 1;
         }
 
         // This extracts fill color of the label from the DataView
         private getLabelFill(dataView: DataView): Fill {
+            if (dataView && dataView.metadata && dataView.metadata.objects) {
+                var label = dataView.metadata.objects['label'];
+                if (label) {
+                    return <Fill>label['fill'];
+                }
+            }
+
             return dataView.metadata && DataViewObjects.getValue(dataView.metadata.objects, AsterPlot.properties.labelFill, { solid: { color: '#333' } });
         }
         
