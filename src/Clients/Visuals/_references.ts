@@ -221,5 +221,6 @@
 /// <reference path="visuals/samples/wordCloud.ts"/>
 /// <reference path="visuals/samples/enhancedScatterChart.ts" />
 /// <reference path="visuals/samples/gantt.ts" />
+/// <reference path="visuals/samples/globeMap.ts" />
 
 /// <reference path="plugins.ts"/>
