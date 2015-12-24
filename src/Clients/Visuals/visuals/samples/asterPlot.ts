@@ -248,7 +248,16 @@ module powerbi.visuals.samples {
                 })
                 .attr('fill', d => d.data.color)
                 .transition().duration(duration)
-                .attr('d', arc);
+                .attrTween('d', function (data) {
+                    if (!this.oldData) {
+                        this.oldData = data;
+                        return () => arc(data);
+                    }
+
+                    var interpolation = d3.interpolate(this.oldData, data);
+                    this.oldData = interpolation(0);
+                    return (x) => arc(interpolation(x));
+                });
 
             selection.exit().remove();
 
