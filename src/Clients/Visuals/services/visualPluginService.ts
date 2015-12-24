@@ -562,6 +562,9 @@ module powerbi.visuals {
             }));
             // Enhanced Scatter Chart
             createPlugin(plugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
+            // Bullet Chart
+            createPlugin(plugins, powerbi.visuals.plugins.bulletChart, () => new samples.BulletChart());
+
             if (scriptVisualEnabled) {
                 // R visual
                 createPlugin(

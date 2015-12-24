@@ -222,5 +222,6 @@
 /// <reference path="visuals/samples/enhancedScatterChart.ts" />
 /// <reference path="visuals/samples/gantt.ts" />
 /// <reference path="visuals/samples/globeMap.ts" />
+/// <reference path="visuals/samples/bulletChart.ts" />
 
 /// <reference path="plugins.ts"/>

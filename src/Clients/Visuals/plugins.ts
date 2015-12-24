@@ -397,4 +397,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.EnhancedScatterChart.capabilities,
         create: () => new samples.EnhancedScatterChart()
     };
+
+    export var bulletChart: IVisualPlugin = {
+        name: "bulletChart",
+        capabilities: samples.BulletChart.capabilities,
+        create: () => new samples.BulletChart()
+    };
 }
