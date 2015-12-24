@@ -560,6 +560,8 @@ module powerbi.visuals {
             createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
                 animator: new BaseAnimator()
             }));
+            // Enhanced Scatter Chart
+            createPlugin(plugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
             if (scriptVisualEnabled) {
                 // R visual
                 createPlugin(

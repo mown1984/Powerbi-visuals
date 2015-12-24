@@ -391,4 +391,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.WordCloud.capabilities,
         create: () => new samples.WordCloud()
     };
+
+    export var enhancedScatterChart: IVisualPlugin = {
+        name: 'enhancedScatterChart',
+        capabilities: samples.EnhancedScatterChart.capabilities,
+        create: () => new samples.EnhancedScatterChart()
+    };
 }
