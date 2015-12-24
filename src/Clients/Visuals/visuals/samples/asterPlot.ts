@@ -146,7 +146,7 @@ module powerbi.visuals.samples {
             var formatStringProp = <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' };
             var categorySourceFormatString = valueFormatter.getFormatString(cat.source, formatStringProp);
 
-            for (var i = 0, len = catValues.length; i < len; i++) {
+            for (var i = 0, len = Math.min(colors.getAllColors().length, catValues.length); i < len; i++) {
                 var formattedCategoryValue = valueFormatter.format(catValues[i], categorySourceFormatString);
 
                 var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
