@@ -384,10 +384,8 @@ module powerbi.visuals.samples {
             this.setSelection(dotSelection);
 
             dotSelection.on("click", (data: DotPlotDatapoint) => {
-                this.selectionManager.clear();
-                
-                this.selectionManager.select(data.identity, true).then(() => {
-                    this.setSelection(dotSelection, data);
+                this.selectionManager.select(data.identity, d3.event.ctrlKey).then((selectionIds: SelectionId[]) => {
+                    this.setSelection(dotSelection, selectionIds);
                 });
 
                 d3.event.stopPropagation();
@@ -399,18 +397,19 @@ module powerbi.visuals.samples {
             });
         }
 
-        private setSelection(selection: D3.UpdateSelection, selectedData?: DotPlotDatapoint): void {
+        private setSelection(selection: D3.UpdateSelection, selectionIds?: SelectionId[]): void {
+            console.log(selectionIds);
             selection.transition()
                 .duration(this.durationAnimations)
                 .style("fill-opacity", this.MaxOpacity);
 
-            if (!selectedData) {
+            if (!selectionIds || !selectionIds.length) {
                 return;
             }
 
             selection
                 .filter((dotSelectionData: DotPlotDatapoint) => {
-                    return dotSelectionData.identity !== selectedData.identity;
+                    return !selectionIds.some((selectionId:  SlectionId) => { return dotSelectionData.identity == selectionId}) ;
                 })
                 .transition()
                 .duration(this.durationAnimations)
