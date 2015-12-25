@@ -145,8 +145,9 @@ module powerbi.visuals.samples {
 
             var formatStringProp = <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' };
             var categorySourceFormatString = valueFormatter.getFormatString(cat.source, formatStringProp);
+            var minValue: number = Math.min(0, d3.min(values[0].values));
 
-            for (var i = 0, len = Math.min(colors.getAllColors().length, catValues.length); i < len; i++) {
+            for (var i = 0, length = Math.min(colors.getAllColors().length, catValues.length); i < length; i++) {
                 var formattedCategoryValue = valueFormatter.format(catValues[i], categorySourceFormatString);
 
                 var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
@@ -173,8 +174,8 @@ module powerbi.visuals.samples {
                 }
 
                 dataPoints.push({
-                    sliceHeight: values[0].values[i],
-                    sliceWidth: values.length > 1 ? values[1].values[i] : 1,
+                    sliceHeight: values[0].values[i] - minValue,
+                    sliceWidth: Math.max(0, values.length > 1 ? values[1].values[i] : 1),
                     label: catValues[i],
                     color: colors.getColorByIndex(i).value,
                     selector: SelectionId.createWithId(cat.identity[i]),
@@ -229,11 +230,11 @@ module powerbi.visuals.samples {
 
             var pie = d3.layout.pie()
                 .sort(null)
-                .value(d => (d && d.sliceWidth ? d.sliceWidth : 1) / totalWeight);
+                .value(d => (d && !isNaN(d.sliceWidth) ? d.sliceWidth : 0) / totalWeight);
 
             var arc = d3.svg.arc()
                 .innerRadius(innerRadius)
-                .outerRadius(d => (radius - innerRadius) * (d && d.data && d.data.sliceHeight ? d.data.sliceHeight : 1) / maxScore + innerRadius + 1);
+                .outerRadius(d => (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius + 1);
 
             var selectionManager = this.selectionManager;
 
