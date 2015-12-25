@@ -131,6 +131,27 @@ module powerbi.visuals.samples {
         ]);
     }
 
+    export class BulletChartWarning implements IVisualWarning {
+        public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
+
+        private message: string;
+        constructor(message: string) {
+            this.message = message;
+        }
+
+        public get code(): string {
+            return "BulletChartWarning";
+        }
+
+        public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
+            return {
+                message: this.message,
+                title: resourceProvider.get(""),
+                detail: resourceProvider.get("")
+            };
+        }
+    }
+
     export class BulletChart implements IVisual {
         private static ScrollbarWidth: number = 13;
         private static BulletVerticalWidth = 105;
@@ -319,6 +340,7 @@ module powerbi.visuals.samples {
         private behavior: BulletWebBehavior;
         private interactivityService: IInteractivityService;
         private clearCatcher: D3.Selection;
+        private hostService: IVisualHostServices;
 
         private get settings(): BulletChartSettings {
             return this.model.bulletChartSettings;
@@ -403,9 +425,11 @@ module powerbi.visuals.samples {
             }
 
             var dataViewCategorical = dataView.categorical;
-            if (!dataViewCategorical || !dataViewCategorical.categories || !dataViewCategorical.values || !dataView.metadata.columns
-                || dataViewCategorical.values.length === 0 || dataView.metadata === null || dataView.metadata.columns.length === 0)
+
+            if (!dataViewCategorical || !dataViewCategorical.categories || !dataViewCategorical.values || dataViewCategorical.values.length === 0
+                || !dataView.metadata || !dataView.metadata.columns || dataView.metadata.columns.length === 0) {
                 return;
+            }
 
             var defaultSettings = BulletChart.DefaultStyleProperties();
             var objects = dataView.metadata.objects;
@@ -547,7 +571,7 @@ module powerbi.visuals.samples {
         /* One time setup*/
         public init(options: VisualInitOptions): void {
             var body = d3.select(options.element.get(0));
-
+            this.hostService = options.host;
             this.clearCatcher = appendClearCatcher(body);
             this.bulletBody = this.clearCatcher
                 .append('div')
@@ -571,7 +595,17 @@ module powerbi.visuals.samples {
             if (!this.model) {
                 return;
             }
-            
+
+            if (this.model.bulletDataPoints.some(data => [data.minimum,
+                data.satisfactory,
+                data.good,
+                data.maximum,
+                data.value,
+                data.targetValue].some(x => x === Infinity || x === -Infinity))) {
+                this.hostService.setWarnings([new BulletChartWarning(BulletChartWarning.ErrorInvalidDataValues)]);
+                return;
+            }
+
             this.updateLabelsReservedArea();
             if (this.interactivityService) {
                 this.interactivityService.applySelectionStateToData(this.model.bulletDataPoints);
@@ -581,7 +615,7 @@ module powerbi.visuals.samples {
             var hasSelection = this.interactivityService.hasSelection();
             var self = this;
             var bullet = (bullets: D3.Selection) => {
-                bullets.each(function(data: BulletDataPoint, index) {
+                bullets.each(function (data: BulletDataPoint, index) {
                     self.setUpBullet(d3.select(this), jQuery.extend(true, {}, data), hasHighlights, hasSelection);
                 });
             };
@@ -638,17 +672,16 @@ module powerbi.visuals.samples {
         }
 
         private setUpBullet(svgBullet: D3.Selection, data: BulletDataPoint, hasHighlights: boolean, hasSelection: boolean) {
+            var sortedRanges = [data.minimum, data.satisfactory, data.good, data.maximum].sort(d3.descending);
+            data.value = data.value || 0;
+            data.targetValue = data.targetValue || 0;
+
             var svgRotate = svgBullet
                 .append('g');
 
             var svgWrap = svgRotate
                 .append('g')
                 .attr("class", "wrap");
-
-            data.value = Math.max(data.value || 0);
-            data.targetValue = Math.max(data.targetValue || 0);
-
-            var sortedRanges = [data.minimum, data.satisfactory, data.good, data.maximum].sort(d3.descending);
 
             var labels = svgRotate.append('g')
                 .classed('labels', true);
