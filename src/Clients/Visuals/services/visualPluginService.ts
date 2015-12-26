@@ -530,40 +530,6 @@ module powerbi.visuals {
 
             // Table
             createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table(formattingPropertiesEnabled));
-            // Radar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
-                animator: new BaseAnimator()
-            }));
-            // DotPlot
-            createPlugin(plugins, powerbi.visuals.plugins.dotPlot, () => new samples.DotPlot({
-                animator: new BaseAnimator()
-            }));
-            // Histogram
-            createPlugin(plugins, powerbi.visuals.plugins.histogram, () => new samples.Histogram({
-                animator: new BaseAnimator()
-            }));
-            // Area Range Chart
-            createPlugin(plugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
-                animator: new BaseAnimator()
-            }));
-            // Chiclet Slicer
-            createPlugin(plugins, powerbi.visuals.plugins.chicletSlicer, () => new samples.ChicletSlicer({
-                behavior: new samples.ChicletSlicerWebBehavior()
-            }));
-            // Tornado Chart
-            createPlugin(plugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
-                animator: new BaseAnimator()
-            }));
-            // Sankey Diagram
-            createPlugin(plugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
-            // Word Cloud
-            createPlugin(plugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
-                animator: new BaseAnimator()
-            }));
-            // Enhanced Scatter Chart
-            createPlugin(plugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
-            // Bullet Chart
-            createPlugin(plugins, powerbi.visuals.plugins.bulletChart, () => new samples.BulletChart());
 
             if (scriptVisualEnabled) {
                 // R visual
@@ -684,9 +650,9 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.dataDotStackedColumnComboChart);
                 }
                            
-                if (this.featureSwitches.sunburstVisualEnabled) {
-                    convertibleVisualTypes.push(powerbi.visuals.plugins.sunburst);
-                }
+                // if (this.featureSwitches.sunburstVisualEnabled) {
+                //     convertibleVisualTypes.push(powerbi.visuals.plugins.sunburst);
+                // }
 
                 if (this.featureSwitches.kpiVisualEnabled) {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.kpi);
