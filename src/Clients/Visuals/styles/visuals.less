@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -69,7 +69,7 @@
     &.hasSelection, &:hover {
         .clear {
             visibility: visible;
-        }   
+        }
     }
 }
 
@@ -1367,7 +1367,7 @@
         font-size: 12px;
         text-anchor: middle;
         font-family: @regularSecondaryFontFamily;
-    } 
+    }
 
     .catagorylabel {
         font-size: 12px;
@@ -1511,7 +1511,7 @@ div.ql-toolbar {
     &.stackedToolbar {
         box-shadow: none;
         position: inherit;
-        
+
         .ql-link-tooltip {
             a {
                 margin: 0;
@@ -1780,25 +1780,6 @@ div.ql-toolbar {
     }
 }
 
-.streamGraph {
-    @streamGraphFontSize: 11px;
-
-    font-family: @regularFontFamily;
-    font-size: @streamGraphFontSize;
-
-    .axis {
-        path, line {
-            fill: none;
-            stroke: #666;
-            shape-rendering: @defaultShapeRendering;
-        }
-
-        text {
-            font-size: @streamGraphFontSize;
-        }
-    }
-}
-
 .visual-sandbox {
     border: none;
     overflow: hidden;
@@ -1817,391 +1798,4 @@ div.ql-toolbar {
 .y1-ref-line {
     stroke-width: 3px;
     stroke-opacity: 0.5;
-}
-
-.radarChart {
-    .axis {
-        path, line {
-            fill: none;
-            stroke: grey;
-            stroke-width: 1px;
-        }
-
-        text {
-            font-family: sans-serif;
-            font-size: 11px;
-        }
-    }
-    .segments {
-        path, line {
-            fill: none;
-            stroke: grey;
-            stroke-opacity: 0.75;
-            stroke-width: 0.3px;
-        }
-    }
-}
-
-.dotPlot {
-    .axis{
-        path, line {
-            fill: none;
-            stroke: black;
-            shape-rendering: crispEdges;
-        }
-
-        text {
-            font-family: sans-serif;
-            font-size: 11px;
-        }
-    }
-}
-
-.timeline {
-    .axis{
-        path, line {
-            fill: none;
-            stroke: black;
-            shape-rendering: crispEdges;
-        }
-
-        text {
-            font-family: sans-serif;
-            font-size: 11px;
-        }
-    }
-}
-
-.sunBurstPercentage{
-    font-weight:bold;
-    opacity:0;
-}
-.sunBurstPercentageFixed{
-    font-weight:bold;
-    opacity:0;
-}
-
-
-.histogram {
-    @histogramAxesColor: @neutralSecondaryAltColor;
-    @histogramLegendTextColor: @blackColor;
-
-    font-family: @regularFontFamily;
-
-    .axis, .legends {
-        path, line {
-            fill: none;
-            stroke: @histogramAxesColor;
-            shape-rendering: crispEdges;
-        }
-
-        text {
-            fill: @histogramAxesColor;
-            font-size: 11px;
-        }
-    }
-
-    .legends {
-        text {
-            font-size: 12px;
-            fill: @histogramLegendTextColor;
-            text-anchor: middle;
-        }
-    }
-}
-
-.areaRangeChart {
-    @areaRangeChartAxesColor: @neutralSecondaryAltColor;
-    @areaRangeChartLegendTextColor: @blackColor;
-
-    font-family: @regularFontFamily;
-
-    .axis {
-        path, line {
-            fill: none;
-            stroke: @areaRangeChartAxesColor;
-            shape-rendering: crispEdges;
-        }
-
-        text {
-            fill: @areaRangeChartAxesColor;
-            font-size: 11px;
-        }
-    }
-
-    .chart {
-        path, line {
-            stroke-width: 1;
-        }
-    }
-}
-
-.chicletSlicer {
-    font-family: @regularFontFamily;
-
-    .clear {
-        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAOCAIAAAB/6NG4AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAHYcAAB2HAY/l8WUAAADtSURBVChTlZBLioRAEETn/jdwJSjqThFBRRARQRD8LjyCCwUPoKJOVEf1tC09MPNWFVkvsz5f53/41c6yrKoqGZ58tqFGUeR5XtM0svTggw01DMN937dtcxzn2nC3i6KgyrgsCxq6rmN8s28qYUPf91i/bKi2beN0mS/keY4pWEi7rmvXdQ3DGIaBlR8wJQgCHijstm3xfEyd59k0zXEcH5oAKrcYha2qKi7HjAbLsthQluVVBcJO0zSO4+M4WJqmCVfCP95UIGx4sJMkYQlAxT+s6yrzE/lKNui6jqlAURRN07DwfZ8CkfafOM9vHlBGJTazbYkAAAAASUVORK5CYII=');
-
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        width: 13px;
-        height: 12px;
-        margin: 4px 2px;
-        float: right;
-        cursor: pointer;
-    }
-
-    .row{
-      white-space: nowrap;
-    }
-    .hidden {
-      display: none !important;
-    }
-
-    .slicerBody {
-        .cell {
-            box-sizing: border-box;
-            padding: 2px 5px;
-              
-            display: inline-block;
-              
-            position: relative;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        li.slicerItemContainer {  
-            height: 100%;
-            width: 100%;
-            padding: 2px;
-            display: flex;
-            flex-direction: column;
-            flex-wrap: nowrap;
-            justify-content: center;
-            align-content: center;
-            align-items: stretch;
-            border-radius: 5px;
-            box-sizing: border-box;
-        
-            .slicer-text-wrapper {
-                box-sizing: border-box;
-                text-align: center;
-                order: 0;
-                align-self: auto;
-                flex-grow: 1;
-                flex-shrink: 1;
-                flex-basis: auto;
-                display: flex;
-                flex-direction: column;
-                flex-wrap: nowrap;
-                justify-content: center;
-                align-content: center;
-                align-items: stretch;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .slicer-img-wrapper {
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: contain;
-            }
-            .stretchImage {
-                background-size: 100% 100%;
-            }
-            .bottomImage {
-                order: 1;
-            }
-            .slicerItem-disabled {
-                opacity: 0.4;
-                color: #fff !important;
-            }
-        }   
-    }
-
-    .slicerItemContainer.selected {
-        background: #BDD7EE;
-    }
-
-    .row-horizontal {
-        display: inline-block;
-    }
-    .slicerContainer .slicerText {
-        padding: 0px 5px;
-    }
-    .slicerHeader {
-        margin-bottom: 5px;
-    }
-}
-
-.tornado-chart {
-    @tornadoChartAxisColor: @neutralSecondaryAltColor;
-
-    font-family: @regularFontFamily;
-    font-size: 11px;
-
-    .axes {
-        .axis {
-            fill: none;
-            stroke: @tornadoChartAxisColor;
-            stroke-width: 1px;
-        }
-    }
-}
-
-.sankeyDiagram {
-    @sankeyDiagramFontSize: 11px;
-
-    font-family: @regularFontFamily;
-    font-size: @sankeyDiagramFontSize;
-
-    .nodes {
-        .node {
-            .nodeRect {
-                stroke-width: 1px;
-                fill-opacity: 0.9;
-                shape-rendering: crispEdges;
-            }
-
-            .nodeLabel {
-                font-size: @sankeyDiagramFontSize;
-            }
-        }
-    }
-
-    .links {
-        .link {
-            fill: none;
-            stroke-opacity: 0.2;
-        }
-
-        .link:hover {
-            stroke-opacity: 0.7;
-        }
-    }
-}
-
-.chordChart {
-    font-family: @regularFontFamily;
-    font-size: 12px;
-    path.chord {
-        fill-opacity: .67;
-        stroke: #000;
-        stroke-width: .5px;
-    }
-    polyline {
-        stroke-width: 1px;
-        fill: rgba(0, 0, 0, 0.00);
-    }
-}
-
-.wordCloud {
-    font-family: @regularFontFamily;
-
-    .words text {
-        text-anchor: middle;
-    }
-}
-
-.enhancedScatterChart {
-    @enhancedScatterChartColor: #777777;
-
-    path {
-        fill: none;
-        stroke-width: 3px;
-    }
-
-    .notSelected {
-        opacity: 0.6;
-    }
-
-    .selected {
-        opacity: 1;
-    }
-
-    .axisGraphicsContext {
-        text {
-            font-family: @regularFontFamily;
-            font-size: 11px;
-            fill: @enhancedScatterChartColor;
-        }
-    }
-
-    .axis {
-        path, line {
-            fill: none;
-            stroke: @enhancedScatterChartColor;
-            shape-rendering: crispEdges;
-        }
-    }
-}
-
-.gantt {
-    .axis {
-        path {
-            fill: none;
-        }
-
-        path, line {
-            stroke: #000;
-            stroke-width: 0.5;
-        }
-    } 
-
-    .tasks {
-        .task {
-            .task-rect {
-                fill: transparent;
-                stroke: #000;
-                stroke-width: 1px;
-            }
-        }
-    }
-
-    .chart {
-        .chart-line {
-            stroke-width: 2px;
-            stroke-dasharray: 3, 3;
-            stroke: #000;
-        }
-    }
-}
-
-.bulletChart {
-    overflow: auto;
-
-    .bullet {
-        font-family: @regularFontFamily;
-        font: 12px;
-        fill-opacity: 1;
-
-        .column {
-            shape-rendering: crispEdges;
-        }
-
-        .title {
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .subtitle, .axis {
-            font-size: 11px;
-        }
-
-        .marker {
-            stroke-width: 2px;
-            z-index: 999;
-        }
-
-        .axis {
-            path {
-                stroke-width: 0px;
-                fill: none;
-            }
-
-            line {
-                stroke-width: 0.5px;
-            }
-        }
-    }
 }
