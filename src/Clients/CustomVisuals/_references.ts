@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../Visuals/obj/visuals.d.ts" />
+/// <reference path="../Visuals/obj/Visuals.d.ts" />
 
 /// <reference path="visuals/consoleWriter/consoleWriter.ts"/>
 /// <reference path="visuals/helloIVisual/helloIVisual.ts"/>
