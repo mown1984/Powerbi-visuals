@@ -3,12 +3,12 @@ node_js:
   - "4.0"
 before_install:
   - npm install -g gulp
-  - npm install phantomjs2 -g --phantomjs_downloadurl=https://s3.amazonaws.com/travis-phantomjs/phantomjs-2.0.0-ubuntu-12.04.tar.bz2
+ # - npm install phantomjs2 -g --phantomjs_downloadurl=https://s3.amazonaws.com/travis-phantomjs/phantomjs-2.0.0-ubuntu-12.04.tar.bz2
 install:
   - npm install
 script:
   - phantomjs --version
-  - gulp test
+  - gulp build
 os:
   - linux
 notifications:
