@@ -45,7 +45,6 @@ module powerbitests {
 
             it("svg element created", () => expect(visualBuilder.element.children("svg")[0]).toBeInDOM());
             it("update", (done) => {
-                
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
                     expect(visualBuilder.element.find('.asterSlice').length)
@@ -83,11 +82,13 @@ module powerbitests {
         }
 
         private build(): void {
-            if (this.isMinervaVisualPlugin) {
-                //this.visual = <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
-            } else {
-                this.visual = new VisualClass();
-            }
+            this.visual = new VisualClass();
+            //  Aster Plot has not been encluded to the visualPluginFactory yet
+            // if (this.isMinervaVisualPlugin) {
+            //     //this.visual = <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
+            // } else {
+            //     this.visual = new VisualClass();
+            // }
         }
 
         private init(): void {
@@ -107,29 +108,6 @@ module powerbitests {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module powerbitests.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -153,16 +131,10 @@ module powerbitests.sampleDataViews {
             [123455.43, 40566.43, 200457.78, 5000.49, 320000.57, 450000.34, 140832.67]
         ];
 
-        private sampleMin1: number = 30000;
-        private sampleMax1: number = 1000000;
-
         private sampleData2 = [
             [31, 17, 24, 30, 37, 40, 12],
             [30, 35, 20, 25, 32, 35, 15]
         ];
-
-        private sampleMin2: number = 10;
-        private sampleMax2: number = 45;
 
         public getDataViews(): powerbi.DataView[] {
             //first dataView - Sales by day of week
@@ -173,7 +145,7 @@ module powerbitests.sampleDataViews {
                 var expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(value));
                 return powerbi.data.createDataViewScopeIdentity(expr);
             });
-        
+
             // Metadata, describes the data columns, and provides the visual with hints
             // so it can decide how to best represent the data
             var dataViewMetadata: powerbi.DataViewMetadata = {
@@ -228,7 +200,7 @@ module powerbitests.sampleDataViews {
                 var exprTemp = powerbi.data.SQExprBuilder.equal(fieldExprTemp, powerbi.data.SQExprBuilder.text(value));
                 return powerbi.data.createDataViewScopeIdentity(exprTemp);
             });
-        
+
             // Metadata, describes the data columns, and provides the visual with hints
             // so it can decide how to best represent the data
             var dataViewMetadataTemp: powerbi.DataViewMetadata = {
