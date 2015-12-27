@@ -587,7 +587,7 @@ module powerbi.visuals.samples {
 
         /* Called for data, size, formatting changes*/
         public update(options: VisualUpdateOptions) {
-            if (!options.dataViews && !options.dataViews[0]) return;
+            if (!options.dataViews || !options.dataViews[0]) return;
             var dataView = options.dataViews[0];
             this.viewport = options.viewport;
             this.model = BulletChart.converter(dataView, options);
