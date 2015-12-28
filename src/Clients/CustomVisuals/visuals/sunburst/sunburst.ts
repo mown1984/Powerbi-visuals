@@ -187,7 +187,7 @@ module powerbi.visuals.samples {
             var width = this.viewport.width;
             var height = this.viewport.height;
             var percentageFixedText = this.svg.select(".sunBurstPercentageFixed");
-			var textWidth = powerbi.TextMeasurementService.measureSvgTextElementWidth(percentageFixedText[0][0]);
+            var textWidth = powerbi.TextMeasurementService.measureSvgTextElementWidth(percentageFixedText[0][0]);
 
             percentageFixedText.style("opacity", 1);
             percentageFixedText.attr("y", (height / 2 + 4));
