@@ -24,26 +24,31 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../Visuals/obj/Visuals.d.ts" />
+@import (reference) "../../../styles/styles.less";
 
-/// <reference path="visuals/consoleWriter/consoleWriter.ts"/>
-/// <reference path="visuals/helloIVisual/helloIVisual.ts"/>
-/// <reference path="visuals/asterPlot/asterPlot.ts"/>
-/// <reference path="visuals/streamGraph/streamGraph.ts"/>
-/// <reference path="visuals/sunburst/sunburst.ts"/>
-/// <reference path="visuals/radarChart/radarChart.ts"/>
-/// <reference path="visuals/dotPlot/dotPlot.ts"/>
-/// <reference path="visuals/timeline/timeline.ts"/>
-/// <reference path="visuals/areaRangeChart/areaRangeChart.ts"/>
-/// <reference path="visuals/chicletSlicer/chicletSlicer.ts"/>
-/// <reference path="visuals/tornadoChart/tornadoChart.ts" />
-/// <reference path="visuals/histogram/histogram.ts"/>
-/// <reference path="visuals/sankeyDiagram/sankeyDiagram.ts"/>
-/// <reference path="visuals/wordCloud/wordCloud.ts"/>
-/// <reference path="visuals/enhancedScatterChart/enhancedScatterChart.ts" />
-/// <reference path="visuals/gantt/gantt.ts" />
-/// <reference path="visuals/globeMap/globeMap.ts" />
-/// <reference path="visuals/bulletChart/bulletChart.ts" />
-/// <reference path="visuals/forceGraph/forceGraph.ts" />
+.forceGraph {
+    path.link {
+        fill: none;
+        stroke: #bbb;
+        cursor: pointer;
+        /*stroke-width: 1.5px;*/
+    }
 
-/// <reference path="plugins.ts" />
+    circle {
+        fill: #ccc;
+        stroke: #fff;
+        stroke-width: 1.5px;
+        cursor: pointer;
+    }
+
+    text {
+        fill: #00a;
+        font: 12px sans-serif;
+        pointer-events: none;
+        z-index: 99;
+    }
+
+    .hidden {
+        display: none;
+    }
+}
