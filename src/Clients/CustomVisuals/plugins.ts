@@ -137,4 +137,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.BulletChart.capabilities,
         create: () => new samples.BulletChart()
     };
+
+    export var forceGraph: IVisualPlugin = {
+        name: "forceGraph",
+        capabilities: samples.ForceGraph.capabilities,
+        create: () => new samples.ForceGraph()
+    };
 }
