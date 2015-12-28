@@ -294,7 +294,7 @@ module powerbi.visuals.samples {
                     .append("svg");
             }
 
-            let style: IVisualStyle = visualsOptions.style;
+            var style: IVisualStyle = visualsOptions.style;
 
             this.colors = style && style.colorPalette
                 ? style.colorPalette.dataColors
@@ -337,7 +337,7 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            let settings: HistogramSettings,
+            var settings: HistogramSettings,
                 histogramLayout: D3.Layout.HistogramLayout,
                 values: HistogramValue[],
                 numericalValues: number[] = [],
@@ -387,7 +387,7 @@ module powerbi.visuals.samples {
             data = histogramLayout.frequency(settings.frequency)(numericalValues);
 
             data.forEach((bin: D3.Layout.Bin, index: number) => {
-                let filteredValues: HistogramValue[],
+                var filteredValues: HistogramValue[],
                     frequency: number;
 
                 filteredValues = values.filter((value: HistogramValue) => {
@@ -437,10 +437,10 @@ module powerbi.visuals.samples {
         }
 
         private getValuesByFrequencies(sourceValues: number[], frequencies: number[], identities: DataViewScopeIdentity[]): HistogramValue[] {
-            let values: HistogramValue[] = [];
+            var values: HistogramValue[] = [];
 
             sourceValues.forEach((item: number, index: number) => {
-                let frequency: number = 1,
+                var frequency: number = 1,
                     value: number = Number(item);
 
                 value = isNaN(value) ? 0 : value;
@@ -468,7 +468,7 @@ module powerbi.visuals.samples {
             data: D3.Layout.Bin[],
             settings: HistogramSettings,
             valueFormatter: IValueFormatter): HistogramData[] {
-            let minValue: number = d3.min(numericalValues),
+            var minValue: number = d3.min(numericalValues),
                 maxValue: number = d3.max(numericalValues);
 
             return data.map((bin: HistogramData, index: number): HistogramData => {
@@ -481,7 +481,7 @@ module powerbi.visuals.samples {
         }
 
         private getRange(minValue: number, maxValue: number, step: number, index: number): number[] {
-            let leftBorder: number = minValue + index * step,
+            var leftBorder: number = minValue + index * step,
                 rightBorder: number = leftBorder + step;
 
             return [leftBorder, rightBorder];
@@ -504,7 +504,7 @@ module powerbi.visuals.samples {
         }
 
         private getSelectionIds(values: HistogramValue[], bin: HistogramData, index: number): SelectionId[] {
-            let selectionIds: SelectionId[] = [];
+            var selectionIds: SelectionId[] = [];
 
             values.forEach((value: HistogramValue) => {
                 if (this.isValueContainedInRange(value, bin, index)) {
@@ -527,7 +527,7 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            let histogramSettings: HistogramSettings = <HistogramSettings>{},
+            var histogramSettings: HistogramSettings = <HistogramSettings>{},
                 objects: DataViewObjects,
                 colorHelper: ColorHelper;
 
@@ -556,7 +556,7 @@ module powerbi.visuals.samples {
         }
 
         private getBins(objects: DataViewObjects): number {
-            let binsNumber: number;
+            var binsNumber: number;
 
             binsNumber = Number(DataViewObjects.getValue<number>(
                 objects,
@@ -578,7 +578,7 @@ module powerbi.visuals.samples {
         }
 
         private getPrecision(objects: DataViewObjects): number {
-            let precision: number = DataViewObjects.getValue(
+            var precision: number = DataViewObjects.getValue(
                 objects,
                 Histogram.Properties["labels"]["labelPrecision"],
                 Histogram.DefaultHistogramSettings.precision);
@@ -597,7 +597,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let dataView: DataView = visualUpdateOptions.dataViews[0];
+            var dataView: DataView = visualUpdateOptions.dataViews[0];
 
             this.durationAnimations = getAnimationDuration(
                 this.animator,
@@ -611,7 +611,7 @@ module powerbi.visuals.samples {
         }
 
         private setSize(viewport: IViewport): void {
-            let height: number,
+            var height: number,
                 width: number;
 
             height =
@@ -633,7 +633,7 @@ module powerbi.visuals.samples {
         }
 
         private updateElements(height: number, width: number): void {
-            let shiftToRight: number = this.margin.left + this.LegendSize;
+            var shiftToRight: number = this.margin.left + this.LegendSize;
 
             this.root.attr({
                 "height": height,
@@ -658,7 +658,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            let columnsSelection: D3.UpdateSelection;
+            var columnsSelection: D3.UpdateSelection;
 
             this.renderAxes();
             columnsSelection = this.renderColumns();
@@ -668,7 +668,7 @@ module powerbi.visuals.samples {
         }
 
         private renderColumns(): D3.UpdateSelection {
-            let data: HistogramData[] = this.histogramDataView.data,
+            var data: HistogramData[] = this.histogramDataView.data,
                 yScale: D3.Scale.LinearScale = this.histogramDataView.yScale,
                 countOfValues: number = data.length,
                 widthOfColumn: number,
@@ -720,7 +720,7 @@ module powerbi.visuals.samples {
         }
 
         private getColumnHeight(column: D3.Layout.Bin, y: D3.Scale.LinearScale): number {
-            let height: number = this.viewport.height - this.LegendSize - y(column.y);
+            var height: number = this.viewport.height - this.LegendSize - y(column.y);
 
             return height > 0
                 ? height
@@ -728,7 +728,7 @@ module powerbi.visuals.samples {
         }
 
         private renderAxes(): void {
-            let xScale: D3.Scale.LinearScale = this.histogramDataView.xScale,
+            var xScale: D3.Scale.LinearScale = this.histogramDataView.xScale,
                 yScale: D3.Scale.LinearScale = this.histogramDataView.yScale,
                 valueFormatter: IValueFormatter = this.histogramDataView.formatter,
                 xAxis: D3.Svg.Axis,
@@ -752,7 +752,7 @@ module powerbi.visuals.samples {
 
         private rangesToArray(data: HistogramData[]): number[] {
             return data.reduce((previousValue: number[], currentValue: HistogramData, index: number) => {
-                let range: number[];
+                var range: number[];
 
                 range = index === 0
                     ? currentValue.range
@@ -763,7 +763,7 @@ module powerbi.visuals.samples {
         }
 
         private rangeToString(range: number[], includeLeftBorder: boolean, valueFormatter: IValueFormatter): string {
-            let leftBracket: string,
+            var leftBracket: string,
                 rightBracket: string = this.IncludeBrackets.right,
                 leftBorder: string = valueFormatter.format(range[0]),
                 rightBorder: string = valueFormatter.format(range[1]);
@@ -776,7 +776,7 @@ module powerbi.visuals.samples {
         }
 
         private renderLegend(): void {
-            let legendElements: D3.Selection,
+            var legendElements: D3.Selection,
                 legendSelection: D3.UpdateSelection,
                 datalegends: Legend[] = this.getDataLegends(this.histogramDataView.settings);
 
@@ -806,7 +806,7 @@ module powerbi.visuals.samples {
         }
 
         private getDataLegends(settings: HistogramSettings): Legend[] {
-            let bottomLegendText: string = this.getLegendText(settings);
+            var bottomLegendText: string = this.getLegendText(settings);
 
             return [{
                 transform: SVGUtil.translate(
@@ -877,7 +877,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let instances: VisualObjectInstance[] = [],
+            var instances: VisualObjectInstance[] = [],
                 settings: HistogramSettings;
 
             if (!this.histogramDataView ||
@@ -889,7 +889,7 @@ module powerbi.visuals.samples {
 
             switch(options.objectName) {
                 case "general": {
-                    let general: VisualObjectInstance  = {
+                    var general: VisualObjectInstance  = {
                         objectName: "general",
                         displayName: "general",
                         selector: null,
@@ -903,7 +903,7 @@ module powerbi.visuals.samples {
                     break;
                 }
                 case "dataPoint": {
-                    let dataPoint: VisualObjectInstance = {
+                    var dataPoint: VisualObjectInstance = {
                         objectName: "dataPoint",
                         displayName: "dataPoint",
                         selector: null,
@@ -916,7 +916,7 @@ module powerbi.visuals.samples {
                     break;
                 }
                 case "labels": {
-                    let labels: VisualObjectInstance = {
+                    var labels: VisualObjectInstance = {
                         objectName: "labels",
                         displayName: "labels",
                         selector: null,
