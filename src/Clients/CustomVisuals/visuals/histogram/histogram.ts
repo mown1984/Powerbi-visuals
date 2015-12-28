@@ -32,7 +32,7 @@ module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
 
-    type D3Element = 
+    type D3Element =
         D3.UpdateSelection |
         D3.Selection |
         D3.Selectors |
@@ -89,6 +89,27 @@ module powerbi.visuals.samples {
 
     interface HistogramProperties {
         [objectName: string]: HistogramProperty;
+    }
+
+    export class HistogramChartWarning implements IVisualWarning {
+        public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
+
+        private message: string;
+        constructor(message: string) {
+            this.message = message;
+        }
+
+        public get code(): string {
+            return "BulletChartWarning";
+        }
+
+        public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
+            return {
+                message: this.message,
+                title: resourceProvider.get(""),
+                detail: resourceProvider.get("")
+            };
+        }
     }
 
     export class Histogram implements IVisual {
@@ -176,7 +197,7 @@ module powerbi.visuals.samples {
             dataViewMappings: [{
                 conditions: [{ "Values": { min: 1, max: 1 }, "Frequency": { min: 0, max: 1 } }],
                 categorical: {
-                    categories: { 
+                    categories: {
                         bind: { to: "Values" },
                         dataReductionAlgorithm: { top: {} }
                     },
@@ -185,7 +206,7 @@ module powerbi.visuals.samples {
             }],
             sorting: {
                 implicit: {
-                    clauses: [{ role: "Values", direction: SortDirection.Ascending }]
+                    clauses: [{ role: "Values", direction: 1 /*SortDirection.Ascending*/ }] //Constant SortDirection.Ascending currently is not supported on the msit
                 }
             },
             objects: {
@@ -211,7 +232,7 @@ module powerbi.visuals.samples {
                             type: { fill: { solid: { color: true } } }
                         }
                     }
-                }, 
+                },
                 labels: {
                     displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
                     properties: {
@@ -256,6 +277,7 @@ module powerbi.visuals.samples {
         private durationAnimations: number = 200;
 
         private viewport: IViewport;
+        private hostService: IVisualHostServices;
         private selectionManager: SelectionManager;
         private colors: IDataColorPalette;
 
@@ -272,6 +294,11 @@ module powerbi.visuals.samples {
 
         private animator: IGenericAnimator;
 
+        private get columnsSelection(): D3.Selection {
+            return this.main.select(Histogram.Columns.selector)
+                .selectAll(Histogram.Column.selector);
+        }
+
         constructor(histogramConstructorOptions?: HistogramConstructorOptions) {
             if (histogramConstructorOptions) {
                 if (histogramConstructorOptions.svg) {
@@ -287,6 +314,8 @@ module powerbi.visuals.samples {
         }
 
         public init(visualsOptions: VisualInitOptions): void {
+            this.hostService = visualsOptions.host;
+
             if (this.svg) {
                 this.root = this.svg;
             } else {
@@ -356,8 +385,8 @@ module powerbi.visuals.samples {
                 frequencies = dataView.categorical.values[0].values;
             }
 
-            if (dataView.categorical.categories[0].identity &&
-                    dataView.categorical.categories[0].identity.length > 0) {
+            if (dataView.categorical.categories[0].identity
+                && dataView.categorical.categories[0].identity.length > 0) {
                 identities = dataView.categorical.categories[0].identity;
             }
 
@@ -445,10 +474,10 @@ module powerbi.visuals.samples {
 
                 value = isNaN(value) ? 0 : value;
 
-                if (frequencies &&
-                        frequencies[index] &&
-                        !isNaN(frequencies[index]) &&
-                        frequencies[index] > 1){
+                if (frequencies
+                    && frequencies[index]
+                    && !isNaN(frequencies[index])
+                    && frequencies[index] > 1) {
                     frequency = frequencies[index];
                 }
 
@@ -540,7 +569,7 @@ module powerbi.visuals.samples {
             histogramSettings.fillColor = Histogram.DefaultHistogramSettings.fillColor;
             histogramSettings.bins = Histogram.DefaultHistogramSettings.bins;
             histogramSettings.frequency = Histogram.DefaultHistogramSettings.frequency;
-            histogramSettings.displayName = 
+            histogramSettings.displayName =
                 dataView.metadata.columns[0].displayName || Histogram.DefaultHistogramSettings.displayName;
 
             objects = this.getObjectsFromDataView(dataView);
@@ -590,6 +619,15 @@ module powerbi.visuals.samples {
             return precision;
         }
 
+        public validateData(data: HistogramDataView): boolean {
+            if (data && data.data.some(x=> x.range.some(x => isNaN(x) || x === Infinity || x === -Infinity))) {
+                this.hostService.setWarnings([new HistogramChartWarning(HistogramChartWarning.ErrorInvalidDataValues)]);
+                return false;
+            }
+
+            return true;
+        }
+
         public update(visualUpdateOptions: VisualUpdateOptions): void {
             if (!visualUpdateOptions ||
                 !visualUpdateOptions.dataViews ||
@@ -606,6 +644,9 @@ module powerbi.visuals.samples {
             this.setSize(visualUpdateOptions.viewport);
 
             this.histogramDataView = this.converter(dataView);
+            if (!this.validateData(this.histogramDataView)) {
+                this.histogramDataView.data = [];
+            }
 
             this.render();
         }
@@ -614,13 +655,11 @@ module powerbi.visuals.samples {
             var height: number,
                 width: number;
 
-            height =
-                viewport.height -
+            height = viewport.height -
                 this.margin.top -
                 this.margin.bottom;
 
-            width =
-                viewport.width -
+            width = viewport.width -
                 this.margin.left -
                 this.margin.right;
 
@@ -658,10 +697,8 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            var columnsSelection: D3.UpdateSelection;
-
             this.renderAxes();
-            columnsSelection = this.renderColumns();
+            var columnsSelection: D3.UpdateSelection = this.renderColumns();
             this.renderLegend();
 
             this.bindSelectionHandler(columnsSelection);
@@ -672,59 +709,52 @@ module powerbi.visuals.samples {
                 yScale: D3.Scale.LinearScale = this.histogramDataView.yScale,
                 countOfValues: number = data.length,
                 widthOfColumn: number,
-                columnsSelection: D3.UpdateSelection,
-                columnElements: D3.Selection = this.main
-                    .select(Histogram.Columns.selector)
-                    .selectAll(Histogram.Column.selector);
+                updateColumnsSelection: D3.UpdateSelection;
 
-            widthOfColumn = (this.viewport.width - this.AxisSize - this.LegendSize) / countOfValues - this.ColumnPadding;
+            widthOfColumn = countOfValues && ((this.viewport.width - this.AxisSize - this.LegendSize) / countOfValues - this.ColumnPadding);
 
             if (widthOfColumn < 0) {
                 widthOfColumn = 0;
             }
 
-            columnsSelection = columnElements.data(data);
+            updateColumnsSelection = this.columnsSelection.data(data);
 
-            columnsSelection
+            updateColumnsSelection
                 .enter()
                 .append("svg:rect");
 
-            columnsSelection
+            updateColumnsSelection
                 .attr("x", this.ColumnPadding / 2)
                 .attr("width", widthOfColumn)
-                .attr("height", (item: HistogramData) => {
-                    return this.getColumnHeight(item, yScale);
-                })
+                .attr("height", (item: HistogramData) => this.getColumnHeight(item, yScale))
                 .style("fill", this.histogramDataView.settings.fillColor)
                 .attr("class", Histogram.Column["class"])
-                .attr("transform", (item: HistogramData, index: number) => {
-                    return SVGUtil.translate(
-                        widthOfColumn * index + this.ColumnPadding * index,
-                        yScale(item.y) - this.ColumnPadding / 2.5);
-                })
-                .classed(Histogram.Column["class"]);
+                .attr("transform", (item: HistogramData, index: number) => SVGUtil.translate(
+                    widthOfColumn * index + this.ColumnPadding * index,
+                    yScale(item.y) - this.ColumnPadding / 2.5));
 
-            columnsSelection
-                .exit()
-                .remove();
+            if (countOfValues) {
+                //if data is empty, it throws for some reason
+                updateColumnsSelection.classed(Histogram.Column["class"]);
+            }
 
-            this.renderTooltip(columnsSelection);
+            updateColumnsSelection.exit().remove();
 
-            return columnsSelection;
+            this.renderTooltip(updateColumnsSelection);
+
+            return updateColumnsSelection;
         }
 
         private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-               return (<HistogramData> tooltipEvent.data).tooltipInfo;
+                return (<HistogramData> tooltipEvent.data).tooltipInfo;
             });
         }
 
         private getColumnHeight(column: D3.Layout.Bin, y: D3.Scale.LinearScale): number {
             var height: number = this.viewport.height - this.LegendSize - y(column.y);
 
-            return height > 0
-                ? height
-                : this.MinColumnHeight;
+            return height > 0 ? height : this.MinColumnHeight;
         }
 
         private renderAxes(): void {
@@ -887,9 +917,9 @@ module powerbi.visuals.samples {
 
             settings = this.histogramDataView.settings;
 
-            switch(options.objectName) {
+            switch (options.objectName) {
                 case "general": {
-                    var general: VisualObjectInstance  = {
+                    var general: VisualObjectInstance = {
                         objectName: "general",
                         displayName: "general",
                         selector: null,
@@ -939,7 +969,7 @@ module powerbi.visuals.samples {
                 !dataView.metadata.columns ||
                 !dataView.metadata.objects) {
                     return null;
-                }
+            }
 
             return dataView.metadata.objects;
         }
