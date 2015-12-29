@@ -251,6 +251,7 @@ module powerbi.visuals.samples {
         private MaxOpacity: number = 1;
         private NumberOfLabelsOnAxisY: number = 5;
         private MinNumberOfBins: number = 0;
+        private MaxNumberOfBins: number = 100;
         private MinPrecision: number = 0;
         private MaxPrecision: number = 17; // max number of decimals in float
         private TooltipDisplayName: string = "Range";
@@ -595,6 +596,10 @@ module powerbi.visuals.samples {
 
             if (!binsNumber || isNaN(binsNumber) || binsNumber <= this.MinNumberOfBins) {
                 return Histogram.DefaultHistogramSettings.bins;
+            }
+
+            if (binsNumber > this.MaxNumberOfBins) {
+                return this.MaxNumberOfBins;
             }
 
             return binsNumber;
