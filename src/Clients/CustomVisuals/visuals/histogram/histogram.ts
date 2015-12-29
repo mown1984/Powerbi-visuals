@@ -252,6 +252,7 @@ module powerbi.visuals.samples {
         private NumberOfLabelsOnAxisY: number = 5;
         private MinNumberOfBins: number = 0;
         private MinPrecision: number = 0;
+        private MaxPrecision: number = 17; // max number of decimals in float
         private TooltipDisplayName: string = "Range";
         private SeparatorNumbers: string = ", ";
         private LegendSize: number = 50;
@@ -614,6 +615,10 @@ module powerbi.visuals.samples {
 
             if (precision <= this.MinPrecision) {
                 return this.MinPrecision;
+            }
+
+            if (precision >= this.MaxPrecision) {
+                return this.MaxPrecision;
             }
 
             return precision;
