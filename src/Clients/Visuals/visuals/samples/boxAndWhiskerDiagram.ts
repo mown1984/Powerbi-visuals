@@ -83,7 +83,7 @@ module powerbi.visuals.samples {
         colour: string;
     }
 
-    export interface BoxAndWhiskerDiagramLine extends BoxAndWhiskerDiagramPoint{
+    export interface BoxAndWhiskerDiagramLine extends BoxAndWhiskerDiagramPoint {
         x1: number;
         y1: number;
         type: BoxAndWhiskerDiagramLineType;
@@ -100,9 +100,9 @@ module powerbi.visuals.samples {
         size: number;
     }
 
-    export interface BoxAndWhisker 
+    export interface BoxAndWhisker
         extends BoxAndWhiskerDiagramPoint,
-            BoxAndWhiskerDiagramColour {
+        BoxAndWhiskerDiagramColour {
         name: string;
         box: BoxAndWhiskerDiagramBox;
         whisker: BoxAndWhiskerDiagramWhisker;
@@ -192,10 +192,10 @@ module powerbi.visuals.samples {
                 kind: VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Category")
             }, {
-                name: "Values",
-                kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
-            }],
+                    name: "Values",
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Values")
+                }],
             dataViewMappings: [{
                 conditions: [{
                     "Category": { min: 0, max: 1 }, "Values": { min: 0 }
@@ -268,6 +268,7 @@ module powerbi.visuals.samples {
         private main: D3.Selection;
         private nodes: D3.Selection;
         private axes: D3.Selection;
+        private overlappingDiv: D3.Selection;
 
         private viewport: IViewport;
 
@@ -289,7 +290,10 @@ module powerbi.visuals.samples {
             if (this.svg) {
                 this.root = this.svg;
             } else {
-                this.root = d3.select(visualsInitOptions.element.get(0)).append("svg");
+                var rootDiv = d3.select(visualsInitOptions.element.get(0)).append("div");
+                rootDiv.style('overflow-x', 'overlay')
+                this.overlappingDiv = rootDiv.append("div");
+                this.root = this.overlappingDiv.append("svg");
             }
 
             var style: IVisualStyle = visualsInitOptions.style;
@@ -357,8 +361,9 @@ module powerbi.visuals.samples {
 
             this.main.attr("transform", SVGUtil.translate(this.margin.left, this.margin.top));
         }
-
+        private totalWidthOfBoxes = 0;
         public converter(dataView: DataView): BoxAndWhiskerDataView {
+            this.totalWidthOfBoxes = 0;
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
@@ -421,13 +426,13 @@ module powerbi.visuals.samples {
                 });
 
                 box = {
-                    x: 0, 
+                    x: 0,
                     y: 0,
                     width: settings.sizeOfBox,
                     height: 0,
                     quartiles: this.getQuartiles(values)
                 };
-
+                this.totalWidthOfBoxes += settings.sizeOfBox;
                 if (localMinValue < minValue) {
                     minValue = localMinValue;
                 }
@@ -451,7 +456,7 @@ module powerbi.visuals.samples {
                         if (value < localMinValue) {
                             localMinValue = value;
                         }
-    
+
                         if (value > localMaxValue) {
                             localMaxValue = value;
                         }
@@ -497,6 +502,15 @@ module powerbi.visuals.samples {
 
             this.findPositionForEachBox(boxAndWhiskers, settings, scale);
 
+
+            this.root.attr({
+                "width": this.totalWidthOfBoxes + 200
+            });
+
+            this.overlappingDiv.style(
+                "width", (this.totalWidthOfBoxes + 200) + 'px'
+            );
+
             return {
                 data: boxAndWhiskers,
                 settings: settings,
@@ -512,17 +526,17 @@ module powerbi.visuals.samples {
                 orientation: string,
                 sizeOfBox: number;
 
-            sorting = DataViewObjects.getValue <string>(
+            sorting = DataViewObjects.getValue<string>(
                 objects,
                 BoxAndWhiskerDiagram.Properties["general"]["sorting"],
                 boxAndWhiskerDiagramSorting.Sorting[BoxAndWhiskerDiagram.DefaultSettings.sorting]);
 
-            orientation = DataViewObjects.getValue <string>(
+            orientation = DataViewObjects.getValue<string>(
                 objects,
                 BoxAndWhiskerDiagram.Properties["general"]["orientation"],
                 boxAndWhiskerDiagramOrientation.Orientation[BoxAndWhiskerDiagram.DefaultSettings.orientation]);
 
-            sizeOfBox = DataViewObjects.getValue <number>(
+            sizeOfBox = DataViewObjects.getValue<number>(
                 objects,
                 BoxAndWhiskerDiagram.Properties["box"]["size"],
                 BoxAndWhiskerDiagram.DefaultSettings.sizeOfBox);
@@ -536,9 +550,9 @@ module powerbi.visuals.samples {
 
         private getObjectsFromDataView(dataView: DataView): DataViewObjects {
             if (!dataView ||
-                    !dataView.metadata ||
-                    !dataView.metadata.columns ||
-                    !dataView.metadata.objects) {
+                !dataView.metadata ||
+                !dataView.metadata.columns ||
+                !dataView.metadata.objects) {
                 return null;
             }
 
@@ -597,7 +611,7 @@ module powerbi.visuals.samples {
 
                 shiftByAxis += boxAndWhisker.box.width;
 
-                boxAndWhisker.box.height = 
+                boxAndWhisker.box.height =
                     scale(boxAndWhisker.box.quartiles[2]) - scale(boxAndWhisker.box.quartiles[0]);
 
                 boxAndWhisker.box.x = 0;
@@ -828,7 +842,7 @@ module powerbi.visuals.samples {
         }
 
         private renderAxes(): void {
-            
+
         }
 
         private getMedianPosition(scale: D3.Scale.LinearScale, boxAndWhisker: BoxAndWhisker): number {
