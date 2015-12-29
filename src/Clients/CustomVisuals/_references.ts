@@ -26,6 +26,8 @@
 
 /// <reference path="../Visuals/obj/Visuals.d.ts" />
 
+/// <reference path="capabilities/consoleWriter.capabilities.ts" />
+
 /// <reference path="visuals/consoleWriter/consoleWriter.ts"/>
 /// <reference path="visuals/helloIVisual/helloIVisual.ts"/>
 /// <reference path="visuals/asterPlot/asterPlot.ts"/>
