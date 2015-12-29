@@ -64,6 +64,14 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbi.visuals.samples {
+    export interface ForceGraphData {
+        nodes: any;
+        links: any;
+        minFiles: number;
+        maxFiles: number;
+        linkedByName: any;
+    }
+
     export class ForceGraph implements IVisual {
         public static capabilities: VisualCapabilities = {
             dataRoles: [
@@ -96,11 +104,47 @@ module powerbi.visuals.samples {
         private static VisualClassName = 'forceGraph';
 
         private root: D3.Selection;
+        private paths: D3.Selection;
+        private nodes: D3.Selection;
         private dataView: DataView;
+        private data: ForceGraphData;
+        private forceLayout: D3.Layout.ForceLayout;
 
+        private marginValue: IMargin;
+        private get margin(): IMargin {
+            return this.marginValue || { left: 0, right: 0, top: 0, bottom: 0 };
+        }
+
+        private set margin(value: IMargin) {
+            this.marginValue = $.extend({}, value);
+            this.viewportInValue = ForceGraph.substractMargin(this.viewport, this.margin);
+        }
+
+        private viewportValue: IViewport;
+        private get viewport(): IViewport {
+            return this.viewportValue || { width: 0, height: 0 };
+        }
+
+        private set viewport(value: IViewport) {
+            this.viewportValue = $.extend({}, value);
+            this.viewportInValue = ForceGraph.substractMargin(this.viewport, this.margin);
+        }
+
+        private viewportInValue: IViewport;
+        private get viewportIn(): IViewport {
+            return this.viewportInValue || this.viewport;
+        }
+
+        private static substractMargin(viewport: IViewport, margin: IMargin): IViewport {
+            return {
+                width: Math.max(viewport.width - (margin.left + margin.right), 0),
+                height: Math.max(viewport.height - (margin.top + margin.bottom), 0)
+            };
+        }
+        
         // converts data from Values to two dimensional array
         // expected order: MemberFrom MemberTo Value Valu2 (optional - for coloring)
-        public static converter(dataView: DataView): any {
+        public static converter(dataView: DataView): ForceGraphData {
             var nodes = {};
             var minFiles = Number.MAX_VALUE;
             var maxFiles = 0;
@@ -159,126 +203,135 @@ module powerbi.visuals.samples {
 
         public init(options: VisualInitOptions): void {
             this.root = d3.select(options.element.get(0));
+            this.forceLayout = d3.layout.force();
         }
 
         public update(options: VisualUpdateOptions) {
             if (!options.dataViews || (options.dataViews.length < 1)) return;
-            var data = ForceGraph.converter(this.dataView = options.dataViews[0]);
+            this.data = ForceGraph.converter(this.dataView = options.dataViews[0]);
+            this.viewport = options.viewport;
 
-            var viewport = options.viewport;
-            var w = viewport.width,
-                h = viewport.height;
-            var k = Math.sqrt(Object.keys(data.nodes).length / (w * h));
-
+            var k = Math.sqrt(Object.keys(this.data.nodes).length / (this.viewport.width * this.viewport.height));
             this.root.selectAll("svg").remove();
 
             var svg = this.root
                 .append("svg")
-                .attr("width", w)
-                .attr("height", h)
+                .attr("width", this.viewport.width)
+                .attr("height", this.viewport.height)
                 .classed(ForceGraph.VisualClassName, true);
 
-            var force = d3.layout.force()
+            this.updateNodes();
+            this.forceLayout
+                .links(this.data.links)
                 .gravity(100 * k)
-                .nodes(d3.values(data.nodes))
-                .links(data.links)
-                .size([w, h])
+                .size([this.viewport.width, this.viewport.height])
                 .linkDistance(100)
                 .charge(-15 / k)
-                .on("tick", tick)
-                .start();
+                .on("tick", this.tick());
+            this.updateNodes();
+            this.forceLayout.start();
 
-            var scale0to100 = d3.scale.linear().domain([data.minFiles, data.maxFiles]).range([2, 10]).clamp(true);
+            var scale0to100 = d3.scale.linear().domain([this.data.minFiles, this.data.maxFiles]).range([2, 10]).clamp(true);
 
-            var path = svg.selectAll(".link")
-                .data(force.links())
+            this.paths = svg.selectAll(".link")
+                .data(this.forceLayout.links())
                 .enter().append("path")
                 .attr("class", "link")
-                .attr("stroke-width", function (d) {
-                    return scale0to100(d.filecount);
-                })
-                .on("mouseover", fadePath(.3))
-                .on("mouseout", fadePath(1));
+                .attr("stroke-width", d => scale0to100(d.filecount))
+                .on("mouseover", this.fadePath(.3))
+                .on("mouseout", this.fadePath(1));
 
-            path.append("title").text(d => d.source.name + "-" + d.target.name + ":" + d.filecount);
+            this.paths.append("title").text(d => d.source.name + "-" + d.target.name + ":" + d.filecount);
 
             // define the nodes
-            var node = svg.selectAll(".node")
-                .data(force.nodes())
+            this.nodes = svg.selectAll(".node")
+                .data(this.forceLayout.nodes())
                 .enter().append("g")
                 .attr("class", "node")
-                .call(force.drag)
-                .on("mouseover", fadeNode(.3))
-                .on("mouseout", fadeNode(1))
-                .on("mousedown", function () { d3.event.stopPropagation(); })
-                ;
-
+                .call(this.forceLayout.drag)
+                .on("mouseover", this.fadeNode(.3))
+                .on("mouseout", this.fadeNode(1))
+                .on("mousedown", () => d3.event.stopPropagation());
+                
             // add the nodes
-            node.append("circle")
-                .attr("r", function (d) {
-                    return d.weight < 10 ? 10 : d.weight;
-                });
+            this.nodes.append("circle")
+                .attr("r", d => d.weight < 10 ? 10 : d.weight);
 
             // add the text 
-            node.append("text")
+            this.nodes.append("text")
                 .attr("x", 12)
                 .attr("dy", ".35em")
-                .text(function (d) {
-                    return d.name;
+                .text(d => d.name);
+        }
+
+        private updateNodes() {
+            var oldNodes = this.forceLayout.nodes();
+            this.forceLayout.nodes(d3.values(this.data.nodes));
+            this.forceLayout.nodes().forEach((node, i) => {
+                if (!oldNodes[i]) {
+                    return;
+                }
+                node.x = oldNodes[i].x;
+                node.y = oldNodes[i].y;
+                node.px = oldNodes[i].px;
+                node.py = oldNodes[i].py;
+                node.weight = oldNodes[i].weight;
+            });
+        }
+
+        private fadePath(opacity) {
+            return (d) => {
+                this.paths.style("stroke-opacity", o => o.source === d.source && o.target === d.target ? 1 : opacity);
+                this.paths.style("stroke", o => o.source === d.source && o.target === d.target ? "#f00" : "#bbb");
+            };
+        }
+
+        private fadeNode(opacity) {
+            var isConnected = (a, b) => this.data.linkedByName[a.name + "," + b.name]
+                                            || this.data.linkedByName[b.name + "," + a.name]
+                                            || a.name === b.name;
+            return (d) => {
+                this.nodes.style("stroke-opacity", function (o) {
+                    var thisOpacity = isConnected(d, o) ? 1 : opacity;
+                    this.setAttribute('fill-opacity', thisOpacity);
+                    return thisOpacity;
                 });
 
-            function isConnected(a, b) {
-                return data.linkedByName[a.name + "," + b.name] || data.linkedByName[b.name + "," + a.name] || a.name === b.name;
-            }
+                this.paths.style("stroke-opacity", o => o.source === d || o.target === d ? 1 : opacity);
+                this.paths.style("stroke", o => o.source === d || o.target === d ? "#f00" : "#bbb");
+            };
+        }
+         
+        // add the curvy lines
+        private tick() {
+            var viewport = this.viewportIn;
+            //"width/height * 20" seems enough to move nodes freely by force layout.
+            var maxWidth = viewport.width * 20;
+            var maxHeight = viewport.height * 20;
 
-            // add the curvy lines
-            function tick() {
-                path.each(function () { this.parentNode.insertBefore(this, this); });
-                path.attr("d", function (d) {
-                    var dx = d.target.x - d.source.x,
-                        dy = d.target.y - d.source.y,
-                        dr = Math.sqrt(dx * dx + dy * dy);
-                    return "M" +
-                        d.source.x + "," +
-                        d.source.y + "A" +
-                        dr + "," + dr + " 0 0,1 " +
-                        d.target.x + "," +
-                        d.target.y;
-                });
-
-                node
-                    .attr("transform", function (d) {
-                        return "translate(" + d.x + "," + d.y + ")";
-                    });
+            var limitX = x => Math.max((viewport.width - maxWidth) / 2, Math.min((viewport.width + maxWidth) / 2, x));
+            var limitY = y => Math.max((viewport.height - maxHeight) / 2, Math.min((viewport.height + maxHeight) / 2, y));
+            var getPath = d => {
+                d.source.x = limitX(d.source.x);
+                d.source.y = limitY(d.source.y);
+                d.target.x = limitX(d.target.x);
+                d.target.y = limitY(d.target.y);
+                var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                return "M" +
+                    d.source.x + "," +
+                    d.source.y + "A" +
+                    dr + "," + dr + " 0 0,1 " +
+                    d.target.x + "," +
+                    d.target.y;
             };
 
-            function fadeNode(opacity) {
-                return function (d) {
-                    node.style("stroke-opacity", function (o) {
-                        var thisOpacity = isConnected(d, o) ? 1 : opacity;
-                        this.setAttribute('fill-opacity', thisOpacity);
-                        return thisOpacity;
-                    });
-
-                    path.style("stroke-opacity", function (o) {
-                        return o.source === d || o.target === d ? 1 : opacity;
-                    });
-                    path.style("stroke", function (o) {
-                        return o.source === d || o.target === d ? "#f00" : "#bbb";
-                    });
-                };
-            }
-
-            function fadePath(opacity) {
-                return function (d) {
-                    path.style("stroke-opacity", function (o) {
-                        return o.source === d.source && o.target === d.target ? 1 : opacity;
-                    });
-                    path.style("stroke", function (o) {
-                        return o.source === d.source && o.target === d.target ? "#f00" : "#bbb";
-                    });
-                };
-            }
+            return () => {
+                this.paths.each(function () { this.parentNode.insertBefore(this, this); });
+                this.paths.attr("d", getPath);
+                this.nodes.attr("transform", d => "translate(" + limitX(d.x) + "," + limitY(d.y) + ")");
+            };
         }
 
         public destroy(): void {
