@@ -647,8 +647,7 @@ module powerbi.visuals.samples {
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0] ||
                 !dataView.categorical.categories[0].values ||
-                !(dataView.categorical.categories[0].values.length > 0) ||
-                !dataView.categorical.values) {
+                !(dataView.categorical.categories[0].values.length > 0)) {
                 return;
             }
             var converter = new ChicletSlicerChartConversion.ChicletSlicerConverter(dataView, interactivityService);
@@ -713,38 +712,6 @@ module powerbi.visuals.samples {
             this.settings = ChicletSlicer.DefaultStyleProperties();
 
             this.initContainer();
-        }
-
-        public onDataChanged(options: VisualDataChangedOptions): void {
-            if (!options.dataViews || !options.dataViews[0]) {
-                return;
-            }
-
-            var dataView,
-                dataViews = options.dataViews;
-
-            var existingDataView: DataView = this.dataView;
-            if (dataViews && dataViews.length > 0) {
-                dataView = this.dataView = dataViews[0];
-            }
-
-            if (!dataView ||
-                !dataView.categorical ||
-                !dataView.categorical.values ||
-                !dataView.categorical.values[0] ||
-                !dataView.categorical.values[0].values) {
-                return;
-            }
-
-            var resetScrollbarPosition = false;
-            // Null check is needed here. If we don't check for null, selecting a value on loadMore event will evaluate the below condition to true and resets the scrollbar
-            if (options.operationKind !== undefined) {
-                resetScrollbarPosition = options.operationKind !== VisualDataChangeOperationKind.Append
-                    && !DataViewAnalysis.hasSameCategoryIdentity(existingDataView, this.dataView);
-            }
-
-            this.updateInternal(resetScrollbarPosition);
-            this.waitingForData = false;
         }
 
         public update(options: VisualUpdateOptions) {
@@ -878,7 +845,7 @@ module powerbi.visuals.samples {
             this.slicerData = data;
             this.settings = this.slicerData.slicerSettings;
             if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.BOTTOM) {
-                data.slicerDataPoints.sort(function(a, b) {
+                data.slicerDataPoints.sort(function (a, b) {
                     if (a.selectable === b.selectable) {
                         return 0;
                     } else if (a.selectable && !b.selectable) {
@@ -899,9 +866,8 @@ module powerbi.visuals.samples {
                 .rows(this.settings.general.rows)
                 .columns(this.settings.general.columns)
                 .data(data.slicerDataPoints,
-                (d: ChicletSlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
-                resetScrollbarPosition
-                )
+                	  (d: ChicletSlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
+                      resetScrollbarPosition)
                 .viewport(this.getSlicerBodyViewport(this.currentViewport))
                 .render();
         }
@@ -1109,15 +1075,14 @@ module powerbi.visuals.samples {
 
         private getHeaderHeight(): number {
             return TextMeasurementService.estimateSvgTextHeight(
-                this.getTextProperties(this.settings.header.textSize)
-            );
+            	this.getTextProperties(this.settings.header.textSize));
         }
 
         private getRowHeight(): number {
             var textSettings = this.settings.slicerText;
-            return textSettings.height !== 0 ? textSettings.height : TextMeasurementService.estimateSvgTextHeight(
-                this.getTextProperties(textSettings.textSize)
-            );
+            return textSettings.height !== 0
+            	? textSettings.height
+            	: TextMeasurementService.estimateSvgTextHeight(this.getTextProperties(textSettings.textSize));
         }
 
         private getBorderStyle(outlineElement: string): string {
@@ -1148,7 +1113,6 @@ module powerbi.visuals.samples {
         export class ChicletSlicerConverter {
             private dataViewCategorical: DataViewCategorical;
             private dataViewMetadata: DataViewMetadata;
-            private seriesCount: number;
             private category: DataViewCategoryColumn;
             private categoryIdentities: DataViewScopeIdentity[];
             private categoryValues: any[];
@@ -1165,7 +1129,6 @@ module powerbi.visuals.samples {
                 var dataViewCategorical = dataView.categorical;
                 this.dataViewCategorical = dataViewCategorical;
                 this.dataViewMetadata = dataView.metadata;
-                this.seriesCount = dataViewCategorical.values ? dataViewCategorical.values.length : 0;
 
                 if (dataViewCategorical.categories && dataViewCategorical.categories.length > 0) {
                     this.category = dataViewCategorical.categories[0];
@@ -1260,10 +1223,10 @@ module powerbi.visuals.samples {
                         var categoryValue = this.categoryValues[categoryIndex];
                         var categoryLabel = valueFormatter.format(categoryValue, this.categoryFormatString);
 
-                        if (this.seriesCount > 0) {
+                        if (this.dataViewCategorical.values) {
                         
                             // Series are either measures in the multi-measure case, or the single series otherwise
-                            for (var seriesIndex: number = 0; seriesIndex < this.seriesCount; seriesIndex++) {
+                            for (var seriesIndex: number = 0; seriesIndex < this.dataViewCategorical.values.length; seriesIndex++) {
                                 var seriesData = dataViewCategorical.values[seriesIndex];
                                 if (seriesData.values[categoryIndex] != null) {
                                     value = seriesData.values[categoryIndex];
@@ -1272,6 +1235,9 @@ module powerbi.visuals.samples {
                                     }
                                     if (seriesData.source.groupName && seriesData.source.groupName !== '') {
                                         imageURL = converterHelper.getFormattedLegendLabel(seriesData.source, dataViewCategorical.values, formatStringProp);
+                                        if (!/^(ftp|http|https):\/\/[^ "]+$/.test(imageURL)) {
+                                            imageURL = undefined;
+                                        }
                                     }
                                 }
                             }
@@ -1346,7 +1312,7 @@ module powerbi.visuals.samples {
                 var settings: ChicletSlicerSettings = this.slicerSettings;
                 d3.event.preventDefault();
                 if (d3.event.altKey && settings.general.multiselect) {
-                    var selectedIndexes = jQuery.map(this.dataPoints, function(d, index) { if (d.selected) return index; });
+                    var selectedIndexes = jQuery.map(this.dataPoints, function (d, index) { if (d.selected) return index; });
                     var selIndex = selectedIndexes.length > 0 ? (selectedIndexes[selectedIndexes.length - 1]) : 0;
                     if (selIndex > index) {
                         var temp = index;
@@ -1364,7 +1330,7 @@ module powerbi.visuals.samples {
                 else {
                     selectionHandler.handleSelection(d, false /* isMultiSelect */);
                 }
-                selectionHandler.persistSelectionFilter(filterPropertyId);     
+                selectionHandler.persistSelectionFilter(filterPropertyId);
             });
 
             slicerClear.on("click", (d: SelectableDataPoint) => {
@@ -1400,7 +1366,7 @@ module powerbi.visuals.samples {
 
         public styleSlicerInputs(slicers: D3.Selection, hasSelection: boolean) {
             var settings = this.slicerSettings;
-            slicers.each(function(d: ChicletSlicerDataPoint) {
+            slicers.each(function (d: ChicletSlicerDataPoint) {
                 d3.select(this).style({
                     'background': d.selectable ? (d.selected ? settings.slicerText.selectedColor : settings.slicerText.unselectedColor)
                         : settings.slicerText.disabledColor
