@@ -270,6 +270,82 @@ declare module powerbi {
         getDetails(resourceProvider: IStringResourceProvider): ErrorDetails;
     }
 }
+declare module jsCommon {
+    interface ArrayIdItems<T> extends Array<T> {
+        withId(id: number): T;
+    }
+    interface ArrayNamedItems<T> extends Array<T> {
+        withName(name: string): T;
+    }
+    module ArrayExtensions {
+        /**
+         * Returns items that exist in target and other.
+         */
+        function intersect<T>(target: T[], other: T[]): T[];
+        /**
+         * Return elements exists in target but not exists in other.
+         */
+        function diff<T>(target: T[], other: T[]): T[];
+        /**
+         * Return an array with only the distinct items in the source.
+         */
+        function distinct<T>(source: T[]): T[];
+        /**
+         * Pushes content of source onto target,
+         * for parts of course that do not already exist in target.
+         */
+        function union<T>(target: T[], source: T[]): void;
+        /**
+         * Pushes value onto target, if value does not already exist in target.
+         */
+        function unionSingle<T>(target: T[], value: T): void;
+        /**
+         * Returns an array with a range of items from source,
+         * including the startIndex & endIndex.
+         */
+        function range<T>(source: T[], startIndex: number, endIndex: number): T[];
+        /**
+         * Returns an array that includes items from source, up to the specified count.
+         */
+        function take<T>(source: T[], count: number): T[];
+        function copy<T>(source: T[]): T[];
+        /**
+         * Returns a value indicating whether the arrays have the same values in the same sequence.
+         */
+        function sequenceEqual<T>(left: T[], right: T[], comparison: (x: T, y: T) => boolean): boolean;
+        /**
+         * Returns null if the specified array is empty.
+         * Otherwise returns the specified array.
+         */
+        function emptyToNull<T>(array: T[]): T[];
+        function indexOf<T>(array: T[], predicate: (T) => boolean): number;
+        /**
+         * Returns a copy of the array rotated by the specified offset.
+         */
+        function rotate<T>(array: T[], offset: number): T[];
+        function createWithId<T>(): ArrayIdItems<T>;
+        function extendWithId<T>(array: {
+            id: number;
+        }[]): ArrayIdItems<T>;
+        /**
+         * Finds and returns the first item with a matching ID.
+         */
+        function findWithId<T>(array: T[], id: number): T;
+        function createWithName<T>(): ArrayNamedItems<T>;
+        function extendWithName<T>(array: {
+            name: string;
+        }[]): ArrayNamedItems<T>;
+        function findItemWithName<T>(array: T[], name: string): T;
+        function indexWithName<T>(array: T[], name: string): number;
+        /**
+         * Deletes all items from the array.
+         */
+        function clear(array: any[]): void;
+        function isUndefinedOrEmpty(array: any[]): boolean;
+        function isArray(object: any): boolean;
+        function swap<T>(array: T[], firstIndex: number, secondIndex: number): void;
+    }
+}
 declare module InJs {
     module DomFactory {
         function div(): JQuery;
@@ -1508,82 +1584,6 @@ declare module jsCommon {
     function waitForMapControlLoaded(): JQueryPromise<void>;
 }
 declare let globalMapControlLoaded: () => void;
-declare module jsCommon {
-    interface ArrayIdItems<T> extends Array<T> {
-        withId(id: number): T;
-    }
-    interface ArrayNamedItems<T> extends Array<T> {
-        withName(name: string): T;
-    }
-    module ArrayExtensions {
-        /**
-         * Returns items that exist in target and other.
-         */
-        function intersect<T>(target: T[], other: T[]): T[];
-        /**
-         * Return elements exists in target but not exists in other.
-         */
-        function diff<T>(target: T[], other: T[]): T[];
-        /**
-         * Return an array with only the distinct items in the source.
-         */
-        function distinct<T>(source: T[]): T[];
-        /**
-         * Pushes content of source onto target,
-         * for parts of course that do not already exist in target.
-         */
-        function union<T>(target: T[], source: T[]): void;
-        /**
-         * Pushes value onto target, if value does not already exist in target.
-         */
-        function unionSingle<T>(target: T[], value: T): void;
-        /**
-         * Returns an array with a range of items from source,
-         * including the startIndex & endIndex.
-         */
-        function range<T>(source: T[], startIndex: number, endIndex: number): T[];
-        /**
-         * Returns an array that includes items from source, up to the specified count.
-         */
-        function take<T>(source: T[], count: number): T[];
-        function copy<T>(source: T[]): T[];
-        /**
-         * Returns a value indicating whether the arrays have the same values in the same sequence.
-         */
-        function sequenceEqual<T>(left: T[], right: T[], comparison: (x: T, y: T) => boolean): boolean;
-        /**
-         * Returns null if the specified array is empty.
-         * Otherwise returns the specified array.
-         */
-        function emptyToNull<T>(array: T[]): T[];
-        function indexOf<T>(array: T[], predicate: (T) => boolean): number;
-        /**
-         * Returns a copy of the array rotated by the specified offset.
-         */
-        function rotate<T>(array: T[], offset: number): T[];
-        function createWithId<T>(): ArrayIdItems<T>;
-        function extendWithId<T>(array: {
-            id: number;
-        }[]): ArrayIdItems<T>;
-        /**
-         * Finds and returns the first item with a matching ID.
-         */
-        function findWithId<T>(array: T[], id: number): T;
-        function createWithName<T>(): ArrayNamedItems<T>;
-        function extendWithName<T>(array: {
-            name: string;
-        }[]): ArrayNamedItems<T>;
-        function findItemWithName<T>(array: T[], name: string): T;
-        function indexWithName<T>(array: T[], name: string): number;
-        /**
-         * Deletes all items from the array.
-         */
-        function clear(array: any[]): void;
-        function isUndefinedOrEmpty(array: any[]): boolean;
-        function isArray(object: any): boolean;
-        function swap<T>(array: T[], firstIndex: number, secondIndex: number): void;
-    }
-}
 declare module InJs {
     /**
      * The types of possible traces within the system, this aligns to the traces available in Cloud Platform.
@@ -2991,6 +2991,12 @@ declare module powerbi.data {
     }
 }
 declare module powerbi.data {
+    import IStringResourceProvider = jsCommon.IStringResourceProvider;
+    type DisplayNameGetter = ((resourceProvider: IStringResourceProvider) => string) | string;
+    function createDisplayNameGetter(displayNameKey: string): (IStringResourceProvider) => string;
+    function getDisplayName(displayNameGetter: data.DisplayNameGetter, resourceProvider: jsCommon.IStringResourceProvider): string;
+}
+declare module powerbi.data {
     /** Represents a data reader. */
     interface IDataReader {
         /** Executes a query, with a promise of completion.  The response object should be compatible with the transform implementation. */
@@ -4165,12 +4171,6 @@ declare module powerbi.data {
     }
 }
 declare module powerbi.data {
-    import IStringResourceProvider = jsCommon.IStringResourceProvider;
-    type DisplayNameGetter = ((resourceProvider: IStringResourceProvider) => string) | string;
-    function createDisplayNameGetter(displayNameKey: string): (IStringResourceProvider) => string;
-    function getDisplayName(displayNameGetter: data.DisplayNameGetter, resourceProvider: jsCommon.IStringResourceProvider): string;
-}
-declare module powerbi.data {
     module DataShapeBindingDataReduction {
         function createFrom(reduction: ReductionAlgorithm): DataShapeBindingDataReductionAlgorithm;
     }
@@ -5242,17 +5242,6 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     var scriptVisualCapabilities: VisualCapabilities;
-}
-declare module powerbi.visuals.samples {
-    var consoleWriterCapabilities: VisualCapabilities;
-}
-declare module powerbi.visuals.samples {
-    class ConsoleWriter implements IVisual {
-        static converter(dataView: DataView): any;
-        init(options: VisualInitOptions): void;
-        onResizing(viewport: IViewport): void;
-        update(options: VisualUpdateOptions): void;
-    }
 }
 declare module powerbi.visuals {
     const lineChartCapabilities: VisualCapabilities;
@@ -8020,6 +8009,7 @@ declare module powerbi.visuals {
             static MinHeightFunnelCategoryLabelsVisible: number;
             constructor(smallViewPortProperties?: SmallViewPortProperties);
             getPlugin(type: string): IVisualPlugin;
+            private getMapThrottleInterval();
         }
         function create(): IVisualPluginService;
         function createVisualPluginService(featureSwitch: MinervaVisualFeatureSwitches): IVisualPluginService;
@@ -10560,63 +10550,6 @@ declare module powerbi.visuals {
         private createLabelDataPoints();
     }
 }
-declare module powerbi.visuals.samples {
-    interface HelloViewModel {
-        text: string;
-        color: string;
-        size: number;
-        selector: SelectionId;
-        toolTipInfo: TooltipDataItem[];
-    }
-    class HelloIVisual implements IVisual {
-        static capabilities: VisualCapabilities;
-        private static DefaultText;
-        private root;
-        private svgText;
-        private dataView;
-        private selectiionManager;
-        static converter(dataView: DataView): HelloViewModel;
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private static getFill(dataView);
-        private static getSize(dataView);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
-        destroy(): void;
-    }
-}
-declare module powerbi.visuals.samples {
-    interface AsterDatapoint {
-        color: string;
-        sliceHeight: number;
-        sliceWidth: number;
-        label: string;
-        selector: SelectionId;
-        tooltipInfo: TooltipDataItem[];
-    }
-    class AsterPlot implements IVisual {
-        static capabilities: VisualCapabilities;
-        private static properties;
-        private static VisualClassName;
-        private static AsterSlice;
-        private static OuterLine;
-        private svg;
-        private mainGroupElement;
-        private centerText;
-        private colors;
-        private selectionManager;
-        private dataView;
-        static converter(dataView: DataView, colors: IDataColorPalette): AsterDatapoint[];
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private drawOuterLine(innerRadius, radius, data);
-        private getCenterText(dataView);
-        private drawCenterText(innerRadius);
-        private getShowOuterline(dataView);
-        private getOuterThickness(dataView);
-        private getLabelFill(dataView);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
-    }
-}
 declare module powerbi.visuals {
     interface ComboChartDataViewObjects extends DataViewObjects {
         general: ComboChartDataViewObject;
@@ -10631,6 +10564,39 @@ declare module powerbi.visuals {
      */
     module ComboChart {
         const capabilities: VisualCapabilities;
+    }
+}
+declare module powerbi.visuals {
+    class DataColorPalette implements IDataColorPalette {
+        private scales;
+        private colors;
+        /**
+         * Colors used for sentiment visuals, e.g. KPI, Gauge. Since this is only a temporary implementation which will
+         * eventually be superseded by conditional formatting, we don't declare them as part of the theme and instead
+         * use a hardcoded color scheme here until conditional formatting is ready.
+         */
+        private sentimentColors;
+        private basePickerColors;
+        /**
+         * Creates a DataColorPalette using the given theme, or the default theme.
+         */
+        constructor(colors?: IColorInfo[]);
+        getColorScaleByKey(key: string): IColorScale;
+        getNewColorScale(): IColorScale;
+        getColorByIndex(index: number): IColorInfo;
+        getSentimentColors(): IColorInfo[];
+        getBasePickerColors(): IColorInfo[];
+        getAllColors(): IColorInfo[];
+        private createScale();
+    }
+    class D3ColorScale implements IColorScale {
+        private scale;
+        constructor(scale: D3.Scale.OrdinalScale);
+        getColor(key: any): IColorInfo;
+        clearAndRotateScale(): void;
+        clone(): IColorScale;
+        getDomain(): any[];
+        static createFromColors(colors: IColorInfo[]): D3ColorScale;
     }
 }
 /**
@@ -11328,6 +11294,8 @@ declare module powerbi.visuals {
         private static validStackedLabelPositions;
         private overlayRect;
         private isComboChart;
+        private lastDragMoveXPosition;
+        private deferDragMoveOperation;
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(options: VisualSortableOptions): string[];
         static converter(dataView: DataView, blankCategoryValue: string, colors: IDataColorPalette, isScalar: boolean, interactivityService?: IInteractivityService, shouldCalculateStacked?: boolean, isComboChart?: boolean): LineChartData;
@@ -11412,6 +11380,7 @@ declare module powerbi.visuals {
         disableZooming?: boolean;
         disablePanning?: boolean;
         isLegendScrollable?: boolean;
+        viewChangeThrottleInterval?: number;
     }
     interface IMapControlFactory {
         createMapControl(element: HTMLElement, options?: Microsoft.Maps.MapOptions): Microsoft.Maps.Map;
@@ -11613,6 +11582,7 @@ declare module powerbi.visuals {
         private disablePanning;
         private locale;
         private isLegendScrollable;
+        private viewChangeThrottleInterval;
         constructor(options: MapConstructionOptions);
         init(options: VisualInitOptions): void;
         private addDataPoint(dataPoint);
@@ -12305,6 +12275,10 @@ declare module powerbi.visuals {
     interface ColumnWidthCallbackType {
         (index: number, width: number): void;
     }
+    interface TableConstructorOptions {
+        isFormattingPropertiesEnabled?: boolean;
+        isTouchEnabled?: boolean;
+    }
     class Table implements IVisual {
         private static preferredLoadMoreThreshold;
         private element;
@@ -12312,6 +12286,7 @@ declare module powerbi.visuals {
         private style;
         private formatter;
         private isInteractive;
+        private isTouchEnabled;
         private getLocalizedString;
         private hostServices;
         private tablixControl;
@@ -12322,7 +12297,7 @@ declare module powerbi.visuals {
         private columnWidthManager;
         private dataView;
         private isFormattingPropertiesEnabled;
-        constructor(isFormattingPropertiesEnabled?: boolean);
+        constructor(options?: TableConstructorOptions);
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(): string[];
         init(options: VisualInitOptions): void;
@@ -12501,6 +12476,10 @@ declare module powerbi.visuals {
          */
         private getSortableHeaderColumnMetadata(item);
     }
+    interface MatrixConstructorOptions {
+        isFormattingPropertiesEnabled?: boolean;
+        isTouchEnabled?: boolean;
+    }
     class Matrix implements IVisual {
         private static preferredLoadMoreThreshold;
         /**
@@ -12513,6 +12492,7 @@ declare module powerbi.visuals {
         private dataView;
         private formatter;
         private isInteractive;
+        private isTouchEnabled;
         private hostServices;
         private hierarchyNavigator;
         private waitingForData;
@@ -12521,7 +12501,7 @@ declare module powerbi.visuals {
         private waitingForSort;
         private columnWidthManager;
         private isFormattingPropertiesEnabled;
-        constructor(isFormattingPropertiesEnabled?: boolean);
+        constructor(options?: MatrixConstructorOptions);
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(): string[];
         init(options: VisualInitOptions): void;
@@ -12776,415 +12756,6 @@ declare module powerbi.visuals {
         private updateViewportSize(width, height);
     }
 }
-declare module powerbi.visuals.samples {
-    interface StreamData {
-        dataPoints: StreamDataPoint[][];
-        legendData: LegendData;
-        valueFormatter: IValueFormatter;
-        axisXData: StreamAxisXData;
-    }
-    interface StreamDataPoint {
-        x: number;
-        y: number;
-        y0?: number;
-        identity: SelectionId;
-    }
-    interface StreamAxisXData {
-        valueFormatter: IValueFormatter;
-        values: any[];
-        maxNumverOfValues: number;
-        scale?: D3.Scale.GenericScale<D3.Scale.LinearScale | D3.Scale.TimeScale | D3.Scale.OrdinalScale>;
-    }
-    interface StreamProperties {
-        [objectName: string]: StreamProperty;
-    }
-    interface StreamProperty {
-        [propertyName: string]: DataViewObjectPropertyIdentifier;
-    }
-    class StreamGraph implements IVisual {
-        private static VisualClassName;
-        private static Properties;
-        private static Layer;
-        private static MaxNumberOfAxisXValues;
-        static capabilities: VisualCapabilities;
-        private margin;
-        private viewport;
-        private svg;
-        private xAxis;
-        private yAxis;
-        private colors;
-        private selectionManager;
-        private dataView;
-        private legend;
-        converter(dataView: DataView, colors: IDataColorPalette): StreamData;
-        private parseAxisXData(source, values);
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private drawAxis(data, yScale);
-        private setMaxTicks(axis, maxSize, maxValue?);
-        private getFittedTickLength(axis, maxSize, maxTicks);
-        private getFittedTickValues(axis, maxSize, maxTicks);
-        private measureTicks(ticks, measureTickFunction);
-        private getTicksByAxis(axis);
-        private getMeasureTickFunction(axis, ticks);
-        private getTextPropertiesFunction();
-        private fontSize;
-        private fontFamily;
-        private fontWeight;
-        private getWiggle(dataView);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
-    }
-}
-declare module powerbi.visuals.samples {
-    interface SunburstSlice {
-        children?: SunburstSlice[];
-        value?: any;
-        color?: string;
-        name?: string;
-        parent?: SunburstSlice;
-        selector: SelectionId;
-        total: number;
-        tooltipInfo?: TooltipDataItem[];
-    }
-    interface SunburstViewModel {
-        root: SunburstSlice;
-    }
-    var sunburstRoleNames: {
-        nodes: string;
-        values: string;
-    };
-    class Sunburst implements IVisual {
-        private static minOpacity;
-        private svg;
-        private g;
-        private arc;
-        private total;
-        private viewport;
-        private colors;
-        private selectionManager;
-        private static roleNames;
-        static capabilities: VisualCapabilities;
-        init(options: VisualInitOptions): void;
-        private static setAllUnhide(selection);
-        update(options: VisualUpdateOptions): void;
-        private updateInternal(dataRootNode);
-        private static getTreePath(node);
-        private onResize();
-        private highlightPath(d, sunBurst, setUnhide);
-        private renderTooltip(selection);
-        private static getTooltipData(displayName, value);
-        private covertTreeNodeToSunBurstNode(originParentNode, sunburstParentNode, colors, pathIdentity, color);
-        converter(dataView: DataView, colors: IDataColorPalette): SunburstSlice;
-    }
-}
-declare module powerbi.visuals.samples {
-    interface RadarChartConstructorOptions {
-        animator?: IGenericAnimator;
-        svg?: D3.Selection;
-        margin?: IMargin;
-    }
-    interface RadarChartDatapoint {
-        x: number;
-        y: number;
-        y0?: number;
-        color?: string;
-        value?: number;
-        label?: string;
-        identity: SelectionId;
-        tooltipInfo?: TooltipDataItem[];
-    }
-    interface RadarChartData {
-        dataPoints: RadarChartDatapoint[][];
-        legendData: LegendData;
-    }
-    class RadarChart implements IVisual {
-        static capabilities: VisualCapabilities;
-        /** Note: Public for testability */
-        static formatStringProp: DataViewObjectPropertyIdentifier;
-        private static VisualClassName;
-        private static Segments;
-        private static SegmentNode;
-        private static Axis;
-        private static AxisNode;
-        private static AxisLabel;
-        private static Chart;
-        private static ChartNode;
-        private static ChartPolygon;
-        private static ChartDot;
-        private svg;
-        private segments;
-        private axis;
-        private chart;
-        private mainGroupElement;
-        private colors;
-        private selectionManager;
-        private viewport;
-        private animator;
-        private margin;
-        private legend;
-        private static DefaultMargin;
-        private static SegmentLevels;
-        private static SegmentFactor;
-        private static Radians;
-        private static Scale;
-        private angle;
-        private radius;
-        static converter(dataView: DataView, colors: IDataColorPalette): RadarChartData;
-        constructor(options?: RadarChartConstructorOptions);
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private drawCircularSegments(values);
-        private drawAxes(values);
-        private drawAxesLabels(values, dataViewMetadataColumn?);
-        private drawChart(dataPoints, duration);
-    }
-}
-declare module powerbi.visuals.samples {
-    interface DotPlotConstructorOptions {
-        animator?: IGenericAnimator;
-        svg?: D3.Selection;
-        margin?: IMargin;
-        radius?: number;
-        strokeWidth?: number;
-    }
-    interface DotPlotDatapoint {
-        x: number;
-        y: number;
-        color?: string;
-        value?: number;
-        label?: string;
-        identity: SelectionId;
-        tooltipInfo?: TooltipDataItem[];
-    }
-    interface DotPlotData {
-        dataPoints: DotPlotDatapoint[];
-        legendData: LegendData;
-    }
-    class DotPlot implements IVisual {
-        static capabilities: VisualCapabilities;
-        private static VisualClassName;
-        private static DotPlot;
-        private static Axis;
-        private static Dot;
-        private svg;
-        private axis;
-        private dotPlot;
-        private colors;
-        private selectionManager;
-        private dataView;
-        private viewport;
-        private animator;
-        private margin;
-        private legend;
-        private static DefaultMargin;
-        private radius;
-        private strokeWidth;
-        private hostService;
-        private static DefaultRadius;
-        private static DefaultStrokeWidth;
-        private static FrequencyText;
-        private static round10(value, digits?);
-        private static getTooltipData(value);
-        static converter(dataView: DataView, maxDots: number, colors: IDataColorPalette, host: IVisualHostServices): DotPlotData;
-        constructor(options?: DotPlotConstructorOptions);
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private drawDotPlot(data, xScale, yScale);
-        private renderTooltip(selection);
-        private drawAxis(values, xScale, translateY);
-    }
-}
-declare module powerbi.visuals.samples {
-    interface TimelineFormat {
-        showHeader: boolean;
-        leftMargin: number;
-        rightMargin: number;
-        topMargin: number;
-        bottomMargin: number;
-        timeRangeSize: number;
-        textSize: number;
-        cellWidth: number;
-        cellHeight: number;
-        cellsYPosition: number;
-        textYPosition: number;
-        cellColor: Fill;
-        cellColorOut: Fill;
-    }
-    interface TimelineData {
-        dataView?: DataView;
-        options?: VisualUpdateOptions;
-        dragging?: boolean;
-        categorySourceName?: string;
-        columnIdentity?: powerbi.data.SQExpr;
-        timelineDatapoints?: TimelineDatapoint[];
-        elementsCount: number;
-        granularity: string;
-        startDate?: Date;
-        endDate?: Date;
-        selectionStartDate?: Date;
-        selectionEndDate?: Date;
-        cursorDataPoints: CursorDatapoint[];
-        granuralityChanged: boolean;
-    }
-    interface CursorDatapoint {
-        cursorIndex: number;
-        dx: number;
-    }
-    interface TimelineDatapoint {
-        label: string;
-        isAdditional: boolean;
-        index: number;
-        unitIndex: number;
-        dateStart: Date;
-        dateEnd: Date;
-        fillPart: number;
-        dx: number;
-        dx2: number;
-    }
-    class Timeline implements IVisual {
-        static capabilities: VisualCapabilities;
-        private static monthNames;
-        private static VisualClassName;
-        private static TimelineContainer;
-        private static Header;
-        private static CellContainer;
-        private static CellTextLevel1;
-        private static CellTextLevel2;
-        private static Cursor;
-        private static Cell;
-        private static Clear;
-        private static SelectionRange;
-        timelineFormat: TimelineFormat;
-        timelineData: TimelineData;
-        private hostServices;
-        private svg;
-        private body;
-        private header;
-        private headerTextContainer;
-        private rangeText;
-        private mainGroupElement;
-        private cursorGroupElement;
-        private selectorContainer;
-        private options;
-        private dataView;
-        private periodSlicerRect;
-        private selectedText;
-        private selector;
-        private selectorNames;
-        static isIE(): boolean;
-        init(options: VisualInitOptions): void;
-        selectPriod(periodName: any, dx: any): void;
-        static converter(timelineData: TimelineData, timelineFormat: TimelineFormat): void;
-        update(options: VisualUpdateOptions): void;
-        private render(timelineData, timelineFormat);
-        fillCells(): void;
-        currentlyMouceOverElement: any;
-        cellMouseOver(datapoint: any): void;
-        renderCells(timelineData: TimelineData, timelineFormat: TimelineFormat): D3.UpdateSelection;
-        dragstarted(d: any, that: any): void;
-        dragged(d: any, that: any): void;
-        dragended(d: any, that: any): void;
-        private drag;
-        renderCursors(timelineData: TimelineData, timelineFormat: TimelineFormat): D3.UpdateSelection;
-        renderCellLabels(timelineData: TimelineData, timelineFormat: TimelineFormat): D3.UpdateSelection;
-        renderTimeRangeText(timelineData: TimelineData, timelineFormat: TimelineFormat): void;
-        static getCellColor(d: TimelineDatapoint, timelineData: TimelineData, timelineFormat: TimelineFormat): string;
-        getTimeRangeColorFill(dataView: DataView): Fill;
-        getHeaderFill(dataView: DataView): Fill;
-        setSelection(timelineData: TimelineData): void;
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
-    }
-}
-declare module powerbi.visuals.samples {
-    interface AreaRangeChartConstructorOptions {
-        animator?: IGenericAnimator;
-    }
-    interface AreaRangeChartSeries {
-        name: string;
-        data: AreaRangeChartDataPoint[];
-        color: string;
-        identity: SelectionId;
-    }
-    interface AreaRangeChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
-        x: number;
-        y0: number;
-        y1: number;
-    }
-    interface AreaRangeChartLegend extends DataViewObject {
-        show?: boolean;
-        showTitle?: boolean;
-        titleText?: string;
-        position?: LegendPosition;
-    }
-    interface AreaRangeChartSettings {
-        displayName?: string;
-        fillColor?: string;
-        precision: number;
-        legend?: AreaRangeChartLegend;
-        colors?: IColorPalette;
-    }
-    interface AreaRangeChartData {
-        series: AreaRangeChartSeries[];
-        categories: any[];
-        legendData: LegendData;
-        xAxisProperties: IAxisProperties;
-        yAxisProperties: IAxisProperties;
-        settings: AreaRangeChartSettings;
-        formatter: IValueFormatter;
-    }
-    class AreaRangeChart implements IVisual {
-        private static properties;
-        private static RoleNames;
-        static capabilities: VisualCapabilities;
-        private static VisualClassName;
-        private static Chart;
-        private static Area;
-        private static Axis;
-        private static DimmedFillOpacity;
-        private static FillOpacity;
-        private svg;
-        private colors;
-        private selectionManager;
-        private dataView;
-        private viewport;
-        private animator;
-        private margin;
-        private legend;
-        private data;
-        private static DefaultSettings;
-        private static DefaultMargin;
-        private chart;
-        private axis;
-        private axisX;
-        private axisY;
-        private scaleType;
-        constructor(options?: AreaRangeChartConstructorOptions);
-        init(options: VisualInitOptions): void;
-        update(options: VisualUpdateOptions): void;
-        private render(data, duration);
-        private setSize(viewport);
-        private updateElements(height, width);
-        private getObjectsFromDataView(dataView);
-        private getPrecision(objects);
-        private getLegendSettings(objects);
-        private getDataColorsSettings(objects);
-        private parseSettings(dataView);
-        private getTooltipData(categoryColumn, y0, y1, categoryIndex, valueFormatter);
-        converter(dataView: DataView, colors: IDataColorPalette): AreaRangeChartData;
-        private calculateYDomain(valueColumns, lowerMeasureIndex, upperMeasureIndex);
-        private getXAxisProperties(categoryColumn);
-        private getYAxisProperties(valueColumns, lowerMeasureIndex, upperMeasureIndex);
-        private renderAxis(data, duration);
-        private renderChart(data, duration);
-        private static findClosestXAxisIndex(currentX, xAxisValues);
-        static getTooltipInfoByPointX(pointData: any, xScale: D3.Scale.OrdinalScale, pointX: number): TooltipDataItem[];
-        private renderTooltip(selection, xScale);
-        private getLegend(series, title);
-        private enumerateLegend(enumeration);
-        private enumerateDataPoints(enumeration);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-    }
-}
 declare module powerbi.visuals {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     class NoMapLocationWarning implements IVisualWarning {
@@ -13330,157 +12901,6 @@ declare module powerbi.visuals {
         private getAvailableHeight();
         private getSentimentColorsFromObjects(objects);
         createLabelDataPoints(): LabelDataPoint[];
-    }
-}
-declare module powerbi.visuals.samples {
-    import IStringResourceProvider = jsCommon.IStringResourceProvider;
-    interface TornadoChartSections {
-        left: number;
-        right?: number;
-        isPercent: boolean;
-    }
-    interface TornadoChartTextOptions {
-        fontFamily?: string;
-        fontSize?: number;
-        sizeUnit?: string;
-    }
-    interface TornadoChartConstructorOptions {
-        svg?: D3.Selection;
-        animator?: IGenericAnimator;
-        margin?: IMargin;
-        sections?: TornadoChartSections;
-        maxLabelWidth?: number;
-        columnPadding?: number;
-    }
-    interface TornadoChartSeries {
-        fill: string;
-        name: string;
-        values: any[];
-        selectionId: SelectionId;
-    }
-    interface TornadoChartCategory {
-        value: string;
-        selectionId: SelectionId;
-    }
-    interface TornadoChartSettings {
-        precision: number;
-        formatter?: IValueFormatter;
-        showLabels?: boolean;
-        showLegend?: boolean;
-        showCategories?: boolean;
-        labelInsideFillColour: string;
-        labelOutsideFillColour: string;
-        categoriesFillColour: string;
-    }
-    interface TornadoChartDataView {
-        displayName: string;
-        categories: TornadoChartCategory[];
-        series: TornadoChartSeries[];
-        settings: TornadoChartSettings;
-        legend: LegendData;
-    }
-    class TornadoChartWarning implements IVisualWarning {
-        code: string;
-        getMessages(resourceProvider: IStringResourceProvider): IVisualErrorMessage;
-    }
-    function getTornadoChartWarning(): IVisualWarning;
-    class TornadoChart implements IVisual {
-        private static ClassName;
-        private static Properties;
-        private static Columns;
-        private static Column;
-        private static Axes;
-        private static Axis;
-        private static Labels;
-        private static Label;
-        private static LabelTitle;
-        private static LabelText;
-        private static Categories;
-        private static Category;
-        private static CategoryTitle;
-        private static CategoryText;
-        private static MaxSeries;
-        private static MinPrecision;
-        private static MinOpacity;
-        private static MinColumnOpacity;
-        private static MaxOpacity;
-        private static MaxSizeSections;
-        private static LabelPadding;
-        private static CategoryMinHeight;
-        static capabilities: VisualCapabilities;
-        private DefaultTornadoChartSettings;
-        private DefaultFillColors;
-        private columnPadding;
-        private maxLabelWidth;
-        private leftLabelMargin;
-        private durationAnimations;
-        private InnerTextHeightDelta;
-        private textOptions;
-        private sections;
-        private currentSections;
-        private margin;
-        private element;
-        private root;
-        private svg;
-        private main;
-        private columns;
-        private axes;
-        private labels;
-        private categories;
-        private legendObjectProperties;
-        private legend;
-        private colors;
-        private viewport;
-        private dataView;
-        private tornadoChartDataView;
-        private heightColumn;
-        private widthLeftSection;
-        private widthRightSection;
-        private animator;
-        private hostService;
-        private selectionManager;
-        private scrolling;
-        constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions);
-        init(visualInitOptions: VisualInitOptions): void;
-        update(visualUpdateOptions: VisualUpdateOptions): void;
-        private subtractMargin(viewport);
-        private updateElements();
-        private getValueByPercent(percent, maxValue, isPrecent?);
-        converter(dataView: DataView): TornadoChartDataView;
-        private parseSettings(dataView, objects, value);
-        private parseLegendProperties(dataView);
-        private getColor(properties, defaultColor, objects);
-        private getPrecision(objects);
-        private getObjectsFromDataView(dataView);
-        private parseCategories(dataView);
-        private parseSeries(dataViewValueColumns);
-        private getLegendData(series);
-        private updateSections(dataView);
-        private render(tornadoChartDataView);
-        private renderWithScrolling(tornadoChartDataView, scrollStart, scrollEnd);
-        private updateViewport();
-        private computeHeightColumn(tornadoChartDataView);
-        private renderMiddleSection(tornadoChartDataView);
-        private renderColumns(columnsData, selectSecondSeries?);
-        private setSelection(columns, selectSecondSeries?);
-        private renderTooltip(selection);
-        private generateColumnDataBySeries(tornadoChartDataView);
-        private generateColumnDataByValues(tornadoChartSeries, minValue, maxValue, maxWidth, shiftToRight, shiftToMiddle, valueFormatter, categories, seriesName, displayName, labelInsideFillColour, labelOutsideFillColour);
-        private generateColumnData(value, minValue, maxValue, width, shiftToMiddle, shiftToRight, color, index, valueFormatter, categoryValue, seriesName, displayName, labelInsideFillColour, labelOutsideFillColour);
-        private getColumnWidth(value, minValue, maxValue, width);
-        private getLabelData(value, xColumn, yColumn, dxColumn, dyColumn, columnWidth, isColumnPositionLeft, valueFormatter, labelInsideFillColour, labelOutsideFillColour);
-        private getTooltipData(displayName, categoryValue, seriesName, value);
-        private renderAxes(tornadoChartDataView);
-        private generateAxesData();
-        private renderLabels(columnsData, settings);
-        private renderCategories(tornadoChartDataView);
-        private renderLegend(tornadoChartDataView);
-        private getTextData(text, measureWidth?, measureHeight?);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-        private enumerateDataPoint(enumeration);
-        private setOpacity(element, opacityValue?, disableAnimation?);
-        private animation(element);
-        destroy(): void;
     }
 }
 declare module powerbi.visuals {
@@ -13724,104 +13144,6 @@ declare module powerbi.visuals {
         static cullDataByViewport(dataPoints: DonutDataPoint[], maxValue: number, viewport: IViewport): DonutDataPoint[];
     }
 }
-declare module powerbi.visuals.samples {
-    interface HistogramConstructorOptions {
-        svg?: D3.Selection;
-        animator?: IGenericAnimator;
-        margin?: IMargin;
-    }
-    interface HistogramSettings {
-        displayName?: string;
-        fillColor?: string;
-        frequency: boolean;
-        bins?: number;
-        precision: number;
-    }
-    interface HistogramData extends D3.Layout.Bin, TooltipEnabledDataPoint {
-        range: number[];
-        selectionIds: SelectionId[];
-    }
-    interface HistogramDataView {
-        data: HistogramData[];
-        xScale?: D3.Scale.LinearScale;
-        yScale?: D3.Scale.LinearScale;
-        settings: HistogramSettings;
-        formatter: IValueFormatter;
-    }
-    class Histogram implements IVisual {
-        private static ClassName;
-        private static FrequencyText;
-        private static DensityText;
-        private static Properties;
-        private static DefaultHistogramSettings;
-        private static Axes;
-        private static Axis;
-        private static Columns;
-        private static Column;
-        private static Legends;
-        private static Legend;
-        static capabilities: VisualCapabilities;
-        private ColumnPadding;
-        private MinColumnHeight;
-        private MinOpacity;
-        private MaxOpacity;
-        private NumberOfLabelsOnAxisY;
-        private MinNumberOfBins;
-        private MinPrecision;
-        private TooltipDisplayName;
-        private SeparatorNumbers;
-        private LegendSize;
-        private AxisSize;
-        private ExcludeBrackets;
-        private IncludeBrackets;
-        private margin;
-        private durationAnimations;
-        private viewport;
-        private selectionManager;
-        private colors;
-        private root;
-        private svg;
-        private main;
-        private axes;
-        private axisX;
-        private axisY;
-        private legend;
-        private columns;
-        private histogramDataView;
-        private animator;
-        constructor(histogramConstructorOptions?: HistogramConstructorOptions);
-        init(visualsOptions: VisualInitOptions): void;
-        converter(dataView: DataView): HistogramDataView;
-        private getValuesByFrequencies(sourceValues, frequencies, identities);
-        private getData(values, numericalValues, data, settings, valueFormatter);
-        private getRange(minValue, maxValue, step, index);
-        private getTooltipData(value, range, settings, includeLeftBorder, valueFormatter);
-        private getSelectionIds(values, bin, index);
-        private isValueContainedInRange(value, bin, index);
-        private parseSettings(dataView);
-        private getBins(objects);
-        private getFrequency(objects);
-        private getPrecision(objects);
-        update(visualUpdateOptions: VisualUpdateOptions): void;
-        private setSize(viewport);
-        private updateElements(height, width);
-        private render();
-        private renderColumns();
-        private renderTooltip(selection);
-        private getColumnHeight(column, y);
-        private renderAxes();
-        private rangesToArray(data);
-        private rangeToString(range, includeLeftBorder, valueFormatter);
-        private renderLegend();
-        private getDataLegends(settings);
-        private getLegendText(settings);
-        private bindSelectionHandler(columnsSelection);
-        private setSelection(columnsSelection, data?);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
-        private getObjectsFromDataView(dataView);
-        destroy(): void;
-    }
-}
 declare module powerbi.visuals {
     interface ScriptVisualDataViewObjects extends DataViewObjects {
         lastSavedImage: ScriptVisualDataViewObject;
@@ -13878,7 +13200,6 @@ declare module powerbi.visuals.plugins {
     let map: IVisualPlugin;
     let filledMap: IVisualPlugin;
     let treemap: IVisualPlugin;
-    let sunburst: IVisualPlugin;
     let pieChart: IVisualPlugin;
     let scatterChart: IVisualPlugin;
     let stackedAreaChart: IVisualPlugin;
@@ -13886,54 +13207,11 @@ declare module powerbi.visuals.plugins {
     let matrix: IVisualPlugin;
     let slicer: IVisualPlugin;
     let textbox: IVisualPlugin;
-    let waterfallChart: IVisualPlugin;
-    let cheerMeter: IVisualPlugin;
-    let consoleWriter: IVisualPlugin;
-    let helloIVisual: IVisualPlugin;
-    let asterPlot: IVisualPlugin;
     let owlGauge: IVisualPlugin;
-    let streamGraph: IVisualPlugin;
+    let cheerMeter: IVisualPlugin;
+    let waterfallChart: IVisualPlugin;
     let scriptVisual: IVisualPlugin;
-    var radarChart: IVisualPlugin;
-    var dotPlot: IVisualPlugin;
-    var histogram: IVisualPlugin;
-    var areaRangeChart: IVisualPlugin;
-    var timeline: IVisualPlugin;
-    var tornadoChart: IVisualPlugin;
     let kpi: IVisualPlugin;
-}
-declare module powerbi.visuals {
-    class DataColorPalette implements IDataColorPalette {
-        private scales;
-        private colors;
-        /**
-         * Colors used for sentiment visuals, e.g. KPI, Gauge. Since this is only a temporary implementation which will
-         * eventually be superseded by conditional formatting, we don't declare them as part of the theme and instead
-         * use a hardcoded color scheme here until conditional formatting is ready.
-         */
-        private sentimentColors;
-        private basePickerColors;
-        /**
-         * Creates a DataColorPalette using the given theme, or the default theme.
-         */
-        constructor(colors?: IColorInfo[]);
-        getColorScaleByKey(key: string): IColorScale;
-        getNewColorScale(): IColorScale;
-        getColorByIndex(index: number): IColorInfo;
-        getSentimentColors(): IColorInfo[];
-        getBasePickerColors(): IColorInfo[];
-        getAllColors(): IColorInfo[];
-        private createScale();
-    }
-    class D3ColorScale implements IColorScale {
-        private scale;
-        constructor(scale: D3.Scale.OrdinalScale);
-        getColor(key: any): IColorInfo;
-        clearAndRotateScale(): void;
-        clone(): IColorScale;
-        getDomain(): any[];
-        static createFromColors(colors: IColorInfo[]): D3ColorScale;
-    }
 }
 declare module powerbi.visuals {
     interface CartesianBehaviorOptions {
