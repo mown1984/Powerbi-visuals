@@ -131,7 +131,8 @@ module powerbi.visuals.samples {
         ]);
     }
 
-    export class BulletChartWarning implements IVisualWarning {
+    //more than one implementation of interface which contains "IVisual" in its name currently is not supported in devtools
+    export class BulletChartWarning/* implements IVisualWarning*/ {
         public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
 
         private message: string;
@@ -153,7 +154,7 @@ module powerbi.visuals.samples {
     }
 
     export class BulletChart implements IVisual {
-        private static ScrollbarWidth: number = 13;
+        private static ScrollbarWidth: number = 18;
         private static BulletVerticalWidth = 105;
         private static BulletHorizontalHeight = 50;
         private static BulletWidth = 25;
