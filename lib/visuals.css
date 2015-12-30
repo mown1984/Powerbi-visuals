@@ -1024,7 +1024,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1033,14 +1033,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -3090,19 +3090,6 @@ div.ql-toolbar.darkToolbar select.ql-picker {
     transform: rotate(2deg);
   }
 }
-.streamGraph {
-  font-family: Tahoma,Verdana,Geneva,sans-serif;
-  font-size: 11px;
-}
-.streamGraph .axis path,
-.streamGraph .axis line {
-  fill: none;
-  stroke: #666;
-  shape-rendering: crispEdges;
-}
-.streamGraph .axis text {
-  font-size: 11px;
-}
 .visual-sandbox {
   border: none;
   overflow: hidden;
@@ -3117,96 +3104,4 @@ div.ql-toolbar.darkToolbar select.ql-picker {
 .y1-ref-line {
   stroke-width: 3px;
   stroke-opacity: 0.5;
-}
-.radarChart .axis path,
-.radarChart .axis line {
-  fill: none;
-  stroke: grey;
-  stroke-width: 1px;
-}
-.radarChart .axis text {
-  font-family: sans-serif;
-  font-size: 11px;
-}
-.radarChart .segments path,
-.radarChart .segments line {
-  fill: none;
-  stroke: grey;
-  stroke-opacity: 0.75;
-  stroke-width: 0.3px;
-}
-.dotPlot .axis path,
-.dotPlot .axis line {
-  fill: none;
-  stroke: black;
-  shape-rendering: crispEdges;
-}
-.dotPlot .axis text {
-  font-family: sans-serif;
-  font-size: 11px;
-}
-.timeline .axis path,
-.timeline .axis line {
-  fill: none;
-  stroke: black;
-  shape-rendering: crispEdges;
-}
-.timeline .axis text {
-  font-family: sans-serif;
-  font-size: 11px;
-}
-.sunBurstPercentage {
-  font-weight: bold;
-  opacity: 0;
-}
-.sunBurstPercentageFixed {
-  font-weight: bold;
-  opacity: 0;
-}
-.histogram {
-  font-family: Tahoma,Verdana,Geneva,sans-serif;
-}
-.histogram .axis path,
-.histogram .legends path,
-.histogram .axis line,
-.histogram .legends line {
-  fill: none;
-  stroke: #777777;
-  shape-rendering: crispEdges;
-}
-.histogram .axis text,
-.histogram .legends text {
-  fill: #777777;
-  font-size: 11px;
-}
-.histogram .legends text {
-  font-size: 12px;
-  fill: #000;
-  text-anchor: middle;
-}
-.areaRangeChart {
-  font-family: Tahoma,Verdana,Geneva,sans-serif;
-}
-.areaRangeChart .axis path,
-.areaRangeChart .axis line {
-  fill: none;
-  stroke: #777777;
-  shape-rendering: crispEdges;
-}
-.areaRangeChart .axis text {
-  fill: #777777;
-  font-size: 11px;
-}
-.areaRangeChart .chart path,
-.areaRangeChart .chart line {
-  stroke-width: 1;
-}
-.tornado-chart {
-  font-family: Tahoma,Verdana,Geneva,sans-serif;
-  font-size: 11px;
-}
-.tornado-chart .axes .axis {
-  fill: none;
-  stroke: #777777;
-  stroke-width: 1px;
 }
