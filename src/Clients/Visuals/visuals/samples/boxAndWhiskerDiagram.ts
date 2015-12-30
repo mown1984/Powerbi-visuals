@@ -290,9 +290,8 @@ module powerbi.visuals.samples {
             if (this.svg) {
                 this.root = this.svg;
             } else {
-                var rootDiv = d3.select(visualsInitOptions.element.get(0)).append("div");
-                rootDiv.style('overflow-x', 'overlay')
-                this.overlappingDiv = rootDiv.append("div");
+                this.overlappingDiv = d3.select(visualsInitOptions.element.get(0)).append("div");
+                this.overlappingDiv.style('overflow-x', 'overlay')
                 this.root = this.overlappingDiv.append("svg");
             }
 
@@ -358,7 +357,9 @@ module powerbi.visuals.samples {
                 "height": height > 0 ? height : 0,
                 "width": width > 0 ? width : 0
             });
-
+            this.overlappingDiv.style(
+                "width", (width > 0 ? width : 0) + 'px'
+            );
             this.main.attr("transform", SVGUtil.translate(this.margin.left, this.margin.top));
         }
         private totalWidthOfBoxes = 0;
@@ -507,9 +508,7 @@ module powerbi.visuals.samples {
                 "width": this.totalWidthOfBoxes + 200
             });
 
-            this.overlappingDiv.style(
-                "width", (this.totalWidthOfBoxes + 200) + 'px'
-            );
+
 
             return {
                 data: boxAndWhiskers,
