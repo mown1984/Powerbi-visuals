@@ -874,6 +874,11 @@ module powerbi.visuals {
         }
     }
 
+    export interface MatrixConstructorOptions {
+        isFormattingPropertiesEnabled?: boolean;
+        isTouchEnabled?: boolean;
+    }
+
     export class Matrix implements IVisual {
         private static preferredLoadMoreThreshold: number = 0.8;
         
@@ -888,6 +893,7 @@ module powerbi.visuals {
         private dataView: DataView;
         private formatter: ICustomValueColumnFormatter;
         private isInteractive: boolean;
+        private isTouchEnabled: boolean;
         private hostServices: IVisualHostServices;
         private hierarchyNavigator: IMatrixHierarchyNavigator;
         private waitingForData: boolean;
@@ -897,9 +903,13 @@ module powerbi.visuals {
         private columnWidthManager: controls.TablixColumnWidthManager;
         private isFormattingPropertiesEnabled: boolean;
 
-        constructor(isFormattingPropertiesEnabled?: boolean) {
-            this.isFormattingPropertiesEnabled = isFormattingPropertiesEnabled;
+        constructor(options?: MatrixConstructorOptions) {
+            if (options) {
+                this.isFormattingPropertiesEnabled = options.isFormattingPropertiesEnabled;
+                this.isTouchEnabled = options.isTouchEnabled;
+            }
         }
+
         public static customizeQuery(options: CustomizeQueryOptions): void {
             let dataViewMapping = options.dataViewMappings[0];
             if (!dataViewMapping || !dataViewMapping.matrix || !dataViewMapping.metadata)
@@ -1080,7 +1090,7 @@ module powerbi.visuals {
 
             let tablixOptions: controls.TablixOptions = {
                 interactive: this.isInteractive,
-                enableTouchSupport: false,
+                enableTouchSupport: this.isTouchEnabled,
                 fontSize: TablixUtils.getTextSizeInPx(textSize),
             };
 
