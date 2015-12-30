@@ -411,6 +411,7 @@ module powerbi.visuals.samples {
         private static MaxSeries: number = 2;
 
         private static MinPrecision: number = 0;
+        private static MaxPrecision: number = 17; // max number of decimals in float
 
         private static MinOpacity: number = 0;
         private static MinColumnOpacity: number = 0.2;
@@ -822,6 +823,10 @@ module powerbi.visuals.samples {
 
             if (precision <= TornadoChart.MinPrecision) {
                 return TornadoChart.MinPrecision;
+            }
+
+            if (precision >= TornadoChart.MaxPrecision) {
+                return TornadoChart.MaxPrecision;
             }
 
             return precision;
