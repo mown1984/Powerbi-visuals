@@ -178,6 +178,15 @@ module powerbi.visuals {
         private overlayRect: D3.Selection;
         private isComboChart: boolean;
 
+        private lastDragMoveXPosition: number;
+        private deferDragMoveOperation = jsCommon.DeferUtility.deferUntilNextFrame(() => {
+            if (this.lastDragMoveXPosition) {
+                let index: number = this.findIndex(this.lastDragMoveXPosition - this.margin.left);
+                this.selectColumn(index);
+                this.lastDragMoveXPosition = undefined;
+            }
+        });
+
         public static customizeQuery(options: CustomizeQueryOptions): void {
             let dataViewMapping = options.dataViewMappings[0];
             if (!dataViewMapping || !dataViewMapping.categorical || !dataViewMapping.categorical.categories)
@@ -501,10 +510,8 @@ module powerbi.visuals {
             if (this.isInteractiveChart) {
                 let rootSvg: EventTarget = LineChart.getInteractiveLineChartDomElement(this.element);
                 let dragMove = () => {
-                    let x: number = d3.mouse(rootSvg)[0];
-
-                    let index: number = this.findIndex(x - this.margin.left);
-                    this.selectColumn(index);
+                    this.lastDragMoveXPosition = d3.mouse(rootSvg)[0];
+                    this.deferDragMoveOperation();
                 };
 
                 // assign drag and onClick events

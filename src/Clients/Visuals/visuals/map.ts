@@ -42,6 +42,7 @@ module powerbi.visuals {
         disableZooming?: boolean;
         disablePanning?: boolean;
         isLegendScrollable?: boolean;
+        viewChangeThrottleInterval?: number; // Minimum interval between viewChange events (in milliseconds)
     }
 
     export interface IMapControlFactory {
@@ -865,16 +866,16 @@ module powerbi.visuals {
 
                     if (this.dataLabelsSettings.show && !this.dataLabelsSettings.showCategory) {
                         text = dataShape.catagoryLabeltext;
-                        if (text === undefined|| text === null)
+                        if (text === undefined)
                             continue;
                     } else if (this.dataLabelsSettings.showCategory && !this.dataLabelsSettings.show) {
                         text = dataShape.labeltext;
-                        if (text === undefined || text === null)
+                        if (text === undefined)
                             continue;
                     } else if (this.dataLabelsSettings.showCategory && this.dataLabelsSettings.show) {
                         text = dataShape.catagoryLabeltext;
                         secondRowText = dataShape.labeltext;
-                        if ((text === undefined || text === null) && (secondRowText === undefined || secondRowText === null))
+                        if (text === undefined && secondRowText === undefined)
                             continue;
                         hasSecondRow = true;
                     }
@@ -983,6 +984,7 @@ module powerbi.visuals {
         private disablePanning: boolean;
         private locale: string;
         private isLegendScrollable: boolean;
+        private viewChangeThrottleInterval: number;
 
         constructor(options: MapConstructionOptions) {
             if (options.filledMap) {
@@ -1000,6 +1002,7 @@ module powerbi.visuals {
             this.disableZooming = options.disableZooming;
             this.disablePanning = options.disablePanning;
             this.isLegendScrollable = !!options.behavior;
+            this.viewChangeThrottleInterval = options.viewChangeThrottleInterval;
         }
 
         public init(options: VisualInitOptions) {
@@ -1793,7 +1796,14 @@ module powerbi.visuals {
             };
             let divQuery = InJs.DomFactory.div().addClass(Map.MapContainer.cssClass).appendTo(container);
             this.mapControl = this.mapControlFactory.createMapControl(divQuery[0], mapOptions);
-            Microsoft.Maps.Events.addHandler(this.mapControl, "viewchange", () => { this.onViewChanged(); });
+
+            if (this.viewChangeThrottleInterval !== undefined) {
+                Microsoft.Maps.Events.addThrottledHandler(this.mapControl, "viewchange", () => { this.onViewChanged(); },
+                    this.viewChangeThrottleInterval);
+            } else {
+                Microsoft.Maps.Events.addHandler(this.mapControl, "viewchange", () => { this.onViewChanged(); });
+            }
+
             this.dataPointRenderer.init(this.mapControl, divQuery, !!this.behavior);
 
             if (!this.pendingGeocodingRender) {

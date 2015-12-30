@@ -497,6 +497,11 @@ module powerbi.visuals {
         (index: number, width: number): void;
     }
 
+    export interface TableConstructorOptions {
+        isFormattingPropertiesEnabled?: boolean;
+        isTouchEnabled?: boolean;
+    }
+
     export class Table implements IVisual {
         private static preferredLoadMoreThreshold: number = 0.8;
 
@@ -505,6 +510,7 @@ module powerbi.visuals {
         private style: IVisualStyle;
         private formatter: ICustomValueColumnFormatter;
         private isInteractive: boolean;
+        private isTouchEnabled: boolean;
         private getLocalizedString: (stringId: string) => string;
         private hostServices: IVisualHostServices;
 
@@ -517,8 +523,11 @@ module powerbi.visuals {
         private dataView: DataView;
         private isFormattingPropertiesEnabled: boolean;
 
-        constructor(isFormattingPropertiesEnabled?: boolean) {
-            this.isFormattingPropertiesEnabled = isFormattingPropertiesEnabled;
+        constructor(options?: TableConstructorOptions) {
+            if (options) {
+                this.isFormattingPropertiesEnabled = options.isFormattingPropertiesEnabled;
+                this.isTouchEnabled = options.isTouchEnabled;
+            }
         }
 
         public static customizeQuery(options: CustomizeQueryOptions): void {
@@ -704,7 +713,7 @@ module powerbi.visuals {
 
             let tablixOptions: controls.TablixOptions = {
                 interactive: this.isInteractive,
-                enableTouchSupport: false,
+                enableTouchSupport: this.isTouchEnabled,
                 layoutKind: layoutKind,
                 fontSize: TablixUtils.getTextSizeInPx(textSize),
             };
