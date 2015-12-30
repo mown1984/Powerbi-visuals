@@ -154,7 +154,7 @@ module powerbi.visuals.samples {
     }
 
     export class BulletChart implements IVisual {
-        private static ScrollbarWidth: number = 18;
+        private static ScrollbarWidth: number = 22;
         private static BulletVerticalWidth = 105;
         private static BulletHorizontalHeight = 50;
         private static BulletWidth = 25;
@@ -576,7 +576,8 @@ module powerbi.visuals.samples {
             this.clearCatcher = appendClearCatcher(body);
             this.bulletBody = this.clearCatcher
                 .append('div')
-                .classed(BulletChart.ClassName, true);
+                .classed(BulletChart.ClassName, true)
+                .attr("drag-resize-disabled", true);
 
             this.scrollContainer = this.bulletBody.append('div')
                 .classed('bullet-scroll-region', true);
