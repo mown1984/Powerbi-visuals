@@ -71,6 +71,7 @@ module powerbi.visuals.samples {
     export interface BoxAndWhiskerDiagramPoint {
         x: number;
         y: number;
+
     }
 
     export interface BoxAndWhiskerDiagramBox extends BoxAndWhiskerDiagramPoint {
@@ -108,6 +109,7 @@ module powerbi.visuals.samples {
         whisker: BoxAndWhiskerDiagramWhisker;
         outliers: BoxAndWhiskerDiagramOutlier[];
         selectionId: SelectionId;
+        tooltipInfo: TooltipDataItem[];
     }
 
     export interface BoxAndWhiskerDataView {
@@ -210,6 +212,15 @@ module powerbi.visuals.samples {
                 }
             }],
             objects: {
+                cellColor: {
+                    displayName: 'Cells color',
+                    properties: {
+                        fill: {
+                            displayName: 'Cell fill',
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
                 general: {
                     displayName: data.createDisplayNameGetter("Visual_General"),
                     properties: {
@@ -358,12 +369,29 @@ module powerbi.visuals.samples {
                 "width": width > 0 ? width : 0
             });
             this.overlappingDiv.style(
-                "width", (width > 0 ? width : 0) + 'px'
+                "width", (width > 0 ? width : 0)
             );
             this.main.attr("transform", SVGUtil.translate(this.margin.left, this.margin.top));
         }
+
+        private getTooltipData(displayName: string, values: any[]): TooltipDataItem[] {
+            return [{
+                displayName: displayName,
+                value: values.length == 0 ? "" : values.join(),
+            }];
+        }
+
         private totalWidthOfBoxes = 0;
+        private defaultDataPointColorTop: string;
         public converter(dataView: DataView): BoxAndWhiskerDataView {
+
+            if (dataView && dataView.metadata.objects) {
+                var cellColorObj = dataView.metadata.objects['cellColor'];
+                if (cellColorObj && cellColorObj['fill']) {
+                    this.defaultDataPointColorTop = cellColorObj['fill'].solid.color;
+                }
+            }
+
             this.totalWidthOfBoxes = 0;
             if (!dataView ||
                 !dataView.categorical ||
@@ -488,7 +516,8 @@ module powerbi.visuals.samples {
                     colour: this.getColour(
                         BoxAndWhiskerDiagram.Properties["dataPoint"]["fill"],
                         BoxAndWhiskerDiagram.DefaultColour,
-                        objects[index])
+                        objects[index]),
+                    tooltipInfo: this.getTooltipData(category, values)
                 };
             });
 
@@ -741,27 +770,33 @@ module powerbi.visuals.samples {
                 .classed(BoxAndWhiskerDiagram.NodeSelector.class, true);
 
             this.renderBoxes(nodeSelection, nodeEnterSelection);
+
             this.renderWhiskers(nodeSelection, nodeEnterSelection);
             this.renderOutlier(nodeSelection, nodeEnterSelection);
+
 
             nodeSelection
                 .exit()
                 .remove();
+
+
         }
 
         private renderBoxes(nodeSelection: D3.UpdateSelection, nodeEnterSelection: D3.Selection): void {
             nodeEnterSelection
                 .append("rect")
                 .classed(BoxAndWhiskerDiagram.BoxSelector.class, true);
+            var nodes = nodeSelection
+                .select(BoxAndWhiskerDiagram.BoxSelector.selector);
 
-            nodeSelection
-                .select(BoxAndWhiskerDiagram.BoxSelector.selector)
-                .attr({
-                    x: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.x,
-                    y: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.y,
-                    width: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.width,
-                    height: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.height
-                })
+            this.renderTooltip(nodes);
+
+            nodes.attr({
+                x: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.x,
+                y: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.y,
+                width: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.width,
+                height: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.box.height
+            })
                 .style({
                     fill: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.colour,
                     stroke: (boxAndWhisker: BoxAndWhisker) => d3.rgb(boxAndWhisker.colour).darker(1.5)
@@ -848,11 +883,11 @@ module powerbi.visuals.samples {
             return scale(boxAndWhisker.box.quartiles[1]);
         }
 
-        // private renderTooltip(selection: D3.UpdateSelection): void {
-        //     TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-        //         return (<SankeyDiagramTooltipData> tooltipEvent.data).tooltipData;
-        //     });
-        // }
+        private renderTooltip(selection: D3.Selection): void {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (<BoxAndWhisker>tooltipEvent.data).tooltipInfo;
+            });
+        }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             var enumeration: ObjectEnumerationBuilder = new ObjectEnumerationBuilder();
