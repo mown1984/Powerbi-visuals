@@ -47,5 +47,6 @@ build_script:
 #---------------------------------#
 
 test_script:
+  - gulp tslint:visuals
   - gulp build:visualsTests
   - gulp run:test:visuals
