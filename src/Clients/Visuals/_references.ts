@@ -65,7 +65,6 @@
 /// <reference path="capabilities/gauge.capabilities.ts"/>
 /// <reference path="capabilities/imageVisual.capabilities.ts"/>
 /// <reference path="capabilities/scriptVisual.capabilities.ts"/>
-/// <reference path="capabilities/samples/consoleWriter.capabilities.ts"/>
 
 /// <reference path="capabilities/lineChart.capabilities.ts"/>
 /// <reference path="capabilities/map.capabilities.ts"/>

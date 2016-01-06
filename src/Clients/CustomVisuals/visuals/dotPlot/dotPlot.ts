@@ -154,7 +154,6 @@ module powerbi.visuals.samples {
             }
         };
 
-        private static MaxXAxisHeight: number = 20;
         private static VisualClassName = 'dotPlot';
 
         private static DotPlot: ClassAndSelector = {
@@ -172,6 +171,16 @@ module powerbi.visuals.samples {
             selector: '.dot'
         };
 
+        private static DefaultMargin: IMargin = {
+            top: 40,
+            bottom: 5,
+            right: 5,
+            left: 5
+        };
+
+        private static MaxXAxisHeight: number = 50;
+        private static XAxisHorizontalMargin: number = 40;
+
         private svg: D3.Selection;
         private axis: D3.Selection;
         private dotPlot: D3.Selection;
@@ -182,15 +191,6 @@ module powerbi.visuals.samples {
         private layout: VisualLayout;
         private animator: IGenericAnimator;
         private legend: ILegend;
-
-        private static DefaultMargin: IMargin = {
-            top: 40,
-            bottom: 20,
-            right: 5,
-            left: 5
-        };
-
-        private static XAxisHorizontalMargin: number = 40;
 
         private radius: number;
         private strokeWidth: number;
@@ -484,6 +484,51 @@ module powerbi.visuals.samples {
             this.axis.attr("class", "x axis")
                 .attr('transform', SVGUtil.translate(0, translateY));
             this.axis.call(xAxis);
+
+            this.relaxTicks(values);
+        }
+
+        private itemsWidth: number = 0;
+        private itemsLength: number = 0;
+
+        private relaxTicks(values: any[]) {
+            var xAxisWidth = this.axis.node().getBoundingClientRect().width;
+            if (values.length !== this.itemsLength) {
+                var self = this;
+                this.itemsWidth = 0;
+                this.itemsLength = values.length;
+                this.axis.selectAll("text").each(function(d, i) {
+                    self.itemsWidth += d3.select(this).node().getBoundingClientRect().width + 15;
+                });
+            }
+            this.toggleRotateTicks( xAxisWidth < this.itemsWidth ? true : false );
+            this.toggleHideTicks( xAxisWidth < values.length * 15 ? true : false );
+        }
+        private toggleRotateTicks(state) {
+            if (state) {
+                this.axis.selectAll("text")
+                    .attr("dx", ".8em")
+                    .attr("dy", ".15em")
+                    .attr("transform", "rotate(65)")
+                    .style("text-anchor", "start")
+                    .text(function(d) { return (d.length > 5 ? d.substring(0, 5) + '...' : d); });
+            } else {
+                this.axis.selectAll("text")
+                    .attr("dx", "0em")
+                    .attr("transform", "rotate(0)")
+                    .style("text-anchor", "middle");
+            }
+        }
+        private toggleHideTicks(state) {
+            if (state) {
+                this.axis.selectAll("text").each(function(d, i) {
+                    if (i % 2) {
+                        d3.select(this).attr('fill', 'transparent');
+                    }
+                });
+                return;
+            }
+            this.axis.selectAll("text").attr('fill', null);
         }
     }
 }

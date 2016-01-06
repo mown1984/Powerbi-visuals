@@ -272,6 +272,19 @@ module powerbi.visuals.plugins {
         create: () => new Textbox()
     };
 
+    export let owlGauge: IVisualPlugin = {
+        name: 'owlGauge',
+        watermarkKey: 'gauge',
+        capabilities: OwlGauge.capabilities,
+        create: () => new OwlGauge()
+    };
+
+    export let cheerMeter: IVisualPlugin = {
+        name: 'cheerMeter',
+        capabilities: CheerMeter.capabilities,
+        create: () => new CheerMeter()
+    };
+
     export let waterfallChart: IVisualPlugin = {
         name: 'waterfallChart',
         watermarkKey: 'waterfall',

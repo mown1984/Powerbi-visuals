@@ -411,6 +411,7 @@ module powerbi.visuals.samples {
         private static MaxSeries: number = 2;
 
         private static MinPrecision: number = 0;
+        private static MaxPrecision: number = 17; // max number of decimals in float
 
         private static MinOpacity: number = 0;
         private static MinColumnOpacity: number = 0.2;
@@ -824,6 +825,10 @@ module powerbi.visuals.samples {
                 return TornadoChart.MinPrecision;
             }
 
+            if (precision >= TornadoChart.MaxPrecision) {
+                return TornadoChart.MaxPrecision;
+            }
+
             return precision;
         }
 
@@ -1058,7 +1063,7 @@ module powerbi.visuals.samples {
                 : columnsSelection)
                 .attr("width", (item: ColumnData) => Math.max(item.width, 0))
                 .attr("height", (item: ColumnData) => Math.max(item.height, 0))
-                .attr("fill", (item: ColumnData) => item.color)
+                .style("fill", (item: ColumnData) => item.color)
                 .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle));
 
             columnsSelection.classed(TornadoChart.Column["class"], true);
