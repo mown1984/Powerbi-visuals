@@ -61,11 +61,11 @@ module powerbi.visuals.samples {
                 kind: powerbi.VisualDataRoleKind.Grouping,
                 displayName: data.createDisplayNameGetter("Role_DisplayName_Category")
             },
-            {
-                name: 'Y',
-                kind: powerbi.VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
-            }],
+                {
+                    name: 'Y',
+                    kind: powerbi.VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
+                }],
             dataViewMappings: [{
                 conditions: [
                     { 'Category': { max: 1 }, 'Y': { max: 1 } },
@@ -176,7 +176,7 @@ module powerbi.visuals.samples {
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0]) {
-                return  {
+                return {
                     dataPoints: dataPoints,
                     legendData: legendData,
                 };
@@ -235,10 +235,10 @@ module powerbi.visuals.samples {
                     var y = dotsScale(data[k].value);
 
                     var categorySelectionId = SelectionIdBuilder.builder()
-                            .withCategory(categoryColumn, k)
-                            .createSelectionId();
+                        .withCategory(categoryColumn, k)
+                        .createSelectionId();
 
-                    for (var level = 0; level < y; level++) {                        
+                    for (var level = 0; level < y; level++) {
                         dataPoints.push({
                             x: data[k].key,
                             y: level,
@@ -332,7 +332,7 @@ module powerbi.visuals.samples {
             var dataPoints = data.dataPoints;
 
             var values = dataView.categorical
-                && dataView.categorical.categories 
+                && dataView.categorical.categories
                 && dataView.categorical.categories.length > 0 ?
                 dataView.categorical.categories[0].values
                 : [];
@@ -361,9 +361,9 @@ module powerbi.visuals.samples {
                 .enter()
                 .append('circle')
                 .classed(DotPlot.Dot.class, true);
-            selection   
+            selection
                 .attr("cx", function(point: DotPlotDatapoint) {
-                    return xScale(point.x) + xScale.rangeBand()/2;
+                    return xScale(point.x) + xScale.rangeBand() / 2;
                 })
                 .attr("cy", function(point: DotPlotDatapoint) {
                     return yScale(point.y);
@@ -408,7 +408,7 @@ module powerbi.visuals.samples {
 
             selection
                 .filter((dotSelectionData: DotPlotDatapoint) => {
-                    return !selectionIds.some((selectionId: SelectionId) => {return dotSelectionData.identity === selectionId;});
+                    return !selectionIds.some((selectionId: SelectionId) => { return dotSelectionData.identity === selectionId; });
                 })
                 .transition()
                 .duration(this.durationAnimations)
@@ -430,6 +430,51 @@ module powerbi.visuals.samples {
             this.axis.attr("class", "x axis")
                 .attr('transform', SVGUtil.translate(0, translateY));
             this.axis.call(xAxis);
+
+            this.relaxTicks(values);
+        }
+
+        private itemsWidth: number = 0;
+        private itemsLength: number = 0;
+
+        private relaxTicks(values: any[]) {
+            var xAxisWidth = this.axis.node().getBoundingClientRect().width;
+            if (values.length !== this.itemsLength) {
+                var self = this;
+                this.itemsWidth = 0;
+                this.itemsLength = values.length;
+                this.axis.selectAll("text").each(function(d, i) {
+                    self.itemsWidth += d3.select(this).node().getBoundingClientRect().width + 15;
+                });
+            }
+            this.toggleRotateTicks( xAxisWidth < this.itemsWidth ? true : false );
+            this.toggleHideTicks( xAxisWidth < values.length * 15 ? true : false );
+        }
+        private toggleRotateTicks(state) {
+            if (state) {
+                this.axis.selectAll("text")
+                    .attr("dx", ".8em")
+                    .attr("dy", ".15em")
+                    .attr("transform", "rotate(65)")
+                    .style("text-anchor", "start")
+                    .text(function(d) { return (d.length > 5 ? d.substring(0, 5) + '...' : d); });
+            } else {
+                this.axis.selectAll("text")
+                    .attr("dx", "0em")
+                    .attr("transform", "rotate(0)")
+                    .style("text-anchor", "middle");
+            }
+        }
+        private toggleHideTicks(state) {
+            if (state) {
+                this.axis.selectAll("text").each(function(d, i) {
+                    if (i % 2) {
+                        d3.select(this).attr('fill', 'transparent');
+                    }
+                });
+                return;
+            }
+            this.axis.selectAll("text").attr('fill', null);
         }
     }
 }
