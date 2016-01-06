@@ -1024,7 +1024,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
+ *  All rights reserved. 
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1033,14 +1033,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -1824,42 +1824,53 @@ body {
   border-bottom: 2px solid #FFF;
   transform: rotate(45deg);
 }
+.horizontalSlicerContainer.canScrollRight .navigationArrow.right {
+  visibility: visible;
+}
+.horizontalSlicerContainer.canScrollLeft .navigationArrow.left {
+  visibility: visible;
+}
 .horizontalSlicerContainer .navigationArrow {
   visibility: hidden;
   background-color: white;
-}
-.horizontalSlicerContainer .navigationArrow.show {
-  visibility: visible;
 }
 .horizontalSlicerContainer .navigationArrow.right {
   background-image: url(../images/visuals.sprites.png);
   background-position: -62px -72px;
   width: 14px;
   height: 24px;
+  margin-left: 5px;
 }
 .horizontalSlicerContainer .navigationArrow.left {
   background-image: url(../images/visuals.sprites.png);
   background-position: -48px -72px;
   width: 14px;
   height: 24px;
+  margin-right: 5px;
 }
 .horizontalSlicerContainer .flexDisplay {
   display: -ms-flexbox;
+  display: -webkit-flex;
   display: flex;
-  -ms-flex-direction: row;
-  flex-direction: row;
 }
 .horizontalSlicerContainer .slicerBody {
   align-items: center;
   -ms-flex-align: center;
+  justify-content: space-between;
+  -ms-flex-direction: row;
+  flex-direction: row;
 }
 .horizontalSlicerContainer .slicerItemsContainer {
   vertical-align: top;
+  width: 100%;
+  height: 100%;
+  -webkit-flex: 1;
+  /* Chrome */
+  -ms-flex: 1;
+  /* IE 10 */
+  flex: 1;
 }
 .horizontalSlicerContainer .slicerText {
-  display: -ms-flexbox;
-  display: -webkit-flex;
-  display: flex;
   -webkit-flex-direction: column;
   -ms-flex-direction: column;
   flex-direction: column;
@@ -1869,6 +1880,11 @@ body {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .horizontalSlicerContainer .slicerText.selected,
 .horizontalSlicerContainer .slicerText.partiallySelected {
@@ -2677,10 +2693,15 @@ body {
 .visual .scroll-wrapper .scroll-element.scroll-draggable .scroll-bar {
   opacity: 1;
 }
+.visual.disable-events {
+  pointer-events: none;
+}
 .interactive-legend {
   white-space: nowrap;
   text-align: left;
   overflow: hidden;
+  touch-action: none;
+  cursor: pointer;
 }
 .interactive-legend .title {
   font-family: Tahoma,Verdana,Geneva,sans-serif;
@@ -3104,4 +3125,10 @@ div.ql-toolbar.darkToolbar select.ql-picker {
 .y1-ref-line {
   stroke-width: 3px;
   stroke-opacity: 0.5;
+}
+.kpiVisual .goalText {
+  fill: #333333;
+  font-family: Tahoma,Verdana,Geneva,sans-serif;
+  font-size: 15px;
+  text-anchor: middle;
 }
