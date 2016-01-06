@@ -555,6 +555,8 @@ module powerbitests.performanceTestsHelpers {
             case "enhancedScatterChart":
             case "wordCloud":
                 return 100;
+            case "columnChart":
+                return 13;
             default:
                 return 6;
         }

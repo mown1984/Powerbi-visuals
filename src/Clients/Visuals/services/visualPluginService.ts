@@ -69,7 +69,7 @@ module powerbi.visuals {
         */
         scriptVisualEnabled?: boolean;
 
-        isLabelInteractivityEnabled?: boolean;        
+        isLabelInteractivityEnabled?: boolean;
 
         referenceLinesEnabled?: boolean;
 
@@ -546,7 +546,7 @@ module powerbi.visuals {
         function enablePivot(pluginOld: IVisualPlugin, categoricalPivotEnabled?: boolean): IVisualPlugin {
             if (!categoricalPivotEnabled)
                 return pluginOld;
-            
+
             let caps: VisualCapabilities = pluginOld.capabilities;
             if (!caps.dataViewMappings)
                 return pluginOld;
@@ -596,7 +596,7 @@ module powerbi.visuals {
                 this.visualPlugins = {};
 
                 this.addCustomVisualizations([]);
-                
+
                 createMinervaPlugins(this.visualPlugins, this.featureSwitches);
             }
 
@@ -627,17 +627,22 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.funnel,
                     powerbi.visuals.plugins.gauge,
                     powerbi.visuals.plugins.multiRowCard,
-                    powerbi.visuals.plugins.card,
-                    powerbi.visuals.plugins.slicer,
-                    powerbi.visuals.plugins.donutChart,                    
+                    powerbi.visuals.plugins.card
                 ];
+
+                if (this.featureSwitches.kpiVisualEnabled) {
+                    convertibleVisualTypes.push(powerbi.visuals.plugins.kpi);
+                }
+
+                convertibleVisualTypes.push(powerbi.visuals.plugins.slicer);
+                convertibleVisualTypes.push(powerbi.visuals.plugins.donutChart);
 
                 if (this.featureSwitches.scriptVisualEnabled) {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.scriptVisual);
                 }
 
-                    // Add any visuals compiled in the developer tools
-                    // Additionally add custom visuals.
+                // Add any visuals compiled in the developer tools
+                // Additionally add custom visuals.
                 for (let p in plugins) {
                     let plugin = plugins[p];
                     if (plugin.custom) {
@@ -651,15 +656,11 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.dataDotClusteredColumnComboChart);
                     convertibleVisualTypes.push(powerbi.visuals.plugins.dataDotStackedColumnComboChart);
                 }
-                           
+
                 // if (this.featureSwitches.sunburstVisualEnabled) {
                 //     convertibleVisualTypes.push(powerbi.visuals.plugins.sunburst);
                 // }
 
-                if (this.featureSwitches.kpiVisualEnabled) {
-                    convertibleVisualTypes.push(powerbi.visuals.plugins.kpi);
-                }
-                    
                 return convertibleVisualTypes;
             }
 
@@ -668,7 +669,7 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(plugin);
                 }
             }
-            
+
             private addCustomVisualizations(convertibleVisualTypes: IVisualPlugin[]): void {
                 // Read new visual from localstorage
                 let customVisualizationList = localStorageService.getData('customVisualizations');

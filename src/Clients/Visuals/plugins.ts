@@ -104,6 +104,7 @@ module powerbi.visuals.plugins {
         name: 'comboChart',
         watermarkKey: 'combo',
         capabilities: capabilities.comboChart,
+        customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.ComboChart })
     };
 
@@ -117,6 +118,7 @@ module powerbi.visuals.plugins {
         name: 'dataDotClusteredColumnComboChart',
         watermarkKey: 'combo',
         capabilities: capabilities.dataDotClusteredColumnComboChart,
+        customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.DataDotClusteredColumnCombo })
     };
 
@@ -124,6 +126,7 @@ module powerbi.visuals.plugins {
         name: 'dataDotStackedColumnComboChart',
         watermarkKey: 'combo',
         capabilities: capabilities.dataDotStackedColumnComboChart,
+        customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.DataDotStackedColumnCombo })
     };
 
@@ -185,6 +188,7 @@ module powerbi.visuals.plugins {
         name: 'lineStackedColumnComboChart',
         watermarkKey: 'combo',
         capabilities: capabilities.lineStackedColumnComboChart,
+        customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.LineStackedColumnCombo }),
         getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
     };
@@ -193,6 +197,7 @@ module powerbi.visuals.plugins {
         name: 'lineClusteredColumnComboChart',
         watermarkKey: 'combo',
         capabilities: capabilities.lineClusteredColumnComboChart,
+        customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.LineClusteredColumnCombo }),
         getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
     };
@@ -272,11 +277,11 @@ module powerbi.visuals.plugins {
         create: () => new Textbox()
     };
 
-    export let owlGauge: IVisualPlugin = {
-        name: 'owlGauge',
-        watermarkKey: 'gauge',
-        capabilities: OwlGauge.capabilities,
-        create: () => new OwlGauge()
+    export let waterfallChart: IVisualPlugin = {
+        name: 'waterfallChart',
+        watermarkKey: 'waterfall',
+        capabilities: capabilities.waterfallChart,
+        create: () => new CartesianChart({ chartType: CartesianChartType.Waterfall })
     };
 
     export let cheerMeter: IVisualPlugin = {
@@ -285,11 +290,11 @@ module powerbi.visuals.plugins {
         create: () => new CheerMeter()
     };
 
-    export let waterfallChart: IVisualPlugin = {
-        name: 'waterfallChart',
-        watermarkKey: 'waterfall',
-        capabilities: capabilities.waterfallChart,
-        create: () => new CartesianChart({ chartType: CartesianChartType.Waterfall })
+    export let owlGauge: IVisualPlugin = {
+        name: 'owlGauge',
+        watermarkKey: 'gauge',
+        capabilities: OwlGauge.capabilities,
+        create: () => new OwlGauge()
     };
 
     export let scriptVisual: IVisualPlugin = {

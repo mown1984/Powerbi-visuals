@@ -559,6 +559,7 @@ module powerbi.visuals {
 
         public unbindRowHeader(item: any, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
+            cell.extension.clearTextAndTooltip();
             controls.HTMLElementUtils.clearChildren(cell.extension.contentHost);
         }
         
@@ -603,7 +604,7 @@ module powerbi.visuals {
 
         public unbindColumnHeader(item: MatrixVisualNode, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
-            cell.extension.contentHost.textContent = '';
+            cell.extension.clearTextAndTooltip();
 
             let sortableHeaderColumnMetadata = this.getSortableHeaderColumnMetadata(item);
             if (sortableHeaderColumnMetadata) {
@@ -622,8 +623,9 @@ module powerbi.visuals {
 
             cell.extension.setContainerStyle(styleClasses);
 
-            if (item.textContent)
-                cell.extension.contentHost.textContent = item.textContent;
+            if (item.textContent) {
+                cell.extension.setTextAndTooltip(item.textContent);
+            }
             else if (!_.isEmpty(item.domContent))
                 $(cell.extension.contentHost).append(item.domContent);
 
@@ -646,7 +648,7 @@ module powerbi.visuals {
 
         public unbindBodyCell(item: MatrixVisualBodyItem, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
-            cell.extension.contentHost.textContent = '';
+            cell.extension.clearTextAndTooltip();
         }
 
         private registerColumnHeaderClickHandler(columnMetadata: DataViewMetadataColumn, cell: controls.ITablixCell) {
@@ -692,7 +694,9 @@ module powerbi.visuals {
                 cell.extension.setContainerStyle(MatrixBinder.headerClassName);
 
             cell.extension.disableDragResize();
-            cell.extension.contentHost.textContent = item.metadata ? item.metadata.displayName : '';
+
+            let itemText = item.metadata ? item.metadata.displayName : '';
+            cell.extension.setTextAndTooltip(itemText);
 
             if (this.formattingProperties) {
                 this.setTablixRegionStyle(cell, this.formattingProperties.header.fontColor, this.formattingProperties.header.backgroundColor, this.formattingProperties.header.outline, this.formattingProperties.general.outlineWeight, this.formattingProperties.general.outlineColor);
@@ -701,7 +705,7 @@ module powerbi.visuals {
 
         public unbindCornerCell(item: MatrixCornerItem, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
-            cell.extension.contentHost.textContent = '';
+            cell.extension.clearTextAndTooltip();
 
             if (item.isColumnHeaderLeaf) {
                 this.unregisterColumnHeaderClickHandler(cell);
@@ -755,7 +759,7 @@ module powerbi.visuals {
 
         private bindHeader(item: MatrixVisualNode, cell: controls.ITablixCell, metadata: DataViewMetadataColumn, overwriteSubtotalLabel?: boolean): void {
             if (item.isSubtotal && !overwriteSubtotalLabel) {
-                cell.extension.contentHost.textContent = this.options.totalLabel;
+                cell.extension.setTextAndTooltip(this.options.totalLabel);
                 return;
             }
 
@@ -771,8 +775,9 @@ module powerbi.visuals {
             } else if (metadata && UrlHelper.isValidImage(metadata, value)) {
                 TablixUtils.appendImgTagToBodyCell(item.value, cell);
             }
-            else
-                cell.extension.contentHost.textContent = value;
+            else {
+                cell.extension.setTextAndTooltip(value);
+            }         
         }
        
         /**
