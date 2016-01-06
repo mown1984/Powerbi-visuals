@@ -556,7 +556,7 @@ module powerbitests.performanceTestsHelpers {
             case "wordCloud":
                 return 100;
             case "columnChart":
-                return 8;
+                return 13;
             default:
                 return 6;
         }
