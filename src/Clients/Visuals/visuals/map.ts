@@ -27,7 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    import ArrayExtensions = jsCommon.ArrayExtensions;
     import Color = jsCommon.Color;
     import PixelConverter = jsCommon.PixelConverter;
     import Polygon = shapes.Polygon;
@@ -731,6 +730,10 @@ module powerbi.visuals {
                     let identity = SelectionId.createWithSelectorForColumnAndMeasure(dataMap, null);
                     let idKey = identity.getKey();
                     let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
+
+                    //Determine Largest Shape
+                    let mainShapeIndex = MapShapeDataPointRenderer.getIndexOfLargestShape(paths);
+
                     for (let pathIndex = 0, pathCount = paths.length; pathIndex < pathCount; pathIndex++) {
                         let path = paths[pathIndex];
                         let labelFormatString = (dataView && dataView.categorical && !_.isEmpty(dataView.categorical.values)) ? valueFormatter.getFormatString(dataView.categorical.values[0].source, filledMapProps.general.formatString) : undefined;
@@ -747,7 +750,7 @@ module powerbi.visuals {
                             identity: identity,
                             selected: false,
                             key: JSON.stringify({ id: idKey, pIdx: pathIndex }),
-                            displayLabel: pathIndex === 0,
+                            displayLabel: pathIndex === mainShapeIndex,
                             labeltext: value,
                             catagoryLabeltext: (catagoryValue != null) ? NewDataLabelUtils.getLabelFormattedText(formatter.format(catagoryValue)) : undefined,
                             labelFormatString: labelFormatString,
@@ -837,6 +840,25 @@ module powerbi.visuals {
 
         public getDataPointPadding() {
             return 12;
+        }
+
+        public static getIndexOfLargestShape(paths: IGeocodeBoundaryPolygon[]): number {
+            let largestShapeIndex = 0;
+            let largestShapeArea = 0;
+
+            for (let pathIndex = 0, pathCount = paths.length; pathIndex < pathCount; pathIndex++) {
+                let path = paths[pathIndex];
+                        
+                // Using the area of the bounding box (and taking the largest)
+                let currentShapeArea = path.absoluteBounds.width * path.absoluteBounds.height; 
+                        
+                if (currentShapeArea > largestShapeArea) {
+                    largestShapeIndex = pathIndex;
+                    largestShapeArea = currentShapeArea;
+                }
+            }
+
+            return largestShapeIndex;
         }
 
         private clearMaxShapeDimension(): void {
@@ -1453,7 +1475,7 @@ module powerbi.visuals {
 
         /** Note: public for UnitTest */
         public static hasSizeField(values: DataViewValueColumns, defaultIndexIfNoRole?: number): boolean {
-            if (ArrayExtensions.isUndefinedOrEmpty(values))
+            if (_.isEmpty(values))
                 return false;
 
             for (let i = 0, ilen = values.length; i < ilen; i++) {

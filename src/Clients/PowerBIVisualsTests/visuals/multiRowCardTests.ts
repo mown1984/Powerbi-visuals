@@ -317,7 +317,7 @@ module powerbitests {
             });
         });
 
-        xit("Validate multiRowCard DOM with Title", () => {
+        it("Validate multiRowCard DOM with Title", () => {
             helpers.runWithImmediateAnimationFrames(() => {
                 fireOnDataChanged(v, { dataViews: [dataWithTitle] });
 
@@ -578,7 +578,7 @@ module powerbitests {
             });
         });
 
-        xit("Verify number of cards and card items in smallTile ", () => {
+        it("Verify number of cards and card items in smallTile ", () => {
             let options = getVisualInitOptions(helpers.testDom("150", "230"));
 
             options.interactivity = { overflow: "hidden" };
@@ -595,7 +595,7 @@ module powerbitests {
             });
         });
 
-        xit("Verify number of cards and card items in MediumTile ", () => {
+        it("Verify number of cards and card items in MediumTile ", () => {
             let options = getVisualInitOptions(helpers.testDom("300", "470"));
 
             options.interactivity = { overflow: "hidden" };

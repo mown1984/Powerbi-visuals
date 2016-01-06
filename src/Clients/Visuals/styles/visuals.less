@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
+ *  All rights reserved. 
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -62,12 +62,11 @@
     &.hasSelection, &:hover {
         .clear {
             visibility: visible;
-        }
+        }   
     }
 }
 
 .slicerContainer {
-
     .slicerItemContainer {
         margin: 2px 0 0 8px;
         box-sizing: border-box;
@@ -177,44 +176,57 @@
 }
 
 .horizontalSlicerContainer {
+    &.canScrollRight {
+        .navigationArrow.right {
+             visibility: visible;
+        }        
+    }
+
+    &.canScrollLeft {
+        .navigationArrow.left {
+             visibility: visible;
+        }        
+    }     
 
     .navigationArrow {
         visibility: hidden;
         background-color: white;
 
-        &.show {
-            visibility: visible;
-        }
-
         &.right {
             .sprite(@horizontal-slicer-right-arrow);
+            margin-left: 5px;
         }
 
         &.left {
             .sprite(@horizontal-slicer-left-arrow);
+            margin-right: 5px;
         }
     }
 
     .flexDisplay {
         display: -ms-flexbox;
+        display: -webkit-flex;
         display: flex;
-        -ms-flex-direction: row;
-        flex-direction: row;
     }
 
     .slicerBody {
         align-items: center;
         -ms-flex-align: center;
+        justify-content: space-between;
+        -ms-flex-direction: row;
+        flex-direction: row;
     }
 
     .slicerItemsContainer {
         vertical-align: top;
+        width: 100%;
+        height: 100%;
+        -webkit-flex: 1; /* Chrome */
+        -ms-flex: 1; /* IE 10 */
+        flex: 1;
     }
 
     .slicerText {
-        display: -ms-flexbox;
-        display: -webkit-flex;
-        display: flex;
         -webkit-flex-direction: column;
         -ms-flex-direction: column;
         flex-direction: column;
@@ -224,6 +236,11 @@
         -webkit-align-items: center;
         -ms-flex-align: center;
         align-items: center;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding-top: 4px;
+        padding-bottom: 4px;
 
         &.selected, &.partiallySelected {
             color: @whiteColor !important;
@@ -831,7 +848,7 @@
             float: right;
         }
 
-        .bi-table-column-header{
+        .bi-table-column-header {
              div.future {
               display: none;
              }
@@ -840,7 +857,7 @@
               display: inline-block;
              }
 
-             &>div:hover {
+            & > div:hover {
                 div.sorted {
                     display: none;
                 }
@@ -1002,7 +1019,7 @@
             float: right;
         }
 
-        .bi-table-column-header{
+        .bi-table-column-header {
              div.future {
               display: none;
              }
@@ -1243,12 +1260,18 @@
     .scroll-wrapper .scroll-element.scroll-draggable .scroll-bar {
         opacity: 1;
     }
+
+    &.disable-events{
+        pointer-events: none;
+}
 }
 
 .interactive-legend {
     white-space: nowrap;
     text-align: left;
     overflow: hidden;
+    touch-action: none;
+    cursor: pointer;
 
     .title {
         font-family: @lightFontFamily;
@@ -1360,7 +1383,7 @@
         font-size: 12px;
         text-anchor: middle;
         font-family: @regularSecondaryFontFamily;
-    }
+    } 
 
     .catagorylabel {
         font-size: 12px;
@@ -1370,7 +1393,7 @@
 }
 
     .leader-lines {
-    .line-label{
+    .line-label {
         opacity: 0.5;
     }
 }
@@ -1504,7 +1527,7 @@ div.ql-toolbar {
     &.stackedToolbar {
         box-shadow: none;
         position: inherit;
-
+        
         .ql-link-tooltip {
             a {
                 margin: 0;
@@ -1776,9 +1799,8 @@ div.ql-toolbar {
 .visual-sandbox {
     border: none;
     overflow: hidden;
-
     //adding this because cors block fonts for sandboxed visuals.
-    .tooltip-container .tooltip-row{
+    .tooltip-container .tooltip-row {
         font-size: 9px;
     }
 }
@@ -1791,4 +1813,12 @@ div.ql-toolbar {
 .y1-ref-line {
     stroke-width: 3px;
     stroke-opacity: 0.5;
+}
+.kpiVisual {
+    .goalText {
+        fill: #333333;
+        font-family: @regularFontFamily;
+        font-size: 15px;
+        text-anchor: middle;
+    }
 }

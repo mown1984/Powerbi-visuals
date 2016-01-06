@@ -248,7 +248,7 @@ module powerbitests {
             expect(isInConflict).toBe(true);
         });
 
-        xit("check boundingbox size by label", () => {
+        it("check boundingbox size by label", () => {
 
             let labelSettings: dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();;
 
