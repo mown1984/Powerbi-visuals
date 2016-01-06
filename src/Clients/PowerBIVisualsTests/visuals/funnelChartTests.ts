@@ -1808,7 +1808,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("Ensure percent bars font size position with many categories", (done) => {
+        xit("Ensure percent bars font size position with many categories", (done) => {
             let fontSize = 35;
             let categoryValues: any[] = [
                 "United States",
