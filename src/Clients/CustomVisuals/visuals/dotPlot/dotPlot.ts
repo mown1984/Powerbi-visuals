@@ -39,7 +39,7 @@ module powerbi.visuals.samples {
         strokeWidth?: number;
     }
 
-    export interface DotPlotDatapoint {
+    export interface DotPlotDataPoint {
         x: number;
         y: number;
         color?: string;
@@ -50,7 +50,7 @@ module powerbi.visuals.samples {
     }
 
     export interface DotPlotData {
-        dataPoints: DotPlotDatapoint[];
+        dataPoints: DotPlotDataPoint[];
         legendData: LegendData;
     }
 
@@ -218,7 +218,7 @@ module powerbi.visuals.samples {
 
         public static converter(dataView: DataView, maxDots: number, colors: IDataColorPalette, host: IVisualHostServices): DotPlotData {
 
-            var dataPoints: DotPlotDatapoint[] = [];
+            var dataPoints: DotPlotDataPoint[] = [];
             var legendData: LegendData = {
                 dataPoints: [],
             };
@@ -337,7 +337,6 @@ module powerbi.visuals.samples {
             var element = options.element;
             this.selectionManager = new SelectionManager({ hostServices: options.host });
             this.hostService = options.host;
-            this.layout = new VisualLayout(null, DotPlot.DefaultMargin);
 
             if (!this.svg) {
                 this.svg = d3.select(element.get(0)).append('svg');
@@ -415,15 +414,15 @@ module powerbi.visuals.samples {
             this.drawDotPlot(dataPoints, xScale, yScale);
         }
 
-        private drawDotPlot(data: DotPlotDatapoint[], xScale: D3.Scale.OrdinalScale, yScale: D3.Scale.LinearScale): void {
+        private drawDotPlot(data: DotPlotDataPoint[], xScale: D3.Scale.OrdinalScale, yScale: D3.Scale.LinearScale): void {
             var selection = this.dotPlot.selectAll(DotPlot.Dot.selector).data(data);
             selection
                 .enter()
                 .append('circle')
                 .classed(DotPlot.Dot.class, true);
             selection
-                .attr("cx", (point: DotPlotDatapoint) => xScale(point.x) + xScale.rangeBand() / 2)
-                .attr("cy", (point: DotPlotDatapoint) => yScale(point.y))
+                .attr("cx", (point: DotPlotDataPoint) => xScale(point.x) + xScale.rangeBand() / 2)
+                .attr("cy", (point: DotPlotDataPoint) => yScale(point.y))
                 .attr("fill", d => d.color)
                 .attr("stroke", "black")
                 .attr("stroke-width", this.strokeWidth)
@@ -439,7 +438,7 @@ module powerbi.visuals.samples {
         private setSelectHandler(dotSelection: D3.UpdateSelection): void {
             this.setSelection(dotSelection);
 
-            dotSelection.on("click", (data: DotPlotDatapoint) => {
+            dotSelection.on("click", (data: DotPlotDataPoint) => {
                 this.selectionManager
                     .select(data.identity, d3.event.ctrlKey)
                     .then((selectionIds: SelectionId[]) => this.setSelection(dotSelection, selectionIds));
@@ -463,7 +462,7 @@ module powerbi.visuals.samples {
             }
 
             selection
-                .filter((dotSelectionData: DotPlotDatapoint) =>
+                .filter((dotSelectionData: DotPlotDataPoint) =>
                     !selectionIds.some((selectionId: SelectionId) => dotSelectionData.identity === selectionId))
                 .transition()
                 .duration(this.durationAnimations)
@@ -472,7 +471,7 @@ module powerbi.visuals.samples {
 
         private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) =>
-                (<DotPlotDatapoint>tooltipEvent.data).tooltipInfo);
+                (<DotPlotDataPoint>tooltipEvent.data).tooltipInfo);
         }
 
         private drawAxis(values: any[], xScale: D3.Scale.OrdinalScale, translateY: number) {
