@@ -188,6 +188,8 @@ module powerbi.visuals.samples {
             sizeOfBox: 35
         };
 
+        private static axisLeftMargin = 200;
+
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
                 name: "Category",
@@ -263,8 +265,8 @@ module powerbi.visuals.samples {
         private margin: IMargin = {
             top: 10,
             right: 10,
-            bottom: 10,
-            left: 10
+            bottom: 100,
+            left: 50
         };
 
         private nodeMargin: IMargin = {
@@ -304,6 +306,10 @@ module powerbi.visuals.samples {
                 this.overlappingDiv = d3.select(visualsInitOptions.element.get(0)).append("div");
                 this.overlappingDiv.style('overflow-x', 'overlay')
                 this.root = this.overlappingDiv.append("svg");
+                this.root.on('mousedown', (d) => {
+                    this.root.selectAll(BoxAndWhiskerDiagram.BoxSelector.selector).style("opacity", 1);
+                    this.selectionManager.clear();
+                })
             }
 
             var style: IVisualStyle = visualsInitOptions.style;
@@ -534,10 +540,8 @@ module powerbi.visuals.samples {
 
 
             this.root.attr({
-                "width": this.totalWidthOfBoxes + 200
+                "width": (this.totalWidthOfBoxes + this.margin.left + this.margin.right + BoxAndWhiskerDiagram.axisLeftMargin)
             });
-
-
 
             return {
                 data: boxAndWhiskers,
@@ -732,18 +736,19 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            this.updateOrientation();
+
             this.renderBoxAndWhisker();
             this.renderAxes();
+            this.updateOrientation();
         }
 
         private updateOrientation(): void {
             var settings: BoxAndWhiskerDiagramSettings = this.dataView.settings;
 
             if (settings.orientation === boxAndWhiskerDiagramOrientation.Orientation.Horizontal) {
-                this.nodes.attr("transform", SVGUtil.translateAndRotate(this.viewport.width, 0, 0, 0, 90));
+                this.root.attr("transform", SVGUtil.translateAndRotate(this.viewport.width, 0, 0, 0, 90));
             } else {
-                this.nodes.attr("transform", null);
+                this.root.attr("transform", null);
             }
         }
 
@@ -800,7 +805,15 @@ module powerbi.visuals.samples {
                 .style({
                     fill: (boxAndWhisker: BoxAndWhisker) => boxAndWhisker.colour,
                     stroke: (boxAndWhisker: BoxAndWhisker) => d3.rgb(boxAndWhisker.colour).darker(1.5)
-                });
+                })
+                .on("mousedown", (d) => {
+                    if (d.selectionId) {
+                        this.selectionManager.select(d.selectionId);
+                    }
+                    d3.selectAll(BoxAndWhiskerDiagram.BoxSelector.selector).style("opacity", 0.5);
+                    d3.select(event.target).style("opacity", 1);
+                    event.stopPropagation();
+                });;
         }
 
         private renderWhiskers(nodeSelection: D3.UpdateSelection, nodeEnterSelection: D3.Selection): void {
@@ -876,6 +889,74 @@ module powerbi.visuals.samples {
         }
 
         private renderAxes(): void {
+            // Vertical axis
+            
+            //  var verticalAxis = this.root.append("line")
+            //         .attr("x1", 10)
+            //         .attr("y1", this.margin.top)
+            //         .attr("x2", 10)
+            //         .attr("y2", this.viewport.height)
+            //         .attr('style','stroke:black; stroke-width:1px;');
+            
+            var verticalAxis = this.root.selectAll('.verticalAxis').data([{ 1: 1 }]);
+            verticalAxis.enter()
+                .append('rect')
+                .classed('verticalAxis', true);
+            verticalAxis.attr("x", 40)
+                .attr('y', this.margin.top)
+                .attr('height', this.viewport.height)
+                .attr('width', 1)
+                .attr("fill", 'gray')
+                .text((d) => { return ''; });
+            verticalAxis.exit().remove();
+
+
+            var horizontalAxis = this.root.selectAll('.horizontalAxis').data([{ 1: 1 }]);
+            horizontalAxis.enter()
+                .append('rect')
+                .classed('horizontalAxis', true);
+            horizontalAxis.attr("x", this.margin.left)
+                .attr('y', this.margin.top + this.viewport.height + 20)
+                .attr('height', 1)
+                .attr('width', this.viewport.width)
+                .attr("fill", 'gray')
+                .text((d) => { return ''; });
+            horizontalAxis.exit().remove();
+
+            var horizontalAxisPoints = this.root.selectAll('.horizontalAxisPoints').data(this.dataView.data);
+            horizontalAxisPoints.enter()
+                .append('rect')
+                .classed('horizontalAxisPoints', true);
+            horizontalAxisPoints.attr("x", this.margin.left)
+                .attr("x", (d) => { return d.x + this.margin.left + d.box.width / 2; })
+                .attr("y", (this.margin.top + this.viewport.height + 20))
+                .attr('height', 5)
+                .attr('width', 1)
+                .attr("fill", 'gray')
+                .text((d) => { return ''; });
+            horizontalAxisPoints.exit().remove();
+
+
+            var horizontalAxisText = this.root.selectAll('.horizontalAxisText').data(this.dataView.data);
+            horizontalAxisText.enter()
+                .append('text')
+                .classed('horizontalAxisText', true);
+            horizontalAxisText
+                .attr("fill", 'black')
+                .text((d) => { return d.name; });
+
+            var superThis = this;
+            this.root.selectAll(".horizontalAxisText").attr("transform",
+                function(d) {
+                    return " translate(" + (d.x + superThis.margin.left + d.box.width / 4) + ", " + (superThis.margin.top + superThis.viewport.height + 35) + ") rotate(45)";
+                });
+                
+            //                 this.root.selectAll(".horizontalAxisText"). // select all the text elements for the xaxis
+            // attr("transform", function(d) {
+            //     return "rotate(-45)";
+            // });
+                               
+            horizontalAxisText.exit().remove();
 
         }
 
