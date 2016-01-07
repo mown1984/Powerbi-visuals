@@ -232,8 +232,6 @@ module powerbi.visuals.samples {
 
         private static Radians: number = Math.PI / 180;
 
-        private static UpdateInterval: number = 10;
-
         private static MinAngle: number = -180;
         private static MaxAngle: number = 180;
 
@@ -428,12 +426,13 @@ module powerbi.visuals.samples {
 
         private animator: IGenericAnimator;
 
-        private updateTimerId: number;
-        private scaleMainViewTimeoutId: number;
         private layout: VisualLayout;
 
         private hostService: IVisualHostServices;
         private selectionManager: utility.SelectionManager;
+
+        private isUpdating: boolean;
+        private visualUpdateOptions: VisualUpdateOptions;
 
         constructor(options?: WordCloudConstructorOptions) {
             if (options) {
@@ -513,7 +512,7 @@ module powerbi.visuals.samples {
                 };
             });
 
-            return <WordCloudData>{
+            return <WordCloudData> {
                 settings: settings,
                 texts: texts
             };
@@ -653,13 +652,10 @@ module powerbi.visuals.samples {
             return parsedValue;
         }
 
-        private computePositions(words: WordCloudDataPoint[], callback: (dataView: WordCloudDataView) => void): void {
+        private computePositions(words: WordCloudDataPoint[], onPositionsComputed: (WordCloudDataView) => void): void {
             var context: CanvasRenderingContext2D = this.getCanvasContext(),
-                wordsForDraw: WordCloudDataPoint[] = [],
                 surface: number[] = [],
                 borders: IPoint[] = null,
-                index: number = 0,
-                self: WordCloud = this,
                 maxNumberOfWords: number;
 
             if (!words || !(words.length > 0)) {
@@ -680,67 +676,52 @@ module powerbi.visuals.samples {
                 surface[i] = 0;
             }
 
-            function compute(): void {
-                var startDate: Date = new Date();
+            this.computeCycle(words, context, surface, borders, onPositionsComputed, [], 0);
+        }
 
-                while (true) {
-                    var currentDate: Date = new Date();
+        private computeCycle(
+            words: WordCloudDataPoint[],
+            context: CanvasRenderingContext2D,
+            surface: number[],
+            borders: IPoint[],
+            onPositionsComputed: (WordCloudDataView) => void,
+            wordsForDraw: WordCloudDataPoint[] = [],
+            index: number = 0): void {
+            var word: WordCloudDataPoint = words[index],
+                ratio: number = 1;
 
-                    if (!(currentDate.getTime() - startDate.getTime() < WordCloud.UpdateInterval) ||
-                        !self.updateTimerId || !(index < words.length)) {
-                        break;
-                    }
-
-                    var word: WordCloudDataPoint = words[index],
-                        ratio: number = 1;
-
-                    if (words.length <= 10) {
-                        ratio = 5;
-                    } else if (words.length <= 25) {
-                        ratio = 3;
-                    } else if (words.length <= 75) {
-                        ratio = 1.5;
-                    } else if (words.length <= 100) {
-                        ratio = 1.25;
-                    }
-
-                    word.x = (self.specialViewport.width / ratio * (Math.random() + 0.5)) >> 1;
-                    word.y = (self.specialViewport.height / ratio * (Math.random() + 0.5)) >> 1;
-
-                    self.generateSprites(context, word, words, index);
-
-                    if (word.sprite && self.findPosition(surface, word, borders)) {
-                        wordsForDraw.push(word);
-
-                        borders = self.updateBorders(word, borders);
-
-                        word.x -= self.specialViewport.width >> 1;
-                        word.y -= self.specialViewport.height >> 1;
-                    }
-
-                    index++;
-                }
-
-                if (index >= words.length) {
-                    borders = borders
-                        ? borders
-                        : [];
-
-                    clearInterval(self.updateTimerId);
-
-                    callback({
-                        data: wordsForDraw,
-                        leftBorder: borders[0],
-                        rightBorder: borders[1]
-                    });
-                }
+            if (words.length <= 10) {
+                ratio = 5;
+            } else if (words.length <= 25) {
+                ratio = 3;
+            } else if (words.length <= 75) {
+                ratio = 1.5;
+            } else if (words.length <= 100) {
+                ratio = 1.25;
             }
 
-            if (this.updateTimerId) {
-                clearInterval(this.updateTimerId);
+            word.x = (this.specialViewport.width / ratio * (Math.random() + 0.5)) >> 1;
+            word.y = (this.specialViewport.height / ratio * (Math.random() + 0.5)) >> 1;
+
+            this.generateSprites(context, word, words, index);
+
+            if (word.sprite && this.findPosition(surface, word, borders)) {
+                wordsForDraw.push(word);
+
+                borders = this.updateBorders(word, borders);
+                word.x -= this.specialViewport.width >> 1;
+                word.y -= this.specialViewport.height >> 1;
             }
 
-            this.updateTimerId = setInterval(compute, WordCloud.UpdateInterval);
+            if(++index < words.length && this.root) {
+                setTimeout(() => this.computeCycle(words, context, surface, borders, onPositionsComputed, wordsForDraw, index), 0);
+            } else {
+                onPositionsComputed({
+                    data: wordsForDraw,
+                    leftBorder: borders && borders[0],
+                    rightBorder: borders && borders[1]
+                });
+            }
         }
 
         private updateBorders(word: WordCloudDataPoint, borders: IPoint[]): IPoint[] {
@@ -1267,9 +1248,7 @@ module powerbi.visuals.samples {
 
             angle = Math.abs(((maxAngle - minAngle) / maxNumberOfOrientations) * Math.floor(Math.random() * maxNumberOfOrientations));
 
-            return maxNumberOfOrientations !== 0
-                ? minAngle + angle
-                : 0;
+            return maxNumberOfOrientations !== 0 ? minAngle + angle : 0;
         }
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
@@ -1283,17 +1262,29 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            var dataView: DataView = visualUpdateOptions.dataViews[0];
-            this.layout.viewport = visualUpdateOptions.viewport;
+            this.visualUpdateOptions = visualUpdateOptions;
 
-            this.clearTimersAndIntervals();
+            if(!this.isUpdating) {
+                this.isUpdating = true;
+                this.updtateDelayed(visualUpdateOptions, () => {
+                    this.isUpdating = false;
+                    if(visualUpdateOptions !== this.visualUpdateOptions) {
+                        this.update(this.visualUpdateOptions);
+                    }
+                });
+            };
+        }
+
+        private updtateDelayed(visualUpdateOptions: VisualUpdateOptions, onUpdated: () => void) {
+            this.layout.viewport = this.visualUpdateOptions.viewport;
+            var dataView: DataView = visualUpdateOptions.dataViews[0];
 
             if (this.layout.viewportInIsZero) {
                 return;
             }
 
-            this.durationAnimations = getAnimationDuration(
-                this.animator,
+			this.durationAnimations = getAnimationDuration(
+			    this.animator,
                 visualUpdateOptions.suppressAnimations);
             this.UpdateSize();
 
@@ -1305,7 +1296,7 @@ module powerbi.visuals.samples {
             this.settings = data.settings;
             this.computePositions(
                 this.getWords(this.getReducedText(data.texts)),
-                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
+                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView, onUpdated));
         }
 
         private UpdateSize(): void {
@@ -1334,15 +1325,7 @@ module powerbi.visuals.samples {
             });
         }
 
-        private render(wordCloudDataView: WordCloudDataView): void {
-            if (!wordCloudDataView) {
-                return;
-            }
-
-            this.renderWords(wordCloudDataView);
-        }
-
-        private renderWords(wordCloudDataView: WordCloudDataView): void {
+        private render(wordCloudDataView: WordCloudDataView, onRendered: () => void): void {
             if (!wordCloudDataView ||
                 !wordCloudDataView.data) {
                 return;
@@ -1351,10 +1334,7 @@ module powerbi.visuals.samples {
             var animatedWordSelection: D3.Selection,
                 wordElements: D3.Selection = this.main
                     .select(WordCloud.Words.selector)
-                    .selectAll(WordCloud.Word.selector),
-                delayOfScaleView: number;
-
-            delayOfScaleView = wordElements[0].length === 0 ? 0 : this.durationAnimations;
+                    .selectAll(WordCloud.Word.selector);
 
             this.wordsSelection = wordElements.data(wordCloudDataView.data);
 
@@ -1362,18 +1342,18 @@ module powerbi.visuals.samples {
                 .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y) }rotate(${item.rotate})`)
                 .style("font-size", (item: WordCloudDataPoint) => `${item.size}${WordCloud.Size}`);
 
+            animatedWordSelection = this.wordsSelection
+                .enter()
+                .append("svg:text")
+                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y) }rotate(${item.rotate})`)
+                .style("font-size", "1px");
+
             this.wordsSelection.on("click", (item: WordCloudDataPoint) => {
                 this.selectionManager
                     .select(item.selectionId, d3.event.ctrlKey)
                     .then(() => this.setSelection(this.wordsSelection));
                 d3.event.stopPropagation();
             });
-
-            animatedWordSelection = this.wordsSelection
-                .enter()
-                .append("svg:text")
-                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y) }rotate(${item.rotate})`)
-                .style("font-size", "1px");
 
             (<D3.UpdateSelection> this.animation(animatedWordSelection, this.durationAnimations))
                 .style("font-size", (item: WordCloudDataPoint) => `${item.size}${WordCloud.Size}`)
@@ -1383,25 +1363,24 @@ module powerbi.visuals.samples {
                 .text((item: WordCloudDataPoint) => item.text)
                 .classed(WordCloud.Word["class"], true);
 
-            this.wordsSelection
-                .exit()
-                .remove();
-
-            if (this.updateTimerId) {
-                clearInterval(this.updateTimerId);
-            }
-
-            this.scaleMainViewTimeoutId = setTimeout(() => {
-                this.scaleMainView(wordCloudDataView, delayOfScaleView);
-
-                clearTimeout(this.scaleMainViewTimeoutId);
-            }, delayOfScaleView + WordCloud.RenderDelay);
-
+            this.wordsSelection.exit().remove();
             this.setSelection(this.wordsSelection);
+
+            setTimeout(() => {
+												if (this.root) {
+                	this.scaleMainView(wordCloudDataView, wordElements[0].length && this.durationAnimations);
+                	onRendered();
+                }
+            }, this.durationAnimations + WordCloud.RenderDelay);
         }
 
         private setSelection(selection: D3.Selection): void {
             var selectionIds: SelectionId[] = this.selectionManager.getSelectionIds();
+
+			if(selectionIds.some(x => !selection.data().some((d: WordCloudDataPoint) => d.selectionId.getKey() === x.getKey()))) {
+                this.selectionManager.clear();
+                selectionIds = [];
+            }
 
             if (!selectionIds.length) {
                 this.setOpacity(selection, WordCloud.MaxOpacity, true);
@@ -1521,18 +1500,7 @@ module powerbi.visuals.samples {
                 .each("end", callback);
         }
 
-        public clearTimersAndIntervals() {
-            if (this.updateTimerId) {
-                clearInterval(this.updateTimerId);
-            }
-
-            if (this.scaleMainViewTimeoutId) {
-                clearTimeout(this.scaleMainViewTimeoutId);
-            }
-        }
-
         public destroy(): void {
-            this.clearTimersAndIntervals();
             this.root = null;
             this.canvas = null;
         }
