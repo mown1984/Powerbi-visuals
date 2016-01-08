@@ -105,6 +105,7 @@ module powerbi.visuals.samples {
         extends BoxAndWhiskerDiagramPoint,
         BoxAndWhiskerDiagramColour {
         name: string;
+        textSize: number;
         box: BoxAndWhiskerDiagramBox;
         whisker: BoxAndWhiskerDiagramWhisker;
         outliers: BoxAndWhiskerDiagramOutlier[];
@@ -189,6 +190,7 @@ module powerbi.visuals.samples {
         };
 
         private static axisLeftMargin = 200;
+        private static textAngle = 45;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
@@ -343,6 +345,21 @@ module powerbi.visuals.samples {
             this.updateViewport(visualUpdateOptions.viewport);
 
             this.dataView = this.converter(dataView);
+
+            var maxTextSize = 0;
+            for (var i = 0; i < this.dataView.data.length; i++)
+                if (this.dataView.data[i].textSize > maxTextSize)
+                    maxTextSize = this.dataView.data[i].textSize;
+            var settings: BoxAndWhiskerDiagramSettings = this.dataView.settings;
+
+            var formatter = valueFormatter.create({ format: "0", value: 0.1, value2: null });
+            if (settings.orientation === boxAndWhiskerDiagramOrientation.Orientation.Horizontal) {
+                this.margin.left = maxTextSize * 12;
+            } else {
+                this.margin.bottom = maxTextSize * 7;
+                this.margin.left = (formatter.format(this.dataView.maxValue)).length * 13;
+            }
+
 
             this.render();
         }
@@ -515,6 +532,7 @@ module powerbi.visuals.samples {
                     x: 0,
                     y: 0,
                     name: category,
+                    textSize: category.length,
                     box: box,
                     whisker: whisker,
                     outliers: outliers,
@@ -537,7 +555,6 @@ module powerbi.visuals.samples {
                 ]);
 
             this.findPositionForEachBox(boxAndWhiskers, settings, scale);
-
 
             this.root.attr({
                 "width": (this.totalWidthOfBoxes + this.margin.left + this.margin.right + BoxAndWhiskerDiagram.axisLeftMargin)
@@ -902,13 +919,52 @@ module powerbi.visuals.samples {
             verticalAxis.enter()
                 .append('rect')
                 .classed('verticalAxis', true);
-            verticalAxis.attr("x", 40)
+            verticalAxis.attr("x", this.margin.left - 10)
                 .attr('y', this.margin.top)
                 .attr('height', this.viewport.height)
                 .attr('width', 1)
                 .attr("fill", 'gray')
                 .text((d) => { return ''; });
             verticalAxis.exit().remove();
+            
+            // render axis valuesusing this.dataView.maxValue this.dataView.minValue
+            var pointsHeight = 60;
+            var axisPoints = this.viewport.height / pointsHeight;
+
+
+            var period = (this.dataView.maxValue - this.dataView.minValue) / axisPoints;
+            var axisYdata = new Array();
+            axisYdata.push({ value: this.dataView.maxValue, y: this.margin.top });
+            for (var i = 1; i < axisPoints; i++)
+                axisYdata.push({ value: (this.dataView.maxValue - period * i), y: (this.margin.top + pointsHeight * i) });
+            if (axisYdata.length > 0 && this.viewport.height - axisYdata[axisYdata.length - 1].y + 5 < 20)
+                axisYdata.splice(axisYdata.length - 1, 1)
+            axisYdata.push({ value: this.dataView.minValue, y: (this.margin.top + pointsHeight * axisPoints) });
+
+            var formatter = valueFormatter.create({ format: "0", value: 0.1, value2: null });
+            var verticalAxisText = this.root.selectAll('.verticalAxisText').data(axisYdata);
+            verticalAxisText.enter()
+                .append('text')
+                .classed('verticalAxisText', true);
+            verticalAxisText
+                .attr("x", (d) => { return 10; })
+                .attr("y", (d) => { return d.y + 5; })
+                .attr("fill", 'black')
+                .text((d) => { return formatter.format(d.value); });
+            verticalAxisText.exit().remove();
+
+            var verticalAxisPoints = this.root.selectAll('.verticalAxisPoints').data(axisYdata);
+            verticalAxisPoints.enter()
+                .append('rect')
+                .classed('verticalAxisPoints', true);
+            verticalAxisPoints.attr("x", this.margin.left - 13)
+                .attr("y", (d) => { return d.y; })
+                .attr('height', 1)
+                .attr('width', 4)
+                .attr("fill", 'grey')
+                .text((d) => { return ''; });
+            verticalAxisPoints.exit().remove();
+
 
 
             var horizontalAxis = this.root.selectAll('.horizontalAxis').data([{ 1: 1 }]);
