@@ -1001,7 +1001,7 @@ module powerbi.visuals.samples {
                 : this.scrolling.scrollViewport.width - this.currentSections.left;
         }
 
-        private clearData() {
+        private clearData(): void {
             this.columns.selectAll("*").remove();
             this.axes.selectAll("*").remove();
             this.labels.selectAll("*").remove();
@@ -1013,7 +1013,8 @@ module powerbi.visuals.samples {
             let tornadoChartDataView: TornadoChartDataView = this.tornadoChartDataView;
             if (!tornadoChartDataView ||
                 !tornadoChartDataView.settings) {
-                return this.clearData();
+				this.clearData();
+                return;
             }
             
             this.renderLegend();
