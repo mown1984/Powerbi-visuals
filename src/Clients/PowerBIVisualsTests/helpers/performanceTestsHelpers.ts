@@ -554,6 +554,7 @@ module powerbitests.performanceTestsHelpers {
             case "pieChart":
             case "enhancedScatterChart":
             case "wordCloud":
+	    case "bulletChart":
                 return 100;
             case "columnChart":
                 return 13;
