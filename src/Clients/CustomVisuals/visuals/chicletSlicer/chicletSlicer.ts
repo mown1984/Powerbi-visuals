@@ -688,7 +688,6 @@ module powerbi.visuals.samples {
                 defaultSettings.images.bottomImage = DataViewObjects.getValue<boolean>(objects, chicletSlicerProps.images.bottomImage, defaultSettings.images.bottomImage);
             }
             var categories: DataViewCategoricalColumn = dataView.categorical.categories[0];
-
             slicerData = {
                 categorySourceName: categories.source.displayName,
                 formatString: valueFormatter.getFormatString(categories.source, chicletSlicerProps.formatString),
@@ -845,7 +844,7 @@ module powerbi.visuals.samples {
             this.slicerData = data;
             this.settings = this.slicerData.slicerSettings;
             if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.BOTTOM) {
-                data.slicerDataPoints.sort(function (a, b) {
+                data.slicerDataPoints.sort(function(a, b) {
                     if (a.selectable === b.selectable) {
                         return 0;
                     } else if (a.selectable && !b.selectable) {
@@ -854,10 +853,12 @@ module powerbi.visuals.samples {
                         return 1;
                     }
                 });
+            } else if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.HIDE){
+                data.slicerDataPoints = data.slicerDataPoints.filter(x => x.selectable);
             }
 
             var height: number = this.settings.slicerText.height > 0 ? this.settings.slicerText.height :
-                (data.slicerDataPoints[0].imageURL !== '' ? 100 : 25);
+                (data.slicerDataPoints.length === 0 || data.slicerDataPoints[0].imageURL !== '' ? 100 : 25);
 
             this.tableView
                 .rowHeight(height)
@@ -866,8 +867,8 @@ module powerbi.visuals.samples {
                 .rows(this.settings.general.rows)
                 .columns(this.settings.general.columns)
                 .data(data.slicerDataPoints,
-                	  (d: ChicletSlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
-                      resetScrollbarPosition)
+                (d: ChicletSlicerDataPoint) => $.inArray(d, data.slicerDataPoints),
+                resetScrollbarPosition)
                 .viewport(this.getSlicerBodyViewport(this.currentViewport))
                 .render();
         }
@@ -987,7 +988,6 @@ module powerbi.visuals.samples {
                         'border-width': this.getBorderWidth(settings.slicerText.outline, settings.slicerText.outlineWeight),
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                     });
-                    rowSelection.style('display', (d: ChicletSlicerDataPoint) => (d.selectable || settings.general.showDisabled !== ChicletSlicerShowDisabled.HIDE) ? 'inline-block' : 'none');
                     this.slicerBody.style('background-color', settings.slicerText.background);
 
                     if (this.interactivityService && this.slicerBody) {
@@ -1075,14 +1075,14 @@ module powerbi.visuals.samples {
 
         private getHeaderHeight(): number {
             return TextMeasurementService.estimateSvgTextHeight(
-            	this.getTextProperties(this.settings.header.textSize));
+                this.getTextProperties(this.settings.header.textSize));
         }
 
         private getRowHeight(): number {
             var textSettings = this.settings.slicerText;
             return textSettings.height !== 0
-            	? textSettings.height
-            	: TextMeasurementService.estimateSvgTextHeight(this.getTextProperties(textSettings.textSize));
+                ? textSettings.height
+                : TextMeasurementService.estimateSvgTextHeight(this.getTextProperties(textSettings.textSize));
         }
 
         private getBorderStyle(outlineElement: string): string {
@@ -1312,7 +1312,7 @@ module powerbi.visuals.samples {
                 var settings: ChicletSlicerSettings = this.slicerSettings;
                 d3.event.preventDefault();
                 if (d3.event.altKey && settings.general.multiselect) {
-                    var selectedIndexes = jQuery.map(this.dataPoints, function (d, index) { if (d.selected) return index; });
+                    var selectedIndexes = jQuery.map(this.dataPoints, function(d, index) { if (d.selected) return index; });
                     var selIndex = selectedIndexes.length > 0 ? (selectedIndexes[selectedIndexes.length - 1]) : 0;
                     if (selIndex > index) {
                         var temp = index;
@@ -1366,7 +1366,7 @@ module powerbi.visuals.samples {
 
         public styleSlicerInputs(slicers: D3.Selection, hasSelection: boolean) {
             var settings = this.slicerSettings;
-            slicers.each(function (d: ChicletSlicerDataPoint) {
+            slicers.each(function(d: ChicletSlicerDataPoint) {
                 d3.select(this).style({
                     'background': d.selectable ? (d.selected ? settings.slicerText.selectedColor : settings.slicerText.unselectedColor)
                         : settings.slicerText.disabledColor
