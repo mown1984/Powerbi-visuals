@@ -64,7 +64,7 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbi.visuals.samples {
-        export module linkColorType {
+        module linkColorType {
             export var byWeight: string = 'ByWeight';
             export var byLinkType: string = 'ByLinkType';
             export var interactive: string = 'Interactive';
@@ -79,7 +79,7 @@ module powerbi.visuals.samples {
         export interface ForceGraphOptions {
             showArrow: boolean;
             showLabel: boolean;
-            colorLink: linkColorType;
+            colorLink: string;
             thickenLink: boolean;
             displayImage: boolean;
             defaultImage: string;
