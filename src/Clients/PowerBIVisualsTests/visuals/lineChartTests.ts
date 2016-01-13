@@ -3466,7 +3466,7 @@ module powerbitests {
             let title = legend.find('.title');
 
             expect(legend.length).toBe(1);
-            expect(title.text().trim()).toBe('12/18/2014');
+            expect(title.text().trim()).toBe('12/20/2014');
         });
     });
 
@@ -3750,7 +3750,7 @@ module powerbitests {
 
             let hoverLine = $('.hover-line');
 
-            expect(lineChart.selectColumn).toHaveBeenCalledWith(0, true);
+            expect(lineChart.selectColumn).toHaveBeenCalledWith(4, true);
             expect(hoverLine.length).toBe(1);
         });
     });
