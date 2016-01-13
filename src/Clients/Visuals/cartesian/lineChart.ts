@@ -1149,10 +1149,10 @@ module powerbi.visuals {
                 let selectionSize = updateSelection.size();
                 let endedTransitionCount = 0;
                 transitions.each('end', () => {
-                    // When transitions finish, and it's an interactive chart - select the first column (draw the legend and the handle)
+                    // When transitions finish, and it's an interactive chart - select the last column (draw the legend and the handle)
                     endedTransitionCount++;
                     if (endedTransitionCount === selectionSize) { // all transitions had finished
-                        this.selectColumn(this.findIndex(0), true);
+                        this.selectColumn(this.findMaxDataPoint(data.series), true);
                     }
                 });
             }
@@ -1288,6 +1288,18 @@ module powerbi.visuals {
                     return true;
             }
             return false;
+        }
+
+        private findMaxDataPoint(series: LineChartSeries[]): number {
+            if (series.length === 0)
+                return 0;
+            let maxLength: number = 0;
+            for (let singleSeries of series) {
+                let length = singleSeries.data.length;
+                if (length > maxLength)
+                    maxLength = length;
+            }
+            return maxLength - 1;
         }
 
         private getXValue(d: LineChartDataPoint): any {
