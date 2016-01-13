@@ -11508,6 +11508,7 @@ declare module powerbi.visuals {
         private static sliceSeries(series, newLength, startIndex?);
         private extraLineShift();
         private hasDataPoint(series);
+        private findMaxDataPoint(series);
         private getXValue(d);
         /**
           * This checks to see if a data point is isolated, which means
