@@ -275,11 +275,15 @@ module powerbi.visuals.samples {
                         .builder()
                         .withSeries(dataView.categorical.values, dataView.categorical.values[i])
                         .createSelectionId();
+
+                    var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(RadarChart.formatStringProp, catDv, catDv.categories[0].values[k], values[i].values[k], null, null, i);
+
                     dataPoints[i].push({
                         x: k,
                         y: values[i].values[k],
                         color: color,
-                        identity: id
+                        identity: id,
+                        tooltipInfo: tooltipInfo
                     });
                 }
             }            
@@ -565,10 +569,13 @@ module powerbi.visuals.samples {
                 .append('svg:circle')
                 .classed(RadarChart.ChartDot.class, true);
             dots.attr('r', dotRadius)
+
                 .attr('cx', (value, i) => -1 * y(value.y) * Math.sin(i * angle))
                 .attr('cy', (value, i) => -1 * y(value.y) * Math.cos(i * angle))
                 .style('fill', d => d.color);
             dots.exit().remove();
+
+            TooltipManager.addTooltip(dots, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
 
             selection.exit().remove();
         }
