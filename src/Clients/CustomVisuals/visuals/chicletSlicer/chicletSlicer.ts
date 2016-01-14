@@ -245,7 +245,7 @@ module powerbi.visuals.samples {
             outline: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'outline' },
             outlineColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'outlineColor' },
             outlineWeight: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'outlineWeight' },
-
+            borderStyle: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'borderStyle' },
         },
         images: {
             imageSplit: <DataViewObjectPropertyIdentifier>{ objectName: 'images', propertyName: 'imageSplit' },
@@ -255,8 +255,19 @@ module powerbi.visuals.samples {
         selectedPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selected' },
         filterPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'filter' },
         formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
-
     };
+
+    module ChicletBorderStyle {
+        export var ROUNDED: string = 'Rounded';
+        export var CUT: string = 'Cut';
+        export var SQUARE: string = 'Square';
+
+        export var type: IEnumType = createEnumType([
+            { value : ROUNDED, displayName: ChicletBorderStyle.ROUNDED },
+            { value: CUT, displayName: ChicletBorderStyle.CUT },
+            { value: SQUARE, displayName: ChicletBorderStyle.SQUARE },
+        ]);
+    }
 
     module ChicletSlicerShowDisabled {
         export var INPLACE: string = 'Inplace';
@@ -340,6 +351,7 @@ module powerbi.visuals.samples {
             background: string;
             outlineColor: string;
             outlineWeight: number;
+            borderStyle: string;
         };
         slicerItemContainer: {
             marginTop: number;
@@ -440,11 +452,11 @@ module powerbi.visuals.samples {
                             type: { numeric: true }
                         },
                         outlineColor: {
-                            displayName: data.createDisplayNameGetter('Visual_outlineColor'),
+                            displayName: 'Outline Color',
                             type: { fill: { solid: { color: true } } }
                         },
                         outlineWeight: {
-                            displayName: data.createDisplayNameGetter('Visual_outlineWeight'),
+                            displayName: 'Outline Weight',
                             type: { numeric: true }
                         }
                     }
@@ -489,14 +501,17 @@ module powerbi.visuals.samples {
                             type: { formatting: { outline: true } }
                         },
                         outlineColor: {
-                            displayName: data.createDisplayNameGetter('Visual_outlineColor'),
+                            displayName: 'Outline Color',
                             type: { fill: { solid: { color: true } } }
                         },
                         outlineWeight: {
-                            displayName: data.createDisplayNameGetter('Visual_outlineWeight'),
+                            displayName: 'Outline Weight',
                             type: { numeric: true }
                         },
-
+                        borderStyle: {
+                            displayName: 'Outline Style',
+                            type: { enumeration: ChicletBorderStyle.type }
+                        },
                     }
                 },
                 images: {
@@ -614,6 +629,7 @@ module powerbi.visuals.samples {
                     background: '#ffffff',
                     outlineColor: '#000000',
                     outlineWeight: 1,
+                    borderStyle: 'Cut',
 
                 },
                 slicerItemContainer: {
@@ -682,6 +698,7 @@ module powerbi.visuals.samples {
                 defaultSettings.slicerText.outline = DataViewObjects.getValue<string>(objects, chicletSlicerProps.rows.outline, defaultSettings.slicerText.outline);
                 defaultSettings.slicerText.outlineColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.outlineColor, defaultSettings.slicerText.outlineColor);
                 defaultSettings.slicerText.outlineWeight = DataViewObjects.getValue<number>(objects, chicletSlicerProps.rows.outlineWeight, defaultSettings.slicerText.outlineWeight);
+                defaultSettings.slicerText.borderStyle = DataViewObjects.getValue<string>(objects, chicletSlicerProps.rows.borderStyle, defaultSettings.slicerText.borderStyle);
 
                 defaultSettings.images.imageSplit = DataViewObjects.getValue<number>(objects, chicletSlicerProps.images.imageSplit, defaultSettings.images.imageSplit);
                 defaultSettings.images.stretchImage = DataViewObjects.getValue<boolean>(objects, chicletSlicerProps.images.stretchImage, defaultSettings.images.stretchImage);
@@ -799,6 +816,7 @@ module powerbi.visuals.samples {
                     outlineColor: slicerSettings.slicerText.outlineColor,
                     outlineWeight: slicerSettings.slicerText.outlineWeight,
                     fontColor: slicerSettings.slicerText.fontColor,
+                    borderStyle: slicerSettings.slicerText.borderStyle,
                 }
             }];
         }
@@ -987,6 +1005,7 @@ module powerbi.visuals.samples {
                         'border-color': settings.slicerText.outlineColor,
                         'border-width': this.getBorderWidth(settings.slicerText.outline, settings.slicerText.outlineWeight),
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
+                        'border-radius': this.getBorderRadius(settings.slicerText.borderStyle),
                     });
                     this.slicerBody.style('background-color', settings.slicerText.background);
 
@@ -1105,6 +1124,17 @@ module powerbi.visuals.samples {
                     return outlineWeight + 'px';
                 default:
                     return outlineElement.replace("1", outlineWeight.toString());
+            }
+        }
+
+        private getBorderRadius(borderType: string): string {
+            switch(borderType){
+                case ChicletBorderStyle.ROUNDED:
+                    return "10px";
+                case ChicletBorderStyle.SQUARE:
+                    return "0px";
+                default:
+                    return "5px";
             }
         }
     }
