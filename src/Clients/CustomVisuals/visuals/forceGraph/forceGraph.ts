@@ -110,8 +110,8 @@ module powerbi.visuals.samples {
             },
             size: {
                 charge: <DataViewObjectPropertyIdentifier>{ objectName: 'size', propertyName: 'charge' },
-            },
-        }
+            }
+        };
 
         export interface ForceGraphData {
             nodes: {};
@@ -348,7 +348,6 @@ module powerbi.visuals.samples {
 
             public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
                 var instances: VisualObjectInstance[] = [];
-                var dataView = this.dataView;
                 switch (options.objectName) {
                     case 'links':
                         var links: VisualObjectInstance = {
@@ -455,10 +454,10 @@ module powerbi.visuals.samples {
                                 label: item[linkTypeCol],
                                 color: colors.getColorByIndex(linkTypeCount++).value,
                             };
-                        }
+                        };
                     };
-                    if (link.filecount < minFiles) { minFiles = link.filecount };
-                    if (link.filecount > maxFiles) { maxFiles = link.filecount };
+                    if (link.filecount < minFiles) { minFiles = link.filecount; };
+                    if (link.filecount > maxFiles) { maxFiles = link.filecount; };
                     links.push(link);
                 });
 
@@ -501,29 +500,30 @@ module powerbi.visuals.samples {
                 this.updateNodes();
                 this.forceLayout.start();
 
-                if (this.options.showArrow) {
+                // uncomment if we don't need the marker-end workaround
+                //if (this.options.showArrow) {
                     // build the arrow.
-                    function marker(d, i) {
-                        var val = "mid_" + i;
-                        svg.append("defs").selectAll("marker")
-                            .data([val])      // Different link/path types can be defined here
-                            .enter().append("marker")    // This section adds in the arrows
-                            .attr("id", String)
-                            .attr("viewBox", "0 -5 10 10")
-                            .attr("refX", 10)
-                            .attr("refY", 0)
-                            .attr("markerWidth", 6)
-                            .attr("markerHeight", 6)
-                            .attr("orient", "auto")
-                            .attr("markerUnits", "userSpaceOnUse")
-                            .append("path")
-                            .attr("d", "M0,-5L10,0L0,5")
-                        //below works if no marker-end workaround needed
-                            .style("fill", d => this.getLinkColor(d))
-                        ;
-                        return "url(#" + val + ")";
-                    }
-                }
+                    //function marker(d, i) {
+                    //    var val = "mid_" + i;
+                    //    svg.append("defs").selectAll("marker")
+                    //        .data([val])      // Different link/path types can be defined here
+                    //        .enter().append("marker")    // This section adds in the arrows
+                    //        .attr("id", String)
+                    //        .attr("viewBox", "0 -5 10 10")
+                    //        .attr("refX", 10)
+                    //        .attr("refY", 0)
+                    //        .attr("markerWidth", 6)
+                    //        .attr("markerHeight", 6)
+                    //        .attr("orient", "auto")
+                    //        .attr("markerUnits", "userSpaceOnUse")
+                    //        .append("path")
+                    //        .attr("d", "M0,-5L10,0L0,5")
+                    //    //below works if no marker-end workaround needed
+                    //        .style("fill", d => this.getLinkColor(d))
+                    //    ;
+                    //    return "url(#" + val + ")";
+                    //}
+                //}
                 this.paths = svg.selectAll(".link")
                     .data(this.forceLayout.links())
                     .enter().append("path")
@@ -540,7 +540,7 @@ module powerbi.visuals.samples {
                 ;
 
                 if (this.options.showLabel) {
-                    var linktext = svg.selectAll(".linklabelholder")
+                    svg.selectAll(".linklabelholder")
                         .data(this.forceLayout.links())
                         .enter().append("g")
                         .attr("class", "linklabelholder")
@@ -572,10 +572,10 @@ module powerbi.visuals.samples {
                 if (this.options.displayImage) {
                     this.nodes.append("image")
                         .attr("xlink:href", d =>
-                            d.image && d.image != '' ?
+                            d.image && d.image !== '' ?
                                 this.options.imageUrl + d.image + this.options.imageExt :
                                 (
-                                    this.options.defaultImage && this.options.defaultImage != '' ?
+                                    this.options.defaultImage && this.options.defaultImage !== '' ?
                                         this.options.imageUrl + this.options.defaultImage + this.options.imageExt :
                                         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAMAAAHNDTTxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACuUExURQAAAMbGxvLy8sfHx/Hx8fLy8vHx8cnJycrKyvHx8fHx8cvLy/Ly8szMzM3NzfHx8dDQ0PHx8fLy8vHx8e/v79LS0tPT0/Ly8tTU1NXV1dbW1vHx8fHx8fDw8NjY2PT09PLy8vLy8vHx8fLy8vHx8fHx8enp6fDw8PLy8uPj4+Tk5OXl5fHx8b+/v/Pz8+bm5vHx8ejo6PLy8vHx8fLy8sTExPLy8vLy8sXFxfHx8YCtMbUAAAA6dFJOUwD/k/+b7/f///+r/////0z/w1RcEP//ZP///4fj/v8Yj3yXn/unDEhQ////YP9Y/8//aIMU/9+L/+fzC4s1AAAACXBIWXMAABcRAAAXEQHKJvM/AAABQElEQVQoU5WS61LCMBCFFymlwSPKVdACIgWkuNyL+P4v5ibZ0jKjP/xm0uw5ySa7mRItAhnMoIC5TwQZdCZiZjcoC8WU6EVsmZgzoqGdxafgvJAvjUXCb2M+0cXNsd/GDarZqSf7av3M2P1E3xhfLkPUvLD5joEYwVVJQXM6+9McWUwLf4nDTCQZAy96UoDjNI/jhl3xPLbQamu8xD7iaIsPKw7GJ7KZEnWLY3Gi8EFj5nqibXnwD5VEGjJXk5sbpLppfvvo1RazQVrhSopPK4TODrtnjS3dY4ic8KurruWQYF+UG60BacexTMyT2jlNg41dOmKvTpkUd/Jevy7ZxQ61ULRUpoododx8GeDPvIrktbFVdUsK6f8Na5VlVpjZJtowTXVy7kfXF5wCaV1tqXAFuIdWJu+JviaQzNzfQvQDGKRXXEmy83cAAAAASUVORK5CYII='
                                 )
@@ -666,7 +666,7 @@ module powerbi.visuals.samples {
             }
 
             private fadePath(opacity: number) {
-                if (this.options.colorLink != linkColorType.interactive) return;
+                if (this.options.colorLink !== linkColorType.interactive) return;
                 return d => {
                     this.paths.style("stroke-opacity", o => o.source === d.source && o.target === d.target ? 1 : opacity);
                     this.paths.style("stroke", o => o.source === d.source && o.target === d.target ?
@@ -701,8 +701,8 @@ module powerbi.visuals.samples {
             }
 
             private fadeNode(opacity: number) {
-                if (this.options.colorLink != linkColorType.interactive) return;
-                var isConnected = (a, b) => this.data.linkedByName[a.name + "," + b.name] || this.data.linkedByName[b.name + "," + a.name] || a.name == b.name;
+                if (this.options.colorLink !== linkColorType.interactive) return;
+                var isConnected = (a, b) => this.data.linkedByName[a.name + "," + b.name] || this.data.linkedByName[b.name + "," + a.name] || a.name === b.name;
 
                 return d => {
                     var that = this;
