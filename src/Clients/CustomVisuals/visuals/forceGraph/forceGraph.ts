@@ -478,7 +478,8 @@ module powerbi.visuals.samples {
                 if (!options.dataViews || (options.dataViews.length < 1)) return;
                 this.data = ForceGraph.converter(this.dataView = options.dataViews[0], this.colors);
                 if (!this.data) return;
-                this.updateOptions(options.dataViews[0].metadata.objects);
+                if (options.dataViews[0].metadata && options.dataViews[0].metadata.objects)
+                    this.updateOptions(options.dataViews[0].metadata.objects);
                 this.viewport = options.viewport;
                 var k = Math.sqrt(Object.keys(this.data.nodes).length / (this.viewport.width * this.viewport.height));
 
