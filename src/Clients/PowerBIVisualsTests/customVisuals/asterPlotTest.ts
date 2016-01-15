@@ -40,7 +40,7 @@ module powerbitests.customVisuals {
 
             beforeEach(() => {
                 visualBuilder = new AsterPlotBuilder();
-                dataViews = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData().getDataViews();
+                dataViews = [powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData()];
             });
 
             it("svg element created", () => expect(visualBuilder.element.children("svg")[0]).toBeInDOM());
