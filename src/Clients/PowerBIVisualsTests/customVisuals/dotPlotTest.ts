@@ -27,44 +27,47 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests.customVisuals {
-    import VisualClass = powerbi.visuals.samples.AsterPlot;
+    import VisualClass = powerbi.visuals.samples.DotPlot;
 
-    describe("AsterPlot", () => {
+    describe("DotPlot", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: AsterPlotBuilder;
+            let visualBuilder: BulletChartBuilder;
             let dataViews: powerbi.DataView[];
 
             beforeEach(() => {
-                visualBuilder = new AsterPlotBuilder();
-                dataViews = [powerbitests.customVisuals.sampleDataViews.salesByDayOfWeekData()];
+                visualBuilder = new BulletChartBuilder();
+                dataViews = [powerbitests.customVisuals.sampleDataViews.dotPlotData()];
             });
 
-            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+            it("svg element created", () =>expect(visualBuilder.mainElement[0]).toBeInDOM());
+
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
-                    expect(visualBuilder.mainElement.find('.asterSlice').length)
+                    expect(visualBuilder.mainElement.children(".dotPlot").children(".dot").length)
+                        .toBeGreaterThan(0);
+                    expect(visualBuilder.mainElement.children(".x.axis").children(".tick").length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
                     done();
-                }, DefaultWaitForRender);
+                }, powerbitests.DefaultWaitForRender);
             });
         });
     });
 
-    class AsterPlotBuilder {
+    class BulletChartBuilder {
         private isMinervaVisualPlugin: boolean = false;
         private visual: VisualClass;
         private host: powerbi.IVisualHostServices;
         private style: powerbi.IVisualStyle;
         private viewport: powerbi.IViewport;
         public element: JQuery;
-
+        
         public get mainElement() {
-            return this.element.children("svg");
+            return this.element.children('svg.dotPlot');
         }
 
         constructor(
@@ -87,12 +90,6 @@ module powerbitests.customVisuals {
 
         private build(): void {
             this.visual = new VisualClass();
-            //  Aster Plot has not been encluded to the visualPluginFactory yet
-            // if (this.isMinervaVisualPlugin) {
-            //     //this.visual = <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
-            // } else {
-            //     this.visual = new VisualClass();
-            // }
         }
 
         private init(): void {
