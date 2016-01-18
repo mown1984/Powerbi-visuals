@@ -27,7 +27,7 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbitests.customVisuals.sampleDataViews {
-    export function SalesByDayOfWeekData(): powerbi.DataView {
+    export function salesByDayOfWeekData(): powerbi.DataView {
         var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "day of week" } });
 
         var categoryValues = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];

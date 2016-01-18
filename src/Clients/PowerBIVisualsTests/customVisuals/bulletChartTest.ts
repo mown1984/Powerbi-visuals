@@ -43,11 +43,11 @@ module powerbitests.customVisuals {
                 dataViews = [powerbitests.customVisuals.sampleDataViews.bulletChartData()];
             });
 
-            it("svg element created", () => expect(visualBuilder.element.children("div").children("svg")[0]).toBeInDOM());
+            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
-                    expect(visualBuilder.element.children().children().children("g").first().children("text").length)
+                    expect(visualBuilder.mainElement.children("g").first().children("text").length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
                     done();
                 }, DefaultWaitForRender);
@@ -62,6 +62,10 @@ module powerbitests.customVisuals {
         private style: powerbi.IVisualStyle;
         private viewport: powerbi.IViewport;
         public element: JQuery;
+
+        public get mainElement() {
+            return this.element.children("div").children("svg");
+        }
 
         constructor(
             height: number = 200,
