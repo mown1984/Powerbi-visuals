@@ -80,11 +80,7 @@ module powerbitests.customVisuals.sampleDataViews {
             powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
 
         var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-        var tableDataValues = categoryValues.map((category, idx) => {
-            var categoryDataValues = columns.map(x => <any>x.values[idx]);
-            categoryDataValues.unshift(category);
-            return categoryDataValues;
-        });
+        var tableDataValues = helpers.getTableDataValues(categoryValues, columns);
 
         return {
             metadata: dataViewMetadata,

@@ -27,46 +27,43 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests.customVisuals {
-    import VisualClass = powerbi.visuals.samples.DotPlot;
+    import VisualClass = powerbi.visuals.samples.WordCloud;
 
-    describe("DotPlot", () => {
+    describe("WordCloud", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: BulletChartBuilder;
+            let visualBuilder: WordCloudBuilder;
             let dataViews: powerbi.DataView[];
-
+            
             beforeEach(() => {
-                visualBuilder = new BulletChartBuilder();
-                dataViews = [powerbitests.customVisuals.sampleDataViews.dotPlotData()];
+                visualBuilder = new WordCloudBuilder();
+                dataViews = [powerbitests.customVisuals.sampleDataViews.countriesData()];
             });
 
-            it("svg element created", () =>expect(visualBuilder.mainElement[0]).toBeInDOM());
-
-            it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    expect(visualBuilder.mainElement.children(".dotPlot").children(".dot").length)
-                        .toBeGreaterThan(0);
-                    expect(visualBuilder.mainElement.children(".x.axis").children(".tick").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
-                    done();
-                }, powerbitests.DefaultWaitForRender);
-            });
+            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+            //it("update", (done) => {
+            //    visualBuilder.update(dataViews);
+            //    setTimeout(() => {
+            //        expect(visualBuilder.mainElement.children("g").children("g.words").children("text.word").length)
+            //            .toBeGreaterThan(0);
+            //        done();
+            //    }, DefaultWaitForRender);
+            //});
         });
     });
 
-    class BulletChartBuilder extends VisualBuilderBase<VisualClass> {
+    class WordCloudBuilder extends VisualBuilderBase<VisualClass> {
         constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
         }
-        
+
         public get mainElement() {
-            return this.element.children('svg.dotPlot');
+            return this.element.children("svg.wordCloud");
         }
 
         private build(): void {

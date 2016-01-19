@@ -43,62 +43,31 @@ module powerbitests.customVisuals {
                 dataViews = [powerbitests.customVisuals.sampleDataViews.valueByAgeData()];
             });
 
-            it("svg element created", () => expect(visualBuilder.element.children("svg")[0]).toBeInDOM());
+            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {                    
                     var binsNumber = d3.layout.histogram().frequency(true)(dataViews[0].categorical.categories[0].values).length;
-                    expect(visualBuilder.element.find('.column').length).toBe(binsNumber);
+                    expect(visualBuilder.mainElement.find('.column').length).toBe(binsNumber);
                     done();
                 }, DefaultWaitForRender);
             });
         });
     });
 
-    class HistogramChartBuilder {
-        private isMinervaVisualPlugin: boolean = false;
-        private visual: VisualClass;
-        private host: powerbi.IVisualHostServices;
-        private style: powerbi.IVisualStyle;
-        private viewport: powerbi.IViewport;
-        public element: JQuery;
-
-        constructor(
-            height: number = 200,
-            width: number = 300,
-            isMinervaVisualPlugin: boolean = false) {
-
-            this.element = powerbitests.helpers.testDom(height.toString(), width.toString());
-            this.host = mocks.createVisualHostServices();
-            this.style = powerbi.visuals.visualStyles.create();
-            this.isMinervaVisualPlugin = isMinervaVisualPlugin;
-            this.viewport = {
-                height: this.element.height(),
-                width: this.element.width()
-            };
-
+    class HistogramChartBuilder extends VisualBuilderBase<VisualClass> {
+        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+            super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
         }
 
+        public get mainElement() {
+            return this.element.children("svg");
+        }
+
         private build(): void {
             this.visual = new VisualClass();
-        }
-
-        private init(): void {
-            this.visual.init({
-                element: this.element,
-                host: this.host,
-                style: this.style,
-                viewport: this.viewport
-            });
-        }
-
-        public update(dataViews: powerbi.DataView[]): void {
-            this.visual.update(<powerbi.VisualUpdateOptions>{
-                dataViews: dataViews,
-                viewport: this.viewport
-            });
         }
     }
 }
