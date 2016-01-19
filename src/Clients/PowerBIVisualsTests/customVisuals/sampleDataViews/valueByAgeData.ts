@@ -70,9 +70,7 @@ module powerbitests.customVisuals.sampleDataViews {
         ];
 
         var dataValues: powerbi.DataViewValueColumns = DataViewTransform.createValueColumns([columns[1]]);
-        var tableDataValues = ages.map(function (age,idx) {
-            return [age, columns[1].values[idx]];
-        });
+        var tableDataValues = helpers.getTableDataValues(ages, columns);
         
         return {
             metadata: dataViewMetadata,

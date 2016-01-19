@@ -24,18 +24,14 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="typedefs/typedefs.ts"/>
-/// <reference path="typedefs/typedefs.obj.ts"/>
+/// <reference path="../../_references.ts"/>
 
-/// <reference path="common.ts"/>
-/// <reference path="mocks.ts"/>
-/// <reference path="helpers/helpers.ts"/>
-/// <reference path="helpers/performanceTestsHelpers.ts"/>
-/// <reference path="helpers/slicerHelper.ts"/>
-/// <reference path="helpers/kpiHelper.ts"/>
-/// <reference path="helpers/tableDataViewHelper.ts"/>
-/// <reference path="helpers/tablixHelper.ts"/>
-/// <reference path="sqFieldDef.ts"/>
-
-/// <reference path="customVisuals/VisualBuilderBase.ts"/>
-/// <reference path="customVisuals/helpers/dataViewHelper.ts"/>
+module powerbitests.customVisuals.helpers {
+    export function getTableDataValues(categoryValues: any[], columns: any[]): any[] {
+        return categoryValues.map((category, idx) => {
+            var categoryDataValues = columns.map(x => <any>x.values[idx]);
+            categoryDataValues.unshift(category);
+            return categoryDataValues;
+        });
+    }
+}
