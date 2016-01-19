@@ -28,30 +28,36 @@
 
 module powerbitests.customVisuals.sampleDataViews {
     import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import DataView = powerbi.DataView;
+    import DataViewMetadata = powerbi.DataViewMetadata;
+    import ValueType = powerbi.ValueType;
+    import DataViewTransform = powerbi.data.DataViewTransform;
+    import DataViewValueColumns = powerbi.DataViewValueColumns;
+    import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function dotPlotData(): powerbi.DataView {
-        var dataViewMetadata: powerbi.DataViewMetadata = {
+    export function dotPlotData(): DataView {
+        var dataViewMetadata: DataViewMetadata = {
                 columns: [{
                     displayName: 'Name',
                     queryName: 'Name',
-                    type: powerbi.ValueType.fromDescriptor({ text: true }),
+                    type: ValueType.fromDescriptor({ text: true }),
                     roles: { Category: true }
                 },
                 {
                     displayName: 'Count',
                     queryName: 'Count',
-                    type: powerbi.ValueType.fromDescriptor({ integer: true }),
+                    type: ValueType.fromDescriptor({ integer: true }),
                     roles: { Series: true }
                 }]
             };
 
-        var columns = [{
+        var columns: DataViewValueColumn[] = [{
                 source: dataViewMetadata.columns[1],
                 values: [4, 4, 2, 3, 5, 2, 2]
             }];
         var categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
 
-        var dataValues: powerbi.DataViewValueColumns = powerbi.data.DataViewTransform.createValueColumns(columns);
+        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
         var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
         var categoryIdentities = categoryValues.map((value) =>
             powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));

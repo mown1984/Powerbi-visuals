@@ -35,27 +35,36 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function salesByDayOfWeekData(): DataView {
+    export function areaRangeChartData(): DataView {
         var dataViewMetadata: DataViewMetadata = {
             columns: [
                 {
-                    displayName: 'Day',
-                    queryName: 'Day',
-                    type: ValueType.fromDescriptor({ text: true })
+                    displayName: 'Country',
+                    queryName: 'Country',
+                    type: ValueType.fromDescriptor({ text: true }),
+                    roles: { Category: true }
                 },
                 {
-                    displayName: 'Previous week sales',
+                    displayName: 'District',
+                    queryName: 'District',
+                    type: ValueType.fromDescriptor({ text: true }),
+                    roles: { Series: true }
+                },
+                {
+                    displayName: 'Sales Amount (2014)',
                     isMeasure: true,
                     format: "$0,000.00",
-                    queryName: 'sales1',
+                    queryName: 'district',
+                    roles: { Lower: true },
                     type: ValueType.fromDescriptor({ numeric: true }),
                     objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
                 },
                 {
-                    displayName: 'This week sales',
+                    displayName: 'Sales Amount (2015)',
                     isMeasure: true,
                     format: "$0,000.00",
-                    queryName: 'sales2',
+                    queryName: 'district',
+                    roles: { Upper: true },
                     type: ValueType.fromDescriptor({ numeric: true })
                 }
             ]
@@ -63,28 +72,22 @@ module powerbitests.customVisuals.sampleDataViews {
 
         var columns: DataViewValueColumn[] = [
             {
-                source: dataViewMetadata.columns[1],
+                source: dataViewMetadata.columns[2],
                 // Sales Amount for 2014
-                values: [742731.43, 162066.43, 283085.78, 300263.49, 376074.57, 814724.34, 570921.34],
+                values: [0, 2, 4, 2, 2, 0],
             },
             {
-                source: dataViewMetadata.columns[2],
+                source: dataViewMetadata.columns[3],
                 // Sales Amount for 2015
-                values: [123455.43, 40566.43, 200457.78, 5000.49, 320000.57, 450000.34, 140832.67],
+                values: [1, 3, 6, 3, 4, 1],
             }
         ];
 
-        var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "day of week" } });
-        var categoryValues = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        var categoryIdentities = categoryValues.map((value) =>
+        var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
+        var categoryValues = ["Australia", "Canada", "France", "Germany", "United Kingdom", "United States"];
+        var categoryIdentities = categoryValues.map(value =>
             powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
-
         var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-        var tableDataValues = categoryValues.map((category, idx) => {
-            var categoryDataValues = columns.map(x => <any>x.values[idx]);
-            categoryDataValues.unshift(category);
-            return categoryDataValues;
-        });
 
         return {
             metadata: dataViewMetadata,
@@ -92,13 +95,9 @@ module powerbitests.customVisuals.sampleDataViews {
                 categories: [{
                     source: dataViewMetadata.columns[0],
                     values: categoryValues,
-                    identity: categoryIdentities,
+                    identity: categoryIdentities
                 }],
-                values: dataValues
-            },
-            table: {
-                rows: tableDataValues,
-                columns: dataViewMetadata.columns,
+                values: dataValues,
             }
         };
     }

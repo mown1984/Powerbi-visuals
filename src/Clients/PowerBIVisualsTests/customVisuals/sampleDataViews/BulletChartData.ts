@@ -28,49 +28,55 @@
 
 module powerbitests.customVisuals.sampleDataViews {
     import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import DataView = powerbi.DataView;
+    import DataViewMetadata = powerbi.DataViewMetadata;
+    import ValueType = powerbi.ValueType;
+    import DataViewTransform = powerbi.data.DataViewTransform;
+    import DataViewValueColumns = powerbi.DataViewValueColumns;
+    import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function bulletChartData(): powerbi.DataView {
-        var dataViewMetadata: powerbi.DataViewMetadata = {
+    export function bulletChartData(): DataView {
+        var dataViewMetadata: DataViewMetadata = {
             columns: [
                 {
                     displayName: 'Category',
                     roles: { 'Category': true },
-                    type: powerbi.ValueType.fromDescriptor({ text: true }),
+                    type: ValueType.fromDescriptor({ text: true }),
                 }, {
                     displayName: 'Value',
                     roles: { 'Value': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }, {
                     displayName: 'Target Value',
                     roles: { 'TargetValue': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }, {
                     displayName: 'Minimum',
                     roles: { 'Minimum': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }, {
                     displayName: 'Satisfactory',
                     roles: { 'Satisfactory': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }, {
                     displayName: 'Good',
                     roles: { 'Good': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }, {
                     displayName: 'Maximum',
                     roles: { 'Maximum': true },
                     isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    type: ValueType.fromDescriptor({ numeric: true }),
                 }
             ]
         };
 
-        var columns = [
+        var columns: DataViewValueColumn[] = [
             {
                 source: dataViewMetadata.columns[1],
                 // Value
@@ -104,12 +110,11 @@ module powerbitests.customVisuals.sampleDataViews {
         ];
 
         var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "Category", name: "Category" } });
-
         var categoryValues = ["One", "Two", "Three", "Four", "Five", "Six", "Seven"];
         var categoryIdentities = categoryValues.map((value) => 
             powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
 
-        var dataValues: powerbi.DataViewValueColumns = powerbi.data.DataViewTransform.createValueColumns(columns);
+        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
         var tableDataValues = categoryValues.map((category, idx) => {
             var categoryDataValues = columns.map(x => <any>x.values[idx]);
             categoryDataValues.unshift(category);
