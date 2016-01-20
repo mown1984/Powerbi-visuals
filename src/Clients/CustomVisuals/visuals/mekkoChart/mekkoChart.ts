@@ -2476,7 +2476,8 @@ module powerbi.visuals.samples {
             showCategoryAxisLabel: false,
             showValueAxisLabel: false,
             categoryAxisScaleType: categoryAxisProperties && categoryAxisProperties['axisScale'] != null ? <string>categoryAxisProperties['axisScale'] : axisScale.linear,
-            valueAxisScaleType: valueAxisProperties && valueAxisProperties['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : axisScale.linear
+            valueAxisScaleType: valueAxisProperties && valueAxisProperties['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : axisScale.linear,
+            trimOrdinalDataOnOverflow: false
         };
 
         var yAxisWillMerge = false;
@@ -2668,6 +2669,7 @@ module powerbi.visuals.samples {
                     domain: domain,
                     isScalar: isScalar,
                     isScrollable: this.isScrollable,
+                    trimOrdinalDataOnOverflow: false
                 });
         }
         

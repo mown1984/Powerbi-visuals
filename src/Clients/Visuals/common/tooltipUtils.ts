@@ -24,18 +24,25 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="typedefs/typedefs.ts"/>
-/// <reference path="typedefs/typedefs.obj.ts"/>
+/// <reference path="../_references.ts" />
 
-/// <reference path="common.ts"/>
-/// <reference path="mocks.ts"/>
-/// <reference path="helpers/helpers.ts"/>
-/// <reference path="helpers/performanceTestsHelpers.ts"/>
-/// <reference path="helpers/slicerHelper.ts"/>
-/// <reference path="helpers/tableDataViewHelper.ts"/>
-/// <reference path="helpers/tablixHelper.ts"/>
-/// <reference path="helpers/kpiHelper.ts"/>
-/// <reference path="sqFieldDef.ts"/>
+module powerbi.visuals {
+    /**
+     * Contains functions/constants to aid in adding tooltips. 
+     */
+    export module tooltipUtils {
 
-/// <reference path="customVisuals/VisualBuilderBase.ts"/>
-/// <reference path="customVisuals/helpers/dataViewHelper.ts"/>
+        export function tooltipUpdate(selection: D3.Selection, tooltips: string[]): void {
+            if (tooltips.length === 0)
+                return;
+
+            debug.assert(selection.length === tooltips.length || selection[0].length === tooltips.length, 'data length should match dom element count');
+            let titles = selection.selectAll('title');
+            let titlesUpdate = titles.data((d, i) => [tooltips[i]]);
+
+            titlesUpdate.enter().append('title');
+            titlesUpdate.exit().remove();
+            titlesUpdate.text((d) => d);
+        }
+    }
+}

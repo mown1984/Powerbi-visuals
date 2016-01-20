@@ -2223,7 +2223,8 @@ module powerbi.visuals.samples {
                 categoryAxisScaleType: categoryAxisProperties && categoryAxisProperties['axisScale'] != null ? <string>categoryAxisProperties['axisScale'] : null,
                 valueAxisScaleType: valueAxisProperties && valueAxisProperties['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : null,
                 valueAxisDisplayUnits: valueAxisProperties && valueAxisProperties['labelDisplayUnits'] != null ? <number>valueAxisProperties['labelDisplayUnits'] : EnhancedScatterChart.LabelDisplayUnitsDefault,
-                categoryAxisDisplayUnits: categoryAxisProperties && categoryAxisProperties['labelDisplayUnits'] != null ? <number>categoryAxisProperties['labelDisplayUnits'] : EnhancedScatterChart.LabelDisplayUnitsDefault
+                categoryAxisDisplayUnits: categoryAxisProperties && categoryAxisProperties['labelDisplayUnits'] != null ? <number>categoryAxisProperties['labelDisplayUnits'] : EnhancedScatterChart.LabelDisplayUnitsDefault,
+                trimOrdinalDataOnOverflow: false
             };
 
             if (valueAxisProperties) {
