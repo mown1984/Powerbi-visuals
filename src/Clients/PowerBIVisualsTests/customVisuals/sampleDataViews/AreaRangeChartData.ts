@@ -35,70 +35,73 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function areaRangeChartData(): DataView {
-        var dataViewMetadata: DataViewMetadata = {
-            columns: [
+    export class AreaRangeChartData {
+
+        public getDataView(): DataView {
+            let dataViewMetadata: DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'Country',
+                        queryName: 'Country',
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { Category: true }
+                    },
+                    {
+                        displayName: 'District',
+                        queryName: 'District',
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { Series: true }
+                    },
+                    {
+                        displayName: 'Sales Amount (2014)',
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        queryName: 'district',
+                        roles: { Lower: true },
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
+                    },
+                    {
+                        displayName: 'Sales Amount (2015)',
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        queryName: 'district',
+                        roles: { Upper: true },
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    }
+                ]
+            };
+
+            let columns: DataViewValueColumn[] = [
                 {
-                    displayName: 'Country',
-                    queryName: 'Country',
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: { Category: true }
+                    source: dataViewMetadata.columns[2],
+                    // Sales Amount for 2014
+                    values: [0, 2, 4, 2, 2, 0],
                 },
                 {
-                    displayName: 'District',
-                    queryName: 'District',
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: { Series: true }
-                },
-                {
-                    displayName: 'Sales Amount (2014)',
-                    isMeasure: true,
-                    format: "$0,000.00",
-                    queryName: 'district',
-                    roles: { Lower: true },
-                    type: ValueType.fromDescriptor({ numeric: true }),
-                    objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
-                },
-                {
-                    displayName: 'Sales Amount (2015)',
-                    isMeasure: true,
-                    format: "$0,000.00",
-                    queryName: 'district',
-                    roles: { Upper: true },
-                    type: ValueType.fromDescriptor({ numeric: true })
+                    source: dataViewMetadata.columns[3],
+                    // Sales Amount for 2015
+                    values: [1, 3, 6, 3, 4, 1],
                 }
-            ]
-        };
+            ];
 
-        var columns: DataViewValueColumn[] = [
-            {
-                source: dataViewMetadata.columns[2],
-                // Sales Amount for 2014
-                values: [0, 2, 4, 2, 2, 0],
-            },
-            {
-                source: dataViewMetadata.columns[3],
-                // Sales Amount for 2015
-                values: [1, 3, 6, 3, 4, 1],
-            }
-        ];
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
+            let categoryValues = ["Australia", "Canada", "France", "Germany", "United Kingdom", "United States"];
+            let categoryIdentities = categoryValues.map(value =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
 
-        var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
-        var categoryValues = ["Australia", "Canada", "France", "Germany", "United Kingdom", "United States"];
-        var categoryIdentities = categoryValues.map(value =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
-        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-
-        return {
-            metadata: dataViewMetadata,
-            categorical: {
-                categories: [{
-                    source: dataViewMetadata.columns[0],
-                    values: categoryValues,
-                    identity: categoryIdentities
-                }],
-                values: dataValues,
-            }
-        };
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: categoryValues,
+                        identity: categoryIdentities
+                    }],
+                    values: dataValues,
+                }
+            };
+        }
     }
 }

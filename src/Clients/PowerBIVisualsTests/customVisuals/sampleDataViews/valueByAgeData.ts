@@ -29,63 +29,66 @@
 module powerbitests.customVisuals.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
 
-    export function valueByAgeData(): powerbi.DataView {
-        var ages = [10, 11, 12, 15, 16, 20, 21, 25, 26, 27, 28, 29, 30, 31, 40, 50, 60];
+    export class ValueByAgeData {
 
-        var frequency = [7, 6, 10, 4, 3, 3, 3, 6, 10, 4, 1, 7, 9, 2, 9, 4, 5];       
+        public getDataView(): powerbi.DataView {
+            let ages = [10, 11, 12, 15, 16, 20, 21, 25, 26, 27, 28, 29, 30, 31, 40, 50, 60];
+
+            let frequency = [7, 6, 10, 4, 3, 3, 3, 6, 10, 4, 1, 7, 9, 2, 9, 4, 5];       
         
-        var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "age" } });
+            let fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "age" } });
 
-        var identities = ages.map(function (value) {
-            var expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.decimal(value));
-            return powerbi.data.createDataViewScopeIdentity(expr);
-        });
+            let identities = ages.map(function (value) {
+                let expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.decimal(value));
+                return powerbi.data.createDataViewScopeIdentity(expr);
+            });
 
-        var dataViewMetadata: powerbi.DataViewMetadata = {
-            columns: [
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'Age',
+                        queryName: 'table1.Age',
+                        isMeasure: true,
+                        type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    {
+                        displayName: 'Value',
+                        isMeasure: true,
+                        queryName: 'Sum(table1.Value)',
+                        type: powerbi.ValueType.fromDescriptor({ numeric: true })
+                    }
+                ]
+            };
+
+            let columns = [
                 {
-                    displayName: 'Age',
-                    queryName: 'table1.Age',
-                    isMeasure: true,
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
-                },
-                {
-                    displayName: 'Value',
-                    isMeasure: true,
-                    queryName: 'Sum(table1.Value)',
-                    type: powerbi.ValueType.fromDescriptor({ numeric: true })
-                }
-            ]
-        };
-
-        var columns = [
-            {
-                source: dataViewMetadata.columns[0],
-                values: ages,
-            },
-            {
-                source: dataViewMetadata.columns[1],
-                values: frequency,
-            }
-        ];
-
-        var dataValues: powerbi.DataViewValueColumns = DataViewTransform.createValueColumns([columns[1]]);
-        var tableDataValues = helpers.getTableDataValues(ages, columns);
-        
-        return {
-            metadata: dataViewMetadata,
-            categorical: {
-                categories: [{
                     source: dataViewMetadata.columns[0],
                     values: ages,
-                    identity: identities,
-                }],
-                values: dataValues
-            },
-            table: {
-                rows: tableDataValues,
-                columns: dataViewMetadata.columns,
-            }
-        };
+                },
+                {
+                    source: dataViewMetadata.columns[1],
+                    values: frequency,
+                }
+            ];
+
+            let dataValues: powerbi.DataViewValueColumns = DataViewTransform.createValueColumns([columns[1]]);
+            let tableDataValues = helpers.getTableDataValues(ages, columns);
+        
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: ages,
+                        identity: identities,
+                    }],
+                    values: dataValues
+                },
+                table: {
+                    rows: tableDataValues,
+                    columns: dataViewMetadata.columns,
+                }
+            };
+        }
     }
 }

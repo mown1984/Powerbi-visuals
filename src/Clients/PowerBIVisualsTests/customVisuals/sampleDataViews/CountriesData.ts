@@ -31,127 +31,130 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
 
-    export function countriesData(): DataView {
-        let dataViewMetadata: powerbi.DataViewMetadata = {
-            columns: [{
-                displayName: "Country",
-                queryName: "Country",
-                type: ValueType.fromDescriptor({ text: true }),
-                roles: { "Values": true }
-            }],
-            objects: {
-                rotateText: {
-                    show: true,
-                    quantityAngles: 0
-                }
-            }
-        };
+    export class CountriesData {
 
-        let countries: string[] = [
-            "Afghanistan",
-            "Albania",
-            "Algeria",
-            "Andorra",
-            "Angola",
-            "Antigua and Barbuda",
-            "Argentina",
-            "Armenia",
-            "Aruba",
-            "Australia",
-            "Austria",
-            "Azerbaijan",
-            "Gabon",
-            "Georgia",
-            "Germany",
-            "Ghana",
-            "Greece",
-            "Grenada",
-            "Guatemala",
-            "Guinea",
-            "Guinea-Bissau",
-            "Guyana",
-            "Haiti",
-            "Holy See",
-            "Honduras",
-            "Hong Kong",
-            "Hungary",
-            "Iceland",
-            "India",
-            "Indonesia",
-            "Iran",
-            "Iraq",
-            "Ireland",
-            "Israel",
-            "Italy",
-            "Macau",
-            "Macedonia",
-            "Madagascar",
-            "Malawi",
-            "Malaysia",
-            "Maldives",
-            "Mali",
-            "Malta",
-            "Marshall Islands",
-            "Mauritania",
-            "Mauritius",
-            "Mexico",
-            "Micronesia",
-            "Moldova",
-            "Monaco",
-            "Monaco",
-            "Monaco",
-            "Monaco",
-            "Monaco",
-            "Monaco",
-            "Monaco",
-            "Mongolia",
-            "Montenegro",
-            "Morocco",
-            "Mozambique",
-            "United Kingdom",
-            "United Kingdom",
-            "United Kingdom",
-            "The USA",
-            "The USA",
-            "The USA",
-            "The USA",
-            "Uganda",
-            "Ukraine",
-            "United Arab Emirates",
-            "Uruguay",
-            "Uzbekistan",
-            "Romania",
-            "Russia",
-            "Rwanda",
-            "Saint Kitts and Nevis",
-            "Saint Lucia",
-            "Saint Vincent and the Grenadines",
-            "Samoa",
-            "San Marino",
-            "Papua New Guinea",
-            "Fiji",
-            "Finland",
-            "France",
-            "France"
-        ];
-
-        let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table1", name: "country" } });
-        let categoryIdentities = countries.map((item: string) =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(item))));
-
-        return {
-            metadata: dataViewMetadata,
-            categorical: {
-                categories: [{
-                    source: dataViewMetadata.columns[0],
-                    values: countries,
-                    identity: categoryIdentities
+        public getDataView(): DataView {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [{
+                    displayName: "Country",
+                    queryName: "Country",
+                    type: ValueType.fromDescriptor({ text: true }),
+                    roles: { "Values": true }
                 }],
-            },
-            table: {
-                columns: [dataViewMetadata.columns[0]],
-                rows: countries.map((item: string) => [item])
-            }
-        };
+                objects: {
+                    rotateText: {
+                        show: true,
+                        quantityAngles: 0
+                    }
+                }
+            };
+
+            let countries: string[] = [
+                "Afghanistan",
+                "Albania",
+                "Algeria",
+                "Andorra",
+                "Angola",
+                "Antigua and Barbuda",
+                "Argentina",
+                "Armenia",
+                "Aruba",
+                "Australia",
+                "Austria",
+                "Azerbaijan",
+                "Gabon",
+                "Georgia",
+                "Germany",
+                "Ghana",
+                "Greece",
+                "Grenada",
+                "Guatemala",
+                "Guinea",
+                "Guinea-Bissau",
+                "Guyana",
+                "Haiti",
+                "Holy See",
+                "Honduras",
+                "Hong Kong",
+                "Hungary",
+                "Iceland",
+                "India",
+                "Indonesia",
+                "Iran",
+                "Iraq",
+                "Ireland",
+                "Israel",
+                "Italy",
+                "Macau",
+                "Macedonia",
+                "Madagascar",
+                "Malawi",
+                "Malaysia",
+                "Maldives",
+                "Mali",
+                "Malta",
+                "Marshall Islands",
+                "Mauritania",
+                "Mauritius",
+                "Mexico",
+                "Micronesia",
+                "Moldova",
+                "Monaco",
+                "Monaco",
+                "Monaco",
+                "Monaco",
+                "Monaco",
+                "Monaco",
+                "Monaco",
+                "Mongolia",
+                "Montenegro",
+                "Morocco",
+                "Mozambique",
+                "United Kingdom",
+                "United Kingdom",
+                "United Kingdom",
+                "The USA",
+                "The USA",
+                "The USA",
+                "The USA",
+                "Uganda",
+                "Ukraine",
+                "United Arab Emirates",
+                "Uruguay",
+                "Uzbekistan",
+                "Romania",
+                "Russia",
+                "Rwanda",
+                "Saint Kitts and Nevis",
+                "Saint Lucia",
+                "Saint Vincent and the Grenadines",
+                "Samoa",
+                "San Marino",
+                "Papua New Guinea",
+                "Fiji",
+                "Finland",
+                "France",
+                "France"
+            ];
+
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table1", name: "country" } });
+            let categoryIdentities = countries.map((item: string) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(item))));
+
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: countries,
+                        identity: categoryIdentities
+                    }],
+                },
+                table: {
+                    columns: [dataViewMetadata.columns[0]],
+                    rows: countries.map((item: string) => [item])
+                }
+            };
+        }
     }
 }
