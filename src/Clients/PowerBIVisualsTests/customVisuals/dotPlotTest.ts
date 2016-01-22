@@ -40,7 +40,7 @@ module powerbitests.customVisuals {
 
             beforeEach(() => {
                 visualBuilder = new DotPlotBuilder();
-                dataViews = [powerbitests.customVisuals.sampleDataViews.dotPlotData()];
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
             });
 
             it("svg element created", () =>expect(visualBuilder.mainElement[0]).toBeInDOM());

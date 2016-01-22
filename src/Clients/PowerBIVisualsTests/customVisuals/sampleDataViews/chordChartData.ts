@@ -35,48 +35,51 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function chortChartData(): DataView {
-        var dataViewMetadata: DataViewMetadata = {
-            columns: [
-                {
-                    displayName: 'From',
-                    roles: { Category: true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: 'To',
-                    roles: { Series: true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: "Values",
-                    roles: { Y: true },
-                    isMeasure: true,
-                    type: ValueType.fromDescriptor({ numeric: true }),
-                }
-            ]
-        };
+    export class ChortChartData {
 
-        var columns: DataViewValueColumn[] = [{
-                source: dataViewMetadata.columns[0],
-                values: [23,56,4,7,73,85,25,92,16,72]
-            }];
+        public getDataView(): DataView {
+            let dataViewMetadata: DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'From',
+                        roles: { Category: true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }, {
+                        displayName: 'To',
+                        roles: { Series: true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }, {
+                        displayName: "Values",
+                        roles: { Y: true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    }
+                ]
+            };
 
-        var categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
+            let columns: DataViewValueColumn[] = [{
+                    source: dataViewMetadata.columns[0],
+                    values: [23,56,4,7,73,85,25,92,16,72]
+                }];
 
-        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-        var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
-        var categoryIdentities = categoryValues.map((value) =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+            let categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
 
-        return {
-            metadata: dataViewMetadata,
-            categorical: {
-                categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: categoryValues,
-                        identity: categoryIdentities
-                    }],
-                values: dataValues
-            },
-        };
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
+            let categoryIdentities = categoryValues.map((value) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: categoryValues,
+                            identity: categoryIdentities
+                        }],
+                    values: dataValues
+                },
+            };
+        }
     }
 }

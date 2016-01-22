@@ -40,7 +40,7 @@ module powerbitests.customVisuals {
 
             beforeEach(() => {
                 visualBuilder = new BulletChartBuilder();
-                dataViews = [powerbitests.customVisuals.sampleDataViews.bulletChartData()];
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.BulletChartData().getDataView()];
             });
 
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());

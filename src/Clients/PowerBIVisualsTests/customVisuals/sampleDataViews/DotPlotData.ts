@@ -35,43 +35,46 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function dotPlotData(): DataView {
-        var dataViewMetadata: DataViewMetadata = {
-                columns: [{
-                    displayName: 'Name',
-                    queryName: 'Name',
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: { Category: true }
-                },
-                {
-                    displayName: 'Count',
-                    queryName: 'Count',
-                    type: ValueType.fromDescriptor({ integer: true }),
-                    roles: { Series: true }
-                }]
-            };
+    export class DotPlotData {
 
-        var columns: DataViewValueColumn[] = [{
-                source: dataViewMetadata.columns[1],
-                values: [4, 4, 2, 3, 5, 2, 2]
-            }];
-        var categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
+        public getDataView(): DataView {
+            let dataViewMetadata: DataViewMetadata = {
+                    columns: [{
+                        displayName: 'Name',
+                        queryName: 'Name',
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { Category: true }
+                    },
+                    {
+                        displayName: 'Count',
+                        queryName: 'Count',
+                        type: ValueType.fromDescriptor({ integer: true }),
+                        roles: { Series: true }
+                    }]
+                };
 
-        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-        var fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
-        var categoryIdentities = categoryValues.map((value) =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+            let columns: DataViewValueColumn[] = [{
+                    source: dataViewMetadata.columns[1],
+                    values: [4, 4, 2, 3, 5, 2, 2]
+                }];
+            let categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
 
-        return {
-               metadata: dataViewMetadata,
-               categorical: {
-                   categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: categoryValues,
-                        identity: categoryIdentities
-                    }],
-                    values: dataValues
-                }
-           };
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
+            let categoryIdentities = categoryValues.map((value) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+
+            return {
+                   metadata: dataViewMetadata,
+                   categorical: {
+                       categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: categoryValues,
+                            identity: categoryIdentities
+                        }],
+                        values: dataValues
+                    }
+               };
+        }
     }
 }

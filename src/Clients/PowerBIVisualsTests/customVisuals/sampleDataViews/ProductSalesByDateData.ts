@@ -37,6 +37,7 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
     export class ProductSalesByDateData {
+
         private static seriesCount = 4;
         private static valueCount = 50;
 

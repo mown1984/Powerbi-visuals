@@ -35,76 +35,79 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export function forceGraphData(): DataView {
-        var dataViewMetadata: DataViewMetadata = {
-            columns: [
-                {
-                    displayName: 'Source',
-                    roles: { 'Source': true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: 'Target',
-                    roles: { 'Target': true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: 'Weight',
-                    roles: { 'Weight': true },
-                    isMeasure: true,
-                    type: ValueType.fromDescriptor({ numeric: true }),
-                }, {
-                    displayName: 'LinkType',
-                    roles: { 'LinkType': true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: 'SourceType',
-                    roles: { 'SourceType': true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }, {
-                    displayName: 'TargetType',
-                    roles: { 'TargetType': true },
-                    type: ValueType.fromDescriptor({ text: true }),
-                }
-            ]
-        };
+    export class ForceGraphData {
 
-        var sourceValues = ["Brazil", "Canada",  "USA", "Portugal"];
-        var targetValues = ["One", "Two", "Three", "Four", "Five", "Six", "Seven"];
-
-        var columns: DataViewValueColumn[] = [{
-                source: dataViewMetadata.columns[0],
-                values: targetValues
-            }];
-
-        var tableDataValues = helpers.getTableDataValues(sourceValues, columns);
-
-        var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-
-        var sourceValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "source", name: "source" } });
-        var sourceValuesIdentities = sourceValues.map((value) =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(sourceValuesfieldExpr, SQExprBuilder.text(value))));
-
-        var targetValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "target", name: "target" } });
-        var targetValuesIdentities = targetValues.map((value) =>
-            powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(targetValuesfieldExpr, SQExprBuilder.text(value))));
-
-        return {
-            metadata: dataViewMetadata,
-            categorical: {
-                categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: sourceValues,
-                        identity: sourceValuesIdentities
+        public getDataView(): DataView {
+            let dataViewMetadata: DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'Source',
+                        roles: { 'Source': true },
+                        type: ValueType.fromDescriptor({ text: true }),
                     }, {
-                        source: dataViewMetadata.columns[1],
-                        values: targetValues,
-                        identity: targetValuesIdentities
-                    }],
-                values: dataValues
-            },
-            table: {
-                rows: tableDataValues,
-                columns: dataViewMetadata.columns,
-            }
-        };
+                        displayName: 'Target',
+                        roles: { 'Target': true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }, {
+                        displayName: 'Weight',
+                        roles: { 'Weight': true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    }, {
+                        displayName: 'LinkType',
+                        roles: { 'LinkType': true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }, {
+                        displayName: 'SourceType',
+                        roles: { 'SourceType': true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }, {
+                        displayName: 'TargetType',
+                        roles: { 'TargetType': true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    }
+                ]
+            };
+
+            let sourceValues = ["Brazil", "Canada",  "USA", "Portugal"];
+            let targetValues = ["One", "Two", "Three", "Four", "Five", "Six", "Seven"];
+
+            let columns: DataViewValueColumn[] = [{
+                    source: dataViewMetadata.columns[0],
+                    values: targetValues
+                }];
+
+            let tableDataValues = helpers.getTableDataValues(sourceValues, columns);
+
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+
+            let sourceValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "source", name: "source" } });
+            let sourceValuesIdentities = sourceValues.map((value) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(sourceValuesfieldExpr, SQExprBuilder.text(value))));
+
+            let targetValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "target", name: "target" } });
+            let targetValuesIdentities = targetValues.map((value) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(targetValuesfieldExpr, SQExprBuilder.text(value))));
+
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: sourceValues,
+                            identity: sourceValuesIdentities
+                        }, {
+                            source: dataViewMetadata.columns[1],
+                            values: targetValues,
+                            identity: targetValuesIdentities
+                        }],
+                    values: dataValues
+                },
+                table: {
+                    rows: tableDataValues,
+                    columns: dataViewMetadata.columns,
+                }
+            };
+        }
     }
 }
