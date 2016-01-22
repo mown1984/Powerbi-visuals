@@ -27,20 +27,20 @@
 /// <reference path="../_references.ts"/>
 
 module powerbitests.customVisuals {
-    import VisualClass = powerbi.visuals.samples.DotPlot;
+    import VisualClass = powerbi.visuals.samples.StreamGraph;
 
-    describe("DotPlot", () => {
+    describe("StreamGraph", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: DotPlotBuilder;
+            let visualBuilder: StreamGraphBuilder;
             let dataViews: powerbi.DataView[];
 
             beforeEach(() => {
-                visualBuilder = new DotPlotBuilder();
-                dataViews = [powerbitests.customVisuals.sampleDataViews.dotPlotData()];
+                visualBuilder = new StreamGraphBuilder();
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData().getDataView()];
             });
 
             it("svg element created", () =>expect(visualBuilder.mainElement[0]).toBeInDOM());
@@ -48,17 +48,19 @@ module powerbitests.customVisuals {
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
-                    expect(visualBuilder.mainElement.children(".dotPlot").children(".dot").length)
-                        .toBeGreaterThan(0);
-                    expect(visualBuilder.mainElement.children(".x.axis").children(".tick").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                    expect(visualBuilder.mainElement.children("path.layer").length)
+                        .toBe(dataViews[0].categorical.values.length);
+                    expect(visualBuilder.mainElement.children("g.x.axis").children("g.tick"))
+                        .toBeInDOM();
+                    expect(visualBuilder.mainElement.children("g.y.axis").children("g.tick"))
+                        .toBeInDOM();
                     done();
                 }, powerbitests.DefaultWaitForRender);
             });
         });
     });
 
-    class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
+    class StreamGraphBuilder extends VisualBuilderBase<VisualClass> {
         constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
@@ -66,7 +68,7 @@ module powerbitests.customVisuals {
         }
         
         public get mainElement() {
-            return this.element.children('svg.dotPlot');
+            return this.element.children('svg.streamGraph');
         }
 
         private build(): void {
