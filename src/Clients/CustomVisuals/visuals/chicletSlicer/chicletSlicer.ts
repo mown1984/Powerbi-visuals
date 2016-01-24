@@ -239,6 +239,7 @@ module powerbi.visuals.samples {
             height: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'height' },
             width: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'width' },
             background: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'background' },
+            transparency: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'transparency' },
             selectedColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'selectedColor' },
             unselectedColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'unselectedColor' },
             disabledColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'disabledColor' },
@@ -263,7 +264,7 @@ module powerbi.visuals.samples {
         export var SQUARE: string = 'Square';
 
         export var type: IEnumType = createEnumType([
-            { value : ROUNDED, displayName: ChicletBorderStyle.ROUNDED },
+            { value: ROUNDED, displayName: ChicletBorderStyle.ROUNDED },
             { value: CUT, displayName: ChicletBorderStyle.CUT },
             { value: SQUARE, displayName: ChicletBorderStyle.SQUARE },
         ]);
@@ -349,6 +350,7 @@ module powerbi.visuals.samples {
             marginLeft: number;
             outline: string;
             background: string;
+            transparency: number;
             outlineColor: string;
             outlineWeight: number;
             borderStyle: string;
@@ -496,6 +498,11 @@ module powerbi.visuals.samples {
                             displayName: data.createDisplayNameGetter('Visual_Background'),
                             type: { fill: { solid: { color: true } } }
                         },
+                        transparency: {
+                            displayName: "Transparency",
+                            description: "Set transparency for background color",
+                            type: { numeric: true }
+                        },
                         outline: {
                             displayName: data.createDisplayNameGetter('Visual_Outline'),
                             type: { formatting: { outline: true } }
@@ -627,6 +634,7 @@ module powerbi.visuals.samples {
                     marginLeft: 8,
                     outline: 'Frame',
                     background: '#ffffff',
+                    transparency: 0,
                     outlineColor: '#000000',
                     outlineWeight: 1,
                     borderStyle: 'Cut',
@@ -694,6 +702,7 @@ module powerbi.visuals.samples {
                 defaultSettings.slicerText.unselectedColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.unselectedColor, defaultSettings.slicerText.unselectedColor);
                 defaultSettings.slicerText.disabledColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.disabledColor, defaultSettings.slicerText.disabledColor);
                 defaultSettings.slicerText.background = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.background, defaultSettings.slicerText.background);
+                defaultSettings.slicerText.transparency = DataViewObjects.getValue<number>(objects, chicletSlicerProps.rows.transparency, defaultSettings.slicerText.transparency);
                 defaultSettings.slicerText.fontColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.fontColor, defaultSettings.slicerText.fontColor);
                 defaultSettings.slicerText.outline = DataViewObjects.getValue<string>(objects, chicletSlicerProps.rows.outline, defaultSettings.slicerText.outline);
                 defaultSettings.slicerText.outlineColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.outlineColor, defaultSettings.slicerText.outlineColor);
@@ -704,6 +713,7 @@ module powerbi.visuals.samples {
                 defaultSettings.images.stretchImage = DataViewObjects.getValue<boolean>(objects, chicletSlicerProps.images.stretchImage, defaultSettings.images.stretchImage);
                 defaultSettings.images.bottomImage = DataViewObjects.getValue<boolean>(objects, chicletSlicerProps.images.bottomImage, defaultSettings.images.bottomImage);
             }
+
             var categories: DataViewCategoricalColumn = dataView.categorical.categories[0];
             slicerData = {
                 categorySourceName: categories.source.displayName,
@@ -809,6 +819,7 @@ module powerbi.visuals.samples {
                     height: slicerSettings.slicerText.height,
                     width: slicerSettings.slicerText.width,
                     background: slicerSettings.slicerText.background,
+                    transparency: slicerSettings.slicerText.transparency,
                     selectedColor: slicerSettings.slicerText.selectedColor,
                     unselectedColor: slicerSettings.slicerText.unselectedColor,
                     disabledColor: slicerSettings.slicerText.disabledColor,
@@ -862,7 +873,7 @@ module powerbi.visuals.samples {
             this.slicerData = data;
             this.settings = this.slicerData.slicerSettings;
             if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.BOTTOM) {
-                data.slicerDataPoints.sort(function(a, b) {
+                data.slicerDataPoints.sort(function (a, b) {
                     if (a.selectable === b.selectable) {
                         return 0;
                     } else if (a.selectable && !b.selectable) {
@@ -871,7 +882,7 @@ module powerbi.visuals.samples {
                         return 1;
                     }
                 });
-            } else if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.HIDE){
+            } else if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.HIDE) {
                 data.slicerDataPoints = data.slicerDataPoints.filter(x => x.selectable);
             }
 
@@ -1007,8 +1018,8 @@ module powerbi.visuals.samples {
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
                         'border-radius': this.getBorderRadius(settings.slicerText.borderStyle),
                     });
-                    this.slicerBody.style('background-color', settings.slicerText.background);
 
+                    this.slicerBody.style('background-color', explore.util.hexToRGBString(settings.slicerText.background, (100 - settings.slicerText.transparency) / 100));
                     if (this.interactivityService && this.slicerBody) {
                         var slicerBody = this.slicerBody.attr('width', this.currentViewport.width);
                         var slicerItemContainers = slicerBody.selectAll(ChicletSlicer.ItemContainer.selector);
@@ -1128,7 +1139,7 @@ module powerbi.visuals.samples {
         }
 
         private getBorderRadius(borderType: string): string {
-            switch(borderType){
+            switch (borderType) {
                 case ChicletBorderStyle.ROUNDED:
                     return "10px";
                 case ChicletBorderStyle.SQUARE:
@@ -1342,7 +1353,7 @@ module powerbi.visuals.samples {
                 var settings: ChicletSlicerSettings = this.slicerSettings;
                 d3.event.preventDefault();
                 if (d3.event.altKey && settings.general.multiselect) {
-                    var selectedIndexes = jQuery.map(this.dataPoints, function(d, index) { if (d.selected) return index; });
+                    var selectedIndexes = jQuery.map(this.dataPoints, function (d, index) { if (d.selected) return index; });
                     var selIndex = selectedIndexes.length > 0 ? (selectedIndexes[selectedIndexes.length - 1]) : 0;
                     if (selIndex > index) {
                         var temp = index;
@@ -1396,13 +1407,45 @@ module powerbi.visuals.samples {
 
         public styleSlicerInputs(slicers: D3.Selection, hasSelection: boolean) {
             var settings = this.slicerSettings;
-            slicers.each(function(d: ChicletSlicerDataPoint) {
+            slicers.each(function (d: ChicletSlicerDataPoint) {
                 d3.select(this).style({
                     'background': d.selectable ? (d.selected ? settings.slicerText.selectedColor : settings.slicerText.unselectedColor)
                         : settings.slicerText.disabledColor
                 });
                 d3.select(this).classed('slicerItem-disabled', !d.selectable);
             });
+        }
+    }
+
+    module explore.util {
+        export function hexToRGBString(hex: string, transparency?: number): string {
+        
+            // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+            const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+            hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+                return r + r + g + g + b + b;
+            });
+
+            // Hex format which return the format r-g-b
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+
+            let rgb = result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+
+            // Wrong input
+            if (rgb === null) {
+                return '';
+            }
+
+            if (!transparency && transparency !== 0) {
+                return "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+            }
+            else {
+                return "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + transparency + ")";
+            }
         }
     }
 }
