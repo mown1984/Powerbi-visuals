@@ -4912,6 +4912,7 @@ declare module powerbi.visuals {
     module Legend {
         function isLeft(orientation: LegendPosition): boolean;
         function isTop(orientation: LegendPosition): boolean;
+        function positionChartArea(chartArea: D3.Selection, legend: ILegend): void;
     }
     class SVGLegend implements ILegend {
         private orientation;
