@@ -566,6 +566,8 @@ module powerbi.visuals {
                     });
                 this.svg
                     .style('top', DonutChart.InteractiveLegendContainerHeight);
+            } else {
+                Legend.positionChartArea(this.svg, this.legend);
             }
 
             this.previousRadius = this.radius;

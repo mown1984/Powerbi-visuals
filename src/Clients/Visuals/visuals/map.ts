@@ -1920,6 +1920,7 @@ module powerbi.visuals {
             }
 
             let behaviorOptions = this.dataPointRenderer.updateInternal(data, viewport, dataChanged, this.interactivityService);
+            Legend.positionChartArea(d3.select(this.root[0]), this.legend);
 
             if (this.interactivityService && behaviorOptions) {
                 this.interactivityService.bind(behaviorOptions.dataPoints, this.behavior, behaviorOptions);
