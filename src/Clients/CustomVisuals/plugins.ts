@@ -131,7 +131,13 @@ module powerbi.visuals.plugins {
         create: () => new samples.ForceGraph()
     };
 
-    export let mekkoChart: IVisualPlugin = {
+    export var chordChart: IVisualPlugin = {
+        name: "chordChart",
+        capabilities: samples.ChordChart.capabilities,
+        create: () => new samples.ChordChart()
+    };
+    
+     export let mekkoChart: IVisualPlugin = {
         name: 'mekkoChart',
         watermarkKey: 'mekko',
         capabilities: samples.MekkoChart.capabilities,
@@ -139,5 +145,4 @@ module powerbi.visuals.plugins {
         customizeQuery: ColumnChart.customizeQuery,
         getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
     };
-
 }

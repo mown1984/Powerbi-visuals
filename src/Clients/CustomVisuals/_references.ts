@@ -34,6 +34,7 @@
 /// <reference path="visuals/streamGraph/streamGraph.ts"/>
 /// <reference path="visuals/sunburst/sunburst.ts"/>
 /// <reference path="visuals/radarChart/radarChart.ts"/>
+/// <reference path="visuals/chordChart/chordChart.ts"/>
 /// <reference path="visuals/dotPlot/dotPlot.ts"/>
 /// <reference path="visuals/timeline/timeline.ts"/>
 /// <reference path="visuals/areaRangeChart/areaRangeChart.ts"/>
