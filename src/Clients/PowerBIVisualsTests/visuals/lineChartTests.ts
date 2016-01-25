@@ -5604,6 +5604,10 @@ module powerbitests {
         return labelDataPointsGroups[0].labelDataPoints;
     }
 
+    // function callCreateLabelDataPointsObj(v: powerbi.IVisual): powerbi.LabelDataPointsGroup[] {
+    //     return (<any>v).layers[0].createLabelDataPoints();
+    // }
+
     function createTooltipEvent(data: any, context?: HTMLElement): powerbi.visuals.TooltipEvent {
         return {
             data: data,

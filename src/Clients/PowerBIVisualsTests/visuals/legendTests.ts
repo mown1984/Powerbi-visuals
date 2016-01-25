@@ -301,18 +301,22 @@ module powerbitests {
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             let lenOfLegendOnDom = $('.legendItem title').length;
             for (let i = 0; i < lenOfLegendOnDom; i++) {
-                expect($('.legendItem title').eq(i).text()).toBe(legendData[i].tooltip);
+                expect($('.legendItem title').eq(i).text()).toBe(legendData[i].label);
             }
         });
 
         it('legend truncated items tooltip', () => {
             let legendData = getLotsOfLegendData();
-            legend.drawLegend({ dataPoints: legendData, title: 'states' }, viewport);
+            let originalOrientation = legend.getOrientation();
+            legend.changeOrientation(LegendPosition.Left);
+            legend.drawLegend({ dataPoints: legendData, title: 'states' }, { height: 500, width: 150 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             let lenOfLegendOnDom = $('.legendItem title').length;
             for (let i = 0; i < lenOfLegendOnDom; i++) {
-                expect($('.legendItem title').eq(i).text()).toBe(legendData[i].tooltip);
+                let legendItemText = $('.legendItem title').eq(i).text();
+                expect(legendItemText).toBe(legendData[i].label);
             }
+            legend.changeOrientation(originalOrientation);
         });
 
         xit('legend with long title on Right', () => {

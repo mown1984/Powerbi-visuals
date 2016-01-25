@@ -578,7 +578,6 @@ module powerbi.visuals {
                 }
 
                 this.data = Treemap.converter(dataView, this.colors, labelSettings, this.interactivityService, this.currentViewport, legendObjectProperties);
-
             }
             else {
                 let rootNode: TreemapNode = {
@@ -744,6 +743,7 @@ module powerbi.visuals {
                 width: viewport.width,
                 height: viewport.height
             });
+            Legend.positionChartArea(this.svg, this.legend);
 
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
         }

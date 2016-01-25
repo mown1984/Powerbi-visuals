@@ -866,10 +866,7 @@ module powerbi.visuals {
                 'width': plotAreaViewport.width,
                 'height': plotAreaViewport.height,
             });
-            this.chartAreaSvg.style({
-                'left': Legend.isLeft(legendOrientation) ? legendMargins.width + 'px' : null,
-                'top': Legend.isTop(legendOrientation) ? legendMargins.height + 'px' : null,
-            });
+            Legend.positionChartArea(this.chartAreaSvg, this.legend);
 
             let axesLayout = this.axes.negotiateAxes(
                 this.layers,

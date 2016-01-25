@@ -123,6 +123,15 @@ module powerbi.visuals {
                     return false;
             }
         }
+
+        export function positionChartArea(chartArea: D3.Selection, legend: ILegend): void {
+            let legendMargins = legend.getMargins();
+            let legendOrientation = legend.getOrientation();
+            chartArea.style({
+                'left': Legend.isLeft(legendOrientation) ? legendMargins.width + 'px' : null,
+                'top': Legend.isTop(legendOrientation) ? legendMargins.height + 'px' : null,
+            });
+        }
     }
 
     interface TitleLayout {
@@ -280,9 +289,16 @@ module powerbi.visuals {
         }
 
         public drawLegend(data: LegendData, viewport: IViewport): void {
-            this.setTooltipToLegendItems(data);
-            // TODO: Legend should use a view model to render rather than modifying the passed in data points.
-            this.drawLegendInternal(data, viewport, true /* perform auto width */);
+            // clone because we modify legend item label with ellipsis if it is truncated
+            let clonedData = Prototype.inherit(data);
+            let newDataPoints: LegendDataPoint[] = [];
+            for (let dp of data.dataPoints) {
+                newDataPoints.push(Prototype.inherit(dp));
+            }
+            clonedData.dataPoints = newDataPoints;
+
+            this.setTooltipToLegendItems(clonedData);
+            this.drawLegendInternal(clonedData, viewport, true /* perform auto width */);
         }
 
         public drawLegendInternal(data: LegendData, viewport: IViewport, autoWidth: boolean): void {
