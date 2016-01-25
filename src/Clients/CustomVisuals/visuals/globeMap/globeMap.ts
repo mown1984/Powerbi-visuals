@@ -28,7 +28,6 @@
 
 var THREE: any;
 var WebGLHeatmap;
-var lastGlobeMap: any;
 var GlobeMapCanvasLayers: JQuery[];
 
 module powerbi.visuals.samples {
@@ -73,7 +72,6 @@ module powerbi.visuals.samples {
         private hoveredBar: any;
         private averageBarVector: any;
         private zoomControl: any;
-        private zoomControlContainer: any;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [
