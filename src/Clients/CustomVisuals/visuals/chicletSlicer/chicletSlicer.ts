@@ -579,10 +579,10 @@ module powerbi.visuals.samples {
         private behavior: ChicletSlicerWebBehavior;
         private hostServices: IVisualHostServices;
         private waitingForData: boolean;
-        private textProperties: TextProperties = {
-            'fontFamily': 'Segoe UI, Tahoma, Verdana, Geneva, sans-serif',
-            'fontSize': '14px',
-        };
+
+        public static DefaultFontFamily: string = 'Segoe UI, Tahoma, Verdana, Geneva, sans-serif';
+        public static DefaultFontSizeInPt: number = 11;
+
         private static ItemContainer: ClassAndSelector = createClassAndSelector('slicerItemContainer');
         private static HeaderText: ClassAndSelector = createClassAndSelector('headerText');
         private static Container: ClassAndSelector = createClassAndSelector('chicletSlicer');
@@ -662,7 +662,6 @@ module powerbi.visuals.samples {
             if (!this.behavior) {
                 this.behavior = new ChicletSlicerWebBehavior();
             }
-
         }
 
         public static converter(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService): ChicletSlicerData {
@@ -886,8 +885,10 @@ module powerbi.visuals.samples {
                 data.slicerDataPoints = data.slicerDataPoints.filter(x => x.selectable);
             }
 
+            let textProperties = ChicletSlicer.getChicletTextProperties(this.settings.slicerText.textSize);
             var height: number = this.settings.slicerText.height > 0 ? this.settings.slicerText.height :
-                (data.slicerDataPoints.length === 0 || data.slicerDataPoints[0].imageURL !== '' ? 100 : 25);
+                (data.slicerDataPoints.length === 0 || data.slicerDataPoints[0].imageURL !== '' ? 100 :
+                    TextMeasurementService.estimateSvgTextHeight(textProperties) + ChicletSlicerTextMeasurementHelper.estimateSvgTextBaselineDelta(textProperties));
 
             this.tableView
                 .rowHeight(height)
@@ -978,9 +979,14 @@ module powerbi.visuals.samples {
                         .classed('slicerBody-horizontal', settings.general.orientation === Orientation.HORIZONTAL);
 
                     var slicerText = rowSelection.selectAll(ChicletSlicer.LabelText.selector);
+                    let textProperties = ChicletSlicer.getChicletTextProperties(settings.slicerText.textSize);
 
                     var formatString = data.formatString;
-                    slicerText.text((d: ChicletSlicerDataPoint) => valueFormatter.format(d.category, formatString));
+                    slicerText.text((d: ChicletSlicerDataPoint) => {
+                        let text = valueFormatter.format(d.category, formatString);
+                        textProperties.text = text;
+                        return TextMeasurementService.getTailoredTextOrDefault(textProperties, this.currentViewport.width / this.settings.general.columns);
+                    });
 
                     var slicerImg = rowSelection.selectAll('.slicer-img-wrapper');
                     slicerImg
@@ -1098,21 +1104,23 @@ module powerbi.visuals.samples {
                 });
         }
 
-        private getTextProperties(textSize: number): TextProperties {
-            this.textProperties.fontSize = PixelConverter.fromPoint(textSize);
-            return this.textProperties;
+        public static getChicletTextProperties(textSize?: number): TextProperties {
+            return <TextProperties>{
+                fontFamily: ChicletSlicer.DefaultFontFamily,
+                fontSize: PixelConverter.fromPoint(textSize || ChicletSlicer.DefaultFontSizeInPt),
+            };
         }
 
         private getHeaderHeight(): number {
             return TextMeasurementService.estimateSvgTextHeight(
-                this.getTextProperties(this.settings.header.textSize));
+                ChicletSlicer.getChicletTextProperties(this.settings.header.textSize));
         }
 
         private getRowHeight(): number {
             var textSettings = this.settings.slicerText;
             return textSettings.height !== 0
                 ? textSettings.height
-                : TextMeasurementService.estimateSvgTextHeight(this.getTextProperties(textSettings.textSize));
+                : TextMeasurementService.estimateSvgTextHeight(ChicletSlicer.getChicletTextProperties(textSettings.textSize));
         }
 
         private getBorderStyle(outlineElement: string): string {
@@ -1291,14 +1299,87 @@ module powerbi.visuals.samples {
                             selected: categoryIsSelected,
                             selectable: selectable
                         });
-
                     }
                     if (numberOfScopeIds != null && numberOfScopeIds > this.numberOfCategoriesSelectedInData) {
                         this.hasSelectionOverride = true;
                     }
-
                 }
             }
+        }
+    }
+
+    //TODO: This module should be removed once TextMeasruementService exports the "estimateSvgTextBaselineDelta" function.
+    export module ChicletSlicerTextMeasurementHelper {
+        interface CanvasContext {
+            font: string;
+            measureText(text: string): { width: number };
+        }
+
+        interface CanvasElement extends HTMLElement {
+            getContext(name: string);
+        }
+
+        let spanElement: JQuery;
+        let svgTextElement: D3.Selection;
+        let canvasCtx: CanvasContext;
+
+        export function estimateSvgTextBaselineDelta(textProperties: TextProperties): number {
+            let rect = estimateSvgTextRect(textProperties);
+            return rect.y + rect.height;
+        }
+
+        function ensureDOM(): void {
+            if (spanElement)
+                return;
+
+            spanElement = $('<span/>');
+            $('body').append(spanElement);
+            //The style hides the svg element from the canvas, preventing canvas from scrolling down to show svg black square.
+            svgTextElement = d3.select($('body').get(0))
+                .append('svg')
+                .style({
+                    'height': '0px',
+                    'width': '0px',
+                    'position': 'absolute'
+                })
+                .append('text');
+            canvasCtx = (<CanvasElement>$('<canvas/>').get(0)).getContext("2d");
+        }
+
+        function measureSvgTextRect(textProperties: TextProperties): SVGRect {
+            debug.assertValue(textProperties, 'textProperties');
+
+            ensureDOM();
+
+            svgTextElement.style(null);
+            svgTextElement
+                .text(textProperties.text)
+                .attr({
+                    'visibility': 'hidden',
+                    'font-family': textProperties.fontFamily,
+                    'font-size': textProperties.fontSize,
+                    'font-weight': textProperties.fontWeight,
+                    'font-style': textProperties.fontStyle,
+                    'white-space': textProperties.whiteSpace || 'nowrap'
+                });
+
+            // We're expecting the browser to give a synchronous measurement here
+            // We're using SVGTextElement because it works across all browsers 
+            return svgTextElement.node<SVGTextElement>().getBBox();
+        }
+
+        function estimateSvgTextRect(textProperties: TextProperties): SVGRect {
+            debug.assertValue(textProperties, 'textProperties');
+
+            let estimatedTextProperties: TextProperties = {
+                fontFamily: textProperties.fontFamily,
+                fontSize: textProperties.fontSize,
+                text: "M",
+            };
+
+            let rect = measureSvgTextRect(estimatedTextProperties);
+
+            return rect;
         }
     }
 
