@@ -438,8 +438,10 @@ module powerbi.visuals.samples {
         private static LabelPadding: number = 2.5;
 
         private static CategoryMinHeight: number = 25;
-        
-        private static DefaultFontSize: number = 16;
+
+        private static DefaultFontSize: number = 9;
+
+        private static DefaultLegendFontSize: number = 8;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
@@ -582,10 +584,10 @@ module powerbi.visuals.samples {
                 fontSize: TornadoChart.DefaultFontSize,
                 displayUnits: 0,
                 labelColor: dataLabelUtils.defaultInsideLabelColor,
-                },
+            },
             showCategories: true,
             showLegend: true,
-            legendFontSize: TornadoChart.DefaultFontSize * 3 / 4,
+            legendFontSize: TornadoChart.DefaultLegendFontSize,
             legendColor: LegendData.DefaultLegendLabelFillColor,
             categoriesFillColor: "#777"
         };
@@ -671,23 +673,25 @@ module powerbi.visuals.samples {
 
             this.colors = style.colorPalette.dataColors;
 
-            if (this.svg) {
-                this.root = this.svg;
-            } else {
-                this.root = d3.select(this.element.get(0))
+            let root: D3.Selection;
+            if (this.svg)
+                this.root = root = this.svg;
+            else
+                this.root = root = d3.select(this.element.get(0))
                     .append("svg");
-            }
 
-            this.root.classed(TornadoChart.ClassName, true);
+            root
+                .classed(TornadoChart.ClassName, true)
+                .style('position', 'absolute');
 
-            fontSize = this.root.style("font-size");
+            fontSize = root.style("font-size");
 
             this.textOptions.sizeUnit = fontSize.slice(fontSize.length - 2);
             this.textOptions.fontSize = Number(fontSize.slice(0, fontSize.length - 2));
-            this.textOptions.fontFamily = this.root.style("font-family");
+            this.textOptions.fontFamily = root.style("font-family");
 
-            this.scrolling = new TornadoChartScrolling(() => this.root, () => this.viewport, () => this.margin, true);
-            this.main = this.root.append("g");
+            this.scrolling = new TornadoChartScrolling(() => root, () => this.viewport, () => this.margin, true);
+            this.main = root.append("g");
 
             this.columns = this.main
                 .append("g")
@@ -1013,10 +1017,10 @@ module powerbi.visuals.samples {
             let tornadoChartDataView: TornadoChartDataView = this.tornadoChartDataView;
             if (!tornadoChartDataView ||
                 !tornadoChartDataView.settings) {
-				this.clearData();
+                this.clearData();
                 return;
             }
-            
+
             this.renderLegend();
 
             this.updateViewport();
@@ -1333,7 +1337,7 @@ module powerbi.visuals.samples {
                 labelSettings: VisualDataLabelsSettings = tornadoChartSettings.labelSettings,
                 fontSize: number = labelSettings.fontSize,
                 color: string = labelSettings.labelColor;
-                
+
             let maxOutsideLabelWidth = isColumnPositionLeft
                 ? dxColumn - this.leftLabelMargin
                 : this.widthRightSection - (dxColumn + columnWidth + this.leftLabelMargin + this.margin.right);
@@ -1586,6 +1590,7 @@ module powerbi.visuals.samples {
             }
 
             this.legend.drawLegend(legendData, this.viewport);
+            Legend.positionChartArea(this.root, this.legend);
         }
 
         private getTextData(text: string, measureWidth: boolean = false, measureHeight: boolean = false, overrideFontSize?: number): TextData {
