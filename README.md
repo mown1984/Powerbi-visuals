@@ -42,24 +42,6 @@ Install dev dependencies:
 npm install  # This command will install all necessary modules
 ```
 
-## How to Engage, Contribute and Provide Feedback
-
-There are many ways in which you can contribute to Power BI visuals:
-* You can contribute fixes and new visuals to this repo, read the [contribution guidelines](https://github.com/Microsoft/PowerBI-visuals/blob/master/CONTRIBUTING.md).
-* Submit bugs by opening a GitHub Issue [here](https://github.com/Microsoft/PowerBI-visuals/issues).
-* Contribute to discussions on [StackOverflow](http://stackoverflow.com/questions/tagged/powerbidev).
-* Follow the [Power BI Developer](http://blogs.msdn.com/powerbidev) blog for updates.
-* Follow Power BI on Twitter [@mspowerbi](http://twitter.com/mspowerbi).
-
-## Documentation
-
-*  [Getting started](https://github.com/Microsoft/PowerBI-visuals/wiki)
-*  [API specification](http://microsoft.github.io/PowerBI-visuals/interfaces/powerbi.ivisual.html)
-*  [Power BI visuals playground (see our visuals live in action)](http://microsoft.github.io/PowerBI-visuals/playground/index.html)
-*  [Power BI Homepage](https://powerbi.microsoft.com/)
-
-## Additional instructions
-
 ### Running PlayGround from Visual Studio
 
 Make sure you first follow the [Prerequisites](https://github.com/Microsoft/PowerBI-visuals#prerequisites) & [Onetime Setup](https://github.com/Microsoft/PowerBI-visuals#one-time-setup)
@@ -103,6 +85,23 @@ To run unit tests on non-Windows environment you will need to
 install [PhantomJS](http://phantomjs.org/) (PhantomJS is a headless WebKit scriptable with a JavaScript API. It has fast and native support for various web standards: DOM handling, CSS selector, JSON, Canvas, and SVG.).
 
 On Windows PhantomJS is installed automatically as part of `gulp test` command.
+
+## How to Engage, Contribute and Provide Feedback
+
+There are many ways in which you can contribute to Power BI visuals:
+* You can contribute fixes and new visuals to this repo, read the [contribution guidelines](https://github.com/Microsoft/PowerBI-visuals/blob/master/CONTRIBUTING.md).
+* Submit bugs by opening a GitHub Issue [here](https://github.com/Microsoft/PowerBI-visuals/issues).
+* Contribute to discussions on [StackOverflow](http://stackoverflow.com/questions/tagged/powerbidev).
+* Follow the [Power BI Developer](http://blogs.msdn.com/powerbidev) blog for updates.
+* Follow Power BI on Twitter [@mspowerbi](http://twitter.com/mspowerbi).
+
+## Documentation
+
+*  [Getting started](https://github.com/Microsoft/PowerBI-visuals/wiki)
+*  [API specification](http://microsoft.github.io/PowerBI-visuals/interfaces/powerbi.ivisual.html)
+*  [Power BI visuals playground (see our visuals live in action)](http://microsoft.github.io/PowerBI-visuals/playground/index.html)
+*  [Power BI Homepage](https://powerbi.microsoft.com/)
+
 
 ### Copyrights
 
