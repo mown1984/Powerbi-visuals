@@ -33,8 +33,10 @@ module powerbi.visuals.samples {
         values: {
             targetValue: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'targetValue' },
             minimumPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'minimumPercent' },
+            needsImprovementPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'needsImprovementPercent' },
             satisfactoryPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'satisfactoryPercent' },
             goodPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'goodPercent' },
+            veryGoodPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'veryGoodPercent' },
             maximumPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'maximumPercent' },
             targetValue2: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'targetValue2' },
         },
@@ -43,8 +45,10 @@ module powerbi.visuals.samples {
         },
         colors: {
             badColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'badColor' },
+            needsImprovementColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'needsImprovementColor' },
             satisfactoryColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'satisfactoryColor' },
             goodColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'goodColor' },
+            veryGoodColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'veryGoodColor' },
             bulletColor: <DataViewObjectPropertyIdentifier>{ objectName: 'colors', propertyName: 'bulletColor' },
         },
         axis: {
@@ -88,6 +92,14 @@ module powerbi.visuals.samples {
         key: string;
     }
 
+    export interface ScaledValues {
+        firstScale: number;
+        secondScale: number;
+        thirdScale: number;
+        fourthScale: number;
+        fifthScale: number;
+    }
+
     export interface BarValueRect extends BarRect {
     }
 
@@ -95,8 +107,10 @@ module powerbi.visuals.samples {
         values: {
             targetValue: number;
             minimumPercent: number;
+            needsImprovementPercent: number;
             satisfactoryPercent: number;
             goodPercent: number;
+            veryGoodPercent: number;
             maximumPercent: number;
             targetValue2: number;
         };
@@ -107,10 +121,13 @@ module powerbi.visuals.samples {
         };
         colors: {
             badColor: string;
+            needsImprovementColor: string;
             satisfactoryColor: string;
             goodColor: string;
+            veryGoodColor: string;
             bulletColor: string;
         };
+
         axis: {
             axis: boolean;
             axisColor: string;
@@ -134,8 +151,10 @@ module powerbi.visuals.samples {
         value: 'Value',
         targetValue: 'TargetValue',
         minValue: 'Minimum',
+        needsImprovementValue: 'NeedsImprovement',
         satisfactoryValue: 'Satisfactory',
         goodValue: 'Good',
+        veryGoodValue: 'VeryGood',
         maxValue: 'Maximum',
         targetValue2: 'TargetValue2',
     };
@@ -182,8 +201,7 @@ module powerbi.visuals.samples {
                     name: 'Category',
                     kind: VisualDataRoleKind.Grouping,
                     displayName: 'Category',
-                },
-                {
+                }, {
                     name: 'Value',
                     kind: VisualDataRoleKind.Measure,
                     displayName: 'Value',
@@ -196,6 +214,10 @@ module powerbi.visuals.samples {
                     kind: VisualDataRoleKind.Measure,
                     displayName: 'Minimum',
                 }, {
+                    name: 'NeedsImprovement',
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: 'Needs Improvement',
+                }, {
                     name: 'Satisfactory',
                     kind: VisualDataRoleKind.Measure,
                     displayName: 'Satisfactory',
@@ -203,6 +225,10 @@ module powerbi.visuals.samples {
                     name: 'Good',
                     kind: VisualDataRoleKind.Measure,
                     displayName: 'Good',
+                }, {
+                    name: 'VeryGood',
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: 'Very Good',
                 }, {
                     name: 'Maximum',
                     kind: VisualDataRoleKind.Measure,
@@ -237,6 +263,10 @@ module powerbi.visuals.samples {
                             displayName: 'Minimum %',
                             type: { numeric: true }
                         },
+                        needsImprovementPercent: {
+                            displayName: 'Needs Improvement %',
+                            type: { numeric: true },
+                        },
                         satisfactoryPercent: {
                             displayName: 'Satisfactory %',
                             type: { numeric: true }
@@ -244,6 +274,10 @@ module powerbi.visuals.samples {
                         goodPercent: {
                             displayName: 'Good %',
                             type: { numeric: true }
+                        },
+                        veryGoodPercent: {
+                            displayName: 'Very Good %',
+                            type: { numeric: true },
                         },
                         maximumPercent: {
                             displayName: 'Maximum %',
@@ -285,6 +319,10 @@ module powerbi.visuals.samples {
                             type: { fill: { solid: { color: true } } },
                             displayName: 'Bad Color'
                         },
+                        needsImprovementColor: {
+                            type: { fill: { solid: { color: true } } },
+                            displayName: 'Needs Improvement Color',
+                        },
                         satisfactoryColor: {
                             type: { fill: { solid: { color: true } } },
                             displayName: 'Satisfactory Color'
@@ -292,6 +330,10 @@ module powerbi.visuals.samples {
                         goodColor: {
                             type: { fill: { solid: { color: true } } },
                             displayName: 'Good Color'
+                        },
+                        veryGoodColor: {
+                            type: { fill: { solid: { color: true } } },
+                            displayName: 'Very Good Color',
                         },
                         bulletColor: {
                             type: { fill: { solid: { color: true } } },
@@ -324,8 +366,8 @@ module powerbi.visuals.samples {
             dataViewMappings: [{
                 conditions: [
                     {
-                        'Category': { max: 1 }, 'Value': { max: 1 }, 'TargetValue': { max: 1 }, 'Minimum': { max: 1 },
-                        'Satisfactory': { max: 1 }, 'Good': { max: 1 }, 'Maximum': { max: 1 }, 'TargetValue2': { max: 1 },
+                        'Category': { max: 1 }, 'Value': { max: 1 }, 'TargetValue': { max: 1 }, 'Minimum': { max: 1 }, 'NeedsImprovement': { max: 1 },
+                        'Satisfactory': { max: 1 }, 'Good': { max: 1 }, 'VeryGood': { max: 1 }, 'Maximum': { max: 1 }, 'TargetValue2': { max: 1 },
                     },
                 ],
                 categorical: {
@@ -339,8 +381,10 @@ module powerbi.visuals.samples {
                             { bind: { to: 'TargetValue' } },
                             { bind: { to: 'TargetValue2' } },
                             { bind: { to: 'Minimum' } },
+                            { bind: { to: 'NeedsImprovement' } },
                             { bind: { to: 'Satisfactory' } },
                             { bind: { to: 'Good' } },
+                            { bind: { to: 'VeryGood' } },
                             { bind: { to: 'Maximum' } },
                         ]
                     },
@@ -375,13 +419,15 @@ module powerbi.visuals.samples {
         }
 
         public static DefaultStyleProperties(): BulletChartSettings {
-            return <BulletChartSettings>{
+            return {
                 values: {
                     targetValue: 0,
                     targetValue2: 0,
                     minimumPercent: 0,
+                    needsImprovementPercent: 25,
                     satisfactoryPercent: 50,
                     goodPercent: 100,
+                    veryGoodPercent: 125,
                     maximumPercent: 200,
                 },
                 orientation: {
@@ -390,9 +436,11 @@ module powerbi.visuals.samples {
                     vertical: false
                 },
                 colors: {
-                    badColor: 'Red',
+                    badColor: 'Darkred',
+                    needsImprovementColor: 'Red',
                     satisfactoryColor: 'Yellow',
                     goodColor: 'Green',
+                    veryGoodColor: 'Darkgreen',
                     bulletColor: 'Black'
                 },
                 axis: {
@@ -458,15 +506,19 @@ module powerbi.visuals.samples {
                 settings.values.targetValue = DataViewObjects.getValue<number>(objects, bulletChartProps.values.targetValue, defaultSettings.values.targetValue);
                 settings.values.targetValue2 = DataViewObjects.getValue<number>(objects, bulletChartProps.values.targetValue2, defaultSettings.values.targetValue2);
                 settings.values.minimumPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.minimumPercent, defaultSettings.values.minimumPercent);
+                settings.values.needsImprovementPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.needsImprovementPercent, defaultSettings.values.needsImprovementPercent);
                 settings.values.satisfactoryPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.satisfactoryPercent, defaultSettings.values.satisfactoryPercent);
                 settings.values.goodPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.goodPercent, defaultSettings.values.goodPercent);
+                settings.values.veryGoodPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.veryGoodPercent, defaultSettings.values.veryGoodPercent);
                 settings.values.maximumPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.maximumPercent, defaultSettings.values.maximumPercent);
 
                 settings.orientation.orientation = DataViewObjects.getValue<string>(objects, bulletChartProps.orientation.orientation, defaultSettings.orientation.orientation);
 
                 settings.colors.badColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.badColor, defaultSettings.colors.badColor);
+                settings.colors.needsImprovementColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.needsImprovementColor, defaultSettings.colors.needsImprovementColor);
                 settings.colors.satisfactoryColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.satisfactoryColor, defaultSettings.colors.satisfactoryColor);
                 settings.colors.goodColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.goodColor, defaultSettings.colors.goodColor);
+                settings.colors.veryGoodColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.veryGoodColor, defaultSettings.colors.veryGoodColor);
                 settings.colors.bulletColor = DataViewObjects.getFillColor(objects, bulletChartProps.colors.bulletColor, defaultSettings.colors.bulletColor);
 
                 settings.axis.axis = DataViewObjects.getValue<boolean>(objects, bulletChartProps.axis.axis, defaultSettings.axis.axis);
@@ -501,8 +553,8 @@ module powerbi.visuals.samples {
 
             for (let idx = 0; idx < categoryValuesLen; idx++) {
                 let toolTipItems = [];
-                let category: string, value: number = undefined, targetValue: number = undefined, targetValue2: number = undefined, minimum: number = undefined, satisfactory: number = undefined,
-                    good: number = undefined, maximum: number = undefined;
+                let category: string, value: number, targetValue: number, targetValue2: number, minimum: number, satisfactory: number,
+                    good: number, maximum: number, needsImprovement: number, veryGood: number;
                 let highlight: boolean = false,
                     categoryIdentity: DataViewScopeIdentity;
 
@@ -544,48 +596,58 @@ module powerbi.visuals.samples {
                             targetValue2 = currentVal;
                         } else if (col.roles[bulletChartRoleNames.minValue])
                             minimum = currentVal;
+                        else if (col.roles[bulletChartRoleNames.needsImprovementValue])
+                            needsImprovement = currentVal;
                         else if (col.roles[bulletChartRoleNames.satisfactoryValue])
                             satisfactory = currentVal;
                         else if (col.roles[bulletChartRoleNames.goodValue])
                             good = currentVal;
+                        else if (col.roles[bulletChartRoleNames.veryGoodValue])
+                            veryGood = currentVal;
                         else if (col.roles[bulletChartRoleNames.maxValue])
                             maximum = currentVal;
                     }
                 }
 
-                if (minimum === undefined)
+                if (!minimum)
                     minimum = settings.values.minimumPercent * targetValue / 100;
-                if (satisfactory === undefined)
+                if (!needsImprovement)
+                    needsImprovement = settings.values.needsImprovementPercent * targetValue / 100;
+                if (!satisfactory)
                     satisfactory = settings.values.satisfactoryPercent * targetValue / 100;
-                if (good === undefined)
+                if (!good)
                     good = settings.values.goodPercent * targetValue / 100;
-                if (maximum === undefined)
+                if (!veryGood)
+                    veryGood = settings.values.veryGoodPercent * targetValue / 100;
+                if (!maximum)
                     maximum = settings.values.maximumPercent * targetValue / 100;
 
                 let viewportLength = (settings.orientation.vertical ? (options.viewport.height - BulletChart.MaxLabelHeight) : (options.viewport.width - BulletChart.MaxLabelWidth)) -
                     BulletChart.StartMarginHorizontal - BulletChart.ScrollBarSize;
-                let sortedRanges = [minimum, satisfactory, good, maximum].sort(d3.descending);
+                let sortedRanges = [minimum, needsImprovement, satisfactory, good, veryGood, maximum].sort(d3.descending);
                 let scale = (d3.scale.linear()
                     .clamp(true)
                     .domain([minimum, Math.max(sortedRanges[0], targetValue, value)])
                     .range(settings.orientation.vertical ? [viewportLength, 0] : [0, viewportLength]));
 
-                let scaleMin = scale(minimum);
-                let scaleMax = scale(maximum);
-                let scaleValue = scale(value);
-                let scaleLeft, scaleRight;
-                if (good >= satisfactory) {
-                    scaleLeft = scale(satisfactory);
-                    scaleRight = scale(good);
-                } else {
-                    scaleLeft = scale(good);
-                    scaleRight = scale(satisfactory);
-                }
+                // Scalles without
+                let firstScale = scale(minimum);
+                let secondScale = scale(needsImprovement);
+                let thirdScale = scale(satisfactory);
+                let fourthScale = scale(good);
+                let fifthScale = scale(veryGood);
+                let lastScale = scale(maximum);
+                let valueScale = scale(value);
 
-                BulletChart.addItemToBarArray(bulletModel.barRects, idx, scaleMin, scaleLeft, (good >= satisfactory) ? settings.colors.badColor : settings.colors.goodColor, toolTipItems, categoryIdentity);
-                BulletChart.addItemToBarArray(bulletModel.barRects, idx, scaleLeft, scaleRight, settings.colors.satisfactoryColor, toolTipItems, categoryIdentity);
-                BulletChart.addItemToBarArray(bulletModel.barRects, idx, scaleRight, scaleMax, (good >= satisfactory) ? settings.colors.goodColor : settings.colors.badColor, toolTipItems, categoryIdentity);
-                BulletChart.addItemToBarArray(bulletModel.valueRects, idx, scaleMin, scaleValue, settings.colors.bulletColor, toolTipItems, categoryIdentity);
+                let firstColor = settings.colors.badColor, secondColor = settings.colors.needsImprovementColor,
+                    thirdColor = settings.colors.satisfactoryColor, fourthColor = settings.colors.goodColor, lastColor = settings.colors.veryGoodColor;
+
+                BulletChart.addItemToBarArray(bulletModel.barRects, idx, firstScale, secondScale, firstColor, toolTipItems, categoryIdentity);
+                BulletChart.addItemToBarArray(bulletModel.barRects, idx, secondScale, thirdScale, secondColor, toolTipItems, categoryIdentity);
+                BulletChart.addItemToBarArray(bulletModel.barRects, idx, thirdScale, fourthScale, thirdColor, toolTipItems, categoryIdentity);
+                BulletChart.addItemToBarArray(bulletModel.barRects, idx, fourthScale, fifthScale, fourthColor, toolTipItems, categoryIdentity);
+                BulletChart.addItemToBarArray(bulletModel.barRects, idx, fifthScale, lastScale, lastColor, toolTipItems, categoryIdentity);
+                BulletChart.addItemToBarArray(bulletModel.valueRects, idx, firstScale, valueScale, settings.colors.bulletColor, toolTipItems, categoryIdentity);
 
                 // markerValue
                 bulletModel.targetValues.push({
@@ -601,7 +663,7 @@ module powerbi.visuals.samples {
                     xAxis = d3.svg.axis();
                     xAxis.orient(settings.orientation.vertical ? "left" : "bottom");
                     let minTickSize = Math.round(Math.max(3, viewportLength / 100));
-                    let axisValues = [value, targetValue, good, satisfactory, maximum, minimum]
+                    let axisValues = [value, targetValue, good, satisfactory, maximum, minimum, needsImprovement, veryGood]
                         .filter(x => !isNaN(x));
                     xAxis.tickFormat(valueFormatter.create({
                         format: bulletModel.bulletValueFormatString,
@@ -639,7 +701,7 @@ module powerbi.visuals.samples {
                 key: SelectionId.createWithIdAndMeasure(categoryIdentity, start + " " + end).getKey(),
             });
         }
-
+ 
         /* One time setup*/
         public init(options: VisualInitOptions): void {
             let body = d3.select(options.element.get(0));
@@ -1059,8 +1121,10 @@ module powerbi.visuals.samples {
                     targetValue: this.model.bulletChartSettings.values.targetValue,
                     targetValue2: this.model.bulletChartSettings.values.targetValue2,
                     minimumPercent: this.model.bulletChartSettings.values.minimumPercent,
+                    needsImprovementPercent: this.model.bulletChartSettings.values.needsImprovementPercent,
                     satisfactoryPercent: this.model.bulletChartSettings.values.satisfactoryPercent,
                     goodPercent: this.model.bulletChartSettings.values.goodPercent,
+                    veryGoodPercent: this.model.bulletChartSettings.values.veryGoodPercent,
                     maximumPercent: this.model.bulletChartSettings.values.maximumPercent,
                 }
             }];
@@ -1095,8 +1159,10 @@ module powerbi.visuals.samples {
                 objectName: 'colors',
                 properties: {
                     badColor: this.model.bulletChartSettings.colors.badColor,
+                    needsImprovementColor: this.model.bulletChartSettings.colors.needsImprovementColor,
                     satisfactoryColor: this.model.bulletChartSettings.colors.satisfactoryColor,
                     goodColor: this.model.bulletChartSettings.colors.goodColor,
+                    veryGoodColor: this.model.bulletChartSettings.colors.veryGoodColor,
                     bulletColor: this.model.bulletChartSettings.colors.bulletColor,
                 }
             }];
