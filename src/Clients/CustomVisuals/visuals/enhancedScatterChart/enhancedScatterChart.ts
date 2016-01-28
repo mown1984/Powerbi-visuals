@@ -146,7 +146,6 @@ module powerbi.visuals.samples {
         private colors: IDataColorPalette;
         private options: VisualInitOptions;
         private interactivity: InteractivityOptions;
-        private isInteractiveChart: boolean;
         private interactivityService: IInteractivityService;
         private categoryAxisProperties: DataViewObject;
         private valueAxisProperties: DataViewObject;
@@ -658,7 +657,6 @@ module powerbi.visuals.samples {
             this.hostServices = options.host;
             this.colors = this.style.colorPalette.dataColors;
             this.interactivity = options.interactivity;
-            this.isInteractiveChart = options.interactivity && options.interactivity.isInteractiveLegend;
             this.margin = {
                 top: 1,
                 right: 1,
@@ -701,7 +699,7 @@ module powerbi.visuals.samples {
             this.y1AxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnY);
             this.interactivityService = createInteractivityService(this.hostServices);
 
-            this.legend = createLegend(element, this.isInteractiveChart, this.interactivityService, true);
+            this.legend = createLegend(element, this.interactivity && this.interactivity.isInteractiveLegend, this.interactivityService, true);
 
             this.mainGraphicsG = this.axisGraphicsContextScrollable.append('g')
                 .classed(EnhancedScatterChart.MainGraphicsContextClassName, true);
@@ -1410,8 +1408,9 @@ module powerbi.visuals.samples {
             if ((legendData.dataPoints.length === 1 && !legendData.grouped) || this.hideLegends()) {
                 legendData.dataPoints = [];
             }
-
-            legend.drawLegend(legendData, this.viewport);
+            
+            let viewport = this.viewport;
+            legend.drawLegend(legendData, { height: viewport.height, width: viewport.width });
             Legend.positionChartArea(this.svg, legend);
         }
         private hideLegends(): boolean {
