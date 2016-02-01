@@ -271,6 +271,11 @@ module powerbi.visuals.samples {
                     identity: SelectionId.createWithMeasure(queryName)
                 });
                 for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
+
+                    // Check if the point has empty data
+                    if (values[i].values[k] == null)
+                        continue;
+
                     let id = SelectionIdBuilder
                         .builder()
                         .withSeries(dataView.categorical.values, dataView.categorical.values[i])
@@ -284,7 +289,7 @@ module powerbi.visuals.samples {
                         color: color,
                         identity: id,
                         tooltipInfo: tooltipInfo
-                    });                    
+                    });
                 }
             }            
 
@@ -518,9 +523,9 @@ module powerbi.visuals.samples {
                 })]).range([0, radius]);
 
             let calculatePoints = (points) => {
-                return points.map((value, i) => {
-                    let x1 = -1 * y(value.y) * Math.sin(i * angle);
-                    let y1 = -1 * y(value.y) * Math.cos(i * angle);
+                return points.map((value) => {
+                    let x1 = -1 * y(value.y) * Math.sin(value.x * angle);
+                    let y1 = -1 * y(value.y) * Math.cos(value.x * angle);
                     return `${x1},${y1}`;
                 }).join(' ');
             };
@@ -569,8 +574,8 @@ module powerbi.visuals.samples {
                 .append('svg:circle')
                 .classed(RadarChart.ChartDot.class, true);
             dots.attr('r', dotRadius)
-                .attr('cx', (value, i) => -1 * y(value.y) * Math.sin(i * angle))
-                .attr('cy', (value, i) => -1 * y(value.y) * Math.cos(i * angle))
+                .attr({'cx': (value) => -1 * y(value.y) * Math.sin(value.x * angle),
+                       'cy': (value) => -1 * y(value.y) * Math.cos(value.x * angle)})
                 .style('fill', d => d.color);
             dots.exit().remove();
 
@@ -600,7 +605,8 @@ module powerbi.visuals.samples {
                 this.legend.changeOrientation(LegendPosition.Top);
             }
 
-            this.legend.drawLegend(legendData, this.viewport);
+            let viewport = this.viewport;
+            this.legend.drawLegend(legendData, { height: viewport.height, width: viewport.width });
             Legend.positionChartArea(this.svg, this.legend);
         }
 
