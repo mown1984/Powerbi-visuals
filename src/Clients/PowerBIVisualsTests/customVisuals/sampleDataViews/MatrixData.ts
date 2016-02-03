@@ -194,9 +194,9 @@ module powerbitests.customVisuals.sampleDataViews {
                 rows: {
                     root: this.convertMatrixDataToRoot(data),
                     levels: [
-                        { sources: [dataViewMetadata[0]] },
-                        { sources: [dataViewMetadata[1]] },
-                        { sources: [dataViewMetadata[2]] }
+                        { sources: [dataViewMetadata.columns[0]] },
+                        { sources: [dataViewMetadata.columns[1]] },
+                        { sources: [dataViewMetadata.columns[2]] }
                     ]
                 },
                 columns: {
@@ -209,25 +209,25 @@ module powerbitests.customVisuals.sampleDataViews {
                     },
                     levels: [{
                         sources: [
-                            dataViewMetadata[0],
-                            dataViewMetadata[1],
-                            dataViewMetadata[2]
+                            dataViewMetadata.columns[0],
+                            dataViewMetadata.columns[1],
+                            dataViewMetadata.columns[2]
                         ]
                     }]
                 },
                 valueSources: [
-                    dataViewMetadata[0],
-                    dataViewMetadata[1],
-                    dataViewMetadata[2]
+                    dataViewMetadata.columns[0],
+                    dataViewMetadata.columns[1],
+                    dataViewMetadata.columns[2]
                 ]
             };
 
             return {
                 metadata: {
                     columns: [
-                        dataViewMetadata[3],
-                        dataViewMetadata[4],
-                        dataViewMetadata[5]
+                        dataViewMetadata.columns[3],
+                        dataViewMetadata.columns[4],
+                        dataViewMetadata.columns[5]
                     ], segment: {}
                 },
                 matrix: matrixThreeMeasuresThreeRowGroups

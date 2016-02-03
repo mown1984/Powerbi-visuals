@@ -39,14 +39,14 @@ module powerbitests.customVisuals.sampleDataViews {
     export class ProductSalesByDateData {
 
         private static seriesCount = 4;
-        private static valueCount = 50;
+        private static valuesCount = 50;
 
         private sampleData: number[][];
         private dates: Date[];
         
         constructor() {
-            this.sampleData = this.generateData(ProductSalesByDateData.seriesCount, ProductSalesByDateData.valueCount);
-            this.dates = this.generateDates(ProductSalesByDateData.valueCount);
+            this.sampleData = this.generateData(ProductSalesByDateData.seriesCount, ProductSalesByDateData.valuesCount);
+            this.dates = this.generateDates(ProductSalesByDateData.valuesCount);
         }
 
         public getDataView(): DataView {
@@ -82,9 +82,9 @@ module powerbitests.customVisuals.sampleDataViews {
             };
         };
 
-        private generateColumns(dataViewMetadata: DataViewMetadata, n: number): DataViewValueColumn[] {
-            var columns: DataViewValueColumn[] = [];
-            for(let i=0;i<n;i++){
+        private generateColumns(dataViewMetadata: DataViewMetadata, count: number): DataViewValueColumn[] {
+            let columns: DataViewValueColumn[] = [];
+            for(let i=0; i<count; i++){
                 columns.push({
                     source: dataViewMetadata.columns[i+1],
                     // Sales Amount for 2014
@@ -116,35 +116,32 @@ module powerbitests.customVisuals.sampleDataViews {
             return columns;
         }
 
-        private generateData(n: number, m: number): number[][] {
+        private generateData(seriesCount: number, valuesCount: number): number[][] {
             let data: number[][] = [];
-            for(let i=0;i<n;i++) {
-                data.push(this.generateSeries(m));
+            for(let i=0; i<seriesCount; i++) {
+                data.push(this.generateSeries(valuesCount));
             }
 
             return data;
         }
 
-        private generateSeries(n: number): number[] {
-            var generateValue = (a) => {
-                var x = 1 / (.1 + Math.random()),
+        private generateSeries(count: number): number[] {
+            let values = Array.apply(null, Array(count)).map(x => 0);
+            for (let i = 0; i < 5; ++i) {
+                let x = 1 / (.1 + Math.random()),
                     y = 2 * Math.random() - .5,
                     z = 10 / (.1 + Math.random());
-                for (var i = 0; i < n; i++) {
-                    var w = (i / n - y) * z;
-                    a[i] += x * Math.exp(-w * w);
+                for (let i = 0; i < count; i++) {
+                    let w = (i / count - y) * z;
+                    values[i] += x * Math.exp(-w * w);
                 }
-            };
-
-            var a = [], i;
-            for (i = 0; i < n; ++i) a[i] = 0;
-            for (i = 0; i < 5; ++i) generateValue(a);
-            return a.map((d, i) => Math.max(0, d) * 10000);
+            }
+            return values.map(x => Math.max(0, x) * 10000);
         }
 
-        private generateDates(n: number): Date[] {
+        private generateDates(count: number): Date[] {
             let dates: Date[] = [];
-            for(let i=0; i<n; i++) {
+            for(let i=0; i<count; i++) {
                 let randDate = this.randomDate(new Date(2014,0,1), new Date(2015,5,10));
                 if(_.contains(dates,randDate)) {
                     i--;
