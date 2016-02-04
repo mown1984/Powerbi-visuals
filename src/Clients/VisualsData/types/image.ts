@@ -34,14 +34,6 @@ module powerbi {
 
     export type ImageDefinition = ImageDefinitionGeneric<SQExpr>;
 
-    export type ImageValue = ImageDefinitionGeneric<string>;
-
-    export interface ImageDefinitionGeneric<T> {
-        name: T;
-        url: T;
-        scaling?: T;
-    }
-
     export module ImageDefinition {
         export const urlType: ValueTypeDescriptor = { misc: { imageUrl: true } };
     }

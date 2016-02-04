@@ -318,7 +318,7 @@ module powerbi.visuals {
             }
 
             let metaDataColumn = this.data ? this.data.categoryMetadata : undefined;
-            let categoryDataType: ValueType = AxisHelper.getCategoryValueType(metaDataColumn);
+            let categoryDataType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(metaDataColumn);
             let isScalar = this.data ? this.data.scalarCategoryAxis : false;
             let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain);
             return CartesianChart.getLayout(

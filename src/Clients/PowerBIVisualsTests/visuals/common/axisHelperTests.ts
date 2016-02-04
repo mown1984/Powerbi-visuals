@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
+
 
 module powerbitests {
     import AxisHelper = powerbi.visuals.AxisHelper;
@@ -1047,6 +1047,7 @@ module powerbitests {
             this.xAxisProperties.willLabelsFit = !rotateX;
             this.xAxisProperties.willLabelsWordBreak = wordBreak;
             let dataDomain = [0, 10];
+            this.xAxisProperties.dataDomain = dataDomain;
             this.xAxisProperties.scale = isScalar ? AxisHelper.createLinearScale(this.viewPort.width, dataDomain) : AxisHelper.createOrdinalScale(this.viewPort.width, dataDomain);
 
             if (categoryThickness != null) {

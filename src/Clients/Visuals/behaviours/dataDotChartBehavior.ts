@@ -31,6 +31,7 @@ module powerbi.visuals {
         dots: D3.Selection;
         dotLabels: D3.Selection;
         isPartOfCombo?: boolean;
+        datapoints?: DataDotChartDataPoint[];
     }
 
     export class DataDotChartWebBehavior implements IInteractiveBehavior {

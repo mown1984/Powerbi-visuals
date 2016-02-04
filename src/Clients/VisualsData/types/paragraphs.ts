@@ -47,23 +47,4 @@ module powerbi {
         value: string | TExpr;
     }
 
-    export type Paragraphs = Paragraph[];
-    export interface Paragraph {
-        horizontalTextAlignment?: string;
-        textRuns: TextRun[];
-    }
-
-    export interface TextRunStyle {
-        fontFamily?: string;
-        fontSize?: string;
-        fontStyle?: string;
-        fontWeight?: string;
-        textDecoration?: string;
-    }
-
-    export interface TextRun {
-        textStyle?: TextRunStyle;
-        url?: string;
-        value: string;
-    }
 }

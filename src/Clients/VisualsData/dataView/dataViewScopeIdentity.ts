@@ -27,15 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi {
-    
-    /** Encapsulates the identity of a data scope in a DataView. */
-    export interface DataViewScopeIdentity {
-        /** Predicate expression that identifies the scope. */
-        expr: data.SQExpr;
-
-        /** Key string that identifies the DataViewScopeIdentity to a string, which can be used for equality comparison. */
-        key: string;
-    }
 
     export module DataViewScopeIdentity {
         /** Compares the two DataViewScopeIdentity values for equality. */
@@ -53,7 +44,7 @@ module powerbi {
             debug.assertValue(x, 'x');
             debug.assertValue(y, 'y');
 
-            return data.SQExpr.equals(x.expr, y.expr, ignoreCase);
+            return data.SQExpr.equals(<data.SQExpr>x.expr, <data.SQExpr>y.expr, ignoreCase);
         }
 
         export function filterFromIdentity(identities: DataViewScopeIdentity[], isNot?: boolean): data.SemanticFilter {
@@ -62,7 +53,7 @@ module powerbi {
             
             let exprs: data.SQExpr[] = [];
             for (let identity of identities) {
-                exprs.push(identity.expr);
+                exprs.push(<data.SQExpr>identity.expr);
             }
 
             return filterFromExprs(exprs, isNot);

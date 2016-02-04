@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -1121,7 +1121,7 @@ module powerbitests {
 
                 let actualData = DonutChart.converter(dataView, donutColors);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -1183,7 +1183,7 @@ module powerbitests {
                 
                 let actualData = DonutChart.converter(dataView, donutColors);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -1245,7 +1245,7 @@ module powerbitests {
 
                 let actualData = DonutChart.converter(dataView, donutColors);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -1311,7 +1311,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -1412,7 +1412,7 @@ module powerbitests {
 
                 let actualData = DonutChart.converter(dataView, donutColors);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     hexGreen,
@@ -1600,7 +1600,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -2151,7 +2151,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -2365,7 +2365,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -2470,7 +2470,7 @@ module powerbitests {
                 let viewPort = { height: 10, width: 10 };
                 let actualData = DonutChart.converter(dataView, donutColors, null, viewPort, false);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
@@ -2523,7 +2523,7 @@ module powerbitests {
                 let viewPort = { height: 10, width: 10 };
                 let actualData = DonutChart.converter(dataView, donutColors, null, viewPort, true);
                 let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
-                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.categories[0].identityFields);
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,

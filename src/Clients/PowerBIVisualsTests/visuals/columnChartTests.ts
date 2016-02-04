@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests {
     import DataViewSelfCrossJoin = powerbi.data.DataViewSelfCrossJoin;
@@ -9617,32 +9617,7 @@ module powerbitests {
         let dataChangedOptions;
         let lastIndex;
 
-        let dataViewMetadataTwoColumn: powerbi.DataViewMetadata = {
-            columns: [
-                {
-                    displayName: 'col1',
-                    queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                },
-                {
-                    displayName: 'col2',
-                    queryName: 'col2',
-                    isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                },
-                {
-                    displayName: 'col3',
-                    queryName: 'col3',
-                    isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                },
-                {
-                    displayName: 'col4',
-                    queryName: 'col4',
-                    isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                }],
-        };
+        let dataViewMetadataTwoColumn: powerbi.DataViewMetadata;
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '900');
@@ -9658,11 +9633,37 @@ module powerbitests {
                 interactivity: { isInteractiveLegend: false },
                 animation: { transitionImmediate: true },
             });
+
+            dataViewMetadataTwoColumn = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    },
+                    {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    },
+                    {
+                        displayName: 'col3',
+                        queryName: 'col3',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    },
+                    {
+                        displayName: 'col4',
+                        queryName: 'col4',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    }],
+            };
         });
 
         function setAxisType(xType: any) {
-            (<any>dataViewMetadataTwoColumn.objects['categoryAxis']).axisType = xType;
-            dataChangedOptions.dataViews.metadata = dataViewMetadataTwoColumn;
+            dataViewMetadataTwoColumn.objects['categoryAxis']['axisType'] = xType;
         };
 
         it('Display Unit customization check', () => {
@@ -10077,6 +10078,77 @@ module powerbitests {
             expect(helpers.findElementTitle(axisLabels.eq(1))).toBe('1/1/2012');
             expect(helpers.findElementTitle(axisLabels.eq(2))).toBe('1/1/2013');
             expect(helpers.findElementTitle(axisLabels.eq(3))).toBe('1/1/2014');
+        });
+
+        it('Tooltips are correct after axis change', () => {
+            dataViewMetadataTwoColumn.objects = {
+                categoryAxis: {
+                    show: true,
+                    axisType: AxisType.categorical,
+                }
+            };
+
+            let categoryValues = [
+                500,
+                2000,
+                5000,
+                10000,
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: categoryValues,
+                            identity: _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v)),
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100000, 200000, 150000, 50000]
+                        }])
+                    }
+                }]
+            });
+            bars = $('.column');
+            labels = $('.x.axis').children('.tick').find('text');
+
+            expect(helpers.findElementText(labels.first())).toBe('500.00');
+            expect(helpers.findElementTitle(labels.first())).toBe('500.00');
+
+            expect(helpers.findElementText(labels.last())).toBe('10,000.00');
+            expect(helpers.findElementTitle(labels.last())).toBe('10,000.00');
+
+            // -- Animate to different tick labels ---
+            categoryValues = [
+                1000,
+                5000,
+                10000,
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: categoryValues,
+                            identity: _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v)),
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100000, 200000, 150000, 50000]
+                        }])
+                    }
+                }]
+            });
+            bars = $('.column');
+            labels = $('.x.axis').children('.tick').find('text');
+
+            expect(helpers.findElementText(labels.first())).toBe('1,000.00');
+            expect(helpers.findElementTitle(labels.first())).toBe('1,000.00');
+
+            expect(helpers.findElementText(labels.last())).toBe('10,000.00');
+            expect(helpers.findElementTitle(labels.last())).toBe('10,000.00');
         });
     });
 

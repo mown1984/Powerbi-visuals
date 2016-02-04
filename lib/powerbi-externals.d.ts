@@ -3945,8 +3945,7 @@ declare module "jquery" {
 }
 declare var jQuery: JQueryStatic;
 declare var $: JQueryStatic;
-
-// Type definitions for d3JS
+;// Type definitions for d3JS
 // Project: http://d3js.org/
 // Definitions by: Boris Yankov <https://github.com/borisyankov>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped

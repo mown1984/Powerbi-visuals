@@ -29,19 +29,6 @@
 module powerbi {
     import SemanticFilter = powerbi.data.SemanticFilter;
 
-    /** Describes a structural type in the client type system. Leaf properties should use ValueType. */
-    export interface StructuralTypeDescriptor {
-        fill?: FillTypeDescriptor;
-        fillRule?: FillRuleTypeDescriptor;
-        filter?: FilterTypeDescriptor;
-        expression?: DefaultValueTypeDescriptor;
-        image?: ImageTypeDescriptor;
-        paragraphs?: ParagraphsTypeDescriptor;
-
-        //border?: BorderTypeDescriptor;
-        //etc.
-    }
-
     export type StructuralObjectDefinition =
         FillDefinition |
         FillRuleDefinition |
@@ -49,15 +36,6 @@ module powerbi {
         DefaultValueDefinition |
         ImageDefinition |
         ParagraphsDefinition;
-
-    /** Defines instances of structural types. */
-    export type StructuralObjectValue =
-        Fill |
-        FillRule |
-        SemanticFilter |
-        DefaultValueDefinition |
-        ImageValue |
-        Paragraphs;
 
     export module StructuralTypeDescriptor {
         export function isValid(type: StructuralTypeDescriptor): boolean {

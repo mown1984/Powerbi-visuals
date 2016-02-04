@@ -93,6 +93,10 @@ module powerbi.visuals {
          * (optional) Whether domain contains zero value and log scale is enabled.
          */
         hasDisallowedZeroInDomain?: boolean;
+        /** (optional) The original data domain. Linear scales use .nice() to round to cleaner edge values. Keep the original data domain for later. */
+        dataDomain?: number[];
+        /** (optional) The D3 graphics context for this axis */
+        graphicsContext?: D3.Selection;
     }
 
     export interface IMargin {
@@ -493,7 +497,7 @@ module powerbi.visuals {
                                     leftOverflow = (width / 2) - ordinalLabelOffset - xLabelOuterPadding;
                                 leftOverflow = Math.max(leftOverflow, 0);
                             }
-                            else if (xDomain && xDomain.length > 1) {
+                            else if (xDomain.length > 1) {
                                 // Scalar - do some math
                                 let xPos = xScale(xDomain[0]);
                                 // xPos already incorporates xLabelOuterPadding, don't subtract it twice
@@ -507,7 +511,7 @@ module powerbi.visuals {
                                 rightOverflow = (width / 2) - ordinalLabelOffset - xLabelOuterPadding;
                                 rightOverflow = Math.max(rightOverflow, 0);
                             }
-                            else if (xDomain && xDomain.length > 1) {
+                            else if (xDomain.length > 1) {
                                 // Scalar - do some math
                                 let xPos = xScale(xDomain[1]);
                                 // xPos already incorporates xLabelOuterPadding, don't subtract it twice
@@ -544,7 +548,7 @@ module powerbi.visuals {
             };
         }
 
-        export function columnDataTypeHasValue(dataType: ValueType) {
+        export function columnDataTypeHasValue(dataType: ValueTypeDescriptor) {
             return dataType && (dataType.bool || dataType.numeric || dataType.text || dataType.dateTime);
         }
 
@@ -552,7 +556,7 @@ module powerbi.visuals {
             return ValueType.fromDescriptor({ text: true });
         }
 
-        export function isOrdinal(type: ValueType): boolean {
+        export function isOrdinal(type: ValueTypeDescriptor): boolean {
             return !!(type && (type.text || type.bool));
         }
 
@@ -560,7 +564,7 @@ module powerbi.visuals {
             return typeof scale.invert === 'undefined';
         }
 
-        export function isDateTime(type: ValueType): boolean {
+        export function isDateTime(type: ValueTypeDescriptor): boolean {
             return !!(type && type.dateTime);
         }
 
@@ -621,7 +625,7 @@ module powerbi.visuals {
             return Math.max(value, 1);
         }
 
-        export function createDomain(data: CartesianSeries[], axisType: ValueType, isScalar: boolean, forcedScalarDomain: any[]): number[]{
+        export function createDomain(data: CartesianSeries[], axisType: ValueTypeDescriptor, isScalar: boolean, forcedScalarDomain: any[]): number[]{
             if (isScalar && !isOrdinal(axisType)) {
                 let userMin, userMax;
                 if (forcedScalarDomain && forcedScalarDomain.length === 2) {
@@ -647,7 +651,7 @@ module powerbi.visuals {
          */
         export function getCategoryValueType(metadataColumn: DataViewMetadataColumn, isScalar?: boolean): ValueType {
             if (metadataColumn && columnDataTypeHasValue(metadataColumn.type))
-                return metadataColumn.type;
+                return <ValueType>metadataColumn.type;
 
             if (isScalar) {
                 return ValueType.fromDescriptor({ numeric: true });
@@ -761,6 +765,7 @@ module powerbi.visuals {
                 outerPadding: outerPadding,
                 usingDefaultDomain: scaleResult.usingDefaultDomain,
                 isLogScaleAllowed: isLogScaleAllowed,
+                dataDomain: dataDomain,
             };
         }
 
@@ -953,7 +958,7 @@ module powerbi.visuals {
             return 0;
         }
 
-        function createScalarDomain(data: CartesianSeries[], userMin: DataViewPropertyValue, userMax: DataViewPropertyValue, axisType: ValueType): number[] {
+        function createScalarDomain(data: CartesianSeries[], userMin: DataViewPropertyValue, userMax: DataViewPropertyValue, axisType: ValueTypeDescriptor): number[] {
             debug.assertValue(data, 'data');
             if (data.length === 0) {
                 return null;

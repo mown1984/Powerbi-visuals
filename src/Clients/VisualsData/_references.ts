@@ -28,17 +28,16 @@
 /// <reference path="typedefs/typedefs.obj.ts"/>
 
 /// <reference path="semanticQuery\sqExprVisitor.ts"/>
-/// <reference path="types\defaultValue.ts"/>
 /// <reference path="types\enumType.ts"/>
 /// <reference path="types\fill.ts"/>
 /// <reference path="types\fillRule.ts"/>
-/// <reference path="types\filter.ts"/>
 /// <reference path="types\image.ts"/>
 /// <reference path="types\paragraphs.ts"/>
 /// <reference path="types\structuralType.ts"/>
 /// <reference path="types\valueType.ts"/>
 /// <reference path="contracts\conceptualSchema.ts"/>
 /// <reference path="contracts\dataShapeBinding.ts"/>
+/// <reference path="contracts\dataShapeBindingDataReduction.ts"/>
 /// <reference path="contracts\federatedConceptualSchema.ts"/>
 /// <reference path="contracts\selector.ts"/>
 /// <reference path="contracts\query.ts"/>
@@ -54,15 +53,17 @@
 /// <reference path="dataView\dataViewPivotCategorical.ts"/>
 /// <reference path="dataView\dataViewPivotMatrix.ts"/>
 /// <reference path="dataView\dataViewSelfCrossJoin.ts"/>
+/// <reference path="dataView\dataViewPivotCategoricalToPrimaryGroups.ts"/>
+/// <reference path="dataView\dataViewTransform.ts"/>
+/// <reference path="dataView\dataViewNormalizeValues.ts"/>
 /// <reference path="displayNameGetter.ts"/>
 /// <reference path="dataReader/dataReader.ts"/>
 /// <reference path="iFormattingService.ts"/>
 /// <reference path="semanticQuery\exprPatterns\fieldExprPattern.ts"/>
-/// <reference path="dataView\dataView.ts"/>
 /// <reference path="dataView\dataViewAnalysis.ts"/>
-/// <reference path="dataView\dataViewMapping.ts"/>
 /// <reference path="dataView\dataViewScopeIdentity.ts"/>
 /// <reference path="dataView\dataViewScopeWildcard.ts"/>
+/// <reference path="dataView\dataViewSelfCrossJoin.ts"/>
 /// <reference path="dataView\dataViewTransform.ts"/>
 /// <reference path="dataView\rules\evalContext.ts"/>
 /// <reference path="dataView\rules\categoricalEvalContext.ts"/>
@@ -76,11 +77,15 @@
 /// <reference path="semanticQuery\exprPatterns\filterScopeIdsCollector.ts"/>
 /// <reference path="semanticQuery\exprPatterns\scopeIdentityExtractor.ts"/>
 /// <reference path="semanticQuery\primitiveValueEncoding.ts"/>
+/// <reference path="semanticQuery\sqHierarchyExprUtils.ts"/>
 /// <reference path="semanticQuery\sqExprGroupUtils.ts"/>
 /// <reference path="semanticQuery\sqExpr.ts"/>
 /// <reference path="semanticQuery\sqExprUtils.ts"/>
 /// <reference path="semanticQuery\semanticQueryRewriter.ts"/>
 /// <reference path="semanticQuery\semanticQuery.ts"/>
 /// <reference path="dataView\dataViewBuilder.ts"/>
+/// <reference path="dataView\rules\staticEvalContext.ts"/>
+/// <reference path="dataView\rules\matrixEvalContext.ts"/>
 /// <reference path="services\formattingService.ts"/>
 /// <reference path="services\serialization\sqExprShortSerializer.ts"/>
+

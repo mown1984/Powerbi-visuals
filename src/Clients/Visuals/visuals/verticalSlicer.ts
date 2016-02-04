@@ -66,7 +66,7 @@ module powerbi.visuals {
         // SlicerDefaultValueHandler
         public getDefaultValue(): data.SQConstantExpr {
             if (this.data && this.data.defaultValue)
-                return this.data.defaultValue.value;
+                return <data.SQConstantExpr>this.data.defaultValue.value;
         }
 
         public getIdentityFields(): data.SQExpr[] {

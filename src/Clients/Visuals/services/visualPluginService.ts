@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    const unsupportedVisuals: string[] = ['play', 'subview', 'smallMultiple'];
+
     export interface IVisualPluginService {
         getPlugin(type: string): IVisualPlugin;
         getVisuals(): IVisualPlugin[];
@@ -146,10 +148,19 @@ module powerbi.visuals {
             }
 
             public isCustomVisual(visual: string): boolean {
-                if (visual && this.plugins[visual]) {
-                    return this.plugins[visual].custom === true;
+                if (visual) {
+                    
+                    if (this.plugins[visual]) {
+                        return this.plugins[visual].custom === true;
+                    }
+                    else if (_.include(unsupportedVisuals, visual)) {
+                        /*use the hardcoded unsupported visual list to distinguish unsupported visual with custom visual when the plugin object is not in memory*/
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
                 }
-
                 return false;
             }
 

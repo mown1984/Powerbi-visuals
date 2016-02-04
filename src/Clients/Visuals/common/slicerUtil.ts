@@ -68,7 +68,7 @@ module powerbi.visuals {
                 if (!dataViewCategorical || _.isEmpty(dataViewCategorical.categories))
                     return;
 
-                return dataViewCategorical.categories[0].identityFields;
+                return <data.SQExpr[]>dataViewCategorical.categories[0].identityFields;
             }
         }
 

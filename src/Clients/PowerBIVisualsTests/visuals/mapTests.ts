@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -225,7 +225,7 @@ module powerbitests {
                 let longIndex = -1;
                 let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
                 let categoryColumnRef = dataView.categorical.values.identityFields;
-                let result = Map.calculateSeriesInfo(dataView.categorical.values.grouped(), 0, sizeIndex, longIndex, latIndex, colors, undefined, undefined, categoryColumnRef);
+                let result = Map.calculateSeriesInfo(dataView.categorical.values.grouped(), 0, sizeIndex, longIndex, latIndex, colors, undefined, undefined, <powerbi.data.SQExpr[]>categoryColumnRef);
 
                 expect(result.sizeValuesForGroup.length).toBe(4);
                 for (let i = 0; i < result.sizeValuesForGroup.length; i++) {
@@ -914,7 +914,7 @@ module powerbitests {
             let dataView = dataBuilder.buildWithSeries(true, false);
             v.onDataChanged({ dataViews: [dataView] });
 
-            let seriesExpr = powerbi.data.SQExprShortSerializer.serializeArray(dataView.categorical.values.identityFields);
+            let seriesExpr = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.values.identityFields);
             let scale = visualBuilder.style.colorPalette.dataColors.getColorScaleByKey(seriesExpr);
             let colors = _.map(scale.getDomain(), (k) => scale.getColor(k));
 

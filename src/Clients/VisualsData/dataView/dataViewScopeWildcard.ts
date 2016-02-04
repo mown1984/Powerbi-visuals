@@ -29,19 +29,13 @@
 module powerbi.data {
     import Lazy = jsCommon.Lazy;
 
-    /** Defines a match against all instances of a given DataView scope. */
-    export interface DataViewScopeWildcard {
-        exprs: SQExpr[];
-        key: string;
-    }
-
     export module DataViewScopeWildcard {
         export function matches(wildcard: DataViewScopeWildcard, instance: DataViewScopeIdentity): boolean {
-            let instanceExprs = ScopeIdentityExtractor.getKeys(instance.expr);
+            let instanceExprs = ScopeIdentityExtractor.getKeys(<SQExpr>instance.expr);
             if (!instanceExprs)
                 return false;
 
-            return SQExprUtils.sequenceEqual(wildcard.exprs, instanceExprs);
+            return SQExprUtils.sequenceEqual(<SQExpr[]>wildcard.exprs, instanceExprs);
         }
 
         export function fromExprs(exprs: SQExpr[]): DataViewScopeWildcard {

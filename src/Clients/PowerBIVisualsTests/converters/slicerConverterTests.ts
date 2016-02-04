@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbitests {
     import data = powerbi.data;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -129,6 +127,7 @@ module powerbitests {
             allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, true);
             expect(interactivityService.isSelectionModeInverted()).toBe(true);
         });
+
 
         function allItemsSelectedSlicerTestHelper(
             interactivityService: powerbi.visuals.IInteractivityService,

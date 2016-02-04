@@ -366,7 +366,7 @@ module powerbi.data {
     }
 
     /** Represents a semantic filter condition.  Round-trippable with a JSON FilterDefinition.  Instances of this class are immutable. */
-    export class SemanticFilter {
+    export class SemanticFilter implements ISemanticFilter {
         private fromValue: SQFrom;
         private whereItems: SQFilter[];
 

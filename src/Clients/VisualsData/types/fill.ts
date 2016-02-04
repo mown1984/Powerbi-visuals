@@ -29,27 +29,6 @@
 module powerbi {
     import SQExpr = powerbi.data.SQExpr;
 
-    export interface FillTypeDescriptor {
-        solid?: {
-            color?: FillSolidColorTypeDescriptor;
-        };
-        gradient?: {
-            startColor?: boolean;
-            endColor?: boolean;
-        };
-        pattern?: {
-            patternKind?: boolean;
-            color?: boolean;
-        };
-    }
-
-    export type FillSolidColorTypeDescriptor = boolean | FillSolidColorAdvancedTypeDescriptor;
-
-    export interface FillSolidColorAdvancedTypeDescriptor {
-        /** Indicates whether the color value may be nullable, and a 'no fill' option is appropriate. */
-        nullable: boolean;
-    };
-
     export interface FillDefinition {
         solid?: {
             color?: SQExpr;
@@ -61,20 +40,6 @@ module powerbi {
         pattern?: {
             patternKind?: SQExpr;
             color?: SQExpr;
-        };
-    }
-
-    export interface Fill {
-        solid?: {
-            color?: string;
-        };
-        gradient?: {
-            startColor?: string;
-            endColor?: string;
-        };
-        pattern?: {
-            patternKind?: string;
-            color?: string;
         };
     }
 

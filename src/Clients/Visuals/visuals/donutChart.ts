@@ -1702,7 +1702,7 @@ module powerbi.visuals {
                     this.categoryIdentities = category.identity;
                     this.categoryValues = category.values;
                     this.allCategoryObjects = category.objects;
-                    this.categoryColumnRef = category.identityFields;
+                    this.categoryColumnRef = <data.SQExpr[]>category.identityFields;
                     this.categoryFormatString = valueFormatter.getFormatString(category.source, donutChartProps.general.formatString);
                 }
 

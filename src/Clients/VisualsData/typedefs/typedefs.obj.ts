@@ -24,4 +24,5 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../VisualsContracts/obj/VisualsContracts.d.ts"/>
 /// <reference path="../../VisualsCommon/obj/VisualsCommon.d.ts"/>

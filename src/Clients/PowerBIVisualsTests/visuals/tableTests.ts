@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests {
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
@@ -1226,7 +1226,7 @@ module powerbitests {
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
                     expect(persistedColWidths[0].width).toBe(47);
                     expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
-                    expect(persistedColWidths[1].width).toBe(55);
+                    expect(persistedColWidths[1].width).toBe(57);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
                     expect(persistedColWidths[2].width).toBe(49);
                     done();
@@ -1392,7 +1392,7 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
                 expect(rowCells.eq(1).width()).toEqual(48);
-                expect(rowCells.eq(2).width()).toEqual(56);
+                expect(rowCells.eq(2).width()).toEqual(58);
                 expect(rowCells.eq(3).width()).toEqual(50);
                 
                 // Mock Resize
@@ -1430,7 +1430,7 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
                 expect(rowCells.eq(1).width()).toEqual(48);
-                expect(rowCells.eq(2).width()).toEqual(56);
+                expect(rowCells.eq(2).width()).toEqual(58);
                 expect(rowCells.eq(3).width()).toEqual(50);
 
                 // Mock Resize
@@ -1513,7 +1513,7 @@ module powerbitests {
                     let rows = $(selector);
                     let rowCells = rows.eq(0).find('td');
                     expect(rowCells.eq(1).width()).toEqual(48);
-                    expect(rowCells.eq(2).width()).toEqual(56);
+                    expect(rowCells.eq(2).width()).toEqual(58);
                     expect(rowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);

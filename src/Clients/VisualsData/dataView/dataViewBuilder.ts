@@ -281,7 +281,7 @@ module powerbi.data {
         source: DataViewBuilderColumnIdentitySource,
         index: number,
         value: PrimitiveValue,
-        valueType: ValueType): DataViewScopeIdentity {
+        valueType: ValueTypeDescriptor): DataViewScopeIdentity {
         let identities = source.identities;
         if (identities) {
             return identities[index];

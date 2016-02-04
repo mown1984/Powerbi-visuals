@@ -35,7 +35,7 @@ module powerbi.visuals {
      * A combination of identifiers used to uniquely identify
      * data points and their bound geometry.
      */
-    export class SelectionId {
+    export class SelectionId implements ISelectionId {
         private selector: Selector;
         // This is a new data structure to support drilling -- in the long term it should replace the 'selector' field
         private selectorsByColumn: SelectorsByColumn;
@@ -102,11 +102,11 @@ module powerbi.visuals {
             return (this.selector && !!this.selector.data);
         }
 
-        public getSelector() {
+        public getSelector(): Selector {
             return this.selector;
         }
 
-        public getSelectorsByColumn() {
+        public getSelectorsByColumn(): Selector {
             return this.selectorsByColumn;
         }
 
@@ -237,7 +237,7 @@ module powerbi.visuals {
      * This class is designed to simplify the creation of SelectionId objects
      * It allows chaining to build up an object before calling 'create' to build a SelectionId
      */
-    export class SelectionIdBuilder {
+    export class SelectionIdBuilder implements ISelectionIdBuilder {
         private dataMap: SelectorForColumn;
         private measure: string;
 
@@ -245,21 +245,21 @@ module powerbi.visuals {
             return new SelectionIdBuilder();
         }
 
-        public withCategory(categoryColumn: DataViewCategoryColumn, index: number): SelectionIdBuilder {
+        public withCategory(categoryColumn: DataViewCategoryColumn, index: number): this {
             if (categoryColumn && categoryColumn.source && categoryColumn.source.queryName && categoryColumn.identity)
                 this.ensureDataMap()[categoryColumn.source.queryName] = categoryColumn.identity[index];
             
             return this;
         }
 
-        public withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): SelectionIdBuilder {
+        public withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this {
             if (seriesColumn && seriesColumn.source && seriesColumn.source.queryName && valueColumn)
                 this.ensureDataMap()[seriesColumn.source.queryName] = valueColumn.identity;
 
             return this;
         }
 
-        public withMeasure(measureId: string): SelectionIdBuilder {
+        public withMeasure(measureId: string): this {
             this.measure = measureId;
 
             return this;

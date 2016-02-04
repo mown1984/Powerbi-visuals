@@ -28,6 +28,7 @@
 
 module powerbi.visuals {
     import SQExprConverter = powerbi.data.SQExprConverter;
+    import SemanticFilter = powerbi.data.SemanticFilter;
 
     /** Helper module for converting a DataView into SlicerData. */
     export module DataConversion {
@@ -41,12 +42,12 @@ module powerbi.visuals {
             if (!identityFields)
                 return;
 
-            let filter: data.SemanticFilter = <data.SemanticFilter>(
+            let filter: SemanticFilter = <SemanticFilter>(
                 dataView.metadata &&
                 dataView.metadata.objects &&
                 DataViewObjects.getValue(dataView.metadata.objects, visuals.slicerProps.filterPropertyIdentifier));
 
-            let analyzer = hostServices.analyzedFilter({
+            let analyzer = hostServices.analyzeFilter({
                 dataView: dataView,
                 defaultValuePropertyId: slicerProps.defaultValue,
                 filter: filter,
@@ -54,8 +55,9 @@ module powerbi.visuals {
             });
             if (!analyzer)
                 return;
-
-            if (analyzer.hasDefaultFilterOverride()) {
+            
+            let analyzedSemanticFilter = <SemanticFilter>analyzer.filter;
+            if (analyzedSemanticFilter && !SemanticFilter.isSameFilter(analyzedSemanticFilter, filter)) {
                 (<ISelectionHandler>interactivityService).handleClearSelection();
                 let filterPropertyIdentifier = slicerProps.filterPropertyIdentifier;
                 let properties: { [propertyName: string]: DataViewPropertyValue } = {};
@@ -78,7 +80,7 @@ module powerbi.visuals {
         }
 
         function getSlicerData(
-            filter: data.SemanticFilter,
+            filter: SemanticFilter,
             analyzer: AnalyzedFilter,
             dataViewMetadata: DataViewMetadata,
             categorical: DataViewCategorical,

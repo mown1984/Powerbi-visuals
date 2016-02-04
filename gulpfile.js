@@ -1,4 +1,3 @@
-/// <binding ProjectOpened='init' />
 /*
  *  Power BI Visualizations
  *
@@ -24,30 +23,4 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require('gulp'),
-    runSequence = require("run-sequence");
-
-require('./gulp/visualsTest.js');
-require('./gulp/visualsDownload.js');
-require('./gulp/visualsPlayground.js');
-require('./gulp/visualsBuild.js').load();
-require('./gulp/visualsWatcher.js');
-require('./gulp/visualsPackage.js');
-require('./gulp/ghPages.js');
-require('./gulp/gulpHelp.js');
-
-gulp.task("build", function(cb) {
-    runSequence("build:visuals", cb);
-});
-
-gulp.task("test",  function(cb) {
-    runSequence("test:visuals", cb);
-});
-
-gulp.task("run:test", ["run:test:visuals"]);
-
-gulp.task("default", ["build:visuals"]);
-
-gulp.task("init", ["init:visuals"]);
-
-gulp.task("tslint", ["tslint:visuals"]);
+require("./src/gulpTasks");

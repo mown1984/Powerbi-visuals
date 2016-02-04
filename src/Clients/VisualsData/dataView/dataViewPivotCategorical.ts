@@ -88,7 +88,7 @@ module powerbi.data {
             let pivotedMetadata = inherit(dataView.metadata);
             pivotedMetadata.columns = pivotedColumns;
 
-            values = DataViewTransform.createValueColumns(pivotedValues, category.identityFields, category.source);
+            values = DataViewTransform.createValueColumns(pivotedValues, <SQExpr[]>category.identityFields, category.source);
             return {
                 metadata: pivotedMetadata,
                 categorical: {

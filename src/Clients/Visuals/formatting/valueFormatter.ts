@@ -71,7 +71,7 @@ module powerbi.visuals {
         detectAxisPrecision?: boolean;
 
         /** Specifies the column type of the data value */
-        columnType?: ValueType;
+        columnType?: ValueTypeDescriptor;
     }
 
     export interface IValueFormatter {
@@ -330,7 +330,7 @@ module powerbi.visuals {
                 !!allowFormatBeautification ? locale.beautify(format) : format);
         }
 
-        function getValueFormat(value: any, columnType: ValueType): string {
+        function getValueFormat(value: any, columnType: ValueTypeDescriptor): string {
             // If column type not defined or is not datetime
             // ...and the value is of time datetime,
             // then use the default date format string

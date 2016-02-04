@@ -61,8 +61,6 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbi.visuals.samples {
     import PixelConverter = jsCommon.PixelConverter;
 

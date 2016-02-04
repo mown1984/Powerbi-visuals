@@ -27,53 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.data {
-    export interface DataViewObjectDescriptors {
-        /** Defines general properties for a visualization. */
-        general?: DataViewObjectDescriptor;
-
-        [objectName: string]: DataViewObjectDescriptor;
-    }
-
-    /** Defines a logical object in a visualization. */
-    export interface DataViewObjectDescriptor {
-        displayName?: DisplayNameGetter;
-        description?: DisplayNameGetter;
-        properties: DataViewObjectPropertyDescriptors;
-    }
-
-    export interface DataViewObjectPropertyDescriptors {
-        [propertyName: string]: DataViewObjectPropertyDescriptor;
-    }
-
-    /** Defines a property of a DataViewObjectDefinition. */
-    export interface DataViewObjectPropertyDescriptor {
-        displayName?: DisplayNameGetter;
-        description?: DisplayNameGetter;
-        placeHolderText?: DisplayNameGetter;
-        type: DataViewObjectPropertyTypeDescriptor;
-        rule?: DataViewObjectPropertyRuleDescriptor;        
-
-        /** Indicates whether the Format Painter should ignore this property. */
-        suppressFormatPainterCopy?: boolean;   
-    }
-
-    export type DataViewObjectPropertyTypeDescriptor = ValueTypeDescriptor | StructuralTypeDescriptor;
-
-    export interface DataViewObjectPropertyRuleDescriptor {
-        /** For rule typed properties, defines the input visual role name. */
-        inputRole?: string;
-
-        /** Defines the output for rule-typed properties. */
-        output?: DataViewObjectPropertyRuleOutputDescriptor;
-    }
-
-    export interface DataViewObjectPropertyRuleOutputDescriptor {
-        /** Name of the target property for rule output. */
-        property: string;
-
-        /** Names roles that define the selector for the output properties. */
-        selector: string[];
-    }
 
     export module DataViewObjectDescriptors {
         /** Attempts to find the format string property.  This can be useful for upgrade and conversion. */

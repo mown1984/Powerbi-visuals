@@ -23,48 +23,44 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-var gulp = require("gulp"),
-    runSequence = require("run-sequence"),
-    rename = require("gulp-rename"),
+
+var gulp = require('gulp-help')(require('gulp')),
+    glob = require("glob"),
+    runSequence = require("run-sequence").use(gulp),
     fs = require("fs"),
+    path = require("path"),
     jasmineBrowser = require("gulp-jasmine-browser"),
     common = require("./utils.js"),
     cliParser = require("./cliParser.js"),
     visualsCommon = require("./visualsCommon.js"),
-    visualsBuildDebug = require("./visualsBuild.js").load(),
-    visualsBuildRelease = require("./visualsBuild.js").load({ isRelease: true }),
     visualsDownload = require("./visualsDownload.js");
 
-var openInBrowser = Boolean(cliParser.cliOptions.openInBrowser);
+// this loads PowerBIVisualsTests gulp tasks
+require("../src/Clients/PowerBIVisualsTests/gulpProject.js");
 
-var filesOption = common.getOptionFromCli(cliParser.cliOptions.files);
-
-function copyInternalDependencies() {
-    return gulp.src([
-        "src/Clients/PowerBIVisualsTests/obj/PowerBIVisualsTests.js"])
-        .pipe(rename("powerbi-visuals-tests.js"))
-        .pipe(gulp.dest("VisualsTests"));
-}
+var openInBrowser = cliParser.openInBrowser,
+    filesOption = common.getOptionFromCli(cliParser.files);
 
 function copyExternalDependencies() {
     return gulp.src([
-        "build/styles/visuals.css",
-        "build/scripts/powerbi-visuals.all.js",
+        "../lib/visuals.css",
+        "../lib/powerbi-visuals.all.js",
 
-        "build/styles/CustomVisuals.css",
-        "build/scripts/CustomVisuals.js",
+        "../src/Clients/CustomVisuals/styles/customVisuals.css",
+        "../src/Clients/CustomVisuals/obj/CustomVisuals.js",
 
-        "src/Clients/externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js",
-        "src/Clients/externals/ThirdPartyIP/MomentJS/moment.min.js",
-        "src/Clients/externals/ThirdPartyIP/Velocity/velocity.min.js",
-        "src/Clients/externals/ThirdPartyIP/Velocity/velocity.ui.min.js",
-        "src/Clients/externals/ThirdPartyIP/QuillJS/quill.min.js",
-
-        "node_modules/jasmine-core/lib/jasmine-core/jasmine.js",
-        "node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
-        "node_modules/jasmine-core/lib/jasmine-core/boot.js",
-        "node_modules/jasmine-core/lib/jasmine-core/jasmine.css"
-    ]).pipe(gulp.dest("VisualsTests"));
+        "../src/Clients/externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js",
+        "../src/Clients/externals/ThirdPartyIP/MomentJS/moment.min.js",
+        "../src/Clients/externals/ThirdPartyIP/Velocity/velocity.min.js",
+        "../src/Clients/externals/ThirdPartyIP/Velocity/velocity.ui.min.js",
+        "../src/Clients/externals/ThirdPartyIP/QuillJS/quill.min.js",
+        "../src/Clients/externals/ThirdPartyIP/JQueryScrollbar/jquery.scrollbar.min.js",
+        "../src/Clients/externals/css/jquery.scrollbar.css",
+        "../node_modules/jasmine-core/lib/jasmine-core/jasmine.js",
+        "../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
+        "../node_modules/jasmine-core/lib/jasmine-core/boot.js",
+        "../node_modules/jasmine-core/lib/jasmine-core/jasmine.css"], {cwd: __dirname})
+        .pipe(gulp.dest("../VisualsTests", {cwd: __dirname}));
 }
 
 function addLink(link) {
@@ -72,7 +68,7 @@ function addLink(link) {
 }
 
 function addScript(script) {
-    return '<script type="text/javascript" src="' + script + '"></script>';
+    return '<script type="text/javascript" src="' + script + '"></script>\r\n';
 }
 
 function addPaths(paths) {
@@ -119,11 +115,29 @@ gulp.task("run:test:visuals", function (callback) {
 });
 
 function runTestVisuals(callback) {
+    // TODO read VisualsTests folder location from config
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",
-        specRunnerPath = testFolder + "/" + specRunnerFileName,
-        src = [
+        specRunnerPath = path.resolve(__dirname, "../", testFolder + "/" + specRunnerFileName),
+        testsPath = path.resolve(__dirname, "../", testFolder),
+        tests = [];
+
+    if (filesOption && filesOption.length > 0) {
+        for (var i = 0; i < filesOption.length; i++) {
+            tests = tests.concat(glob.sync("./**/" + filesOption[i], {
+                cwd: testsPath
+            }));
+        }
+    }
+    else {
+        tests = tests.concat(glob.sync("./**/*Test*.js", {
+            cwd: testsPath
+        }));
+    }
+
+    var src = [
             "visuals.css",
+            "jquery.scrollbar.css",
             "CustomVisuals.css",
             "powerbi-visuals.all.js",
             "CustomVisuals.js",
@@ -132,8 +146,36 @@ function runTestVisuals(callback) {
             "velocity.ui.min.js",
             "quill.min.js",
             "moment.min.js",
-            "powerbi-visuals-tests.js"
-        ],
+            "mocks.js",
+            "common.js",
+            "sqFieldDef.js",
+            "./helpers/helpers.js",
+            "./helpers/kpiHelper.js",
+            "./helpers/slicerHelper.js",
+            "./helpers/tableDataViewHelper.js",
+            "./helpers/tablixHelper.js",
+            "./helpers/performanceTestsHelpers.js",
+            "./utils/bingSocial/NewsDataFactory.js",
+            "./utils/bingSocial/TweetFactory.js",
+            "./customVisuals/VisualBuilderBase.js",
+            "./customVisuals/helpers/dataViewHelper.js",
+            "./customVisuals/sampleDataViews/AreaRangeChartData.js",
+            "./customVisuals/sampleDataViews/BulletChartData.js",
+            "./customVisuals/sampleDataViews/CarLogosData.js",
+            "./customVisuals/sampleDataViews/chordChartData.js",
+            "./customVisuals/sampleDataViews/CountriesData.js",
+            "./customVisuals/sampleDataViews/DotPlotData.js",
+            "./customVisuals/sampleDataViews/forceGraphData.js",
+            "./customVisuals/sampleDataViews/GanttData.js",
+            "./customVisuals/sampleDataViews/MatrixData.js",
+            "./customVisuals/sampleDataViews/MekkoChartData.js",
+            "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
+            "./customVisuals/sampleDataViews/SalesByCountryData.js",
+            "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
+            "./customVisuals/sampleDataViews/TimelineData.js",
+            "./customVisuals/sampleDataViews/valueByAgeData.js",
+            "./customVisuals/sampleDataViews/ValuesByCountriesData.js"
+        ].concat(tests),
         jasminePaths = [
             "jasmine.css",
             "jasmine.js",
@@ -145,93 +187,42 @@ function runTestVisuals(callback) {
         specRunnerPath,
         jasminePaths.concat(src),
         common.getOptionFromCli(openInBrowser)[0]
-        );
+    );
 
-    if (openInBrowser) {
+    if (openInBrowser !== undefined && openInBrowser !== null) {
         visualsCommon.runHttpServer({
             path: testFolder,
             port: 3001,
             index: specRunnerFileName
         }, callback);
     } else {
-        return gulp.src(src, { cwd: testFolder })
-            .pipe(jasmineBrowser.specRunner({ console: true }))
+        return gulp.src(src, {
+            cwd: testsPath
+        })
+            .pipe(jasmineBrowser.specRunner({
+                console: true
+            }))
             .pipe(jasmineBrowser.headless());
     }
 }
 
-gulp.task("test:visuals:performance", function (callback) {
-    filesOption.push("performance/performanceTests.ts");
+gulp.task("test:visuals:performance", "Run only performance tests", function (callback) {
+    filesOption.push("visuals/performance/performanceTests.js");
     runSequence("test:visuals", callback);
 });
 
-gulp.task("test:visuals", function (callback) {
-    testVisuals(callback);
+gulp.task("test:visuals", ["build:visualsTests"], function (callback) {
+    return runTestVisuals(callback);
 });
 
-function testVisuals(callback) {
-    return visualsCommon.runScriptSequence([
-        buildVisuals,
-        buildVisualsTests,
-        runTestVisuals,
-        callback
-    ]);
-}
-
-function buildVisuals() {
-    var isDebug = Boolean(cliParser.cliOptions.debug);
-    var buildingVisualsLog = function () {
-        console.log('Building visuals...');
-    };
-    if (isDebug) {
-        return visualsCommon.runScriptSequence([
-            buildingVisualsLog,
-            visualsBuildDebug.buildVisualsCommon,
-            visualsBuildDebug.buildVisualsData,
-            visualsBuildDebug.buildVisualsProject,
-            visualsBuildDebug.buildVisualsScripts,
-            visualsBuildDebug.buildCustomVisuals
-        ]);
-    }
-    else {
-        var tsLintLog = function () {
-            if (!cliParser.cliOptions.noLint) {
-                console.log('Linting TypeScript...');
-            }
-        };
-        return visualsCommon.runScriptSequence([
-            tsLintLog,
-            visualsBuildRelease.tslintVisuals,
-            buildingVisualsLog,
-            visualsBuildRelease.buildVisualsCommon,
-            visualsBuildRelease.buildVisualsData,
-            visualsBuildRelease.buildVisualsProject,
-            visualsBuildRelease.buildVisualsScripts,
-            visualsBuildRelease.buildCustomVisuals,
-        ]);
-    }
-}
-
-gulp.task("build:visualsTests", function () {
+gulp.task("build:visualsTests", ["build:powerBIVisualsTests"], function () {
     return buildVisualsTests();
 });
 
 function buildVisualsTests() {
-    // by default, tests are build in release mode
-    // but if debug flag exists, then we have to build in debug mode
-    var isDebug = Boolean(cliParser.cliOptions.debug);
-    var tsBuildMode = isDebug ? visualsBuildDebug : visualsBuildRelease;
     return visualsCommon.runScriptSequence([
-        tsBuildMode.buildVisualsTestsTs,
         visualsDownload.installJasmine,
         visualsDownload.installPhantomjs,
-        tsBuildMode.combineVisualJsAll,
-        copyInternalDependencies,
         copyExternalDependencies
     ]);
 }
-
-gulp.task("open:test:visuals", function (callback) {
-    openInBrowser = true;
-    testVisuals(callback);
-});

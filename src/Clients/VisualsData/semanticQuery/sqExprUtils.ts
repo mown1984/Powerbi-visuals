@@ -221,6 +221,9 @@ module powerbi.data {
                 return;
 
             let sqField = SQExprConverter.asFieldPattern(fieldSQExpr);
+            if (!sqField)
+                return;
+
             let column: FieldExprPropertyPattern = sqField.column;
 
             if (column) {

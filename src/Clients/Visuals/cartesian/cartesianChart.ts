@@ -32,6 +32,8 @@ module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
     const COMBOCHART_DOMAIN_OVERLAP_TRESHOLD_PERCENTAGE = 0.1;
+    // the interactive right margin is set to be the circle selection radius of the hover line
+    const INTERACTIVITY_RIGHT_MARGIN = 6;
 
     export const enum CartesianChartType {
         Line,
@@ -400,7 +402,7 @@ module powerbi.visuals {
                 && (!dataView.categorical || categoryRoleIsPlay);
         }
 
-        public static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueType): boolean {
+        public static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor): boolean {
             let axisTypeValue = DataViewObjects.getValue(objects, propertyId);
 
             if (!objects || axisTypeValue === undefined) {
@@ -868,13 +870,16 @@ module powerbi.visuals {
             });
             Legend.positionChartArea(this.chartAreaSvg, this.legend);
 
+            let interactivityRightMargin = this.calculateInteractivityRightMargin();
+
             let axesLayout = this.axes.negotiateAxes(
                 this.layers,
                 plotAreaViewport,
                 padding,
                 playAxisControlLayout,
                 hideAxisLabels,
-                CartesianChart.TextProperties);
+                CartesianChart.TextProperties,
+                interactivityRightMargin );
 
             // Even if the caller thinks animations are ok, now that we've laid out the axes and legend we should disable animations
             // if the plot area changed. Animations for property changes like legend on/off are not desired.
@@ -930,6 +935,15 @@ module powerbi.visuals {
                 }
             }
             return false;
+        }
+
+        private calculateInteractivityRightMargin(): number {
+            // add right margin in order not to cut the circle selection of the hover line 
+            if (this.visualInitOptions.interactivity && this.visualInitOptions.interactivity.isInteractiveLegend && !this.trimOrdinalDataOnOverflow) {
+                return INTERACTIVITY_RIGHT_MARGIN;
+            } else {
+                return 0;
+            }          
         }
 
         private renderPlotArea(
@@ -1935,11 +1949,17 @@ module powerbi.visuals {
             this.y2AxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnY);
         }
 
-        private updateTickTooltips(axisSelection: D3.Selection, axis: D3.Svg.Axis): void {
-            let ticks = axisSelection.selectAll('text');
-            let formatter = axis.tickFormat();
-            let tickValues = _.map(ticks.data(), (d) => formatter ? formatter(d) : d);
-            ticks.call(tooltipUtils.tooltipUpdate, tickValues);
+        private static updateAnimatedTickTooltips(axisSelection: D3.Transition.Transition, values: any[]): void {
+            axisSelection.each('end', function () {
+                d3.select(this)
+                    .selectAll('text')
+                    .append('title')
+                    .text((d, i) => values[i]);
+            });
+        }
+
+        private static updateTickTooltips(axisSelection: D3.Selection, values: any[]): void {
+            axisSelection.selectAll('text').append('title').text((d, i) => values[i]);
         }
 
         public renderAxes(axesLayout: CartesianAxesLayout, duration: number): void {
@@ -1972,7 +1992,8 @@ module powerbi.visuals {
                     xAxisGraphicsElement
                         .transition()
                         .duration(duration)
-                        .call(axes.x.axis);
+                        .call(axes.x.axis)
+                        .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.x.values);
                 }
                 else {
                     xAxisGraphicsElement
@@ -1999,8 +2020,9 @@ module powerbi.visuals {
                         this.axes.isXScrollBarVisible || this.axes.isYScrollBarVisible);
                 }
 
-                this.updateTickTooltips(xAxisGraphicsElement, axes.x.axis);
-
+                if (!duration) {
+                    SvgCartesianAxes.updateTickTooltips(xAxisGraphicsElement, axes.x.values);
+                }
             }
             else {
                 this.xAxisGraphicsContext.selectAll('*').remove();
@@ -2024,7 +2046,8 @@ module powerbi.visuals {
                     y1AxisGraphicsElement
                         .transition()
                         .duration(duration)
-                        .call(axes.y1.axis);
+                        .call(axes.y1.axis)
+                        .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.y1.values);
                 }
                 else {
                     y1AxisGraphicsElement
@@ -2043,7 +2066,9 @@ module powerbi.visuals {
                         TextMeasurementService.svgEllipsis);
                 }
 
-                this.updateTickTooltips(y1AxisGraphicsElement, axes.y1.axis);
+                if (!duration) {
+                    SvgCartesianAxes.updateTickTooltips(y1AxisGraphicsElement, axes.y1.values);
+                }
 
                 if (axes.y2 && (!this.valueAxisProperties || this.valueAxisProperties['secShow'] == null || this.valueAxisProperties['secShow'])) {
                     y2LabelColor = this.valueAxisProperties && this.valueAxisProperties['secLabelColor'] ? this.valueAxisProperties['secLabelColor'] : null;
@@ -2059,7 +2084,8 @@ module powerbi.visuals {
                         y2AxisGraphicsElement
                             .transition()
                             .duration(duration)
-                            .call(axes.y2.axis);
+                            .call(axes.y2.axis)
+                            .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.y2.values);
                     }
                     else {
                         y2AxisGraphicsElement
@@ -2078,8 +2104,9 @@ module powerbi.visuals {
                             TextMeasurementService.svgEllipsis);
                     }
 
-                    this.updateTickTooltips(y2AxisGraphicsElement, axes.y2.axis);
-
+                    if (!duration) {
+                        SvgCartesianAxes.updateTickTooltips(y2AxisGraphicsElement, axes.y2.values);
+                    }
                 }
                 else {
                     this.y2AxisGraphicsContext.selectAll('*').remove();
@@ -2372,7 +2399,8 @@ module powerbi.visuals {
             padding: IMargin,
             playAxisControlLayout: IRect,
             hideAxisLabels: boolean,
-            textProperties: TextProperties): CartesianAxesLayout {
+            textProperties: TextProperties,
+            interactivityRightMargin: number): CartesianAxesLayout {
 
             let margin: IMargin = Prototype.inherit(CartesianAxes.MinimumMargin);
             let viewport: IViewport = Prototype.inherit(parentViewport);
@@ -2498,6 +2526,10 @@ module powerbi.visuals {
 
                 margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
                 margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
+                if (!isScalar) {
+                    margin.right += interactivityRightMargin;
+                }             
+
                 margin.bottom = xMax;
 
                 width = viewport.width - (margin.left + margin.right);

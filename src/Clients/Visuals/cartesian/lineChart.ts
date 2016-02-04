@@ -117,7 +117,6 @@ module powerbi.visuals {
         private static CategoryAreaSelector: ClassAndSelector = createClassAndSelector('catArea');
         private static HoverLineCircleDot: ClassAndSelector = createClassAndSelector('circle-item');
         private static PointRadius = 5;
-        private static HorizontalShift = 0;
         private static CircleRadius = 4;
         private static PathElementName = 'path';
         private static CircleElementName = 'circle';
@@ -550,7 +549,7 @@ module powerbi.visuals {
                         let dvCategories = dataViewCat.categories;
                         let categoryType = ValueType.fromDescriptor({ text: true });
                         if (dvCategories && dvCategories.length > 0 && dvCategories[0].source && dvCategories[0].source.type)
-                            categoryType = dvCategories[0].source.type;
+                            categoryType = <ValueType>dvCategories[0].source.type;
 
                         let convertedData = LineChart.converter(
                             dataView,
@@ -779,7 +778,7 @@ module powerbi.visuals {
             let width = viewport.width - (margin.left + margin.right);
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
-            let horizontalOffset = LineChart.HorizontalShift + this.extraLineShift();
+            let horizontalOffset = this.extraLineShift();
 
             let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
             let renderAreas: boolean = EnumExtensions.hasFlag(this.lineType, LineChartType.area) || EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea);
@@ -1041,11 +1040,11 @@ module powerbi.visuals {
 
             let extraLineShift = this.extraLineShift();
 
-            this.mainGraphicsContext.attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
+            this.mainGraphicsContext.attr('transform', SVGUtil.translate(extraLineShift, 0));
 
             this.mainGraphicsSVG.attr('height', this.getAvailableHeight())
                 .attr('width', this.getAvailableWidth());
-            this.hoverLineContext.attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
+            this.hoverLineContext.attr('transform', SVGUtil.translate(extraLineShift, 0));
 
             if (EnumExtensions.hasFlag(this.lineType, LineChartType.area)) {
                 let catAreaSelect = this.mainGraphicsContext.selectAll(LineChart.CategoryAreaSelector.selector)
@@ -1178,7 +1177,7 @@ module powerbi.visuals {
                 }
 
                 dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsSVG, layout, this.currentViewport);
-                this.mainGraphicsSVG.select('.labels').attr('transform', SVGUtil.translate(LineChart.HorizontalShift + extraLineShift, 0));
+                this.mainGraphicsSVG.select('.labels').attr('transform', SVGUtil.translate(extraLineShift, 0));
             }
             else {
                 dataLabelUtils.cleanDataLabels(this.mainGraphicsSVG);
@@ -1219,14 +1218,15 @@ module powerbi.visuals {
         }
 
         public getTooltipInfoByPathPointX(tooltipEvent: TooltipEvent, pointX: number): TooltipDataItem[] {
-            let pointData = tooltipEvent.data;
-            let svgPathElement = <SVGPathElement>(<any>tooltipEvent.context);
-            if (svgPathElement && svgPathElement.pathSegList && svgPathElement.pathSegList.getItem(0)
-                && svgPathElement.pathSegList.getItem(0).pathSegType === SVGPathSeg.PATHSEG_MOVETO_ABS) {
-                pointX += (<SVGPathSegMovetoAbs>svgPathElement.pathSegList.getItem(0)).x;
+            // update pointX, the mouse coordinate, with the left-offset of the SVGRect from the x-scale space so we can use the d3.scale to get the index.
+            let seriesData = <LineChartSeries>tooltipEvent.data;
+            let seriesOffset = 0;
+            if (seriesData && seriesData.data && seriesData.data.length && this.xAxisProperties) {
+                let firstNonNullPoint = _.find(seriesData.data, (dp: LineChartDataPoint) => dp.value != null);
+                seriesOffset = this.xAxisProperties.scale(this.getXValue(firstNonNullPoint));
             }
-            let index: number = this.findIndex(pointX);
-            let dataPoint = _.find(pointData.data, (dp: LineChartDataPoint) => dp.categoryIndex === index);
+            let index: number = this.findIndex(pointX, seriesOffset + this.extraLineShift());
+            let dataPoint = _.find(seriesData.data, (dp: LineChartDataPoint) => dp.categoryIndex === index);
             if (dataPoint)
                 return dataPoint.tooltipInfo;
             // return undefined so we don't show an empty tooltip
@@ -1240,7 +1240,7 @@ module powerbi.visuals {
             let dvCategories = this.dataViewCat ? this.dataViewCat.categories : undefined;
             let categoryType = ValueType.fromDescriptor({ text: true });
             if (dvCategories && dvCategories.length > 0 && dvCategories[0].source && dvCategories[0].source.type)
-                categoryType = dvCategories[0].source.type;
+                categoryType = <ValueType>dvCategories[0].source.type;
 
             let isOrdinal = AxisHelper.isOrdinal(categoryType);
             return isOrdinal ? axisType.categorical : axisType.both;
@@ -1286,8 +1286,9 @@ module powerbi.visuals {
                 // This will place the line points in the middle of the bands
                 // So they center with Labels when scale is ordinal.
                 let xScale = <D3.Scale.OrdinalScale>this.xAxisProperties.scale;
-                if (xScale.rangeBand)
+                if (xScale.rangeBand) {
                     return xScale.rangeBand() / 2;
+                }
             }
             return 0;
         }
@@ -1342,8 +1343,7 @@ module powerbi.visuals {
         }
 
         public selectColumnForTooltip(columnIndex: number, force: boolean = false): HoverLineDataPoint[] {
-            let horizontalOffset = LineChart.HorizontalShift + this.extraLineShift();
-            let x = this.getChartX(columnIndex) + horizontalOffset;
+            let x = this.getChartX(columnIndex) + this.extraLineShift();
 
             let dataPoints = this.createTooltipDataPoints(columnIndex);
             if (dataPoints.length > 0) {
@@ -1442,17 +1442,26 @@ module powerbi.visuals {
             x = Math.min(x, rangeEnd);
             if (!isNaN(x))
                 return x;
+            return 0;
         }
 
         /**
          * Finds the index of the category of the given x coordinate given.
+         * pointX is in non-scaled screen-space, and offsetX is in render-space.
+         * offsetX does not need any scaling adjustment.
+         * @param {number} pointX The mouse coordinate in screen-space, without scaling applied
+         * @param {number} offsetX Any left offset in d3.scale render-space
+         * @return {number}
          */
-        private findIndex(pointX: number): number {
+        private findIndex(pointX: number, offsetX?: number): number {
             // we are using mouse coordinates that do not know about any potential CSS transform scale
             let svgNode = <SVGSVGElement>(this.mainGraphicsSVG.node());
             let ratios = SVGUtil.getTransformScaleRatios(svgNode);
             if (!Double.equalWithPrecision(ratios.x, 1.0, 0.00001)) {
                 pointX = pointX / ratios.x;
+            }
+            if (offsetX) {
+                pointX += offsetX;
             }
 
             let scaleX = powerbi.visuals.AxisHelper.invertScale(this.xAxisProperties.scale, pointX);
@@ -1616,7 +1625,7 @@ module powerbi.visuals {
         private createLabelDataPoints(): LabelDataPointsGroup[] {
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
-            let horizontalOffset = LineChart.HorizontalShift + this.extraLineShift();
+            let horizontalOffset = this.extraLineShift();
             let data = this.data;
             let series = data.series;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();

@@ -40,13 +40,12 @@ install:
   - npm install
 
 build_script:
-  - gulp build
+  - gulp buildAll
 
 #---------------------------------#
 #       tests configuration       #
 #---------------------------------#
 
 test_script:
-  - gulp tslint:visuals
-  - gulp build:visualsTests
-  - gulp run:test:visuals
+  - gulp tslint
+  - gulp run:tests

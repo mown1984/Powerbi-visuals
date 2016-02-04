@@ -112,7 +112,7 @@ module powerbi.data {
             return {
                 groupColumn: {
                     source: category.source,
-                    identityFrom: { fields: category.identityFields, identities: category.identity },
+                    identityFrom: { fields: <SQExpr[]>category.identityFields, identities: category.identity },
                     values: category.values,
                 },
                 valueColumns: _.map(valuesArray, v => <DataViewBuilderColumnOptions>{ source: v.source }),

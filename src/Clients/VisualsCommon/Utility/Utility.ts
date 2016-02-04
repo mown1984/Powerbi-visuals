@@ -302,6 +302,18 @@ module jsCommon {
             //let specialCharacterRemover = (key: string, value: string) => value.replace(/[^\w\s]/gi, '');
             return JSON.stringify(object /*, specialCharacterRemover*/);
         }
+
+        /**
+         * Derive a CLS-compliant name from a specified string.  If no allowed characters are present, return a fallback string instead.
+         * TODO (6708134): this should have a fully Unicode-aware implementation
+         */
+        export function deriveClsCompliantName(input: string, fallback: string): string {
+            debug.assertValue(input, 'input');
+
+            let result = input.replace(/^[^A-Za-z]*/g, '').replace(/[ :\.\/\\\-\u00a0\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/g, '_').replace(/[\W]/g, '');
+
+            return result.length > 0 ? result : fallback;
+        }
     }
 
     /**

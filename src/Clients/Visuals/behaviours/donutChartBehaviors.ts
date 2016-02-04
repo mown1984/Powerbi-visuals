@@ -32,6 +32,8 @@ module powerbi.visuals {
         highlightSlices: D3.Selection;
         clearCatcher: D3.Selection;
         hasHighlights: boolean;
+        allowDrilldown: boolean;
+        visual: IVisual;
     }
 
     export class DonutChartWebBehavior implements IInteractiveBehavior {

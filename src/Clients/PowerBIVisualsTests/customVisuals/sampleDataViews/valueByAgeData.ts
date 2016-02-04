@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
+
 
 module powerbitests.customVisuals.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
