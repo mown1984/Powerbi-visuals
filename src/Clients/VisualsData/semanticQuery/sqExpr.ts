@@ -30,7 +30,7 @@ module powerbi.data {
     import StringExtensions = jsCommon.StringExtensions;
 
     /** Represents an immutable expression within a SemanticQuery. */
-    export /*abstract*/ class SQExpr {
+    export /*abstract*/ class SQExpr implements ISQExpr {
         constructor() {
         }
 
@@ -629,7 +629,7 @@ module powerbi.data {
         }
     }
 
-    export class SQConstantExpr extends SQExpr {
+    export class SQConstantExpr extends SQExpr implements ISQConstantExpr {
         public type: ValueType;
 
         /** The native JavaScript representation of the value. */
@@ -895,7 +895,7 @@ module powerbi.data {
         }
 
         /** Returns an SQExpr that evaluates to the constant value. */
-        export function typedConstant(value: PrimitiveValue, type: ValueType): SQConstantExpr {
+        export function typedConstant(value: PrimitiveValue, type: ValueTypeDescriptor): SQConstantExpr {
             if (value == null)
                 return nullConstant();
 

@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 // TODO: We should not be validating specific styles (e.g. RGB codes) in unit tests.
 

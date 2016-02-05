@@ -25,6 +25,7 @@
  */
 
 /// <reference path="typedefs/typedefs.ts"/>
+/// <reference path="typedefs/typedefs.obj.ts"/>
 
 /// <reference path="DOMConstants.ts"/>
 /// <reference path="serviceError.ts"/>
@@ -38,18 +39,16 @@
 /// <reference path="color.ts"/>
 /// <reference path="CssConstants.ts"/>
 /// <reference path="debug.ts"/>
-/// <reference path="DragDrop.ts"/>
 /// <reference path="Errors.ts"/>
-/// <reference path="IStringResourceProvider.ts"/>
 /// <reference path="JQueryExtensions.ts"/>
 /// <reference path="Lazy.ts"/>
-/// <reference path="promise.ts"/>
 /// <reference path="Prototype.ts"/>
 /// <reference path="ScriptErrorInfo.ts"/>
 /// <reference path="Formatting.ts"/>
 /// <reference path="services/requires.ts"/>
 /// <reference path="services/jqueryPromiseFactory.ts"/>
 /// <reference path="services/localStorageService.ts"/>
+/// <reference path="Utility/wordBreaker.ts"/>
 /// <reference path="services/textMeasurementService.ts"/>
 /// <reference path="Utility/ThrottleUtility.ts"/>
 /// <reference path="Utility/TimerPromiseFactory.ts"/>

@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
+
 
 module powerbitests.mocks {
     import SQExprBuilder = powerbi.data.SQExprBuilder;
@@ -440,12 +440,6 @@ module powerbitests.mocks {
 
             this.isNotFilter = this.container && this.container.isNot;
             this.selectedIdentities = this.container && this.container.scopeIds;
-        }
-
-        
-
-        public hasDefaultFilterOverride(): boolean {
-            return false;
         }
     }
 }

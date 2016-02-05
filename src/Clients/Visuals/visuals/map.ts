@@ -37,7 +37,7 @@ module powerbi.visuals {
         mapControlFactory?: IMapControlFactory;
         behavior?: MapBehavior;
         tooltipsEnabled?: boolean;
-        filledMapDataLabelsEnabled?: boolean;
+        filledMapDataLabelsEnabled?: boolean; 
         disableZooming?: boolean;
         disablePanning?: boolean;
         isLegendScrollable?: boolean;
@@ -131,7 +131,8 @@ module powerbi.visuals {
         addDataPoint(dataPoint: MapDataPoint): void;
         getDataPointCount(): number;
         converter(viewPort: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService: IInteractivityService): MapData;
-        updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService): MapBehaviorOptions;
+        updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
+        updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void;
         getDataPointPadding(): number;
         clearDataPoints(): void;
     }
@@ -397,7 +398,7 @@ module powerbi.visuals {
             return { bubbleData: bubbleData, sliceData: sliceData };
         }
 
-        public updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService): MapBehaviorOptions {
+        public updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions {
             debug.assertValue(viewport, "viewport");
             Map.removeTransform3d(this.root);
 
@@ -472,23 +473,7 @@ module powerbi.visuals {
 
             slices.exit().remove();
 
-            let labelSettings = this.dataLabelsSettings;
-            let dataLabels: Label[] = [];
-            if (labelSettings && (labelSettings.show || labelSettings.showCategory)) {
-                let labelDataPoints = this.createLabelDataPoints();
-                let labelLayout = new LabelLayout({
-                    maximumOffset: NewDataLabelUtils.maxLabelOffset,
-                    startingOffset: NewDataLabelUtils.startingLabelOffset
-                });
-                let labelDataPointsGroup: LabelDataPointsGroup = {
-                    labelDataPoints: labelDataPoints,
-                    maxNumberOfLabels: labelDataPoints.length
-                };
-                dataLabels = labelLayout.layout([labelDataPointsGroup], { width: viewport.width, height: viewport.height });
-            }
-
-            NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContext, dataLabels, powerbi.visuals.DefaultBackgroundColor, powerbi.visuals.DefaultFillOpacity);
-            NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, dataLabels, false); // Once we properly split up and handle show and showCategory, the false here should change to !labelSettings.showCategory
+            this.updateInternalDataLabels(viewport, redrawDataLabels);
 
             if (this.tooltipsEnabled) {
                 TooltipManager.addTooltip(slices, (tooltipEvent: TooltipEvent) => tooltipEvent.data.data.tooltipInfo);
@@ -507,6 +492,26 @@ module powerbi.visuals {
                 dataPoints: allData,
             };
             return behaviorOptions;
+        }
+
+        public updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void {
+            let labelSettings = this.dataLabelsSettings;
+            let dataLabels: Label[] = [];
+            if (labelSettings && (labelSettings.show || labelSettings.showCategory)) {
+                let labelDataPoints = this.createLabelDataPoints();
+                let labelLayout = new LabelLayout({
+                    maximumOffset: NewDataLabelUtils.maxLabelOffset,
+                    startingOffset: NewDataLabelUtils.startingLabelOffset
+                });
+                let labelDataPointsGroup: LabelDataPointsGroup = {
+                    labelDataPoints: labelDataPoints,
+                    maxNumberOfLabels: labelDataPoints.length
+                };
+                dataLabels = labelLayout.layout([labelDataPointsGroup], { width: viewport.width, height: viewport.height });
+            }
+
+            NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContext, dataLabels, powerbi.visuals.DefaultBackgroundColor, powerbi.visuals.DefaultFillOpacity);
+            NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, dataLabels, false); // Once we properly split up and handle show and showCategory, the false here should change to !labelSettings.showCategory
         }
 
         private createLabelDataPoints(): LabelDataPoint[] {
@@ -579,6 +584,7 @@ module powerbi.visuals {
         private dataLabelsSettings: PointDataLabelsSettings;
         private filledMapDataLabelsEnabled: boolean;
         private tooltipsEnabled: boolean;
+        private labelLayout: FilledMapLabelLayout;
         private static validLabelPolygonPositions: NewPointLabelPosition[] = [NewPointLabelPosition.Center, NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left, NewPointLabelPosition.BelowRight, NewPointLabelPosition.BelowLeft, NewPointLabelPosition.AboveRight, NewPointLabelPosition.AboveLeft];
         private root: JQuery;
 
@@ -772,7 +778,7 @@ module powerbi.visuals {
             return { shapeData: shapeData };
         }
 
-        public updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService): MapBehaviorOptions {
+        public updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions {
             debug.assertValue(viewport, "viewport");
             Map.removeTransform3d(this.root);
 
@@ -819,18 +825,7 @@ module powerbi.visuals {
             shapes.exit()
                 .remove();
 
-            let labelSettings = this.dataLabelsSettings;
-            let labels: Label[];
-
-            if (labelSettings && (labelSettings.show || labelSettings.showCategory)) {
-                let labelDataPoints = this.createLabelDataPoints();
-                let labelLayout = new FilledMapLabelLayout();
-                labels = labelLayout.layout(labelDataPoints, { width: viewport.width, height: viewport.height }, this.polygonInfo.transform);
-            }
-            
-            this.drawLabelStems(this.labelGraphicsContext, labels, labelSettings.show, labelSettings.showCategory);
-            NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContext, labels, powerbi.visuals.DefaultBackgroundColor, powerbi.visuals.DefaultFillOpacity);
-            NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, labels, false, labelSettings.show && labelSettings.showCategory);
+            this.updateInternalDataLabels(viewport, redrawDataLabels);
 
             if (this.tooltipsEnabled) {
                 TooltipManager.addTooltip(shapes, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
@@ -858,8 +853,8 @@ module powerbi.visuals {
                 let path = paths[pathIndex];
                         
                 // Using the area of the bounding box (and taking the largest)
-                let currentShapeArea = path.absoluteBounds.width * path.absoluteBounds.height; 
-                        
+                let currentShapeArea = path.absoluteBounds.width * path.absoluteBounds.height;
+
                 if (currentShapeArea > largestShapeArea) {
                     largestShapeIndex = pathIndex;
                     largestShapeArea = currentShapeArea;
@@ -867,6 +862,24 @@ module powerbi.visuals {
             }
 
             return largestShapeIndex;
+        }
+
+        public updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void {
+            let labelSettings = this.dataLabelsSettings;
+            let labels: Label[];
+
+            if (labelSettings && (labelSettings.show || labelSettings.showCategory)) {
+                let labelDataPoints = this.createLabelDataPoints();
+
+                if (this.labelLayout === undefined) {
+                    this.labelLayout = new FilledMapLabelLayout();
+                }
+                labels = this.labelLayout.layout(labelDataPoints, { width: viewport.width, height: viewport.height }, this.polygonInfo.transform, redrawDataLabels);
+            }
+
+            this.drawLabelStems(this.labelGraphicsContext, labels, labelSettings.show, labelSettings.showCategory);
+            NewDataLabelUtils.drawLabelBackground(this.labelGraphicsContext, labels, powerbi.visuals.DefaultBackgroundColor, powerbi.visuals.DefaultFillOpacity);
+            NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, labels, false, labelSettings.show && labelSettings.showCategory);
         }
 
         private clearMaxShapeDimension(): void {
@@ -1079,7 +1092,7 @@ module powerbi.visuals {
                 this.pendingGeocodingRender = true;
                 // Maintain a 3 second delay between redraws from geocoded geometry
                 setTimeout(() => {
-                    this.updateInternal(true);
+                    this.updateInternal(true, true);
                     this.pendingGeocodingRender = false;
                 }, 3000);
             }
@@ -1457,7 +1470,7 @@ module powerbi.visuals {
         public static getGeocodingCategory(categorical: DataViewCategorical, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): string {
             if (categorical && categorical.categories && categorical.categories.length > 0 && categorical.categories[0].source) {
                 // Check categoryString for manually specified information in the model
-                let type = categorical.categories[0].source.type;
+                let type = <ValueType>categorical.categories[0].source.type;
                 if (type && type.categoryString) {
                     return geoTaggingAnalyzerService.getFieldType(type.categoryString);
                 }
@@ -1680,10 +1693,10 @@ module powerbi.visuals {
 
                     let seriesSource: data.SQExpr[];
                     if (hasDynamicSeries) {
-                        seriesSource = categorical.values.identityFields;
+                        seriesSource = <data.SQExpr[]>categorical.values.identityFields;
                     }
                     else if (categorical.values && categorical.values.length > 0) {
-                        seriesSource = categorical.categories[0].identityFields;
+                        seriesSource = <data.SQExpr[]>categorical.categories[0].identityFields;
                     }
 
                     let sizeIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, "Size");
@@ -1758,7 +1771,7 @@ module powerbi.visuals {
 
             this.host.setWarnings(warnings);
 
-            this.updateInternal(true /* dataChanged */);
+            this.updateInternal(true /* dataChanged */, true);
         }
 
         private swapLogoContainerChildElement() {
@@ -1808,7 +1821,7 @@ module powerbi.visuals {
             if (this.currentViewport.width !== viewport.width || this.currentViewport.height !== viewport.height) {
                 this.currentViewport = viewport;
                 this.renderLegend(this.legendData);
-                this.updateInternal(false /* dataChanged */);
+                this.updateInternal(false /* dataChanged */, false);
             }
         }
 
@@ -1836,24 +1849,29 @@ module powerbi.visuals {
                 Microsoft.Maps.Events.addHandler(this.mapControl, "viewchange", () => { this.onViewChanged(); });
             }
 
+            Microsoft.Maps.Events.addHandler(this.mapControl, "viewchangeend", () => { this.onViewChangeEnded(); });
             this.dataPointRenderer.init(this.mapControl, divQuery, !!this.behavior);
 
             if (!this.pendingGeocodingRender) {
-                this.updateInternal(true /* dataChanged */);
+                this.updateInternal(true /* dataChanged */, true);
             }
         }
 
         private onViewChanged() {
-            Map.removeTransform3d(this.root);
             if (!this.executingInternalViewChange)
                 this.receivedExternalViewChange = true;
             else
                 this.executingInternalViewChange = false;
-            this.updateOffsets(false /* dataChanged */);
+            this.updateOffsets(false, false /* dataChanged */);
             if (this.behavior)
                 this.behavior.viewChanged();
 
             this.swapLogoContainerChildElement();
+        }
+
+        private onViewChangeEnded() {
+
+            this.dataPointRenderer.updateInternalDataLabels(this.currentViewport, true);
         }
 
         private getMapViewPort(): IViewport {
@@ -1877,7 +1895,7 @@ module powerbi.visuals {
             }
         }
 
-        private updateInternal(dataChanged: boolean) {
+        private updateInternal(dataChanged: boolean, redrawDataLabels: boolean) {
             if (this.mapControl) {
                 let isLegendVisible = this.legend.isVisible();
 
@@ -1890,7 +1908,7 @@ module powerbi.visuals {
                 mapDiv.width(mapViewport.width);
 
                 // With the risk of double drawing, if the position updates to nearly the same, the map control won't call viewchange, so explicitly update the points
-                this.updateOffsets(dataChanged);
+                this.updateOffsets(dataChanged, redrawDataLabels);
 
                 // Set zoom level after we rendered that map as we need the max size of the bubbles/ pie slices to calculate it
                 let levelOfDetail = this.getOptimumLevelOfDetail(mapViewport.width, mapViewport.height);
@@ -1903,7 +1921,7 @@ module powerbi.visuals {
             }
         }
 
-        private updateOffsets(dataChanged: boolean) {
+        private updateOffsets(dataChanged: boolean, redrawDataLabels: boolean) {
             let dataView = this.dataView;
             let data: MapData;
             let viewport = this.getMapViewPort();
@@ -1919,7 +1937,7 @@ module powerbi.visuals {
                 };
             }
 
-            let behaviorOptions = this.dataPointRenderer.updateInternal(data, viewport, dataChanged, this.interactivityService);
+            let behaviorOptions = this.dataPointRenderer.updateInternal(data, viewport, dataChanged, this.interactivityService, redrawDataLabels);
             Legend.positionChartArea(d3.select(this.root[0]), this.legend);
 
             if (this.interactivityService && behaviorOptions) {
@@ -1929,7 +1947,7 @@ module powerbi.visuals {
 
         public onClearSelection(): void {
             this.interactivityService.clearSelection();
-            this.updateOffsets(false /* dataChanged */);
+            this.updateOffsets(false, false /* dataChanged */);
         }
 
         private clearDataPoints(): void {

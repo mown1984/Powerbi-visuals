@@ -995,7 +995,7 @@ module powerbi.data {
             if (!identityFields)
                 return;
 
-            let scopeIds = SQExprConverter.asScopeIdsContainer(propertyValue, identityFields);
+            let scopeIds = SQExprConverter.asScopeIdsContainer(propertyValue, <SQExpr[]>identityFields);
             if (!scopeIds)
                 return;
 
@@ -1125,7 +1125,7 @@ module powerbi.data {
             if (!dataViewCategoricalValues || !dataViewCategoricalValues.identityFields)
                 return;
 
-            if (!Selector.matchesKeys(selector, [dataViewCategoricalValues.identityFields]))
+            if (!Selector.matchesKeys(selector, <SQExpr[][]>[dataViewCategoricalValues.identityFields]))
                 return;
 
             let valuesGrouped = dataViewCategoricalValues.grouped();
@@ -1255,7 +1255,7 @@ module powerbi.data {
             let childIdentityFields = dataViewNode.childIdentityFields;
             if (childIdentityFields) {
                 // NOTE: selector matching in matrix currently only considers the current node, and does not consider parents as part of the match.
-                shouldSearchChildren = Selector.matchesKeys(selector, [childIdentityFields]);
+                shouldSearchChildren = Selector.matchesKeys(selector, <SQExpr[][]>[childIdentityFields]);
             }
 
             for (let i = 0, len = childNodes.length; i < len; i++) {
@@ -1345,7 +1345,7 @@ module powerbi.data {
             let categoricalColumn = dataViewCategorical.categories[0];
             if (!categoricalColumn.identityFields)
                 return;
-            if (!Selector.matchesKeys(selector, [categoricalColumn.identityFields]))
+            if (!Selector.matchesKeys(selector, <SQExpr[][]>[categoricalColumn.identityFields]))
                 return;
 
             let identities = categoricalColumn.identity,
@@ -1392,7 +1392,7 @@ module powerbi.data {
             if (!categoryRoles || !categoryIdentityFields || !categoryRoles[selectorRoles[0]])
                 return;
 
-            return { data: [DataViewScopeWildcard.fromExprs(categoryIdentityFields)] };
+            return { data: [DataViewScopeWildcard.fromExprs(<SQExpr[]>categoryIdentityFields)] };
         }
 
         /** Attempts to find the value range for the single column with the given inputRole. */

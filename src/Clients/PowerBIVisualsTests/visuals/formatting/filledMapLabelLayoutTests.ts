@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
+
 
 module powerbitests {
 
@@ -34,6 +34,7 @@ module powerbitests {
     import IRect = powerbi.visuals.IRect;
     import LabelDataPoint = powerbi.LabelDataPoint;
     import Polygon = powerbi.visuals.shapes.Polygon;
+    import Rect = powerbi.visuals.shapes.Rect;
     import Transform = powerbi.visuals.Transform;
     import dataLabelsSettings = powerbi.visuals.PointDataLabelsSettings;
     import TextProperties = powerbi.TextProperties;
@@ -41,6 +42,8 @@ module powerbitests {
     import TextMeasurementService = powerbi.TextMeasurementService;
     import dataLabelUtils = powerbi.visuals.dataLabelUtils;
     import LabelDataPointParentType = powerbi.LabelDataPointParentType;
+    import FilledMapLabel = powerbi.FilledMapLabel;
+    import IPoint = powerbi.visuals.IPoint;
 
     let testOutsideFillColor = "#000000";
     let testInsideFillColor = "#FFFFFF";
@@ -104,7 +107,7 @@ module powerbitests {
         });
 
         it("Label is correctly laid out", () => {
-           
+
             let parentShape: LabelParentPolygon = {
                 polygon: new Polygon(polygonPath),
                 validPositions: [PolygonLabelPosition.Center],
@@ -114,9 +117,12 @@ module powerbitests {
                 createLabelDataPoint("text", parentShape)
             ];
 
-            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             expect(labels.length).toBe(1);
-            expect(labels[0].boundingBox).toEqual(createRect(603.4723273724817, 319.6871085538696, 40, 10));
+            expect(labels[0].boundingBox.left).toBeCloseTo(603.4723273724817,3);
+            expect(labels[0].boundingBox.top).toBeCloseTo(319.6871085538696,3);
+            expect(labels[0].boundingBox.width).toBe(40);
+            expect(labels[0].boundingBox.height).toBe(10);
             expect(labels[0].isVisible).toBe(true);
         });
 
@@ -129,7 +135,7 @@ module powerbitests {
             let labelDataPoints = [
                 createLabelDataPoint("text", parentShape)
             ];
-            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             expect(labels[0].text).toBe("text");
         });
 
@@ -142,7 +148,7 @@ module powerbitests {
             let labelDataPoints = [
                 createLabelDataPoint("text", parentShape)
             ];
-            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             expect(labels[0].fill).toBe(testInsideFillColor);
         });
 
@@ -155,13 +161,13 @@ module powerbitests {
             let labelDataPoints = [
                 createLabelDataPoint("text", parentShape)
             ];
-            filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
 
             let centroid: any = {
                 x: 148781.8289518388,
                 y: 196749.2354017094,
             };
-             expect((<LabelParentPolygon>labelDataPoints[0].parentShape).polygon.absoluteCentroid()).toEqual(centroid);
+            expect((<LabelParentPolygon>labelDataPoints[0].parentShape).polygon.absoluteCentroid()).toEqual(centroid);
         });
 
         it("check if polygon has label", () => {
@@ -173,7 +179,7 @@ module powerbitests {
             let labelDataPoints = [
                 createLabelDataPoint("text", parentShape)
             ];
-            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            let labels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             expect(labels.length).toBe(1);
         });
 
@@ -187,7 +193,7 @@ module powerbitests {
                 createLabelDataPoint("text", parentShape)
             ];
 
-            filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
 
             let rect: IRect = {
                 height: 12,
@@ -201,7 +207,7 @@ module powerbitests {
 
             expect(isFit).toBe(true);
         });
-        
+
         it("Polygon has the correct absoluteBoundingRect", () => {
             let parentShape: LabelParentPolygon = {
                 polygon: new Polygon(polygonPath),
@@ -212,7 +218,7 @@ module powerbitests {
                 createLabelDataPoint("text", parentShape)
             ];
 
-            filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
 
             let absoluteBoundingRect: any = {
                 left: 144878.98368355556,
@@ -234,7 +240,7 @@ module powerbitests {
                 createLabelDataPoint("text", parentShape)
             ];
 
-            filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
 
             let polygon = (<LabelParentPolygon>labelDataPoints[0].parentShape).polygon;
             let rect: IRect = {
@@ -272,8 +278,8 @@ module powerbitests {
             let FirstTextHeight = TextMeasurementService.estimateSvgTextHeight(firstRowProperties);
             labelDataPoints[0].textSize.width = FirstTextwidth;
             labelDataPoints[0].textSize.height = FirstTextHeight;
-            
-            let label = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+
+            let label = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             let firstRect: IRect = {
                 left: 614.4723273724817,
                 top: 317.1871085538696,
@@ -308,7 +314,7 @@ module powerbitests {
             labelSettings.show = true;
             labelSettings.showCategory = true;
 
-            label = filledMapLabelLayout.layout(labelDataPoints, viewport, transform);
+            label = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             let secondRect: IRect = {
                 left: 589.9723273724817,
                 top: 309.6871085538696,
@@ -327,7 +333,7 @@ module powerbitests {
 
             let pointLabelDataPoint = createLabelDataPoint("text", parentShape);
             let polygon = (<LabelParentPolygon>pointLabelDataPoint.parentShape).polygon;
-            
+
             it("Above positioning", () => {
                 parentShape.validPositions = [PolygonLabelPosition.Above];
                 expect(filledMapLabelLayout.getLabelPolygon(pointLabelDataPoint, PolygonLabelPosition.Above, polygon.absoluteCentroid(), offset)).toEqual(createRect(148761.8289518388, 196734.2354017094, 40, 10));
@@ -389,12 +395,39 @@ module powerbitests {
                 expect(labelRect.height).toBe(10);
             });
         });
+
+        it("Labels do not redraw during pan or zoom but do move", () => {
+            let parentShape: LabelParentPolygon = {
+                polygon: new Polygon(polygonPath),
+                validPositions: [PolygonLabelPosition.Center, PolygonLabelPosition.Above, PolygonLabelPosition.Below,
+                    PolygonLabelPosition.Left, PolygonLabelPosition.Right, PolygonLabelPosition.AboveLeft,
+                    PolygonLabelPosition.AboveRight, PolygonLabelPosition.BelowLeft, PolygonLabelPosition.BelowRight],
+            };
+
+            let labelDataPoints = [
+                createLabelDataPoint("text to enusure label doesn't fit", parentShape)
+            ];
+
+
+            let prelabels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
+            let prelabelsAbsoluteBoundingBoxCenter: IPoint = {
+                x: (<FilledMapLabel>prelabels[0]).absoluteBoundingBoxCenter.x,
+                y: (<FilledMapLabel>prelabels[0]).absoluteBoundingBoxCenter.y
+            };
+            let prelabelsBoundingBox: IRect = Rect.clone((<FilledMapLabel>prelabels[0]).boundingBox);
+
+            let alternateTransform = getAlternateTransform();
+            let postlabels = filledMapLabelLayout.layout(labelDataPoints, viewport, alternateTransform, false);
+
+            expect(prelabelsAbsoluteBoundingBoxCenter).toEqual((<FilledMapLabel>postlabels[0]).absoluteBoundingBoxCenter);
+            expect(prelabelsBoundingBox).not.toEqual((<FilledMapLabel>postlabels[0]).boundingBox);
+        });
     });
 
     function convertStringToFloatArray(path: string): Float64Array {
         let stringArray = path.split(" ");
         let f64s = new Float64Array(stringArray.length);
-        
+
         for (let i: number = 0; i < stringArray.length; i++) {
             f64s[i] = parseFloat(stringArray[i]);
         }
@@ -425,6 +458,27 @@ module powerbitests {
         let current: any = {
             height: 1717.0461420707134,
             left: 1029.4307291666669,
+            top: -370.55802416855295,
+            width: 1365.333333333333,
+        };
+
+        let transform = new Transform();
+        transform.translate(current.left, current.top);
+        transform.scale((current.width / base.width), (current.height / base.height));
+        transform.translate(-base.left, -base.top);
+        return transform;
+    }
+
+    function getAlternateTransform(): Transform {
+        let base: any = {
+            height: 109890.95309252565,
+            left: 174763.16666666666,
+            top: 152253.54690747435,
+            width: 87381.33333333334,
+        };
+        let current: any = {
+            height: 1717.0461420707134,
+            left: 1050.4307291666669,
             top: -370.55802416855295,
             width: 1365.333333333333,
         };

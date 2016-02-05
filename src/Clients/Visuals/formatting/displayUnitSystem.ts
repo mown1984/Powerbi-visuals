@@ -49,7 +49,7 @@ module powerbi {
         // Methods
         public project(value: number): number {
             if (this.value) {
-                return Double.divide(value, this.value);
+                return Double.removeDecimalNoise(value / this.value);
             } else {
                 return value;
             }

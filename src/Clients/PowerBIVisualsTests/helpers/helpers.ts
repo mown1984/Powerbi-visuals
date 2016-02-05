@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 /* tslint:disable */
 const powerBIAccessToken = "fooBarBaz";

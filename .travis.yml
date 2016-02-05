@@ -16,7 +16,7 @@ install:
   - npm install
 script:
  # - phantomjs --version
-  - gulp tslint:visuals
-  - gulp build
+  - gulp tslint
+  - gulp buildAll
 notifications:
   email: false

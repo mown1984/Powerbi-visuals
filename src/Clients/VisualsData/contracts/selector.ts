@@ -27,19 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.data {
-    /** Defines a selector for content, including data-, metadata, and user-defined repetition. */
-    export interface Selector {
-        /** Data-bound repetition selection. */
-        data?: DataRepetitionSelector[];
-	
-        /** Metadata-bound repetition selection.  Refers to a DataViewMetadataColumn queryName. */
-        metadata?: string;
-
-        /** User-defined repetition selection. */
-        id?: string;
-    }
-
-    export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard;
 
     export module Selector {
         export function filterFromSelector(selectors: Selector[], isNot?: boolean): SemanticFilter {
@@ -53,7 +40,7 @@ module powerbi.data {
                 let exprToAdd: SQExpr = undefined;
                 if (data && data.length) {
                     for (let j = 0, jlen = data.length; j < jlen; j++) {
-                        exprToAdd = SQExprBuilder.and(exprToAdd, (<DataViewScopeIdentity>identity.data[j]).expr);
+                        exprToAdd = SQExprBuilder.and(exprToAdd, <SQExpr>(<DataViewScopeIdentity>identity.data[j]).expr);
                     }
                 }
 
@@ -105,10 +92,10 @@ module powerbi.data {
                     selectorDataExprs: SQExpr[];
 
                 if ((<DataViewScopeIdentity>selectorDataItem).expr) {
-                    selectorDataExprs = ScopeIdentityExtractor.getKeys((<DataViewScopeIdentity>selectorDataItem).expr);
+                    selectorDataExprs = ScopeIdentityExtractor.getKeys(<SQExpr>(<DataViewScopeIdentity>selectorDataItem).expr);
                 }
                 else {
-                    selectorDataExprs = (<DataViewScopeWildcard>selectorDataItem).exprs;
+                    selectorDataExprs = <SQExpr[]>(<DataViewScopeWildcard>selectorDataItem).exprs;
                 }
 
                 if (!selectorDataExprs)

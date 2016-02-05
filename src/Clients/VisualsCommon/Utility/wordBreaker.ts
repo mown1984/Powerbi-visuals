@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module jsCommon {
     export module WordBreaker {
         import TextProperties = powerbi.TextProperties;

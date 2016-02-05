@@ -23,9 +23,12 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
 var gulp = require("gulp"),
     runSequence = require("run-sequence"),
     visualsCommon = require("./visualsCommon.js");
+
+require("../src/Clients/PowerBIVisualsPlayground/gulpProject");
 
 gulp.task("run:playground", function (callback) {
     visualsCommon.runHttpServer({
@@ -33,9 +36,6 @@ gulp.task("run:playground", function (callback) {
     }, callback);
 });
 
-gulp.task("build:run:playground", ["build:visuals"], function (callback) {
+gulp.task("build:run:playground", ["build:powerBIVisualsPlayground"], function (callback) {
     runSequence("run:playground", callback);
 });
-
-
-

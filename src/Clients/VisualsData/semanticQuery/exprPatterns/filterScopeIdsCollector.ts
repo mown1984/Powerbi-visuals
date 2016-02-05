@@ -53,7 +53,7 @@ module powerbi.data {
         export function getFirstComparandValue(identity: DataViewScopeIdentity): any {
             debug.assertValue(identity, 'identity');
 
-            let comparandExpr = identity.expr.accept(new FindComparandVisitor());
+            let comparandExpr = (<SQExpr>identity.expr).accept(new FindComparandVisitor());
             if (comparandExpr)
                 return comparandExpr.value;
         }

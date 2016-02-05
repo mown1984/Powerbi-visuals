@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 interface JQuery {
     /** Demonstrates how Power BI visual creation could be implemented as jQuery plugin */
     visual(plugin: Object, dataView?: Object): JQuery;

@@ -530,7 +530,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            timelineData.columnIdentity = dataView.categorical.categories[0].identityFields[0];
+            timelineData.columnIdentity = <data.SQExpr>dataView.categorical.categories[0].identityFields[0];
             var timesLine = timelineData.dataView.categorical.categories[0].values;
 
             if (timesLine.length <= 0) return;

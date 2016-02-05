@@ -27,9 +27,6 @@
 /// <reference path="typedefs/typedefs.ts"/>
 /// <reference path="typedefs/typedefs.obj.ts"/>
 
-/// <reference path="iVisual.ts"/>
-
-/// <reference path="common/tooltipUtils.ts" />
 /// <reference path="common/point.ts"/>
 /// <reference path="common/rect.ts"/>
 /// <reference path="legend.ts"/>
@@ -90,10 +87,14 @@
 /// <reference path="behaviours/lineChartBehaviors.ts"/>
 /// <reference path="behaviours/mapBehaviors.ts"/>
 /// <reference path="behaviours/scatterChartBehaviors.ts"/>
+/// <reference path="behaviours/horizontalSlicerBehaviors.ts"/>
+/// <reference path="behaviours/verticalSlicerBehaviors.ts"/>
 /// <reference path="behaviours/slicerBehaviors.ts"/>
 /// <reference path="behaviours/legendBehaviors.ts"/>
 /// <reference path="behaviours/TreemapBehaviors.ts"/>
 /// <reference path="behaviours/waterfallChartBehavior.ts"/>
+/// <reference path="behaviours/LabelsBehavior.ts"/>
+/// <reference path="behaviours/cartesianChartBehaviors.ts"/>
 
 /// <reference path="contracts/contracts.ts"/>
 
@@ -124,10 +125,12 @@
 /// <reference path="common/gradientHelper.ts"/>
 /// <reference path="common/visualBackgroundHelper.ts"/>
 /// <reference path="common/objectEnumerationBuilder.ts"/>
+/// <reference path="common/visualBorderUtil.ts"/>
+/// <reference path="common/transform.ts"/>
+/// <reference path="common/visibilityUtil.ts"/>
 
 /// <reference path="converter/slicer.converter.ts"/>
 
-/// <reference path="formatting/filledMapLabelLayout.ts" />
 /// <reference path="formatting/dataLabelManager.ts"/>
 /// <reference path="formatting/labelLayout.ts"/>
 /// <reference path="formatting/dateTimeSequence.ts"/>
@@ -135,6 +138,8 @@
 /// <reference path="formatting/numericSequence.ts"/>
 /// <reference path="formatting/numericSequenceRange.ts"/>
 /// <reference path="formatting/valueFormatter.ts"/>
+/// <reference path="formatting/donutLabelLayout.ts"/>
+/// <reference path="formatting/filledMapLabelLayout.ts"/>
 
 /// <reference path="services/colorAllocatorFactory.ts"/>
 /// <reference path="services/defaultVisualHostService.ts"/>
@@ -157,6 +162,7 @@
 /// <reference path="controls/tablix/tablixTouchDelegate.ts"/>
 /// <reference path="controls/tablix/touchRegionAbstraction.ts"/>
 /// <reference path="controls/tablix/ITablixFormatting.ts"/>
+/// <reference path="controls/tablix/tablixColumnWidthManager.ts"/>
 
 /// <reference path="visuals/animatedText.ts"/>
 /// <reference path="visuals/animatedNumber.ts"/>
@@ -178,7 +184,6 @@
 /// <reference path="visuals/gauge.ts"/>
 /// <reference path="visuals/imageVisual.ts"/>
 /// <reference path="visuals/kpiStatusWithHistory.ts"/>
-/// <reference path="iVisualStyle.ts"/>
 
 /// <reference path="cartesian/lineChart.ts"/>
 
@@ -189,6 +194,8 @@
 /// <reference path="cartesian/scatterChart.ts"/>
 /// <reference path="cartesian/playChart.ts"/>
 
+/// <reference path="visuals/verticalSlicer.ts"/>
+/// <reference path="visuals/horizontalSlicer.ts"/>
 /// <reference path="visuals/slicer.ts"/>
 /// <reference path="visuals/table.ts"/>
 /// <reference path="visuals/matrix.ts"/>
@@ -197,8 +204,11 @@
 /// <reference path="visuals/owlGauge.ts"/>
 /// <reference path="warnings/visualWarnings.ts"/>
 /// <reference path="cartesian/waterfallChart.ts"/>
+
 /// <reference path="tooltip.ts"/>
+
 /// <reference path="styles/visualStyles.ts"/>
+
 /// <reference path="visuals/donutChart.ts"/>
 /// <reference path="visuals/scriptVisual.ts"/>
 

@@ -23,11 +23,13 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
 var gulp = require("gulp"),
     express = require("express"),
     open = require("gulp-open"),
     consume = require('stream-consume'),
-    Q = require('q');
+    Q = require('q'),
+    pathModule = require("path");
 
 module.exports = {
     runHttpServer: runHttpServer,
@@ -38,11 +40,11 @@ function runHttpServer(settings, callback) {
     var expressServer = express(); 
     
     var server = null,
-        path = settings.path,
+        path = pathModule.join(__dirname, "../", settings.path),
         port = settings.port || 3000,
         host = settings.host || "localhost",
         index = settings.index || "index.html";
-    
+
     expressServer.use(express.static(
         path, {
             index: index
@@ -54,22 +56,23 @@ function runHttpServer(settings, callback) {
             server.address().address +
             ":" +
             server.address().port;
-        
+
         console.log("Server started on %s", uri);
-        
+
         gulp.src(path).pipe(open({
             uri: uri
         }));
     });
-    
+
     process.on("SIGINT", function () {
         if (server && server.close) {
             server.close();
         }
-        if (callback) {			
-			callback();
-		}
-        
+
+        if (callback) {
+            callback();
+        }
+
         process.exit();
     });
 }

@@ -11,10 +11,10 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
+ *
  *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *   
+ *
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -23,8 +23,6 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-
-/// <reference path="../_references.ts" />
 
 module powerbi {
 
@@ -48,40 +46,56 @@ module powerbi {
         validPositions: NewPointLabelPosition[];
     }
 
+    export interface FilledMapLabel extends Label {
+        absoluteBoundingBoxCenter: IPoint;
+        originalPixelOffset: number;
+        originalPosition?: NewPointLabelPosition;
+        originalAbsoluteCentroid?: IPoint;
+        absoluteStemSource?: IPoint;
+        isPlacedInsidePolygon: boolean;
+    }
+
     export class FilledMapLabelLayout {
+        private labels: FilledMapLabel[];
 
-        public layout(labelDataPoints: LabelDataPoint[], viewport: IViewport, polygonInfoTransform: Transform): Label[] {
-            let labelDataPointsGroup: LabelDataPointsGroup = {
-                labelDataPoints: labelDataPoints,
-                maxNumberOfLabels: labelDataPoints.length
-            };
-
-            for (let labelPoint of labelDataPoints) {
-                labelPoint.labelSize = {
-                    width: labelPoint.textSize.width + 2 * NewDataLabelUtils.horizontalLabelBackgroundPadding,
-                    height: labelPoint.textSize.height + 2 * NewDataLabelUtils.verticalLabelBackgroundPadding,
+        public layout(labelDataPoints: LabelDataPoint[], viewport: IViewport, polygonInfoTransform: Transform, redrawDataLabels: boolean): Label[] {
+            if (redrawDataLabels || this.labels === undefined) {
+                let labelDataPointsGroup: LabelDataPointsGroup = {
+                    labelDataPoints: labelDataPoints,
+                    maxNumberOfLabels: labelDataPoints.length
                 };
-            }
 
-            let grid = new LabelArrangeGrid([labelDataPointsGroup], viewport);
-            let resultingDataLabels: Label[] = [];
-            let allPolygons: Polygon[] = [];
-
-            for (let labelPoint of labelDataPoints) {
-                let polygon = (<LabelParentPolygon>labelPoint.parentShape).polygon;
-                allPolygons.push(polygon);
-                polygon.pixelBoundingRect = polygonInfoTransform.applyToRect(polygon.absoluteBoundingRect());
-            }
-
-            let shapesgrid = new LabelPolygonArrangeGrid(allPolygons, viewport);
-
-            for (let labelPoint of labelDataPoints) {
-                let dataLabel = this.getLabelByPolygonPositions(labelPoint, polygonInfoTransform, grid, shapesgrid);
-                if (dataLabel != null) {
-                    resultingDataLabels.push(dataLabel);
+                for (let labelPoint of labelDataPoints) {
+                    labelPoint.labelSize = {
+                        width: labelPoint.textSize.width + 2 * NewDataLabelUtils.horizontalLabelBackgroundPadding,
+                        height: labelPoint.textSize.height + 2 * NewDataLabelUtils.verticalLabelBackgroundPadding,
+                    };
                 }
+
+                let grid = new LabelArrangeGrid([labelDataPointsGroup], viewport);
+                let resultingDataLabels: FilledMapLabel[] = [];
+                let allPolygons: Polygon[] = [];
+
+                for (let labelPoint of labelDataPoints) {
+                    let polygon = (<LabelParentPolygon>labelPoint.parentShape).polygon;
+                    allPolygons.push(polygon);
+                    polygon.pixelBoundingRect = polygonInfoTransform.applyToRect(polygon.absoluteBoundingRect());
+                }
+
+                let shapesgrid = new LabelPolygonArrangeGrid(allPolygons, viewport);
+
+                for (let labelPoint of labelDataPoints) {
+                    let dataLabel = this.getLabelByPolygonPositions(labelPoint, polygonInfoTransform, grid, shapesgrid);
+                    if (dataLabel != null) {
+                        resultingDataLabels.push(dataLabel);
+                    }
+                }
+                this.labels = resultingDataLabels;
             }
-            return resultingDataLabels;
+            else {
+                this.updateLabelOffsets(polygonInfoTransform);
+            }
+            return this.labels;
         }
 
         public getLabelPolygon(mapDataPoint: LabelDataPoint, position: NewPointLabelPosition, pointPosition: IPoint, offset: number): IRect {
@@ -90,6 +104,10 @@ module powerbi {
                 height: (mapDataPoint.textSize.height)
             };
 
+            return this.getLabelBoundingBox(dataPointSize, position, pointPosition, offset);
+        }
+
+        private getLabelBoundingBox(dataPointSize: ISize, position: NewPointLabelPosition, pointPosition: IPoint, offset: number): IRect {
             switch (position) {
                 case NewPointLabelPosition.Above: {
                     return DataLabelPointPositioner.above(dataPointSize, pointPosition, offset);
@@ -125,19 +143,21 @@ module powerbi {
             return null;
         }
 
-        private getLabelByPolygonPositions(labelPoint: LabelDataPoint, polygonInfoTransform: Transform, grid: LabelArrangeGrid, shapesGrid: LabelPolygonArrangeGrid): Label {
+        private getLabelByPolygonPositions(labelPoint: LabelDataPoint, polygonInfoTransform: Transform, grid: LabelArrangeGrid, shapesGrid: LabelPolygonArrangeGrid): FilledMapLabel {
             let offset: number = 0;
+            let inverseTransorm = polygonInfoTransform.getInverse();
             for (let i: number = 0; i < 2; i++) {
                 if (i === 1) {
                     offset = DefaultCentroidOffset;
                 }
                 for (let position of (<LabelParentPolygon>labelPoint.parentShape).validPositions) {
-                    let resultingBoundingBox = this.tryPositionForPolygonPosition(position, labelPoint, polygonInfoTransform, offset);
+                    let resultingAbsoluteBoundingBox = this.tryPositionForPolygonPosition(position, labelPoint, polygonInfoTransform, offset, inverseTransorm);
                     if (position === NewPointLabelPosition.Center && i !== 0) {
                         continue;
                     }
-                    if (resultingBoundingBox) {
-                        let dataLabel: Label = {
+                    if (resultingAbsoluteBoundingBox) {
+                        let resultingBoundingBox = polygonInfoTransform.applyToRect(resultingAbsoluteBoundingBox);
+                        let dataLabel: FilledMapLabel = {
                             text: labelPoint.text,
                             secondRowText: labelPoint.secondRowText,
                             boundingBox: resultingBoundingBox,
@@ -146,6 +166,13 @@ module powerbi {
                             identity: null,
                             selected: false,
                             hasBackground: true,
+                            textAnchor: "middle",
+                            originalPixelOffset: offset,
+                            isPlacedInsidePolygon: true,
+                            absoluteBoundingBoxCenter: {
+                                x: resultingAbsoluteBoundingBox.left + resultingAbsoluteBoundingBox.width / 2,
+                                y: resultingAbsoluteBoundingBox.top + resultingAbsoluteBoundingBox.height / 2
+                            }
                         };
 
                         return dataLabel;
@@ -153,7 +180,6 @@ module powerbi {
                 }
             }
 
-            let inverseTransorm = polygonInfoTransform.getInverse();
             let currentOffset = 6;
 
             while (currentOffset <= MaximumOffset) {
@@ -163,10 +189,11 @@ module powerbi {
                     }
                     let polygon = (<LabelParentPolygon>labelPoint.parentShape).polygon;
                     let pixelCentroid = polygonInfoTransform.applyToPoint(polygon.absoluteCentroid());
-                    let resultingBoundingBox = this.tryPlaceLabelOutsidePolygon(grid, position, labelPoint, currentOffset, pixelCentroid, shapesGrid, inverseTransorm);
+                    let resultingAbsolutBoundingBox = this.tryPlaceLabelOutsidePolygon(grid, position, labelPoint, currentOffset, pixelCentroid, shapesGrid, inverseTransorm);
 
-                    if (resultingBoundingBox) {
-                        let dataLabel: Label = {
+                    if (resultingAbsolutBoundingBox) {
+                        let resultingBoundingBox = polygonInfoTransform.applyToRect(resultingAbsolutBoundingBox);
+                        let dataLabel: FilledMapLabel = {
                             text: labelPoint.text,
                             secondRowText: labelPoint.secondRowText,
                             boundingBox: resultingBoundingBox,
@@ -175,10 +202,22 @@ module powerbi {
                             identity: null,
                             selected: false,
                             hasBackground: true,
+                            isPlacedInsidePolygon: false,
+                            textAnchor: "middle",
+                            originalPixelOffset: currentOffset,
+                            originalPosition: position,
+                            originalAbsoluteCentroid: polygon.absoluteCentroid(),
+                            absoluteBoundingBoxCenter: {
+                                x: resultingAbsolutBoundingBox.left + resultingAbsolutBoundingBox.width / 2,
+                                y: resultingAbsolutBoundingBox.top + resultingAbsolutBoundingBox.height / 2
+                            }
                         };
 
-                        dataLabel.leaderLinePoints = this.setLeaderLinePoints(this.calculateStemSource(polygonInfoTransform, inverseTransorm, polygon, resultingBoundingBox, position, pixelCentroid),
-                            this.calculateStemDestination(resultingBoundingBox, position));
+                        let pixelStemSource = this.calculateStemSource(polygonInfoTransform, inverseTransorm, polygon, resultingBoundingBox, position, pixelCentroid);
+
+                        dataLabel.leaderLinePoints = this.setLeaderLinePoints(pixelStemSource, this.calculateStemDestination(resultingBoundingBox, position));
+
+                        dataLabel.absoluteStemSource = inverseTransorm.applyToPoint(pixelStemSource);
 
                         grid.add(resultingBoundingBox);
                         return dataLabel;
@@ -306,14 +345,13 @@ module powerbi {
             return { x: x, y: y };
         }
 
-        private tryPositionForPolygonPosition(position: NewPointLabelPosition, labelDataPoint: LabelDataPoint, polygonInfoTransform: Transform, offset: number) {
+        private tryPositionForPolygonPosition(position: NewPointLabelPosition, labelDataPoint: LabelDataPoint, polygonInfoTransform: Transform, offset: number, inverseTransorm: Transform) {
             let polygon = (<LabelParentPolygon>labelDataPoint.parentShape).polygon;
             let pixelCentroid = polygonInfoTransform.applyToPoint(polygon.absoluteCentroid());
             let labelRect = this.getLabelPolygon(labelDataPoint, position, pixelCentroid, offset);
-            let inverseTransorm = polygonInfoTransform.getInverse();
             let absoluteLabelRect = this.getAbsoluteRectangle(inverseTransorm, labelRect);
 
-            return polygon.contains(absoluteLabelRect) ? labelRect : null;
+            return polygon.contains(absoluteLabelRect) ? absoluteLabelRect : null;
         }
 
         /**
@@ -330,11 +368,34 @@ module powerbi {
             if (!otherLabelsConflict) {
                 let absoluteLabelRect = this.getAbsoluteRectangle(inverseTransform, labelRect);
 
-                if (!shapesGrid.hasConflict(absoluteLabelRect, labelRect)) {
-                    return labelRect;
-                }
+                if (!shapesGrid.hasConflict(absoluteLabelRect, labelRect))
+                    return absoluteLabelRect;
             }
             return null;
+        }
+
+        private updateLabelOffsets(polygonInfoTransform: Transform): void {
+            for (let label of this.labels) {
+                if (!label.isVisible)
+                    continue;
+
+                if (label.isPlacedInsidePolygon) {
+                    var newOffset = polygonInfoTransform.applyToPoint(label.absoluteBoundingBoxCenter);
+
+                    let xDelta = (label.boundingBox.left + label.boundingBox.width / 2) - newOffset.x;
+                    let yDelta = (label.boundingBox.top + label.boundingBox.height / 2) - newOffset.y;
+
+                    label.boundingBox.top -= yDelta;
+                    label.boundingBox.left -= xDelta;
+                } else {
+                    var stemSourcePoint = polygonInfoTransform.applyToPoint(label.absoluteStemSource);
+                    var pixelCentroid = polygonInfoTransform.applyToPoint(label.originalAbsoluteCentroid);
+                    label.boundingBox = this.getLabelBoundingBox({ width: label.boundingBox.width, height: label.boundingBox.height }, label.originalPosition, pixelCentroid, label.originalPixelOffset);
+
+                    if (label.leaderLinePoints !== undefined)
+                        label.leaderLinePoints = this.setLeaderLinePoints(stemSourcePoint, this.calculateStemDestination(label.boundingBox, label.originalPosition));
+                }
+            }
         }
 
         private getAbsoluteRectangle(inverseTransorm: Transform, rect: IRect) {

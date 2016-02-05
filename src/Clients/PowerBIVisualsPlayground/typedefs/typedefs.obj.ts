@@ -24,6 +24,6 @@
  *  THE SOFTWARE.
  */
 
-///<reference path="../../VisualsCommon/obj/VisualsCommon.d.ts"/>
-///<reference path="../../VisualsData/obj/VisualsData.d.ts"/>
-///<reference path="../../Visuals/obj/Visuals.d.ts"/>
+/// <reference path="../../VisualsCommon/obj/VisualsCommon.d.ts"/>
+/// <reference path="../../VisualsData/obj/VisualsData.d.ts"/>
+/// <reference path="../../Visuals/obj/Visuals.d.ts"/>

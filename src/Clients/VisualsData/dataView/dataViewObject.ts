@@ -27,29 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi {
-    /** Represents evaluated, named, custom objects in a DataView. */
-    export interface DataViewObjects {
-        [name: string]: DataViewObject | DataViewObjectMap;
-    }
-
-    /** Represents an object (name-value pairs) in a DataView. */
-    export interface DataViewObject {
-        [propertyName: string]: DataViewPropertyValue;
-    }
-
-    export type DataViewPropertyValue = PrimitiveValue | StructuralObjectValue;
-
-    export type DataViewObjectMap = DataViewObjectWithId[];
-
-    export interface DataViewObjectWithId {
-        id: string;
-        object: DataViewObject;
-    }
-
-    export interface DataViewObjectPropertyIdentifier {
-        objectName: string;
-        propertyName: string;
-    }
 
     export module DataViewObjects {
         /** Gets the value of the given object/property pair. */

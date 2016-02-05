@@ -155,7 +155,7 @@ module powerbi.visuals {
                     // I default to text unless there is a category type
                     let categoryType = ValueType.fromDescriptor({ text: true });
                     if (dvCategories && dvCategories.length > 0 && dvCategories[0].source && dvCategories[0].source.type)
-                        categoryType = dvCategories[0].source.type;
+                        categoryType = <ValueType>dvCategories[0].source.type;
 
                     this.data = DataDotChart.converter(dataView, valueFormatter.format(null), this.interactivityService);
                 }
@@ -374,7 +374,7 @@ module powerbi.visuals {
                 behaviorOptions = {
                     dots: dots,
                     dotLabels: dotLabels,
-                    datapoints: dataPoints,
+                    datapoints: dataPoints
                 };
             }        
 
@@ -457,7 +457,7 @@ module powerbi.visuals {
                     identity: undefined
                 };
 
-            let categoryType: ValueType = AxisHelper.getCategoryValueType(category.source);
+            let categoryType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(category.source);
             let isDateTime = AxisHelper.isDateTime(categoryType);
             let categoryValues = category.values;
 

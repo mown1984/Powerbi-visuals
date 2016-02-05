@@ -23,11 +23,13 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
 var gulp = require("gulp"),
     fs = require("fs"),
     download = require("gulp-download"),
     os = require("os"),
-    exec = require("child_process").execSync,
+    shelljs = require("shelljs"),
+    path = require("path"),
     unzip = require("gulp-unzip"),
     visualsCommon = require("./visualsCommon.js");
 
@@ -54,7 +56,7 @@ function installJasmine() {
 function installPhantomjs() {
     var zipUrl = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.0.0-windows.zip";
     var phantomExe = "phantomjs.exe";
-    var jasmineBrowserDir = "./node_modules/gulp-jasmine-browser/lib/";
+    var jasmineBrowserDir = path.resolve(__dirname, "../node_modules/gulp-jasmine-browser/lib/");
 
     // Download phantomjs only for Windows OS.
     var version = getPhantomJsVersion(jasmineBrowserDir);
@@ -87,8 +89,12 @@ function installPhantomjs() {
 
     function getPhantomJsVersion(path) {
         try {
-            var stdout = exec("phantomjs -v", { cwd: path }).toString();
-            return stdout.substring(0, 5);
+            shelljs.cd(path);
+            var stdout = shelljs.exec("phantomjs -v", {
+                silent: true
+            });
+            shelljs.cd(__dirname);
+            return (stdout.code === 0) ? stdout.output.substring(0, 5) : null;
         }
         catch (e) {
             return null;

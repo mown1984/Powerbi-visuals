@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbi.visuals.samples {
 
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -1183,7 +1181,7 @@ module powerbi.visuals.samples {
                     this.category = dataViewCategorical.categories[0];
                     this.categoryIdentities = this.category.identity;
                     this.categoryValues = this.category.values;
-                    this.categoryColumnRef = this.category.identityFields;
+                    this.categoryColumnRef = <data.SQExpr[]> this.category.identityFields;
                     this.categoryFormatString = valueFormatter.getFormatString(this.category.source, chicletSlicerProps.formatString);
                 }
 

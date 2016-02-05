@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "suppressExcessPropertyErrors": true
+    },
+    "filesGlob": [
+        "**/*.ts"
+    ],
+    "files": [
+        "common/enums.ts"
+    ]
+}

@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests {
     import MultiRowCard = powerbi.visuals.MultiRowCard;
@@ -216,11 +216,13 @@ module powerbitests {
         describe('enumerateObjectInstances', () => {
             let visual: MultiRowCard;
 
+            let defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings(true, "#767676", 13);
+
             beforeEach(() => {
-                let element = helpers.testDom("200", "300");
+                let element = helpers.testDom("200", "300")
                 visual = <MultiRowCard>powerbi.visuals.visualPluginFactory.create().getPlugin("multiRowCard").create();
                 visual.init(getVisualInitOptions(element));
-            });
+            })
 
             it('after no dataview should return default values', () => {
                 // We guarantee onDataChanged, but not with a valid data view.
@@ -302,8 +304,8 @@ module powerbitests {
 
             beforeEach(() => {
                 v = <MultiRowCard>powerbi.visuals.visualPluginFactory.create().getPlugin("multiRowCard").create();
-                element = helpers.testDom("200", "300");
-                visualInitOptions = getVisualInitOptions(element);
+                element = helpers.testDom("200", "300")
+                visualInitOptions = getVisualInitOptions(element)
                 v.init(visualInitOptions);
             });
 
@@ -755,7 +757,7 @@ module powerbitests {
                 });
             });
 
-            xit("Verify number of cards and card items in MediumTile ", () => {
+           xit("Verify number of cards and card items in MediumTile ", () => {
                 let options = getVisualInitOptions(helpers.testDom("300", "470"));
 
                 options.interactivity = { overflow: "hidden" };
@@ -916,7 +918,7 @@ module powerbitests {
 
                     let listViewOptions: powerbi.visuals.ListViewOptions = <powerbi.visuals.ListViewOptions>v["listView"]["options"];
 
-                    let hostServices = visualInitOptions.host;
+                    let hostServices = visualInitOptions.host
                     let loadMoreSpy = spyOn(hostServices, "loadMoreData");
 
                     listViewOptions.loadMoreData();

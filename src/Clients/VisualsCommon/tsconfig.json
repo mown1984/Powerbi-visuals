@@ -1,0 +1,46 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "suppressExcessPropertyErrors": true
+    },
+    "filesGlob": [
+        "**/*.ts"
+    ],
+    "files": [
+        "_references.ts",
+        "services/build.ts",
+        "clientError.ts",
+        "color.ts",
+        "Controls/DomFactory.ts",
+        "CssConstants.ts",
+        "debug.ts",
+        "DOMConstants.ts",
+        "Double.ts",
+        "Errors.ts",
+        "Formatting.ts",
+        "JQueryExtensions.ts",
+        "Lazy.ts",
+        "Prototype.ts",
+        "ScriptErrorInfo.ts",
+        "serviceError.ts",
+        "arrayExtensions.ts",
+        "services/dependencies.ts",
+        "services/geoTaggingAnalyzerService.ts",
+        "services/jqueryPromiseFactory.ts",
+        "services/localStorageService.ts",
+        "services/requires.ts",
+        "services/textMeasurementService.ts",
+        "TraceType.ts",
+        "tracing/trace.ts",
+        "tracing/traceItem.ts",
+        "tracing/traceType.ts",
+        "typedefs/buildConstants.ts",
+        "typedefs/typedefs.obj.ts",
+        "typedefs/typedefs.ts",
+        "Utility/StandaloneUtility.ts",
+        "Utility/ThrottleUtility.ts",
+        "Utility/TimerPromiseFactory.ts",
+        "Utility/Utility.ts",
+        "Utility/wordBreaker.ts"
+    ]
+}

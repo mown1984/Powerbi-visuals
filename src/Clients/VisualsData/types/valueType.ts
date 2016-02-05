@@ -29,69 +29,10 @@
 module powerbi {
     import EnumExtensions = jsCommon.EnumExtensions;
 
-    /** Describes instances of value type objects. */
-    export type PrimitiveValue = string | number | boolean | Date;
-
-    /** Describes a data value type in the client type system. Can be used to get a concrete ValueType instance. */
     export interface ValueTypeDescriptor {
-        // Simplified primitive types
-        text?: boolean;
-        numeric?: boolean;
-        integer?: boolean;
-        bool?: boolean;
-        dateTime?: boolean;
-        duration?: boolean;
-        binary?: boolean;
-        none?: boolean; //TODO: 5005022 remove none type when we introduce property categories.
-
-        // Extended types
-        temporal?: TemporalTypeDescriptor;
-        geography?: GeographyTypeDescriptor;
-        misc?: MiscellaneousTypeDescriptor;
-        formatting?: FormattingTypeDescriptor;
         extendedType?: ExtendedType;
-        enumeration?: IEnumType;
-        scripting?: ScriptTypeDescriptor;
     }
-
-    export interface ScriptTypeDescriptor {
-        source?: boolean;
-    }
-
-    export interface TemporalTypeDescriptor {
-        year?: boolean;
-        month?: boolean;
-    }
-
-    export interface GeographyTypeDescriptor {
-        address?: boolean;
-        city?: boolean;
-        continent?: boolean;
-        country?: boolean;
-        county?: boolean;
-        region?: boolean;
-        postalCode?: boolean;
-        stateOrProvince?: boolean;
-        place?: boolean;
-        latitude?: boolean;
-        longitude?: boolean;
-    }
-
-    export interface MiscellaneousTypeDescriptor {
-        image?: boolean;
-        imageUrl?: boolean;
-        webUrl?: boolean;
-    }
-
-    export interface FormattingTypeDescriptor {
-        color?: boolean;
-        formatString?: boolean;
-        alignment?: boolean;
-        labelDisplayUnits?: boolean;
-        fontSize?: boolean;
-        labelDensity?: boolean;
-    }
-
+    
     /** Describes a data value type, including a primitive type and extended type if any (derived from data category). */
     export class ValueType implements ValueTypeDescriptor {
         private static typeCache: { [id: string]: ValueType } = {};

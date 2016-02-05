@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbitests.customVisuals.helpers {
     export function getTableDataValues(categoryValues: any[], columns: any[]): any[] {
         return categoryValues.map((category, idx) => {

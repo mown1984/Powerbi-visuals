@@ -24,8 +24,6 @@
 *  THE SOFTWARE.
 */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals.sampleDataViews {
     import DataView = powerbi.DataView;
     import DataViewMetadata = powerbi.DataViewMetadata;

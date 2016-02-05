@@ -27,12 +27,6 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
-    export interface IRect {
-        left: number;
-        top: number;
-        width: number;
-        height: number;
-    }
 
     export class Rect implements IRect {
         // Fields

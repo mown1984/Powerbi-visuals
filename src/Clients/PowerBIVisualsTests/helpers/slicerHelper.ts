@@ -24,12 +24,13 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+
 
 module powerbitests.slicerHelper {
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
     import SQExpr = powerbi.data.SQExpr;
     import ValueType = powerbi.ValueType;
+    import SemanticFilter = powerbi.data.SemanticFilter;
 
     export const SelectAllTextKey = 'Select All';
     export const SlicerVisual = 'slicer';
@@ -72,8 +73,8 @@ module powerbitests.slicerHelper {
     export function createHostServices(): powerbi.IVisualHostServices {
         let hostServices = new powerbi.visuals.DefaultVisualHostServices();
         hostServices.canSelect = () => true;
-        hostServices.analyzedFilter = (options: powerbi.FilterAnalyzerOptions) => {
-            return new mocks.FilterAnalyzerMock(options.filter, options.fieldSQExprs);
+        hostServices.analyzeFilter = (options: powerbi.FilterAnalyzerOptions) => {
+            return new mocks.FilterAnalyzerMock(<SemanticFilter>options.filter, <SQExpr[]>options.fieldSQExprs);
         };
         return hostServices;
     }

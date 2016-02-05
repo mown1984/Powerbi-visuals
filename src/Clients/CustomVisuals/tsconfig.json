@@ -1,0 +1,36 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "suppressExcessPropertyErrors": true
+    },
+    "filesGlob": [
+        "**/*.ts"
+    ],
+    "files": [
+        "../Visuals/obj/Visuals.d.ts",
+        "visuals/areaRangeChart/areaRangeChart.ts",
+        "visuals/asterPlot/asterPlot.ts",
+        "visuals/bulletChart/bulletChart.ts",
+        "visuals/chicletSlicer/chicletSlicer.ts",
+        "visuals/chordChart/chordChart.ts",
+        "visuals/consoleWriter/consoleWriter.ts",
+        "visuals/dotPlot/dotPlot.ts",
+        "visuals/enhancedScatterChart/enhancedScatterChart.ts",
+        "visuals/forceGraph/forceGraph.ts",
+        "visuals/gantt/gantt.ts",
+        "visuals/globeMap/globeMap.ts",
+        "visuals/helloIVisual/helloIVisual.ts",
+        "visuals/histogram/histogram.ts",
+        "visuals/mekkoChart/mekkoChart.ts",
+        "visuals/radarChart/radarChart.ts",
+        "visuals/sankeyDiagram/sankeyDiagram.ts",
+        "visuals/streamGraph/streamGraph.ts",
+        "visuals/sunburst/sunburst.ts",
+        "visuals/timeline/timeline.ts",
+        "visuals/tornadoChart/tornadoChart.ts",
+        "visuals/wordCloud/wordCloud.ts",
+        "capabilities/consoleWriter.capabilities.ts",
+        "plugins.ts",
+        "services/customVisualPluginService.ts"
+    ]
+}
