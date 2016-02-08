@@ -24,13 +24,13 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals.sampleDataViews {
     import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
+    import PrimitiveType = powerbi.PrimitiveType;
     import DataViewMetadata = powerbi.DataViewMetadata;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
     export class TimelineData {
         public getDataView(): DataView {
@@ -131,17 +131,26 @@ module powerbitests.customVisuals.sampleDataViews {
             let dataViewMetadata: DataViewMetadata = {
                 columns: [
                     {
-                        displayName: 'Time',
-                        queryName: 'Time',
-                        type: ValueType.fromDescriptor({ dateTime: true })
-                    }
+                        displayName: 'Team',
+                        queryName: 'Team',
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    {
+                        displayName: 'Volume',
+                        isMeasure: true,
+                        queryName: 'volume1',
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
                 ]
             };
-            
+
             let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'series' } });
 
+            let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
+            let groupSource1: DataViewMetadataColumn = { displayName: 'group1', type: dataTypeString, index: 0 };
+
             return {
-                metadata: dataViewMetadata,
+                metadata: { columns: [groupSource1] },
                 categorical: {
                     categories: [{
                         source: dataViewMetadata.columns[0],
@@ -170,7 +179,7 @@ module powerbitests.customVisuals.sampleDataViews {
                     }]
                 },
                 table: {
-                    columns: [dataViewMetadata.columns[0]],
+                    columns: [groupSource1],
                     rows: []
                 }
             };
