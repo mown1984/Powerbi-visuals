@@ -49,6 +49,7 @@ module powerbi.visuals.samples {
         count: number;
         index: number;
         selectionId: SelectionId;
+        color: string;
     }
 
     export interface WordCloudDataPoint extends IPoint {
@@ -65,8 +66,9 @@ module powerbi.visuals.samples {
         y0: number;
         x1: number;
         y1: number;
-        colour: string;
+        color: string;
         selectionId: SelectionId;
+        wordIndex: number;
     }
 
     export interface WordCloudData {
@@ -149,7 +151,7 @@ module powerbi.visuals.samples {
         }
 
         private static restrictToMinMax<T>(value: T): T {
-            var result = $.extend({}, value);
+            let result = $.extend({}, value);
             d3.keys(value).forEach(x => result[x] = Math.max(0, value[x]));
             return result;
         }
@@ -164,51 +166,57 @@ module powerbi.visuals.samples {
                     objectName: "general",
                     propertyName: "formatString"
                 },
-                maxNumberOfWords: <DataViewObjectPropertyIdentifier> {
+                maxNumberOfWords: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "maxNumberOfWords"
                 },
-                minFontSize: <DataViewObjectPropertyIdentifier> {
+                minFontSize: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "minFontSize"
                 },
-                maxFontSize: <DataViewObjectPropertyIdentifier> {
+                maxFontSize: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "maxFontSize"
                 },
-                isBrokenText: <DataViewObjectPropertyIdentifier> {
+                isBrokenText: <DataViewObjectPropertyIdentifier>{
                     objectName: "general",
                     propertyName: "isBrokenText"
                 },
             },
+            dataPoint: {
+                fill: <DataViewObjectPropertyIdentifier>{
+                    objectName: "dataPoint",
+                    propertyName: "fill"
+                }
+            },
             stopWords: {
-                show: <DataViewObjectPropertyIdentifier> {
+                show: <DataViewObjectPropertyIdentifier>{
                     objectName: "stopWords",
                     propertyName: "show"
                 },
-                isDefaultStopWords: <DataViewObjectPropertyIdentifier> {
+                isDefaultStopWords: <DataViewObjectPropertyIdentifier>{
                     objectName: "stopWords",
                     propertyName: "isDefaultStopWords"
                 },
-                words: <DataViewObjectPropertyIdentifier> {
+                words: <DataViewObjectPropertyIdentifier>{
                     objectName: "stopWords",
                     propertyName: "words"
                 },
             },
             rotateText: {
-                show: <DataViewObjectPropertyIdentifier> {
+                show: <DataViewObjectPropertyIdentifier>{
                     objectName: "rotateText",
                     propertyName: "show"
                 },
-                minAngle: <DataViewObjectPropertyIdentifier> {
+                minAngle: <DataViewObjectPropertyIdentifier>{
                     objectName: "rotateText",
                     propertyName: "minAngle"
                 },
-                maxAngle: <DataViewObjectPropertyIdentifier> {
+                maxAngle: <DataViewObjectPropertyIdentifier>{
                     objectName: "rotateText",
                     propertyName: "maxAngle"
                 },
-                maxNumberOfOrientations: <DataViewObjectPropertyIdentifier> {
+                maxNumberOfOrientations: <DataViewObjectPropertyIdentifier>{
                     objectName: "rotateText",
                     propertyName: "maxNumberOfOrientations"
                 }
@@ -242,11 +250,11 @@ module powerbi.visuals.samples {
             dataRoles: [{
                 name: "Category",
                 kind: VisualDataRoleKind.Grouping,
-                displayName: data.createDisplayNameGetter("Role_DisplayName_Group")
+                displayName: "Category"
             }, {
                     name: "Values",
                     kind: VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter("Role_DisplayName_Value")
+                    displayName: "Values"
                 }],
             dataViewMappings: [{
                 conditions: [{
@@ -279,7 +287,7 @@ module powerbi.visuals.samples {
             },
             objects: {
                 general: {
-                    displayName: data.createDisplayNameGetter("Visual_General"),
+                    displayName: "General",
                     properties: {
                         formatString: {
                             type: {
@@ -310,11 +318,20 @@ module powerbi.visuals.samples {
                         }
                     }
                 },
+                dataPoint: {
+                    displayName: "Data colors",
+                    properties: {
+                        fill: {
+                            displayName: "Fill",
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
                 stopWords: {
                     displayName: "Stop Words",
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            displayName: "Show",
                             type: { bool: true }
                         },
                         isDefaultStopWords: {
@@ -331,7 +348,7 @@ module powerbi.visuals.samples {
                     displayName: "Rotate Text",
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            displayName: "Show",
                             type: { bool: true }
                         },
                         minAngle: {
@@ -397,6 +414,10 @@ module powerbi.visuals.samples {
         };
 
         private settings: WordCloudSettings;
+        private wordCloudTexts: WordCloudText[];
+        private wordCloudDataView: WordCloudDataView;
+        private data: WordCloudData;
+        private dataBeforeRender: WordCloudDataPoint[];
 
         private durationAnimations: number = 500;
 
@@ -412,6 +433,8 @@ module powerbi.visuals.samples {
             height: 2048
         };
 
+
+        public static colors: IDataColorPalette;
         private root: D3.Selection;
         private svg: D3.Selection;
         private main: D3.Selection;
@@ -437,26 +460,23 @@ module powerbi.visuals.samples {
                 this.svg = options.svg || this.svg;
                 this.layout = new VisualLayout(null, options.margin || WordCloud.DefaultMargin);
 
-                if (options.animator) {
+                if (options.animator)
                     this.animator = options.animator;
-                }
             }
         }
 
         public init(options: VisualInitOptions): void {
-            if (this.svg) {
+            if (this.svg)
                 this.root = this.svg;
-            } else {
-                this.root = d3.select(options.element.get(0))
-                    .append("svg");
-            }
+            else
+                this.root = d3.select(options.element.get(0)).append("svg");
 
+            WordCloud.colors = options.style.colorPalette.dataColors;
             this.hostService = options.host;
             this.selectionManager = new utility.SelectionManager({ hostServices: this.hostService });
 
-            if (!this.layout) {
+            if (!this.layout)
                 this.layout = new VisualLayout(null, WordCloud.DefaultMargin);
-            }
 
             this.root.classed(WordCloud.ClassName, true);
 
@@ -476,55 +496,70 @@ module powerbi.visuals.samples {
             this.canvas = document.createElement("canvas");
         }
 
-        public static converter(dataView: DataView): WordCloudData {
+        public converter(dataView: DataView): WordCloudData {
             if (!dataView ||
                 !dataView.categorical ||
                 !dataView.categorical.categories ||
                 !dataView.categorical.categories[0] ||
                 !dataView.categorical.categories[0].values ||
                 !dataView.categorical.categories[0].values.length ||
-                !(dataView.categorical.categories[0].values.length > 0)) {
+                !(dataView.categorical.categories[0].values.length > 0))
                 return null;
-            }
 
-            var categories: string[] = dataView.categorical.categories[0].values,
+            let categories: string[] = dataView.categorical.categories[0].values,
                 settings: WordCloudSettings = WordCloud.parseSettings(dataView, categories[0]),
                 frequencies: number[],
                 texts: WordCloudText[];
-            if (!settings) {
+            if (!settings)
                 return null;
-            }
 
             if (!_.isEmpty(dataView.categorical.values) &&
                 !_.isEmpty(dataView.categorical.values[0]) &&
-                !_.isEmpty(dataView.categorical.values[0].values)) {
+                !_.isEmpty(dataView.categorical.values[0].values))
                 frequencies = dataView.categorical.values[0].values;
-            }
 
             texts = categories.map((item: string, index: number) => {
-                return <WordCloudText> {
+                let color, categoryObject = dataView.categorical.categories[0];
+                if (categoryObject.objects && categoryObject.objects[index])
+                    color = this.getColor(WordCloud.Properties.dataPoint.fill, explore.util.getRandomColor(), categoryObject.objects[index]);
+                else {
+                    if (this.wordCloudTexts && this.wordCloudTexts[index])
+                        color = this.wordCloudTexts[index].color;
+                    else
+                        color = explore.util.getRandomColor();
+                }
+
+                return <WordCloudText>{
                     text: item,
                     count: (frequencies && frequencies[index] && !isNaN(frequencies[index])) ? frequencies[index] : 1,
                     index: index,
-                    selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[index])
+                    selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[index]),
+                    color: color,
                 };
             });
 
-            return <WordCloudData> {
+            return <WordCloudData>{
                 settings: settings,
                 texts: texts
             };
+        }
+
+        private getColor(properties: any, defaultColor: string, objects: DataViewObjects): string {
+            let colorHelper: ColorHelper;
+
+            colorHelper = new ColorHelper(WordCloud.colors, properties, defaultColor);
+
+            return explore.util.hexToRgb(colorHelper.getColorForMeasure(objects, ""));
         }
 
         private static parseSettings(dataView: DataView, value: any): WordCloudSettings {
             if (!dataView ||
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
-                !dataView.metadata.columns[0]) {
+                !dataView.metadata.columns[0])
                 return null;
-            }
 
-            var objects: DataViewObjects = dataView.metadata.objects,
+            let objects: DataViewObjects = dataView.metadata.objects,
                 valueFormatter: IValueFormatter,
                 minFontSize: number,
                 maxFontSize: number,
@@ -596,11 +631,10 @@ module powerbi.visuals.samples {
                 WordCloud.Properties.stopWords.words,
                 WordCloud.DefaultSettings.stopWords);
 
-            if (typeof stopWords === "string") {
+            if (typeof stopWords === "string")
                 stopWordsArray = stopWords.split(WordCloud.StopWordsDelemiter);
-            } else {
+            else
                 stopWordsArray = WordCloud.DefaultSettings.stopWordsArray;
-            }
 
             isDefaultStopWords = DataViewObjects.getValue<boolean>(
                 objects,
@@ -633,32 +667,28 @@ module powerbi.visuals.samples {
             defaultValue: number = 0,
             minValue: number = -Number.MAX_VALUE,
             maxValue: number = Number.MAX_VALUE): number {
-            var parsedValue: number = Number(value);
+            let parsedValue: number = Number(value);
 
-            if (isNaN(parsedValue) || (typeof value === "string" && value.length === 0)) {
+            if (isNaN(parsedValue) || (typeof value === "string" && value.length === 0))
                 return defaultValue;
-            }
 
-            if (parsedValue < minValue) {
+            if (parsedValue < minValue)
                 return minValue;
-            }
 
-            if (parsedValue > maxValue) {
+            if (parsedValue > maxValue)
                 return maxValue;
-            }
 
             return parsedValue;
         }
 
         private computePositions(words: WordCloudDataPoint[], onPositionsComputed: (WordCloudDataView) => void): void {
-            var context: CanvasRenderingContext2D = this.getCanvasContext(),
+            let context: CanvasRenderingContext2D = this.getCanvasContext(),
                 surface: number[] = [],
                 borders: IPoint[] = null,
                 maxNumberOfWords: number;
 
-            if (!words || !(words.length > 0)) {
+            if (!words || !(words.length > 0))
                 return null;
-            }
 
             maxNumberOfWords = Math.abs(this.parseNumber(
                 this.settings.maxNumberOfWords,
@@ -666,15 +696,14 @@ module powerbi.visuals.samples {
                 words.length * -1,
                 words.length));
 
-            if (words.length > maxNumberOfWords) {
+            if (words.length > maxNumberOfWords)
                 words = words.slice(0, maxNumberOfWords);
-            }
 
-            for (var i: number; i < (this.specialViewport.width >> 5) * this.specialViewport.height; i++) {
+            for (let i: number; i < (this.specialViewport.width >> 5) * this.specialViewport.height; i++) {
                 surface[i] = 0;
             }
 
-            this.computeCycle(words, context, surface, borders, onPositionsComputed, [], 0);
+            setTimeout(() => this.computeCycle(words, context, surface, borders, onPositionsComputed, [], 0), 0);
         }
 
         private computeCycle(
@@ -685,18 +714,17 @@ module powerbi.visuals.samples {
             onPositionsComputed: (WordCloudDataView) => void,
             wordsForDraw: WordCloudDataPoint[] = [],
             index: number = 0): void {
-            var word: WordCloudDataPoint = words[index],
+            let word: WordCloudDataPoint = words[index],
                 ratio: number = 1;
 
-            if (words.length <= 10) {
+            if (words.length <= 10)
                 ratio = 5;
-            } else if (words.length <= 25) {
+            else if (words.length <= 25)
                 ratio = 3;
-            } else if (words.length <= 75) {
+            else if (words.length <= 75)
                 ratio = 1.5;
-            } else if (words.length <= 100) {
+            else if (words.length <= 100)
                 ratio = 1.25;
-            }
 
             word.x = (this.specialViewport.width / ratio * (Math.random() + 0.5)) >> 1;
             word.y = (this.specialViewport.height / ratio * (Math.random() + 0.5)) >> 1;
@@ -711,9 +739,9 @@ module powerbi.visuals.samples {
                 word.y -= this.specialViewport.height >> 1;
             }
 
-            if(++index < words.length && this.root) {
-                setTimeout(() => this.computeCycle(words, context, surface, borders, onPositionsComputed, wordsForDraw, index), 0);
-            } else {
+            if (++index < words.length && this.root)
+                this.computeCycle(words, context, surface, borders, onPositionsComputed, wordsForDraw, index);
+            else {
                 onPositionsComputed({
                     data: wordsForDraw,
                     leftBorder: borders && borders[0],
@@ -724,24 +752,20 @@ module powerbi.visuals.samples {
 
         private updateBorders(word: WordCloudDataPoint, borders: IPoint[]): IPoint[] {
             if (borders && borders.length === 2) {
-                var leftBorder: IPoint = borders[0],
+                let leftBorder: IPoint = borders[0],
                     rightBorder: IPoint = borders[1];
 
-                if (word.x + word.x0 < leftBorder.x) {
+                if (word.x + word.x0 < leftBorder.x)
                     leftBorder.x = word.x + word.x0;
-                }
 
-                if (word.y + word.y0 < leftBorder.y) {
+                if (word.y + word.y0 < leftBorder.y)
                     leftBorder.y = word.y + word.y0;
-                }
 
-                if (word.x + word.x1 > rightBorder.x) {
+                if (word.x + word.x1 > rightBorder.x)
                     rightBorder.x = word.x + word.x1;
-                }
 
-                if (word.y + word.y1 > rightBorder.y) {
+                if (word.y + word.y1 > rightBorder.y)
                     rightBorder.y = word.y + word.y1;
-                }
             } else {
                 borders = [
                     {
@@ -762,21 +786,20 @@ module powerbi.visuals.samples {
             currentWord: WordCloudDataPoint,
             words: WordCloudDataPoint[],
             index: number): void {
-            if (currentWord.sprite) {
+            if (currentWord.sprite)
                 return;
-            }
 
             context.clearRect(0, 0, this.canvasViewport.width << 5, this.canvasViewport.height);
 
-            var x: number = 0,
+            let x: number = 0,
                 y: number = 0,
                 maxHeight: number = 0,
                 quantityOfWords: number = words.length,
                 pixels: number[],
                 sprite: number[] = [];
 
-            for (var i: number = index; i < quantityOfWords; i++) {
-                var currentWordData: WordCloudDataPoint = words[i],
+            for (let i: number = index; i < quantityOfWords; i++) {
+                let currentWordData: WordCloudDataPoint = words[i],
                     widthOfWord: number = 0,
                     heightOfWord: number = 0;
 
@@ -787,7 +810,7 @@ module powerbi.visuals.samples {
                 heightOfWord = currentWordData.size << 1;
 
                 if (currentWordData.rotate) {
-                    var sr: number = Math.sin(currentWordData.rotate * WordCloud.Radians),
+                    let sr: number = Math.sin(currentWordData.rotate * WordCloud.Radians),
                         cr: number = Math.cos(currentWordData.rotate * WordCloud.Radians),
                         widthCr: number = widthOfWord * cr,
                         widthSr: number = widthOfWord * sr,
@@ -796,13 +819,11 @@ module powerbi.visuals.samples {
 
                     widthOfWord = (Math.max(Math.abs(widthCr + heightSr), Math.abs(widthCr - heightSr)) + 31) >> 5 << 5;
                     heightOfWord = Math.floor(Math.max(Math.abs(widthSr + heightCr), Math.abs(widthSr - heightCr)));
-                } else {
+                } else
                     widthOfWord = (widthOfWord + 31) >> 5 << 5;
-                }
 
-                if (heightOfWord > maxHeight) {
+                if (heightOfWord > maxHeight)
                     maxHeight = heightOfWord;
-                }
 
                 if (x + widthOfWord >= (this.canvasViewport.width << 5)) {
                     x = 0;
@@ -812,9 +833,8 @@ module powerbi.visuals.samples {
 
                 context.translate((x + (widthOfWord >> 1)), (y + (heightOfWord >> 1)));
 
-                if (currentWordData.rotate) {
+                if (currentWordData.rotate)
                     context.rotate(currentWordData.rotate * WordCloud.Radians);
-                }
 
                 context.fillText(currentWordData.text, 0, 0);
 
@@ -841,8 +861,8 @@ module powerbi.visuals.samples {
 
             sprite = [];
 
-            for (var i = quantityOfWords - 1; i >= 0; i--) {
-                var currentWordData: WordCloudDataPoint = words[i],
+            for (let i = quantityOfWords - 1; i >= 0; i--) {
+                let currentWordData: WordCloudDataPoint = words[i],
                     width: number = currentWordData.width,
                     width32: number = width >> 5,
                     height: number = currentWordData.y1 - currentWordData.y0,
@@ -858,24 +878,23 @@ module powerbi.visuals.samples {
                     continue;
                 }
 
-                for (var j = 0; j < height * width32; j++) {
+                for (let j = 0; j < height * width32; j++) {
                     sprite[j] = 0;
                 }
 
-                if (currentWordData.xOff !== null) {
+                if (currentWordData.xOff !== null)
                     x = currentWordData.xOff;
-                } else {
+                else
                     return;
-                }
 
                 y = currentWordData.yOff;
 
                 seen = 0;
                 seenRow = -1;
 
-                for (var j = 0; j < height; j++) {
-                    for (var k = 0; k < width; k++) {
-                        var l: number = width32 * j + (k >> 5),
+                for (let j = 0; j < height; j++) {
+                    for (let k = 0; k < width; k++) {
+                        let l: number = width32 * j + (k >> 5),
                             index: number = ((y + j) * (this.canvasViewport.width << 5) + (x + k)) << 2,
                             m: number = pixels[index]
                                 ? 1 << (31 - (k % 32))
@@ -885,9 +904,9 @@ module powerbi.visuals.samples {
                         seen |= m;
                     }
 
-                    if (seen) {
+                    if (seen)
                         seenRow = j;
-                    } else {
+                    else {
                         currentWordData.y0++;
                         height--;
                         j--;
@@ -901,7 +920,7 @@ module powerbi.visuals.samples {
         }
 
         private findPosition(surface: number[], word: WordCloudDataPoint, borders: IPoint[]): boolean {
-            var startPoint: IPoint = { x: word.x, y: word.y },
+            let startPoint: IPoint = { x: word.x, y: word.y },
                 delta = Math.sqrt(this.specialViewport.width * this.specialViewport.width + this.specialViewport.height * this.specialViewport.height),
                 point: IPoint,
                 dt: number = Math.random() < 0.5 ? 1 : -1,
@@ -917,9 +936,8 @@ module powerbi.visuals.samples {
                 dx = Math.floor(point.x);
                 dy = Math.floor(point.y);
 
-                if (Math.min(Math.abs(dx), Math.abs(dy)) >= delta) {
+                if (Math.min(Math.abs(dx), Math.abs(dy)) >= delta)
                     break;
-                }
 
                 word.x = startPoint.x + dx;
                 word.y = startPoint.y + dy;
@@ -927,13 +945,12 @@ module powerbi.visuals.samples {
                 if (word.x + word.x0 < 0 ||
                     word.y + word.y0 < 0 ||
                     word.x + word.x1 > this.specialViewport.width ||
-                    word.y + word.y1 > this.specialViewport.height) {
+                    word.y + word.y1 > this.specialViewport.height)
                     continue;
-                }
 
                 if (!borders || !this.checkIntersect(word, surface)) {
                     if (!borders || this.checkIntersectOfRectangles(word, borders[0], borders[1])) {
-                        var sprite: number[] = word.sprite,
+                        let sprite: number[] = word.sprite,
                             width: number = word.width >> 5,
                             shiftWidth: number = this.specialViewport.width >> 5,
                             lx: number = word.x - (width << 4),
@@ -942,16 +959,15 @@ module powerbi.visuals.samples {
                             height: number = word.y1 - word.y0,
                             x: number = (word.y + word.y0) * shiftWidth + (lx >> 5);
 
-                        for (var i: number = 0; i < height; i++) {
-                            var lastSprite: number = 0;
+                        for (let i: number = 0; i < height; i++) {
+                            let lastSprite: number = 0;
 
-                            for (var j: number = 0; j <= width; j++) {
-                                var leftMask: number = lastSprite << msx,
+                            for (let j: number = 0; j <= width; j++) {
+                                let leftMask: number = lastSprite << msx,
                                     rightMask: number;
 
-                                if (j < width) {
+                                if (j < width)
                                     lastSprite = sprite[i * width + j];
-                                }
 
                                 rightMask = j < width
                                     ? lastSprite >>> sx
@@ -974,7 +990,7 @@ module powerbi.visuals.samples {
         }
 
         private archimedeanSpiral(value: number): IPoint {
-            var ratio: number = this.specialViewport.width / this.specialViewport.height;
+            let ratio: number = this.specialViewport.width / this.specialViewport.height;
 
             value = value * 0.1;
 
@@ -985,7 +1001,7 @@ module powerbi.visuals.samples {
         }
 
         private checkIntersect(word: WordCloudDataPoint, surface: number[]): boolean {
-            var shiftWidth: number = this.specialViewport.width >> 5,
+            let shiftWidth: number = this.specialViewport.width >> 5,
                 sprite: number[] = word.sprite,
                 widthOfWord = word.width >> 5,
                 lx: number = word.x - (widthOfWord << 4),
@@ -994,19 +1010,18 @@ module powerbi.visuals.samples {
                 heightOfWord = word.y1 - word.y0,
                 x: number = (word.y + word.y0) * shiftWidth + (lx >> 5);
 
-            for (var i = 0; i < heightOfWord; i++) {
-                var lastSprite: number = 0;
+            for (let i = 0; i < heightOfWord; i++) {
+                let lastSprite: number = 0;
 
-                for (var j = 0; j <= widthOfWord; j++) {
-                    var mask: number = 0,
+                for (let j = 0; j <= widthOfWord; j++) {
+                    let mask: number = 0,
                         leftMask: number,
                         intersectMask: number = 0;
 
                     leftMask = lastSprite << msx;
 
-                    if (j < widthOfWord) {
+                    if (j < widthOfWord)
                         lastSprite = sprite[i * widthOfWord + j];
-                    }
 
                     mask = j < widthOfWord
                         ? lastSprite >>> sx
@@ -1014,9 +1029,8 @@ module powerbi.visuals.samples {
 
                     intersectMask = (leftMask | mask) & surface[x + j];
 
-                    if (intersectMask) {
+                    if (intersectMask)
                         return true;
-                    }
                 }
 
                 x += shiftWidth;
@@ -1033,14 +1047,13 @@ module powerbi.visuals.samples {
         }
 
         private getCanvasContext(): CanvasRenderingContext2D {
-            if (!this.canvasViewport) {
+            if (!this.canvasViewport)
                 return null;
-            }
 
             this.canvas.width = 1;
             this.canvas.height = 1;
 
-            var context: CanvasRenderingContext2D = this.canvas.getContext("2d");
+            let context: CanvasRenderingContext2D = this.canvas.getContext("2d");
 
             this.canvas.width = this.canvasViewport.width << 5;
             this.canvas.height = this.canvasViewport.height;
@@ -1053,7 +1066,7 @@ module powerbi.visuals.samples {
         }
 
         private getReducedText(texts: WordCloudText[]): WordCloudText[] {
-            var brokenStrings: WordCloudText[] = [];
+            let brokenStrings: WordCloudText[] = [];
             brokenStrings = this.getBrokenWords(texts);
 
             return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
@@ -1074,28 +1087,26 @@ module powerbi.visuals.samples {
         }
 
         private getBrokenWords(words: WordCloudText[]): WordCloudText[] {
-            var brokenStrings: WordCloudText[] = [],
+            let brokenStrings: WordCloudText[] = [],
                 whiteSpaceRegExp: RegExp = /\s/,
                 punctuatuinRegExp: RegExp;
 
-            if (!this.settings.isBrokenText) {
+            if (!this.settings.isBrokenText)
                 return words;
-            }
 
-            punctuatuinRegExp = new RegExp(`[${WordCloud.Punctuation.join("\\") }]`, "gim");
+            punctuatuinRegExp = new RegExp(`[${WordCloud.Punctuation.join("\\")}]`, "gim");
 
             words.forEach((item: WordCloudText) => {
                 if (typeof item.text === "string") {
-                    var words: string[];
+                    let words: string[];
 
                     words = item.text.replace(punctuatuinRegExp, " ").split(whiteSpaceRegExp);
 
                     if (this.settings.isRemoveStopWords) {
-                        var stopWords: string[] = this.settings.stopWordsArray;
+                        let stopWords: string[] = this.settings.stopWordsArray;
 
-                        if (this.settings.isDefaultStopWords) {
+                        if (this.settings.isDefaultStopWords)
                             stopWords = stopWords.concat(WordCloud.StopWords);
-                        }
 
                         words = words.filter((value: string) => {
                             return value.length > 0 && !stopWords.some((removeWord: string) => {
@@ -1110,27 +1121,26 @@ module powerbi.visuals.samples {
                                 text: element,
                                 count: item.count,
                                 index: item.index,
-                                selectionId: item.selectionId
+                                selectionId: item.selectionId,
+                                color: item.color
                             });
                         }
                     });
-                } else {
+                } else
                     brokenStrings.push(item);
-                }
             });
 
             return brokenStrings;
         }
 
         private getWords(values: WordCloudText[]): WordCloudDataPoint[] {
-            var sortedValues: WordCloudText[],
+            let sortedValues: WordCloudText[],
                 minValue: number = 0,
                 maxValue: number = 0,
                 valueFormatter: IValueFormatter = this.settings.valueFormatter;
 
-            if (!values || !(values.length >= 1)) {
+            if (!values || !(values.length >= 1))
                 return [];
-            }
 
             sortedValues = values.sort((a: WordCloudText, b: WordCloudText) => {
                 return b.count - a.count;
@@ -1138,9 +1148,8 @@ module powerbi.visuals.samples {
 
             minValue = sortedValues[sortedValues.length - 1].count;
             maxValue = sortedValues[0].count;
-
-            return values.map((value: WordCloudText) => {
-                return <WordCloudDataPoint> {
+            let returnValues = values.map((value: WordCloudText) => {
+                return <WordCloudDataPoint>{
                     text: valueFormatter.format(value.text),
                     size: this.getFontSize(value.count, minValue, maxValue),
                     x: 0,
@@ -1155,18 +1164,13 @@ module powerbi.visuals.samples {
                     y0: 0,
                     x1: 0,
                     y1: 0,
-                    colour: this.getRandomColor(),
-                    selectionId: value.selectionId
+                    color: value.color,
+                    selectionId: value.selectionId,
+                    wordIndex: value.index
                 };
             });
-        }
-
-        private getRandomColor(): string {
-            var red: number = Math.floor(Math.random() * 255),
-                green: number = Math.floor(Math.random() * 255),
-                blue: number = Math.floor(Math.random() * 255);
-
-            return `rgb(${red},${green},${blue})`;
+            this.dataBeforeRender = returnValues;
+            return returnValues;
         }
 
         private getFontSize(
@@ -1174,7 +1178,7 @@ module powerbi.visuals.samples {
             minValue: number,
             maxValue: number,
             scaleType: WordCloudScaleType = WordCloudScaleType.value) {
-            var weight: number,
+            let weight: number,
                 fontSize: number,
                 maxFontSize: number,
                 minFontSize: number;
@@ -1183,7 +1187,7 @@ module powerbi.visuals.samples {
             maxFontSize = Math.abs(this.parseNumber(this.settings.maxFontSize, WordCloud.DefaultSettings.maxFontSize));
 
             if (minFontSize > maxFontSize) {
-                var buffer: number = minFontSize;
+                let buffer: number = minFontSize;
 
                 minFontSize = maxFontSize;
                 maxFontSize = buffer;
@@ -1214,11 +1218,10 @@ module powerbi.visuals.samples {
 
         private getAngle(): number {
             if (!this.settings ||
-                !this.settings.isRotateText) {
+                !this.settings.isRotateText)
                 return 0;
-            }
 
-            var minAngle: number,
+            let minAngle: number,
                 maxAngle: number,
                 maxNumberOfOrientations: number,
                 angle: number;
@@ -1238,7 +1241,7 @@ module powerbi.visuals.samples {
                 WordCloud.MaxAngle);
 
             if (minAngle > maxAngle) {
-                var buffer: number = minAngle;
+                let buffer: number = minAngle;
 
                 minAngle = maxAngle;
                 maxAngle = buffer;
@@ -1256,58 +1259,49 @@ module powerbi.visuals.samples {
                 !visualUpdateOptions.dataViews[0] ||
                 !visualUpdateOptions.viewport ||
                 !(visualUpdateOptions.viewport.height >= 0) ||
-                !(visualUpdateOptions.viewport.width >= 0)) {
+                !(visualUpdateOptions.viewport.width >= 0))
                 return;
-            }
 
             this.visualUpdateOptions = visualUpdateOptions;
 
-            if(!this.isUpdating) {
-                this.isUpdating = true;
-                this.updtateDelayed(visualUpdateOptions, () => {
-                    this.isUpdating = false;
-                    if(visualUpdateOptions !== this.visualUpdateOptions) {
-                        this.update(this.visualUpdateOptions);
-                    }
-                });
-            };
-        }
 
-        private updtateDelayed(visualUpdateOptions: VisualUpdateOptions, onUpdated: () => void) {
             this.layout.viewport = this.visualUpdateOptions.viewport;
-            var dataView: DataView = visualUpdateOptions.dataViews[0];
+            let dataView: DataView = visualUpdateOptions.dataViews[0];
 
-            if (this.layout.viewportInIsZero) {
+            if (this.layout.viewportInIsZero)
                 return;
-            }
 
-			this.durationAnimations = getAnimationDuration(
-			    this.animator,
+            this.durationAnimations = getAnimationDuration(
+                this.animator,
                 visualUpdateOptions.suppressAnimations);
             this.UpdateSize();
 
-            var data: WordCloudData = WordCloud.converter(dataView);
-            if (!data) {
+            this.data = this.converter(dataView);
+            if (!this.data)
                 return;
-            }
 
-            this.settings = data.settings;
+            this.settings = this.data.settings;
+            this.wordCloudTexts = this.data.texts;
+
             this.computePositions(
-                this.getWords(this.getReducedText(data.texts)),
-                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView, onUpdated));
+                this.getWords(this.getReducedText(this.data.texts)),
+                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
+
+            if (visualUpdateOptions !== this.visualUpdateOptions)
+                this.update(this.visualUpdateOptions);
         }
 
         private UpdateSize(): void {
-            var fakeWidth: number,
+            let fakeWidth: number,
                 fakeHeight: number,
                 ratio: number;
 
             ratio = Math.sqrt((this.fakeViewport.width * this.fakeViewport.height)
                 / (this.layout.viewportIn.width * this.layout.viewportIn.height));
 
-            if (isNaN(ratio)) {
+            if (isNaN(ratio))
                 fakeHeight = fakeWidth = 1;
-            } else {
+            else {
                 fakeHeight = this.layout.viewportIn.height * ratio;
                 fakeWidth = this.layout.viewportIn.width * ratio;
             }
@@ -1323,27 +1317,31 @@ module powerbi.visuals.samples {
             });
         }
 
-        private render(wordCloudDataView: WordCloudDataView, onRendered: () => void): void {
+        private render(wordCloudDataView: WordCloudDataView): void {
             if (!wordCloudDataView ||
-                !wordCloudDataView.data) {
+                !wordCloudDataView.data)
                 return;
-            }
 
-            var animatedWordSelection: D3.Selection,
+            this.wordCloudDataView = wordCloudDataView;
+
+            let animatedWordSelection: D3.Selection,
                 wordElements: D3.Selection = this.main
                     .select(WordCloud.Words.selector)
                     .selectAll(WordCloud.Word.selector);
 
             this.wordsSelection = wordElements.data(wordCloudDataView.data);
 
-            (<D3.UpdateSelection> this.animation(this.wordsSelection, this.durationAnimations))
-                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y) }rotate(${item.rotate})`)
-                .style("font-size", (item: WordCloudDataPoint) => `${item.size}${WordCloud.Size}`);
+            (<D3.UpdateSelection>this.animation(this.wordsSelection, this.durationAnimations))
+                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`)
+                .style({
+                    "font-size": ((item: WordCloudDataPoint): string => `${item.size}${WordCloud.Size}`),
+                    "fill": ((item: WordCloudDataPoint): string => item.color),
+                });
 
             animatedWordSelection = this.wordsSelection
                 .enter()
                 .append("svg:text")
-                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y) }rotate(${item.rotate})`)
+                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`)
                 .style("font-size", "1px");
 
             this.wordsSelection.on("click", (item: WordCloudDataPoint) => {
@@ -1353,9 +1351,12 @@ module powerbi.visuals.samples {
                 d3.event.stopPropagation();
             });
 
-            (<D3.UpdateSelection> this.animation(animatedWordSelection, this.durationAnimations))
-                .style("font-size", (item: WordCloudDataPoint) => `${item.size}${WordCloud.Size}`)
-                .style("fill", (item: WordCloudDataPoint) => item.colour);
+            (<D3.UpdateSelection>this.animation(animatedWordSelection, this.durationAnimations))
+                .style({
+                    "font-size": ((item: WordCloudDataPoint): string => `${item.size}${WordCloud.Size}`),
+                    "fill": ((item: WordCloudDataPoint): string => item.color),
+                });
+
 
             this.wordsSelection
                 .text((item: WordCloudDataPoint) => item.text)
@@ -1365,17 +1366,16 @@ module powerbi.visuals.samples {
             this.setSelection(this.wordsSelection);
 
             setTimeout(() => {
-												if (this.root) {
-                	this.scaleMainView(wordCloudDataView, wordElements[0].length && this.durationAnimations);
-                	onRendered();
-                }
+                if (this.root)
+                    this.scaleMainView(wordCloudDataView, wordElements[0].length && this.durationAnimations);
+
             }, this.durationAnimations + WordCloud.RenderDelay);
         }
 
         private setSelection(selection: D3.Selection): void {
-            var selectionIds: SelectionId[] = this.selectionManager.getSelectionIds();
+            let selectionIds: SelectionId[] = this.selectionManager.getSelectionIds();
 
-			if(selectionIds.some(x => !selection.data().some((d: WordCloudDataPoint) => d.selectionId.getKey() === x.getKey()))) {
+            if (selectionIds.some(x => !selection.data().some((d: WordCloudDataPoint) => d.selectionId.getKey() === x.getKey()))) {
                 this.selectionManager.clear();
                 selectionIds = [];
             }
@@ -1385,7 +1385,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            var selectedColumns: D3.UpdateSelection = selection.filter((x: WordCloudDataPoint) =>
+            let selectedColumns: D3.UpdateSelection = selection.filter((x: WordCloudDataPoint) =>
                 selectionIds.some((y: SelectionId) => y.getKey() === x.selectionId.getKey()));
 
             this.setOpacity(selection, WordCloud.MinOpacity);
@@ -1393,18 +1393,17 @@ module powerbi.visuals.samples {
         }
 
         private setOpacity(element: D3.Selection, opacityValue: number, disableAnimation: boolean = false): void {
-            var elementAnimation = disableAnimation ? element : this.animation(element);
+            let elementAnimation = disableAnimation ? element : this.animation(element);
             elementAnimation.style("fill-opacity", opacityValue);
         }
 
         private scaleMainView(wordCloudDataView: WordCloudDataView, durationAnimation: number = 0): void {
             if (!wordCloudDataView ||
                 !wordCloudDataView.leftBorder ||
-                !wordCloudDataView.rightBorder) {
+                !wordCloudDataView.rightBorder)
                 return;
-            }
 
-            var scale: number = 1,
+            let scale: number = 1,
                 mainSVGRect: SVGRect = this.main.node()["getBBox"](),
                 leftBorder: IPoint = wordCloudDataView.leftBorder,
                 rightBorder: IPoint = wordCloudDataView.rightBorder,
@@ -1423,20 +1422,19 @@ module powerbi.visuals.samples {
             height2 = this.layout.margin.top + (mainSVGRect.y * scale * -1)
                 + (this.layout.viewportIn.height - (mainSVGRect.height * scale)) / 2;
 
-            (<D3.Selection> this.animation(this.main, durationAnimation))
-                .attr("transform", `${SVGUtil.translate(width2, height2) }scale(${scale})`);
+            (<D3.Selection>this.animation(this.main, durationAnimation))
+                .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            var instances: VisualObjectInstance[] = [];
+            let instances: VisualObjectInstance[] = [];
 
-            if (!this.settings) {
+            if (!this.settings)
                 return instances;
-            }
 
             switch (options.objectName) {
                 case "general": {
-                    var general: VisualObjectInstance = {
+                    let general: VisualObjectInstance = {
                         objectName: "general",
                         displayName: "general",
                         selector: null,
@@ -1451,10 +1449,33 @@ module powerbi.visuals.samples {
                     instances.push(general);
                     break;
                 }
+                case "dataPoint": {
+                    if (!this.wordCloudDataView ||
+                        !this.wordCloudDataView.data)
+                        return;
+
+                    let dataPoints: WordCloudDataPoint[] = this.dataBeforeRender;
+                    let wordCategoriesIndex: number[] = [];
+                    dataPoints.forEach((item: WordCloudDataPoint) => {
+                        if (wordCategoriesIndex.indexOf(item.wordIndex) === -1) {
+                            wordCategoriesIndex.push(item.wordIndex);
+                            instances.push({
+                                objectName: "dataPoint",
+                                displayName: this.data.texts[item.wordIndex].text,
+                                selector: ColorHelper.normalizeSelector(item.selectionId.getSelector(), false),
+                                properties: {
+                                    fill: { solid: { color: item.color } }
+                                }
+                            });
+                        }
+                    });
+
+                    break;
+                }
                 case "rotateText": {
-                    var rotateText: VisualObjectInstance = {
+                    let rotateText: VisualObjectInstance = {
                         objectName: "rotateText",
-                        displayName: "rotateText",
+                        displayName: "Rotate Text",
                         selector: null,
                         properties: {
                             show: this.settings.isRotateText,
@@ -1468,15 +1489,15 @@ module powerbi.visuals.samples {
                     break;
                 }
                 case "stopWords": {
-                    var stopWords: VisualObjectInstance = {
+                    let stopWords: VisualObjectInstance = {
                         objectName: "stopWords",
-                        displayName: "stopWords",
+                        displayName: "Stop Words",
                         selector: null,
                         properties: {
                             show: this.settings.isRemoveStopWords,
                             isDefaultStopWords: this.settings.isDefaultStopWords,
                             words: this.settings.stopWords ||
-                            	this.settings.stopWordsArray.join(WordCloud.StopWordsDelemiter)
+                            this.settings.stopWordsArray.join(WordCloud.StopWordsDelemiter)
                         }
                     };
 
@@ -1501,6 +1522,27 @@ module powerbi.visuals.samples {
         public destroy(): void {
             this.root = null;
             this.canvas = null;
+        }
+    }
+
+    module explore.util {
+        export function hexToRgb(hex): string {
+            // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+            let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+            hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+                return r + r + g + g + b + b;
+            });
+
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `rgb(${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)})` : null;
+        }
+
+        export function getRandomColor(): string {
+            let red: number = Math.floor(Math.random() * 255),
+                green: number = Math.floor(Math.random() * 255),
+                blue: number = Math.floor(Math.random() * 255);
+
+            return `rgb(${red},${green},${blue})`;
         }
     }
 }
