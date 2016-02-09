@@ -42,19 +42,19 @@ module powerbitests.customVisuals {
             });
 
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
-            //it("update", (done) => {
-            //    visualBuilder.update(dataViews);
-            //    visualBuilder.currentPeriod = 3;//select a day period
-            //    setTimeout(() => {
-            //        let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
-            //        let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children(".lowerTextArea").children(".lowerTextCell").length;
+            it("update", (done) => {
+                visualBuilder.update(dataViews);
+                visualBuilder.currentPeriod = 3;//select a day period
+                setTimeout(() => {
+                    let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
+                    let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children(".lowerTextArea").children(".lowerTextCell").length;
 
-            //        expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
-            //        expect(countOfTextItems).toBe(dataViews[0].categorical.categories[0].values.length);
+                    expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
+                    expect(countOfTextItems).toBe(dataViews[0].categorical.categories[0].values.length);
 
-            //        done();
-            //    }, DefaultWaitForRender);
-            //});
+                    done();
+                }, DefaultWaitForRender);
+            });
         });
     });
 
