@@ -772,7 +772,7 @@ module powerbi.visuals.samples {
             PeriodSlicerSelection: createClassAndSelector('periodSlicerSelection'),
             PeriodSlicerSelectionRect: createClassAndSelector('periodSlicerSelectionRect'),
             PeriodSlicerRect: createClassAndSelector('periodSlicerRect')
-        };
+        }
 		/**
 		 * Changes the current granularity depending on the given granularity type
 		 * Separates the new granularity's date periods which contain the start/end selection
@@ -826,14 +826,10 @@ module powerbi.visuals.samples {
             this.selectionManager.clear();
             this.timelineData.selectionStartIndex = 0;
             this.timelineData.selectionEndIndex = this.timelineData.currentGranularity.getDatePeriods().length - 1;
-            if (_.any(this.timelineData.timelineDatapoints, (x) => x.index % 1 !== 0))
-                this.selectPeriod(this.timelineData.currentGranularity.getType());
-            else {
-                Timeline.updateCursors(this.timelineData, this.timeLineProperties.cellWidth);
-                this.fillCells(this.timelineFormat.cellFormat);
-                this.renderCursors(this.timelineData, this.timelineFormat, this.timeLineProperties.cellHeight, this.timeLineProperties.cellsYPosition);
-                this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
-            }
+            Timeline.updateCursors(this.timelineData, this.timeLineProperties.cellWidth);
+            this.fillCells(this.timelineFormat.cellFormat);
+            this.renderCursors(this.timelineData, this.timelineFormat, this.timeLineProperties.cellHeight, this.timeLineProperties.cellsYPosition);
+            this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
             this.setSelection(this.timelineData);
         }
 
@@ -1249,7 +1245,7 @@ module powerbi.visuals.samples {
                         label: textFunc(d),
                         maxWidth: maxSize,
                         fontSize: labelFormat.sizeProperty
-                    };
+                    }
                     return dataLabelUtils.getLabelFormattedText(labelFormattedTextOptions);
                 })
                     .style('font-size', PixelConverter.fromPoint(labelFormat.sizeProperty))
