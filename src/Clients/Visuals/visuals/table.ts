@@ -318,7 +318,7 @@ module powerbi.visuals {
             if (backgroundColor)
                 cell.extension.setBackgroundColor(backgroundColor);
 
-            let borderStyle = VisualBorderUtil.getBorderStyleWithWeight(outline, outlineWeight);
+            let borderStyle = 'solid';
             let borderWeight = VisualBorderUtil.getBorderWidth(outline, outlineWeight);
             cell.extension.setOutline(borderStyle, outlineColor, borderWeight);
         }
@@ -596,18 +596,20 @@ module powerbi.visuals {
 
         public onDataChanged(options: VisualDataChangedOptions): void {
             debug.assertValue(options, 'options');
-            // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
-            if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
-                // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
-                this.columnWidthManager.suppressOnDataChangedNotification = false;
-                return;
-            }
 
-            let previousDataView = this.dataView;
             let dataViews = options.dataViews;
 
             if (dataViews && dataViews.length > 0) {
+                let previousDataView = this.dataView;
                 this.dataView = dataViews[0];
+
+                // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
+                if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
+                    // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
+                    this.columnWidthManager.suppressOnDataChangedNotification = false;
+                    return;
+                }
+
                 let visualTable = Table.converter(this.dataView, this.isFormattingPropertiesEnabled);
                 let textSize = visualTable.formattingProperties ? visualTable.formattingProperties.general.textSize : TablixUtils.getTextSize(this.dataView.metadata.objects);
 
@@ -647,7 +649,7 @@ module powerbi.visuals {
             this.hostServices.persistProperties(objectInstances);
         }
 
-        private updateViewport(newViewport: IViewport) {
+        private updateViewport(newViewport: IViewport): void {
             this.currentViewport = newViewport;
 
             if (this.tablixControl) {
@@ -657,13 +659,13 @@ module powerbi.visuals {
             }
         }
 
-        private refreshControl(clear: boolean) {
+        private refreshControl(clear: boolean): void {
             if (visibilityHelper.partiallyVisible(this.element) || this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
                 this.tablixControl.refresh(clear);
             }
         }
 
-        private getLayoutKind() {
+        private getLayoutKind(): controls.TablixLayoutKind {
             return this.isInteractive ? controls.TablixLayoutKind.Canvas : controls.TablixLayoutKind.DashboardTile;
         }
 
@@ -831,6 +833,11 @@ module powerbi.visuals {
 
         private shouldAllowHeaderResize(): boolean {
             return this.hostServices.getViewMode() === ViewMode.Edit;
+        }
+
+        public onViewModeChanged(viewMode: ViewMode): void {
+            /* Refreshes the column headers to enable/disable Column resizing */
+            this.updateViewport(this.currentViewport);
         }
 
         private verifyHeaderResize() {

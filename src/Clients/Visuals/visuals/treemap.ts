@@ -51,6 +51,7 @@ module powerbi.visuals {
     export interface TreemapNode extends D3.Layout.GraphNode, SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
         key: any;
         highlightMultiplier?: number;
+        highlightValue?: number;
         color: string;
         highlightedTooltipInfo?: TooltipDataItem[];
     }
@@ -247,7 +248,7 @@ module powerbi.visuals {
         /**
          * Note: Public for testing purposes.
          */
-        public static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject): TreemapData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject, tooltipsEnabled: boolean = true): TreemapData {
             let rootNode: TreemapNode = {
                 key: "root",
                 name: "root",
@@ -296,6 +297,8 @@ module powerbi.visuals {
                 dataWasCulled = false;
                 let shouldCullValue = undefined;
                 let highlight = undefined;
+                let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(data);
+                let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(data);
                 if ((data.categories == null) && !_.isEmpty(values)) {
                     // No categories, sliced by series and measures
                     for (let i = 0, ilen = values[0].length; i < ilen; i++) {
@@ -323,13 +326,15 @@ module powerbi.visuals {
                         let highlightedValue = hasHighlights && highlight !== 0 ? highlight : undefined;
                         let categorical = dataView.categorical;
                         let valueIndex: number = i;
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, nodeName, value, null, null, valueIndex, i);
+                        let tooltipInfo: TooltipDataItem[];
                         let highlightedTooltipInfo: TooltipDataItem[];
-
-                        if (highlightedValue !== undefined) {
-                            highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, nodeName, value, null, null, valueIndex, i, highlightedValue);
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, nodeName, value, null, null, valueIndex, i);
+                            if (highlightedValue !== undefined) {
+                                highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, nodeName, value, null, null, valueIndex, i, highlightedValue);
+                            }
                         }
-
+                        
                         let node: TreemapNode = {
                             key: key,
                             name: nodeName,
@@ -342,7 +347,8 @@ module powerbi.visuals {
                             labelFormatString: valueFormatter.getFormatString(valueColumn.source, formatStringProp),
                         };
                         if (hasHighlights && highlights) {
-                            node.highlightMultiplier = value ? highlights[0][i] / value : 0;
+                            node.highlightMultiplier = value !== 0 ? highlights[0][i] / value : 0;
+                            node.highlightValue = highlights[0][i];
                         }
                         rootNode.children.push(node);
                         allNodes.push(node);
@@ -376,15 +382,16 @@ module powerbi.visuals {
 
                         let categoryValue = valueFormatter.format(categoryColumn.values[i], categoryFormat);
                         let value = values[i][0];
-                        let highlightedValue = hasHighlights && highlights ? highlights[i][0] : undefined;
+                        let highlightValue = hasHighlights && highlights ? highlights[i][0] : undefined;
                         categorical = dataView.categorical;
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value);
+                        let tooltipInfo: TooltipDataItem[];
                         let highlightedTooltipInfo: TooltipDataItem[];
-
-                        if (highlightedValue !== undefined) {
-                            highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightedValue);
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value);
+                            if (highlightValue !== undefined) {
+                                highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightValue);
+                            }
                         }
-
                         let node: TreemapNode = {
                             key: key,
                             name: categoryValue,
@@ -395,6 +402,10 @@ module powerbi.visuals {
                             highlightedTooltipInfo: highlightedTooltipInfo,
                             labelFormatString: valueColumnCount === 1 ? valueFormatter.getFormatString(data.values[0].source, formatStringProp) : categoryFormat,
                         };
+                        if (hasHighlights) {
+                            node.highlightMultiplier = value !== 0 ? highlightValue / value : 0;
+                            node.highlightValue = highlightValue;
+                        }
 
                         legendDataPoints.push({
                             label: categoryValue,
@@ -452,11 +463,15 @@ module powerbi.visuals {
 
                                 let highlightedValue = hasHighlights && highlight !== 0 ? highlight : undefined;
                                 categorical = dataView.categorical;
-                                let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i);
+                                //If j index equals to gradientIndex, the tooltip values are the same
+                                let gradientColumnForTooltip = gradientMeasureIndex === j ? null : gradientValueColumn;
+                                let tooltipInfo: TooltipDataItem[];
                                 let highlightedTooltipInfo: TooltipDataItem[];
-
-                                if (highlightedValue !== undefined) {
-                                    highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i, highlightedValue);
+                                if (tooltipsEnabled) {
+                                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i, null, gradientColumnForTooltip);
+                                    if (highlightedValue !== undefined) {
+                                        highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i, highlightedValue, gradientColumnForTooltip);
+                                    }
                                 }
 
                                 let childNode: TreemapNode = {
@@ -470,8 +485,10 @@ module powerbi.visuals {
                                     highlightedTooltipInfo: highlightedTooltipInfo,
                                     labelFormatString: valueFormatter.getFormatString(valueColumn.source, formatStringProp),
                                 };
-                                if (hasHighlights)
-                                    childNode.highlightMultiplier = value ? highlight / value : 0;
+                                if (hasHighlights) {
+                                    childNode.highlightMultiplier = value !== 0 ? highlight / value : 0;
+                                    childNode.highlightValue = highlight;
+                                }
                                 if (node.children == null)
                                     node.children = [];
 
@@ -577,7 +594,7 @@ module powerbi.visuals {
                     legendObjectProperties = objects['legend'];
                 }
 
-                this.data = Treemap.converter(dataView, this.colors, labelSettings, this.interactivityService, this.currentViewport, legendObjectProperties);
+                this.data = Treemap.converter(dataView, this.colors, labelSettings, this.interactivityService, this.currentViewport, legendObjectProperties, this.tooltipsEnabled);
             }
             else {
                 let rootNode: TreemapNode = {
@@ -840,7 +857,7 @@ module powerbi.visuals {
                 let measureFormatter = formattersCache.getOrCreate(node.labelFormatString, labelsSettings, alternativeScale);
                 // Create measure label
                 label = dataLabelUtils.getLabelFormattedText({
-                    label: node.value, maxWidth:
+                    label: node.highlightValue != null ? node.highlightValue : node.value, maxWidth:
                     spaceAvaliableForLabels, formatter: measureFormatter
                 });
                 // Add category if needed (we're showing category and the node depth is 2)
@@ -979,7 +996,7 @@ module powerbi.visuals {
             }
 
             if (this.tooltipsEnabled) {
-                TooltipManager.addTooltip(shapes, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                TooltipManager.addTooltip(shapes, (tooltipEvent: TooltipEvent) => tooltipEvent.data.highlightedTooltipInfo ? tooltipEvent.data.highlightedTooltipInfo : tooltipEvent.data.tooltipInfo);
                 TooltipManager.addTooltip(highlightShapes, (tooltipEvent: TooltipEvent) => tooltipEvent.data.highlightedTooltipInfo);
             }
 

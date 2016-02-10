@@ -139,6 +139,7 @@ module powerbi.visuals {
         y: number;
         text: string;
         width: number;
+        height: number;
     }
 
     const enum NavigationArrowType {
@@ -182,6 +183,7 @@ module powerbi.visuals {
 
         public static DefaultFontSizeInPt = 8;
         private static LegendIconRadius = 5;
+        private static LegendIconRadiusFactor = 5;
         private static MaxTextLength = 60;
         private static MaxTitleLength = 80;
         private static TextAndIconPadding = 5;
@@ -191,12 +193,12 @@ module powerbi.visuals {
         private static TopLegendHeight = 24;
         private static DefaultTextMargin = PixelConverter.fromPointToPixel(SVGLegend.DefaultFontSizeInPt);
         private static DefaultMaxLegendFactor = SVGLegend.MaxTitleLength / SVGLegend.DefaultTextMargin;
+        private static LegendIconYRatio = 0.52;
         
         // Navigation Arrow constants
         private static LegendArrowOffset = 10;
         private static LegendArrowHeight = 15;
         private static LegendArrowWidth = 7.5;
-        private static LegendArrowTranslateY = 3.5;
 
         private static DefaultFontFamily = 'wf_segoe-ui_normal';
         private static DefaultTitleFontFamily = 'wf_segoe-ui_Semibold';
@@ -372,6 +374,11 @@ module powerbi.visuals {
 
             let virtualizedDataPoints = data.dataPoints.slice(this.legendDataStartIndex, this.legendDataStartIndex + layout.numberOfItems);
 
+            let iconRadius = TextMeasurementService.estimateSvgTextHeight(SVGLegend.getTextProperties(false, '', this.data.fontSize)) / SVGLegend.LegendIconRadiusFactor;
+            iconRadius = (this.legendFontSizeMarginValue > SVGLegend.DefaultTextMargin) && iconRadius > SVGLegend.LegendIconRadius
+                ? iconRadius :
+                SVGLegend.LegendIconRadius;
+
             let legendItems = group
                 .selectAll(SVGLegend.LegendItem.selector)
                 .data(virtualizedDataPoints, (d: LegendDataPoint) => d.identity.getKey());
@@ -402,7 +409,7 @@ module powerbi.visuals {
                 .attr({
                     'cx': (d: LegendDataPoint, i) => d.glyphPosition.x,
                     'cy': (d: LegendDataPoint) => d.glyphPosition.y,
-                    'r': SVGLegend.LegendIconRadius,
+                    'r': iconRadius,
                 })
                 .style({
                     'fill': (d: LegendDataPoint) => {
@@ -424,8 +431,10 @@ module powerbi.visuals {
                     'y': (d: LegendDataPoint) => d.textPosition.y,
                 })
                 .text((d: LegendDataPoint) => d.label)
-                .style('fill', data.labelColor)
-                .style('font-size', PixelConverter.fromPoint(data.fontSize));
+                .style({
+                    'fill': data.labelColor,
+                    'font-size': PixelConverter.fromPoint(data.fontSize)
+                });
 
             if (this.interactivityService) {
                 let iconsSelection = legendItems.select(SVGLegend.LegendIcon.selector);
@@ -485,12 +494,15 @@ module powerbi.visuals {
 
                 if (isHorizontal)
                     width += SVGLegend.TitlePadding;
+                else
+                    text = TextMeasurementService.getTailoredTextOrDefault(textProperties, this.viewport.width);
 
                 return {
                     x: 0,
                     y: 0,
                     text: text,
                     width: width,
+                    height: TextMeasurementService.estimateSvgTextHeight(textProperties)
                 };
             }
             return null;
@@ -552,7 +564,7 @@ module powerbi.visuals {
         private calculateHorizontalNavigationArrowsLayout(title: TitleLayout): NavigationArrow[] {
             let height = SVGLegend.LegendArrowHeight;
             let width = SVGLegend.LegendArrowWidth;
-            let translateY = SVGLegend.LegendArrowTranslateY;
+            let translateY = (this.viewport.height / 2) - (height / 2);
 
             let data: NavigationArrow[] = [];
             let rightShift = title ? title.x + title.width : 0;
@@ -582,14 +594,16 @@ module powerbi.visuals {
             let height = SVGLegend.LegendArrowHeight;
             let width = SVGLegend.LegendArrowWidth;
 
+            let verticalCenter = this.viewport.height / 2;
             let data: NavigationArrow[] = [];
-            let rightShift = 40;
+            let rightShift = verticalCenter + height / 2;
             let arrowTop = SVGUtil.createArrow(width, height, 270 /*angle*/);
             let arrowBottom = SVGUtil.createArrow(width, height, 90 /*angle*/);
+            let titleHeight = title ? title.height : 0;
 
             data.push({
                 x: rightShift,
-                y: height + SVGLegend.LegendArrowOffset / 2,
+                y: width + titleHeight,
                 path: arrowTop.path,
                 rotateTransform: arrowTop.transform,
                 type: NavigationArrowType.Decrease
@@ -608,21 +622,29 @@ module powerbi.visuals {
 
         private calculateHorizontalLayout(dataPoints: LegendDataPoint[], title: TitleLayout, navigationArrows: NavigationArrow[]): number {
             debug.assertValue(navigationArrows, 'navigationArrows');
-            let HorizontalTextShift = 4;
-            let HorizontalIconShift = 11;
-            let fontSizeBiggerThenDefault = this.legendFontSizeMarginDifference > 0;
-            let fontSizeMargin = fontSizeBiggerThenDefault ? SVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : SVGLegend.TextAndIconPadding;
-            let fixedTextShift = SVGLegend.LegendIconRadius + fontSizeMargin + HorizontalTextShift;
-            let fixedIconShift = HorizontalIconShift + (fontSizeBiggerThenDefault ? this.legendFontSizeMarginDifference : 0);
+            // calculate the text shift
+            let HorizontalTextShift = 4 + SVGLegend.LegendIconRadius;
+            // check if we need more space for the margin, or use the default text padding
+            let fontSizeBiggerThanDefault = this.legendFontSizeMarginDifference > 0;
+            let fontSizeMargin = fontSizeBiggerThanDefault ? SVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : SVGLegend.TextAndIconPadding;
+            let fixedTextShift = (fontSizeMargin / (SVGLegend.LegendIconRadiusFactor / 2)) + HorizontalTextShift;
             let totalSpaceOccupiedThusFar = 0;
-            let iconTotalItemPadding = SVGLegend.LegendIconRadius * 2 + fontSizeMargin * 3;
+            // calculate the size of the space for both sides of the radius
+            let iconTotalItemPadding = SVGLegend.LegendIconRadius * 2 + fontSizeMargin * 1.5;
             let numberOfItems: number = dataPoints.length;
+            // get the Y coordinate which is the middle of the container + the middle of the text height - the delta of the text 
+            let defaultTextProperties = SVGLegend.getTextProperties(false, '', this.data.fontSize);
+            let verticalCenter = this.viewport.height / 2;
+            let textYCoordinate = verticalCenter + TextMeasurementService.estimateSvgTextHeight(defaultTextProperties) / 2
+                - TextMeasurementService.estimateSvgTextBaselineDelta(defaultTextProperties);
 
             if (title) {
-                totalSpaceOccupiedThusFar = title.width;
-                title.y = fixedTextShift;
+                totalSpaceOccupiedThusFar += title.width;
+                // get the Y coordinate which is the middle of the container + the middle of the text height - the delta of the text 
+                title.y = verticalCenter + title.height / 2 - TextMeasurementService.estimateSvgTextBaselineDelta(SVGLegend.getTextProperties(true, title.text, this.data.fontSize));
             }
 
+            // if an arrow should be added, we add space for it
             if (this.legendDataStartIndex > 0) {
                 totalSpaceOccupiedThusFar += SVGLegend.LegendArrowOffset;
             }
@@ -639,18 +661,19 @@ module powerbi.visuals {
 
             for (let i = 0; i < dataPointsLength; i++) {
                 let dp = dataPoints[i];
+                let textProperties = SVGLegend.getTextProperties(false, dp.label, this.data.fontSize);
 
                 dp.glyphPosition = {
-                    x: totalSpaceOccupiedThusFar + SVGLegend.LegendIconRadius,
-                    y: fixedIconShift
+                    // the space taken so far + the radius + the margin / radiusFactor to prevent huge spaces
+                    x: totalSpaceOccupiedThusFar + SVGLegend.LegendIconRadius + (this.legendFontSizeMarginDifference / SVGLegend.LegendIconRadiusFactor),
+                    // The middle of the container but a bit lower due to text not being in the middle (qP for example making middle between q and P)
+                    y: (this.viewport.height * SVGLegend.LegendIconYRatio),
                 };
 
                 dp.textPosition = {
                     x: totalSpaceOccupiedThusFar + fixedTextShift,
-                    y: fixedTextShift
+                    y: textYCoordinate,
                 };
-
-                let textProperties = SVGLegend.getTextProperties(false, dp.label, this.data.fontSize);
 
                 let width = TextMeasurementService.measureSvgTextWidth(textProperties);
                 let spaceTakenByItem = 0;
@@ -684,14 +707,18 @@ module powerbi.visuals {
             title: TitleLayout,
             navigationArrows: NavigationArrow[],
             autoWidth: boolean): number {
+            // check if we need more space for the margin, or use the default text padding
             let fontSizeBiggerThenDefault = this.legendFontSizeMarginDifference > 0;
             let fontFactor = fontSizeBiggerThenDefault ? this.legendFontSizeMarginDifference : 0;
+            // calculate the size needed after font size change
             let verticalLegendHeight = 20 + fontFactor;
-            let spaceNeededByTitle = 15 + (fontFactor * 1.3);
+            let spaceNeededByTitle = 15 + fontFactor;
+            let extraShiftForTextAlignmentToIcon = 4 + fontFactor;
             let totalSpaceOccupiedThusFar = verticalLegendHeight;
-            let extraShiftForTextAlignmentToIcon = 4 + (fontFactor * 1.3);
-            let fixedHorizontalIconShift = SVGLegend.TextAndIconPadding + SVGLegend.LegendIconRadius;
-            let fixedHorizontalTextShift = SVGLegend.LegendIconRadius + SVGLegend.TextAndIconPadding + fixedHorizontalIconShift;
+            // the default space for text and icon radius + the margin after the font size change
+            let fixedHorizontalIconShift = SVGLegend.TextAndIconPadding + SVGLegend.LegendIconRadius + (this.legendFontSizeMarginDifference / SVGLegend.LegendIconRadiusFactor);
+            let fixedHorizontalTextShift = fixedHorizontalIconShift * 2;
+            // check how much space is needed
             let maxHorizontalSpaceAvaliable = autoWidth
                 ? this.parentViewport.width * SVGLegend.LegendMaxWidthFactor
                 - fixedHorizontalTextShift - SVGLegend.LegendEdgeMariginWidth
@@ -708,25 +735,24 @@ module powerbi.visuals {
                 title.y = spaceNeededByTitle;
                 maxHorizontalSpaceUsed = title.width || 0;
             }
-
+            // if an arrow should be added, we add space for it
             if (this.legendDataStartIndex > 0)
                 totalSpaceOccupiedThusFar += SVGLegend.LegendArrowOffset;
 
             let dataPointsLength = dataPoints.length;
             for (let i = 0; i < dataPointsLength; i++) {
                 let dp = dataPoints[i];
+                let textProperties = SVGLegend.getTextProperties(false, dp.label, this.data.fontSize);
 
                 dp.glyphPosition = {
                     x: fixedHorizontalIconShift,
-                    y: totalSpaceOccupiedThusFar + fontFactor
+                    y: (totalSpaceOccupiedThusFar + extraShiftForTextAlignmentToIcon) - TextMeasurementService.estimateSvgTextBaselineDelta(textProperties)
                 };
 
                 dp.textPosition = {
                     x: fixedHorizontalTextShift,
                     y: totalSpaceOccupiedThusFar + extraShiftForTextAlignmentToIcon
                 };
-
-                let textProperties = SVGLegend.getTextProperties(false, dp.label, this.data.fontSize);
 
                 // TODO: [PERF] Get rid of this extra measurement, and modify
                 // getTailoredTextToReturnWidth + Text

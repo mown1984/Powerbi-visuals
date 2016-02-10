@@ -183,7 +183,7 @@ module powerbi.data {
             if (origLeft === rewrittenLeft && origRight === rewrittenRight)
                 return orig;
 
-            return new SQCompareExpr(orig.kind, rewrittenLeft, rewrittenRight);
+            return new SQCompareExpr(orig.comparison, rewrittenLeft, rewrittenRight);
         }
 
         public visitContains(orig: SQContainsExpr): SQExpr {

@@ -1103,6 +1103,7 @@ This must be run when you have at least 2 sprites.
  *  THE SOFTWARE.
  */
 /* KPI colors*/
+/* KPI Visual colors*/
 .kpi-green {
   color: #79c75b;
 }
@@ -1111,6 +1112,26 @@ This must be run when you have at least 2 sprites.
 }
 .kpi-red {
   color: #c0433a;
+}
+.kpi-visual-green {
+  color: #3bb44a;
+  fill: #3bb44a;
+}
+.kpi-visual-yellow {
+  color: #F2C811;
+  fill: #F2C811;
+}
+.kpi-visual-red {
+  color: #E81123;
+  fill: #E81123;
+}
+.kpi-visual-text-grey {
+  color: #212121;
+  fill: #212121;
+}
+.kpi-visual-graph-grey {
+  color: #5F6B6D;
+  fill: #5F6B6D;
 }
 .powervisuals-glyph {
   font-family: PowerVisuals;
@@ -1728,7 +1749,7 @@ body {
   background-position: -96px -80px;
   width: 13px;
   height: 12px;
-  margin: 4px 2px;
+  margin: 4px 8px 4px 2px;
   float: right;
   cursor: pointer;
   display: block;
@@ -1783,7 +1804,7 @@ body {
   cursor: pointer;
   vertical-align: middle;
   align-self: center;
-  margin-left: 8px;
+  margin: 0 8px;
   flex: 0 0 auto;
   -ms-flex: 0 0 auto;
   -webkit-flex: 0 0 auto;
@@ -1837,7 +1858,6 @@ body {
   white-space: nowrap;
 }
 .slicerContainer .slicerCountText {
-  padding-right: 16px;
   align-self: center;
   flex: 0 0 auto;
   -ms-flex: 0 0 auto;
@@ -1917,8 +1937,7 @@ body {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 4px 0;
 }
 .horizontalSlicerContainer .slicerText.selected,
 .horizontalSlicerContainer .slicerText.partiallySelected {
@@ -1939,6 +1958,21 @@ body {
 }
 .horizontalSlicerContainer .slicerText > span {
   text-align: center;
+}
+.horizontalSlicerContainer .slicerImage {
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 4px 0;
 }
 .overflowingText {
   overflow: hidden;
@@ -1980,12 +2014,6 @@ body {
   font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
 }
 /* Column chart styles */
-.columnChart .column {
-  fill: #28ace2;
-}
-.columnChart .column:hover {
-  fill: #239fd1;
-}
 .columnChart .axisGraphicsContext {
   font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
   font-size: 11px;
@@ -2249,6 +2277,11 @@ body {
   display: inline-block;
   cursor: pointer;
 }
+.playChart .mobile-button-container {
+  margin-left: 2px;
+  margin-right: 18px;
+  touch-action: none;
+}
 .playChart .play {
   width: 0;
   height: 0;
@@ -2277,6 +2310,11 @@ body {
   display: inline-block;
   vertical-align: top;
   margin-top: 12px;
+}
+.playChart .mobile-noUi-handle {
+  width: 20px;
+  left: -10px;
+  touch-action: none;
 }
 .tableContainer {
   overflow: auto;
@@ -3150,8 +3188,22 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   stroke-opacity: 0.5;
 }
 .kpiVisual .goalText {
-  fill: #333333;
+  margin-top: -6px;
+  color: #333333;
   font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  font-size: 15px;
-  text-anchor: middle;
+  font-size: 11px;
+}
+.kpiVisual .textContainer {
+  display: block;
+  align-items: center;
+  position: absolute;
+  text-align: center;
+}
+.kpiVisual .indicatorText {
+  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-size: 60px;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: center;
 }

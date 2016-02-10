@@ -56,6 +56,8 @@ module jsCommon {
      * Extensions to String class.
      */
     export module StringExtensions {
+        const HtmlTagRegex = new RegExp('[<>]', 'g');
+
         export function format(...args: string[]) {
             let s = args[0];
 
@@ -314,6 +316,11 @@ module jsCommon {
 
             return result.length > 0 ? result : fallback;
         }
+
+        /** Performs cheap sanitization by stripping away HTML tag (<>) characters. */
+        export function stripTagDelimiters(s: string): string {
+            return s.replace(HtmlTagRegex, '');
+        }
     }
 
     /**
@@ -350,7 +357,7 @@ module jsCommon {
 
         private static staticContentLocation: string = window.location.protocol + '//' + window.location.host;
         private static urlRegex = /http[s]?:\/\/(\S)+/gi;
-
+        private static imageUrlRegex = /http[s]?:\/\/(\S)+(png|jpg|jpeg|gif|svg)/gi;
         /**
          * Ensures the specified value is not null or undefined. Throws a relevent exception if it is.
          * @param value The value to check.
@@ -772,6 +779,19 @@ module jsCommon {
         public static isValidImageDataUrl(url: string): boolean {
             let regex: RegExp = new RegExp('data:(image\/(png|jpg|jpeg|gif|svg))');
             return regex.test(url);
+        }
+
+        /**
+         * Tests whether a URL is valid.
+         * @param url The url to be tested.
+         * @returns Whether the provided url is valid.
+         */
+        public static isValidImageUrl(url: string): boolean {
+            if (_.isEmpty(url))
+                return false;
+            
+            let match = RegExpExtensions.run(Utility.imageUrlRegex, url);
+            return !!match && match.index === 0;
         }
         
         /**

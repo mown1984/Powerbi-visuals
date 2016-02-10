@@ -31,6 +31,7 @@ module powerbi.visuals {
     import Color = jsCommon.Color;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface ScatterChartConstructorOptions extends CartesianVisualConstructorOptions {
     }
@@ -195,7 +196,7 @@ module powerbi.visuals {
 
             let svg = this.svg = options.svg;
 
-            this.renderer.init(svg, options.labelsContext, this.isMobileChart);
+            this.renderer.init(svg, options.labelsContext, this.isMobileChart, this.tooltipsEnabled);
         }
 
         private static getObjectProperties(dataView: DataView, dataLabelsSettings?: PointDataLabelsSettings): ScatterObjectProperties {
@@ -224,7 +225,7 @@ module powerbi.visuals {
             return objectProperties;
         }
 
-        public static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo): ScatterChartData {
+        public static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled: boolean = true): ScatterChartData {
             let categoryValues: any[],
                 categoryFormatter: IValueFormatter,
                 categoryObjects: DataViewObjects[],
@@ -277,7 +278,8 @@ module powerbi.visuals {
                 objProps.defaultDataPointColor,
                 categoryQueryName,
                 objProps.colorByCategory,
-                playFrameInfo);
+                playFrameInfo,
+                tooltipsEnabled);
 
             let legendItems = hasDynamicSeries
                 ? ScatterChart.createSeriesLegend(dataValues, colorPalette, dataValues, valueFormatter.getFormatString(dvSource, scatterChartProps.general.formatString), objProps.defaultDataPointColor)
@@ -355,7 +357,8 @@ module powerbi.visuals {
             defaultDataPointColor?: string,
             categoryQueryName?: string,
             colorByCategory?: boolean,
-            playFrameInfo?: PlayFrameInfo): ScatterChartDataPoint[] {
+            playFrameInfo?: PlayFrameInfo,
+            tooltipsEnabled?: boolean): ScatterChartDataPoint[] {
 
             let dataPoints: ScatterChartDataPoint[] = [],
                 indicies = metadata.idx,
@@ -423,9 +426,10 @@ module powerbi.visuals {
                     if (playFrameInfo) {
                         seriesData.push({ value: playFrameInfo.label, metadata: { source: playFrameInfo.column, values: [] } });
                     }
-
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, null, categoryValue, null, categories, seriesData);
-
+                    let tooltipInfo: TooltipDataItem[];
+                    if (tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, null, categoryValue, null, categories, seriesData);
+                    }
                     let dataPoint: ScatterChartDataPoint = {
                         x: xVal,
                         y: yVal,
@@ -572,7 +576,7 @@ module powerbi.visuals {
             this.cartesianVisualHost.triggerRender(false);
         }
 
-        public setData(dataViews: DataView[], resized?: boolean) {
+        public setData(dataViews: DataView[]): void {
             this.data = ScatterChart.getDefaultData();
 
             if (dataViews.length > 0) {
@@ -604,7 +608,7 @@ module powerbi.visuals {
                         let playData = this.playAxis.setData(
                             dataView,
                             (dataView: DataView, playFrameInfo?: PlayFrameInfo) =>
-                                ScatterChart.converter(dataView, converterOptions, playFrameInfo), resized);
+                                ScatterChart.converter(dataView, converterOptions, playFrameInfo, this.tooltipsEnabled));
                         this.mergeSizeRanges(playData);
                         this.data = playData.currentViewModel;
 
@@ -617,7 +621,7 @@ module powerbi.visuals {
                         }
 
                         if (dataView.categorical && dataView.categorical.values) {
-                            this.data = ScatterChart.converter(dataView, converterOptions);
+                            this.data = ScatterChart.converter(dataView, converterOptions, undefined, this.tooltipsEnabled);
                         }
                     }
                 }
@@ -1054,8 +1058,9 @@ module powerbi.visuals {
         private mainGraphicsBackgroundRect: D3.Selection;
         private labelGraphicsContext: D3.Selection;
         private isMobileChart: boolean;
+        private tooltipsEnabled: boolean;
 
-        public init(element: D3.Selection, labelsContext: D3.Selection, isMobileChart: boolean): void {
+        public init(element: D3.Selection, labelsContext: D3.Selection, isMobileChart: boolean, tooltipsEnabled: boolean): void {
             this.mainGraphicsG = element.append('g')
                 .classed(SvgRenderer.MainGraphicsContext.class, true);
 
@@ -1070,6 +1075,7 @@ module powerbi.visuals {
 
             this.mainGraphicsContext = this.mainGraphicsG.append('svg');
             this.labelGraphicsContext = labelsContext;
+            this.tooltipsEnabled = tooltipsEnabled;
         }
 
         public render(viewModel: ScatterChartViewModel, interactivityService: IInteractivityService): ScatterBehaviorOptions {
@@ -1090,8 +1096,9 @@ module powerbi.visuals {
                 scatterMarkers = this.drawScatterMarkers(viewModel);
             }
 
-            TooltipManager.addTooltip(scatterMarkers, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
-
+            if (this.tooltipsEnabled) {
+                TooltipManager.addTooltip(this.mainGraphicsContext, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+            }
             SVGUtil.flushAllD3TransitionsIfNeeded(viewModel.animationOptions);
 
             return <ScatterBehaviorOptions> {
@@ -1102,7 +1109,7 @@ module powerbi.visuals {
         }
 
         public createTraceLineRenderer(viewModel: PlayChartViewModel<ScatterChartData, ScatterChartViewModel>): ScatterTraceLineRenderer {
-            return new ScatterTraceLineRenderer(viewModel, this.mainGraphicsContext);
+            return new ScatterTraceLineRenderer(viewModel, this.mainGraphicsContext, this.tooltipsEnabled);
         }
 
         private drawScatterMarkers(viewModel: ScatterChartViewModel): D3.UpdateSelection {
@@ -1312,10 +1319,12 @@ module powerbi.visuals {
 
         private viewModel: PlayChartViewModel<ScatterChartData, ScatterChartViewModel>;
         private element: D3.Selection;
+        private tooltipsEnabled: boolean;
 
-        constructor(viewModel: PlayChartViewModel<ScatterChartData, ScatterChartViewModel>, element: D3.Selection) {
+        constructor(viewModel: PlayChartViewModel<ScatterChartData, ScatterChartViewModel>, element: D3.Selection, tooltipsEnabled: boolean) {
             this.viewModel = viewModel;
             this.element = element;
+            this.tooltipsEnabled = tooltipsEnabled;
         }
 
         public remove() {
@@ -1488,7 +1497,9 @@ module powerbi.visuals {
                     .style('opacity', 0) // fade exiting bubbles out
                     .remove();
 
-                TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                if (this.tooltipsEnabled) {
+                    TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                }
 
                 // sort the z-order, smallest size on top
                 circles.sort((d1: ScatterChartDataPoint, d2: ScatterChartDataPoint) => { return d2.size - d1.size; });

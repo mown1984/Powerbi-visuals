@@ -25,6 +25,7 @@
  */
 
 module powerbi.visuals {
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface KPIStatusWithHistoryData {
         dataPoints: KPIStatusWithHistoryDataPoint[];
@@ -40,7 +41,6 @@ module powerbi.visuals {
         showGoal: boolean;
         showDistanceFromGoal: boolean;
         showTrendLine: boolean;
-        textSize: number;
     }
 
     export interface KPIStatusWithHistoryDataPoint {
@@ -58,24 +58,38 @@ module powerbi.visuals {
         public static showKPITrendLine: DataViewObjectPropertyIdentifier = { objectName: 'trendline', propertyName: 'show' };
         public static indicatorDisplayUnitsProp: DataViewObjectPropertyIdentifier = { objectName: 'indicator', propertyName: 'indicatorDisplayUnits' };
         public static indicatorPrecisionProp: DataViewObjectPropertyIdentifier = { objectName: 'indicator', propertyName: 'indicatorPrecision' };
-        public static indicatorTextSize: DataViewObjectPropertyIdentifier = { objectName: 'indicator', propertyName: 'fontSize' };
 
         public static status = { INCREASE: "increase", DROP: "drop", IN_BETWEEN: "in-between", NOGOAL: "no-goal" };
-        public static textStatusColor = { RED: "#ee0000", GREEN: "#3bb44a", YELLOW: "#f2b311", NOGOAL: "#212121" };
-        public static statusColor = { RED: "#fef0f0", GREEN: "#ebf7ec", YELLOW: "#fdf9e7", NOGOAL: "#f2f2f2" };
         public static statusBandingType = { Below: "BELOW", Above: "ABOVE" };
         public static actualTextConsts = { VERTICAL_OFFSET_FROM_HALF_HEIGHT: 20, FONT_WIDTH_FACTOR: 14, RIGHT_MARGIN: 10 };
 
-        public static trendAreaFilePercentage = 0.34;
+        public static kpiRedClass = 'kpi-visual-red';
+        public static kpiYellowClass = 'kpi-visual-yellow';
+        public static kpiGreenClass = 'kpi-visual-green';
+        public static kpiTextGreyClass = 'kpi-visual-text-grey';
+        public static kpiGraphGreyClass = 'kpi-visual-graph-grey';
+
+        public static allColorClasses = KPIStatusWithHistory.kpiRedClass + ' ' + KPIStatusWithHistory.kpiYellowClass + ' ' + KPIStatusWithHistory.kpiGreenClass + ' ' + KPIStatusWithHistory.kpiTextGreyClass + ' ' + KPIStatusWithHistory.kpiGraphGreyClass;
+
+        public static trendAreaFilePercentage = 1;
+
+        public static estimatedIconHeightInPx = 9;
+
+        public static indicatorTextSizeInPx = 60;
 
         private svg: D3.Selection;
         private dataView: DataView;
         private mainGroupElement: D3.Selection;
-        private mainRect: D3.Selection;
         private kpiActualText: D3.Selection;
         private absoluteGoalDistanceText: D3.Selection;
         private areaFill: D3.Selection;
         private host: IVisualHostServices;
+        private exclamationMarkIcon: D3.Selection;
+        private successMarkIcon: D3.Selection;
+        private betweenIcon: D3.Selection;
+        private rootElement: D3.Selection;
+        private indicatorTextContainer: D3.Selection;
+        private textContainer: D3.Selection;
 
         private static getLocalizedString: (stringId: string) => string;
 
@@ -84,12 +98,21 @@ module powerbi.visuals {
 
         public init(options: VisualInitOptions): void {
             KPIStatusWithHistory.getLocalizedString = options.host.getLocalizedString;
-            this.svg = d3.select(options.element.get(0)).append('svg');
-            let mainGroupElement = this.mainGroupElement = this.svg.append('g').classed('kpiVisual', true);
-            this.mainRect = mainGroupElement.append("rect");
+            this.rootElement = d3.select(options.element.get(0)).append('div').attr('text-align', 'center').classed('kpiVisual', true);
+            this.svg = this.rootElement.append('svg');
+            let mainGroupElement = this.mainGroupElement = this.svg.append('g');
             this.areaFill = mainGroupElement.append("path");
-            this.kpiActualText = mainGroupElement.append("text");
-            this.absoluteGoalDistanceText = mainGroupElement.append("text").classed('goalText', true);
+
+            this.textContainer = this.rootElement.append("div").classed('textContainer', true);
+
+            this.indicatorTextContainer = this.textContainer.append("div").classed('indicatorText', true);
+
+            this.absoluteGoalDistanceText = this.textContainer.append("div").classed('goalText', true);
+
+            this.kpiActualText = this.indicatorTextContainer.append("div").attr('id', 'indicatorText');
+
+            this.initIcons();
+
             this.host = options.host;
         }
 
@@ -102,6 +125,7 @@ module powerbi.visuals {
             if ((!dataView.categorical || !dataView.categorical.values || dataView.categorical.values.length < 1) &&
                 (!dataView.categorical || !dataView.categorical.categories || dataView.categorical.categories.length < 1)) {
                 this.svg.attr("visibility", "hidden");
+                this.textContainer.attr("style", "display:none");
                 return;
             }
             this.svg.attr("visibility", "visible");
@@ -114,6 +138,16 @@ module powerbi.visuals {
             this.render(kpiViewModel, viewport);
         }
 
+        private initIcons() {
+            this.successMarkIcon = this.indicatorTextContainer.append("div").classed('powervisuals-glyph checkmark kpi-visual-green', true);
+            this.betweenIcon = this.indicatorTextContainer.append('div').classed('powervisuals-glyph circle-small kpi-visual-yellow', true);
+            this.exclamationMarkIcon = this.indicatorTextContainer.append("div").classed('powervisuals-glyph exclamation kpi-visual-red', true);
+            
+            this.successMarkIcon.attr('style', 'display:none');
+            this.betweenIcon.attr('style', 'display:none');
+            this.exclamationMarkIcon.attr('style', 'display:none');
+        }
+
         private render(kpiViewModel: KPIStatusWithHistoryData, viewport: IViewport) {
 
             this.setShowDataMissingWarning(!(kpiViewModel.indicatorExists && kpiViewModel.trendExists));
@@ -121,12 +155,13 @@ module powerbi.visuals {
             if (kpiViewModel.dataPoints.length === 0 || !kpiViewModel.historyExists || !kpiViewModel.indicatorExists || !kpiViewModel.trendExists) {
                 this.areaFill.attr("visibility", "hidden");
                 this.svg.attr("visibility", "hidden");
+                this.textContainer.attr("style", "display:none");
                 return;
             }
 
             this.svg.attr({
                 'height': viewport.height,
-                'width': viewport.width
+                'width': viewport.width,
             });
 
             let status = KPIStatusWithHistory.status.NOGOAL;
@@ -136,22 +171,53 @@ module powerbi.visuals {
 
             let actualText = kpiViewModel.formattedValue;
 
+            let calculatedHeight = KPIStatusWithHistory.indicatorTextSizeInPx;
+
+            this.textContainer
+                .attr('style', "width:" + viewport.width + "px;" +
+                    "top:" + ((viewport.height - calculatedHeight) / 2) + "px");
+
             this.kpiActualText
-                .attr("x", viewport.width * 0.5)
-                .attr("y", viewport.height * 0.5 + KPIStatusWithHistory.actualTextConsts.VERTICAL_OFFSET_FROM_HALF_HEIGHT)
-                .attr("fill", GetTextColorByStatus(status))
-                .attr("style", "font-family:wf_standard-font_light,helvetica,arial,sans-serif;font-size:" + kpiViewModel.textSize + "px")
+                .classed(KPIStatusWithHistory.allColorClasses, false)
+                .classed(GetTextColorClassByStatus(status), true)
                 .attr("text-anchor", "middle")
                 .text(actualText);
+
+            let icon: D3.Selection = null;
+
+            switch (status) {
+                case KPIStatusWithHistory.status.INCREASE:
+                    icon = this.successMarkIcon;
+                    this.exclamationMarkIcon.attr("style", "display:none");
+                    this.betweenIcon.attr("style", "display:none");
+                    break;
+                case KPIStatusWithHistory.status.IN_BETWEEN:
+                    icon = this.betweenIcon;
+                    this.exclamationMarkIcon.attr("style", "display:none");
+                    this.successMarkIcon.attr("style", "display:none");
+                    break;
+                case KPIStatusWithHistory.status.DROP:
+                    icon = this.exclamationMarkIcon;
+                    this.successMarkIcon.attr("style", "display:none");
+                    this.betweenIcon.attr("style", "display:none");
+                    break;
+                default:
+                    this.exclamationMarkIcon.attr("style", "display:none");
+                    this.successMarkIcon.attr("style", "display:none");
+                    this.betweenIcon.attr("style", "display:none");
+            }
+
+            if (icon) {
+                icon.attr('style', 'font-size:12px');
+            }
 
             let shownGoalString = kpiViewModel.showGoal ? kpiViewModel.formattedGoalString + " " : "";
             let shownDistanceFromGoalString = kpiViewModel.showDistanceFromGoal ? getDistanceFromGoalInPercentageString(kpiViewModel.actual, kpiViewModel.goals, kpiViewModel.directionType) : "";
 
             this.absoluteGoalDistanceText
-                .attr("x", viewport.width * 0.5)
-                .attr("y", viewport.height * 0.5 + 2.2 * KPIStatusWithHistory.actualTextConsts.VERTICAL_OFFSET_FROM_HALF_HEIGHT)
+                .attr("text-anchor", "middle")
                 .text(shownGoalString + shownDistanceFromGoalString);
-
+            
             if (kpiViewModel.showTrendLine) {
                 let area = d3.svg.area()
                     .x(function (d) { return d.x; })
@@ -159,10 +225,12 @@ module powerbi.visuals {
                     .y1(function (d) { return d.y; });
 
                 this.areaFill
+                    .classed(KPIStatusWithHistory.allColorClasses, false)
+                    .classed(GetGraphColorClassByStatus(status), true)
                     .attr("d", area(kpiViewModel.dataPoints))
                     .attr("stroke", "none")
                     .attr("visibility", "visible")
-                    .attr("fill", GetColorByStatus(status));
+                    .attr('fill-opacity', 0.2);
             } else {
                 this.areaFill.attr("visibility", "hidden");
             }
@@ -176,7 +244,7 @@ module powerbi.visuals {
         private static getDefaultFormatSettings(): CardFormatSetting {
             return {
                 labelSettings: dataLabelUtils.getDefaultLabelSettings(true, Card.DefaultStyle.value.color),
-                textSize: 23,
+                textSize: 27,
                 wordWrap: false
             };
         }
@@ -244,15 +312,6 @@ module powerbi.visuals {
             }
 
             return KPIStatusWithHistory.defaultLabelSettings.precision;
-        }
-
-        private static getProp_Indicator_TextSize(dataView: DataView) {
-            KPIStatusWithHistory.initDefaultLabelSettings();
-            if (dataView && dataView.metadata) {
-                return DataViewObjects.getValue<number>(dataView.metadata.objects, KPIStatusWithHistory.indicatorTextSize, KPIStatusWithHistory.defaultCardFormatSetting.textSize);
-            }
-
-            return KPIStatusWithHistory.defaultCardFormatSetting.textSize;
         }
 
         private static initDefaultLabelSettings() {
@@ -333,8 +392,7 @@ module powerbi.visuals {
                     formattedValue,
                     showGoal: false,
                     showDistanceFromGoal: false,
-                    showTrendLine: false,
-                    textSize: 0
+                    showTrendLine: false
                 };
             }
 
@@ -415,8 +473,6 @@ module powerbi.visuals {
 
             let showTrendLine = KPIStatusWithHistory.getProp_Show_KPITrendLine(dataView);
 
-            let textSize = KPIStatusWithHistory.getProp_Indicator_TextSize(dataView);
-
             return {
                 dataPoints: dataPoints,
                 directionType: directionType,
@@ -430,8 +486,7 @@ module powerbi.visuals {
                 formattedValue,
                 showGoal,
                 showDistanceFromGoal,
-                showTrendLine,
-                textSize: textSize
+                showTrendLine
             };
         }
 
@@ -457,8 +512,7 @@ module powerbi.visuals {
                         objectName: 'indicator',
                         properties: {
                             indicatorDisplayUnits: KPIStatusWithHistory.getProp_Indicator_DisplayUnits(dataView),
-                            indicatorPrecision: KPIStatusWithHistory.getProp_Indicator_Precision(dataView),
-                            fontSize: KPIStatusWithHistory.getProp_Indicator_TextSize(dataView)
+                            indicatorPrecision: KPIStatusWithHistory.getProp_Indicator_Precision(dataView)
                         }
                     });
                 case 'trendline':
@@ -566,35 +620,35 @@ module powerbi.visuals {
         return "(" + sign + percent + "%)";
     }
 
-    function GetColorByStatus(status) {
+    function GetTextColorClassByStatus(status) {
         switch (status) {
             case KPIStatusWithHistory.status.NOGOAL:
-                return KPIStatusWithHistory.statusColor.NOGOAL;
+                return KPIStatusWithHistory.kpiTextGreyClass;
 
             case KPIStatusWithHistory.status.INCREASE:
-                return KPIStatusWithHistory.statusColor.GREEN;
+                return KPIStatusWithHistory.kpiGreenClass;
 
             case KPIStatusWithHistory.status.IN_BETWEEN:
-                return KPIStatusWithHistory.statusColor.YELLOW;
+                return KPIStatusWithHistory.kpiYellowClass;
 
             case KPIStatusWithHistory.status.DROP:
-                return KPIStatusWithHistory.statusColor.RED;
+                return KPIStatusWithHistory.kpiRedClass;
         }
     }
 
-    function GetTextColorByStatus(status) {
+    function GetGraphColorClassByStatus(status) {
         switch (status) {
             case KPIStatusWithHistory.status.NOGOAL:
-                return KPIStatusWithHistory.textStatusColor.NOGOAL;
+                return KPIStatusWithHistory.kpiGraphGreyClass;
 
             case KPIStatusWithHistory.status.INCREASE:
-                return KPIStatusWithHistory.textStatusColor.GREEN;
+                return KPIStatusWithHistory.kpiGreenClass;
 
             case KPIStatusWithHistory.status.IN_BETWEEN:
-                return KPIStatusWithHistory.textStatusColor.YELLOW;
+                return KPIStatusWithHistory.kpiYellowClass;
 
             case KPIStatusWithHistory.status.DROP:
-                return KPIStatusWithHistory.textStatusColor.RED;
+                return KPIStatusWithHistory.kpiRedClass;
         }
     }
 }

@@ -47,6 +47,9 @@ declare module powerbi {
 
         /** Indicates the required ValueTypes for this data role. Any values which do not match one of the ValueTypes specified will be null'd out */
         requiredTypes?: ValueTypeDescriptor[];
+
+        /** Indicates the cartesian role for the visual role */
+        cartesianKind?: CartesianRoleKind;
     }
 
     export interface RoleCondition extends NumberRange {

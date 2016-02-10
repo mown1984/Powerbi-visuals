@@ -48,7 +48,6 @@ module powerbi.visuals {
         private settings: SlicerSettings;
         private behavior: IInteractiveBehavior;
         private hostServices: IVisualHostServices;
-        private renderAsImage: (url: string) => boolean;
         private textProperties: TextProperties = {
             'fontFamily': 'wf_segoe-ui_normal, helvetica, arial, sans-serif',
             'fontSize': '14px',
@@ -59,7 +58,6 @@ module powerbi.visuals {
             if (options) {
                 this.behavior = options.behavior;
             }
-            this.renderAsImage = $.noop;
             this.domHelper = options.domHelper;
         }
 
@@ -142,7 +140,6 @@ module powerbi.visuals {
             }
 
             this.dataView = dataView;
-            this.renderAsImage = options.renderAsImage;
             let settings = this.settings = data.slicerSettings;
             let domHelper = this.domHelper;
 
@@ -175,12 +172,19 @@ module powerbi.visuals {
                 .attr('type', 'checkbox');
 
             labelElement.append('span')
-                .classed(Selectors.Checkbox.class, true)
-                .style(Styles.buildCheckboxStyle(settings));
+                .classed(Selectors.Checkbox.class, true);
 
-            listItemElement.append('span')
-                .classed(SlicerUtil.Selectors.LabelText.class, true)
-                .style('font-size', PixelConverter.fromPoint(settings.slicerText.textSize));
+            listItemElement.each(function (d: SlicerDataPoint, i: number) {
+                let item = d3.select(this);
+                if (d.isImage) {
+                    item.append('img')
+                        .classed(SlicerUtil.Selectors.LabelImage.class, true);
+                }
+                else {
+                    item.append('span')
+                        .classed(SlicerUtil.Selectors.LabelText.class, true);
+                }
+            });
 
             listItemElement.append('span')
                 .classed(SlicerUtil.Selectors.CountText.class, true)
@@ -195,23 +199,23 @@ module powerbi.visuals {
                 let domHelper = this.domHelper;
                 domHelper.styleSlicerHeader(this.header, settings, data.categorySourceName);
                 this.header.attr('title', data.categorySourceName);
-
+                
                 let labelText = rowSelection.selectAll(SlicerUtil.Selectors.LabelText.selector);
-                labelText.html((d: SlicerDataPoint) => {
-                    if (!this.renderAsImage(d.value))
-                        return d.value;
-                    else
-                        return `<img src="${d.value}" />`;
+                labelText.text((d: SlicerDataPoint) => {
+                    return d.value;
+                }).attr('title', (d: SlicerDataPoint) => {
+                    return d.tooltip;
                 });
-                labelText.attr('title', (d: SlicerDataPoint) => d.tooltip);
                 domHelper.setSlicerTextStyle(labelText, settings);
+
+                let labelImage = rowSelection.selectAll(SlicerUtil.Selectors.LabelImage.selector);
+                labelImage.attr('src', (d: SlicerDataPoint) => {
+                        return d.value;
+                });
 
                 let countText = rowSelection.selectAll(SlicerUtil.Selectors.CountText.selector);
                 countText.text((d: SlicerDataPoint) =>  d.count);
                 domHelper.setSlicerTextStyle(countText, settings);
-
-                let slicerCheckbox = rowSelection.selectAll(Selectors.Input.selector).selectAll('span');
-                slicerCheckbox.style(Styles.buildCheckboxStyle(settings));
 
                 if (interactivityService && this.body) {
                     let body = this.body.attr('width', this.currentViewport.width);
@@ -263,29 +267,5 @@ module powerbi.visuals {
         export const MinimumSize = 8;
         export const Size = 13;
         export const SizeRange = Size - MinimumSize;
-    }
-
-    /** Helper class for managing slicer styles. */
-    module Styles {
-        export function buildCheckboxStyle(settings: SlicerSettings): CheckboxStyle {
-            let checkboxScale = getCheckboxScale(settings);
-            let checkboxTransformOrigin = SVGUtil.transformOrigin('left', 'center');
-            return {
-                'transform': checkboxScale,
-                'transform-origin': checkboxTransformOrigin,
-                'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
-            };
-        }
-
-        function getCheckboxScale(settings: SlicerSettings): string {
-            let scale = jsCommon.TextSizeDefaults.getScale(settings.slicerText.textSize);
-            let size = (CheckboxSprite.MinimumSize + (CheckboxSprite.SizeRange * scale));
-            let relativeZoom = size / CheckboxSprite.Size;
-
-            let rounded = powerbi.Double.toIncrement(relativeZoom, 0.05);
-
-            return SVGUtil.scale(rounded);
-        }
-
     }
 }

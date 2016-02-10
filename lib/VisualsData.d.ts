@@ -338,8 +338,9 @@ declare module powerbi {
     }
 }
 declare module powerbi.data {
+    import ArrayNamedItems = jsCommon.ArrayNamedItems;
     class ConceptualSchema {
-        entities: jsCommon.ArrayNamedItems<ConceptualEntity>;
+        entities: ArrayNamedItems<ConceptualEntity>;
         capabilities: ConceptualCapabilities;
         /** Indicates whether the user can edit this ConceptualSchema.  This is used to enable/disable model authoring UX. */
         canEdit: boolean;
@@ -363,9 +364,17 @@ declare module powerbi.data {
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
-        properties: jsCommon.ArrayNamedItems<ConceptualProperty>;
-        hierarchies: jsCommon.ArrayNamedItems<ConceptualHierarchy>;
-        navigationProperties: jsCommon.ArrayNamedItems<ConceptualNavigationProperty>;
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
+        navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>;
+        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+    }
+    interface ConceptualDisplayFolder {
+        name: string;
+        displayName: string;
+        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
     }
     interface ConceptualProperty {
         name: string;
@@ -382,7 +391,7 @@ declare module powerbi.data {
     interface ConceptualHierarchy {
         name: string;
         displayName: string;
-        levels: jsCommon.ArrayNamedItems<ConceptualHierarchyLevel>;
+        levels: ArrayNamedItems<ConceptualHierarchyLevel>;
         hidden?: boolean;
     }
     interface ConceptualHierarchyLevel {
@@ -408,11 +417,11 @@ declare module powerbi.data {
     }
     interface ConceptualColumn {
         defaultAggregate?: ConceptualDefaultAggregate;
-        keys?: jsCommon.ArrayNamedItems<ConceptualProperty>;
+        keys?: ArrayNamedItems<ConceptualProperty>;
         idOnEntityKey?: boolean;
         calculated?: boolean;
         defaultValue?: SQConstantExpr;
-        variations?: jsCommon.ArrayNamedItems<ConceptualVariationSource>;
+        variations?: ArrayNamedItems<ConceptualVariationSource>;
     }
     interface ConceptualMeasure {
         kpi?: ConceptualPropertyKpi;
@@ -859,13 +868,15 @@ declare module powerbi.data {
     }
     class QueryProjectionCollection {
         private items;
-        private _activeProjectionRef;
+        private _activeProjectionRefs;
         private _showAll;
-        constructor(items: QueryProjection[], activeProjectionRef?: string, showAll?: boolean);
+        constructor(items: QueryProjection[], activeProjectionRefs?: string[], showAll?: boolean);
         /** Returns all projections in a mutable array. */
         all(): QueryProjection[];
-        activeProjectionQueryRef: string;
+        activeProjectionRefs: string[];
         showAll: boolean;
+        addActiveQueryReference(queryRef: string): void;
+        getLastActiveQueryReference(): string;
         clone(): QueryProjectionCollection;
     }
     module QueryProjectionsByRole {
@@ -926,6 +937,41 @@ declare module powerbi.data {
     interface CompiledDataViewRoleBindMappingWithReduction extends CompiledDataViewRoleBindMapping, HasReductionAlgorithm {
     }
     interface CompiledDataViewRoleForMappingWithReduction extends CompiledDataViewRoleForMapping, HasReductionAlgorithm {
+    }
+}
+declare module powerbi.data {
+    module DataRoleHelper {
+        function getMeasureIndexOfRole(grouped: DataViewValueColumnGroup[], roleName: string): number;
+        function getCategoryIndexOfRole(categories: DataViewCategoryColumn[], roleName: string): number;
+        function hasRole(column: DataViewMetadataColumn, name: string): boolean;
+        function hasRoleInDataView(dataView: DataView, name: string): boolean;
+    }
+}
+declare module powerbi.data {
+    function createIDataViewCategoricalReader(dataView: any): IDataViewCategoricalReader;
+    interface IDataViewCategoricalReader {
+        hasCategories(): boolean;
+        getCategoryCount(): number;
+        getCategoryValues(roleName: string): any;
+        getCategoryValue(categoryIndex: number, roleName: string): any;
+        getCategoryColumn(roleName: string): DataViewCategoryColumn;
+        hasCompositeCategories(): boolean;
+        hasCategoryWithRole(roleName: string): boolean;
+        getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects;
+        hasValues(roleName: string): boolean;
+        getValues(roleName: string, seriesIndex?: number): any[];
+        getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        getMeasureQueryName(roleName: string): string;
+        getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
+        hasDynamicSeries(): boolean;
+        getSeriesCount(): number;
+        getSeriesObjects(seriesIndex: number): DataViewObjects;
+        getSeriesColumn(seriesIndex: number): DataViewValueColumn;
+        getSeriesColumns(): DataViewValueColumns;
+        getSeriesSource(): DataViewMetadataColumn;
+        getSeriesColumnIdentifier(): powerbi.data.ISQExpr[];
+        getSeriesName(seriesIndex: number): PrimitiveValue;
+        getSeriesDisplayName(): string;
     }
 }
 declare module powerbi.data {
@@ -1119,12 +1165,27 @@ declare module powerbi.data {
         dataViewMappings: DataViewMapping[];
         dataRoles: VisualDataRole[];
     }
+    /**
+     * Interface of a function for deciding whether a column is tied to any role that has required type(s).
+     *
+     * @param columnIndex the position of the column in the select statement, i.e. the same semantic as the index property on the DataViewMetadataColumn interface.
+     * @returns true iff the column in the specified columnIndex is tied to any role that has required type(s), i.e. if the value in that column potentially needs to get normalized.
+     */
     interface IMetadataColumnFilter {
         (columnIndex: number): boolean;
     }
+    /**
+     * Returns true iff the specified value is of matching type as required by the role assigned to the column associated with this filter object.
+     */
     interface IColumnValueFilter {
         (value: any): boolean;
     }
+    /**
+     * Interface of a function for deciding whether a value needs to be normalized due to not having a matching type as required by a role tied to the column associated with the specified columnIndex.
+     *
+     * @param columnIndex the position of the column in the select statement, i.e. the same semantic as the index property on the DataViewMetadataColumn interface.
+     * @returns false iff the specified value needs to be normalized due to not having a matching type as required by a role tied to the column associated with the specified columnIndex.
+     */
     interface IValueFilter {
         (columnIndex: number, value: any): boolean;
     }
@@ -1292,6 +1353,7 @@ declare module powerbi.data {
         columnHierarchyLevelVariation?: FieldExprColumnHierarchyLevelVariation;
         entityAggr?: FieldExprEntityAggrPattern;
         hierarchyLevel?: FieldExprHierarchyLevelPattern;
+        hierarchyLevelAggr?: FieldExprHierarchyLevelAggrPattern;
         hierarchy?: FieldExprHierarchyPattern;
         measure?: FieldExprMeasurePattern;
     }
@@ -1305,6 +1367,9 @@ declare module powerbi.data {
     }
     type FieldExprColumnPattern = FieldExprPropertyPattern;
     interface FieldExprColumnAggrPattern extends FieldExprColumnPattern {
+        aggregate: QueryAggregateFunction;
+    }
+    interface FieldExprHierarchyLevelAggrPattern extends FieldExprHierarchyLevelPattern {
         aggregate: QueryAggregateFunction;
     }
     module SQExprBuilder {
@@ -1332,6 +1397,7 @@ declare module powerbi.data {
     module FieldExprPattern {
         function hasFieldExprName(fieldExpr: FieldExprPattern): boolean;
         function getPropertyName(fieldExpr: FieldExprPattern): string;
+        function getHierarchyName(fieldExpr: FieldExprPattern): string;
         function getColumnRef(fieldExpr: FieldExprPattern): FieldExprPropertyPattern;
         function getFieldExprName(fieldExpr: FieldExprPattern): string;
         function toFieldExprEntityItemPattern(fieldExpr: FieldExprPattern): FieldExprEntityItemPattern;
@@ -1340,6 +1406,8 @@ declare module powerbi.data {
 declare module powerbi {
     module DataViewAnalysis {
         import QueryProjectionsByRole = powerbi.data.QueryProjectionsByRole;
+        import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
+        import DataViewObjectDefinitions = powerbi.data.DataViewObjectDefinitions;
         interface ValidateAndReshapeResult {
             dataView?: DataView;
             isValid: boolean;
@@ -1356,7 +1424,7 @@ declare module powerbi {
         /** Determines whether the value conforms to the range in the role condition */
         function conformsToRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): boolean;
         /** Determines the appropriate DataViewMappings for the projections. */
-        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef): DataViewMapping[];
+        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef, objectDescriptors?: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): DataViewMapping[];
         function getPropertyCount(roleName: string, projections: QueryProjectionsByRole, useActiveIfAvailable?: boolean): number;
         function hasSameCategoryIdentity(dataView1: DataView, dataView2: DataView): boolean;
         function areMetadataColumnsEquivalent(column1: DataViewMetadataColumn, column2: DataViewMetadataColumn): boolean;
@@ -1534,6 +1602,8 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module SQHierarchyExprUtils {
+        function getConceptualHierarchyLevelFromExpr(conceptualSchema: FederatedConceptualSchema, fieldExpr: FieldExprPattern): ConceptualHierarchyLevel;
+        function getConceptualHierarchyLevel(conceptualSchema: FederatedConceptualSchema, schemaName: string, entity: string, hierarchy: string, hierarchyLevel: string): ConceptualHierarchyLevel;
         function getConceptualHierarchy(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): ConceptualHierarchy;
         function expandExpr(schema: FederatedConceptualSchema, expr: SQExpr, suppressHierarchyLevelExpansion?: boolean): SQExpr | SQExpr[];
         function isHierarchyOrVariation(schema: FederatedConceptualSchema, expr: SQExpr): boolean;
@@ -1568,11 +1638,13 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     /** Represents an immutable expression within a SemanticQuery. */
-    class SQExpr implements ISQExpr {
-        constructor();
+    abstract class SQExpr implements ISQExpr {
+        private _kind;
+        constructor(kind: SQExprKind);
         static equals(x: SQExpr, y: SQExpr, ignoreCase?: boolean): boolean;
         validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+        kind: SQExprKind;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
         /** Return the SQExpr[] of group on columns if it has group on keys otherwise return the SQExpr of the column.*/
@@ -1588,6 +1660,30 @@ declare module powerbi.data {
         private getPropertyMetadata(field, property);
         private getMetadataForProperty(field, federatedSchema);
         private static getMetadataForEntity(field, federatedSchema);
+    }
+    const enum SQExprKind {
+        Entity = 0,
+        ColumnRef = 1,
+        MeasureRef = 2,
+        Aggregation = 3,
+        PropertyVariationSource = 4,
+        Hierarchy = 5,
+        HierarchyLevel = 6,
+        And = 7,
+        Between = 8,
+        In = 9,
+        Or = 10,
+        Contains = 11,
+        Compare = 12,
+        StartsWith = 13,
+        Exists = 14,
+        Not = 15,
+        Constant = 16,
+        DateSpan = 17,
+        DateAdd = 18,
+        Now = 19,
+        AnyValue = 20,
+        DefaultValue = 21,
     }
     interface SQExprMetadata {
         kind: FieldKind;
@@ -1614,10 +1710,10 @@ declare module powerbi.data {
         constructor(schema: string, entity: string, variable?: string);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
-    class SQPropRefExpr extends SQExpr {
+    abstract class SQPropRefExpr extends SQExpr {
         ref: string;
         source: SQExpr;
-        constructor(source: SQExpr, ref: string);
+        constructor(kind: SQExprKind, source: SQExpr, ref: string);
     }
     class SQColumnRefExpr extends SQPropRefExpr {
         constructor(source: SQExpr, ref: string);
@@ -1678,10 +1774,10 @@ declare module powerbi.data {
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     class SQCompareExpr extends SQExpr {
-        kind: QueryComparisonKind;
+        comparison: QueryComparisonKind;
         left: SQExpr;
         right: SQExpr;
-        constructor(kind: QueryComparisonKind, left: SQExpr, right: SQExpr);
+        constructor(comparison: QueryComparisonKind, left: SQExpr, right: SQExpr);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     class SQContainsExpr extends SQExpr {
@@ -1730,12 +1826,15 @@ declare module powerbi.data {
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     class SQNowExpr extends SQExpr {
+        constructor();
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     class SQDefaultValueExpr extends SQExpr {
+        constructor();
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     class SQAnyValueExpr extends SQExpr {
+        constructor();
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     /** Provides utilities for creating & manipulating expressions. */
@@ -1786,9 +1885,11 @@ declare module powerbi.data {
         invalidEntityReference = 2,
         invalidColumnReference = 3,
         invalidMeasureReference = 4,
-        invalidLeftOperandType = 5,
-        invalidRightOperandType = 6,
-        invalidValueType = 7,
+        invalidHierarchyReference = 5,
+        invalidHierarchyLevelReference = 6,
+        invalidLeftOperandType = 7,
+        invalidRightOperandType = 8,
+        invalidValueType = 9,
     }
     class SQExprValidationVisitor extends SQExprRewriter {
         errors: SQExprValidationError[];
@@ -1799,11 +1900,16 @@ declare module powerbi.data {
         visitColumnRef(expr: SQColumnRefExpr): SQExpr;
         visitMeasureRef(expr: SQMeasureRefExpr): SQExpr;
         visitAggr(expr: SQAggregationExpr): SQExpr;
+        visitHierarchy(expr: SQHierarchyExpr): SQExpr;
+        visitHierarchyLevel(expr: SQHierarchyLevelExpr): SQExpr;
         visitEntity(expr: SQEntityExpr): SQExpr;
         visitContains(expr: SQContainsExpr): SQExpr;
         visitStartsWith(expr: SQContainsExpr): SQExpr;
+        private validateOperandsAndTypeForStartOrContains(left, right);
         private validateCompatibleType(left, right);
         private validateEntity(schemaName, entityName);
+        private validateHierarchy(schemaName, entityName, hierarchyName);
+        private validateHierarchyLevel(schemaName, entityName, hierarchyName, levelName);
         private register(error);
         private isQueryable(fieldExpr);
     }
@@ -2081,5 +2187,10 @@ declare module powerbi.data {
     module SQExprShortSerializer {
         function serialize(expr: SQExpr): string;
         function serializeArray(exprs: SQExpr[]): string;
+    }
+}
+declare module powerbi.data {
+    module DataViewConcatenateCategoricalColumns {
+        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[]): DataView;
     }
 }

@@ -33,9 +33,14 @@ module powerbi {
         /** Indicates that the role can be bound to either Grouping or Measure. */
         GroupingOrMeasure,
     }
-    
+
     export enum VisualDataChangeOperationKind {
         Create = 0,
         Append = 1
+    }
+
+    export const enum CartesianRoleKind {
+        X,
+        Y,
     }
 }

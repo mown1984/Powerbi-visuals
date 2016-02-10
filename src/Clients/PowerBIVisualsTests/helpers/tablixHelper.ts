@@ -151,6 +151,7 @@ module powerbitests.tablixHelper {
                 if (expectedColumnHeaders) {
                     for (var i = 0, len = expectedColumnHeaders.length; i < len; i++) {
                         var coordinate = expectedColumnHeaders[i];
+                        coordinate.expectedText = TablixUtils.replaceSpaceWithNBSP(coordinate.expectedText);
                         var headerCell = getTableCell(tableBody, coordinate);
                         if (coordinate.expectedText)
                             expect(headerCell.text).toBe(coordinate.expectedText);
@@ -212,6 +213,7 @@ module powerbitests.tablixHelper {
 
             for (var j = 0; j < jlen; j++) {
                 result[i][j] = cells.eq(j).text();
+                expectedValues[i][j] = TablixUtils.replaceSpaceWithNBSP(expectedValues[i][j]);
                 if (result[i][j] !== expectedValues[i][j])
                     addError(errorString, "Actual value " + result[i][j] + " in row " + i + " and column " + j + " does not match expected value " + expectedValues[i][j] + ".");
             }
@@ -244,7 +246,9 @@ module powerbitests.tablixHelper {
             for (var j = 0; j < jlen; j++) {
                 textResult[i][j] = cells.eq(j).text();
                 titleResult[i][j] = getTitleOfTablixItem(cells.eq(j));
-                
+
+                expectedValues[i][j] = TablixUtils.replaceSpaceWithNBSP(expectedValues[i][j]);
+
                 //this check only empty header cells
                 if (titleResult[i][j] === '' && expectedValues[i][j] === "\xa0")
                     titleResult[i][j] = expectedValues[i][j];

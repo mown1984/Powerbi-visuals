@@ -28,6 +28,7 @@
 
 module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface ColumnChartConstructorOptions extends CartesianVisualConstructorOptions {
         chartType: ColumnChartType;
@@ -178,6 +179,7 @@ module powerbi.visuals {
     }
 
     export interface ColumnChartDrawInfo {
+        eventGroup: D3.Selection;
         shapesSelection: D3.Selection;
         viewport: IViewport;
         axisOptions: ColumnAxisOptions;
@@ -245,19 +247,10 @@ module powerbi.visuals {
                 return;
 
             dataViewMapping.categorical.dataVolume = 4;
-
-            let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
-            let categoryItems = dataViewCategories.for.in.items;
-            if (!_.isEmpty(categoryItems)) {
-                let categoryType = categoryItems[0].type;
-
-                let objects: DataViewObjects;
-                if (dataViewMapping.metadata)
-                    objects = dataViewMapping.metadata.objects;
-
-                if (CartesianChart.getIsScalar(objects, columnChartProps.categoryAxis.axisType, categoryType)) {
-                    dataViewCategories.dataReductionAlgorithm = { sample: {} };
-                }
+            
+            if (CartesianChart.detectScalarMapping(dataViewMapping)) {
+                let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
+                dataViewCategories.dataReductionAlgorithm = { sample: {} };
             }
         }
 
@@ -340,7 +333,8 @@ module powerbi.visuals {
             isScalar: boolean = false,
             dataViewMetadata: DataViewMetadata = null,
             chartType?: ColumnChartType,
-            interactivityService?: IInteractivityService): ColumnChartData {
+            interactivityService?: IInteractivityService,
+            tooltipsEnabled: boolean = true): ColumnChartData {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(colors, 'colors');
 
@@ -392,7 +386,8 @@ module powerbi.visuals {
                 categoryInfo.categoryObjects,
                 defaultDataPointColor,
                 chartType,
-                categoryMetadata);
+                categoryMetadata,
+                tooltipsEnabled);
             let columnSeries: ColumnChartSeries[] = result.series;
 
             let valuesMetadata: DataViewMetadataColumn[] = [];
@@ -453,7 +448,8 @@ module powerbi.visuals {
             categoryObjectsList?: DataViewObjects[],
             defaultDataPointColor?: string,
             chartType?: ColumnChartType,
-            categoryMetadata?: DataViewMetadataColumn): { series: ColumnChartSeries[]; hasHighlights: boolean; hasDynamicSeries: boolean; isMultiMeasure: boolean } {
+            categoryMetadata?: DataViewMetadataColumn,
+            tooltipsEnabled?: boolean): { series: ColumnChartSeries[]; hasHighlights: boolean; hasDynamicSeries: boolean; isMultiMeasure: boolean } {
 
             let grouped = dataViewCat && dataViewCat.values ? dataViewCat.values.grouped() : undefined;
             let categoryCount = categories.length;
@@ -536,6 +532,8 @@ module powerbi.visuals {
                 if (seriesCount > 1)
                     dataPointObjects = seriesObjectsList[seriesIndex];
                 let metadata = dataViewCat.values[seriesIndex].source;
+                let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(dataViewCat);
+                let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(dataViewCat);
 
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     if (seriesIndex === 0) {
@@ -602,7 +600,11 @@ module powerbi.visuals {
 
                     let rawCategoryValue = categories[categoryIndex];
                     let color = ColumnChart.getDataPointColor(legendItem, categoryIndex, dataPointObjects);
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex);
+                    let gradientColumnForTooltip = gradientMeasureIndex === 0 ? null : gradientValueColumn;
+                    let tooltipInfo: TooltipDataItem[];
+                    if (tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex, null, gradientColumnForTooltip);
+                    }
                     let series = columnSeries[seriesIndex];
                     let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : defaultLabelSettings;
                     let labelColor = dataPointLabelSettings.labelColor;
@@ -664,8 +666,10 @@ module powerbi.visuals {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
                         let rawCategoryValue = categories[categoryIndex];
                         let highlightedValue: number = highlightedTooltip ? valueHighlight : undefined;
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex, highlightedValue);
-
+                        let tooltipInfo: TooltipDataItem[];
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex, highlightedValue, gradientColumnForTooltip);
+                        }
                         if (highlightedTooltip) {
                             // Override non highlighted data point
                             dataPoint.tooltipInfo = tooltipInfo;
@@ -794,7 +798,8 @@ module powerbi.visuals {
                         CartesianChart.getIsScalar(dataView.metadata ? dataView.metadata.objects : null, columnChartProps.categoryAxis.axisType, categoryType),
                         dataView.metadata,
                         this.chartType,
-                        this.interactivityService);
+                        this.interactivityService,
+                        this.tooltipsEnabled);
                 }
             }
 
@@ -1177,7 +1182,8 @@ module powerbi.visuals {
             let data = this.data;
 
             if (this.tooltipsEnabled)
-                TooltipManager.addTooltip(columnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                TooltipManager.addTooltip(columnChartDrawInfo.eventGroup, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                
             let allDataPoints: ColumnChartDataPoint[] = [];
             let behaviorOptions: ColumnBehaviorOptions = undefined;
             if (this.interactivityService) {
@@ -1186,6 +1192,7 @@ module powerbi.visuals {
                 }
                 behaviorOptions = {
                     datapoints: allDataPoints,
+                    eventGroup: columnChartDrawInfo.eventGroup,
                     bars: columnChartDrawInfo.shapesSelection,
                     hasHighlights: data.hasHighlights,
                     mainGraphicsContext: this.mainGraphicsContext,

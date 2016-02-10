@@ -99,11 +99,22 @@ declare module powerbi {
 
         /** Gets filter analyzer */
         analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter;
-        
+
+        /** Gets display name for the identities */
+        getIdentityDisplayNames(identities: DataViewScopeIdentity[]): DisplayNameIdentityPair[];
+
+        /** Set the display names for their corresponding DataViewScopeIdentity */
+        setIdentityDisplayNames(displayNamesIdentityPairs: DisplayNameIdentityPair[]): void;
+
         /** 
          * Creates a Selection Id Builder
          * designed to simplify the creation of SelectionId objects 
          */
         createSelectionIdBuilder?(): visuals.ISelectionIdBuilder;
+    }
+
+    export interface DisplayNameIdentityPair {
+        displayName: string;
+        identity: DataViewScopeIdentity;
     }
 }

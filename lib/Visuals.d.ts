@@ -100,6 +100,7 @@ declare module powerbi.visuals {
         private legendFontSizeMarginValue;
         static DefaultFontSizeInPt: number;
         private static LegendIconRadius;
+        private static LegendIconRadiusFactor;
         private static MaxTextLength;
         private static MaxTitleLength;
         private static TextAndIconPadding;
@@ -109,10 +110,10 @@ declare module powerbi.visuals {
         private static TopLegendHeight;
         private static DefaultTextMargin;
         private static DefaultMaxLegendFactor;
+        private static LegendIconYRatio;
         private static LegendArrowOffset;
         private static LegendArrowHeight;
         private static LegendArrowWidth;
-        private static LegendArrowTranslateY;
         private static DefaultFontFamily;
         private static DefaultTitleFontFamily;
         private static LegendItem;
@@ -285,6 +286,7 @@ declare module powerbi.visuals {
 declare module powerbi.visuals {
     module AnimatorCommon {
         const MinervaAnimationDuration: number;
+        const MaxDataPointsToAnimate: number;
         function GetAnimationDuration(animator: IGenericAnimator, suppressAnimations: boolean): number;
     }
     interface IAnimatorOptions {
@@ -832,6 +834,7 @@ declare module powerbi.visuals {
     interface ColumnBehaviorOptions {
         datapoints: SelectableDataPoint[];
         bars: D3.Selection;
+        eventGroup: D3.Selection;
         mainGraphicsContext: D3.Selection;
         hasHighlights: boolean;
         viewport: IViewport;
@@ -1658,13 +1661,6 @@ declare module powerbi.visuals {
     }
 }
 declare module powerbi.visuals {
-    module DataRoleHelper {
-        function getMeasureIndexOfRole(grouped: DataViewValueColumnGroup[], roleName: string): number;
-        function hasRole(column: DataViewMetadataColumn, name: string): boolean;
-        function hasRoleInDataView(dataView: DataView, name: string): boolean;
-    }
-}
-declare module powerbi.visuals {
     module KpiUtil {
         const enum KpiImageSize {
             Small = 0,
@@ -2060,7 +2056,9 @@ declare module powerbi.visuals {
             const Header: jsCommon.CssConstants.ClassAndSelector;
             const HeaderText: jsCommon.CssConstants.ClassAndSelector;
             const Body: jsCommon.CssConstants.ClassAndSelector;
+            const Label: jsCommon.CssConstants.ClassAndSelector;
             const LabelText: jsCommon.CssConstants.ClassAndSelector;
+            const LabelImage: jsCommon.CssConstants.ClassAndSelector;
             const CountText: jsCommon.CssConstants.ClassAndSelector;
             const Clear: jsCommon.CssConstants.ClassAndSelector;
             const MultiSelectEnabled: jsCommon.CssConstants.ClassAndSelector;
@@ -2225,6 +2223,7 @@ declare module powerbi.visuals {
         function shouldShowGradient(visualConfig: any): boolean;
         function getUpdatedGradientSettings(gradientObject: data.DataViewObjectDefinitions): GradientSettings;
         function getGradientMeasureIndex(dataViewCategorical: DataViewCategorical): number;
+        function getGradientValueColumn(dataViewCategorical: DataViewCategorical): DataViewValueColumn;
         function hasGradientRole(dataViewCategorical: DataViewCategorical): boolean;
         function getDefaultGradientSettings(): GradientSettings;
         function getDefaultFillRuleDefinition(): DataViewObjectPropertyDefinition;
@@ -2276,9 +2275,13 @@ declare module powerbi.visuals {
 declare module powerbi.visuals {
     /** Helper class for Visual border styles */
     module VisualBorderUtil {
-        function getBorderStyle(outlineElement: string): string;
-        function getBorderStyleWithWeight(outlineType: string, outlineWeight: number): string;
-        function getBorderWidth(outlineElement: string, outlineWeight: number): string;
+        /**
+         * Gets The Boder Width string (e.g. 0px 1px 2px 3px)
+         * @param {OutlineType} string Type of the Outline, one of Visuals.outline.<XX> const strings
+         * @param {number} outlineWeight Weight of the outline in pixels
+         * @returns String representing the Border Width
+         */
+        function getBorderWidth(outlineType: string, outlineWeight: number): string;
     }
 }
 declare module powerbi.visuals {
@@ -3309,6 +3312,8 @@ declare module powerbi.visuals {
         geocoder(): IGeocoder;
         promiseFactory(): IPromiseFactory;
         analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter;
+        getIdentityDisplayNames(dentities: DataViewScopeIdentity[]): DisplayNameIdentityPair[];
+        setIdentityDisplayNames(displayNamesIdentityPairs: DisplayNameIdentityPair[]): void;
         private static beautify(format);
         private static describeUnit(exponent);
     }
@@ -3535,7 +3540,6 @@ declare module powerbi.visuals {
         */
         seriesLabelFormattingEnabled?: boolean;
         sandboxVisualsEnabled?: boolean;
-        kpiVisualEnabled?: boolean;
         /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
         categoricalPivotEnabled?: boolean;
         /**
@@ -3549,12 +3553,16 @@ declare module powerbi.visuals {
         filledMapDataLabelsEnabled?: boolean;
         backgroundImageEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
+        latLongGroupEnabled?: boolean;
     }
     interface SmallViewPortProperties {
         cartesianSmallViewPortProperties: CartesianSmallViewPortProperties;
         gaugeSmallViewPortProperties: GaugeSmallViewPortProperties;
         funnelSmallViewPortProperties: FunnelSmallViewPortProperties;
         DonutSmallViewPortProperties: DonutSmallViewPortProperties;
+    }
+    interface CreateDashboardOptions {
+        tooltipsEnabled: boolean;
     }
     module visualPluginFactory {
         class VisualPluginService implements IVisualPluginService {
@@ -3578,7 +3586,7 @@ declare module powerbi.visuals {
             private visualPlugins;
             constructor(featureSwitches: MinervaVisualFeatureSwitches);
             getVisuals(): IVisualPlugin[];
-            private pushPluginIntoConveratbleTypes(convertibleVisualTypes, plugin);
+            private pushPluginIntoConvertibleTypes(convertibleVisualTypes, plugin);
             private addCustomVisualizations(convertibleVisualTypes);
             getPlugin(type: string): IVisualPlugin;
             requireSandbox(plugin: IVisualPlugin): boolean;
@@ -3595,7 +3603,7 @@ declare module powerbi.visuals {
          */
         class DashboardPluginService extends VisualPluginService {
             private visualPlugins;
-            constructor(featureSwitches: MinervaVisualFeatureSwitches);
+            constructor(featureSwitches: MinervaVisualFeatureSwitches, options: CreateDashboardOptions);
             getPlugin(type: string): IVisualPlugin;
             requireSandbox(plugin: IVisualPlugin): boolean;
         }
@@ -3621,7 +3629,7 @@ declare module powerbi.visuals {
         function create(): IVisualPluginService;
         function createVisualPluginService(featureSwitch: MinervaVisualFeatureSwitches): IVisualPluginService;
         function createMinerva(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
-        function createDashboard(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
+        function createDashboard(featureSwitches: MinervaVisualFeatureSwitches, options: CreateDashboardOptions): IVisualPluginService;
         function createInsights(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
         function createMobile(smallViewPortProperties?: SmallViewPortProperties): IVisualPluginService;
     }
@@ -4619,6 +4627,12 @@ declare module powerbi.visuals.controls.internal {
         function createKpiDom(kpi: DataViewKpiColumnMetadata, kpiValue: string): JQuery;
         function appendSortImageToColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void;
         function isValidStatusGraphic(kpi: DataViewKpiColumnMetadata, kpiValue: string): boolean;
+        /**
+         * Replace every whitespace (0x20) with Non-Breaking Space (0xA0)
+         * @param {string} txt String to replace White spaces
+         * @returns Text after replcing white spaces
+         */
+        function replaceSpaceWithNBSP(txt: string): string;
         function setEnumeration(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void;
         function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void;
         function enumerateColumnsOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
@@ -5711,7 +5725,7 @@ declare module powerbi.visuals {
     }
     interface ICartesianVisual {
         init(options: CartesianVisualInitOptions): void;
-        setData(dataViews: DataView[], resized?: boolean): void;
+        setData(dataViews: DataView[]): void;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         overrideXScale(xProperties: IAxisProperties): void;
         render(suppressAnimations: boolean): CartesianVisualRenderResult;
@@ -5852,6 +5866,7 @@ declare module powerbi.visuals {
         private tooltipsEnabled;
         private lineChartLabelDensityEnabled;
         private trimOrdinalDataOnOverflow;
+        private isMobileChart;
         private referenceLinesEnabled;
         private xRefLine;
         private y1RefLine;
@@ -5870,8 +5885,9 @@ declare module powerbi.visuals {
         init(options: VisualInitOptions): void;
         private isPlayAxis();
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor): boolean;
+        static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean;
         private populateObjectProperties(dataViews);
-        update(options: VisualUpdateOptions): void;
+        private updateInternal(options, dataChanged);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
         scrollTo(position: number): void;
@@ -5884,6 +5900,7 @@ declare module powerbi.visuals {
         private renderLegend();
         private hideLegends();
         private render(suppressAnimations);
+        private runWithDetachedDom(element, fn);
         private getPlotAreaRect(axesLayout, legendMargins);
         private renderBackgroundImage(layout);
         private hideAxisLabels(legendMargins);
@@ -6065,6 +6082,7 @@ declare module powerbi.visuals {
         seriesObjects: DataViewObjects[][];
     }
     interface ColumnChartDrawInfo {
+        eventGroup: D3.Selection;
         shapesSelection: D3.Selection;
         viewport: IViewport;
         axisOptions: ColumnAxisOptions;
@@ -6110,9 +6128,9 @@ declare module powerbi.visuals {
         updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin: any): void;
         init(options: CartesianVisualInitOptions): void;
         private getCategoryLayout(numCategoryValues, options);
-        static converter(dataView: DataViewCategorical, colors: IDataColorPalette, is100PercentStacked?: boolean, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: ColumnChartType, interactivityService?: IInteractivityService): ColumnChartData;
+        static converter(dataView: DataViewCategorical, colors: IDataColorPalette, is100PercentStacked?: boolean, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: ColumnChartType, interactivityService?: IInteractivityService, tooltipsEnabled?: boolean): ColumnChartData;
         private static canSupportOverflow(chartType, seriesCount);
-        private static createDataPoints(dataViewCat, categories, categoryIdentities, legend, seriesObjectsList, converterStrategy, defaultLabelSettings, is100PercentStacked?, isScalar?, isCategoryAlsoSeries?, categoryObjectsList?, defaultDataPointColor?, chartType?, categoryMetadata?);
+        private static createDataPoints(dataViewCat, categories, categoryIdentities, legend, seriesObjectsList, converterStrategy, defaultLabelSettings, is100PercentStacked?, isScalar?, isCategoryAlsoSeries?, categoryObjectsList?, defaultDataPointColor?, chartType?, categoryMetadata?, tooltipsEnabled?);
         private static getDataPointColor(legendItem, categoryIndex, dataPointObjects?);
         private static getStackedLabelColor(isNegative, seriesIndex, seriesCount, categoryIndex, rawValues);
         static sliceSeries(series: ColumnChartSeries[], endIndex: number, startIndex?: number): ColumnChartSeries[];
@@ -6573,7 +6591,7 @@ declare module powerbi.visuals {
         constructor(options?: FunnelChartConstructorOptions);
         private static isValidValueColumn(valueColumn);
         private static getFirstValidValueColumn(values);
-        static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string): FunnelData;
+        static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string, tooltipsEnabled?: boolean): FunnelData;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private static getLabelSettingsOptions(enumeration, labelSettings, isDataLabels, positionObject?);
         private enumerateDataPoints(enumeration);
@@ -6724,7 +6742,7 @@ declare module powerbi.visuals {
         private static getGaugeData(dataView);
         private static overrideGaugeSettings(settings, gaugeObjectsSettings);
         /** Note: Made public for testability */
-        static converter(dataView: DataView): GaugeData;
+        static converter(dataView: DataView, tooltipsEnabled?: boolean): GaugeData;
         private static convertDataLableSettings(dataview, objectName);
         static getMetaDataColumn(dataView: DataView): DataViewMetadataColumn;
         private initKpiBands();
@@ -6788,7 +6806,6 @@ declare module powerbi.visuals {
         showGoal: boolean;
         showDistanceFromGoal: boolean;
         showTrendLine: boolean;
-        textSize: number;
     }
     interface KPIStatusWithHistoryDataPoint {
         x: number;
@@ -6803,23 +6820,10 @@ declare module powerbi.visuals {
         static showKPITrendLine: DataViewObjectPropertyIdentifier;
         static indicatorDisplayUnitsProp: DataViewObjectPropertyIdentifier;
         static indicatorPrecisionProp: DataViewObjectPropertyIdentifier;
-        static indicatorTextSize: DataViewObjectPropertyIdentifier;
         static status: {
             INCREASE: string;
             DROP: string;
             IN_BETWEEN: string;
-            NOGOAL: string;
-        };
-        static textStatusColor: {
-            RED: string;
-            GREEN: string;
-            YELLOW: string;
-            NOGOAL: string;
-        };
-        static statusColor: {
-            RED: string;
-            GREEN: string;
-            YELLOW: string;
             NOGOAL: string;
         };
         static statusBandingType: {
@@ -6831,20 +6835,34 @@ declare module powerbi.visuals {
             FONT_WIDTH_FACTOR: number;
             RIGHT_MARGIN: number;
         };
+        static kpiRedClass: string;
+        static kpiYellowClass: string;
+        static kpiGreenClass: string;
+        static kpiTextGreyClass: string;
+        static kpiGraphGreyClass: string;
+        static allColorClasses: string;
         static trendAreaFilePercentage: number;
+        static estimatedIconHeightInPx: number;
+        static indicatorTextSizeInPx: number;
         private svg;
         private dataView;
         private mainGroupElement;
-        private mainRect;
         private kpiActualText;
         private absoluteGoalDistanceText;
         private areaFill;
         private host;
+        private exclamationMarkIcon;
+        private successMarkIcon;
+        private betweenIcon;
+        private rootElement;
+        private indicatorTextContainer;
+        private textContainer;
         private static getLocalizedString;
         private static defaultCardFormatSetting;
         private static defaultLabelSettings;
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
+        private initIcons();
         private render(kpiViewModel, viewport);
         private setShowDataMissingWarning(show);
         private static getDefaultFormatSettings();
@@ -6856,7 +6874,6 @@ declare module powerbi.visuals {
         private static getProp_KPIDirection(dataView);
         private static getProp_Indicator_DisplayUnits(dataView);
         private static getProp_Indicator_Precision(dataView);
-        private static getProp_Indicator_TextSize(dataView);
         private static initDefaultLabelSettings();
         private static getFormattedValue(metaDataColumn, theValue, precision, displayUnits);
         private static getFormattedGoalString(metaDataColumn, goals, precision, displayUnits);
@@ -6982,7 +6999,7 @@ declare module powerbi.visuals {
         private deferDragMoveOperation;
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(options: VisualSortableOptions): string[];
-        static converter(dataView: DataView, blankCategoryValue: string, colors: IDataColorPalette, isScalar: boolean, interactivityService?: IInteractivityService, shouldCalculateStacked?: boolean, isComboChart?: boolean): LineChartData;
+        static converter(dataView: DataView, blankCategoryValue: string, colors: IDataColorPalette, isScalar: boolean, interactivityService?: IInteractivityService, shouldCalculateStacked?: boolean, isComboChart?: boolean, tooltipsEnabled?: boolean): LineChartData;
         static getInteractiveLineChartDomElement(element: JQuery): HTMLElement;
         private static getColor(colorHelper, hasDynamicSeries, values, grouped, seriesIndex, groupedIdentity);
         private static createStackedValueDomain(data);
@@ -7066,33 +7083,34 @@ declare module powerbi.visuals {
         createMapControl(element: HTMLElement, options?: Microsoft.Maps.MapOptions): Microsoft.Maps.Map;
         ensureMap(locale: string, action: () => void): void;
     }
-    /** Note: public for UnitTest */
+    interface MapData {
+        dataPoints: MapDataPoint[];
+        geocodingCategory: string;
+    }
+    /**
+     * The main map data point, which exists for each category
+     */
     interface MapDataPoint {
         geocodingQuery: string;
-        location?: IGeocodeCoordinate;
-        cachedLocation?: IGeocodeCoordinate;
-        paths?: IGeocodeBoundaryPolygon[];
         value: number;
-        radius?: number;
-        seriesInfo: MapSeriesInfo;
-        categoryIdentity: DataViewScopeIdentity;
         categoryValue: string;
+        subDataPoints: MapSubDataPoint[];
+        location?: IGeocodeCoordinate;
+        paths?: IGeocodeBoundaryPolygon[];
+        radius?: number;
     }
-    /** Note: public for UnitTest */
-    interface MapPieSlice {
+    /**
+     * SubDataPoint that carries series-based data.  For category only maps
+     * there will only be one of these on each MapDataPoint; for dynamic series,
+     * there will be one per series for each MapDataPoint.
+     */
+    interface MapSubDataPoint {
         value: number;
-        index: number;
         fill: string;
         stroke: string;
-        seriesId: DataViewScopeIdentity;
+        identity: SelectionId;
     }
-    /** Note: public for UnitTest */
-    interface MapSeriesInfo {
-        sizeValuesForGroup: MapPieSlice[];
-        latitude?: number;
-        longitude?: number;
-    }
-    interface MapData {
+    interface MapRendererData {
         bubbleData?: MapBubble[];
         sliceData?: MapSlice[][];
         shapeData?: MapShape[];
@@ -7129,11 +7147,10 @@ declare module powerbi.visuals {
     /** Note: public for UnitTest */
     interface IMapDataPointRenderer {
         init(mapControl: Microsoft.Maps.Map, mapDiv: JQuery, addClearCatcher: boolean): void;
-        beginDataPointUpdate(geocodingCategory: string, dataPointCount: number): void;
-        addDataPoint(dataPoint: MapDataPoint): void;
+        setData(data: MapData): void;
         getDataPointCount(): number;
-        converter(viewPort: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService: IInteractivityService): MapData;
-        updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
+        converter(viewPort: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService: IInteractivityService, tooltipsEnabled: boolean): MapRendererData;
+        updateInternal(data: MapRendererData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
         updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void;
         getDataPointPadding(): number;
         clearDataPoints(): void;
@@ -7151,7 +7168,7 @@ declare module powerbi.visuals {
     const LeaderLineColor: string;
     class MapBubbleDataPointRenderer implements IMapDataPointRenderer {
         private mapControl;
-        private values;
+        private mapData;
         private maxDataPointRadius;
         private svg;
         private clearSvg;
@@ -7165,20 +7182,19 @@ declare module powerbi.visuals {
         private dataLabelsSettings;
         private tooltipsEnabled;
         private static validLabelPositions;
-        private mapData;
+        private mapRendererData;
         private root;
         constructor(tooltipsEnabled: boolean);
         init(mapControl: Microsoft.Maps.Map, mapDiv: JQuery, addClearCatcher: boolean): void;
-        addDataPoint(dataPoint: MapDataPoint): void;
+        setData(data: MapData): void;
         clearDataPoints(): void;
         getDataPointCount(): number;
         getDataPointPadding(): number;
         private clearMaxDataPointRadius();
         private setMaxDataPointRadius(dataPointRadius);
-        beginDataPointUpdate(geocodingCategory: string, dataPointCount: number): void;
         getDefaultMap(geocodingCategory: string, dataPointCount: number): void;
-        converter(viewport: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService: IInteractivityService): MapData;
-        updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
+        converter(viewport: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService: IInteractivityService, tooltipsEnabled?: boolean): MapRendererData;
+        updateInternal(data: MapRendererData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
         updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void;
         private createLabelDataPoints();
     }
@@ -7192,14 +7208,13 @@ declare module powerbi.visuals {
         private svg;
         private clearSvg;
         private clearCatcher;
-        private geocodingCategory;
         private polygonInfo;
-        private values;
+        private mapData;
         private shapeGraphicsContext;
         private labelGraphicsContext;
         private labelBackgroundGraphicsContext;
         private maxShapeDimension;
-        private mapData;
+        private mapRendererData;
         private dataLabelsSettings;
         private filledMapDataLabelsEnabled;
         private tooltipsEnabled;
@@ -7210,12 +7225,11 @@ declare module powerbi.visuals {
         static buildPaths(locations: IGeocodeBoundaryPolygon[]): IGeocodeBoundaryPolygon[];
         constructor(fillMapDataLabelsEnabled: boolean, tooltipsEnabled: boolean);
         init(mapControl: Microsoft.Maps.Map, mapDiv: JQuery, addClearCatcher: boolean): void;
-        beginDataPointUpdate(geocodingCategory: string, dataPointCount: number): void;
-        addDataPoint(dataPoint: MapDataPoint): void;
+        setData(data: MapData): void;
         clearDataPoints(): void;
         getDataPointCount(): number;
-        converter(viewport: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService?: IInteractivityService): MapData;
-        updateInternal(data: MapData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
+        converter(viewport: IViewport, dataView: DataView, labelSettings: PointDataLabelsSettings, interactivityService?: IInteractivityService): MapRendererData;
+        updateInternal(data: MapRendererData, viewport: IViewport, dataChanged: boolean, interactivityService: IInteractivityService, redrawDataLabels: boolean): MapBehaviorOptions;
         getDataPointPadding(): number;
         static getIndexOfLargestShape(paths: IGeocodeBoundaryPolygon[]): number;
         updateInternalDataLabels(viewport: IViewport, redrawDataLabels: boolean): void;
@@ -7237,7 +7251,6 @@ declare module powerbi.visuals {
         private maxLongitude;
         private minLatitude;
         private maxLatitude;
-        private valueScale;
         private style;
         private colors;
         private dataPointRenderer;
@@ -7292,13 +7305,7 @@ declare module powerbi.visuals {
         /** Note: public for UnitTest */
         static calculateGroupSizes(categorical: DataViewCategorical, grouped: DataViewValueColumnGroup[], groupSizeTotals: number[], sizeMeasureIndex: number, currentValueScale: SimpleRange): SimpleRange;
         /** Note: public for UnitTest */
-        static createMapDataPoint(group: string, value: number, seriesInfo: MapSeriesInfo, radius: number, colors: IDataColorPalette, categoryIdentity: DataViewScopeIdentity): MapDataPoint;
-        static calculateSeriesLegend(grouped: DataViewValueColumnGroup[], groupIndex: number, sizeMeasureIndex: number, colors: IDataColorPalette, defaultDataPointColor?: string, seriesSource?: data.SQExpr[], interactivityService?: IInteractivityService): LegendDataPoint[];
-        /** Note: public for UnitTest */
-        static calculateSeriesInfo(grouped: DataViewValueColumnGroup[], groupIndex: number, sizeMeasureIndex: number, longitudeMeasureIndex: number, latitudeMeasureIndex: number, colors: IDataColorPalette, defaultDataPointColor?: string, objectsDefinitions?: DataViewObjects[], seriesSource?: data.SQExpr[]): MapSeriesInfo;
-        private static getOptionalMeasure(seriesValues, measureIndex, groupIndex, defaultValue);
-        /** Note: public for UnitTest */
-        static calculateRadius(range: SimpleRange, rangeDiff: number, value?: number): number;
+        static calculateRadius(range: SimpleRange, value?: number): number;
         /** Note: public for UnitTest */
         static getGeocodingCategory(categorical: DataViewCategorical, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): string;
         /** Note: public for UnitTest */
@@ -7309,6 +7316,8 @@ declare module powerbi.visuals {
         static enumerateDataPoints(enumeration: ObjectEnumerationBuilder, dataPoints: LegendDataPoint[], colors: IDataColorPalette, hasDynamicSeries: boolean, defaultDataPointColor: string, showAllDataPoints: boolean, bubbleData: MapBubble[]): void;
         static enumerateLegend(enumeration: ObjectEnumerationBuilder, dataView: DataView, legend: ILegend, legendTitle: string): void;
         onDataChanged(options: VisualDataChangedOptions): void;
+        static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): MapData;
+        static createLegendData(dataView: DataView, colorHelper: ColorHelper): LegendData;
         private swapLogoContainerChildElement();
         /** Note: Public for UnitTests */
         static showLocationMissingWarningIfNecessary(dataView: powerbi.DataView): IVisualWarning[];
@@ -7323,6 +7332,7 @@ declare module powerbi.visuals {
         onClearSelection(): void;
         private clearDataPoints();
         private getDefaultMapControlFactory();
+        static addLatLongGroupingToMapCapabilities(plugin: IVisualPlugin): void;
     }
 }
 declare module powerbi.visuals {
@@ -7630,9 +7640,9 @@ declare module powerbi.visuals {
         constructor(options: ScatterChartConstructorOptions);
         init(options: CartesianVisualInitOptions): void;
         private static getObjectProperties(dataView, dataLabelsSettings?);
-        static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo): ScatterChartData;
+        static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
         private static getSizeRangeForGroups(dataViewValueGroups, sizeColumnIndex);
-        private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, defaultDataPointColor?, categoryQueryName?, colorByCategory?, playFrameInfo?);
+        private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, defaultDataPointColor?, categoryQueryName?, colorByCategory?, playFrameInfo?, tooltipsEnabled?);
         private static createSeriesLegend(dataValues, colorPalette, categorical, formatString, defaultDataPointColor);
         static getBubbleRadius(radiusData: RadiusData, sizeRange: NumberRange, viewport: IViewport): number;
         static getMeasureValue(measureIndex: number, seriesValues: DataViewValueColumn[]): DataViewValueColumn;
@@ -7640,7 +7650,7 @@ declare module powerbi.visuals {
         /** Create a new viewmodel with default data. */
         static getDefaultData(): ScatterChartData;
         private renderAtFrame(data);
-        setData(dataViews: DataView[], resized?: boolean): void;
+        setData(dataViews: DataView[]): void;
         private mergeSizeRanges(playData);
         calculateLegend(): LegendData;
         hasLegend(): boolean;
@@ -7728,7 +7738,7 @@ declare module powerbi.visuals {
         private static calloutOffsetMultiplier;
         constructor(options: PlayConstructorOptions);
         init(options: PlayInitOptions): void;
-        setData(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>, onlyResized: boolean): PlayChartData<T>;
+        setData(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T>;
         render<TViewModel>(suppressAnimations: boolean, viewModel: TViewModel, viewport: IViewport, margin: IMargin): PlayChartRenderResult<T, TViewModel>;
         play(): void;
         private playNextFrame(playData, startFrame?, endFrame?);
@@ -7771,7 +7781,6 @@ declare module powerbi.visuals {
         private settings;
         private behavior;
         private hostServices;
-        private renderAsImage;
         private textProperties;
         private domHelper;
         constructor(options?: SlicerConstructorOptions);
@@ -7851,7 +7860,6 @@ declare module powerbi.visuals {
         dataView: DataView;
         data: SlicerData;
         viewport: IViewport;
-        renderAsImage: (url: string) => boolean;
         resetScrollbarPosition?: boolean;
     }
     interface SlicerData {
@@ -7866,6 +7874,7 @@ declare module powerbi.visuals {
         tooltip: string;
         isSelectAllDataPoint?: boolean;
         count: number;
+        isImage?: boolean;
     }
     interface SlicerSettings {
         general: {
@@ -7908,7 +7917,6 @@ declare module powerbi.visuals {
         private slicerRenderer;
         private slicerOrientation;
         private waitingForData;
-        private renderAsImage;
         private domHelper;
         private initOptions;
         static DefaultStyleProperties(): SlicerSettings;
@@ -8134,6 +8142,7 @@ declare module powerbi.visuals {
         needsMoreData(item: any): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private shouldAllowHeaderResize();
+        onViewModeChanged(viewMode: ViewMode): void;
         private verifyHeaderResize();
     }
 }
@@ -8228,7 +8237,7 @@ declare module powerbi.visuals {
         constructor(hierarchyNavigator: IMatrixHierarchyNavigator, options: MatrixBinderOptions);
         onDataViewChanged(formattingProperties: TablixFormattingProperties): void;
         setTablixColumnSeparator(cell: controls.ITablixCell): void;
-        setTablixRegionStyle(cell: controls.ITablixCell, fontColor: string, backgroundColor: any, outline: string, outlineWeight: number, outlineColor: string): void;
+        setTablixRegionStyle(cell: controls.ITablixCell, fontColor: string, backgroundColor: any, outlineType: string, outlineWeight: number, outlineColor: string): void;
         onStartRenderingSession(): void;
         onEndRenderingSession(): void;
         /**
@@ -8334,6 +8343,7 @@ declare module powerbi.visuals {
         needsMoreData(item: MatrixVisualNode): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private shouldAllowHeaderResize();
+        onViewModeChanged(viewMode: ViewMode): void;
         private verifyHeaderResize();
     }
 }
@@ -8358,6 +8368,7 @@ declare module powerbi.visuals {
     interface TreemapNode extends D3.Layout.GraphNode, SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
         key: any;
         highlightMultiplier?: number;
+        highlightValue?: number;
         color: string;
         highlightedTooltipInfo?: TooltipDataItem[];
     }
@@ -8450,7 +8461,7 @@ declare module powerbi.visuals {
         /**
          * Note: Public for testing purposes.
          */
-        static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject): TreemapData;
+        static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject, tooltipsEnabled?: boolean): TreemapData;
         private static getValuesFromCategoricalDataView(data, hasHighlights);
         private static getCullableValue(totalValue, viewport);
         update(options: VisualUpdateOptions): void;
@@ -8678,7 +8689,7 @@ declare module powerbi.visuals {
         private layout;
         constructor(options: WaterfallChartConstructorOptions);
         init(options: CartesianVisualInitOptions): void;
-        static converter(dataView: DataView, palette: IDataColorPalette, hostServices: IVisualHostServices, dataLabelSettings: VisualDataLabelsSettings, sentimentColors: WaterfallChartSentimentColors, interactivityService: IInteractivityService): WaterfallChartData;
+        static converter(dataView: DataView, palette: IDataColorPalette, hostServices: IVisualHostServices, dataLabelSettings: VisualDataLabelsSettings, sentimentColors: WaterfallChartSentimentColors, interactivityService: IInteractivityService, tooltipsEnabled?: boolean): WaterfallChartData;
         setData(dataViews: DataView[]): void;
         enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, options: EnumerateVisualObjectInstancesOptions): void;
         private enumerateSentimentColors(enumeration);
@@ -8725,7 +8736,7 @@ declare module powerbi.visuals {
     }
     interface TooltipCategoryDataItem {
         value?: any;
-        metadata: DataViewMetadataColumn;
+        metadata: DataViewMetadataColumn[];
     }
     interface TooltipSeriesDataItem {
         value?: any;
@@ -8737,7 +8748,6 @@ declare module powerbi.visuals {
     }
     interface TooltipEvent {
         data: any;
-        index: number;
         coordinates: number[];
         elementCoordinates: number[];
         context: HTMLElement;
@@ -8772,13 +8782,14 @@ declare module powerbi.visuals {
     module TooltipManager {
         let ShowTooltips: boolean;
         let ToolTipInstance: ToolTipComponent;
-        function addTooltip(d3Selection: D3.Selection, getTooltipInfoDelegate: (tooltipEvent: TooltipEvent) => TooltipDataItem[], reloadTooltipDataOnMouseMove?: boolean, onMouseOutDelegate?: () => void): void;
+        function addTooltip(selection: D3.Selection, getTooltipInfoDelegate: (tooltipEvent: TooltipEvent) => TooltipDataItem[], reloadTooltipDataOnMouseMove?: boolean, onMouseOutDelegate?: () => void): void;
         function showDelayedTooltip(tooltipEvent: TooltipEvent, getTooltipInfoDelegate: (tooltipEvent: TooltipEvent) => TooltipDataItem[], delayInMs: number): number;
         function hideDelayedTooltip(delayInMs: number): number;
         function setLocalizedStrings(localizationOptions: TooltipLocalizationOptions): void;
     }
     module TooltipBuilder {
-        function createTooltipInfo(formatStringProp: DataViewObjectPropertyIdentifier, dataViewCat: DataViewCategorical, categoryValue: any, value?: any, categories?: DataViewCategoryColumn[], seriesData?: TooltipSeriesDataItem[], seriesIndex?: number, categoryIndex?: number, highlightedValue?: any): TooltipDataItem[];
+        function createTooltipInfo(formatStringProp: DataViewObjectPropertyIdentifier, dataViewCat: DataViewCategorical, categoryValue: any, value?: any, categories?: DataViewCategoryColumn[], seriesData?: TooltipSeriesDataItem[], seriesIndex?: number, categoryIndex?: number, highlightedValue?: any, gradientValueColumn?: DataViewValueColumn): TooltipDataItem[];
+        function createGradientToolTipData(gradientValueColumn: DataViewValueColumn, categoryIndex: number): TooltipSeriesDataItem;
     }
 }
 declare module powerbi.visuals {
@@ -8809,7 +8820,8 @@ declare module powerbi.visuals {
         measure: number;
         measureFormat?: string;
         percentage: number;
-        highlightRatio: number;
+        highlightRatio?: number;
+        highlightValue?: number;
         label: string;
         index: number;
         /** Data points that may be drilled into */
@@ -8908,7 +8920,7 @@ declare module powerbi.visuals {
          */
         animator: IDonutChartAnimator;
         constructor(options?: DonutConstructorOptions);
-        static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService): DonutData;
+        static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService, tooltipsEnabled?: boolean): DonutData;
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
         onDataChanged(options: VisualDataChangedOptions): void;

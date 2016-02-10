@@ -31,6 +31,10 @@ const powerBIAccessToken = "fooBarBaz";
 const powerBIAccessTokenExpiry = "2115-01-01 00:00:00Z";
 /* tslint:enable */
 
+declare interface JQuery {
+    d3Click(x: number, y: number, eventType?: powerbitests.helpers.ClickEventType): void;
+}
+
 module powerbitests.helpers {
     debug.assertFailFunction = (message: string) => {
         expect(message).toBe('DEBUG asserts should never happen.  There is a product or test bug.');
@@ -106,13 +110,6 @@ module powerbitests.helpers {
             return arg => elem.__ondragstart(arg);
     }
 
-    /** Returns a function that can be called to trigger a click. */
-    export function getClickTriggerFunctionForD3(element: HTMLElement): (arg) => {} {
-        let elem: any = element;
-        if (elem.__onclick)
-            return arg => elem.__onclick(arg);
-    }
-
     /** Execute a dummy expect to avoid Jasmine warnings, since some tests only perform validation directly on the httpService via expectPOST etc. */
     export function suppressJasmineMissingExpectWarning(): void {
         expect(true).toBe(true);
@@ -127,29 +124,21 @@ module powerbitests.helpers {
     }
 
     // Defining a simulated click event (see http://stackoverflow.com/questions/9063383/how-to-invoke-click-event-programmaticaly-in-d3)
-    jQuery.fn.d3Click = function (x: number, y: number, eventType?: ClickEventType) {
+    jQuery.fn.d3Click = function (x: number, y: number, eventType?: ClickEventType): void {
         let type = eventType || ClickEventType.Default;
         this.each(function (i, e) {
-            let evt: any = document.createEvent("MouseEvents");
-            evt.initMouseEvent("click", // type
-                true,   // canBubble
-                true,   // cancelable
-                window, // view
-                0,      // detail
-                x,      // screenX
-                y,      // screenY
-                x,      // clientX
-                y,      // clientY
-                type & ClickEventType.CtrlKey,  // ctrlKey
-                type & ClickEventType.AltKey,  // altKey
-                type & ClickEventType.ShiftKey,  // shiftKey
-                type & ClickEventType.MetaKey,  // metaKey
-                0,      // button
-                null);  // relatedTarget
-
+            let evt = createMouseClickEvent(type, x, y);
             e.dispatchEvent(evt);
         });
     };
+
+    export function clickElement(element: JQuery, ctrlKey: boolean = false): void {
+        let coords = element.offset();
+        let width = element.outerWidth();
+        let height = element.outerHeight();
+        let eventType = ctrlKey ? helpers.ClickEventType.CtrlKey : helpers.ClickEventType.Default;
+        element.d3Click(coords.left + (width / 2), coords.top + (height / 2), eventType);
+    }
 
     export function runWithImmediateAnimationFrames(func: () => void): void {
         let requestAnimationFrame = window.requestAnimationFrame;
@@ -244,6 +233,28 @@ module powerbitests.helpers {
         mouseEvt.wheelDelta = delta;
 
         return mouseEvt;
+    }
+
+    export function createMouseClickEvent(eventType: ClickEventType, x: number, y: number): MouseEvent {
+        let type = eventType || ClickEventType.Default;
+        let evt = document.createEvent("MouseEvents");
+        evt.initMouseEvent(
+            "click", // type
+            true,   // canBubble
+            true,   // cancelable
+            window, // view
+            0,      // detail
+            x,      // screenX
+            y,      // screenY
+            x,      // clientX
+            y,      // clientY
+            !!(type & ClickEventType.CtrlKey),  // ctrlKey
+            !!(type & ClickEventType.AltKey),  // altKey
+            !!(type & ClickEventType.ShiftKey),  // shiftKey
+            !!(type & ClickEventType.MetaKey),  // metaKey
+            0,      // button
+            null);  // relatedTarget
+        return evt;
     }
 
     /**

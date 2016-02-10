@@ -757,7 +757,7 @@ module powerbitests {
                 });
             });
 
-           xit("Verify number of cards and card items in MediumTile ", () => {
+            xit("Verify number of cards and card items in MediumTile ", () => {
                 let options = getVisualInitOptions(helpers.testDom("300", "470"));
 
                 options.interactivity = { overflow: "hidden" };

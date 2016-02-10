@@ -249,6 +249,16 @@ module powerbi.visuals.controls.internal {
             return !!KpiUtil.getClassForKpi(kpi, kpiValue);
         }
 
+        /**
+         * Replace every whitespace (0x20) with Non-Breaking Space (0xA0)
+         * @param {string} txt String to replace White spaces
+         * @returns Text after replcing white spaces
+         */
+        export function replaceSpaceWithNBSP(txt: string): string {
+            if (txt != null)
+                return txt.replace(/ /g, "\xA0");
+        }
+
         export function setEnumeration(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void {
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
             // we are resilient here when we do not have data view.

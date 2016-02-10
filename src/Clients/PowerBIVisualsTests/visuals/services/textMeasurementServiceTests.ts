@@ -117,6 +117,27 @@ module powerbitests {
 
                 expect(setDataSpy.calls.count()).toBe(3);
             });
+
+            xit('estimateSvgTextHeight does not cache when results are wrong', () => {
+                // Ask for a measurement so we put the measurement svg into the DOM
+                TextMeasurementService.estimateSvgTextHeight(getTextProperties(2, 'X', 'Primer'));
+                expect(setDataSpy.calls.count()).toBe(1);
+
+                // Measurements will be wrong when the element is disconnected
+                let measurementElement = d3.select('body').select('svg').node();
+                let parent = measurementElement.parentElement;
+                measurementElement.remove();
+
+                let wrongHeight = TextMeasurementService.estimateSvgTextHeight(getTextProperties(10, 'A', 'RandomFont'));
+                expect(wrongHeight).toBe(0);
+                expect(setDataSpy.calls.count()).toBe(1);
+
+                // Connect and remeasure
+                parent.appendChild(measurementElement);
+                let correctHeight = TextMeasurementService.estimateSvgTextHeight(getTextProperties(10, 'A', 'RandomFont'));
+                expect(correctHeight).toBeGreaterThan(0);
+                expect(setDataSpy.calls.count()).toBe(2);
+            });
         });
 
         it("measureSvgTextHeight", () => {

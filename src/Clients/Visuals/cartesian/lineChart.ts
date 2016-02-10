@@ -190,18 +190,11 @@ module powerbi.visuals {
             if (!dataViewMapping || !dataViewMapping.categorical || !dataViewMapping.categorical.categories)
                 return;
 
-            let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
-            let categoryItems = dataViewCategories.for.in.items;
-            if (!_.isEmpty(categoryItems)) {
-                let categoryType = categoryItems[0].type;
+            dataViewMapping.categorical.dataVolume = 4;
 
-                let objects: DataViewObjects;
-                if (dataViewMapping.metadata)
-                    objects = dataViewMapping.metadata.objects;
-
-                if (CartesianChart.getIsScalar(objects, lineChartProps.categoryAxis.axisType, categoryType)) {
-                    dataViewCategories.dataReductionAlgorithm = { sample: {} };
-                }
+            if (CartesianChart.detectScalarMapping(dataViewMapping)) {
+                let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
+                dataViewCategories.dataReductionAlgorithm = { sample: {} };
             }
         }
 
@@ -237,7 +230,8 @@ module powerbi.visuals {
             isScalar: boolean,
             interactivityService?: IInteractivityService,
             shouldCalculateStacked?: boolean,
-            isComboChart?: boolean): LineChartData {
+            isComboChart?: boolean,
+            tooltipsEnabled: boolean = true): LineChartData {
             let categorical = dataView.categorical;
             let category = categorical.categories && categorical.categories.length > 0
                 ? categorical.categories[0]
@@ -322,8 +316,10 @@ module powerbi.visuals {
                         continue;
 
                     let categorical: DataViewCategorical = dataView.categorical;
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex);
-
+                    let tooltipInfo: TooltipDataItem[];
+                    if (tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex);
+                    }
                     let categoryKey = category && !_.isEmpty(category.identity) && category.identity[categoryIndex] ? category.identity[categoryIndex].key : categoryIndex;
 
                     let dataPoint: LineChartDataPoint = {
@@ -771,6 +767,13 @@ module powerbi.visuals {
             let data = this.clippedData ? this.clippedData : this.data;
             if (!data)
                 return;
+                
+            let dataPointCount = data.categories.length * data.series.length;
+            if (dataPointCount > AnimatorCommon.MaxDataPointsToAnimate) {
+                // Too many data points to animate.
+                duration = 0;
+            }
+                
             let isStackedArea = EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea);
             let margin = this.margin;
             let viewport = this.currentViewport;

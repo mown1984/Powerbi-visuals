@@ -483,6 +483,9 @@ module powerbi.visuals {
         }],
         sorting: {
             custom: {},
+            implicit: {
+                clauses: [{ role: 'Play', direction: SortDirection.Ascending }] //typically a datetime field, sort asc
+            },
         },
         drilldown: {
             roles: ['Category']

@@ -27,8 +27,10 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.data {
+    import ArrayNamedItems = jsCommon.ArrayNamedItems;
+
     export class ConceptualSchema {
-        public entities: jsCommon.ArrayNamedItems<ConceptualEntity>;
+        public entities: ArrayNamedItems<ConceptualEntity>;
         public capabilities: ConceptualCapabilities;
 
         /** Indicates whether the user can edit this ConceptualSchema.  This is used to enable/disable model authoring UX. */
@@ -113,9 +115,18 @@ module powerbi.data {
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
-        properties: jsCommon.ArrayNamedItems<ConceptualProperty>;
-        hierarchies: jsCommon.ArrayNamedItems<ConceptualHierarchy>;
-        navigationProperties: jsCommon.ArrayNamedItems<ConceptualNavigationProperty>;
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
+        navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>;
+        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+    }
+
+    export interface ConceptualDisplayFolder {
+        name: string;
+        displayName: string;
+        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
     }
 
     export interface ConceptualProperty {
@@ -134,7 +145,7 @@ module powerbi.data {
     export interface ConceptualHierarchy {
         name: string;
         displayName: string;
-        levels: jsCommon.ArrayNamedItems<ConceptualHierarchyLevel>;
+        levels: ArrayNamedItems<ConceptualHierarchyLevel>;
         hidden?: boolean;
     }
 
@@ -164,11 +175,11 @@ module powerbi.data {
 
     export interface ConceptualColumn {
         defaultAggregate?: ConceptualDefaultAggregate;
-        keys?: jsCommon.ArrayNamedItems<ConceptualProperty>;
+        keys?: ArrayNamedItems<ConceptualProperty>;
         idOnEntityKey?: boolean;
         calculated?: boolean;
         defaultValue?: SQConstantExpr;
-        variations?: jsCommon.ArrayNamedItems<ConceptualVariationSource>;
+        variations?: ArrayNamedItems<ConceptualVariationSource>;
     }
 
     export interface ConceptualMeasure {

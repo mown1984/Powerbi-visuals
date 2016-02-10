@@ -36,6 +36,7 @@ module powerbitests {
     import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
     import Matrix = powerbi.visuals.Matrix;
     import matrixCapabilities = powerbi.visuals.matrixCapabilities;
+    import TablixControl = powerbi.visuals.controls.TablixControl;
 
     import TablixUtils = powerbi.visuals.controls.internal.TablixUtils;
     import MatrixVisualNode = powerbi.visuals.MatrixVisualNode;
@@ -55,17 +56,19 @@ module powerbitests {
     let dataTypeKpiStatus = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer);
 
     let webPluginService = new powerbi.visuals.visualPluginFactory.MinervaVisualPluginService({});
-    let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({});
+    let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({}, { tooltipsEnabled: true });
 
     let rowGroupSource1: DataViewMetadataColumn = { displayName: "RowGroup1", queryName: "RowGroup1", type: dataTypeString, index: 0 };
     let rowGroupSource2: DataViewMetadataColumn = { displayName: "RowGroup2", queryName: "RowGroup2", type: dataTypeString, index: 1 };
     let rowGroupSource3: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 2 };
+    let rowGroupSourceLeadingSpace: DataViewMetadataColumn = { displayName: "    Row    Group1", queryName: "RowGroup1", type: dataTypeString, index: 0 };
     let rowGroupSource3formatted: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 2, objects: { general: { formatString: "0.0" } } };
     let rowGroupSource4: DataViewMetadataColumn = { displayName: "RowGroup4", queryName: "RowGroup4", type: dataTypeBoolean, index: 9 };
     let rowGroupSourceWebUrl: DataViewMetadataColumn = { displayName: "RowGroupWebUrl", queryName: "RowGroupWebUrl", type: dataTypeWebUrl, index: 0 };
     let columnGroupSource1: DataViewMetadataColumn = { displayName: "ColGroup1", queryName: "ColGroup1", type: dataTypeString, index: 3 };
     let columnGroupSource2: DataViewMetadataColumn = { displayName: "ColGroup2", queryName: "ColGroup2", type: dataTypeString, index: 4 };
-    let columnGroupSource3: DataViewMetadataColumn = { displayName: "ColGroup3", queryName: "ColGroup3", type: dataTypeString, index: 5 };
+    let columnGroupSource3: DataViewMetadataColumn = { displayName: "ColGroup3", queryName: "ColGroup3", type: dataTypeString, index: 5 };    
+    let columnGroupSourceLeadingSpce: DataViewMetadataColumn = { displayName: "    Col    Group1", queryName: "ColGroup1", type: dataTypeString, index: 1 };
     let columnGroupSource3formatted: DataViewMetadataColumn = { displayName: "ColGroup3", queryName: "ColGroup3", type: dataTypeString, index: 5, objects: { general: { formatString: "0.00" } } };
     let columnGroupSource4: DataViewMetadataColumn = { displayName: "ColGroup4", queryName: "ColGroup4", type: dataTypeBoolean, index: 10 };
     let columnGroupSourceWebUrl: DataViewMetadataColumn = { displayName: "ColGroupWebUrl", queryName: "ColGroupWebUrl", type: dataTypeWebUrl, index: 0 };
@@ -273,7 +276,6 @@ module powerbitests {
             measureSource3
         ]
     };
-
     let matrixThreeMeasuresDataView: powerbi.DataView = {
         metadata: { columns: [measureSource1, measureSource2, measureSource3] },
         matrix: matrixThreeMeasures
@@ -502,12 +504,10 @@ module powerbitests {
             measureSource3
         ]
     };
-
     let matrixThreeMeasuresThreeRowGroupsDataView: powerbi.DataView = {
         metadata: { columns: [rowGroupSource1, rowGroupSource2, rowGroupSource3], segment: {} },
         matrix: matrixThreeMeasuresThreeRowGroups
     };
-
     let matrixThreeMeasuresThreeRowGroupsDataViewIncreasedFontSize: powerbi.DataView = {
         metadata: {
             columns: [rowGroupSource1, rowGroupSource2, rowGroupSource3],
@@ -674,6 +674,43 @@ module powerbitests {
     let matrixOneRowGroupOneColumnGroupOneGroupInstanceDataView: powerbi.DataView = {
         metadata: { columns: [rowGroupSource1, columnGroupSource1] },
         matrix: matrixOneRowGroupOneColumnGroupOneGroupInstance
+    };
+
+
+    // ------------------------------------
+    // |     Col    Group1 |      G    C1 |
+    // |     Row    Group1 |      G    C2 |
+    // |-------------------+--------------|
+    // |         GR        |              |
+    // ------------------------------------
+    let matrixOneRowGroupTwoColumnGroupsOneGroupInstanceLeadingSpace: DataViewMatrix = {
+        rows: {
+            root: {
+                children: [{
+                    level: 0,
+                    value: "    GR    "
+                }]
+            },
+            levels: [{ sources: [rowGroupSourceLeadingSpace] }]
+        },
+        columns: {
+            root: {
+                children: [{
+                    level: 0,
+                    value: "    G    C1",
+                    children: [{
+                        level: 1,
+                        value: "    G    C2"
+                    }]
+                }]
+            },
+            levels: [{ sources: [columnGroupSourceLeadingSpce] }, { sources: [columnGroupSource2] }]
+        },
+        valueSources: []
+    };
+    let matrixOneRowGroupTwoColumnGroupsOneGroupInstanceLeadingSpaceDataView: powerbi.DataView = {
+        metadata: { columns: [rowGroupSourceLeadingSpace, columnGroupSourceLeadingSpce, columnGroupSource2] },
+        matrix: matrixOneRowGroupTwoColumnGroupsOneGroupInstanceLeadingSpace
     };
 
     // -------------------------------------
@@ -2719,7 +2756,7 @@ module powerbitests {
             let binder = new powerbi.visuals.MatrixBinder(navigator, { layoutKind: layoutKind });
             let layoutManager = powerbi.visuals.controls.internal.CanvasTablixLayoutManager.createLayoutManager(binder, undefined);
             let parent = document.createElement("div");
-            let tablixControl = new powerbi.visuals.controls.TablixControl(navigator, layoutManager, binder, parent, { interactive: true, enableTouchSupport: false });
+            let tablixControl = new TablixControl(navigator, layoutManager, binder, parent, { interactive: true, enableTouchSupport: false });
 
             expect(tablixControl["_touchManager"]).toBeUndefined();
         });
@@ -4275,6 +4312,37 @@ module powerbitests {
                 let expectedClassNames: string[][] = [
                     [HeaderClass, ColumnHeaderLeafClass + NumericCellClassName, ""],
                     [RowHeaderTopLevelStaticLeafClass, BodyCellClass]
+                ];
+
+                validateClassNames(expectedClassNames);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("2x3 matrix (1 row and 2 columns no value + leading spaces) update", (done) => {
+            v.onDataChanged({
+                dataViews: [matrixOneMeasureDataView]
+            });
+
+            // Call onDataChanged again to trigger an update on the hierarchy navigator
+            v.onDataChanged({
+                dataViews: [matrixOneRowGroupTwoColumnGroupsOneGroupInstanceLeadingSpaceDataView]
+            });
+
+            setTimeout(() => {
+                let expectedCells: string[][] = [
+                    ["    Col    Group1", "    G    C1", ""],
+                    ["    Row    Group1", "    G    C2"],
+                    ["    GR    ", ""]
+                ];
+
+                validateMatrix(expectedCells);
+
+                let expectedClassNames: string[][] = [
+                    [RowHeaderLeafClass, HeaderClass + NumericCellClassName, ""],
+                    [ColumnHeaderLeafClass + " " + RowHeaderLeafClass, ColumnHeaderLeafClass + NumericCellClassName],
+                    [RowHeaderTopLevelStaticLeafClass, BodyCellClass],
                 ];
 
                 validateClassNames(expectedClassNames);

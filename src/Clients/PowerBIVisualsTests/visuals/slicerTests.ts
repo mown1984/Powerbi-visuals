@@ -29,42 +29,47 @@
 // TODO: We should not be validating specific styles (e.g. RGB codes) in unit tests.
 
 module powerbitests {
+    import data = powerbi.data;
+    import DataViewMetadata = powerbi.DataViewMetadata;
+    import FilterAnalyzerOptions = powerbi.FilterAnalyzerOptions;
+    import SemanticFilter = powerbi.data.SemanticFilter;
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
     import VisualDataChangedOptions = powerbi.VisualDataChangedOptions;  
+    import visuals = powerbi.visuals;
 
     powerbitests.mocks.setLocale();
 
     describe("Slicer", () => {
         it("Slicer_registered_capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("slicer").capabilities).toBe(powerbi.visuals.slicerCapabilities);
+            expect(visuals.visualPluginFactory.create().getPlugin("slicer").capabilities).toBe(visuals.slicerCapabilities);
         });
 
         it("Capabilities should include dataViewMapping", () => {
-            expect(powerbi.visuals.slicerCapabilities.dataViewMappings).toBeDefined();
-            expect(powerbi.visuals.slicerCapabilities.dataViewMappings.length).toBe(1);
+            expect(visuals.slicerCapabilities.dataViewMappings).toBeDefined();
+            expect(visuals.slicerCapabilities.dataViewMappings.length).toBe(1);
         });
 
         it("Capabilities should have condition", () => {
-            expect(powerbi.visuals.slicerCapabilities.dataViewMappings[0].conditions.length).toBe(1);
-            expect(powerbi.visuals.slicerCapabilities.dataViewMappings[0].conditions[0][powerbi.visuals.slicerCapabilities.dataRoles[0].name].max).toBe(1);
+            expect(visuals.slicerCapabilities.dataViewMappings[0].conditions.length).toBe(1);
+            expect(visuals.slicerCapabilities.dataViewMappings[0].conditions[0][powerbi.visuals.slicerCapabilities.dataRoles[0].name].max).toBe(1);
         });
 
         it("Capabilities should include dataRoles", () => {
-            expect(powerbi.visuals.slicerCapabilities.dataRoles).toBeDefined();
-            expect(powerbi.visuals.slicerCapabilities.dataRoles.length).toBe(1);
+            expect(visuals.slicerCapabilities.dataRoles).toBeDefined();
+            expect(visuals.slicerCapabilities.dataRoles.length).toBe(1);
         });
 
         it("Capabilities should suppressDefaultTitle", () => {
-            expect(powerbi.visuals.slicerCapabilities.suppressDefaultTitle).toBe(true);
+            expect(visuals.slicerCapabilities.suppressDefaultTitle).toBe(true);
         });
 
         it("Filter property should match calculated", () => {
-            expect(powerbi.data.DataViewObjectDescriptors.findFilterOutput(powerbi.visuals.slicerCapabilities.objects)).toEqual(powerbi.visuals.slicerProps.filterPropertyIdentifier);
+            expect(data.DataViewObjectDescriptors.findFilterOutput(visuals.slicerCapabilities.objects)).toEqual(visuals.slicerProps.filterPropertyIdentifier);
         });
 
         it("Sort should be default so the sort UI shows", () => {
-            expect(powerbi.visuals.slicerCapabilities.sorting.custom).not.toBeDefined();
-            expect(powerbi.visuals.slicerCapabilities.sorting.default).toBeDefined();
+            expect(visuals.slicerCapabilities.sorting.custom).not.toBeDefined();
+            expect(visuals.slicerCapabilities.sorting.default).toBeDefined();
         });
     });
 
@@ -305,28 +310,28 @@ module powerbitests {
 
                 dataView.metadata.objects = {
                     general: { orientation: orientation },
-                    header: { outline: 'None' }
+                    header: { outline: visuals.outline.none }
                 };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
                 expect($(".headerText").css('border-width')).toBe('0px');
 
-                dataView.metadata.objects["header"] = { outline: 'TopOnly' };
+                dataView.metadata.objects["header"] = { outline: visuals.outline.topOnly };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
                 expect($(".headerText").css('border-width')).toBe('1px 0px 0px');
 
-                dataView.metadata.objects["header"] = { outline: 'TopBottom' };
+                dataView.metadata.objects["header"] = { outline: visuals.outline.topBottom };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
                 expect($(".headerText").css('border-width')).toBe('1px 0px');
 
-                dataView.metadata.objects["header"] = { outline: 'LeftRight' };
+                dataView.metadata.objects["header"] = { outline: visuals.outline.leftRight };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
                 expect($(".headerText").css('border-width')).toBe('0px 1px');
 
-                dataView.metadata.objects["header"] = { outline: 'Frame' };
+                dataView.metadata.objects["header"] = { outline: visuals.outline.frame };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
                 expect($(".headerText").css('border-width')).toBe('1px');
@@ -377,7 +382,7 @@ module powerbitests {
             });
 
             it("slicer loadMoreData", () => {
-                let metadata: powerbi.DataViewMetadata = {
+                let metadata: DataViewMetadata = {
                     columns: builder.dataViewMetadata.columns,
                     segment: {},
                 };
@@ -385,7 +390,7 @@ module powerbitests {
                 let dataView = { metadata: metadata, categorical: builder.dataViewCategorical };
                 dataView.metadata.objects = slicerHelper.buildDefaultDataViewObjects(orientation);
 
-                let interactiveDataViewOptions: powerbi.VisualDataChangedOptions = {
+                let interactiveDataViewOptions: VisualDataChangedOptions = {
                     dataViews: [dataView]
                 };
                 helpers.fireOnDataChanged(builder.visual, interactiveDataViewOptions);
@@ -396,7 +401,7 @@ module powerbitests {
             });
 
             it("slicer loadMoreData already called", () => {
-                let metadata: powerbi.DataViewMetadata = {
+                let metadata: DataViewMetadata = {
                     columns: builder.dataViewMetadata.columns,
                     segment: {},
                 };
@@ -404,7 +409,7 @@ module powerbitests {
                 let dataView = { metadata: metadata, categorical: builder.dataViewCategorical };
                 dataView.metadata.objects = slicerHelper.buildDefaultDataViewObjects(orientation);
 
-                let interactiveDataViewOptions: powerbi.VisualDataChangedOptions = {
+                let interactiveDataViewOptions: VisualDataChangedOptions = {
                     dataViews: [dataView]
                 };
                 helpers.fireOnDataChanged(builder.visual, interactiveDataViewOptions);
@@ -435,8 +440,8 @@ module powerbitests {
             it("Empty dataView test", () => {
                 expect($(".slicerText").length).toBe(6);
 
-                let dataView: powerbi.DataView = slicerHelper.buildEmptyDataView();
-                let interactiveDataViewOptions: powerbi.VisualDataChangedOptions = {
+                let dataView = slicerHelper.buildEmptyDataView();
+                let interactiveDataViewOptions: VisualDataChangedOptions = {
                     dataViews: [dataView]
                 };
                 helpers.fireOnDataChanged(builder.visual, interactiveDataViewOptions);
@@ -446,6 +451,37 @@ module powerbitests {
 
         describe("VerticalSlicer Null and Empty data validation", () => validateNullEmptyData(SlicerOrientation.Vertical));
         describe("HorizontalSlicer Null and Empty data validation", () => validateNullEmptyData(SlicerOrientation.Horizontal));
+
+        function validateOnClearSelectionWithDefaultValue(orientation: SlicerOrientation): void {
+            let builder: slicerHelper.TestBuilder;
+            let filterAnalyzed: boolean;
+            beforeEach(() => {
+                filterAnalyzed = false;
+                builder = new slicerHelper.TestBuilder(orientation);
+                builder.hostServices.analyzeFilter = (options: FilterAnalyzerOptions) => {
+                    filterAnalyzed = true;
+                    let defaultValueScopeIdentity = data.createDataViewScopeIdentity(data.SQExprUtils.getDataViewScopeIdentityComparisonExpr([builder.field], [data.SQExprBuilder.text('Banana')]));
+                    return new mocks.FilterAnalyzerMock(SemanticFilter.getDefaultValueFilter(builder.field), [builder.field], undefined, [defaultValueScopeIdentity]);
+                };
+            });
+
+            afterEach(() => builder.destroy());
+
+            xit("On Clear should reset the default value", (done) => {
+                (<visuals.Slicer>builder.visual).onClearSelection();
+                expect(filterAnalyzed).toBe(true);
+                helpers.executeWithDelay(() => {
+                    let selectedContainer = getSelectedContainer();
+                    expect(selectedContainer.length).toBe(1);
+                    expect(selectedContainer.text()).toBe('Banana');
+
+                    done();
+                }, 10);
+            });
+        }
+
+        describe("VerticalSlicer on clear selection", () => validateOnClearSelectionWithDefaultValue(SlicerOrientation.Vertical));
+        describe("HorizontalSlicer on clear selection", () => validateOnClearSelectionWithDefaultValue(SlicerOrientation.Horizontal));
     });
 
     function getSelectAllItem(): JQuery {
@@ -467,6 +503,10 @@ module powerbitests {
         return $(".partiallySelected");
     }
 
+    function getSelectedContainer(): JQuery {
+        return $(".selected");
+    }
+
     function parseAndRoundFontSize(element: JQuery): number {
         let fontSize = parseFloat(element.css('font-size'));
         return Math.round(fontSize);
@@ -482,6 +522,6 @@ module powerbitests {
     }
 
     function loadMoreData(builder: slicerHelper.TestBuilder): void {
-        (<powerbi.visuals.Slicer>builder.visual).loadMoreData();
+        (<visuals.Slicer>builder.visual).loadMoreData();
     }
 }

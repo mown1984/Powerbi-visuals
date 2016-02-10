@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -11,10 +11,10 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
+ *   
  *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
+ *   
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -28,6 +28,8 @@
 
 var gulp = require("gulp"),
     gulpTsLint = require("gulp-tslint"),
+    lodash = require("lodash"),
+    config = require("./config.js"),
     utils = require("./utils.js");
 
 /**
@@ -37,8 +39,12 @@ var gulp = require("gulp"),
  * @param {String | Array} includePaths Paths where linter will be searching .ts files.
  * @param {String | Array} excludePaths Excluded paths.
  */
-function tslint(projectPath, includePaths, excludePaths) {
-    var paths;
+function tslint(projectPath, includePaths, excludePaths, options) {
+    var paths,
+        options = lodash.defaults(options || {}, {
+            emitError: config.emitTsLintError || false,
+            configuration: "../src/Clients/tslint.json"
+        });
 
     includePaths = includePaths || "/**/*.ts";
 
@@ -48,10 +54,6 @@ function tslint(projectPath, includePaths, excludePaths) {
         cwd: projectPath
     })
         .pipe(gulpTsLint())
-        .pipe(gulpTsLint.report("full", {
-            emitError: false,
-            configuration: "../src/Clients/tslint.json"
-        }));
-}
+        .pipe(gulpTsLint.report("full", options));}
 
 module.exports = tslint;

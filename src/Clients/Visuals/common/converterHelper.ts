@@ -27,6 +27,8 @@
  /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
+
     export interface PivotedCategoryInfo {
         categories?: any[];
         categoryFormatter?: IValueFormatter;

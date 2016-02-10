@@ -29,6 +29,34 @@
 module powerbi.data {
 
     export module SQHierarchyExprUtils {
+        export function getConceptualHierarchyLevelFromExpr(
+            conceptualSchema: FederatedConceptualSchema,
+            fieldExpr: FieldExprPattern): ConceptualHierarchyLevel {
+            let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
+            let hierarchyLevel = fieldExpr.hierarchyLevel || fieldExpr.hierarchyLevelAggr;
+            if (hierarchyLevel)
+                return SQHierarchyExprUtils.getConceptualHierarchyLevel(
+                    conceptualSchema,
+                    fieldExprItem.schema,
+                    fieldExprItem.entity,
+                    hierarchyLevel.name,
+                    hierarchyLevel.level);
+        }
+
+        export function getConceptualHierarchyLevel(
+            conceptualSchema: FederatedConceptualSchema,
+            schemaName: string,
+            entity: string,
+            hierarchy: string,
+            hierarchyLevel: string): ConceptualHierarchyLevel {
+
+            let schema = conceptualSchema.schema(schemaName);
+            let conceptualHierarchy = schema.findHierarchy(entity, hierarchy);
+            if (conceptualHierarchy) {
+                return conceptualHierarchy.levels.withName(hierarchyLevel);
+            }
+        }
+
         export function getConceptualHierarchy(sqExpr: SQExpr, federatedSchema: FederatedConceptualSchema): ConceptualHierarchy {
             if (sqExpr instanceof SQHierarchyExpr) {
                 let hierarchy = <SQHierarchyExpr>sqExpr;

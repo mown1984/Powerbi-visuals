@@ -26,6 +26,7 @@
 
 module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     interface ScatterChartMeasureMetadata {
         idx: {

@@ -72,7 +72,7 @@ module powerbi.data {
             }
 
             public visitCompare(expr: SQCompareExpr): void {
-                if (expr.kind !== QueryComparisonKind.Equal) {
+                if (expr.comparison !== QueryComparisonKind.Equal) {
                     this.visitDefault(expr);
                     return;
                 }

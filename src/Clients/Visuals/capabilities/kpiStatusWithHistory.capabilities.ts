@@ -88,10 +88,6 @@ module powerbi.visuals {
                     kpiFormat: {
                         displayName: data.createDisplayNameGetter('TaskPane_Format'),
                         type: { text: true },
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
                     }
                 }
             },
@@ -107,7 +103,7 @@ module powerbi.visuals {
             },
             goals: {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_KPI_Goals'),
-                description: data.createDisplayNameGetter('Role_DisplayName_KPI_GoalDescription'),
+                description: data.createDisplayNameGetter('Role_DisplayName_KPI_Goals'),
                 properties: {
                     showGoal: {
                         displayName: data.createDisplayNameGetter('Role_DisplayName_KPI_Show_Goal'),

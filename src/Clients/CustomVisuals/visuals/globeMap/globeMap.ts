@@ -30,6 +30,7 @@ var GlobeMapCanvasLayers: JQuery[];
 
 module powerbi.visuals.samples {
     import TouchRect = controls.TouchUtils.Rectangle;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     interface RenderData {
         lat: number;

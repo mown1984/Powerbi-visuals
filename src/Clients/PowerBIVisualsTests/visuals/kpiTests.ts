@@ -84,12 +84,12 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.GREEN);
+                    helpers.assertColorsMatch(area.css('fill'), "#3bb44a");
 
-                    let text = $element.find('text').get(0);
+                    let text = $element.find('#indicatorText');
 
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.GREEN);
-                    expect(text.textContent).toBe("25.00");
+                    helpers.assertColorsMatch(text.css('color'), "#3bb44a");
+                    expect(text.text()).toBe("25.00");
                 });
 
                 it("show red trend", () => {
@@ -97,11 +97,11 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.RED);
+                    helpers.assertColorsMatch(area.css('fill'), "#E81123");
 
-                    let text = $element.find('text').get(0);
+                    let text = $element.find('#indicatorText');
 
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.RED);
+                    helpers.assertColorsMatch(text.css('color'), "#E81123");
                 });
 
                 it("show gray trend when no goal defined", () => {
@@ -109,10 +109,10 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.NOGOAL);
+                    helpers.assertColorsMatch(area.css('fill'), "#5F6B6D");
 
-                    let text = $element.find('text').get(0);
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.NOGOAL);
+                    let text = $element.find('#indicatorText');
+                    helpers.assertColorsMatch(text.css('color'), "#212121");
                 });
 
                 it("show gray trend when no goal defined after mix of changes", () => {
@@ -126,11 +126,11 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.NOGOAL);
+                    helpers.assertColorsMatch(area.css('fill'), "#5F6B6D");
 
-                    let text = $element.find('text').get(0);
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.NOGOAL);
-                    expect(text.textContent).toBe("12.00");
+                    let text = $element.find('#indicatorText');
+                    helpers.assertColorsMatch(text.css('color'), "#212121");
+                    expect(text.text()).toBe("12.00");
                 });
 
                 it("show green trend after mix of changes", () => {
@@ -144,11 +144,11 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.GREEN);
+                    helpers.assertColorsMatch(area.css('fill'), "#3bb44a");
 
-                    let text = $element.find('text').get(0);
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.GREEN);
-                    expect(text.textContent).toBe("25.00");
+                    let text = $element.find('#indicatorText');
+                    helpers.assertColorsMatch(text.css('color'), "#3bb44a");
+                    expect(text.text()).toBe("25.00");
                 });
 
                 it("Visual is empty if indicator is missing", () => {
@@ -222,12 +222,12 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let area = $element.find('path');
-                    helpers.assertColorsMatch(area.css('fill'), KPIStatusWithHistory.statusColor.YELLOW);
+                    helpers.assertColorsMatch(area.css('fill'), "#F2C811");
 
-                    let text = $element.find('text').get(0);
+                    let text = $element.find('#indicatorText');
 
-                    helpers.assertColorsMatch(text.getAttribute('fill'), KPIStatusWithHistory.textStatusColor.YELLOW);
-                    expect(text.textContent).toBe("12.00");
+                    helpers.assertColorsMatch(text.css('color'), "#F2C811");
+                    expect(text.text()).toBe("12.00");
                 });
             });
         });

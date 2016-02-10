@@ -44,14 +44,20 @@ module powerbi.data {
 
     export class QueryProjectionCollection {
         private items: QueryProjection[];
-        private _activeProjectionRef: string;
+
+        /* The activeProjectionReference is an array that contains all the items that we are grouping on in case of a drillable
+           role. For example, if you have a drill role with [Country, State, City] and the user drilled to state, the active items
+           will include [Country and State]. This means that the query will group on both country and state and the state "last item"
+           is the item that the user drilled to.
+        */
+        private _activeProjectionRefs: string[];
         private _showAll: boolean;
 
-        public constructor(items: QueryProjection[], activeProjectionRef?: string, showAll?: boolean) {
+        public constructor(items: QueryProjection[], activeProjectionRefs?: string[], showAll?: boolean) {
             debug.assertValue(items, 'items');
 
             this.items = items;
-            this._activeProjectionRef = activeProjectionRef;
+            this._activeProjectionRefs  = activeProjectionRefs;
             this._showAll = showAll;
         }
 
@@ -60,15 +66,19 @@ module powerbi.data {
             return this.items;
         }
 
-        public get activeProjectionQueryRef(): string {
-            return this._activeProjectionRef;
+        public get activeProjectionRefs(): string[] {
+            return this._activeProjectionRefs ;
         }
 
-        public set activeProjectionQueryRef(value: string) {
+        public set activeProjectionRefs(queryReferences: string[]) {
             let queryRefs = this.items.map(val => val.queryRef);
-            if (!_.contains(queryRefs, value))
-                return;
-            this._activeProjectionRef = value;
+
+            for (let queryReference of queryReferences) {
+                if (!_.contains(queryRefs, queryReference))
+                    return;
+            }
+
+            this._activeProjectionRefs  = queryReferences;
         }
 
         public get showAll(): boolean {
@@ -78,9 +88,22 @@ module powerbi.data {
         public set showAll(value: boolean) {
             this._showAll = value;
         }
-        
+
+        public addActiveQueryReference(queryRef: string): void {
+            if (!this._activeProjectionRefs)
+                this._activeProjectionRefs = [queryRef];
+            else
+                this._activeProjectionRefs.push(queryRef);
+        }
+
+        public getLastActiveQueryReference(): string {
+            if (!_.isEmpty(this._activeProjectionRefs)) {
+                return this._activeProjectionRefs[this._activeProjectionRefs.length - 1];
+            }
+        }
+
         public clone(): QueryProjectionCollection {
-            return new QueryProjectionCollection(_.clone(this.items), this._activeProjectionRef, this._showAll);
+            return new QueryProjectionCollection(_.clone(this.items), _.clone(this._activeProjectionRefs ), this._showAll);
         }
     }
 

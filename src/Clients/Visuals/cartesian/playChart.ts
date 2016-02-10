@@ -135,13 +135,13 @@ module powerbi.visuals {
 
             this.isMobileChart = options.interactivity && options.interactivity.isInteractiveLegend;
 
-            if (this.interactivityService && !this.isMobileChart) {
-                this.playControl = new PlayControl(this.element, (frameIndex: number) => this.moveToFrameAndRender(frameIndex));
+            if (this.interactivityService) {
+                this.playControl = new PlayControl(this.element, (frameIndex: number) => this.moveToFrameAndRender(frameIndex), this.isMobileChart);
                 this.playControl.onPlay(() => this.play());
             }
         }
 
-        public setData(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>, onlyResized: boolean): PlayChartData<T> {
+        public setData(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T> {
             if (dataView) {
                 if (this.ridiculousFlagForPersistProperties && dataView.metadata) {
                     // BUG FIX: customer feedback has been strong that we should always default to show the last frame.
@@ -156,9 +156,6 @@ module powerbi.visuals {
                     return this.playData;
                 }
                 else if (dataView.matrix || dataView.categorical) {
-                    if (onlyResized)
-                        return this.playData;
-
                     this.playData = PlayChart.converter<T>(dataView, visualConverter);
                 }
                 else {
@@ -363,13 +360,15 @@ module powerbi.visuals {
         private slider: JQuery;
         private noUiSlider: noUiSlider.noUiSlider;
         private renderDelegate: (index: number) => void;
+        private isMobileChart: boolean;
 
         private static SliderMarginLeft = 24 + 10 * 2; // playButton width + playButton margin * 2
         private static SliderMarginRight = 20;
         private static SliderMaxMargin = 100;
         private static PlayControlHeight = 80; //tuned for two rows of label text to be perfectly clipped before the third row. Dependent on current font sizes in noui-pips.css
-
-        constructor(element: JQuery, renderDelegate: (index: number) => void) {
+    
+        constructor(element: JQuery, renderDelegate: (index: number) => void, isMobileChart: boolean) {
+            this.isMobileChart = isMobileChart;
             this.createSliderDOM(element);
             this.renderDelegate = renderDelegate;
         }
@@ -425,6 +424,10 @@ module powerbi.visuals {
 
             this.playButtonCircle = $('<div class="button-container"></div>')
                 .appendTo(this.playAxisContainer);
+
+            if (this.isMobileChart) {
+                this.playButtonCircle.addClass('mobile-button-container');
+            }
 
             this.playButton = $('<div class="play"></div>')
                 .appendTo(this.playButtonCircle);
@@ -498,6 +501,10 @@ module powerbi.visuals {
                 $(elem).width(actualWidth);
                 $(elem).css('margin-left', -actualWidth / 2 + 'px');
             });
+
+            if (this.isMobileChart) {
+                $('.noUi-handle').addClass('mobile-noUi-handle');
+            }
         }
 
         public setFrame(frameIndex: number): void {
