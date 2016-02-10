@@ -772,7 +772,8 @@ module powerbi.visuals.samples {
             PeriodSlicerSelection: createClassAndSelector('periodSlicerSelection'),
             PeriodSlicerSelectionRect: createClassAndSelector('periodSlicerSelectionRect'),
             PeriodSlicerRect: createClassAndSelector('periodSlicerRect')
-        }
+        };
+
 		/**
 		 * Changes the current granularity depending on the given granularity type
 		 * Separates the new granularity's date periods which contain the start/end selection
@@ -824,13 +825,16 @@ module powerbi.visuals.samples {
 
         private clear(): void {
             this.selectionManager.clear();
-            this.timelineData.selectionStartIndex = 0;
-            this.timelineData.selectionEndIndex = this.timelineData.currentGranularity.getDatePeriods().length - 1;
-            Timeline.updateCursors(this.timelineData, this.timeLineProperties.cellWidth);
-            this.fillCells(this.timelineFormat.cellFormat);
-            this.renderCursors(this.timelineData, this.timelineFormat, this.timeLineProperties.cellHeight, this.timeLineProperties.cellsYPosition);
-            this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
-            this.setSelection(this.timelineData);
+
+            if (this.timelineData) {
+                this.timelineData.selectionStartIndex = 0;
+                this.timelineData.selectionEndIndex = this.timelineData.currentGranularity.getDatePeriods().length - 1;
+                Timeline.updateCursors(this.timelineData, this.timeLineProperties.cellWidth);
+                this.fillCells(this.timelineFormat.cellFormat);
+                this.renderCursors(this.timelineData, this.timelineFormat, this.timeLineProperties.cellHeight, this.timeLineProperties.cellsYPosition);
+                this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
+                this.setSelection(this.timelineData);
+            }
         }
 
         private drawGranular(timeLineProperties: TimeLineProperties): void {
@@ -1035,7 +1039,6 @@ module powerbi.visuals.samples {
 
         private render(timelineData: TimelineData, timelineFormat: TimelineFormat, timeLineProperties: TimeLineProperties, options: VisualUpdateOptions): void {
             this.renderTimeRangeText(timelineData, timelineFormat.rangeTextFormat);
-            let bodyHeight = this.timelineMargins.TopMargin * 3 + this.defaultTimelineProperties.TimeLineDefaultTextSize + timeLineProperties.cellHeight + this.defaultTimelineProperties.TimeLineDefaultTextSize * 2 + timeLineProperties.bottomMargin;
             let timelineDatapointsCount = timelineData.timelineDatapoints;
             let svgWidth = timeLineProperties.leftMargin + timeLineProperties.cellWidth * timelineDatapointsCount.length + timeLineProperties.rightMargin;
 
@@ -1052,7 +1055,7 @@ module powerbi.visuals.samples {
             });
 
             this.svg.attr({
-                height: bodyHeight,
+                height: options.viewport.height - this.timelineMargins.TopMargin,
                 width: svgWidth,
             });
 
@@ -1245,7 +1248,7 @@ module powerbi.visuals.samples {
                         label: textFunc(d),
                         maxWidth: maxSize,
                         fontSize: labelFormat.sizeProperty
-                    }
+                    };
                     return dataLabelUtils.getLabelFormattedText(labelFormattedTextOptions);
                 })
                     .style('font-size', PixelConverter.fromPoint(labelFormat.sizeProperty))
@@ -1321,7 +1324,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateRangeHeader(enumeration: ObjectEnumerationBuilder, dataview: DataView): void {
-            let objects = dataview.metadata ? dataview.metadata.objects : undefined;
+            let objects = dataview && dataview.metadata ? dataview.metadata.objects : undefined;
             enumeration.pushInstance({
                 objectName: 'rangeHeader',
                 displayName: 'Selection Color',
@@ -1335,7 +1338,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateCells(enumeration: ObjectEnumerationBuilder, dataview: DataView): void {
-            let objects = dataview.metadata ? dataview.metadata.objects : undefined;
+            let objects = dataview && dataview.metadata ? dataview.metadata.objects : undefined;
             enumeration.pushInstance({
                 objectName: 'cells',
                 selector: null,
@@ -1347,7 +1350,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateLabels(enumeration: ObjectEnumerationBuilder, dataview: DataView): void {
-            let objects = dataview.metadata ? dataview.metadata.objects : undefined;
+            let objects = dataview && dataview.metadata ? dataview.metadata.objects : undefined;
             enumeration.pushInstance({
                 objectName: 'labels',
                 selector: null,
