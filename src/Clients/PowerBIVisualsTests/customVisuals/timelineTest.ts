@@ -24,8 +24,6 @@
 *  THE SOFTWARE.
 */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Timeline;
 
@@ -48,8 +46,8 @@ module powerbitests.customVisuals {
                 visualBuilder.update(dataViews);
                 visualBuilder.currentPeriod = 3;//select a day period
                 setTimeout(() => {
-                    let countOfDays = visualBuilder.mainElement.children("g").first().children("rect.cell").length;
-                    let countOfTextItems = visualBuilder.mainElement.children("g").first().children("text.cellTextLevel2").length;
+                    let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
+                    let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children(".lowerTextArea").children(".lowerTextCell").length;
 
                     expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
                     expect(countOfTextItems).toBe(dataViews[0].categorical.categories[0].values.length);
@@ -69,8 +67,7 @@ module powerbitests.customVisuals {
 
         public get mainElement() {
             return this.element
-                .children("div.timelineContainer")
-                .children("div.cellContainer")
+                .children("div")
                 .children("svg.Timeline");
         }
 
