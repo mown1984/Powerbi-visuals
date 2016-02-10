@@ -1442,6 +1442,8 @@ module powerbi.visuals.samples {
                 'height': viewport.height
             });
 
+            this.svg.style('top', this.legend.isVisible() ? this.legend.getMargins().height + 'px' : 0);
+
             this.svgScrollable.attr({
                 'width': viewport.width,
                 'height': viewport.height
@@ -2397,6 +2399,7 @@ module powerbi.visuals.samples {
                 else {
                     NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContextScrollable, dataLabels);
                 }
+                this.labelGraphicsContextScrollable.selectAll("text.label").style("pointer-events", "none");
                 if (this.interactivityService) {
                     var behaviorOptions: MekkoBehaviorOptions = {
                         layerOptions: layerBehaviorOptions,
