@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,21 +11,20 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
 
 module powerbi.visuals.samples {
-    import DataRoleHelper = powerbi.data.DataRoleHelper;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import ISize = shapes.ISize;
@@ -38,7 +37,7 @@ module powerbi.visuals.samples {
         shapesSelection: D3.Selection;
         viewport: IViewport;
         axisOptions: MekkoColumnAxisOptions;
-		
+
         labelDataPoints: MekkoLabelDataPoint[];
     }
 
@@ -53,7 +52,7 @@ module powerbi.visuals.samples {
         /** The orientation of the parent rectangle */
         orientation: NewRectOrientation;
         /** Valid positions to place the label ordered by preference */
-        validPositions: RectLabelPosition[];        
+        validPositions: RectLabelPosition[];
     }
 
     export interface MekkoLabelDataPoint/* extends LabelDataPoint*/ {
@@ -233,7 +232,7 @@ module powerbi.visuals.samples {
             item: <ClassAndSelector>createClassAndSelector('column'),
             highlightItem: <ClassAndSelector>createClassAndSelector('highlightColumn')
         };
-        
+
         private layout: IMekkoColumnLayout;
         private data: MekkoColumnChartData;
         private graphicsContext: MekkoColumnChartContext;
@@ -318,7 +317,7 @@ module powerbi.visuals.samples {
 
             return formatter;
         }
-        
+
         /**
          * Format the linear tick labels or the category labels.
          */
@@ -347,8 +346,8 @@ module powerbi.visuals.samples {
             }
 
             return formattedTickValues;
-        }        
-        
+        }
+
         /**
          * Create a D3 axis including scale. Can be vertical or horizontal, and either datetime, numeric, or text.
          * @param options The properties used to create the axis.
@@ -388,7 +387,7 @@ module powerbi.visuals.samples {
             var formatter = MekkoColumnChartStrategy.createFormatter(
                 scaleDomain,
                 dataDomain,
-                dataType,   
+                dataType,
                 isScalar,
                 formatString,
                 bestTickCount,
@@ -409,14 +408,14 @@ module powerbi.visuals.samples {
             if (metaDataColumn) {
                 formattedTickValues = MekkoColumnChartStrategy.formatAxisTickValues(axis, tickValues, formatter, dataType, isScalar, getValueFn);
             }
-            
+
             var xLabelMaxWidth;
             // Use category layout of labels if specified, otherwise use scalar layout of labels
             if (!isScalar && categoryThickness) {
                 xLabelMaxWidth = Math.max(1, categoryThickness - CartesianChart.TickLabelPadding * 2);
             }
             else {
-                // When there are 0 or 1 ticks, then xLabelMaxWidth = pixelSpan       
+                // When there are 0 or 1 ticks, then xLabelMaxWidth = pixelSpan
                 // When there is > 1 ticks then we need to +1 so that their widths don't overlap
                 // Example: 2 ticks are drawn at 33.33% and 66.66%, their width needs to be 33.33% so they don't overlap.
                 var labelAreaCount = tickValues.length > 1 ? tickValues.length + 1 : tickValues.length;
@@ -454,16 +453,16 @@ module powerbi.visuals.samples {
             var outerPaddingRatio = layout.outerPaddingRatio;
             var dw = new MekkoDataWrapper(data, isScalar);
             var domain: number[] = [];
-            
+
             if (data.series &&
                 (data.series.length > 0) &&
                 data.series[0].data &&
                 (data.series[0].data.length > 0)
-            ) {                
+            ) {
                 var domainDoubles = data.series[0].data.map((item: ColumnChartDataPoint) => {
                     return item.originalPosition + (item.value / 2);
-                });               
-                
+                });
+
                 domain = domainDoubles.filter(function(item, pos) {
                     return domainDoubles.indexOf(item) === pos;
                 });
@@ -606,7 +605,7 @@ module powerbi.visuals.samples {
             // We filter out invisible (0, null, etc.) values from the dataset
             // based on whether animations are enabled or not, Dashboard and
             // Exploration mode, respectively.
-            
+
             var rectName: string = 'rect';
             filterZeros = false;
 
@@ -636,12 +635,12 @@ module powerbi.visuals.samples {
             shapes
                 .exit()
                 .remove();
-            
+
             var borderSelection = series.selectAll(MekkoColumnChart.BorderClass.selector);
             var borders = borderSelection.data(dataSelector, (d: ColumnChartDataPoint) => d.key);
-            
+
             var borderColor = MekkoColumnChart.getBorderColor(data.borderSettings);
-            
+
             borders.enter()
                 .append(rectName)
                 .classed(MekkoColumnChart.BorderClass.class, true);
@@ -746,7 +745,7 @@ module powerbi.visuals.samples {
                             AxisHelper.diffScaled(xScale, d.originalPosition, 0) +
                             AxisHelper.diffScaled(xScale, d.value, 0) +
                             borderWidth * d.categoryIndex;
-                
+
                 return value;
             };
 
@@ -806,7 +805,7 @@ module powerbi.visuals.samples {
                 var axisFormatter: number = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yProps.formatter, labelSettings);
 
                 for (var j: number = 0; j < currentSeries.data.length; j++) {
-                    var dataPoint: ColumnChartDataPoint = currentSeries.data[j];      
+                    var dataPoint: ColumnChartDataPoint = currentSeries.data[j];
                     if ((data.hasHighlights && !dataPoint.highlight) || dataPoint.value == null) {
                         continue;
                     }
@@ -863,8 +862,8 @@ module powerbi.visuals.samples {
     export interface MekkoChartSettings {
         columnBorder: MekkoBorderSettings;
     }
-    
-    /** 
+
+    /**
      * Renders a data series as a cartestian visual.
      */
     export class MekkoChart implements IVisual {
@@ -1086,7 +1085,7 @@ module powerbi.visuals.samples {
 
             },
             dataViewMappings: [{
-                conditions: [                    
+                conditions: [
                     { 'Category': { min: 0, max: 1 }, 'Series': { min: 0, max: 1 }, 'Y': { min: 0, max: 1 }, 'Width': { min: 0, max: 1 } },
                 ],
                 categorical: {
@@ -1183,11 +1182,11 @@ module powerbi.visuals.samples {
         private layerLegendData: LegendData;
         private hasSetData: boolean;
         private visualInitOptions: VisualInitOptions;
-               
+
         private borderObjectProperties: DataViewObject;
         private legendObjectProperties: DataViewObject;
         private categoryAxisProperties: DataViewObject;
-        
+
         private valueAxisProperties: DataViewObject;
         private cartesianSmallViewPortProperties: CartesianSmallViewPortProperties;
         private interactivityService: IInteractivityService;
@@ -1442,6 +1441,8 @@ module powerbi.visuals.samples {
                 'height': viewport.height
             });
 
+            this.svg.style('top', this.legend.isVisible() ? this.legend.getMargins().height + 'px' : 0);
+
             this.svgScrollable.attr({
                 'width': viewport.width,
                 'height': viewport.height
@@ -1476,7 +1477,7 @@ module powerbi.visuals.samples {
             var axisTypeValue = DataViewObjects.getValue(objects, propertyId);
 
             if (!objects || axisTypeValue === undefined) {
-                // If we don't have anything set (Auto), show charts as Scalar if the category type is numeric or time. 
+                // If we don't have anything set (Auto), show charts as Scalar if the category type is numeric or time.
                 // If we have the property, it will override the type.
                 return !AxisHelper.isOrdinal(type);
             }
@@ -1576,7 +1577,7 @@ module powerbi.visuals.samples {
             } else if (width < 0) {
                 width = 0;
             }
-            
+
             if (!show) {
                 width = 0;
             }
@@ -1858,7 +1859,7 @@ module powerbi.visuals.samples {
                 if (!legendProperties['fontSize']) {
                     legendProperties['fontSize'] = NewDataLabelUtils.DefaultLabelFontSizeInPt;
                 }
-            
+
                 LegendData.update(legendData, legendProperties);
                 var position = <string>legendProperties[legendProps.position];
 
@@ -2149,7 +2150,7 @@ module powerbi.visuals.samples {
             columnsWidth: number[],
             maxHeight: number,
             borderWidth: number): void {
-                
+
             //var allowedLength = axisProperties.xLabelMaxWidth;
             text.each(function(data: any, index: number) {
                 var width: number, allowedLength: number;
@@ -2232,10 +2233,10 @@ module powerbi.visuals.samples {
                     columnWidth = this.layers[0].getColumnsWidth();
                     borderWidth = this.layers[0].getBorderWidth();
                 }
- 
+
                 xAxisGraphicsElement
                     .call(MekkoChart.moveBorder, axes.x.scale, borderWidth);
-                    
+
                 xAxisTextNodes
                     .call(MekkoChart.wordBreak, axes.x, columnWidth, bottomMarginLimit, borderWidth);
             }
@@ -2350,8 +2351,8 @@ module powerbi.visuals.samples {
             var dataPoints: SelectableDataPoint[] = [];
             var layerBehaviorOptions: any[] = [];
             var labelDataPointsGroup: MekkoLabelDataPointsGroup[] = [];
-                
-            //Render chart columns            
+
+            //Render chart columns
             if (this.behavior) {
                 for (var i: number = 0, len: number = layers.length; i < len; i++) {
                     var result: MekkoVisualRenderResult = layers[i].render(suppressAnimations);
@@ -2379,7 +2380,7 @@ module powerbi.visuals.samples {
                         }
                     }
                 }
-                
+
                 var labelLayoutOptions: DataLabelLayoutOptions = {
                     maximumOffset: NewDataLabelUtils.maxLabelOffset,
                     startingOffset: NewDataLabelUtils.startingLabelOffset
@@ -2397,6 +2398,7 @@ module powerbi.visuals.samples {
                 else {
                     NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContextScrollable, dataLabels);
                 }
+                this.labelGraphicsContextScrollable.selectAll("text.label").style("pointer-events", "none");
                 if (this.interactivityService) {
                     var behaviorOptions: MekkoBehaviorOptions = {
                         layerOptions: layerBehaviorOptions,
@@ -2407,7 +2409,7 @@ module powerbi.visuals.samples {
             }
 
         }
-        
+
         /**
          * Within the context of the given selection (g), find the offset of
          * the zero tick using the d3 attached datum of g.tick elements.
@@ -2427,9 +2429,9 @@ module powerbi.visuals.samples {
         private static moveBorder(g: D3.Selection, scale: D3.Scale.LinearScale, borderWidth: number): void {
             g.selectAll('g.tick')
                 .attr("transform", function(value: number, index: number) {
-                     return SVGUtil.translate(scale(value) + (borderWidth * index), 0);            
+                     return SVGUtil.translate(scale(value) + (borderWidth * index), 0);
             });
-        }        
+        }
     }
 
     function getLayerData(dataViews: DataView[], currentIdx: number, totalLayers: number): DataView[] {
@@ -2452,7 +2454,7 @@ module powerbi.visuals.samples {
             (layerNumber === 1 && !yAxisWillMerge && !!valueAxisProperties && !!valueAxisProperties['secShowAxisTitle']));
     }
 
-    /** 
+    /**
      * Computes the Cartesian Chart axes from the set of layers.
      */
     function calculateAxes(
@@ -2560,7 +2562,7 @@ module powerbi.visuals.samples {
     export interface IMekkoColumnChartVisual /*extends ICartesianVisual*/ {
         getColumnsWidth(): number[];
         getBorderWidth(): number;
-		
+
 		init(options: CartesianVisualInitOptions): void;
         setData(dataViews: DataView[], resized?: boolean): void;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
@@ -2573,17 +2575,17 @@ module powerbi.visuals.samples {
         getVisualCategoryAxisIsScalar?(): boolean;
         getSupportedCategoryAxisType?(): string;
         getPreferredPlotArea?(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
-        setFilteredData?(startIndex: number, endIndex: number): CartesianData;		
+        setFilteredData?(startIndex: number, endIndex: number): CartesianData;
     }
 
     export interface IMekkoColumnChartStrategy /*extends IColumnChartStrategy*/ {
 		drawColumns(useAnimation: boolean): MekkoColumnChartDrawInfo;
-		
+
 		setData(data: ColumnChartData): void;
         setupVisualProps(columnChartProps: ColumnChartContext): void;
         setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
         setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
-        
+
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
     }
@@ -2670,7 +2672,7 @@ module powerbi.visuals.samples {
                     trimOrdinalDataOnOverflow: false
                 });
         }
-        
+
         public static getBorderWidth(border: MekkoBorderSettings) {
             if (!border ||
                 !border.show ||
@@ -2679,17 +2681,17 @@ module powerbi.visuals.samples {
             }
 
             var width: number = border.width;
-            
+
             if (width < 0) {
                 return 0;
-            }            
+            }
             if (width > border.maxWidth) {
                 return border.maxWidth;
-            }           
+            }
 
             return width;
         }
-        
+
         public static getBorderColor(border: MekkoBorderSettings) {
             if (!border) {
                 return MekkoChart.DefaultSettings.columnBorder.color;
@@ -2720,10 +2722,10 @@ module powerbi.visuals.samples {
                 categoryIdentities: DataViewScopeIdentity[] = categoryInfo.categoryIdentities,
                 categoryMetadata: DataViewMetadataColumn = dataView.categories && dataView.categories.length > 0 ? dataView.categories[0].source : undefined;
             //labelFormatString: string = dataView.values && dataView.values[0] ? valueFormatter.getFormatString(dataView.values[0].source, columnChartProps.general.formatString) : undefined;
-            
+
             var borderSettings: MekkoBorderSettings = MekkoChart.DefaultSettings.columnBorder;
             var labelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultColumnLabelSettings(true);
-            
+
             var defaultDataPointColor = undefined;
             var showAllDataPoints = undefined;
             if (dataViewMetadata && dataViewMetadata.objects) {
@@ -2734,14 +2736,14 @@ module powerbi.visuals.samples {
 
                 var labelsObj: DataLabelObject = <DataLabelObject>objects['labels'];
                 dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings);
-                
+
                 borderSettings = MekkoChart.parseBorderSettings(objects);
             }
 
             // Allocate colors
             var legendAndSeriesInfo = converterStrategy.getLegend(colors, defaultDataPointColor);
             var legend: MekkoLegendDataPoint[] = legendAndSeriesInfo.legend.dataPoints;
-            var seriesSources: DataViewMetadataColumn[] = legendAndSeriesInfo.seriesSources;            
+            var seriesSources: DataViewMetadataColumn[] = legendAndSeriesInfo.seriesSources;
 
             // Determine data points
             var result: MekkoDataPoints = MekkoColumnChart.createDataPoints(
@@ -2768,7 +2770,7 @@ module powerbi.visuals.samples {
             }
 
             var labels = converterHelper.createAxesLabels(xAxisCardProperties, valueAxisProperties, categoryMetadata, valuesMetadata);
-           
+
             return {
                 categories: categories,
                 categoriesWidth: result.categoriesWidth,
@@ -2797,7 +2799,7 @@ module powerbi.visuals.samples {
 
             var pos: number = 0,
                 neg: number = 0;
-            
+
             for (var i = 0; i < seriesCount; i++) {
                 var value: number = rawValues[i][rowIdx];
                 value = AxisHelper.normalizeNonFiniteNumber(value);
@@ -2823,7 +2825,7 @@ module powerbi.visuals.samples {
             legend: MekkoLegendDataPoint[],
             seriesObjectsList: DataViewObjects[][],
             converterStrategy: ColumnChartConverterHelper,
-            
+
             defaultLabelSettings: VisualDataLabelsSettings,
             is100PercentStacked: boolean = false,
             isScalar: boolean = false,
@@ -2869,10 +2871,10 @@ module powerbi.visuals.samples {
             for (seriesIndex = 0; seriesIndex < dataViewCat.values.length; seriesIndex++) {
                 if (dataViewCat.values[seriesIndex].source.roles &&
                     dataViewCat.values[seriesIndex].source.roles[RoleNames.width] &&
-                    !dataViewCat.values[seriesIndex].source.roles[RoleNames.y]) {               
-                    
+                    !dataViewCat.values[seriesIndex].source.roles[RoleNames.y]) {
+
                     widthIndex = seriesIndex;
-                    var widthValues: number[] = dataViewCat.values[seriesIndex].values;                    
+                    var widthValues: number[] = dataViewCat.values[seriesIndex].values;
                     for (var i: number = 0, valuesLen = widthValues.length; i < valuesLen; i++) {
                         widthColumns[i] = d3.sum([0, widthColumns[i], widthValues[i]]);
                     }
@@ -2900,27 +2902,27 @@ module powerbi.visuals.samples {
             }
 
 			//console.log(dataViewCat);
-			
+
             if (highlightsOverflow && !supportsOverflow) {
                 highlightsOverflow = false;
                 hasHighlights = false;
                 rawValues = rawHighlightValues;
             }
-            
+
             if (widthColumns.length < 1) {
                 for (seriesIndex = 0; seriesIndex < dataViewCat.values.length; seriesIndex++) {
                     if (dataViewCat.values[seriesIndex].source.roles &&
-                        dataViewCat.values[seriesIndex].source.roles[RoleNames.width]) {               
-                        
+                        dataViewCat.values[seriesIndex].source.roles[RoleNames.width]) {
+
                         widthIndex = seriesIndex;
-                        var widthValues: number[] = dataViewCat.values[seriesIndex].values;                    
+                        var widthValues: number[] = dataViewCat.values[seriesIndex].values;
                         for (var i: number = 0, valuesLen: number = widthValues.length; i < valuesLen; i++) {
                             widthColumns[i] = d3.sum([0, widthColumns[i], widthValues[i]]);
                         }
                         continue;
                     }
                 }
-            }            
+            }
 
             if (widthColumns.length < 1) {
                 for (seriesIndex = 0; seriesIndex < categoryCount; seriesIndex++) {
@@ -2944,7 +2946,7 @@ module powerbi.visuals.samples {
                 columnStartX[seriesIndex] = linearScale(columnStartX[seriesIndex]);
                 columnWidth[seriesIndex] = linearScale(widthColumns[seriesIndex]);
             }
-            
+
             var dataPointObjects: DataViewObjects[] = categoryObjectsList,
                 formatStringProp = columnChartProps.general.formatString;
             for (seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
@@ -2970,11 +2972,11 @@ module powerbi.visuals.samples {
                     color: legendItem.color,
                     labelSettings: seriesLabelSettings,
                 };
-                
+
                 if (seriesCount > 1) {
                     dataPointObjects = seriesObjectsList[seriesIndex];
                 }
-                var metadata = dataViewCat.values[seriesIndex].source;				
+                var metadata = dataViewCat.values[seriesIndex].source;
 
                 for (var categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     if (seriesIndex === 0) {
@@ -3046,9 +3048,9 @@ module powerbi.visuals.samples {
                     var color = MekkoColumnChart.getDataPointColor(legendItem, categoryIndex, dataPointObjects);
 
                     var seriesData: TooltipSeriesDataItem[] = [];
-                        
+
                     if (columnGroup) {
-                        
+
                         var seriesValueColumn: DataViewValueColumn = {
                             values: [],
                             source: dataViewCat.values.source,
@@ -3056,8 +3058,8 @@ module powerbi.visuals.samples {
                         seriesData.push({
                             value: columnGroup.name,
                             metadata: seriesValueColumn,
-                        });                     
-                        
+                        });
+
                         for (var columnIndex: number = 0; columnIndex < columnGroup.values.length; columnIndex++) {
                             var columnValues: DataViewValueColumn = columnGroup.values[columnIndex];
                             seriesData.push({
@@ -3066,7 +3068,7 @@ module powerbi.visuals.samples {
                             });
                         }
                     }
-                    
+
                     var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, null/*dataViewCat*/, rawCategoryValue, originalValue, [category], seriesData, null/*seriesIndex*/, categoryIndex);
 
                     var dataPointLabelSettings = (series && series.labelSettings) ? series.labelSettings : defaultLabelSettings;
@@ -3167,7 +3169,7 @@ module powerbi.visuals.samples {
                         seriesDataPoints.push(highlightDataPoint);
                     }
                 }
-                
+
                 columnSeries.push(series);
             }
 
@@ -3232,14 +3234,14 @@ module powerbi.visuals.samples {
                 !data.series[0].data) {
                 return [];
             }
-        
+
             return data.categoriesWidth;
         }
-        
+
         public getBorderWidth(): number {
             return MekkoColumnChart.getBorderWidth(this.data.borderSettings);
         }
-        
+
         public setData(dataViews: DataView[]): void {
             debug.assertValue(dataViews, "dataViews");
             var is100PctStacked: boolean = true;
@@ -3294,7 +3296,7 @@ module powerbi.visuals.samples {
         }
 
         public calculateLegend(): LegendData {
-            // if we're in interactive mode, return the interactive legend 
+            // if we're in interactive mode, return the interactive legend
             if (this.interactivity && this.interactivity.isInteractiveLegend) {
                 return this.createInteractiveMekkoLegendDataPoints(0);
             }
@@ -3437,7 +3439,7 @@ module powerbi.visuals.samples {
 
             var preferredPlotArea = this.getPreferredPlotArea(chartLayout.isScalar, chartLayout.categoryCount, chartLayout.categoryThickness);
 
-            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar. 
+            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar.
              In that case we want to calculate the available plot area for the shapes by subtracting the margin from available viewport */
             if (preferredPlotArea.width === this.currentViewport.width) {
                 preferredPlotArea.width -= (margin.left + margin.right);
@@ -3447,7 +3449,7 @@ module powerbi.visuals.samples {
             var is100Pct: boolean = true;
 
             // When the category axis is scrollable the height of the category axis and value axis will be different
-            // The height of the value axis would be same as viewportHeight 
+            // The height of the value axis would be same as viewportHeight
             var chartContext: MekkoColumnChartContext = {
                 height: preferredPlotArea.height,
                 width: preferredPlotArea.width,
@@ -3679,6 +3681,11 @@ module powerbi.visuals.samples {
             this.dataView = dataView;
         }
 
+		  private static hasRole(column: DataViewMetadataColumn, name: string): boolean {
+            var roles = column.roles;
+            return roles && roles[name];
+        }
+
         public getLegend(colors: IDataColorPalette, defaultColor?: string): LegendSeriesInfo {
             var legend: MekkoLegendDataPoint[] = [];
             var seriesSources: DataViewMetadataColumn[] = [];
@@ -3703,9 +3710,9 @@ module powerbi.visuals.samples {
                         var series: DataViewValueColumn = values[valueIndex];
                         var source: DataViewMetadataColumn = series.source;
                         // Gradient measures do not create series.
-                        if (DataRoleHelper.hasRole(source, 'Width') && !DataRoleHelper.hasRole(source, 'Y')) {
+                        if (ColumnChartConverterHelper.hasRole(source, 'Width') && !ColumnChartConverterHelper.hasRole(source, 'Y')) {
                             continue;
-						}
+                        }
 
                         seriesSources.push(source);
                         seriesObjects.push(series.objects);
