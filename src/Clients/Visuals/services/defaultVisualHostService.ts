@@ -162,6 +162,9 @@ module powerbi.visuals {
                 defaultValue: undefined,
             };
         }
+        public getIdentityDisplayNames(dentities: DataViewScopeIdentity[]): DisplayNameIdentityPair[] { return; }        
+        public setIdentityDisplayNames(displayNamesIdentityPairs: DisplayNameIdentityPair[]): void { }
+
         private static beautify(format: string): string {
             let key = BeautifiedFormat[format];
             if (key)

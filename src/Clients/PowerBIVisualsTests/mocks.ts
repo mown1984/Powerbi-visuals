@@ -27,6 +27,8 @@
 
 
 module powerbitests.mocks {
+    import SemanticFilter = powerbi.data.SemanticFilter;
+    import SQExpr = powerbi.data.SQExpr;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
     import defaultVisualHostServices = powerbi.visuals.defaultVisualHostServices;
     import SelectableDataPoint = powerbi.visuals.SelectableDataPoint;
@@ -128,14 +130,14 @@ module powerbitests.mocks {
         return powerbi.data.createDataViewScopeIdentity(expr);
     }
 
-    export function dataViewScopeIdentityWithEquality(keyExpr: powerbi.data.SQExpr, fakeValue: string | number | boolean | Date): powerbi.DataViewScopeIdentity {
+    export function dataViewScopeIdentityWithEquality(keyExpr: SQExpr, fakeValue: string | number | boolean | Date): powerbi.DataViewScopeIdentity {
         return powerbi.data.createDataViewScopeIdentity(
-            powerbi.data.SQExprBuilder.equal(
+            SQExprBuilder.equal(
                 keyExpr,
                 constExpr(fakeValue)));
     }
 
-    function constExpr(fakeValue: string | number | boolean | Date): powerbi.data.SQExpr {
+    function constExpr(fakeValue: string | number | boolean | Date): SQExpr {
         if (fakeValue === null)
             return SQExprBuilder.nullConstant();
 
@@ -143,12 +145,12 @@ module powerbitests.mocks {
             return SQExprBuilder.boolean(<boolean>fakeValue);
 
         if (typeof (fakeValue) === 'number')
-            return powerbi.data.SQExprBuilder.double(<number>fakeValue);
+            return SQExprBuilder.double(<number>fakeValue);
 
         if (fakeValue instanceof Date)
-            return powerbi.data.SQExprBuilder.dateTime(<Date>fakeValue);
+            return SQExprBuilder.dateTime(<Date>fakeValue);
 
-        return powerbi.data.SQExprBuilder.text(<string>fakeValue);
+        return SQExprBuilder.text(<string>fakeValue);
     }
 
     export class MockVisualWarning implements powerbi.IVisualWarning {
@@ -422,14 +424,18 @@ module powerbitests.mocks {
     }
 
     export class FilterAnalyzerMock implements powerbi.AnalyzedFilter {
-        public filter: powerbi.data.SemanticFilter;
+        public filter: SemanticFilter;
         public defaultValue: powerbi.DefaultValueDefinition;
         public isNotFilter: boolean;
         public selectedIdentities: powerbi.DataViewScopeIdentity[];
 
-        private fieldSQExprs: powerbi.data.SQExpr[];
+        private fieldSQExprs: SQExpr[];
         private container: powerbi.data.FilterValueScopeIdsContainer;
-        public constructor(filter: powerbi.data.SemanticFilter, fieldSQExprs: powerbi.data.SQExpr[]) {
+        public constructor(
+            filter: SemanticFilter,
+            fieldSQExprs: SQExpr[],
+            defaultValue?: powerbi.DefaultValueDefinition,
+            selectedIdentities?: powerbi.DataViewScopeIdentity[]) {
             this.filter = filter;
             this.fieldSQExprs = fieldSQExprs;
             
@@ -439,7 +445,9 @@ module powerbitests.mocks {
                 this.container = { isNot: false, scopeIds: [] };
 
             this.isNotFilter = this.container && this.container.isNot;
-            this.selectedIdentities = this.container && this.container.scopeIds;
+            this.selectedIdentities = selectedIdentities || (this.container && this.container.scopeIds);
+
+            this.defaultValue = defaultValue;
         }
     }
 }

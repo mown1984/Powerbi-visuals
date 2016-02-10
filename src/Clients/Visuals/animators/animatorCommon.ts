@@ -1,4 +1,4 @@
-﻿ /*
+﻿/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -29,6 +29,9 @@
 module powerbi.visuals {
     export module AnimatorCommon {
         export const MinervaAnimationDuration = 250;
+        
+        // The maximum number of data points we can performantly animate with SVG. If we have more, turn off animations.
+        export const MaxDataPointsToAnimate = 1000;
 
         export function GetAnimationDuration(animator: IGenericAnimator, suppressAnimations: boolean) {
             return (suppressAnimations || !animator) ? 0 : animator.getDuration();

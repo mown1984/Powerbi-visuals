@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -33,12 +33,15 @@ declare module powerbi {
          * Any roles not specified in the condition accept any number of items.
          */
         conditions?: DataViewMappingCondition[];
+        requiredProperties?: DataViewObjectPropertyIdentifier[];
+
         categorical?: DataViewCategoricalMapping;
         table?: DataViewTableMapping;
         single?: DataViewSingleMapping;
         tree?: DataViewTreeMapping;
         matrix?: DataViewMatrixMapping;
         scriptResult?: DataViewScriptResultMapping;
+        usage?: DataViewMappingUsage;
     }
 
     /** Describes whether a particular mapping is fits the set of projections. */
@@ -188,5 +191,10 @@ declare module powerbi {
     export interface DataViewScriptResultMapping {
         dataInput: DataViewMapping;
         script: DataViewMappingScriptDefinition;
+    }
+
+    /** Defines how the mapping will be used. The set of objects in this interface can modify the usage. */
+    export interface DataViewMappingUsage {
+        regression: {};
     }
 }

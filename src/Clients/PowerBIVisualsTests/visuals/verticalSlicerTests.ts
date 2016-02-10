@@ -160,7 +160,7 @@ module powerbitests {
                 expect($(".slicerContainer .slicerBody")).toBeInDOM();
                 expect($(".slicerContainer .slicerBody .row img")).toBeInDOM();
                 expect($(".slicerContainer .slicerBody .row img").length).toBe(5);
-                expect($(".slicerContainer .slicerBody .row img").last().attr('src')).toBe("http://dummyimage.com/600x400/000/fff&text=5");
+                expect($(".slicerContainer .slicerBody .row img").last().attr('src')).toBe("http://dummyimage.com/600x400/000/fff&text=5.png");
             });
 
             it("Validate converter", () => {
@@ -172,7 +172,7 @@ module powerbitests {
                     SelectionId.createWithId(dataViewIdentities[3]),
                     SelectionId.createWithId(dataViewIdentities[4])
                 ];
-                let dataPoints = [
+                let dataPoints: powerbi.visuals.SlicerDataPoint[] = [
                     {
                         value: slicerHelper.SelectAllTextKey,
                         tooltip: slicerHelper.SelectAllTextKey,
@@ -187,6 +187,7 @@ module powerbitests {
                         identity: selectionIds[0],
                         selected: false,
                         count: undefined,
+                        isImage: undefined,
                     },
                     {
                         value: "Orange",
@@ -194,6 +195,7 @@ module powerbitests {
                         identity: selectionIds[1],
                         selected: false,
                         count: 3,
+                        isImage: undefined,
                     },
                     {
                         value: "Kiwi",
@@ -201,6 +203,7 @@ module powerbitests {
                         identity: selectionIds[2],
                         selected: false,
                         count: 4,
+                        isImage: undefined,
                     },
                     {
                         value: "Grapes",
@@ -208,6 +211,7 @@ module powerbitests {
                         identity: selectionIds[3],
                         selected: false,
                         count: 5,
+                        isImage: undefined,
                     },
                     {
                         value: "Banana",
@@ -215,6 +219,7 @@ module powerbitests {
                         identity: selectionIds[4],
                         selected: false,
                         count: 6,
+                        isImage: undefined,
                     }];
 
                 let expectedSlicerData: powerbi.visuals.SlicerData = {
@@ -242,7 +247,7 @@ module powerbitests {
 
                 expect($(".slicerContainer .slicerBody").first().css("height")).toBe("181px");
                 expect($(".slicerContainer .slicerBody").first().css("width")).toBe("300px");
-                expect($(".slicerContainer .headerText").first().css("width")).toBe("275px");
+                expect($(".slicerContainer .headerText").first().css("width")).toBe("269px");
 
                 // Next Resize
                 let viewport2 = {

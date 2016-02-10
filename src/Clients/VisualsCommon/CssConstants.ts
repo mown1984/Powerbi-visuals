@@ -96,6 +96,7 @@ module jsCommon {
         export const tableRowValue = 'table-row';
         export const coverValue = 'cover';
         export const pointerValue = 'pointer';
+        export const scrollValue = 'scroll';
     }
 
     export interface ExtendedCSSProperties extends CSSStyleDeclaration {

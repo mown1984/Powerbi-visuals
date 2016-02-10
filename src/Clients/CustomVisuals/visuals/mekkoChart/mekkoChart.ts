@@ -25,7 +25,7 @@
  */
 
 module powerbi.visuals.samples {
-
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import ISize = shapes.ISize;
@@ -3624,6 +3624,7 @@ module powerbi.visuals.samples {
                     datapoints: allDataPoints,
                     bars: MekkoColumnChartDrawInfo.shapesSelection,
                     hasHighlights: data.hasHighlights,
+                    eventGroup: this.mainGraphicsContext,
                     mainGraphicsContext: this.mainGraphicsContext,
                     viewport: MekkoColumnChartDrawInfo.viewport,
                     axisOptions: MekkoColumnChartDrawInfo.axisOptions,

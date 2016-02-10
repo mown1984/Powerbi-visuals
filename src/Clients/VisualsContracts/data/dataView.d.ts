@@ -151,7 +151,10 @@ declare module powerbi {
     export interface DataViewTreeNode {
         name?: string;
         value?: any;
+        
+        /** In each of the key-value-pair in this this dictionary, the key is the position of the column in the select statement to which the value belongs. */
         values?: { [id: number]: DataViewTreeNodeValue };
+
         children?: DataViewTreeNode[];
         identity?: DataViewScopeIdentity;
 

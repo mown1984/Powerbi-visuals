@@ -52,6 +52,15 @@ module powerbi.visuals {
                 if (_.isEmpty(seriesSelect.for.in.items))
                     columnValuesMapping.group.by.items = undefined;
             }
+            
+            if (columnMapping && columnMapping.categorical) {
+                columnMapping.categorical.dataVolume = 4;
+            }
+            
+            let lineMapping = options.dataViewMappings.length > 1 && options.dataViewMappings[1];
+            if (lineMapping && lineMapping.categorical) {
+                lineMapping.categorical.dataVolume = 4;
+            }
         }
 
         export function isComboChart(chartType: CartesianChartType): boolean {

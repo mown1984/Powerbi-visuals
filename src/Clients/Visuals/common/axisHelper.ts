@@ -274,9 +274,7 @@ module powerbi.visuals {
             if (maxTicks > len)
                 return labels;
 
-            // TODO: Should we do ceil? this could result in more than maxTicks
-            // e.g. maxTicks === 6, len === 10, 10 / 6=1.66, floor is 1.0, yielding 10 ticksValues.
-            for (let i = 0, step = Math.floor(len / maxTicks); i < len; i += step) {
+            for (let i = 0, step = Math.ceil(len / maxTicks); i < len; i += step) {
                 tickLabels.push(labels[i]);
             }
             return tickLabels;

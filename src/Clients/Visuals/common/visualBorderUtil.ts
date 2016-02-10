@@ -29,34 +29,33 @@
 module powerbi.visuals {
     /** Helper class for Visual border styles */
     export module VisualBorderUtil {
-        export function getBorderStyle(outlineElement: string): string {
-            return outlineElement === '0px' ? 'none' : 'solid';
-        }
-
-        export function getBorderStyleWithWeight(outlineType: string, outlineWeight: number): string {
-            return (outlineType === 'None' || outlineWeight === 0) ? 'none' : 'solid';
-        }
-
-        export function getBorderWidth(outlineElement: string, outlineWeight: number): string {
-            switch (outlineElement) {
-                case 'None':
+        /**
+         * Gets The Boder Width string (e.g. 0px 1px 2px 3px)
+         * @param {OutlineType} string Type of the Outline, one of Visuals.outline.<XX> const strings
+         * @param {number} outlineWeight Weight of the outline in pixels
+         * @returns String representing the Border Width
+         */
+        export function getBorderWidth(outlineType: string, outlineWeight: number): string {
+            switch (outlineType) {
+                case outline.none:
                     return '0px';
-                case 'BottomOnly':
+                case outline.bottomOnly:
                     return '0px 0px ' + outlineWeight + 'px 0px';
-                case 'TopOnly':
+                case outline.topOnly:
                     return outlineWeight + 'px 0px 0px 0px';
-                case 'LeftOnly':
+                case outline.leftOnly:
                     return '0px 0px 0px ' + outlineWeight + 'px';
-                case 'RightOnly':
+                case outline.rightOnly:
                     return '0px ' + outlineWeight + 'px 0px 0px';
-                case 'TopBottom':
-                    return outlineWeight + 'px 0px ' + outlineWeight + 'px 0px';
-                case 'LeftRight':
-                    return '0px ' + outlineWeight + 'px 0px ' + outlineWeight + 'px';
-                case 'Frame':
+                case outline.topBottom:
+                    return outlineWeight + 'px 0px';
+                case outline.leftRight:
+                    return '0px ' + outlineWeight + 'px';
+                case outline.frame:
                     return outlineWeight + 'px';
                 default:
-                    return outlineElement.replace("1", outlineWeight.toString());
+                    debug.assertFail('Unexpected OutlineType value: ' + outlineType);
+                    return '0px';
             }
         }
     }

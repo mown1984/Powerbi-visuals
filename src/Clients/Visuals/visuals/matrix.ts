@@ -493,14 +493,14 @@ module powerbi.visuals {
                 cell.extension.setColumnSeparator(this.formattingProperties.columns.separatorColor, this.formattingProperties.columns.separatorWeight);
         }
 
-        public setTablixRegionStyle(cell: controls.ITablixCell, fontColor: string, backgroundColor, outline: string, outlineWeight: number, outlineColor: string): void {
+        public setTablixRegionStyle(cell: controls.ITablixCell, fontColor: string, backgroundColor, outlineType: string, outlineWeight: number, outlineColor: string): void {
             if (fontColor !== "")
                 cell.extension.setFontColor(fontColor);
             if (backgroundColor)
                 cell.extension.setBackgroundColor(backgroundColor);
 
-            let borderStyle = VisualBorderUtil.getBorderStyleWithWeight(outline, outlineWeight);
-            let borderWeight = VisualBorderUtil.getBorderWidth(outline, outlineWeight);
+            let borderStyle = 'solid';
+            let borderWeight = VisualBorderUtil.getBorderWidth(outlineType, outlineWeight);
             cell.extension.setOutline(borderStyle, outlineColor, borderWeight);
         }
 
@@ -630,7 +630,7 @@ module powerbi.visuals {
                 $(cell.extension.contentHost).append(item.domContent);
 
             if (this.formattingProperties) {
-                let outlineStyle = item.isSubtotal ? this.formattingProperties.totals.outline : item.isLeftMost ? this.formattingProperties.values.outline : 'None';
+                let outlineStyle = item.isSubtotal ? this.formattingProperties.totals.outline : item.isLeftMost ? this.formattingProperties.values.outline : outline.none;
                 let fontColor = item.isSubtotal ? this.formattingProperties.totals.fontColor : this.formattingProperties.values.fontColor;
                 let backgroundColor = item.isSubtotal ? this.formattingProperties.totals.backgroundColor : this.formattingProperties.values.backgroundColor;
 
@@ -973,16 +973,19 @@ module powerbi.visuals {
         public onDataChanged(options: VisualDataChangedOptions): void {
             debug.assertValue(options, 'options');
 
-            // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
-            if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
-                // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
-                this.columnWidthManager.suppressOnDataChangedNotification = false;
-                return;
-            }
-            let previousDataView = this.dataView;
+            let dataViews = options.dataViews;
 
-            if (options.dataViews && options.dataViews.length > 0) {
-                this.dataView = options.dataViews[0];
+            if (dataViews && dataViews.length > 0) {
+                let previousDataView = this.dataView;
+                this.dataView = dataViews[0];
+
+                // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
+                if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
+                    // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
+                    this.columnWidthManager.suppressOnDataChangedNotification = false;
+                    return;
+                }
+
                 let formattingProperties = Matrix.converter(this.dataView, this.isFormattingPropertiesEnabled);
                 let textSize = formattingProperties ? formattingProperties.general.textSize : TablixUtils.getTextSize(this.dataView.metadata.objects);
 
@@ -1175,6 +1178,11 @@ module powerbi.visuals {
 
         private shouldAllowHeaderResize(): boolean {
             return this.hostServices.getViewMode() === ViewMode.Edit;
+        }
+
+        public onViewModeChanged(viewMode: ViewMode): void {
+            /* Refreshes the column headers to enable/disable Column resizing */
+            this.updateViewport(this.currentViewport);
         }
 
         private verifyHeaderResize() {

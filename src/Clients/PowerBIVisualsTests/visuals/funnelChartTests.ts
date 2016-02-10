@@ -393,7 +393,7 @@ module powerbitests {
             
             let defaultDataPointColor: string = "#00FF00";
 
-            let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor);
+            let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, true);
            
             //first tooltip is regular because highlighted value is 0
             expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
@@ -404,6 +404,55 @@ module powerbitests {
             expect(actualData.slices[3].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }]);
             expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "420" }, { displayName: "Percent of first", value: "700.00 %" }, { displayName: "Percent of previous", value: "350.00 %" }]);
             expect(actualData.slices[5].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "420" }, { displayName: "Percent of previous (highlight)", value: "300.00 %" }]);
+        });
+
+        it("validate tooltip info not being created when tooltips are disabled", () => {
+            let categoryValues: any[] = [
+                "John Domo",
+                "Delta Force",
+                "Jean Tablau"
+            ];
+
+            let objects: DataViewObjects[] = [
+                { dataPoint: { fill: { solid: { color: "#FF0000" } } } },
+                { dataPoint: { fill: { solid: { color: "#00FF00" } } } },
+                { dataPoint: { fill: { solid: { color: "#0000FF" } } } }
+            ];
+
+            dataViewBuilder.setMetadata(dataViewMetadataOneMeasure);
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(dataViewMetadataOneMeasure.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setObjects(objects)
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(dataViewMetadataOneMeasure.columns[1])
+                .setValues([100, 200, 700])
+                .setHighlights([0, 140, 420])
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            let defaultDataPointColor: string = "#00FF00";
+
+            let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, false);
+           
+            //first tooltip is regular because highlighted value is 0
+            expect(actualData.slices[0].tooltipInfo).toBeUndefined();
+            expect(actualData.slices[1].tooltipInfo).toBeUndefined();
+            
+            //tooltips with highlighted value
+            expect(actualData.slices[2].tooltipInfo).toBeUndefined();
+            expect(actualData.slices[3].tooltipInfo).toBeUndefined();
+            expect(actualData.slices[4].tooltipInfo).toBeUndefined();
+            expect(actualData.slices[5].tooltipInfo).toBeUndefined();
         });
 
         it("Check converter with no category and multi-measures", () => {
@@ -3333,9 +3382,9 @@ module powerbitests {
             let defaultDataPointColor: string = "#00FF00";
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "150.00 %" }]);
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "100" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
+            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "200" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "300" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "150.00 %" }]);
         });
 
         it("converter does filter Gradient role", () => {

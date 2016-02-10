@@ -143,7 +143,8 @@ module powerbi.visuals {
             hostServices: IVisualHostServices,
             dataLabelSettings: VisualDataLabelsSettings,
             sentimentColors: WaterfallChartSentimentColors,
-            interactivityService: IInteractivityService): WaterfallChartData {
+            interactivityService: IInteractivityService,
+            tooltipsEnabled: boolean = true): WaterfallChartData {
             debug.assertValue(palette, 'palette');
 
             let formatStringProp = WaterfallChart.formatStringProp;
@@ -211,7 +212,10 @@ module powerbi.visuals {
                             .withCategory(categoryColumn, categoryIndex)
                             .createSelectionId();
 
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, category, value);
+                        let tooltipInfo: TooltipDataItem[];
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, category, value);
+                        }
                         let color = value > 0 ? increaseColor : decreaseColor;
 
                         dataPoints.push({
@@ -238,6 +242,10 @@ module powerbi.visuals {
                     }
                 }
 
+                let tooltipInfo: TooltipDataItem[];
+                if (tooltipsEnabled) {
+                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, totalLabel, pos);
+                }
                 let totalIdentity = SelectionId.createNull();
                 dataPoints.push({
                     value: pos,
@@ -250,7 +258,7 @@ module powerbi.visuals {
                     selected: false,
                     highlight: false,
                     key: totalIdentity.getKey(),
-                    tooltipInfo: TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, totalLabel, pos),
+                    tooltipInfo: tooltipInfo,
                     labelFill: dataLabelSettings.labelColor,
                     labelFormatString: labelFormatString,
                     isTotal: true,
@@ -313,7 +321,7 @@ module powerbi.visuals {
                     }
 
                     if (dataView.categorical) {
-                        this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService);
+                        this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService, this.tooltipsEnabled);
                     }
                 }
             }

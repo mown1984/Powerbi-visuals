@@ -185,6 +185,9 @@ module powerbi.data {
             transformed = transformSelects(transformed, roleMappings, transforms.selects, transforms.projectionOrdering, selectsToInclude);
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
 
+            // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
+            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings);
+
             DataViewNormalizeValues.apply({
                 dataview: transformed,
                 dataViewMappings: roleMappings,

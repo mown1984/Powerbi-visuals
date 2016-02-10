@@ -30,9 +30,9 @@ declare module powerbi.visuals {
     import Selector = data.Selector;
 
     export interface ISelectionIdBuilder {
-        withCategory(categoryColumn: DataViewCategoryColumn, index: number): any;
-        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): any;
-        withMeasure(measureId: string): any;
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
         createSelectionId(): ISelectionId;
     }
     

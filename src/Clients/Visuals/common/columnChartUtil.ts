@@ -208,9 +208,16 @@ module powerbi.visuals {
                 .enter()
                 .append('g')
                 .classed(ColumnChart.SeriesClasses.class, true);
+                
+            series
+                .style({
+                    fill: (d: ColumnChartSeries) => d.color, 
+                });
+                
             series
                 .exit()
                 .remove();
+
             return series;
         }
 
@@ -237,8 +244,8 @@ module powerbi.visuals {
                 .attr("class",(d: ColumnChartDataPoint) => itemCS.class.concat(d.highlight ? " highlight" : ""));
 
             shapes
-                .style("fill",(d: ColumnChartDataPoint) => d.color)
-                .style("fill-opacity",(d: ColumnChartDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, data.hasHighlights))
+                .style("fill-opacity", (d: ColumnChartDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, data.hasHighlights))
+                .style("fill", (d: ColumnChartDataPoint) => d.color !== data.series[d.seriesIndex].color ? d.color : null)  // PERF: Only set the fill color if it is different than series.
                 .attr(layout.shapeLayout);
 
             shapes
@@ -246,7 +253,6 @@ module powerbi.visuals {
                 .remove();
 
             return shapes;
-
         }
 
         export function drawDefaultLabels(series: D3.UpdateSelection, context: D3.Selection, layout: ILabelLayout, viewPort: IViewport, isAnimator: boolean = false, animationDuration?: number): D3.UpdateSelection {

@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -11,10 +11,10 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
+ *   
  *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
+ *   
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -55,7 +55,7 @@ module.exports = function () {
             VisualsDropFolder: path.resolve(__dirname, confJSON.paths.VisualsDropFolder),
             VisualsDropStyles: path.resolve(__dirname, confJSON.paths.VisualsDropStyles),
             VisualsDropScripts: path.resolve(__dirname, confJSON.paths.VisualsDropScripts),
-            VisualsDropTests: path.resolve(__dirname, confJSON.paths.VisualsDropTests)
+            VisualsDropTests: path.resolve(__dirname, confJSON.paths.VisualsDropTests),
         }
     }, confJSON);
 

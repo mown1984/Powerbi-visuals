@@ -72,7 +72,6 @@
         "common/columnChartUtil.ts",
         "common/converterHelper.ts",
         "common/dataLabelUtils.ts",
-        "common/dataRoleHelper.ts",
         "common/donutLabelUtils.ts",
         "common/gradientHelper.ts",
         "common/invalidDataValuesChecker.ts",

@@ -3642,6 +3642,48 @@ module powerbitests {
             expect(node3.tooltipInfo).toEqual([{ displayName: 'c', value: '3' }]);
         });
 
+        it('validate tooltip info not being created when tooltips are disabled', () => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'a', queryName: 'a', isMeasure: true },
+                    { displayName: 'b', queryName: 'b', isMeasure: true },
+                    { displayName: 'c', queryName: 'c', isMeasure: true }
+                ]
+            };
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata.columns[0],
+                            values: [1],
+                        },
+                        {
+                            source: dataViewMetadata.columns[1],
+                            values: [2],
+                        },
+                        {
+                            source: dataViewMetadata.columns[2],
+                            values: [3],
+                        }
+                    ])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, undefined, false).root;
+
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+            let node3: TreemapNode = <TreemapNode>rootNode.children[2];
+
+            expect(node1.tooltipInfo).toBeUndefined();
+            expect(node2.tooltipInfo).toBeUndefined();
+            expect(node3.tooltipInfo).toBeUndefined();
+        });
+
         it('treemap dataView multi measure',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [

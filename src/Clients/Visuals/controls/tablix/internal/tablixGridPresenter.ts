@@ -409,8 +409,9 @@ module powerbi.visuals.controls.internal {
         }
 
         public setTextAndTooltip(text: string): void {
-            this.contentHost.textContent = text;
-            this.contentHost.title = text;
+            let val = TablixUtils.replaceSpaceWithNBSP(text);
+            this.contentHost.textContent = val;
+            this.contentHost.title = val;
         }
 
         public enableHorizontalResize(enable: boolean, handler: ITablixResizeHandler): void {

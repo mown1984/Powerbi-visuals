@@ -39,7 +39,9 @@ module powerbi.visuals {
             export const Header = createClassAndSelector('slicerHeader');
             export const HeaderText = createClassAndSelector('headerText');
             export const Body = createClassAndSelector('slicerBody');
+            export const Label = createClassAndSelector('slicerLabel');
             export const LabelText = createClassAndSelector('slicerText');
+            export const LabelImage = createClassAndSelector('slicerImage');
             export const CountText = createClassAndSelector('slicerCountText');
             export const Clear = createClassAndSelector('clear');
             export const MultiSelectEnabled = createClassAndSelector('isMultiSelectEnabled');
@@ -158,7 +160,7 @@ module powerbi.visuals {
                     .style({
                         'color': settings.slicerText.color,
                         'background-color': settings.slicerText.background,
-                        'border-style': VisualBorderUtil.getBorderStyle(settings.slicerText.outline),
+                        'border-style': 'solid',
                         'border-color': settings.general.outlineColor,
                         'border-width': VisualBorderUtil.getBorderWidth(settings.slicerText.outline, settings.general.outlineWeight),
                         'font-size': PixelConverter.fromPoint(settings.slicerText.textSize),
@@ -167,14 +169,14 @@ module powerbi.visuals {
 
             public getRowsOutlineWidth(outlineElement: string, outlineWeight: number): number {
                 switch (outlineElement) {
-                    case 'None':
-                    case 'LeftRight':
+                    case outline.none:
+                    case outline.leftRight:
                         return 0;
-                    case 'BottomOnly':
-                    case 'TopOnly':
+                    case outline.bottomOnly:
+                    case outline.topOnly:
                         return outlineWeight;
-                    case 'TopBottom':
-                    case 'Frame':
+                    case outline.topBottom:
+                    case outline.frame:
                         return outlineWeight * 2;
                     default:
                         return 0;
@@ -184,7 +186,7 @@ module powerbi.visuals {
             private setSlicerHeaderTextStyle(slicerHeader: D3.Selection, settings: SlicerSettings): void {
                 slicerHeader
                     .style({
-                        'border-style': VisualBorderUtil.getBorderStyle(settings.header.outline),
+                        'border-style': 'solid',
                         'border-color': settings.general.outlineColor,
                         'border-width': VisualBorderUtil.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
                         'color': settings.header.fontColor,

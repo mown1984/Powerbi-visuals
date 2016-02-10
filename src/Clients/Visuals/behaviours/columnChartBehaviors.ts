@@ -30,6 +30,7 @@ module powerbi.visuals {
     export interface ColumnBehaviorOptions {
         datapoints: SelectableDataPoint[];
         bars: D3.Selection;
+        eventGroup: D3.Selection;
         mainGraphicsContext: D3.Selection;
         hasHighlights: boolean;
         viewport: IViewport;
@@ -42,9 +43,12 @@ module powerbi.visuals {
 
         public bindEvents(options: ColumnBehaviorOptions, selectionHandler: ISelectionHandler) {
             this.options = options;
-            let bars = options.bars;
+            let eventGroup = options.eventGroup;
 
-            bars.on('click', (d: SelectableDataPoint, i: number) => {
+            eventGroup.on('click', () => {
+                let target = d3.event.target;
+                let d = d3.select(target).datum();
+                
                 selectionHandler.handleSelection(d, d3.event.ctrlKey);
             });
         }
@@ -52,7 +56,6 @@ module powerbi.visuals {
         public renderSelection(hasSelection: boolean) {
             let options = this.options;
             options.bars.style("fill-opacity", (d: ColumnChartDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && options.hasHighlights));
-
         }
     }
 } 

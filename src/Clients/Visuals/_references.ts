@@ -107,7 +107,6 @@
 /// <reference path="common/dataLabelUtils.ts"/>
 /// <reference path="common/donutLabelUtils.ts"/>
 /// <reference path="common/newDataLabelUtils.ts"/>
-/// <reference path="common/dataRoleHelper.ts"/>
 /// <reference path="common/kpiUtil.ts"/>
 /// <reference path="common/referenceLineHelper.ts"/>
 

@@ -1837,6 +1837,41 @@ module powerbitests {
                 expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: 'series', value: 'c' }, { displayName: 'value1', value: '200' }, { displayName: 'value3', value: '30' }, { displayName: 'value2', value: '3' }]);
             });
 
+            it('validate tooltip info not being created when tooltips are disabled', () => {
+                let viewport: powerbi.IViewport = {
+                    height: 500,
+                    width: 500
+                };
+
+                let dataView = getDataViewWithSharedCategoryAndSeries();
+                dataView.metadata.objects = { categoryLabels: { show: true } };
+
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+                let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors), undefined, false);
+
+                let dataPoints = scatterChartData.dataPoints;
+                expect(dataPoints[0].category).toBe("a");
+                expect(dataPoints[0].x).toBe(0);
+                expect(dataPoints[0].y).toBe(10);
+                expect(dataPoints[0].fill).toBeDefined();
+                expect(dataPoints[0].fill).not.toBe(dataPoints[1].fill);
+                expect(scatterChartData.xCol).toBe(dataView.metadata.columns[1]);
+                expect(scatterChartData.size).toBe(dataView.metadata.columns[2]);
+                expect(scatterChartData.yCol).toBe(dataView.metadata.columns[3]);
+
+                // No legend if we don't have a field in legend
+                expect(scatterChartData.legendData.dataPoints.map(l => l.label)).toEqual(['a', 'b', 'c']);
+                let legendColors = scatterChartData.legendData.dataPoints.map(l => l.color);
+                expect(legendColors).toEqual(ArrayExtensions.distinct(legendColors));
+
+                expect(scatterChartData.legendData.title).toBe('series');
+
+                //Tooltips
+                expect(dataPoints[0].tooltipInfo).toBeUndefined();
+                expect(dataPoints[1].tooltipInfo).toBeUndefined();
+                expect(dataPoints[2].tooltipInfo).toBeUndefined();
+            });
+
             it('scatter chart null legend', () => {
                 let viewport: powerbi.IViewport = {
                     height: 500,
@@ -2833,15 +2868,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dots = element.find('.dot');
-                    let trigger = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    trigger(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(dots.length).toBe(5);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
@@ -2901,15 +2931,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dots = element.find('.dot');
-                    let trigger1 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let trigger3 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[3]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
+
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    trigger1(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(dots.length).toBe(5);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
@@ -2930,7 +2955,8 @@ module powerbitests {
                                 }
                             ]
                         });
-                    trigger3(mockEvent);
+
+                    helpers.clickElement(dots.eq(3));
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -2950,7 +2976,8 @@ module powerbitests {
                             ]
 
                         });
-                    trigger3(mockEvent);
+
+                    helpers.clickElement(dots.eq(3));
                     expect(dots[0].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[2].style.fillOpacity).toBe(defaultOpacity);
@@ -3004,21 +3031,12 @@ module powerbitests {
                     let dots = element.find('.dot');
                     expect(dots.length).toBe(5);
 
-                    let trigger1 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let trigger3 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[3]);
-                    let trigger4 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[4]);
-                    let mockEvent = {
-                        abc: 'def',
-                        ctrlKey: true,
-                        stopPropagation: () => { },
-                    };
-
                     spyOn(hostServices, 'onSelect').and.callThrough();
                 
                     // Allow multiselection
                     spyOn(hostServices, 'canSelect').and.returnValue(true);
 
-                    trigger1(mockEvent);
+                    helpers.clickElement(dots.eq(1), false);
 
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
@@ -3034,8 +3052,7 @@ module powerbitests {
                         ],
                     });
 
-                    trigger3(mockEvent);
-
+                    helpers.clickElement(dots.eq(3), true);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3052,8 +3069,7 @@ module powerbitests {
                         ],
                     });
 
-                    trigger4(mockEvent);
-
+                    helpers.clickElement(dots.eq(4), true);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3072,8 +3088,7 @@ module powerbitests {
                         ],
                     });
 
-                    trigger1(mockEvent);
-
+                    helpers.clickElement(dots.eq(1), true);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3130,22 +3145,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dots = element.find('.dot');
-                    let trigger1 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let trigger3 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[3]);
-                    let trigger4 = powerbitests.helpers.getClickTriggerFunctionForD3(dots[4]);
-                    let singleEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
-                    let multiEvent = {
-                        abc: 'def',
-                        ctrlKey: true,
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    trigger1(singleEvent);
+                    helpers.clickElement(dots.eq(1), false);
 
                     expect(dots.length).toBe(5);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
@@ -3166,7 +3169,8 @@ module powerbitests {
                                 }
                             ]
                         });
-                    trigger3(multiEvent);
+
+                    helpers.clickElement(dots.eq(3), true);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3198,13 +3202,15 @@ module powerbitests {
                                 }
                             ]
                         });
-                    trigger1(singleEvent);
+
+                    helpers.clickElement(dots.eq(1), false);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[3].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[4].style.fillOpacity).toBe(dimmedOpacity);
-                    trigger4(multiEvent);
+
+                    helpers.clickElement(dots.eq(4), true);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3238,7 +3244,8 @@ module powerbitests {
                                 }
                             ]
                         });
-                    trigger3(singleEvent);
+
+                    helpers.clickElement(dots.eq(3), false);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
                     expect(dots[2].style.fillOpacity).toBe(dimmedOpacity);
@@ -3298,15 +3305,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dots = element.find('.dot');
-                    let trigger = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    trigger(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(dots.length).toBe(5);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
@@ -3378,15 +3380,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let dots = element.find('.dot');
-                    let trigger = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    trigger(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(dots.length).toBe(5);
                     expect(dots[0].style.fillOpacity).toBe(dimmedOpacity);
@@ -3411,7 +3408,7 @@ module powerbitests {
                             ]
                         });
 
-                    (<any>($('.clearCatcher').last())).d3Click(0, 0);
+                    helpers.clickElement($('.clearCatcher'));
                     expect(dots[0].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[1].style.fillOpacity).toBe(defaultOpacity);
                     expect(dots[2].style.fillOpacity).toBe(defaultOpacity);
@@ -4826,16 +4823,10 @@ module powerbitests {
                 setTimeout(() => {
                     let dots = element.find('.dot');
                     let labels = element.find('.label');
-                    let triggerSelect = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let triggerUnselect = powerbitests.helpers.getClickTriggerFunctionForD3(dots[1]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    triggerSelect(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(labels.length).toBe(5);
                     expect(labels[0].style.opacity).toBe(dimmedOpacity);
@@ -4844,7 +4835,7 @@ module powerbitests {
                     expect(labels[3].style.opacity).toBe(defaultOpacity);
                     expect(labels[4].style.opacity).toBe(dimmedOpacity);
 
-                    triggerUnselect(mockEvent);
+                    helpers.clickElement(dots.eq(1));
 
                     expect(labels.length).toBe(5);
                     expect(labels[0].style.opacity).toBe(defaultOpacity);
@@ -4870,16 +4861,10 @@ module powerbitests {
                 setTimeout(() => {
                     let dots = element.find('.dot');
                     let labels = element.find('.label');
-                    let triggerSelect = powerbitests.helpers.getClickTriggerFunctionForD3(labels[0]);
-                    let triggerUnselect = powerbitests.helpers.getClickTriggerFunctionForD3(labels[0]);
-                    let mockEvent = {
-                        abc: 'def',
-                        stopPropagation: () => { },
-                    };
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
 
-                    triggerSelect(mockEvent);
+                    helpers.clickElement(dots.eq(0));
 
                     expect(labels.length).toBe(5);
                     expect(labels[0].style.opacity).toBe(labelsDefaultOpacity);
@@ -4894,7 +4879,7 @@ module powerbitests {
                     expect(dots[3].style.fillOpacity).toBe(bublleDimmedOpacity);
                     expect(dots[4].style.fillOpacity).toBe(bublleDimmedOpacity);
 
-                    triggerUnselect(mockEvent);
+                    helpers.clickElement(dots.eq(0));
 
                     expect(labels.length).toBe(5);
                     expect(labels[0].style.opacity).toBe(labelsDefaultOpacity);

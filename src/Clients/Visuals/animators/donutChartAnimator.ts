@@ -99,7 +99,7 @@ module powerbi.visuals {
                 .style('fill', (d: DonutArcDescriptor) => d.data.color ? d.data.color : options.colors.getNewColorScale().getColor(d.data.identity.getKey()).value)
                 .style('fill-opacity', (d: DonutArcDescriptor) => ColumnUtil.getFillOpacity(d.data.selected, true, false, options.viewModel.hasHighlights))
                 .style("stroke-dasharray", (d: DonutArcDescriptor) => DonutChart.drawStrokeForDonutChart(options.radius, options.innerArcRadiusRatio, d, options.sliceWidthRatio, d.data.highlightRatio))
-                .style("stroke-width", (d: DonutArcDescriptor) => d.data.highlightRatio === 0 ? 0 : d.data.strokeWidth)
+                .style("stroke-width", (d: DonutArcDescriptor) => d.data.strokeWidth)
                 .attr(options.layout.shapeLayout)  // Start at the non-highlight layout, then transition to the highlight layout.
                 .transition()
                 .duration(this.animationDuration)
@@ -180,7 +180,7 @@ module powerbi.visuals {
                 .style('fill', (d: DonutArcDescriptor) => d.data.color ? d.data.color : options.colors.getNewColorScale().getColor(d.data.identity.getKey()).value)
                 .style('fill-opacity', (d: DonutArcDescriptor) => ColumnUtil.getFillOpacity(false, true, false, true))
                 .style("stroke-dasharray", (d: DonutArcDescriptor) => DonutChart.drawStrokeForDonutChart(options.radius, options.innerArcRadiusRatio, d, options.sliceWidthRatio, d.data.highlightRatio))
-                .style("stroke-width", (d: DonutArcDescriptor) => d.data.highlightRatio === 0 ? 0 : d.data.strokeWidth)
+                .style("stroke-width", (d: DonutArcDescriptor) => d.data.strokeWidth)
                 .transition()
                 .duration(duration)
                 .attr(hasSelection ? options.layout.zeroShapeLayout : options.layout.shapeLayout)  // Transition to the non-highlight layout
@@ -242,7 +242,7 @@ module powerbi.visuals {
                 .style('fill', (d: DonutArcDescriptor) => d.data.color ? d.data.color : options.colors.getNewColorScale().getColor(d.data.identity.getKey()).value)
                 .style('fill-opacity', (d: DonutArcDescriptor) => ColumnUtil.getFillOpacity(d.data.selected, true, false, options.viewModel.hasHighlights))
                 .style("stroke-dasharray", (d: DonutArcDescriptor) => DonutChart.drawStrokeForDonutChart(options.radius, options.innerArcRadiusRatio, d, options.sliceWidthRatio, d.data.highlightRatio))
-                .style("stroke-width", (d: DonutArcDescriptor) => d.data.highlightRatio === 0 ? 0 : d.data.strokeWidth)
+                .style("stroke-width", (d: DonutArcDescriptor) => d.data.strokeWidth)
                 .transition()
                 .duration(this.animationDuration)
                 .attr(options.layout.highlightShapeLayout);

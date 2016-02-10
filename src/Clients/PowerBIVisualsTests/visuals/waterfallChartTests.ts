@@ -288,6 +288,24 @@ module powerbitests {
                 expect(dataPoints[6].tooltipInfo).toEqual([{ displayName: "year", value: "Total" }, { displayName: "sales", value: "$200" }]);
 
             });
+
+            it("validate tooltip info not being created when tooltips are disabled", () => {
+                dataBuilder = new WaterfallDataBuilder();
+                let dataView = dataBuilder.build();
+                data = WaterfallChart.converter(dataView, colors, visualBuilder.host, dataBuilder.dataLabelSettings, dataBuilder.sentimentColors, /* interactivityService */ null, false);
+                dataPoints = data.series[0].data;
+
+                // categoryValues: [2015, 2016, 2017, 2018, 2019, 2020]
+                // measureValues: [100, -200, 0, 300, null, NaN];
+                expect(dataPoints[0].tooltipInfo).toBeUndefined();
+                expect(dataPoints[1].tooltipInfo).toBeUndefined();
+                expect(dataPoints[2].tooltipInfo).toBeUndefined();
+                expect(dataPoints[3].tooltipInfo).toBeUndefined();
+                expect(dataPoints[4].tooltipInfo).toBeUndefined();
+                expect(dataPoints[5].tooltipInfo).toBeUndefined();
+                expect(dataPoints[6].tooltipInfo).toBeUndefined();
+            });
+
         });
 
         describe("setData", () => {

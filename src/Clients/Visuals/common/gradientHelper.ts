@@ -27,6 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface GradientSettings {
         diverging: boolean;
@@ -102,6 +103,14 @@ module powerbi.visuals {
                 return DataRoleHelper.getMeasureIndexOfRole(grouped, 'Gradient');
             }
             return -1;
+        }
+
+        export function getGradientValueColumn(dataViewCategorical: DataViewCategorical): DataViewValueColumn {
+            if (dataViewCategorical == null) return null;
+            // check for gradient measure index 
+            let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(dataViewCategorical);
+            let gradientValueColumn: DataViewValueColumn = gradientMeasureIndex === - 1 ? null : dataViewCategorical.values[gradientMeasureIndex];
+            return gradientValueColumn;
         }
 
         export function hasGradientRole(dataViewCategorical: DataViewCategorical): boolean {

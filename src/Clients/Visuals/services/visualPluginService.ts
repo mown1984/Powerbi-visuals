@@ -60,8 +60,6 @@ module powerbi.visuals {
         seriesLabelFormattingEnabled?: boolean;
 
         sandboxVisualsEnabled?: boolean;
-
-        kpiVisualEnabled?: boolean;
         
         /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
         categoricalPivotEnabled?: boolean;
@@ -85,6 +83,8 @@ module powerbi.visuals {
         backgroundImageEnabled?: boolean;
 
         lineChartLabelDensityEnabled?: boolean;
+
+        latLongGroupEnabled?: boolean;
     }
 
     export interface SmallViewPortProperties {
@@ -92,6 +92,10 @@ module powerbi.visuals {
         gaugeSmallViewPortProperties: GaugeSmallViewPortProperties;
         funnelSmallViewPortProperties: FunnelSmallViewPortProperties;
         DonutSmallViewPortProperties: DonutSmallViewPortProperties;
+    }
+
+    export interface CreateDashboardOptions {
+        tooltipsEnabled: boolean;
     }
 
     export module visualPluginFactory {
@@ -188,8 +192,8 @@ module powerbi.visuals {
             visualPlugins[base.name] = visualPlugin;
         }
 
-        function createDashboardPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
-            let tooltipsOnDashboard: boolean = true;
+        function createDashboardPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, options: CreateDashboardOptions, featureSwitches?: MinervaVisualFeatureSwitches) {
+            let tooltipsOnDashboard: boolean = options.tooltipsEnabled;
             let lineChartLabelDensityEnabled: boolean = featureSwitches && featureSwitches.lineChartLabelDensityEnabled;
             
             // Bar Chart
@@ -317,6 +321,7 @@ module powerbi.visuals {
             let referenceLinesEnabled: boolean = featureSwitches ? featureSwitches.referenceLinesEnabled : false;
             let backgroundImageEnabled: boolean = featureSwitches ? featureSwitches.backgroundImageEnabled : false;
             let lineChartLabelDensityEnabled: boolean = featureSwitches ? featureSwitches.lineChartLabelDensityEnabled : false;
+            let latLongGroupEnabled: boolean = featureSwitches ? featureSwitches.latLongGroupEnabled : false;
 
             // Bar Chart
             createPlugin(plugins, powerbi.visuals.plugins.barChart, () => new CartesianChart({
@@ -523,7 +528,7 @@ module powerbi.visuals {
                 behavior: new MapBehavior(),
                 tooltipsEnabled: true,
                 isLegendScrollable: true,
-            }));
+            }), latLongGroupEnabled ? Map.addLatLongGroupingToMapCapabilities : undefined);
             // Filled Map
             createPlugin(plugins, powerbi.visuals.plugins.filledMap, () => new Map({
                 filledMap: true,
@@ -639,15 +644,11 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.funnel,
                     powerbi.visuals.plugins.gauge,
                     powerbi.visuals.plugins.multiRowCard,
-                    powerbi.visuals.plugins.card
+                    powerbi.visuals.plugins.card,
+                    powerbi.visuals.plugins.kpi,
+                    powerbi.visuals.plugins.slicer,
+                    powerbi.visuals.plugins.donutChart
                 ];
-
-                if (this.featureSwitches.kpiVisualEnabled) {
-                    convertibleVisualTypes.push(powerbi.visuals.plugins.kpi);
-                }
-
-                convertibleVisualTypes.push(powerbi.visuals.plugins.slicer);
-                convertibleVisualTypes.push(powerbi.visuals.plugins.donutChart);
 
                 if (this.featureSwitches.scriptVisualEnabled) {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.scriptVisual);
@@ -658,7 +659,7 @@ module powerbi.visuals {
                 for (let p in plugins) {
                     let plugin = plugins[p];
                     if (plugin.custom) {
-                        this.pushPluginIntoConveratbleTypes(convertibleVisualTypes, plugin);
+                        this.pushPluginIntoConvertibleTypes(convertibleVisualTypes, plugin);
                     }
                 }
 
@@ -676,7 +677,7 @@ module powerbi.visuals {
                 return convertibleVisualTypes;
             }
 
-            private pushPluginIntoConveratbleTypes(convertibleVisualTypes: IVisualPlugin[], plugin: IVisualPlugin) {
+            private pushPluginIntoConvertibleTypes(convertibleVisualTypes: IVisualPlugin[], plugin: IVisualPlugin) {
                 if (!convertibleVisualTypes.some(pl => pl.name === plugin.name)) {
                     convertibleVisualTypes.push(plugin);
                 }
@@ -684,35 +685,38 @@ module powerbi.visuals {
 
             private addCustomVisualizations(convertibleVisualTypes: IVisualPlugin[]): void {
                 // Read new visual from localstorage
-                let customVisualizationList = localStorageService.getData('customVisualizations');
-                if (customVisualizationList) {
-                    let len = customVisualizationList.length;
-                    for (let i = 0; i < len; i++) {
-                        let pluginName = customVisualizationList[i].pluginName;
-                        let plugin = this.getPlugin(pluginName);
-                        // If the browser session got restarted or its a new window the plugin wont be available, so we need to add it
-                        if (!plugin) {
-                            let jsCode = customVisualizationList[i].javaScriptCode;
-                            let script = $("<script/>", {
-                                html: jsCode + '//# sourceURL=' + pluginName + '.js\n' + '//# sourceMappingURL=' + pluginName + '.js.map'
-                            });
-
-                            script.attr('pluginName', pluginName);
-
-                            $('body').append(script);
-
-                            let style = $("<style/>", {
-                                html: customVisualizationList[i].cssCode
-                            });
-
-                            style.attr('pluginName', pluginName);
-
-                            $('head').append(style);
-
-                            plugin = this.getPlugin(pluginName);
-                        }
-                        this.pushPluginIntoConveratbleTypes(convertibleVisualTypes, plugin);
+                let customVisualizationDict = localStorageService.getData('customVisualMetaData');
+                for (let visualName in customVisualizationDict) {
+                    let customVisualMetaData = customVisualizationDict[visualName];
+                    let pluginName = customVisualMetaData.pluginName;
+                    // Uncompiled new visuals should not be loaded into the report
+                    if (!pluginName) {
+                        continue;
                     }
+
+                    let plugin = this.getPlugin(pluginName);
+                    // If the browser session got restarted or its a new window the plugin wont be available, so we need to add it
+                    if (!plugin) {
+                        let jsCode = customVisualMetaData.sourceCode.javascriptCode;
+                        let script = $("<script/>", {
+                            html: jsCode + '//# sourceURL=' + pluginName + '.js\n' + '//# sourceMappingURL=' + pluginName + '.js.map'
+                        });
+
+                        script.attr('pluginName', pluginName);
+
+                        $('body').append(script);
+
+                        let style = $("<style/>", {
+                            html: customVisualMetaData.sourceCode.cssCode
+                        });
+
+                        style.attr('pluginName', pluginName);
+
+                        $('head').append(style);
+
+                        plugin = this.getPlugin(pluginName);
+                    }
+                    this.pushPluginIntoConvertibleTypes(convertibleVisualTypes, plugin);
                 }
             }
 
@@ -773,14 +777,14 @@ module powerbi.visuals {
         export class DashboardPluginService extends VisualPluginService {
             private visualPlugins: jsCommon.IStringDictionary<IVisualPlugin>;
 
-            public constructor(featureSwitches: MinervaVisualFeatureSwitches) {
+            public constructor(featureSwitches: MinervaVisualFeatureSwitches, options: CreateDashboardOptions) {
                 super(featureSwitches);
 
                 debug.assertValue(featureSwitches, 'featureSwitches');
 
                 this.visualPlugins = {};
 
-                createDashboardPlugins(this.visualPlugins, this.featureSwitches);
+                createDashboardPlugins(this.visualPlugins, options, this.featureSwitches);
             }
 
             public getPlugin(type: string): IVisualPlugin {
@@ -1094,8 +1098,8 @@ module powerbi.visuals {
             return new MinervaVisualPluginService(featureSwitches);
         }
 
-        export function createDashboard(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService {
-            return new DashboardPluginService(featureSwitches);
+        export function createDashboard(featureSwitches: MinervaVisualFeatureSwitches, options: CreateDashboardOptions): IVisualPluginService {
+            return new DashboardPluginService(featureSwitches, options);
         }
 
         export function createInsights(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService {

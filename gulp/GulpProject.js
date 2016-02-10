@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -11,10 +11,10 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
+ *   
  *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
+ *   
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -45,13 +45,15 @@ var gulp = require("gulp-help")(require("gulp")),
     Q = require("q"),
     minimatch = require("minimatch");
 
-var config = require("./config.json");
+var config = require("./config.js");
 
 var DEFAULT_TASK_NAME = "default",
     BUILD_TASK_PREFIX = "build:",
     TSLINT_TASK_PREFIX = "tslint:",
     WATCHER_TASK_PREFIX = "watch:",
+    TSLINT_ON_WATCH_TASK_SUFFIX = "-on-watch",
     AFTER_BUILD_TASK_SUFFIX = "-afterBuild",
+    DROP_ARTIFACTS_TASK_SUFFIX = "-drop",
     TS_TASK_SUFFIX = "-ts",
     LESS_TASK_SUFFIX = "-less",
     ANG_PREF_TASK_SUFFIX = "-html",
@@ -152,8 +154,12 @@ GulpProject.prototype.initBuildTasks = function () {
     }
 
     // create post build task if we have extra assets or custom after build task
-    if (this.params.afterBuild || this.params.copyDepsArtifacts || this.params.drop) {
+    if (this.params.afterBuild || this.params.copyDepsArtifacts) {
         buildTasks.push(this.createAfterBuildTask());
+    }
+
+    if (this.params.drop) {
+        buildTasks.push(this.createDropArtifactsTask());
     }
 
     this.buildTasks = buildTasks;
@@ -163,9 +169,8 @@ GulpProject.prototype.createTypeScriptTask = function () {
 
     var me = this;
     var taskName = BUILD_TASK_PREFIX + this.projName + TS_TASK_SUFFIX;
-
+    
     gulp.task(taskName, function (cb) {
-
         var tsProject = ts.createProject(path.join(me.projFolder, TS_CONFIG_FILE_NAME), {
             typescript: require("typescript"),
             module: "amd",
@@ -178,7 +183,7 @@ GulpProject.prototype.createTypeScriptTask = function () {
             outFileName: me.params.tsc.outFileName, // custom property
             out: path.join(/*me.projFolder,*/ JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js")
         });
-
+        
         tsc(me.projFolder, tsProject, cb);
     });
 
@@ -256,7 +261,6 @@ GulpProject.prototype.createWatchTask = function () {
     var copyDrop = me.params.drop;
 
     var TS_TASK = BUILD_TASK_PREFIX + me.projName + TS_TASK_SUFFIX,
-        TS_LINT_TASK = this.lintTask,
         BOND_TASK = BUILD_TASK_PREFIX + me.projName + BOND_TASK_SUFFIX,
         ANGULAR_TASK = BUILD_TASK_PREFIX + me.projName + ANG_PREF_TASK_SUFFIX,
         LESS_TASK = BUILD_TASK_PREFIX + me.projName + LESS_TASK_SUFFIX;
@@ -280,6 +284,12 @@ GulpProject.prototype.createWatchTask = function () {
 
     if (copyDrop) {
         includes.push(path.join(me.projFolder, "obj/*.js"));
+        includes.push("!" + path.join(me.projFolder, "obj/*.d.ts"));
+
+        if (me.params.less) {
+            var watchPath = me.params.less.destinationPath ? me.params.less.destinationPath : "styles";
+            includes.push(path.join(me.projFolder, watchPath, "*.css"));
+        }
     } else {
         // exclude own obj folder (as we usually specify **/*.ts as watch target,
         // but such filter also covers produced obj/ .d.ts file)
@@ -357,6 +367,13 @@ GulpProject.prototype.createWatchTask = function () {
 
             switch (fileExt) {
                 case ".css":
+
+                    if (copyDrop && !evtType(evt).isDeleted()) {
+                        // TODO: refactor this - copy only changed files.
+                        dropArtifacts(me);
+                        tasksToRun = [];
+                    }
+
                     if (copyDepsConfig.css && !evtType(evt).isDeleted()) {
                         utils.copy({
                             cwd: me.projFolder,
@@ -369,10 +386,16 @@ GulpProject.prototype.createWatchTask = function () {
                     break;
                 case ".map":
                 case ".js":
+
                     if (copyDrop && !evtType(evt).isDeleted()) {
                         dropArtifacts(me);
                         tasksToRun = [];
                     }
+                    if (copyDrop && !evtType(evt).isDeleted()) {
+                        dropArtifacts(me);
+                        tasksToRun = [];
+                    }
+                    
                     if (copyDepsConfig.js && !evtType(evt).isDeleted()) {
                         utils.copy({
                             cwd: me.projFolder,
@@ -387,9 +410,15 @@ GulpProject.prototype.createWatchTask = function () {
                 case ".ts":
                     // run tslint and  tsc tasks
                     if (gulp.hasTask(TS_TASK)) {
+                        
+                        var tsLintOnWatchTask = me.lintTask + TSLINT_ON_WATCH_TASK_SUFFIX;
+
+                        gulp.task(tsLintOnWatchTask, function () {
+                            return tslint(me.projFolder, null, me.params.tsc.tsLintExcludePaths || null, {emitError: false});
+                        });
 
                         // running these tasks in parallel 
-                        tasksToRun = [[TS_LINT_TASK, TS_TASK]];
+                        tasksToRun = [[tsLintOnWatchTask, TS_TASK]];
 
                         if (!config.tslintOnChange) {
                             tasksToRun = [TS_TASK];
@@ -452,7 +481,7 @@ GulpProject.prototype.createWatchTask = function () {
     }
 
     function isFileInDrop(proj, path) {
-        //TODO: improve: return only mathed path/dest and use async.
+        //TODO: improve: return only mathed path/dest.
         return [].concat(proj.params.drop).some(function (dropItem) {
             return [].concat(dropItem.source).some(function (src) {
                 return minimatch(path, src);
@@ -576,6 +605,7 @@ GulpProject.prototype.createProcessStaticFilesTask = function (staticFiles) {
                     source: copyItem.source,
                     destination: copyItem.dest,
                     join: copyItem.join,
+                    produceMaps: copyItem.produceMaps,
                 });
             }));
         }
@@ -591,12 +621,21 @@ GulpProject.prototype.createAfterBuildTask = function () {
     gulp.task(taskName, false, function () {
 
         return copyDeps(me).then(function () {
-                if (me.params.afterBuild) {
-                    return Q.nfcall(runSequence, me.params.afterBuild(me));
-                }
-            }).then(function() {
-                return dropArtifacts(me);
-            });
+            if (me.params.afterBuild) {
+                return Q.nfcall(runSequence, me.params.afterBuild(me));
+            }
+        });
+    });
+
+    return taskName;
+};
+
+GulpProject.prototype.createDropArtifactsTask = function () {
+    var me = this,
+        taskName = BUILD_TASK_PREFIX + this.projName + DROP_ARTIFACTS_TASK_SUFFIX;
+
+    gulp.task(taskName, false, function () {
+        return dropArtifacts(me);
     });
 
     return taskName;
@@ -624,7 +663,7 @@ function dropArtifacts(proj) {
             
             return utils.copy(options).then(function () {
                 if (dropItem.inform) {
-                    var endMsg = dropItem.inform[1]
+                    var endMsg = dropItem.inform[1];
                     gutil.log(endMsg || "Finished drop: '" + description + "'");
                 }
             });

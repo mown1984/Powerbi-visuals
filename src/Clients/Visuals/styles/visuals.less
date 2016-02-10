@@ -50,7 +50,7 @@
 
     .clear {
         .sprite(@slicer-reset);
-        margin: 4px 2px;
+        margin: 4px 8px 4px 2px;
         float: right;
         cursor: pointer;
         display: block;
@@ -123,7 +123,7 @@
         cursor: pointer;
         vertical-align: middle;
         align-self: center;
-        margin-left: 8px;
+        margin: 0 8px;
         flex: 0 0 auto;
         -ms-flex: 0 0 auto;
         -webkit-flex: 0 0 auto;
@@ -181,12 +181,10 @@
         -ms-flex: 1 1 0px;
         -webkit-flex: 1 1 0px;
         display: inline-block;
-
         .trimmedTextWithEllipsis
     }
 
     .slicerCountText {
-        padding-right: 16px;
         align-self: center;
         flex: 0 0 auto;
         -ms-flex: 0 0 auto;
@@ -274,8 +272,7 @@
         width: 100%;
         height: 100%;
         box-sizing: border-box;
-        padding-top: 4px;
-        padding-bottom: 4px;
+        padding: 4px 0;
 
         &.selected, &.partiallySelected {
             color: @whiteColor !important;
@@ -300,6 +297,22 @@
         > span {
             text-align: center;
         }
+    }
+
+    .slicerImage {
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 4px 0;
     }
 }
 
@@ -364,14 +377,6 @@
 
 /* Column chart styles */
 .columnChart {
-    .column {
-        fill: @chartTemplateColor;
-    }
-
-    .column:hover {
-        fill: @chartTemplateColorDarker;
-    }
-
     .axisGraphicsContext {
         font-family: @regularFontFamily;
         font-size: 11px;
@@ -722,6 +727,12 @@
         cursor: pointer;
     }
 
+    .mobile-button-container {
+        margin-left: 2px;
+        margin-right: 18px;
+        touch-action: none;
+     }
+
     .play {
         width: 0;
         height: 0;
@@ -752,6 +763,12 @@
         display: inline-block;
         vertical-align: top;
         margin-top: 12px;
+    }
+
+   .mobile-noUi-handle {
+       width: 20px;
+       left: -10px;
+       touch-action: none;
     }
 }
 
@@ -1839,9 +1856,25 @@ div.ql-toolbar {
 
 .kpiVisual {
     .goalText {
-        fill: #333333;
+        margin-top: -6px;
+        color: #333333;
         font-family: @regularFontFamily;
-        font-size: 15px;
-        text-anchor: middle;
+        font-size: 11px;
+    }
+
+    .textContainer{
+        display:block;
+        align-items:center;
+        position:absolute;
+        text-align:center;
+    }
+
+    .indicatorText{
+        font-family: @regularFontFamily;
+        font-size: 60px;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: center;
     }
 }

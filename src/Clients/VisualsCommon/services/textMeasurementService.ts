@@ -165,7 +165,11 @@ module powerbi {
                 };
 
                 rect = measureSvgTextRect(estimatedTextProperties);
-                ephemeralStorageService.setData(propertiesKey, rect);
+
+                // NOTE: In some cases (disconnected/hidden DOM) we may provide incorrect measurement results (zero sized bounding-box), so
+                // we only store values in the cache if we are confident they are correct.
+                if (rect.height > 0)
+                    ephemeralStorageService.setData(propertiesKey, rect);
             }
 
             return rect;

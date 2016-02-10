@@ -153,7 +153,7 @@ module powerbi.data {
 
             this.isRoot = false;
 
-            if (expr.kind !== QueryComparisonKind.Equal)
+            if (expr.comparison !== QueryComparisonKind.Equal)
                 return this.unsupportedSQExpr();
 
             return expr.left.accept(this) && expr.right.accept(this);
@@ -231,7 +231,7 @@ module powerbi.data {
         }
 
         public visitCompare(expr: SQCompareExpr): SQConstantExpr {
-            if (expr.kind === QueryComparisonKind.Equal) {
+            if (expr.comparison === QueryComparisonKind.Equal) {
                 if (expr.right instanceof SQConstantExpr)
                     return <SQConstantExpr>expr.right;
                 if (expr.left instanceof SQConstantExpr)

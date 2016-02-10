@@ -57,7 +57,8 @@ module powerbi.visuals {
         measure: number;
         measureFormat?: string;
         percentage: number;
-        highlightRatio: number;
+        highlightRatio?: number;
+        highlightValue?: number;
         label: string;
         index: number;
         /** Data points that may be drilled into */
@@ -207,8 +208,8 @@ module powerbi.visuals {
             }
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService): DonutData {
-            let converter = new DonutChartConversion.DonutChartConverter(dataView, colors, defaultDataPointColor);
+        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService, tooltipsEnabled: boolean = true): DonutData {
+            let converter = new DonutChartConversion.DonutChartConverter(dataView, colors, defaultDataPointColor, tooltipsEnabled);
             converter.convert();
             let d3PieLayout = d3.layout.pie()
                 .sort(null)
@@ -340,7 +341,7 @@ module powerbi.visuals {
                     }
                 }
 
-                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling, this.interactivityService);
+                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling, this.interactivityService, this.tooltipsEnabled);
                 this.data.showAllDataPoints = showAllDataPoints;
                 this.data.defaultDataPointColor = defaultDataPointColor;
                 if (!(this.options.interactivity && this.options.interactivity.isInteractiveLegend))
@@ -740,7 +741,7 @@ module powerbi.visuals {
             let fontSize = labelSettings.fontSize;
 
             if (labelSettingsStyle === labelStyle.both || labelSettingsStyle === labelStyle.data) {
-                dataLabel = measureFormatter.format(d.data.measure);
+                dataLabel = measureFormatter.format(d.data.highlightValue != null ? d.data.highlightValue : d.data.measure);
                 dataLabelSize = this.getTextSize(dataLabel, fontSize);
             }
 
@@ -1680,7 +1681,7 @@ module powerbi.visuals {
             private legendDataPoints: LegendDataPoint[];
             private colorHelper: ColorHelper;
             private categoryFormatString: string;
-
+            private tooltipsEnabled;
             public hasHighlights: boolean;
             public dataPoints: DonutDataPoint[];
             public legendData: LegendData;
@@ -1688,11 +1689,11 @@ module powerbi.visuals {
             public legendObjectProperties: DataViewObject;
             public maxValue: number;
 
-            public constructor(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string) {
+            public constructor(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, tooltipsEnabled: boolean = true) {
                 let dataViewCategorical = dataView.categorical;
                 this.dataViewCategorical = dataViewCategorical;
                 this.dataViewMetadata = dataView.metadata;
-
+                this.tooltipsEnabled = tooltipsEnabled;
                 this.seriesCount = dataViewCategorical.values ? dataViewCategorical.values.length : 0;
                 this.colorHelper = new ColorHelper(colors, donutChartProps.dataPoint.fill, defaultDataPointColor);
                 this.maxValue = 0;
@@ -1792,7 +1793,7 @@ module powerbi.visuals {
 
                     let measure = normalizedNonHighlight.measure;
                     let percentage = (this.total > 0) ? normalizedNonHighlight.value / this.total : 0.0;
-                    let highlightRatio = 0;
+                    let highlightRatio = undefined;
                     if (normalizedNonHighlight.value > this.maxValue)
                         this.maxValue = normalizedNonHighlight.value;
                     if (normalizedHighlight.value > this.maxValue)
@@ -1808,7 +1809,7 @@ module powerbi.visuals {
                             highlightRatio = 1;
                         }
                         else {
-                            highlightRatio = normalizedHighlight.value / normalizedNonHighlight.value;
+                            highlightRatio = normalizedNonHighlight.value !== 0 ? normalizedHighlight.value / normalizedNonHighlight.value : 0;
                         }
 
                         if (!highlightRatio) {
@@ -1821,9 +1822,12 @@ module powerbi.visuals {
                     let valueIndex: number = categorical.categories ? null : i;
                     valueIndex = point.seriesIndex !== undefined ? point.seriesIndex : valueIndex;
                     let valuesMetadata = categorical.values[valueIndex].source;
-                    let value: number = point.measureValue.measure;
-                    let highlightedValue: number = this.hasHighlights && point.highlightMeasureValue.value !== 0 ? point.highlightMeasureValue.measure : undefined;
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i, highlightedValue);
+                    let value: number = this.hasHighlights && highlightsOverflow ? point.highlightMeasureValue.measure : point.measureValue.measure;
+                    let highlightValue: number = this.hasHighlights && !highlightsOverflow ? point.highlightMeasureValue.measure : undefined;
+                    let tooltipInfo: TooltipDataItem[];
+                    if (this.tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i, highlightValue);
+                    }
                     let strokeWidth = prevPointColor === point.color && value && value > 0 ? 1 : 0;
                     prevPointColor = value && value > 0 ? point.color : prevPointColor;
                     this.dataPoints.push({
@@ -1834,6 +1838,7 @@ module powerbi.visuals {
                         index: point.index,
                         label: point.label,
                         highlightRatio: highlightRatio,
+                        highlightValue: highlightValue,
                         selected: false,
                         tooltipInfo: tooltipInfo,
                         color: point.color,

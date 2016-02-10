@@ -24,6 +24,7 @@
         "utils/kpiUtilTests.ts",
         "utils/newDataLabelUtilsTests.ts",
         "converters/slicerConverterTests.ts",
+        "data/dataView/dataViewCategoricalReaderTests.ts",
         "visuals/animatedNumberTests.ts",
         "visuals/animatedTextTests.ts",
         "visuals/basicShapeTests.ts",

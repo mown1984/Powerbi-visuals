@@ -45,6 +45,8 @@
 /// <reference path="contracts\visualData.ts"/>
 /// <reference path="dataView\colorAllocator.ts"/>
 /// <reference path="dataView\compiledDataViewMapping.ts"/>
+/// <reference path="dataView\dataRoleHelper.ts"/>
+/// <reference path="dataView\dataViewCategoricalReader.ts"/>
 /// <reference path="dataView\dataViewObjectDefinition.ts"/>
 /// <reference path="dataView\dataViewObjectDescriptor.ts"/>
 /// <reference path="dataView\dataViewObjectEvaluationUtils.ts"/>

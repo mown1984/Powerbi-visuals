@@ -260,6 +260,31 @@ module powerbitests {
             expect(actualData.series).toEqual([]);
         });
 
+        it('validate tooltip info not being created when tooltips are disabled', () => {
+            let metadata: powerbi.DataViewMetadata = {
+                columns: [
+                    dataViewMetadata.columns[0],
+                    powerbi.Prototype.inherit(dataViewMetadata.columns[1], c => c.objects = { dataPoint: { fill: { solid: { color: '#41BEE0' } } } }),
+                ]
+            };
+            let dataView: powerbi.DataView = {
+                metadata: metadata,
+                categorical: {
+                    categories: [{
+                        source: metadata.columns[0],
+                        values: ['John Domo', 'Delta Force', 'Jean Tablau'],
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: metadata.columns[1],
+                        values: [100, 200, 700],
+                        subtotal: 1000
+                    }])
+                }
+            };
+            let actualData = LineChart.converter(dataView, blankCategoryValue, colors, false, undefined, undefined, undefined, false);
+            expect(actualData.series[0].data[0].tooltipInfo).toBeUndefined();
+        });
+
         it('Check convert categorical + fill color', () => {
             let seriesColor = '#41BEE0';
             let metadata: powerbi.DataViewMetadata = {
@@ -2805,8 +2830,7 @@ module powerbitests {
 
             it('line chart validate word breaking axis labels', (done) => {
                 // Word break will only tend to trigger when graphs are wider than they are high
-                v.update({
-                    viewport: { height: 320, width: 640 },
+                v.onDataChanged({
                     dataViews: [{
                         metadata: dataViewMetadata,
                         categorical: {
@@ -2821,6 +2845,7 @@ module powerbitests {
                         }
                     }],
                 });
+                v.onResizing({ height: 320, width: 640 });
 
                 setTimeout(() => {
                     let tickLabels = $('.lineChart .axisGraphicsContext .x.axis .tick text');
@@ -3815,7 +3840,7 @@ module powerbitests {
             v.onDataChanged({ dataViews: [] });
         });
 
-        xit('select column validation', () => {
+        it('select column validation', () => {
             let lineChart = (<any>v).layers[0];
 
             spyOn(lineChart, 'selectColumn').and.callThrough();

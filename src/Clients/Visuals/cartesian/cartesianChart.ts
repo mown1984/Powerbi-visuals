@@ -119,7 +119,7 @@ module powerbi.visuals {
 
     export interface ICartesianVisual {
         init(options: CartesianVisualInitOptions): void;
-        setData(dataViews: DataView[], resized?: boolean): void;
+        setData(dataViews: DataView[]): void;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         overrideXScale(xProperties: IAxisProperties): void;
         render(suppressAnimations: boolean): CartesianVisualRenderResult;
@@ -285,6 +285,7 @@ module powerbi.visuals {
         private tooltipsEnabled: boolean;
         private lineChartLabelDensityEnabled: boolean;
         private trimOrdinalDataOnOverflow: boolean;
+        private isMobileChart: boolean;
 
         private referenceLinesEnabled: boolean;
         private xRefLine: ClassAndSelector = createClassAndSelector('x-ref-line');
@@ -382,6 +383,8 @@ module powerbi.visuals {
                 options.interactivity && options.interactivity.isInteractiveLegend,
                 this.type !== CartesianChartType.Waterfall ? this.interactivityService : undefined,
                 this.axes.isScrollable);
+
+            this.isMobileChart = options.interactivity && options.interactivity.isInteractiveLegend;
         }
 
         private isPlayAxis(): boolean {
@@ -397,7 +400,7 @@ module powerbi.visuals {
                 && dataView.categorical.categories[0].source.roles['Play'];
 
             return this.type === CartesianChartType.Scatter
-                && this.animator
+                && (this.animator || this.isMobileChart)
                 && dataView.matrix != null
                 && (!dataView.categorical || categoryRoleIsPlay);
         }
@@ -413,6 +416,25 @@ module powerbi.visuals {
 
             // also checking type here to be in sync with AxisHelper, which ignores scalar if the type is non-numeric.
             return (axisTypeValue === axisType.scalar) && !AxisHelper.isOrdinal(type);
+        }
+
+        public static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean {
+            if (!dataViewMapping || !dataViewMapping.categorical || !dataViewMapping.categorical.categories)
+                return false;
+                
+            let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
+            let categoryItems = dataViewCategories.for.in.items;
+            if (_.isEmpty(categoryItems))
+                return false;
+                
+            let categoryType = categoryItems[0].type;
+
+            if (!dataViewMapping.metadata)
+                return false;
+            
+            let objects = dataViewMapping.metadata.objects;
+
+            return CartesianChart.getIsScalar(objects, columnChartProps.categoryAxis.axisType, categoryType);
         }
 
         private populateObjectProperties(dataViews: DataView[]) {
@@ -433,12 +455,8 @@ module powerbi.visuals {
             }
         }
 
-        public update(options: VisualUpdateOptions) {
-            debug.assertValue(options, 'options');
-
+        private updateInternal(options: VisualUpdateOptions, dataChanged: boolean): void {
             let dataViews = this.dataViews = options.dataViews;
-            let resized = this.currentViewport && options.viewport
-                && (this.currentViewport.height !== options.viewport.height || this.currentViewport.width !== options.viewport.width);
             this.currentViewport = options.viewport;
 
             if (!dataViews) return;
@@ -451,26 +469,28 @@ module powerbi.visuals {
             }
             let layers = this.layers;
 
-            if (dataViews && dataViews.length > 0) {
-                this.populateObjectProperties(dataViews);
-                this.axes.update(dataViews);
-                this.svgAxes.update(this.categoryAxisProperties, this.valueAxisProperties);
-                let dataView = dataViews[0];
-                if (dataView.metadata) {
-                    // flatten background data
-                    this.background = {
-                        image: DataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image),
-                        transparency: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()),
-                    };
+            if (dataChanged) {
+                if (!_.isEmpty(dataViews)) {
+                    this.populateObjectProperties(dataViews);
+                    this.axes.update(dataViews);
+                    this.svgAxes.update(this.categoryAxisProperties, this.valueAxisProperties);
+                    let dataView = dataViews[0];
+                    if (dataView.metadata) {
+                        // flatten background data
+                        this.background = {
+                            image: DataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image),
+                            transparency: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()),
+                        };
+                    }
                 }
-            }
 
-            this.sharedColorPalette.clearPreferredScale();
-            for (let i = 0, len = layers.length; i < len; i++) {
-                layers[i].setData(getLayerData(dataViews, i, len), resized);
+                this.sharedColorPalette.clearPreferredScale();
+                for (let i = 0, len = layers.length; i < len; i++) {
+                    layers[i].setData(getLayerData(dataViews, i, len));
 
-                if (len > 1)
-                    this.sharedColorPalette.rotateScale();
+                    if (len > 1)
+                        this.sharedColorPalette.rotateScale();
+                }
             }
 
             this.render(!this.hasSetData || options.suppressAnimations);
@@ -491,26 +511,22 @@ module powerbi.visuals {
             }
         }
 
-        // TODO: Remove onDataChanged & onResizing once all visuals have implemented update.
+        // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
         public onDataChanged(options: VisualDataChangedOptions): void {
-            this.update({
+            this.updateInternal({
                 dataViews: options.dataViews,
                 suppressAnimations: options.suppressAnimations,
                 viewport: this.currentViewport
-            });
+            }, true);
         }
 
-        // TODO: Remove onDataChanged & onResizing once all visuals have implemented update.
+        // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
         public onResizing(viewport: IViewport): void {
-            if (this.currentViewport && (this.currentViewport.height === viewport.height && this.currentViewport.width === viewport.width)) {
-                return;
-            }
-
-            this.update({
+            this.updateInternal({
                 dataViews: this.dataViews,
                 suppressAnimations: true,
                 viewport: viewport
-            });
+            }, false);
         }
 
         public scrollTo(position: number): void {
@@ -889,13 +905,36 @@ module powerbi.visuals {
                     this.renderedPlotArea.width !== axesLayout.plotArea.width);
             suppressAnimations = suppressAnimations || plotAreaHasChanged;
 
-            this.scrollableAxes.render(
-                axesLayout,
-                this.layers,
-                suppressAnimations,
-                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins));
+            this.runWithDetachedDom(this.chartAreaSvg.node(), () => {
+                this.scrollableAxes.render(
+                    axesLayout,
+                    this.layers,
+                    suppressAnimations,
+                    (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins));
 
-            this.renderedPlotArea = axesLayout.plotArea;
+                this.renderedPlotArea = axesLayout.plotArea;
+            });
+        }
+        
+        private runWithDetachedDom(element: Element, fn: Function): void {
+            if (!element)
+                return;
+
+            let parent = element.parentNode;
+            if (parent) {
+                if (element.remove)
+                    element.remove();  // NOTE: faster than parent.removeChild(), but not supported in IE10/11
+                else if (parent.removeChild)
+                    parent.removeChild(element);
+            }
+
+            try {
+                fn();
+            }
+            finally {
+                if (parent && !element.parentNode)
+                    parent.appendChild(element);
+            }
         }
 
         private getPlotAreaRect(axesLayout: CartesianAxesLayout, legendMargins: IViewport): IRect {
@@ -2449,7 +2488,7 @@ module powerbi.visuals {
 
                 if (!isScalar && this.isScrollable && layers[0].getPreferredPlotArea) {
                     let categoryThickness = this.showLinesOnY ? axes.x.categoryThickness : axes.y1.categoryThickness;
-                    let categoryCount = this.showLinesOnY ? axes.x.values.length : axes.y1.values.length;
+                    let categoryCount = this.showLinesOnY ? axes.x.dataDomain.length : axes.y1.dataDomain.length;
                     preferredPlotArea = layers[0].getPreferredPlotArea(isScalar, categoryCount, categoryThickness);
                     if (this.showLinesOnY && preferredPlotArea && preferredPlotArea.width > viewport.width) {
                         this.isXScrollBarVisible = true;

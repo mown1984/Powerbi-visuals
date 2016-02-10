@@ -51,7 +51,6 @@ module powerbi.visuals {
         dataView: DataView;
         data: SlicerData;
         viewport: IViewport;
-        renderAsImage: (url: string) => boolean;
         resetScrollbarPosition?: boolean;
     }
 
@@ -68,6 +67,7 @@ module powerbi.visuals {
         tooltip: string;
         isSelectAllDataPoint?: boolean;
         count: number;
+        isImage?: boolean;
     }
 
     export interface SlicerSettings {
@@ -113,7 +113,6 @@ module powerbi.visuals {
         private slicerRenderer: ISlicerRenderer;
         private slicerOrientation: SlicerOrientation;
         private waitingForData: boolean;
-        private renderAsImage: (url: string) => boolean;
         private domHelper: DOMHelper;
         private initOptions: VisualInitOptions;
         public static DefaultStyleProperties(): SlicerSettings {
@@ -126,13 +125,13 @@ module powerbi.visuals {
                 header: {
                     borderBottomWidth: 1,
                     show: true,
-                    outline: 'BottomOnly',
+                    outline: visuals.outline.bottomOnly,
                     fontColor: '#000000',
                     textSize: 10,
                 },
                 slicerText: {
                     color: '#666666',
-                    outline: 'None',
+                    outline: visuals.outline.none,
                     textSize: 10,
                 },
                 selection: {
@@ -177,13 +176,6 @@ module powerbi.visuals {
             let resetScrollbarPosition = options.operationKind !== VisualDataChangeOperationKind.Append
                 && !DataViewAnalysis.hasSameCategoryIdentity(existingDataView, this.dataView);
 
-            let metadata = this.dataView.metadata;
-            this.renderAsImage = metadata &&
-                !_.isEmpty(metadata.columns) &&
-                metadata.columns[0].type &&
-                metadata.columns[0].type.misc &&
-                metadata.columns[0].type.misc.imageUrl ? jsCommon.Utility.isValidUrl : $.noop;
-
             this.render(resetScrollbarPosition, true);
         }
 
@@ -211,8 +203,11 @@ module powerbi.visuals {
         }
 
         public onClearSelection(): void {
-            if (this.interactivityService)
+            if (this.interactivityService) {
                 this.interactivityService.clearSelection();
+                // calls render so that default behavior can be applied after clear selection.
+                this.render(false /* resetScrollbarPosition */);
+            }
         }
 
         private render(resetScrollbarPosition: boolean, stopWaitingForData?: boolean): void {
@@ -233,10 +228,10 @@ module powerbi.visuals {
                         this.initializeSlicerRenderer(slicerOrientation);
                     }
             }
-            this.slicerRenderer.render({ dataView: this.dataView, data: this.slicerData, viewport: this.currentViewport, renderAsImage: this.renderAsImage, resetScrollbarPosition: resetScrollbarPosition });
+            this.slicerRenderer.render({ dataView: this.dataView, data: this.slicerData, viewport: this.currentViewport, resetScrollbarPosition: resetScrollbarPosition });
 
-                    if (stopWaitingForData)
-                        this.waitingForData = false;
+            if (stopWaitingForData)
+                this.waitingForData = false;
         }
 
         private orientationHasChanged(slicerOrientation: SlicerOrientation): boolean {

@@ -52,7 +52,7 @@ module powerbi.visuals {
                 description: data.createDisplayNameGetter('Role_DisplayName_LegendDescription')
             }, {
                 name: 'X',
-                kind: VisualDataRoleKind.Measure,
+                kind: VisualDataRoleKind.Measure, // GroupingOrMeasure if latLongGroupEnabled feature switch is on.
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Longitude'),
                 description: data.createDisplayNameGetter('Role_DisplayName_LongitudeMapDescription'),
                 preferredTypes: [
@@ -60,7 +60,7 @@ module powerbi.visuals {
                 ],
             }, {
                 name: 'Y',
-                kind: VisualDataRoleKind.Measure,
+                kind: VisualDataRoleKind.Measure, // GroupingOrMeasure if latLongGroupEnabled feature switch is on.
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Latitude'),
                 description: data.createDisplayNameGetter('Role_DisplayName_LatitudeMapDescription'),
                 preferredTypes: [
@@ -169,6 +169,7 @@ module powerbi.visuals {
         },
         dataViewMappings: [{
             conditions: [
+                // Kind: measure is added to X and Y here if the latLongGroupEnabled feature switch is on.
                 { 'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1 }, 'Y': { max: 1 }, 'Size': { max: 1 }, 'Gradient': { max: 0 } },
                 { 'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 }, 'Size': { max: 1 }, 'Gradient': { max: 1 } }
             ],
@@ -190,8 +191,8 @@ module powerbi.visuals {
                     }
                 },
                 rowCount: { preferred: { min: 2 } }
-            },
-        }],
+            }
+        }], // An extra set of conditions where X and Y's kind are grouping and category's max is 0 is added if the latLongGroupEnabled feature switch is on.
         sorting: {
             custom: {},
         },

@@ -34,6 +34,7 @@ module powerbi.data {
         columnHierarchyLevelVariation?: FieldExprColumnHierarchyLevelVariation;
         entityAggr?: FieldExprEntityAggrPattern;
         hierarchyLevel?: FieldExprHierarchyLevelPattern;
+        hierarchyLevelAggr?: FieldExprHierarchyLevelAggrPattern;
         hierarchy?: FieldExprHierarchyPattern;
         measure?: FieldExprMeasurePattern;
     }
@@ -51,6 +52,10 @@ module powerbi.data {
     export type FieldExprColumnPattern = FieldExprPropertyPattern;
 
     export interface FieldExprColumnAggrPattern extends FieldExprColumnPattern {
+        aggregate: QueryAggregateFunction;
+    }
+    
+    export interface FieldExprHierarchyLevelAggrPattern extends FieldExprHierarchyLevelPattern {
         aggregate: QueryAggregateFunction;
     }
 
@@ -220,6 +225,10 @@ module powerbi.data {
                 let argAggr = <FieldExprColumnAggrPattern>fieldPattern.columnAggr;
                 argAggr.aggregate = expr.func;
                 return { columnAggr: argAggr };
+            } else if (fieldPattern && fieldPattern.hierarchyLevel) {
+                let argAggr = <FieldExprHierarchyLevelAggrPattern>fieldPattern.hierarchyLevel;
+                argAggr.aggregate = expr.func;
+                return { hierarchyLevelAggr: argAggr };
             }
 
             let sourcePattern = expr.arg.accept(SourceExprPatternBuilder.instance);
@@ -351,11 +360,16 @@ module powerbi.data {
         export function getPropertyName(fieldExpr: FieldExprPattern): string {
             let column = (fieldExpr.column ||
                 fieldExpr.columnAggr ||
-                fieldExpr.measure ||
-                fieldExpr.hierarchy);
+                fieldExpr.measure);
 
             if (column)
                 return column.name;
+        }
+
+        export function getHierarchyName(fieldExpr: FieldExprPattern): string {
+            let hierarchy = fieldExpr.hierarchy;
+            if (hierarchy)
+                return hierarchy.name;
         }
 
         export function getColumnRef(fieldExpr: FieldExprPattern): FieldExprPropertyPattern {
@@ -381,6 +395,7 @@ module powerbi.data {
                 fieldExpr.entityAggr ||
                 fieldExpr.hierarchy ||
                 fieldExpr.hierarchyLevel ||
+                fieldExpr.hierarchyLevelAggr ||
                 fieldExpr.measure ||
                 (fieldExpr.columnHierarchyLevelVariation && fieldExpr.columnHierarchyLevelVariation.source) ||
                 fieldExpr); // fieldExpr for entity

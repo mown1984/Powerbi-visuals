@@ -30,6 +30,7 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface GaugeData extends TooltipEnabledDataPoint {
         percent: number;
@@ -358,7 +359,7 @@ module powerbi.visuals {
                 return;
             }
 
-            this.data = Gauge.converter(dataViews[0]);
+            this.data = Gauge.converter(dataViews[0], this.tooltipsEnabled);
             this.targetSettings = this.data.targetSettings;
 
             if (dataViews[0])
@@ -514,7 +515,7 @@ module powerbi.visuals {
         }
         
         /** Note: Made public for testability */
-        public static converter(dataView: DataView): GaugeData {
+        public static converter(dataView: DataView, tooltipsEnabled: boolean = true): GaugeData {
             let gaugeData = Gauge.getGaugeData(dataView),
                 total = gaugeData.total,
                 formatString: string = null,
@@ -542,7 +543,7 @@ module powerbi.visuals {
 
             let tooltipInfo: TooltipDataItem[];
 
-            if (dataView) {
+            if (tooltipsEnabled && dataView) {
                 if (gaugeData.tooltipItems.length > 0) {
                     tooltipInfo = TooltipBuilder.createTooltipInfo(Gauge.formatStringProp, null, null, null, null, gaugeData.tooltipItems);
                 }

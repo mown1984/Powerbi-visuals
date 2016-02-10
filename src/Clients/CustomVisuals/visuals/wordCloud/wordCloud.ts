@@ -433,7 +433,6 @@ module powerbi.visuals.samples {
             height: 2048
         };
 
-
         public static colors: IDataColorPalette;
         private root: D3.Selection;
         private svg: D3.Selection;
@@ -452,7 +451,6 @@ module powerbi.visuals.samples {
         private hostService: IVisualHostServices;
         private selectionManager: utility.SelectionManager;
 
-        private isUpdating: boolean;
         private visualUpdateOptions: VisualUpdateOptions;
 
         constructor(options?: WordCloudConstructorOptions) {
@@ -1264,7 +1262,6 @@ module powerbi.visuals.samples {
 
             this.visualUpdateOptions = visualUpdateOptions;
 
-
             this.layout.viewport = this.visualUpdateOptions.viewport;
             let dataView: DataView = visualUpdateOptions.dataViews[0];
 
@@ -1356,7 +1353,6 @@ module powerbi.visuals.samples {
                     "font-size": ((item: WordCloudDataPoint): string => `${item.size}${WordCloud.Size}`),
                     "fill": ((item: WordCloudDataPoint): string => item.color),
                 });
-
 
             this.wordsSelection
                 .text((item: WordCloudDataPoint) => item.text)

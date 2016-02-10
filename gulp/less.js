@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -11,10 +11,10 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
+ *   
  *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
+ *   
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -33,7 +33,7 @@ var gulp = require("gulp"),
     gulpMinifyCSS = require("gulp-minify-css"),
     path = require("path");
 
-var config = require("./config.json");
+var config = require("./config.js");
 
 // additionalPaths (String | Array) - is used to add new paths where "lesser" will searching for ".less" files
 module.exports = function (options, cb) {

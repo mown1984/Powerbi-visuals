@@ -245,7 +245,7 @@ module powerbi.visuals {
             return new SelectionIdBuilder();
         }
 
-        public withCategory(categoryColumn: DataViewCategoryColumn, index: number): this {
+        public withCategory(categoryColumn: DataViewCategoryColumn, index: number): this{
             if (categoryColumn && categoryColumn.source && categoryColumn.source.queryName && categoryColumn.identity)
                 this.ensureDataMap()[categoryColumn.source.queryName] = categoryColumn.identity[index];
             

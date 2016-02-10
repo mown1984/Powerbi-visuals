@@ -30,6 +30,7 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface FunnelChartConstructorOptions {
         animator?: IFunnelAnimator;
@@ -247,7 +248,7 @@ module powerbi.visuals {
             return undefined;
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string): FunnelData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string, tooltipsEnabled: boolean = true): FunnelData {
             let slices: FunnelSlice[] = [];
             let formatStringProp = funnelChartProps.general.formatString;
             let categorical: DataViewCategorical = dataView.categorical;
@@ -269,6 +270,10 @@ module powerbi.visuals {
             let firstHighlight: number;
             let previousValue: number;
             let previousHighlight: number;
+            let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(categorical);
+            let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(categorical);
+            const defaultSeriesIndex = 0;
+            const seriesIndexGradientAddedFirst = 1;
 
             if (dataView && dataView.metadata && dataView.metadata.objects) {
                 let labelsObj = <DataLabelObject>dataView.metadata.objects['labels'];
@@ -298,6 +303,8 @@ module powerbi.visuals {
                     percentBarLabelSettings: percentBarLabelSettings,
                 };
 
+            //If Color saturation added before Values
+            let seriesIndex = gradientMeasureIndex === defaultSeriesIndex ? seriesIndexGradientAddedFirst : defaultSeriesIndex;
             // Calculate the first value for percent tooltip values
             firstValue = firstValueColumn.values[0];
             if (hasHighlights) {
@@ -320,16 +327,18 @@ module powerbi.visuals {
 
                     let value = firstValueColumn.values[i];
                     let formattedCategoryValue = valueFormatter.format(categoryValues[i], categorySourceFormatString);
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i);
-
-                    if (hasHighlights) {
-                        let highlight = firstValueColumn.highlights[i];
-                        if (highlight !== 0) {
-                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlight);
+                    let tooltipInfo: TooltipDataItem[];
+                    if (tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, null, gradientValueColumn);
+                        if (hasHighlights) {
+                            let highlight = firstValueColumn.highlights[i];
+                            if (highlight !== 0) {
+                                tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, highlight, gradientValueColumn);
+                            }
                         }
+                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
                     }
-                    FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
-
+                    
                     // Same color for all bars
                     let color = colorHelper.getColorForMeasure(category.objects && category.objects[i], '');
 
@@ -349,9 +358,11 @@ module powerbi.visuals {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
                         let highlight = firstValueColumn.highlights[i];
                         let highlightedValue = highlight !== 0 ? highlight : undefined;
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, 0, i, highlightedValue);
-                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
-
+                        let tooltipInfo: TooltipDataItem[];
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, highlightedValue, gradientValueColumn);
+                            FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
+                        }
                         slices.push({
                             label: formattedCategoryValue,
                             value: value,
@@ -383,18 +394,21 @@ module powerbi.visuals {
                     let identity = SelectionId.createWithMeasure(valueColumn.source.queryName);
                     let categoryValue: any = valueMetaData[i].displayName;
                     let valueIndex: number = categorical.categories ? null : i;
-                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i);
+                    let tooltipInfo: TooltipDataItem[];
 
                     // Same color for all bars
                     let color = colorHelper.getColorForMeasure(valueColumn.source.objects, '');
 
-                    if (hasHighlights) {
-                        let highlight = valueColumn.highlights[0];
-                        if (highlight !== 0) {
-                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlight);
+                    if (tooltipsEnabled) {
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i);
+                        if (hasHighlights) {
+                            let highlight = valueColumn.highlights[0];
+                            if (highlight !== 0) {
+                                tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlight);
+                            }
                         }
+                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
                     }
-                    FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
 
                     slices.push({
                         label: valueMetaData[i].displayName,
@@ -415,8 +429,11 @@ module powerbi.visuals {
                             highlightsOverflow = true;
                         }
                         let highlightedValue = highlight !== 0 ? highlight : undefined;
-                        let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightedValue);
-                        FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
+                        let tooltipInfo: TooltipDataItem[];
+                        if (tooltipsEnabled) {
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightedValue);
+                            FunnelChart.addFunnelPercentsToTooltip(tooltipInfo, hostServices, firstHighlight ? highlight / firstHighlight : null, previousHighlight ? highlight / previousHighlight : null, true);
+                        }
 
                         slices.push({
                             label: valueMetaData[i].displayName,
@@ -623,7 +640,7 @@ module powerbi.visuals {
                 }
 
                 if (dataView.categorical) {
-                    this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor);
+                    this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor, this.tooltipsEnabled);
 
                     if (this.interactivityService) {
                         this.interactivityService.applySelectionStateToData(this.data.slices);

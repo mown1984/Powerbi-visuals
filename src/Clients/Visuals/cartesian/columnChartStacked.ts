@@ -173,6 +173,7 @@ module powerbi.visuals {
             ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
 
             return {
+                eventGroup: this.graphicsContext.mainGraphicsContext,
                 shapesSelection: shapes,
                 viewport: { height: this.height, width: this.width },
                 axisOptions,
@@ -491,6 +492,7 @@ module powerbi.visuals {
             ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
 
             return {
+                eventGroup: this.graphicsContext.mainGraphicsContext,
                 shapesSelection: shapes,
                 viewport: { height: this.height, width: this.width },
                 axisOptions: axisOptions,

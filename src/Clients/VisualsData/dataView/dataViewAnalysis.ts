@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -30,6 +30,8 @@ module powerbi {
     export module DataViewAnalysis {
         import ArrayExtensions = jsCommon.ArrayExtensions;
         import QueryProjectionsByRole = powerbi.data.QueryProjectionsByRole;
+        import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
+        import DataViewObjectDefinitions = powerbi.data.DataViewObjectDefinitions;
 
         export interface ValidateAndReshapeResult {
             dataView?: DataView;
@@ -43,7 +45,7 @@ module powerbi {
         /** Reshapes the data view to match the provided schema if possible. If not, returns null */
         export function validateAndReshape(dataView: DataView, dataViewMappings: DataViewMapping[]): ValidateAndReshapeResult {
             if (!dataViewMappings || dataViewMappings.length === 0)
-                return { dataView: dataView, isValid: true };            
+                return { dataView: dataView, isValid: true };
 
             if (dataView) {
                 for (let dataViewMapping of dataViewMappings) {
@@ -347,7 +349,12 @@ module powerbi {
         }
 
         /** Determines the appropriate DataViewMappings for the projections. */
-        export function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef): DataViewMapping[] {
+        export function chooseDataViewMappings(
+            projections: QueryProjectionsByRole,
+            mappings: DataViewMapping[],
+            roleKindByQueryRef: RoleKindByQueryRef,
+            objectDescriptors?: DataViewObjectDescriptors,
+            objectDefinitions?: DataViewObjectDefinitions): DataViewMapping[]{
             debug.assertValue(projections, 'projections');
             debug.assertValue(mappings, 'mappings');
 
@@ -355,23 +362,46 @@ module powerbi {
 
             for (let i = 0, len = mappings.length; i < len; i++) {
                 let mapping = mappings[i],
-                    mappingConditions = mapping.conditions;
+                    mappingConditions = mapping.conditions,
+                    requiredProperties = mapping.requiredProperties;
+                let conditionsMet: boolean = isAnyConditionMet(mappingConditions, projections, roleKindByQueryRef);
+                let allPropertiesValid: boolean = areAllPropertiesValid(requiredProperties, objectDescriptors, objectDefinitions);
 
-                if (mappingConditions && mappingConditions.length) {
-                    for (let j = 0, jlen = mappingConditions.length; j < jlen; j++) {
-                        let condition = mappingConditions[j];
-                        if (matchesCondition(projections, condition, roleKindByQueryRef)) {
-                            supportedMappings.push(mapping);
-                            break;
-                        }
-                    }
-                }
-                else {
+                if (conditionsMet && allPropertiesValid)
                     supportedMappings.push(mapping);
-                }
             }
 
             return ArrayExtensions.emptyToNull(supportedMappings);
+        }
+
+        function isAnyConditionMet(mappingConditions: DataViewMappingCondition[], projections: QueryProjectionsByRole, roleKindByQueryRef: RoleKindByQueryRef): boolean {
+            if (_.isEmpty(mappingConditions))
+                return true;
+
+            return _.some(mappingConditions, (condition) => matchesCondition(projections, condition, roleKindByQueryRef));
+        }
+
+        function areAllPropertiesValid(requiredProperties: DataViewObjectPropertyIdentifier[], objectDescriptors: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): boolean {
+            if (_.isEmpty(requiredProperties))
+                return true;
+
+            if (!objectDescriptors || !objectDefinitions)
+                return false;
+
+            let staticEvalContext: data.IEvalContext = data.createStaticEvalContext();
+
+            return _.every(requiredProperties, (requiredProperty) => {
+                let objectDescriptorValue = null;
+                let objectDescriptorProperty = objectDescriptors[requiredProperty.objectName];
+                if (objectDescriptorProperty)
+                    objectDescriptorValue = objectDescriptorProperty.properties[requiredProperty.propertyName];
+                let objectDefinitionValue = DataViewObjectDefinitions.getValue(objectDefinitions, requiredProperty, null);
+
+                if (!objectDescriptorValue || !objectDefinitionValue)
+                    return false;
+
+                return data.DataViewObjectEvaluator.evaluateProperty(staticEvalContext, objectDescriptorValue, objectDefinitionValue);
+            });
         }
 
         function matchesCondition(projections: QueryProjectionsByRole, condition: DataViewMappingCondition, roleKindByQueryRef: RoleKindByQueryRef): boolean {
@@ -381,7 +411,7 @@ module powerbi {
             let conditionRoles = Object.keys(condition);
             for (let i = 0, len = conditionRoles.length; i < len; i++) {
                 let roleName: string = conditionRoles[i],
-                    isDrillable = projections[roleName] && projections[roleName].activeProjectionQueryRef != null,
+                    isDrillable = projections[roleName] && !_.isEmpty(projections[roleName].activeProjectionRefs),
                     roleCondition = condition[roleName];
 
                 let roleCount = getPropertyCount(roleName, projections, isDrillable);

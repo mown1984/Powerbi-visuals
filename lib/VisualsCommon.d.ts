@@ -585,6 +585,7 @@ declare module jsCommon {
         const tableRowValue: string;
         const coverValue: string;
         const pointerValue: string;
+        const scrollValue: string;
     }
     interface ExtendedCSSProperties extends CSSStyleDeclaration {
         scrollbarShadowColor: string;
@@ -1086,6 +1087,8 @@ declare module jsCommon {
          * TODO (6708134): this should have a fully Unicode-aware implementation
          */
         function deriveClsCompliantName(input: string, fallback: string): string;
+        /** Performs cheap sanitization by stripping away HTML tag (<>) characters. */
+        function stripTagDelimiters(s: string): string;
     }
     /**
      * Interface used for interacting with WCF typed objects.
@@ -1117,6 +1120,7 @@ declare module jsCommon {
         static Undefined: string;
         private static staticContentLocation;
         private static urlRegex;
+        private static imageUrlRegex;
         /**
          * Ensures the specified value is not null or undefined. Throws a relevent exception if it is.
          * @param value The value to check.
@@ -1289,6 +1293,12 @@ declare module jsCommon {
          * Verifies image data url of images.
          */
         static isValidImageDataUrl(url: string): boolean;
+        /**
+         * Tests whether a URL is valid.
+         * @param url The url to be tested.
+         * @returns Whether the provided url is valid.
+         */
+        static isValidImageUrl(url: string): boolean;
         /**
          * Downloads a content string as a file.
          * @param content Content stream.

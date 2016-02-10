@@ -99,7 +99,7 @@ module powerbi.data {
 
                 return {
                     comp: {
-                        k: expr.kind,
+                        k: expr.comparison,
                         l: expr.left.accept(this),
                         r: expr.right.accept(this),
                     }

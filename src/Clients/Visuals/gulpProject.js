@@ -147,7 +147,6 @@ module.exports = projects.initProject(
                 ],
                 join: "powerbi-visuals.all.js",
                 dest: config.paths.VisualsDropScripts,
-                produceMaps: true
             },
         ],
         tsc: {
