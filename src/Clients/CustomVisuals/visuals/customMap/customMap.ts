@@ -25,7 +25,24 @@
  */
 
 module powerbi.visuals.samples.customMap {
-    /*declare module Microsoft {
+
+    //Uncomment it in the devtools 
+    /*
+    enum NewPointLabelPosition {
+        None = 0,
+        Above = 1,
+        Below = 2,
+        Left = 4,
+        Right = 8,
+        BelowRight = 16,
+        BelowLeft = 32,
+        AboveRight = 64,
+        AboveLeft = 128,
+        Center = 256,
+        All = 511,
+    }
+
+    declare module Microsoft {
         module Maps {
             module Events {
                 function addHandler(target: any, eventName: string, handler: any);
@@ -64,8 +81,9 @@ module powerbi.visuals.samples.customMap {
                 zoom?: number;
             }
         }
-    }*/
-    
+    }
+    //*/
+
     import Color = jsCommon.Color;
     import PixelConverter = jsCommon.PixelConverter;
     import Polygon = shapes.Polygon;
@@ -159,9 +177,12 @@ module powerbi.visuals.samples.customMap {
     }
 
     export class MapViewSettings {
+        public static MinZoom = 1;
+        public static MaxZoom = 20;
+
         public autoZoom: boolean = true;
-        public minZoom = MapUtil.MinLevelOfDetail;
-        public maxZoom = MapUtil.MaxLevelOfDetail;
+        public minZoom = MapViewSettings.MinZoom;
+        public maxZoom = MapViewSettings.MaxZoom;
         public zoom: number = 1;
         public latitude: number;
         public longitude: number;
@@ -598,7 +619,7 @@ module powerbi.visuals.samples.customMap {
                 var textWidth = TextMeasurementService.measureSvgTextWidth(properties);
                 var textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
 
-                labelDataPoints.push({
+                labelDataPoints.push(<any>{
                     isPreferred: true,
                     text: text,
                     textSize: {
@@ -855,7 +876,7 @@ module powerbi.visuals.samples.customMap {
                     .style("height", viewport.height.toString() + "px");
             }
 
-            this.polygonInfo.reCalc(this.mapControl, viewport.width, viewport.height);
+            this.polygonInfo.reCalc(<any>this.mapControl, viewport.width, viewport.height);
             this.shapeGraphicsContext.attr("transform", this.polygonInfo.transformToString(this.polygonInfo.transform));
 
             var hasSelection = interactivityService && interactivityService.hasSelection();
@@ -1007,7 +1028,7 @@ module powerbi.visuals.samples.customMap {
                         textHeight = textHeight * 2;
                     }
 
-                    var labelDataPoint: LabelDataPoint = {
+                    var labelDataPoint: LabelDataPoint = <any>{
                         parentType: LabelDataPointParentType.Polygon,
                         parentShape:
                         {
@@ -1343,6 +1364,7 @@ module powerbi.visuals.samples.customMap {
         }
 
         constructor(options: MapConstructionOptions) {
+            options = options || {};
             if (options.filledMap) {
                 this.dataPointRenderer = new MapShapeDataPointRenderer(options.filledMapDataLabelsEnabled, options.tooltipsEnabled);
                 this.filledMapDataLabelsEnabled = options.filledMapDataLabelsEnabled;
@@ -1446,10 +1468,10 @@ module powerbi.visuals.samples.customMap {
 
         private updateZoom(): void {
             // Restrict min/max zoom levels
-            this.mapViewSettings.minZoom = Math.max(MapUtil.MinLevelOfDetail, Math.min(MapUtil.MaxLevelOfDetail,
-                $.isNumeric(this.mapViewSettings.minZoom) ? Math.min(this.mapViewSettings.maxZoom, this.mapViewSettings.minZoom) : MapUtil.MinLevelOfDetail));
-            this.mapViewSettings.maxZoom = Math.max(MapUtil.MinLevelOfDetail, Math.min(MapUtil.MaxLevelOfDetail,
-                $.isNumeric(this.mapViewSettings.maxZoom) ? Math.max(this.mapViewSettings.minZoom, this.mapViewSettings.maxZoom) : MapUtil.MaxLevelOfDetail));
+            this.mapViewSettings.minZoom = Math.max(MapViewSettings.MinZoom, Math.min(MapViewSettings.MaxZoom,
+                $.isNumeric(this.mapViewSettings.minZoom) ? Math.min(this.mapViewSettings.maxZoom, this.mapViewSettings.minZoom) : MapViewSettings.MinZoom));
+            this.mapViewSettings.maxZoom = Math.max(MapViewSettings.MinZoom, Math.min(MapViewSettings.MaxZoom,
+                $.isNumeric(this.mapViewSettings.maxZoom) ? Math.max(this.mapViewSettings.minZoom, this.mapViewSettings.maxZoom) : MapViewSettings.MaxZoom));
 
             if(this.mapViewApplyAutoZoom || !$.isNumeric(this.mapViewSettings.zoom)) {
                 // Set zoom level after we rendered that map as we need the max size of the bubbles/ pie slices to calculate it
@@ -1463,11 +1485,11 @@ module powerbi.visuals.samples.customMap {
         private getOptimumLevelOfDetail(width: number, height: number): number {
             var dataPointCount = this.dataPointRenderer.getDataPointCount();
             if (dataPointCount === 0)
-                return MapUtil.MinLevelOfDetail;
+                return MapViewSettings.MinZoom;
 
             var threshold: number = this.dataPointRenderer.getDataPointPadding();
 
-            for (var levelOfDetail = MapUtil.MaxLevelOfDetail; levelOfDetail >= MapUtil.MinLevelOfDetail; levelOfDetail--) {
+            for (var levelOfDetail = MapViewSettings.MaxZoom; levelOfDetail >= MapViewSettings.MinZoom; levelOfDetail--) {
                 var minXmaxY = MapUtil.latLongToPixelXY(this.minLatitude, this.minLongitude, levelOfDetail);
                 var maxXminY = MapUtil.latLongToPixelXY(this.maxLatitude, this.maxLongitude, levelOfDetail);
 
@@ -1480,7 +1502,7 @@ module powerbi.visuals.samples.customMap {
                 }
             }
 
-            return MapUtil.MinLevelOfDetail;
+            return MapViewSettings.MinZoom;
         }
 
         private updateViewCenter(): void {
@@ -1835,8 +1857,15 @@ module powerbi.visuals.samples.customMap {
             });
         }
 
-        public onDataChanged(options: VisualDataChangedOptions): void {
+        public update(options: VisualUpdateOptions): void {
             debug.assertValue(options, 'options');
+
+            if (this.dataView && this.currentViewport.width !== options.viewport.width || this.currentViewport.height !== options.viewport.height) {
+                this.currentViewport = options.viewport;
+                this.renderLegend(this.legendData);
+                this.updateInternal(false /* dataChanged */, false);
+                return;
+            }
 
             this.receivedExternalViewChange = false;
 
@@ -2136,14 +2165,6 @@ module powerbi.visuals.samples.customMap {
                 aNode.children().clone().appendTo(divNode);
                 aNode.remove();
                 divNode.appendTo(logoContainer);
-            }
-        }
-
-        public onResizing(viewport: IViewport): void {
-            if (this.currentViewport.width !== viewport.width || this.currentViewport.height !== viewport.height) {
-                this.currentViewport = viewport;
-                this.renderLegend(this.legendData);
-                this.updateInternal(false /* dataChanged */, false);
             }
         }
 
