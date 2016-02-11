@@ -29,6 +29,7 @@
         "visuals/timeline/timeline.ts",
         "visuals/tornadoChart/tornadoChart.ts",
         "visuals/wordCloud/wordCloud.ts",
+        "visuals/customMap/customMap.ts",
         "capabilities/consoleWriter.capabilities.ts",
         "plugins.ts",
         "services/customVisualPluginService.ts"

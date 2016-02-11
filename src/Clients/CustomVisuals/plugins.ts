@@ -143,4 +143,15 @@ module powerbi.visuals.plugins {
         customizeQuery: ColumnChart.customizeQuery,
         getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
     };
+    
+    export let customMap: IVisualPlugin = {
+        name: 'customMap',
+        capabilities: samples.customMap.CustomMap.capabilities,
+        create: () => new samples.customMap.CustomMap({ 
+                filledMap: false,
+                behavior: new MapBehavior(),
+                tooltipsEnabled: true,
+                isLegendScrollable: true
+            }),
+    };
 }

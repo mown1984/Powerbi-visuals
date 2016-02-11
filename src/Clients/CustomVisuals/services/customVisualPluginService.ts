@@ -122,6 +122,13 @@ module powerbi.visuals.visualPluginFactory {
                 //seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
             }));
 
+            // Custom Map
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.customMap, () => new samples.customMap.CustomMap({ 
+                    filledMap: false,
+                    behavior: new MapBehavior(),
+                    tooltipsEnabled: true,
+                    isLegendScrollable: true
+                }));
         }
     }
 
