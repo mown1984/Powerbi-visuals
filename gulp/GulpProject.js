@@ -284,6 +284,8 @@ GulpProject.prototype.createWatchTask = function () {
 
     if (copyDrop) {
         includes.push(path.join(me.projFolder, "obj/*.js"));
+        includes.push("!" + path.join(me.projFolder, "obj/*.min.js"));
+        includes.push("!" + path.join(me.projFolder, "obj/*.nonmin.js"));
         includes.push("!" + path.join(me.projFolder, "obj/*.d.ts"));
 
         if (me.params.less) {
@@ -325,6 +327,8 @@ GulpProject.prototype.createWatchTask = function () {
     }
 
     gulp.task(taskName, function () {
+
+        me.isWatcherStarted = true;
 
         // this is requied if watcher has been started manually w/o building the project
         // so internal build tasks have not been initialized
@@ -387,10 +391,6 @@ GulpProject.prototype.createWatchTask = function () {
                 case ".map":
                 case ".js":
 
-                    if (copyDrop && !evtType(evt).isDeleted()) {
-                        dropArtifacts(me);
-                        tasksToRun = [];
-                    }
                     if (copyDrop && !evtType(evt).isDeleted()) {
                         dropArtifacts(me);
                         tasksToRun = [];
