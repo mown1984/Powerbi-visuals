@@ -342,6 +342,12 @@ GulpProject.prototype.createWatchTask = function () {
             }
         });
 
+        var tsLintOnWatchTask = me.lintTask + TSLINT_ON_WATCH_TASK_SUFFIX;
+
+        gulp.task(tsLintOnWatchTask, function () {
+            return tslint(me.projFolder, null, me.params.tsc.tsLintExcludePaths || null, { emitError: false });
+        });
+
         // currrent project watcher
         watcher(me.projFolder, includes, function (evt) {
 
@@ -411,12 +417,6 @@ GulpProject.prototype.createWatchTask = function () {
                     // run tslint and  tsc tasks
                     if (gulp.hasTask(TS_TASK)) {
                         
-                        var tsLintOnWatchTask = me.lintTask + TSLINT_ON_WATCH_TASK_SUFFIX;
-
-                        gulp.task(tsLintOnWatchTask, function () {
-                            return tslint(me.projFolder, null, me.params.tsc.tsLintExcludePaths || null, {emitError: false});
-                        });
-
                         // running these tasks in parallel 
                         tasksToRun = [[tsLintOnWatchTask, TS_TASK]];
 
