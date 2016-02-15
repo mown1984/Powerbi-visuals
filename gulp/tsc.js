@@ -145,7 +145,8 @@ function getJsUglifyOptions(isDebug) {
                 "debug.assertValue",
                 "debug.assertFail",
                 "debug.assert",
-                "debug.assertAnyValue"
+                "debug.assertAnyValue",
+                "debug.assertNonEmpty",
             ],
             warnings: false,
             dead_code: true,
