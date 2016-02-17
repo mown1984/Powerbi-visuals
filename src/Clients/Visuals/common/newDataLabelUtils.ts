@@ -30,6 +30,7 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import ISize = shapes.ISize;
 
     export module NewDataLabelUtils {
         export const DefaultLabelFontSizeInPt = 9;
@@ -346,6 +347,20 @@ module powerbi.visuals {
                         attemptToMoveLabelsIntoViewport: true,
                     };
             }
+        }
+
+        export function getTextSize(text: string, fontSize: number): ISize {
+            let labelTextProperties = NewDataLabelUtils.LabelTextProperties;
+            let properties = {
+                text: text,
+                fontFamily: labelTextProperties.fontFamily,
+                fontSize: jsCommon.PixelConverter.fromPoint(fontSize),
+                fontWeight: labelTextProperties.fontWeight,
+            };
+            return {
+                width: TextMeasurementService.measureSvgTextWidth(properties),
+                height: TextMeasurementService.estimateSvgTextHeight(properties),
+            };
         }
 
         /**

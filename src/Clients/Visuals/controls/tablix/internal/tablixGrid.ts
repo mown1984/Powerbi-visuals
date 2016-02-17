@@ -400,7 +400,6 @@ module powerbi.visuals.controls.internal {
                 return;
 
             if (this._aligningWidth === -1) {
-                this._contentWidth += 1; // to avoid the ellipsis to appear (Issue with IE)
                 this.setContentWidth(this._contentWidth);
             }
             else {

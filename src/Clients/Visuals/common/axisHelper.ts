@@ -991,7 +991,14 @@ module powerbi.visuals {
             if (_.isEmpty(data))
                 return [];
 
-            return data[0].data.map(d => d.categoryIndex);
+            // each series shares the same categories for oridinal axes (even if a series has some nulls)
+            let domain = [];
+            let firstSeries = data[0];
+            for (let dp of firstSeries.data) {
+                if (!dp.highlight)
+                    domain.push(dp.categoryIndex);
+            }
+            return domain;
         }
 
         export module LabelLayoutStrategy {

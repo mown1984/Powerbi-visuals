@@ -167,33 +167,14 @@ module powerbi.data {
                 return conceptualSchema.capabilities;
         }
 
-        export function getKpiStatus(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr {
-            let kpi = getKpiStatusProperty(expr, schema);
-            if (kpi) {
-                let measureExpr = SQExprConverter.asFieldPattern(expr).measure;
-                if (measureExpr) {
-                    return SQExprBuilder.fieldExpr({
-                        measure: {
-                            schema: measureExpr.schema,
-                            entity: measureExpr.entity,
-                            name: kpi.name,
-                        }
-                    });
-                }
-            }
-        }
-
         export function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata {
-            let property = expr.getConceptualProperty(schema);
-            if (!property)
-                return;
-
-            if (property.measure && property.measure.kpi)
-                return property.measure.kpi.statusMetadata;
-
             let kpiStatusProperty = getKpiStatusProperty(expr, schema);
             if (kpiStatusProperty)
-                return kpiStatusProperty.kpi.measure.kpi.statusMetadata;
+                return kpiStatusProperty.kpiValue.measure.kpi.statusMetadata;
+
+            let kpiTrendProperty = getKpiTrendProperty(expr, schema);
+            if (kpiTrendProperty)
+                return kpiTrendProperty.kpiValue.measure.kpi.trendMetadata;
         }
 
         function getKpiStatusProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {
@@ -201,8 +182,18 @@ module powerbi.data {
             if (!property)
                 return;
 
-            let kpi = property.kpi;
-            if (kpi && kpi.measure.kpi.status === property)
+            let kpiValue = property.kpiValue;
+            if (kpiValue && kpiValue.measure.kpi.status === property)
+                return property;
+        }
+
+        function getKpiTrendProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {
+            let property = expr.getConceptualProperty(schema);
+            if (!property)
+                return;
+
+            let kpiValue = property.kpiValue;
+            if (kpiValue && kpiValue.measure.kpi.trend === property)
                 return property;
         }
 

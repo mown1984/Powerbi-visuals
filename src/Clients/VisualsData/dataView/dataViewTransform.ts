@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -57,20 +57,6 @@ module powerbi.data {
         projectionOrdering?: DataViewProjectionOrdering;
     }
 
-    export interface DataViewSelectTransform {
-        displayName?: string;
-        queryName?: string;
-        format?: string;
-        type?: ValueType;
-        roles?: { [roleName: string]: boolean };
-        kpi?: DataViewKpiColumnMetadata;
-        sort?: SortDirection;
-        expr?: SQExpr;
-
-        /** Describes the default value applied to a column, if any. */
-        defaultValue?: DefaultValueDefinition;
-    }
-
     export interface DataViewSplitTransform {
         selects: INumberDictionary<boolean>;
     }
@@ -100,7 +86,7 @@ module powerbi.data {
         SelfCrossJoin,
     }
 
-    const enum StandardDataViewKinds {
+    export const enum StandardDataViewKinds {
         None = 0,
         Categorical = 1,
         Matrix = 1 << 1,
@@ -129,21 +115,43 @@ module powerbi.data {
             if (!transforms)
                 return [prototype];
 
-            // unpivot result if query was pivoted
+            // Transform Query DataView
             prototype = DataViewPivotCategoricalToPrimaryGroups.unpivotResult(prototype, transforms.selects, dataViewMappings);
+            let transformedDataViews: DataView[] = transformQueryToVisualDataView(prototype, transforms, objectDescriptors, dataViewMappings, colorAllocatorFactory, dataRoles);
 
+            // Transform and generate derived visual DataViews
+            transformedDataViews = DataViewRegression.run({
+                dataViewMappings: dataViewMappings,
+                transformedDataViews: transformedDataViews,
+                dataRoles: dataRoles,
+                objectDescriptors: objectDescriptors,
+                objectDefinitions: transforms.objects,
+                colorAllocatorFactory: colorAllocatorFactory,
+                transformSelects: transforms.selects,
+                dataView: prototype
+            });
+
+            return transformedDataViews;
+        }
+
+        function transformQueryToVisualDataView(
+            prototype: DataView,
+            transforms: DataViewTransformActions,
+            objectDescriptors: DataViewObjectDescriptors,
+            dataViewMappings: DataViewMapping[],
+            colorAllocatorFactory: IColorAllocatorFactory,
+            dataRoles: VisualDataRole[]): DataView[] {
+            let transformedDataViews: DataView[] = [];
             let splits = transforms.splits;
             if (_.isEmpty(splits)) {
-                return [transformDataView(prototype, objectDescriptors, dataViewMappings, transforms, colorAllocatorFactory, dataRoles)];
+                transformedDataViews.push(transformDataView(prototype, objectDescriptors, dataViewMappings, transforms, colorAllocatorFactory, dataRoles));
+            } else {
+                for (let split of splits) {
+                    let transformed = transformDataView(prototype, objectDescriptors, dataViewMappings, transforms, colorAllocatorFactory, dataRoles, split.selects);
+                    transformedDataViews.push(transformed);
+                }
             }
-
-            let transformedDataviews: DataView[] = [];
-            for (let split of splits) {
-                let transformed = transformDataView(prototype, objectDescriptors, dataViewMappings, transforms, colorAllocatorFactory, dataRoles, split.selects);
-                transformedDataviews.push(transformed);
-            }
-
-            return transformedDataviews;
+            return transformedDataViews;
         }
 
         function transformEmptyDataView(objectDescriptors: DataViewObjectDescriptors, transforms: DataViewTransformActions, colorAllocatorFactory: IColorAllocatorFactory): DataView[] {
@@ -186,7 +194,7 @@ module powerbi.data {
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
 
             // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
-            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings);
+            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings, transforms.projectionOrdering);
 
             DataViewNormalizeValues.apply({
                 dataview: transformed,
@@ -233,7 +241,7 @@ module powerbi.data {
                     selectTransforms,
                     columnRewrites);
             }
-            
+
             // NOTE: no rewrites necessary for Tree (it doesn't reference the columns)
             if (dataView.categorical) {
                 dataView.categorical = applyRewritesToCategorical(dataView.categorical, columnRewrites, selectsToInclude);
@@ -314,91 +322,6 @@ module powerbi.data {
             return select.format || column.format;
         }
 
-        /**
-         * 
-         * 
-         * Note: Exported for testability
-         */
-        export function upgradeSettingsToObjects(settings: VisualElementSettings, objectDefns?: DataViewObjectDefinitions): DataViewObjectDefinitions {
-            if (!settings)
-                return;
-
-            if (!objectDefns)
-                objectDefns = {};
-
-            for (let propertyKey in settings) {
-                let propertyValue = settings[propertyKey],
-                    upgradedPropertyKey: string = propertyKey,
-                    upgradedPropertyValue = propertyValue,
-                    objectName: string = 'general';
-
-                switch (propertyKey) {
-                    case 'hasScalarCategoryAxis':
-                        // hasScalarCategoryAxis -> categoryAxis.axisType
-                        objectName = 'categoryAxis';
-                        upgradedPropertyKey = 'axisType';
-                        upgradedPropertyValue = SQExprBuilder.text(propertyValue ? 'Scalar' : 'Categorical');
-                        break;
-
-                    case 'Totals':
-                        // Totals -> general.totals
-                        upgradedPropertyKey = 'totals';
-                        upgradedPropertyValue = SQExprBuilder.boolean(!!propertyValue);
-                        break;
-
-                    case 'textboxSettings':
-                        // textboxSettings.paragraphs -> general.paragraphs
-                        upgradedPropertyKey = 'paragraphs';
-                        if (propertyValue && propertyValue.paragraphs)
-                            upgradedPropertyValue = propertyValue.paragraphs;
-                        break;
-
-                    case 'VisualType1':
-                        // VisualType1 -> general.visualType1
-                        upgradedPropertyKey = 'visualType1';
-                        upgradedPropertyValue = SQExprBuilder.text(propertyValue);
-                        break;
-
-                    case 'VisualType2':
-                        // VisualType2 -> general.visualType2
-                        upgradedPropertyKey = 'visualType2';
-                        upgradedPropertyValue = SQExprBuilder.text(propertyValue);
-                        break;
-
-                    case 'imageVisualSettings':
-                        // imageVisualSettings.imageUrl -> general.imageUrl
-                        upgradedPropertyKey = 'imageUrl';
-                        if (propertyValue && propertyValue.imageUrl)
-                            upgradedPropertyValue = SQExprBuilder.text(propertyValue.imageUrl);
-                        break;
-
-                    default:
-                        // Ignore all other properties.
-                        continue;
-                }
-
-                setObjectDefinition(objectDefns, objectName, upgradedPropertyKey, upgradedPropertyValue);
-            }
-
-            return objectDefns;
-        }
-
-        function setObjectDefinition(objects: DataViewObjectDefinitions, objectName: string, propertyName: string, value: any): void {
-            debug.assertValue(objects, 'objects');
-            debug.assertValue(objectName, 'objectName');
-            debug.assertValue(propertyName, 'propertyName');
-
-            let objectContainer: DataViewObjectDefinition[] = objects[objectName];
-            if (objectContainer === undefined)
-                objectContainer = objects[objectName] = [];
-
-            let object: DataViewObjectDefinition = objectContainer[0];
-            if (object === undefined)
-                object = objectContainer[0] = { properties: {} };
-
-            object.properties[propertyName] = value;
-        }
-
         function applyRewritesToCategorical(prototype: DataViewCategorical, columnRewrites: ValueRewrite<DataViewMetadataColumn>[], selectsToInclude?: INumberDictionary<boolean>): DataViewCategorical {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
@@ -454,7 +377,7 @@ module powerbi.data {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
 
-            // Don't perform this potentially expensive transform unless we actually have a table. 
+            // Don't perform this potentially expensive transform unless we actually have a table.
             // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
             if (!roleMappings || roleMappings.length !== 1 || !roleMappings[0].table)
                 return prototype;
@@ -489,7 +412,7 @@ module powerbi.data {
                     columns[i] = sourceColumn;
                 }
             }
-            
+
             // Reorder the rows
             let rows = Prototype.overrideArray(table.rows,
                 (row: any[]) => {
@@ -536,7 +459,7 @@ module powerbi.data {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
 
-            // Don't perform this potentially expensive transform unless we actually have a matrix. 
+            // Don't perform this potentially expensive transform unless we actually have a matrix.
             // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
             if (!roleMappings || roleMappings.length < 1 || !(roleMappings[0].matrix || (roleMappings[1] && roleMappings[1].matrix)))
                 return prototype;
@@ -722,7 +645,7 @@ module powerbi.data {
             return rewritten;
         }
 
-        function transformObjects(
+        export function transformObjects(
             dataView: DataView,
             targetDataViewKinds: StandardDataViewKinds,
             objectDescriptors: DataViewObjectDescriptors,
@@ -1048,7 +971,7 @@ module powerbi.data {
                 let rewrittenMatrix = evaluateDataRepetitionMatrix(dataViewMatrix, objectDescriptors, selector, rules, containsWildcard, objectDefns);
                 if (rewrittenMatrix)
                     dataView.matrix = rewrittenMatrix;
-                
+
                 // Consider capturing diagnostics for unmatched selectors to help debugging.
             }
         }
@@ -1435,216 +1358,6 @@ module powerbi.data {
 
                 return { min: min, max: max };
             }
-        }
-
-        export function createTransformActions(
-            queryMetadata: QueryMetadata,
-            visualElements: VisualElement[],
-            objectDescs: DataViewObjectDescriptors,
-            objectDefns: DataViewObjectDefinitions): DataViewTransformActions {
-            debug.assertAnyValue(queryMetadata, 'queryMetadata');
-            debug.assertAnyValue(visualElements, 'visualElements');
-            debug.assertAnyValue(objectDescs, 'objectDescs');
-            debug.assertAnyValue(objectDefns, 'objectDefns');
-
-            if ((!queryMetadata || _.isEmpty(queryMetadata.Select)) &&
-                _.isEmpty(visualElements) &&
-                !objectDefns)
-                return;
-
-            let transforms: DataViewTransformActions = {};
-            if (queryMetadata) {
-                let querySelects = queryMetadata.Select;
-                if (querySelects) {
-                    let transformSelects: DataViewSelectTransform[] = transforms.selects = [];
-                    for (let i = 0, len = querySelects.length; i < len; i++) {
-                        let selectMetadata = querySelects[i],
-                            selectTransform = toTransformSelect(selectMetadata, i);
-                        transformSelects.push(selectTransform);
-
-                        if (selectTransform.format && objectDescs) {
-                            debug.assert(!!selectTransform.queryName, 'selectTransform.queryName should be defined (or defaulted).');
-
-                            let formatStringProp = DataViewObjectDescriptors.findFormatString(objectDescs);
-                            if (formatStringProp) {
-                                // Select Format strings are migrated into objects
-                                if (!objectDefns)
-                                    objectDefns = {};
-
-                                DataViewObjectDefinitions.ensure(
-                                    objectDefns,
-                                    formatStringProp.objectName,
-                                    { metadata: selectTransform.queryName })
-                                .properties[formatStringProp.propertyName] = SQExprBuilder.text(selectTransform.format);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (visualElements) {
-                let visualElementsLength = visualElements.length;
-                if (visualElementsLength > 1)
-                    transforms.splits = [];
-
-                for (let i = 0; i < visualElementsLength; i++) {
-                    let visualElement = visualElements[i];
-
-                    if (visualElement.Settings && i === 0)
-                        objectDefns = upgradeSettingsToObjects(visualElement.Settings, objectDefns);
-
-                    if (visualElement.DataRoles) {
-                        if (!transforms.selects)
-                            transforms.selects = [];
-                        if (!transforms.projectionOrdering)
-                            transforms.projectionOrdering = {};
-
-                        populateDataRoles(visualElement.DataRoles, transforms.selects, transforms.projectionOrdering);
-                    }
-
-                    if (transforms.splits)
-                        transforms.splits.push(populateSplit(visualElement.DataRoles));
-                }
-            }
-
-            if (objectDefns)
-                transforms.objects = objectDefns;
-
-            return transforms;
-        }
-
-        function toTransformSelect(select: SelectMetadata, index: number): DataViewSelectTransform {
-            debug.assertValue(select, 'select');
-
-            let result: DataViewSelectTransform = {};
-
-            if (select.Restatement)
-                result.displayName = select.Restatement;
-
-            if (select.Name)
-                result.queryName = select.Name;
-            else if (!result.queryName)
-                result.queryName = '$select' + index;
-
-            if (select.Format)
-                result.format = select.Format;
-
-            if (select.Type) {
-                result.type = describeDataType(select.Type, ConceptualDataCategory[select.DataCategory]);
-            }
-
-            if (select.kpi) {
-                result.kpi = select.kpi;
-            }
-
-            if (select.kpiStatusGraphic) {
-                result.kpi = {
-                    graphic: select.kpiStatusGraphic
-                };
-            }
-
-            return result;
-        }
-
-        function describeDataType(type?: SemanticType, category?: string): ValueType {
-            type = (type || SemanticType.None);
-
-            let primitiveType = PrimitiveType.Null;
-            switch (type) {
-                case SemanticType.String:
-                    primitiveType = PrimitiveType.Text;
-                    break;
-                case SemanticType.Number:
-                    primitiveType = PrimitiveType.Double;
-                    break;
-                case SemanticType.Integer:
-                    primitiveType = PrimitiveType.Integer;
-                    break;
-                case SemanticType.Boolean:
-                    primitiveType = PrimitiveType.Boolean;
-                    break;
-                case SemanticType.Date:
-                    primitiveType = PrimitiveType.Date;
-                    break;
-                case SemanticType.DateTime:
-                    primitiveType = PrimitiveType.DateTime;
-                    break;
-                case SemanticType.Time:
-                    primitiveType = PrimitiveType.Time;
-                    break;
-                case SemanticType.Year:
-                    primitiveType = PrimitiveType.Integer;
-                    debug.assert(!category || category === 'Year', 'Unexpected category for Year type.');
-                    category = 'Year';
-                    break;
-                case SemanticType.Month:
-                    primitiveType = PrimitiveType.Integer;
-                    debug.assert(!category || category === 'Month', 'Unexpected category for Month type.');
-                    category = 'Month';
-                    break;
-            }
-
-            return ValueType.fromPrimitiveTypeAndCategory(primitiveType, category);
-        }
-
-        function populateDataRoles(
-            roles: DataRole[],
-            selects: DataViewSelectTransform[],
-            projectionOrdering: DataViewProjectionOrdering): void {
-            debug.assertValue(roles, 'roles');
-            debug.assertValue(selects, 'selects');
-            debug.assertValue(projectionOrdering, 'projectionOrdering');
-
-            for (let i = 0, len = roles.length; i < len; i++) {
-                let role = roles[i],
-                    roleProjection = role.Projection,
-                    roleName = role.Name;
-
-                // Update the select
-                let select = selects[roleProjection];
-                if (select === undefined) {
-                    fillArray(selects, roleProjection);
-                    select = selects[roleProjection] = {};
-                }
-
-                let selectRoles = select.roles;
-                if (select.roles === undefined)
-                    selectRoles = select.roles = {};
-
-                selectRoles[roleName] = true;
-
-                // Update the projectionOrdering
-                let projectionOrderingForRole = projectionOrdering[roleName];
-                if (projectionOrderingForRole === undefined)
-                    projectionOrderingForRole = projectionOrdering[roleName] = [];
-                projectionOrderingForRole.push(roleProjection);
-            }
-        }
-
-        function fillArray(selects: DataViewSelectTransform[], length: number): void {
-            debug.assertValue(selects, 'selects');
-            debug.assertValue(length, 'length');
-
-            for (let i = selects.length; i < length; i++)
-                selects[i] = {};
-        }
-
-        function populateSplit(roles: DataRole[]): DataViewSplitTransform {
-            debug.assertAnyValue(roles, 'roles');
-
-            let selects: INumberDictionary<boolean> = {};
-            let split: DataViewSplitTransform = {
-                selects: selects
-            };
-
-            if (roles) {
-                for (let i = 0, len = roles.length; i < len; i++) {
-                    let role = roles[i];
-                    selects[role.Projection] = true;
-                }
-            }
-
-            return split;
         }
 
         export function createValueColumns(

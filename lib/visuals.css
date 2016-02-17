@@ -2147,6 +2147,9 @@ body {
   stroke: steelblue;
   stroke-width: 2px;
 }
+.lineChart .axisGraphicsContext .trend-line {
+  stroke-width: 2px;
+}
 .funnelChart line {
   shape-rendering: crispEdges;
 }

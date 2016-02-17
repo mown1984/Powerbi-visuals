@@ -63,6 +63,19 @@ module powerbi.visuals {
             }
         }
 
+        export function getSortableRoles(options: VisualSortableOptions): string[] {
+            if (options && options.dataViewMappings.length > 0) {
+                let dataViewMapping = options.dataViewMappings[0];
+                //TODO: column chart should be sortable by X if it has scalar axis
+                // But currenly it doesn't support this. Return 'category' once
+                // it is supported.
+                if (!CartesianChart.detectScalarMapping(dataViewMapping))
+                    return ['Category', 'Y', 'Y2'];
+            }
+
+            return null;
+        }
+
         export function isComboChart(chartType: CartesianChartType): boolean {
             return chartType === CartesianChartType.ComboChart
                 || chartType === CartesianChartType.LineClusteredColumnCombo

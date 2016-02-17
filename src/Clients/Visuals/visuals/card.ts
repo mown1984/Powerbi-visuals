@@ -293,7 +293,7 @@ module powerbi.visuals {
                     .append('title')
                     .text((d) => d);
 
-                //labelElement.exit().remove();
+                labelElement.exit().remove();
 
                 if (statusGraphicInfo) {
                     // Display card KPI icon

@@ -189,9 +189,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {}).supportedMappings).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {}).supportedMappings).toBe(null);
         });
 
         it('Capabilities should only allow one measure if is a detail group',() => {
@@ -210,8 +210,8 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections, dataViewMappings, {}).supportedMappings).toBe(null);
         });
 
         it('Capabilities should allow multiple measures if there is no detail group',() => {
@@ -249,10 +249,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it('Capabilities should not allow multiple category groups',() => {
@@ -284,9 +284,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {}).supportedMappings).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {}).supportedMappings).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {}).supportedMappings).toBe(null);
         });
 
         it('Capabilities should not allow multiple detail groups',() => {
@@ -318,9 +318,9 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {})).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {})).toBe(null);
-            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {})).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {}).supportedMappings).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {}).supportedMappings).toBe(null);
+            expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections3, dataViewMappings, {}).supportedMappings).toBe(null);
         });
 
         it('Capabilities should allow one category and/or one detail groups',() => {
@@ -346,10 +346,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
     });
 
@@ -565,7 +565,6 @@ module powerbitests {
             setTimeout(() => {
                 expect(warningSpy).toHaveBeenCalled();
                 expect(warningSpy.calls.count()).toBe(1);
-                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                 done();
             }, DefaultWaitForRender);
         });
@@ -580,7 +579,6 @@ module powerbitests {
             setTimeout(() => {
                 expect(warningSpy).toHaveBeenCalled();
                 expect(warningSpy.calls.count()).toBe(1);
-                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                 done();
             }, DefaultWaitForRender);
         });
@@ -1633,7 +1631,6 @@ module powerbitests {
                 expect($('.treemap .labels .majorLabel').length).toBe(2);
                 expect($('.treemap .labels .majorLabel').last().text()).toBe('Comedy');
                 expect($('.treemap .labels .minorLabel').length).toBe(0);
-                expect(hostServices.setWarnings).toHaveBeenCalledWith([new powerbi.visuals.GeometryCulledWarning()]);
                 done();
             }, DefaultWaitForRender);
         });

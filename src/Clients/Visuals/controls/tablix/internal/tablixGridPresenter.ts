@@ -626,7 +626,7 @@ module powerbi.visuals.controls.internal {
             if (!(<TablixCell>cell)._presenter)
                 return 0;
 
-            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement);
+            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement) + 1; // Adding 1 because offsetWidth returns floored number, may risk getting ellipsis
         }
     }
 

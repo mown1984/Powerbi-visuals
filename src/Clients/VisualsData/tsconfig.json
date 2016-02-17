@@ -37,6 +37,8 @@
         "dataView/dataViewScopeWildcard.ts",
         "dataView/dataViewSelfCrossJoin.ts",
         "dataView/dataViewTransform.ts",
+        "dataView/dataViewRegression.ts",
+        "dataView/dataViewSelectTransform.ts",
         "dataView/rules/categoricalEvalContext.ts",
         "dataView/rules/colorRuleEvaluation.ts",
         "dataView/rules/evalContext.ts",

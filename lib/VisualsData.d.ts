@@ -358,47 +358,40 @@ declare module powerbi.data {
         supportsMedian: boolean;
         supportsPercentile: boolean;
     }
-    interface ConceptualEntity {
+    interface ConceptualPropertyItemContainer {
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies?: ArrayNamedItems<ConceptualHierarchy>;
+        displayFolders?: ArrayNamedItems<ConceptualDisplayFolder>;
+    }
+    interface ConceptualPropertyItem {
+        name: string;
+        displayName: string;
+        hidden?: boolean;
+    }
+    interface ConceptualEntity extends ConceptualPropertyItemContainer {
         name: string;
         displayName: string;
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
-        navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+        navigationProperties?: ArrayNamedItems<ConceptualNavigationProperty>;
     }
-    interface ConceptualDisplayFolder {
-        name: string;
-        displayName: string;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
+    interface ConceptualDisplayFolder extends ConceptualPropertyItem, ConceptualPropertyItemContainer {
     }
-    interface ConceptualProperty {
-        name: string;
-        displayName: string;
+    interface ConceptualProperty extends ConceptualPropertyItem {
         type: ValueType;
         kind: ConceptualPropertyKind;
-        hidden?: boolean;
         format?: string;
         column?: ConceptualColumn;
         queryable?: ConceptualQueryableState;
         measure?: ConceptualMeasure;
-        kpi?: ConceptualProperty;
+        kpiValue?: ConceptualProperty;
     }
-    interface ConceptualHierarchy {
-        name: string;
-        displayName: string;
+    interface ConceptualHierarchy extends ConceptualPropertyItem {
         levels: ArrayNamedItems<ConceptualHierarchyLevel>;
-        hidden?: boolean;
     }
-    interface ConceptualHierarchyLevel {
-        name: string;
-        displayName: string;
+    interface ConceptualHierarchyLevel extends ConceptualPropertyItem {
         column: ConceptualProperty;
-        hidden?: boolean;
     }
     interface ConceptualNavigationProperty {
         name: string;
@@ -428,8 +421,10 @@ declare module powerbi.data {
     }
     interface ConceptualPropertyKpi {
         statusMetadata: DataViewKpiColumnMetadata;
+        trendMetadata?: DataViewKpiColumnMetadata;
         status?: ConceptualProperty;
         goal?: ConceptualProperty;
+        trend?: ConceptualProperty;
     }
     const enum ConceptualVisibility {
         Visible = 0,
@@ -777,33 +772,6 @@ declare module powerbi.data {
         LessThan = 3,
         LessThanOrEqual = 4,
     }
-    interface SemanticQueryDataShapeCommand {
-        Query: QueryDefinition;
-        Binding: DataShapeBinding;
-    }
-    /** Only one of the members can be non-null at any one time */
-    interface QueryCommand {
-        SemanticQueryDataShapeCommand?: SemanticQueryDataShapeCommand;
-        ScriptVisualCommand?: ScriptVisualCommand;
-    }
-    interface DataQuery {
-        Commands: QueryCommand[];
-    }
-    /** The final (single) result of a DataQuery is cacheable.
-          * The intermediate results coming out of each QueryCommand (a DataQuery.Commands[i]) is not cached nor returned to the client. */
-    interface DataQueryRequest {
-        Query: DataQuery;
-        /** Optional server-side cache key for the semantic query. This CacheKey is not used to the IQueryCache (client-side cache). */
-        CacheKey?: string;
-    }
-    interface ScriptVisualCommand {
-        Script?: string;
-        RenderingEngine?: string;
-        ViewportWidthPx?: number;
-        ViewportHeightPx?: number;
-        Version?: number;
-        ScriptInput?: ScriptInput;
-    }
     /** Defines semantic data types. */
     enum SemanticType {
         None = 0,
@@ -822,14 +790,6 @@ declare module powerbi.data {
         Boolean = 4096,
         Table = 8192,
         Range = 16384,
-    }
-    enum SelectKind {
-        None = 0,
-        Group = 1,
-        Measure = 2,
-    }
-    interface AuxiliarySelectBinding {
-        Value?: string;
     }
     interface QueryMetadata {
         Select?: SelectMetadata[];
@@ -1122,6 +1082,67 @@ declare module powerbi.data {
         /** Describes the order of selects (referenced by query index) in each role. */
         projectionOrdering?: DataViewProjectionOrdering;
     }
+    interface DataViewSplitTransform {
+        selects: INumberDictionary<boolean>;
+    }
+    interface DataViewProjectionOrdering {
+        [roleName: string]: number[];
+    }
+    interface MatrixTransformationContext {
+        rowHierarchyRewritten: boolean;
+        columnHierarchyRewritten: boolean;
+        hierarchyTreesRewritten: boolean;
+    }
+    const enum StandardDataViewKinds {
+        None = 0,
+        Categorical = 1,
+        Matrix = 2,
+        Single = 4,
+        Table = 8,
+        Tree = 16,
+    }
+    module DataViewTransform {
+        function apply(options: DataViewTransformApplyOptions): DataView[];
+        function transformObjects(dataView: DataView, targetDataViewKinds: StandardDataViewKinds, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, selectTransforms: DataViewSelectTransform[], colorAllocatorFactory: IColorAllocatorFactory): void;
+        function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+    }
+}
+declare module powerbi.data {
+    interface DataViewRegressionRunOptions {
+        dataViewMappings: DataViewMapping[];
+        transformedDataViews: DataView[];
+        dataRoles: VisualDataRole[];
+        objectDescriptors: DataViewObjectDescriptors;
+        objectDefinitions: DataViewObjectDefinitions;
+        colorAllocatorFactory: IColorAllocatorFactory;
+        transformSelects: DataViewSelectTransform[];
+        dataView: DataView;
+    }
+    module DataViewRegression {
+        const regressionYQueryName: string;
+        function run(options: DataViewRegressionRunOptions): DataView[];
+        /**
+         * This function will compute the linear regression algorithm on the sourceDataView and create a new dataView.
+         * It works on scalar axis only.
+         * The algorithm is as follows
+         *
+         * 1. Find the cartesian X and Y roles and the columns that correspond to those roles
+         * 2. Order the X-Y value pairs by the X values
+         * 3. Linearly map dates to their respective times and normalize since regression cannot be directly computed on dates
+         * 4. Compute the actual regression:
+         *    i.   xBar: average of X values, yBar: average of Y values
+         *    ii.  ssXX: sum of squares of X values = Sum(xi - xBar)^2
+         *    iii. ssXY: sum of squares of X and Y values  = Sum((xi - xBar)(yi - yBar)
+         *    iv.  Slope: ssXY / ssXX
+         *    v.   Intercept: yBar - xBar * slope
+         * 5. Compute the X and Y points for regression line using Y = Slope * X + Intercept
+         * 6. Create the new dataView using the points computed above
+         */
+        function linearRegressionTransform(sourceDataView: DataView, dataRoles: VisualDataRole[], regressionDataViewMapping: DataViewMapping, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, colorAllocatorFactory: IColorAllocatorFactory): DataView;
+    }
+}
+declare module powerbi.data {
+    import RoleKindByQueryRef = DataViewAnalysis.RoleKindByQueryRef;
     interface DataViewSelectTransform {
         displayName?: string;
         queryName?: string;
@@ -1136,27 +1157,11 @@ declare module powerbi.data {
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
     }
-    interface DataViewSplitTransform {
-        selects: INumberDictionary<boolean>;
-    }
-    interface DataViewProjectionOrdering {
-        [roleName: string]: number[];
-    }
-    interface MatrixTransformationContext {
-        rowHierarchyRewritten: boolean;
-        columnHierarchyRewritten: boolean;
-        hierarchyTreesRewritten: boolean;
-    }
-    module DataViewTransform {
-        function apply(options: DataViewTransformApplyOptions): DataView[];
-        /**
-         *
-         *
-         * Note: Exported for testability
-         */
-        function upgradeSettingsToObjects(settings: VisualElementSettings, objectDefns?: DataViewObjectDefinitions): DataViewObjectDefinitions;
-        function createTransformActions(queryMetadata: QueryMetadata, visualElements: VisualElement[], objectDescs: DataViewObjectDescriptors, objectDefns: DataViewObjectDefinitions): DataViewTransformActions;
-        function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+    module DataViewSelectTransform {
+        /** Convert selection info to projections */
+        function projectionsFromSelects(selects: DataViewSelectTransform[]): QueryProjectionsByRole;
+        /** Use selections and metadata to fashion query role kinds */
+        function createRoleKindFromMetadata(selects: DataViewSelectTransform[], metadata: DataViewMetadata): RoleKindByQueryRef;
     }
 }
 declare module powerbi.data {
@@ -1415,16 +1420,37 @@ declare module powerbi {
         interface RoleKindByQueryRef {
             [queryRef: string]: VisualDataRoleKind;
         }
+        interface DataViewMappingResult {
+            supportedMappings: DataViewMapping[];
+            /** A set of mapping errors if there are no supported mappings */
+            mappingErrors: DataViewMappingMatchError[];
+        }
+        enum DataViewMappingMatchErrorCode {
+            conditionRangeTooLarge = 0,
+            conditionRangeTooSmall = 1,
+            conditionKindExpectedMeasure = 2,
+            conditionKindExpectedGrouping = 3,
+            conditionKindExpectedGroupingOrMeasure = 4,
+        }
+        interface DataViewMappingMatchError {
+            code: DataViewMappingMatchErrorCode;
+            roleName: string;
+            mappingIndex?: number;
+            conditionIndex?: number;
+        }
         /** Reshapes the data view to match the provided schema if possible. If not, returns null */
         function validateAndReshape(dataView: DataView, dataViewMappings: DataViewMapping[]): ValidateAndReshapeResult;
         function countGroups(columns: DataViewMetadataColumn[]): number;
         function countMeasures(columns: DataViewMetadataColumn[]): number;
         /** Indicates whether the dataView conforms to the specified schema. */
         function supports(dataView: DataView, roleMapping: DataViewMapping, usePreferredDataViewSchema?: boolean): boolean;
-        /** Determines whether the value conforms to the range in the role condition */
-        function conformsToRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): boolean;
+        /**
+         * Determines whether the value conforms to the range in the role condition, returning undefined
+         * if so or an appropriate error code if not.
+         */
+        function validateRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): DataViewMappingMatchErrorCode;
         /** Determines the appropriate DataViewMappings for the projections. */
-        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef, objectDescriptors?: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): DataViewMapping[];
+        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef, objectDescriptors?: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): DataViewMappingResult;
         function getPropertyCount(roleName: string, projections: QueryProjectionsByRole, useActiveIfAvailable?: boolean): number;
         function hasSameCategoryIdentity(dataView1: DataView, dataView2: DataView): boolean;
         function areMetadataColumnsEquivalent(column1: DataViewMetadataColumn, column2: DataViewMetadataColumn): boolean;
@@ -1932,7 +1958,6 @@ declare module powerbi.data {
         function isDefaultValue(expr: SQExpr): boolean;
         function discourageAggregation(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
         function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities;
-        function getKpiStatus(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr;
         function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata;
         function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr;
         function getDefaultValues(fieldSQExprs: SQExpr[], schema: FederatedConceptualSchema): SQConstantExpr[];
@@ -2191,6 +2216,6 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module DataViewConcatenateCategoricalColumns {
-        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[]): DataView;
+        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering): DataView;
     }
 }

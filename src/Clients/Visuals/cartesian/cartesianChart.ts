@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -176,7 +176,7 @@ module powerbi.visuals {
         chartType?: CartesianChartType;
         labelsContext?: D3.Selection; //TEMPORARY - for PlayAxis
     }
-    
+
     export interface ICartesianVisualHost {
         updateLegend(data: LegendData): void;
         getSharedColors(): IDataColorPalette;
@@ -241,7 +241,7 @@ module powerbi.visuals {
         axesLayout: CartesianAxesLayout,
         suppressAnimations: boolean) => void;
 
-    /** 
+    /**
      * Renders a data series as a cartestian visual.
      */
     export class CartesianChart implements IVisual {
@@ -358,7 +358,7 @@ module powerbi.visuals {
 
             this.currentViewport = options.viewport;
             this.hostServices = options.host;
-            
+
             let chartAreaSvg = this.chartAreaSvg = d3.select(element.get(0)).append('svg');
             chartAreaSvg.style('position', 'absolute');
 
@@ -409,7 +409,7 @@ module powerbi.visuals {
             let axisTypeValue = DataViewObjects.getValue(objects, propertyId);
 
             if (!objects || axisTypeValue === undefined) {
-                // If we don't have anything set (Auto), show charts as Scalar if the category type is numeric or time. 
+                // If we don't have anything set (Auto), show charts as Scalar if the category type is numeric or time.
                 // If we have the property, it will override the type.
                 return !AxisHelper.isOrdinal(type);
             }
@@ -421,17 +421,17 @@ module powerbi.visuals {
         public static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean {
             if (!dataViewMapping || !dataViewMapping.categorical || !dataViewMapping.categorical.categories)
                 return false;
-                
+
             let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
             let categoryItems = dataViewCategories.for.in.items;
             if (_.isEmpty(categoryItems))
                 return false;
-                
+
             let categoryType = categoryItems[0].type;
 
             if (!dataViewMapping.metadata)
                 return false;
-            
+
             let objects = dataViewMapping.metadata.objects;
 
             return CartesianChart.getIsScalar(objects, columnChartProps.categoryAxis.axisType, categoryType);
@@ -461,7 +461,9 @@ module powerbi.visuals {
 
             if (!dataViews) return;
 
-            if (this.layers.length === 0) {
+            let shouldAddTrendLayer: boolean = this.isTrendPropertySet(dataViews);
+
+            if (this.layers.length === 0 || (this.layers.length !== dataViews.length && shouldAddTrendLayer)) {
                 // Lazily instantiate the chart layers on the first data load.
                 this.layers = this.createAndInitLayers(dataViews);
 
@@ -509,6 +511,11 @@ module powerbi.visuals {
                 if (warnings && warnings.length > 0)
                     this.hostServices.setWarnings(warnings);
             }
+        }
+
+        private isTrendPropertySet(dataViews: DataView[]): boolean {
+            let objects: DataViewObjects = this.extractMetadataObjects(dataViews);
+            return CartesianLayerFactory.shouldAddTrendLayer(objects);
         }
 
         // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
@@ -769,14 +776,19 @@ module powerbi.visuals {
             }
         }
 
-        private createAndInitLayers(dataViews: DataView[]): ICartesianVisual[] {
+        private extractMetadataObjects(dataViews: DataView[]): DataViewObjects {
             let objects: DataViewObjects;
             if (dataViews && dataViews.length > 0) {
                 let dataViewMetadata = dataViews[0].metadata;
                 if (dataViewMetadata)
                     objects = dataViewMetadata.objects;
             }
-         
+            return objects;
+        }
+
+        private createAndInitLayers(dataViews: DataView[]): ICartesianVisual[] {
+            let objects: DataViewObjects = this.extractMetadataObjects(dataViews);
+
             // Create the layers
             let layers = CartesianLayerFactory.createLayers(
                 this.type,
@@ -905,36 +917,13 @@ module powerbi.visuals {
                     this.renderedPlotArea.width !== axesLayout.plotArea.width);
             suppressAnimations = suppressAnimations || plotAreaHasChanged;
 
-            this.runWithDetachedDom(this.chartAreaSvg.node(), () => {
-                this.scrollableAxes.render(
-                    axesLayout,
-                    this.layers,
-                    suppressAnimations,
-                    (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins));
+            this.scrollableAxes.render(
+                axesLayout,
+                this.layers,
+                suppressAnimations,
+                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins));
 
-                this.renderedPlotArea = axesLayout.plotArea;
-            });
-        }
-        
-        private runWithDetachedDom(element: Element, fn: Function): void {
-            if (!element)
-                return;
-
-            let parent = element.parentNode;
-            if (parent) {
-                if (element.remove)
-                    element.remove();  // NOTE: faster than parent.removeChild(), but not supported in IE10/11
-                else if (parent.removeChild)
-                    parent.removeChild(element);
-            }
-
-            try {
-                fn();
-            }
-            finally {
-                if (parent && !element.parentNode)
-                    parent.appendChild(element);
-            }
+            this.renderedPlotArea = axesLayout.plotArea;
         }
 
         private getPlotAreaRect(axesLayout: CartesianAxesLayout, legendMargins: IViewport): IRect {
@@ -945,7 +934,7 @@ module powerbi.visuals {
                 height: axesLayout.plotArea.height,
             };
 
-            // Adjust the margins to the legend position 
+            // Adjust the margins to the legend position
             if (this.legend) {
                 let legendPosition = this.legend.getOrientation();
 
@@ -977,12 +966,12 @@ module powerbi.visuals {
         }
 
         private calculateInteractivityRightMargin(): number {
-            // add right margin in order not to cut the circle selection of the hover line 
+            // add right margin in order not to cut the circle selection of the hover line
             if (this.visualInitOptions.interactivity && this.visualInitOptions.interactivity.isInteractiveLegend && !this.trimOrdinalDataOnOverflow) {
                 return INTERACTIVITY_RIGHT_MARGIN;
             } else {
                 return 0;
-            }          
+            }
         }
 
         private renderPlotArea(
@@ -1184,14 +1173,16 @@ module powerbi.visuals {
                     if (result.labelDataPointGroups) {
                         let resultLabelDataPointsGroups = result.labelDataPointGroups;
                         for (let resultLabelDataPointsGroup of resultLabelDataPointsGroups) {
+                            if (!resultLabelDataPointsGroup)
+                                continue;
                             labelDataPointGroups.push({
-                                labelDataPoints: NewDataLabelUtils.removeDuplicates(resultLabelDataPointsGroup.labelDataPoints),
+                                labelDataPoints: NewDataLabelUtils.removeDuplicates(resultLabelDataPointsGroup.labelDataPoints || []),
                                 maxNumberOfLabels: resultLabelDataPointsGroup.maxNumberOfLabels,
                             });
                         }
                     }
                     else {
-                        let resultsLabelDataPoints = result.labelDataPoints;
+                        let resultsLabelDataPoints = result.labelDataPoints || [];
                         labelDataPointGroups.push({
                             labelDataPoints: NewDataLabelUtils.removeDuplicates(resultsLabelDataPoints),
                             maxNumberOfLabels: resultsLabelDataPoints.length,
@@ -1215,7 +1206,7 @@ module powerbi.visuals {
                 labelsAreNumeric,
                 plotArea,
                 suppressAnimations,
-                (layers.length > 1));
+                ComboChart.isComboChart(this.type));
 
             if (this.interactivityService) {
                 let behaviorOptions: CartesianBehaviorOptions = {
@@ -1255,7 +1246,7 @@ module powerbi.visuals {
         public static getPreferredCategorySpan(categoryCount: number, categoryThickness: number): number {
             return categoryThickness * (categoryCount + (CartesianChart.OuterPaddingRatio * 2));
         }
-        
+
         /**
          * Note: Public for testing access.
          */
@@ -1273,7 +1264,7 @@ module powerbi.visuals {
             let totalOuterPadding = categoryThickness * CartesianChart.OuterPaddingRatio * 2;
 
             // visibleCategoryCount will be used to discard data that overflows on ordinal-axis charts.
-            // Needed for dashboard visuals            
+            // Needed for dashboard visuals
             let calculatedBarCount = Math.round((availableWidth - totalOuterPadding) / categoryThickness);
             let visibleCategoryCount = Math.min(calculatedBarCount, categoryCount);
 
@@ -1296,7 +1287,7 @@ module powerbi.visuals {
             };
         }
 
-        /** 
+        /**
          * Returns the thickness for each category.
          * For clustered charts, you still need to divide by
          * the number of series to get column width after calling this method.
@@ -1325,17 +1316,17 @@ module powerbi.visuals {
                 // availableWidth = categoryThickness * (categoryCount + (outerPadding * 2)),
                 // categoryThickness = availableWidth / (categoryCount + (outerpadding * 2))
                 thickness = plotLength / (numCategories + (CartesianChart.OuterPaddingRatio * 2));
-                if (trimOrdinalDataOnOverflow) { 
-                    thickness = Math.max(thickness, CartesianChart.MinOrdinalRectThickness); 
+                if (trimOrdinalDataOnOverflow) {
+                    thickness = Math.max(thickness, CartesianChart.MinOrdinalRectThickness);
                 }
             }
-            
+
             // spec calls for using the whole plot area, but the max rectangle thickness is "as if there were three categories"
             // (outerPaddingRatio has the same units as '# of categories' so they can be added)
             let maxRectThickness = plotLength / (3 + (CartesianChart.OuterPaddingRatio * 2));
 
             thickness = Math.min(thickness, maxRectThickness);
-            
+
             if (!isScalar && numCategories >= 3 && trimOrdinalDataOnOverflow) {
                 return Math.max(thickness, CartesianChart.MinOrdinalRectThickness);
             }
@@ -1453,7 +1444,7 @@ module powerbi.visuals {
             };
     }
 
-    /** 
+    /**
      * Computes the Cartesian Chart axes from the set of layers.
      */
     function calculateAxes(
@@ -1663,7 +1654,7 @@ module powerbi.visuals {
                     "drag-resize-disabled": "true" /* Disables resizing of the visual when dragging the scrollbar in edit mode */
                 })
                 .call(this.brush);
-              
+
             /* Disabling the zooming feature */
             brushContext.selectAll(".resize rect")
                 .remove();
@@ -1745,7 +1736,7 @@ module powerbi.visuals {
 
                     // tick values are indices for ordinal axes
                     axisPropsToUpdate.axis.ticks(selected.length);
-                    axisPropsToUpdate.axis.tickValues(selected); 
+                    axisPropsToUpdate.axis.tickValues(selected);
 
                     // use the original tick format to format the tick values
                     let tickFormat = axisPropsToUpdate.axis.tickFormat();
@@ -2567,7 +2558,7 @@ module powerbi.visuals {
                 margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
                 if (!isScalar) {
                     margin.right += interactivityRightMargin;
-                }             
+                }
 
                 margin.bottom = xMax;
 
@@ -2818,18 +2809,29 @@ module powerbi.visuals {
                     break;
             }
 
+            // Linear regression line layer
+            if (shouldAddTrendLayer(objects))
+                layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
+
             return layers;
         }
 
-        function createLineChartLayer(type: LineChartType, inComboChart: boolean, defaultOptions: CartesianVisualConstructorOptions): LineChart {
+        export function shouldAddTrendLayer(objects: DataViewObjects): boolean {
+            let trendObject: DataViewObject = DataViewObjects.getObject(objects, 'trend', null);
+            if (trendObject)
+                return DataViewObject.getValue<boolean>(trendObject, 'show', false);
+        }
+
+        function createLineChartLayer(type: LineChartType, inComboChart: boolean, defaultOptions: CartesianVisualConstructorOptions, isTrendLayer?: boolean): LineChart {
             let options: LineChartConstructorOptions = {
                 animator: defaultOptions.animator,
                 interactivityService: defaultOptions.interactivityService,
                 isScrollable: defaultOptions.isScrollable,
-                tooltipsEnabled: defaultOptions.tooltipsEnabled,
+                tooltipsEnabled: !isTrendLayer && defaultOptions.tooltipsEnabled,
                 seriesLabelFormattingEnabled: defaultOptions.seriesLabelFormattingEnabled,
                 chartType: type,
                 lineChartLabelDensityEnabled: defaultOptions.lineChartLabelDensityEnabled,
+                isTrendLayer: isTrendLayer,
             };
 
             if (inComboChart) {

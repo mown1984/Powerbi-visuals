@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -27,7 +27,7 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.data {
-    
+
     /** Represents a projection from a query result. */
     export interface QueryProjection {
         /** Name of item in the semantic query Select clause. */
@@ -57,7 +57,7 @@ module powerbi.data {
             debug.assertValue(items, 'items');
 
             this.items = items;
-            this._activeProjectionRefs  = activeProjectionRefs;
+            this._activeProjectionRefs = activeProjectionRefs;
             this._showAll = showAll;
         }
 
@@ -67,18 +67,20 @@ module powerbi.data {
         }
 
         public get activeProjectionRefs(): string[] {
-            return this._activeProjectionRefs ;
+            return this._activeProjectionRefs;
         }
 
         public set activeProjectionRefs(queryReferences: string[]) {
-            let queryRefs = this.items.map(val => val.queryRef);
+            if (!_.isEmpty(queryReferences)) {
+                let queryRefs = this.items.map(val => val.queryRef);
 
-            for (let queryReference of queryReferences) {
-                if (!_.contains(queryRefs, queryReference))
-                    return;
+                for (let queryReference of queryReferences) {
+                    if (!_.contains(queryRefs, queryReference))
+                        return;
+                }
+
+                this._activeProjectionRefs = queryReferences;
             }
-
-            this._activeProjectionRefs  = queryReferences;
         }
 
         public get showAll(): boolean {
@@ -103,7 +105,7 @@ module powerbi.data {
         }
 
         public clone(): QueryProjectionCollection {
-            return new QueryProjectionCollection(_.clone(this.items), _.clone(this._activeProjectionRefs ), this._showAll);
+            return new QueryProjectionCollection(_.clone(this.items), _.clone(this._activeProjectionRefs), this._showAll);
         }
     }
 

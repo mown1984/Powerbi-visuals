@@ -210,7 +210,6 @@ module powerbitests {
                 setTimeout(() => {
                     expect(warningSpy).toHaveBeenCalled();
                     expect(warningSpy.calls.count()).toBe(1);
-                    expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -225,7 +224,6 @@ module powerbitests {
                 setTimeout(() => {
                     expect(warningSpy).toHaveBeenCalled();
                     expect(warningSpy.calls.count()).toBe(1);
-                    expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -240,7 +238,6 @@ module powerbitests {
                 setTimeout(() => {
                     expect(warningSpy).toHaveBeenCalled();
                     expect(warningSpy.calls.count()).toBe(1);
-                    expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -255,7 +252,6 @@ module powerbitests {
                 setTimeout(() => {
                     expect(warningSpy).toHaveBeenCalled();
                     expect(warningSpy.calls.count()).toBe(1);
-                    expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('GeometryCulledWarning');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -3061,7 +3057,6 @@ module powerbitests {
                 }
                 else {
                     expect($('.donutChart .slice').length).toBe(2);
-                    expect(hostServices.setWarnings).toHaveBeenCalledWith([new powerbi.visuals.GeometryCulledWarning()]);
                 }
 
                 done();
@@ -4102,7 +4097,6 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.donutChart')).toBeInDOM();
                 expect($('.donutChart .slice').length).toBe(2);
-                expect(hostServices.setWarnings).toHaveBeenCalledWith([new powerbi.visuals.GeometryCulledWarning()]);
 
                 done();
             }, DefaultWaitForRender);
@@ -4352,10 +4346,12 @@ module powerbitests {
 
             v.onDataChanged(dataChangedOptions);
             let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
-            expect(points.instances.length).toBe(4);
-            expect(points.instances[1].displayName).toEqual('a');
+            expect(points.instances.length).toBe(3);
+            expect(points.instances[0].displayName).toEqual('a');
+            expect(points.instances[0].properties['fill']).toBeDefined();
+            expect(points.instances[1].displayName).toEqual('b');
             expect(points.instances[1].properties['fill']).toBeDefined();
-            expect(points.instances[2].displayName).toEqual('b');
+            expect(points.instances[2].displayName).toEqual('c');
             expect(points.instances[2].properties['fill']).toBeDefined();
             done();
         });
@@ -4395,10 +4391,12 @@ module powerbitests {
             v.onDataChanged(dataChangedOptions);
 
             let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
-            expect(points.instances.length).toBe(4);
-            expect(points.instances[1].displayName).toEqual('a');
+            expect(points.instances.length).toBe(3);
+            expect(points.instances[0].displayName).toEqual('a');
+            expect(points.instances[0].properties['fill']).toBeDefined();
+            expect(points.instances[1].displayName).toEqual('b');
             expect(points.instances[1].properties['fill']).toBeDefined();
-            expect(points.instances[2].displayName).toEqual('b');
+            expect(points.instances[2].displayName).toEqual('c');
             expect(points.instances[2].properties['fill']).toBeDefined();
             done();
         });
@@ -4430,7 +4428,7 @@ module powerbitests {
                 // Check legend is hidden
                 expect($('.legend').attr('orientation')).toBe(LegendPosition.None.toString());
                 let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
-                expect(points.instances.length).toBe(4);
+                expect(points.instances.length).toBe(3);
                 done();
             }, DefaultWaitForRender);
         });

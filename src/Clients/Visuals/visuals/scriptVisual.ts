@@ -44,7 +44,7 @@ module powerbi.visuals {
         provider: string;
         source: string;
     }
-    
+
     export interface ScriptVisualOptions {
         canRefresh: boolean;
     }
@@ -70,7 +70,7 @@ module powerbi.visuals {
 
         public update(options: VisualUpdateOptions): void {
             debug.assertValue(options, 'options');
-            
+
             let dataViews = options.dataViews;
             if (!dataViews || dataViews.length === 0)
                 return;
@@ -79,33 +79,42 @@ module powerbi.visuals {
             if (!dataView || !dataView.metadata)
                 return;
 
-            let imageUrl;
-            let saveScriptResult = true;
-            if (!dataView.scriptResult || !dataView.scriptResult.imageBase64) {
-                imageUrl = this.getLastSavedImage(dataView);
-                saveScriptResult = false;
-            }
-            else {
-                imageUrl = "data:image/png;base64," + dataView.scriptResult.imageBase64;
-            }
+            let imageUrl = this.getImageUrl(dataView);
+            let div = this.ensureHtmlElement();
 
+            if (imageUrl && Utility.isValidImageDataUrl(imageUrl)) {
+                let viewport = options.viewport;
+
+                div.css({ height: viewport.height, width: viewport.width, backgroundImage: 'url(' + imageUrl + ')' });
+                if (imageUrl !== this.getLastSavedImage(dataView))
+                    this.updateLastSavedImage(dataView, imageUrl, viewport);
+            }
+            else
+                div.css({ backgroundImage: 'none' });
+        }
+
+        public onResizing(finalViewport: IViewport): void {
+            let div = this.ensureHtmlElement();
+            div.css({ height: finalViewport.height, width: finalViewport.width });
+        }
+
+        private getImageUrl(dataView: DataView): string {
+            debug.assertValue(dataView, 'dataView');
+
+            if (!dataView.scriptResult || !dataView.scriptResult.imageBase64)
+                return this.getLastSavedImage(dataView);
+
+            return "data:image/png;base64," + dataView.scriptResult.imageBase64;
+        }
+
+        private ensureHtmlElement(): JQuery {
             let div: JQuery = this.imageBackgroundElement;
             if (!div) {
                 div = $("<div class='imageBackground' />");
                 this.imageBackgroundElement = div;
                 this.imageBackgroundElement.appendTo(this.element);
             }
-
-            if (imageUrl && Utility.isValidImageDataUrl(imageUrl)) {
-                let viewport = options.viewport;
-                div.css({ height: viewport.height, width: viewport.width, 'background-image': 'url(' + imageUrl + ')' });
-
-                if (saveScriptResult)
-                    this.updateLastSavedImage(dataView, imageUrl, options.viewport);
-            }
-            else {
-                div.css({ 'background-image': 'none' });
-            }
+            return div;
         }
 
         private getLastSavedImage(dataView: DataView): string {
@@ -149,4 +158,4 @@ module powerbi.visuals {
             this.hostServices.persistProperties(changes);
         }
     }
-} 
+}

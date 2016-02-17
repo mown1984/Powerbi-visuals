@@ -105,7 +105,8 @@ module powerbi.visuals.plugins {
         watermarkKey: 'combo',
         capabilities: capabilities.comboChart,
         customizeQuery: ComboChart.customizeQuery,
-        create: () => new CartesianChart({ chartType: CartesianChartType.ComboChart })
+        create: () => new CartesianChart({ chartType: CartesianChartType.ComboChart }),
+        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ComboChart.getSortableRoles(visualSortableOptions)
     };
 
     export let dataDotChart: IVisualPlugin = {
@@ -190,7 +191,7 @@ module powerbi.visuals.plugins {
         capabilities: capabilities.lineStackedColumnComboChart,
         customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.LineStackedColumnCombo }),
-        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
+        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ComboChart.getSortableRoles(visualSortableOptions),
     };
 
     export let lineClusteredColumnComboChart: IVisualPlugin = {
@@ -199,7 +200,7 @@ module powerbi.visuals.plugins {
         capabilities: capabilities.lineClusteredColumnComboChart,
         customizeQuery: ComboChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.LineClusteredColumnCombo }),
-        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ColumnChart.getSortableRoles(visualSortableOptions),
+        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => ComboChart.getSortableRoles(visualSortableOptions),
     };
 
     export let map: IVisualPlugin = {

@@ -109,51 +109,46 @@ module powerbi.data {
         supportsPercentile: boolean;
     }
 
-    export interface ConceptualEntity {
+    export interface ConceptualPropertyItemContainer {
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies?: ArrayNamedItems<ConceptualHierarchy>;
+        displayFolders?: ArrayNamedItems<ConceptualDisplayFolder>;
+    }
+
+    export interface ConceptualPropertyItem {
+        name: string;
+        displayName: string;
+        hidden?: boolean;
+    }
+
+    export interface ConceptualEntity extends ConceptualPropertyItemContainer {
         name: string;
         displayName: string;
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
-        navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+        navigationProperties?: ArrayNamedItems<ConceptualNavigationProperty>;
     }
 
-    export interface ConceptualDisplayFolder {
-        name: string;
-        displayName: string;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
+    export interface ConceptualDisplayFolder extends ConceptualPropertyItem, ConceptualPropertyItemContainer {
     }
 
-    export interface ConceptualProperty {
-        name: string;
-        displayName: string;
+    export interface ConceptualProperty extends ConceptualPropertyItem {
         type: ValueType;
         kind: ConceptualPropertyKind;
-        hidden?: boolean;
         format?: string;
         column?: ConceptualColumn;
         queryable?: ConceptualQueryableState;
         measure?: ConceptualMeasure;
-        kpi?: ConceptualProperty;
+        kpiValue?: ConceptualProperty;
     }
 
-    export interface ConceptualHierarchy {
-        name: string;
-        displayName: string;
+    export interface ConceptualHierarchy extends ConceptualPropertyItem {
         levels: ArrayNamedItems<ConceptualHierarchyLevel>;
-        hidden?: boolean;
     }
 
-    export interface ConceptualHierarchyLevel {
-        name: string;
-        displayName: string;
+    export interface ConceptualHierarchyLevel extends ConceptualPropertyItem {
         column: ConceptualProperty;
-        hidden?: boolean;
     }
 
     export interface ConceptualNavigationProperty {
@@ -188,8 +183,10 @@ module powerbi.data {
 
     export interface ConceptualPropertyKpi {
         statusMetadata: DataViewKpiColumnMetadata;
+        trendMetadata?: DataViewKpiColumnMetadata;
         status?: ConceptualProperty;
         goal?: ConceptualProperty;
+        trend?: ConceptualProperty;
     }
 
     export const enum ConceptualVisibility {

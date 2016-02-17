@@ -160,6 +160,10 @@ module powerbitests {
             measureSource2
         ]
     };
+    let matrixTwoMeasuresDataView: powerbi.DataView = {
+        metadata: { columns: [measureSource1, measureSource2] },
+        matrix: matrixTwoMeasures
+    };
 
     // -----------
     // | Group A |
@@ -2372,8 +2376,8 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups only", () => {
@@ -2391,8 +2395,8 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups and arbitrary number of measures", () => {
@@ -2438,10 +2442,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should allow matrices with column groups only", () => {
@@ -2459,8 +2463,8 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should allow matrices with column groups and measures", () => {
@@ -2506,10 +2510,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups and arbitrary number of column groups and measures", () => {
@@ -2569,10 +2573,10 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {})).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {})).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
         });
 
         it("Capabilities should suppressDefaultTitle", () => {
@@ -3248,6 +3252,31 @@ module powerbitests {
                 expect(navigator.headerItemEquals(columnNode, rowNode)).toBeFalsy();
             });
         });
+
+        describe("bodyCellItemEquals", () => {
+
+            it("returns true if the two items are the same", () => {
+                let dataView = matrixTwoMeasuresDataView;
+                let navigator = powerbi.visuals.createMatrixHierarchyNavigator(dataView.matrix, valueFormatter.formatValueColumn);
+                let cell1 = navigator.getIntersection(dataView.matrix.rows.root.children[0], dataView.matrix.columns.root.children[0]);
+                expect(cell1).toBeDefined();
+                let cell2 = navigator.getIntersection(dataView.matrix.rows.root.children[0], dataView.matrix.columns.root.children[0]);
+                expect(cell2).toBeDefined();
+
+                expect(navigator.bodyCellItemEquals(cell1, cell2)).toBeTruthy();
+            });
+
+            it("returns false if the two items are not same", () => {
+                let dataView = matrixTwoMeasuresDataView;
+                let navigator = powerbi.visuals.createMatrixHierarchyNavigator(dataView.matrix, valueFormatter.formatValueColumn);
+                let cell1 = navigator.getIntersection(dataView.matrix.rows.root.children[0], dataView.matrix.columns.root.children[0]);
+                expect(cell1).toBeDefined();
+                let cell2 = navigator.getIntersection(dataView.matrix.rows.root.children[0], dataView.matrix.columns.root.children[1]);
+                expect(cell2).toBeDefined();
+
+                expect(navigator.bodyCellItemEquals(cell1, cell2)).toBeFalsy();
+            });
+        });
     });
 
     describe("Matrix logic", () => {
@@ -3636,6 +3665,42 @@ module powerbitests {
                     done();
                 }, DefaultWaitForRender);
             });
+        });
+
+        it("suppressNotification not set after loading table with ColumnAutoSizeProperty off", (done) => {
+            let dataViewObjects: powerbi.DataViewObjects = {
+                general: {
+                    totals: true,
+                    autoSizeColumnWidth: false,
+                    textSize: 8,
+                }
+            };
+
+            let rowGroupSource1WithWidth = powerbi.Prototype.inheritSingle(rowGroupSource1);
+            rowGroupSource1WithWidth.objects = { general: { columnWidth: 100 } };
+
+            let measureSource1WithWidth = powerbi.Prototype.inheritSingle(measureSource1);
+            measureSource1WithWidth.objects = { general: { columnWidth: 200 } };
+
+            let dataView = getMatrixColumnWidthDataView2(
+                [rowGroupSource1WithWidth, measureSource1WithWidth],
+                matrixOneMeasureOneRowGroupTwoGroupInstances,
+                dataViewObjects);
+
+            v.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                let matrixVisual = <Matrix>v;
+                let colWidthManager = matrixVisual.getColumnWidthManager();
+                let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
+
+                expect(colWidthManager.suppressOnDataChangedNotification).toBe(false);
+                expect(persistedColWidths.length).toBe(2);
+                expect(persistedColWidths[0].queryName).toBe('RowGroup1');
+                expect(persistedColWidths[0].width).toBe(100);
+                expect(persistedColWidths[1].queryName).toBe('Measure1');
+                expect(persistedColWidths[1].width).toBe(200);
+                done();
+            }, DefaultWaitForRender);
         });
 
         it("enumerateObjectInstances general autoSizeColumnWidth off", () => {
@@ -4064,10 +4129,10 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(2).find('td');
                 expect(rowCells.length).toBe(16);
-                expect(rowCells.eq(3).width()).toEqual(46);
-                expect(rowCells.eq(5).width()).toEqual(46);
-                expect(rowCells.eq(7).width()).toEqual(46);
-                expect(rowCells.eq(9).width()).toEqual(46);
+                expect(rowCells.eq(3).width()).toEqual(45);
+                expect(rowCells.eq(5).width()).toEqual(45);
+                expect(rowCells.eq(7).width()).toEqual(45);
+                expect(rowCells.eq(9).width()).toEqual(45);
                 done();
             }, DefaultWaitForRender);
         });
@@ -4156,7 +4221,7 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(2).find('td');
                 expect(rowCells.eq(4).width()).toEqual(48);
-                expect(rowCells.eq(5).width()).toEqual(46);
+                expect(rowCells.eq(5).width()).toEqual(45);
                 expect(rowCells.eq(6).width()).toEqual(49);
 
                 let objects = {
@@ -4248,7 +4313,7 @@ module powerbitests {
                         setTimeout(() => {
                             let rows3 = $(selector);
                             let rowCells3 = rows3.eq(1).find('td');
-                            expect(rowCells3.eq(1).width()).toEqual(47);
+                            expect(rowCells3.eq(1).width()).toEqual(46);
                             expect(rowCells3.eq(2).width()).toEqual(50);
                             expect(rowCells3.eq(3).width()).toEqual(50);
                             done();

@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -202,7 +202,7 @@ module powerbitests {
 
             expect(LineChart.getSortableRoles({
                 dataViewMappings: [dataViewMapping]
-            })).toEqual(['Category']);
+            })).toEqual(['Category', 'Y']);
         });
 
         function createCompiledDataViewMapping(categoryType: ValueType, objects?: DataViewObjects): CompiledDataViewMapping {
@@ -1491,7 +1491,7 @@ module powerbitests {
             };
 
             let actualData = LineChart.converter(dataView, blankCategoryValue, colors, true /*isScalar*/, null /*interactivity*/, true /*isStacked*/);
-            
+
             //check the first series stacked value
             for (let i = 0, len = actualData.series[0].data.length; i < len; i++) {
                 let dataPoint = actualData.series[0].data[i];
@@ -1542,7 +1542,7 @@ module powerbitests {
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
                 },
                 {
-                    
+
                     // for secondary grouping (legend/series)
                     displayName: 'col5',
                     queryName: 'col5',
@@ -1553,7 +1553,7 @@ module powerbitests {
         };
 
         it('Check convert highlight values - comboChart mode', () => {
-            // highlights only come when using comboChart.capabilities, 
+            // highlights only come when using comboChart.capabilities,
             // and line charts can't render partial-highlights. lineChart should render the highlight values only.
             let dataView: powerbi.DataView = {
                 metadata: dataViewMetadata,
@@ -3004,6 +3004,80 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('line chart with linear regression dom validation', (done) => {
+                let trendLineColor = '#FF0000';
+                let regressionDataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    },
+                    {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        objects: {
+                            dataPoint: {
+                                fill: {
+                                    solid: {
+                                        color: trendLineColor
+                                    }
+                                }
+                            }
+                        },
+                    }],
+                };
+
+                let dataViews = [{
+                    metadata: regressionDataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: regressionDataViewMetadata.columns[0],
+                            values: [1, 2, 3, 4, 5, 6]
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: regressionDataViewMetadata.columns[1],
+                            values: [10, 20, 30, 40, 50, 60]
+                        }])
+                    }
+                },
+                {
+                    metadata: regressionDataViewMetadata,
+                    usage: {
+                        regression: {}
+                    },
+                    categorical: {
+                        categories: [{
+                            source: regressionDataViewMetadata.columns[0],
+                            values: [1, 6]
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: regressionDataViewMetadata.columns[1],
+                            values: [10, 60]
+                        }])
+                    }
+                 }];
+
+                dataViews[0].metadata.objects = {
+                    trend: {
+                        show: true,
+                    },
+                };
+
+                v.onDataChanged({
+                    dataViews: dataViews
+                });
+                setTimeout(() => {
+                    let trendLines = $('.trend-line');
+                    expect(trendLines.length).toBe(1);
+                    helpers.assertColorsMatch(trendLines.css('stroke'), trendLineColor);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it('background image', (done) => {
                 let metadata = _.cloneDeep(dataViewMetadata);
                 metadata.objects = {
@@ -3417,7 +3491,7 @@ module powerbitests {
                     expect(helpers.findElementText($(yaxisSelector).find('text').first())).toBe('0');
                     expect(helpers.findElementText($(yaxisSelector).find('text').last())).toBe('140');//90 + 50
 
-                    //assert title 
+                    //assert title
                     expect(helpers.findElementTitle($(yaxisSelector).find('text').first())).toBe('0');
                     expect(helpers.findElementTitle($(yaxisSelector).find('text').last())).toBe('140');//90 + 50
                     done();
@@ -3502,7 +3576,7 @@ module powerbitests {
                 });
 
                 let labelDataPoints = callCreateLabelDataPoints(v);
-                
+
                 // Important labels (last, first) should be first
                 expect(labelDataPoints[0].text).toEqual("90");
                 expect(labelDataPoints[1].text).toEqual("20");
@@ -3771,7 +3845,7 @@ module powerbitests {
 
             let mainGraphicsContext: any = $('.mainGraphicsContext');
             expect(mainGraphicsContext.length).toBe(1);
-            
+
             // instead of clicking on the graph, which can be unstable due to different user's configurations
             // we will validate that the code knows how to deal with such a click
             let calculatedIndex = lineChart.findIndex(250);
@@ -4988,7 +5062,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            
+
             // Important labels (last, first) should be first
             expect(labelDataPoints[0].text).toEqual("100.00");
             expect(labelDataPoints[1].text).toEqual("500.00");
@@ -5148,7 +5222,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            
+
             // When we don't have labelPrecision the format comes from the model but the trailing zeros are not being forced
             // Important labels (last, first) should be first
             expect(labelDataPoints[0].text).toEqual("1K");
@@ -5200,7 +5274,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            
+
             // Important labels (last, first) should be first
             expect(labelDataPoints[0].text).toEqual("100");
             expect(labelDataPoints[1].text).toEqual("500");
@@ -5311,7 +5385,7 @@ module powerbitests {
             });
 
             let labelDataPoints = callCreateLabelDataPoints(v);
-            
+
             // Important labels (last, first) should be first
             expect(labelDataPoints[0].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[4].key }));
             expect(labelDataPoints[1].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[0].key }));
@@ -5387,8 +5461,8 @@ module powerbitests {
     //        v.onDataChanged(oneSeriesVisualDataOptions());
     //        let i = 0;
     //        let labelDataPoints = callCreateLabelDataPoints(v);
-            
-    //        // First labels are preffered            
+
+    //        // First labels are preffered
     //        for (; i < numberOfPreferredLabels; i++) {
     //            if (!labelDataPoints[i].isPreferred)
     //                break;
@@ -5570,7 +5644,7 @@ module powerbitests {
     //            let curentSeries = labelDataPointsGroups[series].labelDataPoints,
     //                i = 0,
     //                ilen = curentSeries.length;
-                
+
     //            // First labels are preffered
     //            for (; i < numberOfPreferredLabels, i < ilen; i++) {
     //                if (!curentSeries[i].isPreferred)
@@ -5608,7 +5682,7 @@ module powerbitests {
     //        expect(labelDataPoints[1].text).toBe('190');
 
     //        labelDataPoints = labelDataPointsGroups[1].labelDataPoints;
-            
+
     //        // 210 is the first and lowest label
     //        expect(labelDataPoints[0].isPreferred).toBe(true);
     //        expect(labelDataPoints[0].text).toBe('210');

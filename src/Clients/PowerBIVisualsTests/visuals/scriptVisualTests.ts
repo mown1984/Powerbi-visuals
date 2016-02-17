@@ -121,7 +121,7 @@ module powerbitests {
 
                 //Verifying the DOM
                 let imageDiv = element.find('.imageBackground');
-                expect(imageDiv.css('background-image')).toBe('none');
+                expect(imageDiv.css('backgroundImage')).toBe('none');
             });
 
             it('visual shows last saved image from objects', () => {
@@ -132,7 +132,9 @@ module powerbitests {
 
                 //Verifying the DOM
                 let imageDiv = element.find('.imageBackground');
-                expect(imageDiv.css('background-image')).toBe('url(data:image/png;base64,datadatadata)');
+                let backgroundImage = imageDiv.css('backgroundImage');
+                let isUrlEqual = (backgroundImage === 'url(data:image/png;base64,datadatadata)') || (backgroundImage === 'url("data:image/png;base64,datadatadata")');
+                expect(isUrlEqual).toBeTruthy();
                 expect(imageDiv.css('height')).toBe(viewport.height + 'px');
                 expect(imageDiv.css('width')).toBe(viewport.width + 'px');
             });
@@ -145,7 +147,9 @@ module powerbitests {
 
                 //Verifying the DOM
                 let imageDiv = element.find('.imageBackground');
-                expect(imageDiv.css('background-image')).toBe('url(data:image/png;base64,imageimageimage)');
+                let backgroundImage = imageDiv.css('backgroundImage');
+                let isUrlEqual = (backgroundImage === 'url(data:image/png;base64,imageimageimage)') || (backgroundImage === 'url("data:image/png;base64,imageimageimage")');
+                expect(isUrlEqual).toBeTruthy();
                 expect(imageDiv.css('height')).toBe(viewport.height + 'px');
                 expect(imageDiv.css('width')).toBe(viewport.width + 'px');
             });

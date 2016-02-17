@@ -65,6 +65,13 @@ module powerbi.visuals.controls {
             this.visualObjectInstancesToPersist = [];
             this.callHostPersistProperties = false;
             this.dataViewUpdated = false;
+
+            if (dataView && dataView.metadata && dataView.metadata.columns)
+            {
+                this.populateTablixQueryNames();
+                this.deserializeTablixColumnWidths();
+                this.currentPersistedWidths = this.columnWidths;
+            }
         }
 
         public getColumnWidths(): number[] {
@@ -168,16 +175,22 @@ module powerbi.visuals.controls {
         public persistAllColumnWidths(widthsToPersist: number[]): void {
             if (!this.shouldAutoSizeColumnWidth() && this.dataViewUpdated) {
                 let shouldPersist = true;
-                if (!_.isEqual(widthsToPersist, this.currentPersistedWidths)) {
+
+                // Persist all column widths
+                let widths = this.isMatrix ? widthsToPersist
+                    : widthsToPersist.slice(1); // Table indices are offset with an empty header. 
+
+                let savedWidths = this.isMatrix ? this.currentPersistedWidths
+                    : this.currentPersistedWidths.slice(1);
+
+                if (!_.isEqual(widths, savedWidths)) {
                     this.currentPersistedWidths = widthsToPersist;
                     this.suppressNotification = true;
                 }
                 else {
                     shouldPersist = false;
                 }
-                // Persist all column widths
-                let widths = this.isMatrix ? widthsToPersist
-                    : widthsToPersist.slice(1, widthsToPersist.length); // Table indices are offset with an empty header. 
+
                 let savedColumnWidths: controls.TablixColumnWidthObject[] = [];
 
                 if (this.tablixQueryNames.length !== widths.length) {

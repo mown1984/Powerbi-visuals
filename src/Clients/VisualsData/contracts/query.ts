@@ -243,39 +243,6 @@ module powerbi.data {
         LessThanOrEqual = 4,
     }
 
-    export interface SemanticQueryDataShapeCommand {
-        Query: QueryDefinition;
-        Binding: DataShapeBinding;
-    }
-
-    /** Only one of the members can be non-null at any one time */
-    export interface QueryCommand {
-        SemanticQueryDataShapeCommand?: SemanticQueryDataShapeCommand;
-        ScriptVisualCommand?: ScriptVisualCommand;
-    }
-
-    export interface DataQuery {
-        Commands: QueryCommand[];
-    }
-
-    /** The final (single) result of a DataQuery is cacheable.
-          * The intermediate results coming out of each QueryCommand (a DataQuery.Commands[i]) is not cached nor returned to the client. */
-    export interface DataQueryRequest {
-        Query: DataQuery;
-
-        /** Optional server-side cache key for the semantic query. This CacheKey is not used to the IQueryCache (client-side cache). */
-        CacheKey?: string;
-    }
-
-    export interface ScriptVisualCommand {
-        Script?: string;
-        RenderingEngine?: string;
-        ViewportWidthPx?: number;
-        ViewportHeightPx?: number;
-        Version?: number;
-        ScriptInput?: ScriptInput;
-    }
-
     /** Defines semantic data types. */
     export enum SemanticType {
         None = 0x0,
@@ -294,16 +261,6 @@ module powerbi.data {
         Boolean = 0x1000,
         Table = 0x2000,
         Range = 0x4000,
-    }
-
-    export enum SelectKind {
-        None,
-        Group,
-        Measure,
-    }
-
-    export interface AuxiliarySelectBinding {
-        Value?: string;
     }
 
     export interface QueryMetadata {
