@@ -406,7 +406,7 @@ module powerbitests {
     };
 
     describe("Table", () => {
-        xit("Table registered capabilities", () => {
+        it("Table registered capabilities", () => {
             expect(webPluginService.getPlugin("table").capabilities).toEqual(tableCapabilities);
         });
 
@@ -496,13 +496,13 @@ module powerbitests {
     });
 
     describe("Table hierarchy navigator tests", () => {
-        function createNavigator(dataView: DataView): TableHierarchyNavigator {
-            return new TableHierarchyNavigator(dataView.table, valueFormatter.formatValueColumn);
+        function createNavigator(dataViewTable: DataViewTable): TableHierarchyNavigator {
+            return new TableHierarchyNavigator(dataViewTable, valueFormatter.formatValueColumn);
         }
 
         describe("getDepth", () => {
             let dataView = tableTwoGroupsThreeMeasures;
-            let navigator = createNavigator(dataView);
+            let navigator = createNavigator(dataView.table);
 
             it("returns 1 for row dimension", () => {
                 expect(navigator.getDepth(dataView.table.rows)).toBe(1);
@@ -512,20 +512,20 @@ module powerbitests {
                 expect(navigator.getDepth(dataView.table.columns)).toBe(1);
             });
 
-            it("always returns 1", () => {
+            xit("always returns 1", () => {
                 expect(navigator.getDepth(null)).toBe(1);
             });
         });
 
         describe("getLeafCount", () => {
             let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-            let navigator = createNavigator(dataView);
+            let navigator = createNavigator(dataView.table);
 
             it("returns the row count for row dimension", () => {
                 expect(navigator.getLeafCount(dataView.table.rows)).toBe(7);
             });
 
-            xit("returns the column count for column dimension", () => {
+            it("returns the column count for column dimension", () => {
                 expect(navigator.getLeafCount(dataView.table.columns)).toBe(6);
             });
         });
@@ -534,7 +534,7 @@ module powerbitests {
 
             it("returns the correct leaf from the row dimension", () => {
                 let dataView = tableTwoGroupsThreeMeasures;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let rows = dataView.table.rows;
 
                 expect(navigator.getLeafAt(rows, 0)).toBe(rows[0]);
@@ -544,7 +544,7 @@ module powerbitests {
 
             it("returns the correct leaf from the column dimension", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columns = dataView.table.columns;
 
                 expect(navigator.getLeafAt(columns, 0)).toBe(columns[0]);
@@ -554,7 +554,7 @@ module powerbitests {
 
             it("returns undefined if index is out of bounds in the row dimension", () => {
                 let dataView = tableOneMeasure;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let rows = dataView.table.rows;
 
                 expect(navigator.getLeafAt(rows, 1)).not.toBeDefined();
@@ -562,7 +562,7 @@ module powerbitests {
 
             it("returns undefined if index is out of bounds in the column dimension", () => {
                 let dataView = tableOneMeasure;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columns = dataView.table.columns;
 
                 expect(navigator.getLeafAt(columns, 1)).not.toBeDefined();
@@ -571,7 +571,7 @@ module powerbitests {
 
         describe("getParent", () => {
             let dataView = tableTwoGroupsThreeMeasures;
-            let navigator = createNavigator(dataView);
+            let navigator = createNavigator(dataView.table);
 
             it("returns null for column header", () => {
                 expect(navigator.getParent(dataView.table.columns[0])).toBeNull();
@@ -590,7 +590,7 @@ module powerbitests {
 
             it("returns the correct index for columns", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columns = dataView.table.columns;
 
                 expect(navigator.getIndex(columns[0])).toBe(0);
@@ -603,7 +603,7 @@ module powerbitests {
 
             it("returns the correct index for rows", () => {
                 let dataView = tableTwoGroupsThreeMeasures;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let rows = dataView.table.rows;
                 let row1 = { index: 0, values: rows[0] };
                 let row2 = { index: 1, values: rows[1] };
@@ -614,7 +614,7 @@ module powerbitests {
 
             it("returns -1 if cannot find column in the collection", () => {
                 let dataView = tableTwoGroups;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columnInAnotherTable = tableThreeGroupsThreeMeasuresInterleaved.table.columns[4];
 
                 expect(navigator.getIndex(columnInAnotherTable)).toBe(-1);
@@ -622,7 +622,7 @@ module powerbitests {
 
             it("returns -1 if it is null", () => {
                 let dataView = tableTwoGroups;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.getIndex(null)).toBe(-1);
             });
@@ -631,7 +631,7 @@ module powerbitests {
 
             it("returns true for columns", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columns = dataView.table.columns;
 
                 expect(navigator.isLeaf(columns[0])).toBeTruthy();
@@ -644,7 +644,7 @@ module powerbitests {
 
             it("returns true for rows", () => {
                 let dataView = tableTwoGroupsThreeMeasures;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let rows = dataView.table.rows;
 
                 expect(navigator.isLeaf(rows[0])).toBeTruthy();
@@ -661,7 +661,7 @@ module powerbitests {
 
             it("returns null for column", () => {
                 let dataView = tableTwoGroupsThreeMeasures;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let column = dataView.table.columns[3];
 
                 expect(navigator.getChildren(column)).toBeNull();
@@ -669,7 +669,7 @@ module powerbitests {
 
             it("returns null for row", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let row = dataView.table.rows[4];
 
                 expect(navigator.getChildren(row)).toBeNull();
@@ -678,7 +678,7 @@ module powerbitests {
 
         describe("getCount", () => {
             let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-            let navigator = createNavigator(dataView);
+            let navigator = createNavigator(dataView.table);
 
             it("returns the number of the columns for column dimension", () => {
                 expect(navigator.getCount(dataView.table.columns)).toBe(dataView.table.columns.length);
@@ -693,7 +693,7 @@ module powerbitests {
 
             it("returns the correct item from the row dimension", () => {
                 let dataView = tableTwoGroupsThreeMeasures;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let rows = dataView.table.rows;
 
                 expect(navigator.getAt(rows, 0)).toBe(rows[0]);
@@ -703,7 +703,7 @@ module powerbitests {
 
             it("returns the correct item from the column dimension", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
                 let columns = dataView.table.columns;
 
                 expect(navigator.getAt(columns, 0)).toBe(columns[0]);
@@ -713,14 +713,14 @@ module powerbitests {
 
             it("returns undefined if index is out of bounds in the row dimension", () => {
                 let dataView = tableOneMeasure;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.getAt(dataView.table.rows, 1)).not.toBeDefined();
             });
 
             it("returns undefined if index is out of bounds in the column dimension", () => {
                 let dataView = tableOneMeasure;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.getAt(dataView.table.columns, 1)).not.toBeDefined();
             });
@@ -728,7 +728,7 @@ module powerbitests {
 
         describe("getLevel", () => {
             let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-            let navigator = createNavigator(dataView);
+            let navigator = createNavigator(dataView.table);
 
             it("returns 0 for column", () => {
                 expect(navigator.getLevel(dataView.table.columns[1])).toBe(0);
@@ -817,7 +817,7 @@ module powerbitests {
 
             it("always returns null", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.getCorner(0, 0)).toBeNull();
                 expect(navigator.getCorner(10, 0)).toBeNull();
@@ -832,7 +832,7 @@ module powerbitests {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
                 let row = dataView.table.rows[0];
                 let column = dataView.table.columns[0];
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.headerItemEquals(row, row)).toBeTruthy();
                 expect(navigator.headerItemEquals(column, column)).toBeTruthy();
@@ -840,13 +840,13 @@ module powerbitests {
 
             it("returns false if the two items are not same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.headerItemEquals({ displayName: "a" }, { displayName: "a" })).toBeTruthy();
             });
             it("returns true for rows with index", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.headerItemEquals({ index: 1, values: [] }, { index: 1, values: [] })).toBeTruthy();
             });
@@ -854,14 +854,14 @@ module powerbitests {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
                 let row = dataView.table.rows[0];
                 let column = dataView.table.columns[0];
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.headerItemEquals(row, column)).toBeFalsy();
                 expect(navigator.headerItemEquals(column, row)).toBeFalsy();
             });
             it("returns false detects rows with index", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let navigator = createNavigator(dataView);
+                let navigator = createNavigator(dataView.table);
 
                 expect(navigator.headerItemEquals({ index: 1 }, { index: 2 })).toBeFalsy();
             });
@@ -872,17 +872,20 @@ module powerbitests {
 
             it("returns true if the two items are the same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let cell1 = dataView.table.rows[0][3];
-                let navigator = createNavigator(dataView);
+                let dataViewVisualTable = Table.converter(dataView, false);
+                let navigator = createNavigator(dataViewVisualTable);
+                let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
+                let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
 
-                expect(navigator.bodyCellItemEquals(cell1, cell1)).toBeTruthy();
+                expect(navigator.bodyCellItemEquals(cell1, cell2)).toBeTruthy();
             });
 
             it("returns false if the two items are not same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let cell1 = dataView.table.rows[1][3];
-                let cell2 = dataView.table.rows[2][3];
-                let navigator = createNavigator(dataView);
+                let dataViewVisualTable = Table.converter(dataView, false);
+                let navigator = createNavigator(dataViewVisualTable);
+                let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[1]);
+                let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[2]);
 
                 expect(navigator.bodyCellItemEquals(cell1, cell2)).toBeFalsy();
             });
@@ -1188,6 +1191,49 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("suppressNotification not set after loading table with ColumnAutoSizeProperty off", (done) => {
+            let dataViewObjects: powerbi.DataViewObjects = {
+                general: {
+                    totals: true,
+                    autoSizeColumnWidth: false,
+                    textSize: 8,
+                }
+            };
+
+            let measureSource1WithWidth = powerbi.Prototype.inheritSingle(measureSource1);
+            measureSource1WithWidth.objects = { general: { columnWidth: 100 } };
+
+            let measureSource2WithWidth = powerbi.Prototype.inheritSingle(measureSource2);
+            measureSource2WithWidth.objects = { general: { columnWidth: 200 } };
+
+            let measureSource3WithWidth = powerbi.Prototype.inheritSingle(measureSource3);
+            measureSource3WithWidth.objects = { general: { columnWidth: 300 } };
+
+            let dataView: DataView = {
+                metadata: {
+                    columns: [measureSource1WithWidth, measureSource2WithWidth, measureSource3WithWidth],
+                    objects: dataViewObjects
+                },
+                table: dataViewTableThreeMeasures
+            };
+            v.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                let tableVisual = <Table>v;
+                let colWidthManager = tableVisual.getColumnWidthManager();
+                let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
+
+                expect(colWidthManager.suppressOnDataChangedNotification).toBe(false);
+                expect(persistedColWidths.length).toBe(3);
+                expect(persistedColWidths[0].queryName).toBe('measure1');
+                expect(persistedColWidths[0].width).toBe(100);
+                expect(persistedColWidths[1].queryName).toBe('measure2');
+                expect(persistedColWidths[1].width).toBe(200);
+                expect(persistedColWidths[2].queryName).toBe('measure3');
+                expect(persistedColWidths[2].width).toBe(300);
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it("ColumnWidthChangedCallback ColumnAutoSizeProperty on", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
@@ -1240,11 +1286,11 @@ module powerbitests {
                     let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                     expect(persistedColWidths.length).toBe(3);
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(47);
+                    expect(persistedColWidths[0].width).toBe(48);
                     expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
-                    expect(persistedColWidths[1].width).toBe(57);
+                    expect(persistedColWidths[1].width).toBe(58);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(49);
+                    expect(persistedColWidths[2].width).toBe(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1279,11 +1325,11 @@ module powerbitests {
                     let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
                     expect(persistedColWidths.length).toBe(3);
                     expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(47);
+                    expect(persistedColWidths[0].width).toBe(48);
                     expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
                     expect(persistedColWidths[1].width).toBe(45);
                     expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(49);
+                    expect(persistedColWidths[2].width).toBe(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1325,14 +1371,13 @@ module powerbitests {
                     let objectInstances = changes.merge;
                     expect(objectInstances[0].properties["autoSizeColumnWidth"]).toBe(false);
                     expect(objectInstances[1].selector.metadata).toBe(measureSource1.queryName);
-                    expect(objectInstances[1].properties["columnWidth"]).toBe(47);
+                    expect(objectInstances[1].properties["columnWidth"]).toBe(48);
                     expect(objectInstances[2].selector.metadata).toBe(measureSource3.queryName);
-                    expect(objectInstances[2].properties["columnWidth"]).toBe(49);
+                    expect(objectInstances[2].properties["columnWidth"]).toBe(50);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
-
 
         it("Change ViewMode allow Header Resize", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
@@ -1469,7 +1514,7 @@ module powerbitests {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
                     expect(newRowCells.eq(1).width()).toEqual(48);
-                    expect(newRowCells.eq(2).width()).toEqual(46);
+                    expect(newRowCells.eq(2).width()).toEqual(45);
                     expect(newRowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);
@@ -1513,7 +1558,7 @@ module powerbitests {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
                     expect(newRowCells.eq(1).width()).toEqual(48);
-                    expect(newRowCells.eq(2).width()).toEqual(46);
+                    expect(newRowCells.eq(2).width()).toEqual(45);
                     expect(newRowCells.eq(3).width()).toEqual(50);
                     done();
                 }, DefaultWaitForRender);
@@ -1544,7 +1589,7 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
                 expect(rowCells.eq(1).width()).toEqual(48);
-                expect(rowCells.eq(2).width()).toEqual(46);
+                expect(rowCells.eq(2).width()).toEqual(45);
                 expect(rowCells.eq(3).width()).toEqual(50);
                 
                 // AutoSize property on

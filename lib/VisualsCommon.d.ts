@@ -248,6 +248,7 @@ declare module powerbi {
         requestId?: string;
     }
     interface IClientWarning extends ILocalizableError {
+        code: string;
         columnNameFromIndex: (index: number) => string;
     }
     class UnknownClientError implements IClientError {

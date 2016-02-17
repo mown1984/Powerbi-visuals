@@ -115,6 +115,8 @@ gulp.task("run:test:visuals", function (callback) {
 });
 
 function runTestVisuals(callback) {
+    copyExternalDependencies();
+    
     // TODO read VisualsTests folder location from config
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",

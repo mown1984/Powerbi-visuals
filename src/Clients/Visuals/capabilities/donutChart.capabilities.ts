@@ -99,10 +99,6 @@ module powerbi.visuals {
                         displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
                         type: { fill: { solid: { color: true } } }
                     },
-                    showAllDataPoints: {
-                        displayName: data.createDisplayNameGetter('Visual_DataPoint_Show_All'),
-                        type: { bool: true }
-                    },
                     fill: {
                         displayName: data.createDisplayNameGetter('Visual_Fill'),
                         type: { fill: { solid: { color: true } } }
@@ -181,7 +177,6 @@ module powerbi.visuals {
         dataPoint: {
             defaultColor: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'defaultColor' },
             fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
-            showAllDataPoints: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'showAllDataPoints' },
         },
         legend: {
             show: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'show' },

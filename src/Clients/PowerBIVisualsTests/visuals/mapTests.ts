@@ -241,41 +241,6 @@ module powerbitests {
             });
         });
 
-        describe('warnings', () => {
-            it('shows warning with no Location set', () => {
-                var dataView: powerbi.DataView = {
-                    metadata: {
-                        columns: [{ displayName: 'NotLocation', roles: { 'NotCategory': true, }, }],
-                    }
-                };
-
-                let warnings = Map.showLocationMissingWarningIfNecessary(dataView);
-                expect(warnings[0]).not.toBeNull();
-            });
-
-            it('shows warning with no columns set', () => {
-                var dataView: powerbi.DataView = {
-                    metadata: {
-                        columns: [],
-                    }
-                };
-
-                let warnings = Map.showLocationMissingWarningIfNecessary(dataView);
-                expect(warnings[0]).not.toBeNull();
-            });
-
-            it('does not show warning with location set', () => {
-                var dataView: powerbi.DataView = {
-                    metadata: {
-                        columns: [{ displayName: 'Location', queryName: 'Location', roles: { 'Category': true, }, }],
-                    }
-                };
-
-                let warnings = Map.showLocationMissingWarningIfNecessary(dataView);
-                expect(warnings.length).toEqual(0);
-            });
-        });
-
         describe('legend', () => {
             it('is explicitly hidden', () => {
                 var dataView: powerbi.DataView = {
@@ -446,6 +411,34 @@ module powerbitests {
             // ensure first object is 'fill' and not 'defaultColor'
             expect(enumeratedDataPoints.instances[0]['properties']['fill']).toBeDefined();
         });
+
+        it('enumerateDataPoints correctly handles hasDynamicSeries=true', () => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.buildWithSeries(true, false);
+            let visualBuilder = new MapVisualBuilder();
+            let visual = visualBuilder.build(false, true);
+
+            visual.onDataChanged({ dataViews: [dataView] });
+
+            let result = visual.enumerateObjectInstances({
+                objectName: 'legend',
+            });
+            expect((<powerbi.VisualObjectInstanceEnumerationObject>result).instances.length).toBe(1);
+        });
+
+        it('enumerateDataPoints correctly handles hasDynamicSeries=false', () => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(true, false);
+            let visualBuilder = new MapVisualBuilder();
+            let visual = visualBuilder.build(false, true);
+
+            visual.onDataChanged({ dataViews: [dataView] });
+
+            let result = visual.enumerateObjectInstances({
+                objectName: 'legend',
+            });
+            expect(result).toBeUndefined();
+        });
     });
 
     describe("Map Converter", () => {
@@ -523,48 +516,6 @@ module powerbitests {
                     expect(dataPoint.subDataPoints[0].fill).toEqual(fills[0]);
                 }
             });
-        });
-
-        describe('tooltipInfo', () => {
-            let v: Map;
-            let visualBuilder: MapVisualBuilder;
-            var viewport = {
-                height: 800,
-                width: 500,
-            };
-            beforeEach(() => {
-                visualBuilder = new MapVisualBuilder();
-                v = visualBuilder.build(false);
-            });
-            //Test Defect 6170871 - Map tooltip doesn't show Color Saturation value
-            it('Map.calculateSeriesInfo - Gradient tooltip', () => {
-                let dataView = new MapDataBuilder().build(true, false, true);
-                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
-                let options = visualBuilder.buildInitOptions();
-                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
-                v.onDataChanged({ dataViews: [dataView] });
-                let map = <any>v;
-                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService);
-
-                expect(actualData.bubbleData[0].tooltipInfo).toEqual([{ displayName: 'state', value: 'Montana' }, { displayName: 'size', value: '100.00' }, { displayName: 'gradient', value: '75' }]);
-                expect(actualData.bubbleData[1].tooltipInfo).toEqual([{ displayName: 'state', value: 'California' }, { displayName: 'size', value: '200.00' }, { displayName: 'gradient', value: '50' }]);
-                expect(actualData.bubbleData[2].tooltipInfo).toEqual([{ displayName: 'state', value: 'Arizona' }, { displayName: 'size', value: '300.00' }, { displayName: 'gradient', value: '0' }]);
-            });
-
-            it('validate tooltip info not being created when tooltips are disabled', () => {
-                let dataView = new MapDataBuilder().build(true, false, true);
-                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
-                let options = visualBuilder.buildInitOptions();
-                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
-                v.onDataChanged({ dataViews: [dataView] });
-                let map = <any>v;
-                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService, false);
-
-                expect(actualData.bubbleData[0].tooltipInfo).toBeUndefined();
-                expect(actualData.bubbleData[1].tooltipInfo).toBeUndefined();
-                expect(actualData.bubbleData[2].tooltipInfo).toBeUndefined();
-            });
-
         });
 
         describe("Simple category with measures", () => {
@@ -658,6 +609,54 @@ module powerbitests {
                     }
                 }
             });
+
+            it("Null series name doesn't throw exception", () => {
+                dataView = dataBuilder.withNullSeriesName().buildWithSeries(true, true);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                expect(data).toBeTruthy(); // Simple check to expect this not to fail
+            });
+        });
+
+        describe('tooltipInfo', () => {
+            let v: Map;
+            let visualBuilder: MapVisualBuilder;
+            var viewport = {
+                height: 800,
+                width: 500,
+            };
+            beforeEach(() => {
+                visualBuilder = new MapVisualBuilder();
+                v = visualBuilder.build(false);
+            });
+            //Test Defect 6170871 - Map tooltip doesn't show Color Saturation value
+            it('Map.calculateSeriesInfo - Gradient tooltip', () => {
+                let dataView = new MapDataBuilder().build(true, false, true);
+                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
+                let options = visualBuilder.buildInitOptions();
+                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
+                v.onDataChanged({ dataViews: [dataView] });
+                let map = <any>v;
+                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService);
+
+                expect(actualData.bubbleData[0].tooltipInfo).toEqual([{ displayName: 'state', value: 'Montana' }, { displayName: 'size', value: '100.00' }, { displayName: 'gradient', value: '75' }]);
+                expect(actualData.bubbleData[1].tooltipInfo).toEqual([{ displayName: 'state', value: 'California' }, { displayName: 'size', value: '200.00' }, { displayName: 'gradient', value: '50' }]);
+                expect(actualData.bubbleData[2].tooltipInfo).toEqual([{ displayName: 'state', value: 'Arizona' }, { displayName: 'size', value: '300.00' }, { displayName: 'gradient', value: '0' }]);
+            });
+
+            it('validate tooltip info not being created when tooltips are disabled', () => {
+                let dataView = new MapDataBuilder().build(true, false, true);
+                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
+                let options = visualBuilder.buildInitOptions();
+                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
+                v.onDataChanged({ dataViews: [dataView] });
+                let map = <any>v;
+                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService, false);
+
+                expect(actualData.bubbleData[0].tooltipInfo).toBeUndefined();
+                expect(actualData.bubbleData[1].tooltipInfo).toBeUndefined();
+                expect(actualData.bubbleData[2].tooltipInfo).toBeUndefined();
+            });
+
         });
     });
 
@@ -689,19 +688,6 @@ module powerbitests {
             setTimeout(() => {
                 let bubbles = getBubbles();
                 expect(bubbles.length).toBe(dataBuilder.categoryValues.length);
-
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it("should raise warning with no category", (done) => {
-            let warningSpy = jasmine.createSpy('setWarnings');
-            visualBuilder.host.setWarnings = warningSpy;
-            let dataView = new MapDataBuilder().withoutCategory().build(false, false);
-            v.onDataChanged({ dataViews: [dataView] });
-
-            setTimeout(() => {
-                expect(warningSpy).toHaveBeenCalledWith([new powerbi.visuals.NoMapLocationWarning()]);
 
                 done();
             }, DefaultWaitForRender);
@@ -1260,6 +1246,11 @@ module powerbitests {
             this.clearNonDiagonalValues(this.latitudeValues);
             this.clearNonDiagonalValues(this.longitudeValues);
 
+            return this;
+        }
+
+        public withNullSeriesName(): MapDataBuilder {
+            this.seriesValues[1] = null;
             return this;
         }
 

@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -45,12 +45,14 @@ module powerbi.visuals {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_X'),
                 description: data.createDisplayNameGetter('Role_DisplayName_XScatterChartDescription'),
                 requiredTypes: [{ numeric: true }, { integer: true }],
+                cartesianKind: CartesianRoleKind.X,
             }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Y'),
                 description: data.createDisplayNameGetter('Role_DisplayName_YScatterChartDescription'),
                 requiredTypes: [{ numeric: true }, { integer: true }],
+                cartesianKind: CartesianRoleKind.Y,
             }, {
                 name: 'Size',
                 kind: VisualDataRoleKind.Measure,
@@ -106,6 +108,13 @@ module powerbi.visuals {
                         type: { formatting: { formatString: true } },
                     },
                 },
+            },
+            trend: {
+                properties: {
+                    show: {
+                        type: { bool: true }
+                    },
+                }
             },
             categoryAxis: {
                 displayName: data.createDisplayNameGetter('Visual_XAxis'),
@@ -205,7 +214,7 @@ module powerbi.visuals {
                         type: { numeric: true },
                     }
                 }
-            },           
+            },
             xAxisReferenceLine: {
                 displayName: data.createDisplayNameGetter('Visual_Reference_Line_X'),
                 description: data.createDisplayNameGetter('Visual_Reference_Line_Description'),
@@ -276,7 +285,7 @@ module powerbi.visuals {
                     },
                     value: {
                         displayName: data.createDisplayNameGetter('Visual_Reference_Line_Value'),
-                        description: data.createDisplayNameGetter('Visual_Reference_Line_Value_Description'),                        
+                        description: data.createDisplayNameGetter('Visual_Reference_Line_Value_Description'),
                         type: { numeric: true }
                     },
                     lineColor: {
@@ -291,12 +300,12 @@ module powerbi.visuals {
                     },
                     style: {
                         displayName: data.createDisplayNameGetter('Visual_Reference_Line_Style'),
-                        description: data.createDisplayNameGetter('Visual_Reference_Line_Style_Description'),                        
+                        description: data.createDisplayNameGetter('Visual_Reference_Line_Style_Description'),
                         type: { enumeration: lineStyle.type }
                     },
                     position: {
                         displayName: data.createDisplayNameGetter('Visual_Reference_Line_Arrange'),
-                        description: data.createDisplayNameGetter('Visual_Reference_Line_Arrange_Description'), 
+                        description: data.createDisplayNameGetter('Visual_Reference_Line_Arrange_Description'),
                         type: { enumeration: referenceLinePosition.type }
                     },
                     dataLabelShow: {
@@ -480,6 +489,22 @@ module powerbi.visuals {
                     ]
                 }
             }
+        }, {
+            conditions: [
+                { 'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1 }, 'Y': { max: 1 }, 'Size': { max: 0 }, 'Gradient': { max: 0 }, 'Play': { max: 0 } },
+            ],
+            requiredProperties: [{ objectName: 'trend', propertyName: 'show' }],
+            usage: {
+               regression: {},
+            },
+            categorical: {
+                categories: {
+                    for: { in: 'regression.X' }
+                },
+                values: {
+                    for: { in: 'regression.Y' }
+                }
+            }
         }],
         sorting: {
             custom: {},
@@ -499,6 +524,9 @@ module powerbi.visuals {
         dataPoint: {
             defaultColor: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'defaultColor' },
             fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
+        },
+        trend: {
+            show: <DataViewObjectPropertyIdentifier>{ objectName: 'trend', propertyName: 'show' },
         },
         colorBorder: {
             show: <DataViewObjectPropertyIdentifier>{ objectName: 'colorBorder', propertyName: 'show' },

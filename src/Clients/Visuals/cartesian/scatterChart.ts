@@ -239,6 +239,7 @@ module powerbi.visuals {
             let valueAxisProperties = options.valueAxisProperties;
 
             let dataViewCategorical: DataViewCategorical = dataView.categorical;
+            let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(dataViewCategorical);
 
             if (dataViewCategorical.categories && dataViewCategorical.categories.length > 0) {
                 categoryValues = dataViewCategorical.categories[0].values;
@@ -275,6 +276,7 @@ module powerbi.visuals {
                 currentViewport,
                 hasDynamicSeries,
                 dataLabelsSettings,
+                gradientValueColumn,
                 objProps.defaultDataPointColor,
                 categoryQueryName,
                 objProps.colorByCategory,
@@ -354,6 +356,7 @@ module powerbi.visuals {
             viewport: IViewport,
             hasDynamicSeries: boolean,
             labelSettings: PointDataLabelsSettings,
+            gradientValueColumn: DataViewValueColumn,
             defaultDataPointColor?: string,
             categoryQueryName?: string,
             colorByCategory?: boolean,
@@ -426,6 +429,11 @@ module powerbi.visuals {
                     if (playFrameInfo) {
                         seriesData.push({ value: playFrameInfo.label, metadata: { source: playFrameInfo.column, values: [] } });
                     }
+
+                    // check for gradient tooltip data 
+                    let gradientToolTipData = TooltipBuilder.createGradientToolTipData(gradientValueColumn, categoryIdx);
+                    if (gradientToolTipData != null)
+                        seriesData.push(gradientToolTipData);
                     let tooltipInfo: TooltipDataItem[];
                     if (tooltipsEnabled) {
                         tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, null, categoryValue, null, categories, seriesData);
@@ -649,7 +657,7 @@ module powerbi.visuals {
         }
 
         public calculateLegend(): LegendData {
-            return this.data.legendData;
+            return this.data && this.data.legendData;
         }
 
         public hasLegend(): boolean {
@@ -1498,7 +1506,7 @@ module powerbi.visuals {
                     .remove();
 
                 if (this.tooltipsEnabled) {
-                    TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
                 }
 
                 // sort the z-order, smallest size on top

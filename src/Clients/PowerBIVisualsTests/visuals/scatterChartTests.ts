@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -1680,6 +1680,104 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('scatter chart with regression line dom validation', (done) => {
+                let trendLineColor = '#FF0000';
+                let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'testQuery',
+                        roles: { "Category": true },
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    },
+                    {
+                        displayName: 'col2',
+                        queryName: 'col2Query',
+                        isMeasure: true,
+                        roles: { "X": true },
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    },
+                    {
+                        displayName: 'col3',
+                        queryName: 'col3Query',
+                        isMeasure: true,
+                        roles: { "Y": true },
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        objects: {
+                            dataPoint: {
+                                fill: {
+                                    solid: {
+                                        color: trendLineColor
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            };
+
+                let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
+                    mocks.dataViewScopeIdentity('a'),
+                    mocks.dataViewScopeIdentity('b'),
+                    mocks.dataViewScopeIdentity('c'),
+                    mocks.dataViewScopeIdentity('d'),
+                    mocks.dataViewScopeIdentity('e'),
+                ];
+
+                let dataViews = [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e'],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [1, 2, 3, 4, 5]
+                        },
+                        {
+                            source: dataViewMetadata.columns[2],
+                            values: [10, 20, 30, 40, 50]
+                        }])
+                    }
+                },
+                {
+                    metadata: dataViewMetadata,
+                    usage: {
+                        regression: {}
+                    },
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[1],
+                            values: [1, 5],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[2],
+                            values: [10, 50],
+                        }])
+                    }
+                 }];
+
+                dataViews[0].metadata.objects = {
+                    trend: {
+                        show: true,
+                    }
+                };
+
+                v.onDataChanged({
+                    dataViews: dataViews
+                });
+
+                setTimeout(() => {
+                    let trendLines = $('.trend-line');
+                    expect(trendLines.length).toBe(1);
+                    helpers.assertColorsMatch(trendLines.css('stroke'), trendLineColor);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it('background image', (done) => {
                 dataViewMetadataFourColumn.objects = {
                     plotArea: {
@@ -1883,7 +1981,7 @@ module powerbitests {
                 let groupedValues = dataView.categorical.values.grouped();
                 groupedValues[0].objects = { dataPoint: { fill: { solid: { color: '#41BEE1' } } } };
                 dataView.categorical.values.grouped = () => groupedValues;
-                
+
                 let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
                 let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
                 let dataPoints = scatterChartData.dataPoints;
@@ -2644,7 +2742,7 @@ module powerbitests {
                     height: 500,
                     width: 500
                 };
-                
+
                 dataViewMetadataFourColumn.columns.push({ displayName: 'gradient', isMeasure: true, roles: { "Gradient": true } });
 
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
@@ -2703,7 +2801,7 @@ module powerbitests {
                     height: 500,
                     width: 500
                 };
-                
+
                 dataViewMetadataFourColumn.columns.push({ displayName: 'gradient', isMeasure: true, roles: { "Gradient": true } });
 
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
@@ -2751,11 +2849,11 @@ module powerbitests {
                 let dataPoints = scatterChartData.dataPoints;
 
                 // TODO: this should be showing gradient values as well.
-                expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: 'category', value: 'a' }, { displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }, { displayName: 'size', value: '10' }]);
-                expect(dataPoints[1].tooltipInfo).toEqual([{ displayName: 'category', value: 'b' }, { displayName: 'x', value: '120' }, { displayName: 'y', value: '220' }, { displayName: 'size', value: '20' }]);
-                expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: 'category', value: 'c' }, { displayName: 'x', value: '130' }, { displayName: 'y', value: '230' }, { displayName: 'size', value: '15' }]);
-                expect(dataPoints[3].tooltipInfo).toEqual([{ displayName: 'category', value: 'd' }, { displayName: 'x', value: '140' }, { displayName: 'y', value: '240' }, { displayName: 'size', value: '10' }]);
-                expect(dataPoints[4].tooltipInfo).toEqual([{ displayName: 'category', value: 'e' }, { displayName: 'x', value: '150' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '100' }]);
+                expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: 'category', value: 'a' }, { displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }, { displayName: 'size', value: '10' }, { displayName: 'gradient', value: '13' }]);
+                expect(dataPoints[1].tooltipInfo).toEqual([{ displayName: 'category', value: 'b' }, { displayName: 'x', value: '120' }, { displayName: 'y', value: '220' }, { displayName: 'size', value: '20' }, { displayName: 'gradient', value: '33' }]);
+                expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: 'category', value: 'c' }, { displayName: 'x', value: '130' }, { displayName: 'y', value: '230' }, { displayName: 'size', value: '15' }, { displayName: 'gradient', value: '55' }]);
+                expect(dataPoints[3].tooltipInfo).toEqual([{ displayName: 'category', value: 'd' }, { displayName: 'x', value: '140' }, { displayName: 'y', value: '240' }, { displayName: 'size', value: '10' }, { displayName: 'gradient', value: '11' }]);
+                expect(dataPoints[4].tooltipInfo).toEqual([{ displayName: 'category', value: 'e' }, { displayName: 'x', value: '150' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '100' }, { displayName: 'gradient', value: '55' }]);
 
             });
         });
@@ -3026,13 +3124,13 @@ module powerbitests {
                     }]
                 });
 
-                setTimeout(() => {    
+                setTimeout(() => {
                     // Dots show up in reverse order (e.g. dots.eq(0) is category 'e'; 1,d; 2,c; etc.)
                     let dots = element.find('.dot');
                     expect(dots.length).toBe(5);
 
                     spyOn(hostServices, 'onSelect').and.callThrough();
-                
+
                     // Allow multiselection
                     spyOn(hostServices, 'canSelect').and.returnValue(true);
 
@@ -3520,7 +3618,7 @@ module powerbitests {
             }
         });
 
-        function validateInteraction(x: number, y: number, cartesianChart: any): void {    
+        function validateInteraction(x: number, y: number, cartesianChart: any): void {
             //test crosshair position
             let mainGraphicsContext = $('.scatterChart .mainGraphicsContext > svg');
             let behavior = (<any>cartesianChart).behavior.behaviors[0];
@@ -3536,7 +3634,7 @@ module powerbitests {
             //test style => dot 3 should be selected
             expect(getMarkersD3().filter(function (d, i) { return (d.x !== 140) && (d.y !== 240); }).attr('class')).toBe("dot notSelected");
             expect(getMarkersD3().filter(function (d, i) { return (d.x === 140) && (d.y === 240); }).attr('class')).toBe("dot selected");
-        
+
             //test legend
             expect($('.interactive-legend').find('.title').text().trim()).toMatch("d");
             expect($('.interactive-legend').find('.item').find('.itemName')[0].innerText.trim()).toBe('x');
@@ -3796,7 +3894,7 @@ module powerbitests {
                 let enumeration = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'colorByCategory' });
                 expect('show' in enumeration.instances[0].properties).toBeTruthy(); //show is a valid property
                 expect(enumeration.instances[0].properties['show']).toBeFalsy(); //value of show is falsey
-            
+
                 v.onDataChanged({ dataViews: [getDataViewMultiSeries()] });
                 enumeration = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'colorByCategory' });
                 expect(enumeration).toBeUndefined();
@@ -4179,7 +4277,7 @@ module powerbitests {
 
                 setTimeout(() => {
                     expect(getMarkers().first().css('fill-opacity')).toBeGreaterThan(0);
-                
+
                     // null size should be hollow
                     expect(getMarkers().eq(2).css('fill-opacity')).toBe('0');
 
@@ -4234,7 +4332,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart without size verify label fill when fill point is on', (done) => {    
+            it('scatter chart without size verify label fill when fill point is on', (done) => {
                 // Category and series are the same field
                 let metadata: powerbi.DataViewMetadata = {
                     columns: [
@@ -5126,7 +5224,7 @@ module powerbitests {
                                 values: datalabelTextArray,
                                 identity: categoryIdentities,
                             }],
-                        
+
                             // These values create a crowded group of points which will make the label layout logic to draw 4 labels with an increased radius and draw leader lines for it.
                             values: DataViewTransform.createValueColumns([
                                 {

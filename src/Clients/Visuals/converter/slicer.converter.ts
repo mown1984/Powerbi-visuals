@@ -146,22 +146,23 @@ module powerbi.visuals {
                 hostServices.setIdentityDisplayNames(displayNameIdentityPairs);
 
             // Add retained values that are not in the returned dataview to the value list.
-            if (hasSelectionOverride) {
+            if (hasSelectionOverride && !_.isEmpty(selectedScopeIds)) {
                 
                 let displayNamesIdentityPairs = hostServices.getIdentityDisplayNames(selectedScopeIds);
+                if (!_.isEmpty(displayNamesIdentityPairs)) {
+                    for (let pair of displayNamesIdentityPairs) {
+                        // When there is no valueCounts, set count to be undefined, otherwise use 0 as the count for retained values
+                        let slicerData: SlicerDataPoint = {
+                            value: pair.displayName,
+                            tooltip: pair.displayName,
+                            identity: SelectionId.createWithId(pair.identity),
+                            selected: true,
+                            count: valueCounts != null ? 0 : undefined,
+                        };
 
-                for (let pair of displayNamesIdentityPairs) {
-                    // When there is no valueCounts, set count to be undefined, otherwise use 0 as the count for retained values
-                    let slicerData: SlicerDataPoint = {
-                        value: pair.displayName,
-                        tooltip: pair.displayName,
-                        identity: SelectionId.createWithId(pair.identity),
-                        selected: true,
-                        count: valueCounts != null ? 0 : undefined,
-                    };
-
-                    slicerDataPoints.push(slicerData);
-                    numOfSelected++;
+                        slicerDataPoints.push(slicerData);
+                        numOfSelected++;
+                    }
                 }
             }
 

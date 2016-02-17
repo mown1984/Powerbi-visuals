@@ -121,45 +121,6 @@ module powerbi.data {
             return newDataView;
         }
 
-        /** Convert selection info to projections */
-        function projectionsFromSelects(selects: DataViewSelectTransform[]): QueryProjectionsByRole {
-            let projections: QueryProjectionsByRole = {};
-            for (let select of selects) {
-                let roles = select.roles;
-                if (!roles)
-                    continue;
-
-                for (let roleName in roles) {
-                    if (roles[roleName]) {
-                        let qp = projections[roleName];
-                        if (!qp)
-                            qp = projections[roleName] = new QueryProjectionCollection([]);
-                        qp.all().push({ queryRef: select.queryName });
-                    }
-                }
-            }
-
-            return projections;
-        }
-
-        /** Use selections and metadata to fashion query role kinds */
-        function createRoleKindFromMetadata(selects: DataViewSelectTransform[], metadata: DataViewMetadata): RoleKindByQueryRef {
-            let roleKindByQueryRef: DataViewAnalysis.RoleKindByQueryRef = {};
-            for (let column of metadata.columns) {
-                if ((!column.index && column.index !== 0) || column.index < 0 || column.index >= selects.length)
-                    continue;
-
-                let select = selects[column.index];
-                if (select) {
-                    let queryRef = select.queryName;
-                    if (queryRef && roleKindByQueryRef[queryRef] === undefined) {
-                        roleKindByQueryRef[queryRef] = column.isMeasure ? VisualDataRoleKind.Measure : VisualDataRoleKind.Grouping;
-                    }
-                }
-            }
-            return roleKindByQueryRef;
-        }
-
         /** Get roles from a role mapping */
         function getRolesInRoleMapping(role: (roleName: string) => void, roleMapping: DataViewRoleBindMapping | DataViewRoleForMapping | DataViewGroupedRoleMapping | DataViewListRoleMapping): void {
             if (!roleMapping)
@@ -196,9 +157,9 @@ module powerbi.data {
                 return false;
 
             // select applicable mappings based on select roles
-            let roleKinds: RoleKindByQueryRef = createRoleKindFromMetadata(selects, dataView.metadata);
-            let projections: QueryProjectionsByRole = projectionsFromSelects(selects);
-            dataViewMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds);
+            let roleKinds: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(selects, dataView.metadata);
+            let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(selects);
+            dataViewMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
 
             // NOTE: limiting to simple situation that handles scatter for now - see the other side in canPivotCategorical
             if (!dataViewMappings || dataViewMappings.length !== 1)

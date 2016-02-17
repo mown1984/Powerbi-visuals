@@ -53,6 +53,7 @@ module powerbi.visuals {
     export interface MapData {
         dataPoints: MapDataPoint[];
         geocodingCategory: string;
+        hasDynamicSeries: boolean;
     }
 
     /**
@@ -240,6 +241,7 @@ module powerbi.visuals {
             this.mapData = {
                 dataPoints: [],
                 geocodingCategory: null,
+                hasDynamicSeries: false,
             };
         }
 
@@ -684,6 +686,7 @@ module powerbi.visuals {
             this.mapData = {
                 dataPoints: [],
                 geocodingCategory: null,
+                hasDynamicSeries: false,
             };
         }
 
@@ -1466,10 +1469,11 @@ module powerbi.visuals {
             this.showAllDataPoints = null;
             let dataView = this.dataView = options.dataViews[0];
             let enableGeoShaping = this.enableGeoShaping;
-            let warnings = Map.showLocationMissingWarningIfNecessary(dataView);
+            let warnings = [];
             let data: MapData = {
                 dataPoints: [],
                 geocodingCategory: null,
+                hasDynamicSeries: false,
             };
 
             if (dataView) {
@@ -1504,6 +1508,7 @@ module powerbi.visuals {
                 // Convert data
                 let colorHelper = new ColorHelper(this.colors, mapProps.dataPoint.fill, this.defaultDataPointColor);
                 data = Map.converter(dataView, colorHelper, this.geoTaggingAnalyzerService);
+                this.hasDynamicSeries = data.hasDynamicSeries;
 
                 // Create legend
                 this.legendData = Map.createLegendData(dataView, colorHelper);
@@ -1639,7 +1644,7 @@ module powerbi.visuals {
                             }
                         for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                             let color = hasDynamicSeries
-                                ? colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, reader.getSeriesName(seriesIndex).toString())
+                                ? colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>(reader.getSeriesName(seriesIndex)))
                                 : colorHelper.getColorForMeasure(categoryObjects, sizeQueryName);
 
                             let colorRgb = Color.parseColorString(color);
@@ -1684,6 +1689,7 @@ module powerbi.visuals {
             let mapData: MapData = {
                 dataPoints: dataPoints,
                 geocodingCategory: geocodingCategory,
+                hasDynamicSeries: hasDynamicSeries,
             };
 
             return mapData;
@@ -1733,31 +1739,6 @@ module powerbi.visuals {
                 aNode.remove();
                 divNode.appendTo(logoContainer);
             }
-        }
-
-        /** Note: Public for UnitTests */
-        public static showLocationMissingWarningIfNecessary(dataView: powerbi.DataView): IVisualWarning[]{
-            if (dataView) {
-            let metadata = dataView.metadata;
-
-            if (metadata && metadata.columns) {
-                let columns = metadata.columns;
-                let foundLocation: boolean = false;
-
-                for (let i = 0; i < columns.length; i++) {
-                    if (DataRoleHelper.hasRole(columns[i], 'Category')) {
-                        // Found location
-                        foundLocation = true;
-                    }
-                }
-
-                if (!foundLocation) {
-                    return [new NoMapLocationWarning()];
-                }
-            }
-            }
-
-            return [];
         }
 
         public onResizing(viewport: IViewport): void {
@@ -1904,41 +1885,5 @@ module powerbi.visuals {
                 ensureMap: jsCommon.ensureMap,
             };
         }
-        
-        public static addLatLongGroupingToMapCapabilities(plugin: IVisualPlugin): void {
-            plugin.capabilities.dataRoles[2].kind = VisualDataRoleKind.GroupingOrMeasure;
-            plugin.capabilities.dataRoles[3].kind = VisualDataRoleKind.GroupingOrMeasure;
-            plugin.capabilities.dataViewMappings[0].conditions = [
-                { 'Category': { max: 1 }, 'Series': { max: 1 }, 'X': { max: 1, kind: VisualDataRoleKind.Measure }, 'Y': { max: 1, kind: VisualDataRoleKind.Measure }, 'Size': { max: 1 }, 'Gradient': { max: 0 } },
-                { 'Category': { max: 1 }, 'Series': { max: 0 }, 'X': { max: 1, kind: VisualDataRoleKind.Measure }, 'Y': { max: 1, kind: VisualDataRoleKind.Measure }, 'Size': { max: 1 }, 'Gradient': { max: 1 } },
-            ];
-            plugin.capabilities.dataViewMappings.push({
-                conditions: [
-                    { 'Category': { max: 0 }, 'Series': { max: 1 }, 'X': { max: 1, kind: VisualDataRoleKind.Grouping }, 'Y': { max: 1, kind: VisualDataRoleKind.Grouping }, 'Size': { max: 1 }, 'Gradient': { max: 0 } },
-                    { 'Category': { max: 0 }, 'Series': { max: 0 }, 'X': { max: 1, kind: VisualDataRoleKind.Grouping }, 'Y': { max: 1, kind: VisualDataRoleKind.Grouping }, 'Size': { max: 1 }, 'Gradient': { max: 1 } }
-                ],
-                categorical: {
-                    categories: {
-                        select: [
-                            { bind: { to: 'X' } },
-                            { bind: { to: 'Y' } },
-                        ],
-                        dataReductionAlgorithm: { top: {} }
-                    },
-                    values: {
-                        group: {
-                            by: 'Series',
-                            select: [
-                                { bind: { to: 'Size' } },
-                                { bind: { to: 'Gradient' } },
-                            ],
-                            dataReductionAlgorithm: { top: {} }
-                        }
-                    },
-                    rowCount: { preferred: { min: 2 } }
-                },
-            });
-        }
-
     }
 }

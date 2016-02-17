@@ -28,7 +28,7 @@
 
 module powerbi.visuals {
 
-    import TablixFormattingProperties = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
+    import TablixFormattingPropertiesMatrix = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
     import TablixUtils = controls.internal.TablixUtils;
     /**
      * Extension of the Matrix node for Matrix visual.
@@ -69,6 +69,7 @@ module powerbi.visuals {
     }
 
     export interface MatrixVisualBodyItem {
+        dataPoint: DataViewMatrixNodeValue;
         textContent?: string;
         domContent?: JQuery;
         isSubtotal: boolean;
@@ -275,6 +276,7 @@ module powerbi.visuals {
 
             if (!rowItem.values)
                 return {
+                    dataPoint: undefined,
                     textContent: '',
                     isSubtotal: isSubtotalItem,
                     isLeftMost: columnItem.index === 0
@@ -283,6 +285,7 @@ module powerbi.visuals {
             let intersection = <DataViewMatrixNodeValue>(rowItem.values[columnItem.leafIndex]);
             if (!intersection)
                 return {
+                    dataPoint: intersection,
                     isSubtotal: isSubtotalItem,
                     isLeftMost: columnItem.index === 0
                 };
@@ -292,12 +295,14 @@ module powerbi.visuals {
 
             if (TablixUtils.isValidStatusGraphic(valueSource.kpi, formattedValue))
                 return {
+                    dataPoint: intersection,
                     domContent: TablixUtils.createKpiDom(valueSource.kpi, intersection.value),
                     isSubtotal: isSubtotalItem,
                     isLeftMost: columnItem.index === 0
                 };
 
             return {
+                dataPoint: intersection,
                 textContent: formattedValue,
                 isSubtotal: isSubtotalItem,
                 isLeftMost: columnItem.index === 0
@@ -346,7 +351,7 @@ module powerbi.visuals {
         }
 
         public bodyCellItemEquals(item1: MatrixVisualBodyItem, item2: MatrixVisualBodyItem): boolean {
-            return (item1 === item2);
+            return (item1.dataPoint === item2.dataPoint);
         }
 
         public cornerCellItemEquals(item1: any, item2: any): boolean {
@@ -472,7 +477,7 @@ module powerbi.visuals {
         private static totalClassName = "total";
         private static nonBreakingSpace = '&nbsp;';
 
-        private formattingProperties: TablixFormattingProperties;
+        private formattingProperties: TablixFormattingPropertiesMatrix;
         private hierarchyNavigator: IMatrixHierarchyNavigator;
         private options: MatrixBinderOptions;
 
@@ -484,7 +489,7 @@ module powerbi.visuals {
             this.options = options;
         }
 
-        public onDataViewChanged(formattingProperties: TablixFormattingProperties): void {
+        public onDataViewChanged(formattingProperties: TablixFormattingPropertiesMatrix): void {
             this.formattingProperties = formattingProperties;
         }
 
@@ -948,9 +953,9 @@ module powerbi.visuals {
             this.waitingForSort = false;
         }
 
-        public static converter(dataView: DataView, isFormattingPropertiesEnabled: boolean): TablixFormattingProperties {
+        public static converter(dataView: DataView, isFormattingPropertiesEnabled: boolean): TablixFormattingPropertiesMatrix {
             debug.assertValue(dataView, 'dataView');
-            let formattingProperties: TablixFormattingProperties;
+            let formattingProperties: TablixFormattingPropertiesMatrix;
 
             if (isFormattingPropertiesEnabled) {
                 formattingProperties = TablixUtils.getMatrixFormattingProperties(dataView);

@@ -1,4 +1,4 @@
- /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -35,9 +35,11 @@ var gulp = require("gulp"),
     rename = require("gulp-rename"),
     nop = require("gulp-nop"),
     merge = require("merge2"),
+    lodash = require("lodash"),
     os = require("os");
 
-var config = require("./config.js");
+var config = require("./config.js"),
+    utils = require("./utils.js");
 
 var isDebug = config.debug || false,
     nonminJs = config.nonminJs;
@@ -55,37 +57,44 @@ var isDebug = config.debug || false,
  *  of "sourceRootMapPrefix + Project name" for all projects. To override path for single project:
  *  cd proj_folder && gulp build --sourceRootMapFullPath=some/path
  *  
- * @param {String} projectPath
- * @param {TsProjecrt} tsProjecrt
- * @param {Function} cb callback from gulp task that have to be called when this task is done.
+ * @param {String} options.projectPath
+ * @param {TsProjecrt} options.tsProjecrt
+ * @param {Function} options.callback callback from gulp task that have to be called when this task is done.
  */
-function tsc(projectPath, tsProjecrt, cb) {
+function tsc(options) {
     var gulpOptions = {
-            cwd: projectPath
-        },
-        errorCache = [],
-        currentCwd = process.cwd();
+        cwd: options.projectPath
+    },
+    tsProject = options.tsProject,
+    cb = options.callback,
+    // TODO: update config.json structure
+    mapConfig = lodash.defaults(options.mapConfig || {},{
+        sourceRootMapFullPath: config.sourceRootMapFullPath,
+        sourceRootMapPrefix: config.sourceRootMapPrefix,
+        includeContentToMap: config.includeContentToMap,
+        generateMaps: config.generateMaps,
+    }),
+    errorCache = new utils.ErrorCache();
 
-    process.chdir(projectPath);
+    process.chdir(options.projectPath);
 
-    var PROJ_NAME = tsProjecrt.options.projectName,
-        SOURCE_ROOT_PATH = config.sourceRootMapFullPath || config.sourceRootMapPrefix + PROJ_NAME,
-        OUT_FILE_NAME = tsProjecrt.options.outFileName;
+    var PROJ_NAME = tsProject.options.projectName,
+        SOURCE_ROOT_PATH = mapConfig.sourceRootMapFullPath || mapConfig.sourceRootMapPrefix + PROJ_NAME,
+        OUT_FILE_NAME = tsProject.options.outFileName;
 
-    var tscResult = tsProjecrt.src().on("error", function (err) {
-        errorCache.push(err);
-    })
-        .pipe(config.generateMaps ? maps.init() : nop())
-        .pipe(ts(tsProjecrt, undefined, ts.reporter.longReporter()));
+    var tscResult = tsProject.src()
+        .pipe(mapConfig.generateMaps ? maps.init() : nop())
+        .pipe(ts(tsProject, undefined, ts.reporter.longReporter()))
+        .on("error", errorCache.catchError);
 
-    process.chdir(currentCwd);
+    process.chdir(options.projectPath);
 
     return merge([
         // .d.ts
         tscResult.dts
             .pipe(changed("./", {
                 hasChanged: changed.compareSha1Digest,
-                cwd: projectPath,
+                cwd: options.projectPath,
                 extension: ".ts"
             }))
             .pipe(gulp.dest("./", gulpOptions)),
@@ -94,7 +103,7 @@ function tsc(projectPath, tsProjecrt, cb) {
             .pipe(clone())
             .pipe(changed("./", {
                 hasChanged: changed.compareSha1Digest,
-                cwd: projectPath,
+                cwd: options.projectPath,
                 extension: ".js"
             }))
             .pipe(rename({
@@ -108,27 +117,41 @@ function tsc(projectPath, tsProjecrt, cb) {
             .pipe(clone())
             .pipe(changed("./", {
                 hasChanged: changed.compareSha1Digest,
-                cwd: projectPath,
+                cwd: options.projectPath,
                 extension: ".js"
             }))
-            .pipe(config.generateMaps ? maps.write("./", getWriteMapOptions(SOURCE_ROOT_PATH)) : nop())
+            .pipe(mapConfig.generateMaps ? maps.write("./", getWriteMapOptions(SOURCE_ROOT_PATH)) : nop())
             .pipe(gulp.dest("./", gulpOptions)).on("end", function () {
 
             // reinit `maps` in order to use already generated .js and .map files.
             gulp.src(["obj/" + OUT_FILE_NAME + ".js"], gulpOptions)
-                .pipe(config.generateMaps ? maps.init({ loadMaps: true }) : nop())
+                .pipe(mapConfig.generateMaps ? maps.init({ loadMaps: true }) : nop())
                 .pipe(config.uglifyJs ? uglify(getJsUglifyOptions(isDebug)) : nop())
                 .pipe(rename({ extname: ".min.js" }))
                 .pipe(maps.write("./", getWriteMapOptions()))
                 .pipe(gulp.dest("./obj", gulpOptions).on("end", function () {
-                    if (errorCache.length > 0) {
-                        cb && cb(errorCache.join(os.EOL));
+                    if (errorCache.hasErrors()) {
+                        cb && cb(errorCache.getErrors());
                     } else {
                         cb && cb();
                     }
                 }));
         }),
     ]);
+    
+    /**
+     * Options to generate source maps.
+     * 
+     * @param {String} sourcePath Path to sources that will be used in map files.
+     * @returns {Object}
+     */
+    function getWriteMapOptions(sourcePath) {
+        return {
+            // includeContent: true - useful when you don't have sources on server.
+            includeContent: mapConfig.includeContentToMap || false,
+            sourceRoot: sourcePath
+        };
+    }
 }
 
 /**
@@ -182,20 +205,6 @@ function getNonminJsUglifyOptions() {
     };
 
     return options;
-}
-
-/**
- * Options to generate source maps.
- * 
- * @param {String} sourcePath Path to sources that will be used in map files.
- * @returns {Object}
- */
-function getWriteMapOptions(sourcePath) {
-    return {
-        // includeContent: true - useful when you don't have sources on server.
-        includeContent: config.includeContentToMap || false,
-        sourceRoot: sourcePath
-    };
 }
 
 module.exports = tsc;

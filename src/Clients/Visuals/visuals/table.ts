@@ -45,6 +45,7 @@ module powerbi.visuals {
     }
 
     export interface TableCell {
+        dataPoint: any;
         textContent?: string;
         domContent?: JQuery;
         isMeasure: boolean;
@@ -206,6 +207,7 @@ module powerbi.visuals {
                 textContent = formattedValue;
 
             return {
+                dataPoint: value,
                 textContent: textContent,
                 domContent: domContent,
                 isMeasure: columnItem.isMeasure,
@@ -244,8 +246,8 @@ module powerbi.visuals {
             return false;
         }
 
-        public bodyCellItemEquals(item1: any, item2: any): boolean {
-            return (item1 === item2);
+        public bodyCellItemEquals(item1: TableCell, item2: TableCell): boolean {
+            return (item1.dataPoint === item2.dataPoint);
         }
 
         public cornerCellItemEquals(item1: any, item2: any): boolean {

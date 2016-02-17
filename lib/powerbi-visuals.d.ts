@@ -2034,6 +2034,7 @@ declare module powerbi {
         requestId?: string;
     }
     interface IClientWarning extends ILocalizableError {
+        code: string;
         columnNameFromIndex: (index: number) => string;
     }
     class UnknownClientError implements IClientError {
@@ -3719,47 +3720,40 @@ declare module powerbi.data {
         supportsMedian: boolean;
         supportsPercentile: boolean;
     }
-    interface ConceptualEntity {
+    interface ConceptualPropertyItemContainer {
+        properties: ArrayNamedItems<ConceptualProperty>;
+        hierarchies?: ArrayNamedItems<ConceptualHierarchy>;
+        displayFolders?: ArrayNamedItems<ConceptualDisplayFolder>;
+    }
+    interface ConceptualPropertyItem {
+        name: string;
+        displayName: string;
+        hidden?: boolean;
+    }
+    interface ConceptualEntity extends ConceptualPropertyItemContainer {
         name: string;
         displayName: string;
         visibility?: ConceptualVisibility;
         calculated?: boolean;
         queryable?: ConceptualQueryableState;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
-        navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
+        navigationProperties?: ArrayNamedItems<ConceptualNavigationProperty>;
     }
-    interface ConceptualDisplayFolder {
-        name: string;
-        displayName: string;
-        displayFolders: ArrayNamedItems<ConceptualDisplayFolder>;
-        properties: ArrayNamedItems<ConceptualProperty>;
-        hierarchies: ArrayNamedItems<ConceptualHierarchy>;
+    interface ConceptualDisplayFolder extends ConceptualPropertyItem, ConceptualPropertyItemContainer {
     }
-    interface ConceptualProperty {
-        name: string;
-        displayName: string;
+    interface ConceptualProperty extends ConceptualPropertyItem {
         type: ValueType;
         kind: ConceptualPropertyKind;
-        hidden?: boolean;
         format?: string;
         column?: ConceptualColumn;
         queryable?: ConceptualQueryableState;
         measure?: ConceptualMeasure;
-        kpi?: ConceptualProperty;
+        kpiValue?: ConceptualProperty;
     }
-    interface ConceptualHierarchy {
-        name: string;
-        displayName: string;
+    interface ConceptualHierarchy extends ConceptualPropertyItem {
         levels: ArrayNamedItems<ConceptualHierarchyLevel>;
-        hidden?: boolean;
     }
-    interface ConceptualHierarchyLevel {
-        name: string;
-        displayName: string;
+    interface ConceptualHierarchyLevel extends ConceptualPropertyItem {
         column: ConceptualProperty;
-        hidden?: boolean;
     }
     interface ConceptualNavigationProperty {
         name: string;
@@ -3789,8 +3783,10 @@ declare module powerbi.data {
     }
     interface ConceptualPropertyKpi {
         statusMetadata: DataViewKpiColumnMetadata;
+        trendMetadata?: DataViewKpiColumnMetadata;
         status?: ConceptualProperty;
         goal?: ConceptualProperty;
+        trend?: ConceptualProperty;
     }
     const enum ConceptualVisibility {
         Visible = 0,
@@ -4138,33 +4134,6 @@ declare module powerbi.data {
         LessThan = 3,
         LessThanOrEqual = 4,
     }
-    interface SemanticQueryDataShapeCommand {
-        Query: QueryDefinition;
-        Binding: DataShapeBinding;
-    }
-    /** Only one of the members can be non-null at any one time */
-    interface QueryCommand {
-        SemanticQueryDataShapeCommand?: SemanticQueryDataShapeCommand;
-        ScriptVisualCommand?: ScriptVisualCommand;
-    }
-    interface DataQuery {
-        Commands: QueryCommand[];
-    }
-    /** The final (single) result of a DataQuery is cacheable.
-          * The intermediate results coming out of each QueryCommand (a DataQuery.Commands[i]) is not cached nor returned to the client. */
-    interface DataQueryRequest {
-        Query: DataQuery;
-        /** Optional server-side cache key for the semantic query. This CacheKey is not used to the IQueryCache (client-side cache). */
-        CacheKey?: string;
-    }
-    interface ScriptVisualCommand {
-        Script?: string;
-        RenderingEngine?: string;
-        ViewportWidthPx?: number;
-        ViewportHeightPx?: number;
-        Version?: number;
-        ScriptInput?: ScriptInput;
-    }
     /** Defines semantic data types. */
     enum SemanticType {
         None = 0,
@@ -4183,14 +4152,6 @@ declare module powerbi.data {
         Boolean = 4096,
         Table = 8192,
         Range = 16384,
-    }
-    enum SelectKind {
-        None = 0,
-        Group = 1,
-        Measure = 2,
-    }
-    interface AuxiliarySelectBinding {
-        Value?: string;
     }
     interface QueryMetadata {
         Select?: SelectMetadata[];
@@ -4483,6 +4444,67 @@ declare module powerbi.data {
         /** Describes the order of selects (referenced by query index) in each role. */
         projectionOrdering?: DataViewProjectionOrdering;
     }
+    interface DataViewSplitTransform {
+        selects: INumberDictionary<boolean>;
+    }
+    interface DataViewProjectionOrdering {
+        [roleName: string]: number[];
+    }
+    interface MatrixTransformationContext {
+        rowHierarchyRewritten: boolean;
+        columnHierarchyRewritten: boolean;
+        hierarchyTreesRewritten: boolean;
+    }
+    const enum StandardDataViewKinds {
+        None = 0,
+        Categorical = 1,
+        Matrix = 2,
+        Single = 4,
+        Table = 8,
+        Tree = 16,
+    }
+    module DataViewTransform {
+        function apply(options: DataViewTransformApplyOptions): DataView[];
+        function transformObjects(dataView: DataView, targetDataViewKinds: StandardDataViewKinds, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, selectTransforms: DataViewSelectTransform[], colorAllocatorFactory: IColorAllocatorFactory): void;
+        function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+    }
+}
+declare module powerbi.data {
+    interface DataViewRegressionRunOptions {
+        dataViewMappings: DataViewMapping[];
+        transformedDataViews: DataView[];
+        dataRoles: VisualDataRole[];
+        objectDescriptors: DataViewObjectDescriptors;
+        objectDefinitions: DataViewObjectDefinitions;
+        colorAllocatorFactory: IColorAllocatorFactory;
+        transformSelects: DataViewSelectTransform[];
+        dataView: DataView;
+    }
+    module DataViewRegression {
+        const regressionYQueryName: string;
+        function run(options: DataViewRegressionRunOptions): DataView[];
+        /**
+         * This function will compute the linear regression algorithm on the sourceDataView and create a new dataView.
+         * It works on scalar axis only.
+         * The algorithm is as follows
+         *
+         * 1. Find the cartesian X and Y roles and the columns that correspond to those roles
+         * 2. Order the X-Y value pairs by the X values
+         * 3. Linearly map dates to their respective times and normalize since regression cannot be directly computed on dates
+         * 4. Compute the actual regression:
+         *    i.   xBar: average of X values, yBar: average of Y values
+         *    ii.  ssXX: sum of squares of X values = Sum(xi - xBar)^2
+         *    iii. ssXY: sum of squares of X and Y values  = Sum((xi - xBar)(yi - yBar)
+         *    iv.  Slope: ssXY / ssXX
+         *    v.   Intercept: yBar - xBar * slope
+         * 5. Compute the X and Y points for regression line using Y = Slope * X + Intercept
+         * 6. Create the new dataView using the points computed above
+         */
+        function linearRegressionTransform(sourceDataView: DataView, dataRoles: VisualDataRole[], regressionDataViewMapping: DataViewMapping, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, colorAllocatorFactory: IColorAllocatorFactory): DataView;
+    }
+}
+declare module powerbi.data {
+    import RoleKindByQueryRef = DataViewAnalysis.RoleKindByQueryRef;
     interface DataViewSelectTransform {
         displayName?: string;
         queryName?: string;
@@ -4497,27 +4519,11 @@ declare module powerbi.data {
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
     }
-    interface DataViewSplitTransform {
-        selects: INumberDictionary<boolean>;
-    }
-    interface DataViewProjectionOrdering {
-        [roleName: string]: number[];
-    }
-    interface MatrixTransformationContext {
-        rowHierarchyRewritten: boolean;
-        columnHierarchyRewritten: boolean;
-        hierarchyTreesRewritten: boolean;
-    }
-    module DataViewTransform {
-        function apply(options: DataViewTransformApplyOptions): DataView[];
-        /**
-         *
-         *
-         * Note: Exported for testability
-         */
-        function upgradeSettingsToObjects(settings: VisualElementSettings, objectDefns?: DataViewObjectDefinitions): DataViewObjectDefinitions;
-        function createTransformActions(queryMetadata: QueryMetadata, visualElements: VisualElement[], objectDescs: DataViewObjectDescriptors, objectDefns: DataViewObjectDefinitions): DataViewTransformActions;
-        function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+    module DataViewSelectTransform {
+        /** Convert selection info to projections */
+        function projectionsFromSelects(selects: DataViewSelectTransform[]): QueryProjectionsByRole;
+        /** Use selections and metadata to fashion query role kinds */
+        function createRoleKindFromMetadata(selects: DataViewSelectTransform[], metadata: DataViewMetadata): RoleKindByQueryRef;
     }
 }
 declare module powerbi.data {
@@ -4776,16 +4782,37 @@ declare module powerbi {
         interface RoleKindByQueryRef {
             [queryRef: string]: VisualDataRoleKind;
         }
+        interface DataViewMappingResult {
+            supportedMappings: DataViewMapping[];
+            /** A set of mapping errors if there are no supported mappings */
+            mappingErrors: DataViewMappingMatchError[];
+        }
+        enum DataViewMappingMatchErrorCode {
+            conditionRangeTooLarge = 0,
+            conditionRangeTooSmall = 1,
+            conditionKindExpectedMeasure = 2,
+            conditionKindExpectedGrouping = 3,
+            conditionKindExpectedGroupingOrMeasure = 4,
+        }
+        interface DataViewMappingMatchError {
+            code: DataViewMappingMatchErrorCode;
+            roleName: string;
+            mappingIndex?: number;
+            conditionIndex?: number;
+        }
         /** Reshapes the data view to match the provided schema if possible. If not, returns null */
         function validateAndReshape(dataView: DataView, dataViewMappings: DataViewMapping[]): ValidateAndReshapeResult;
         function countGroups(columns: DataViewMetadataColumn[]): number;
         function countMeasures(columns: DataViewMetadataColumn[]): number;
         /** Indicates whether the dataView conforms to the specified schema. */
         function supports(dataView: DataView, roleMapping: DataViewMapping, usePreferredDataViewSchema?: boolean): boolean;
-        /** Determines whether the value conforms to the range in the role condition */
-        function conformsToRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): boolean;
+        /**
+         * Determines whether the value conforms to the range in the role condition, returning undefined
+         * if so or an appropriate error code if not.
+         */
+        function validateRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): DataViewMappingMatchErrorCode;
         /** Determines the appropriate DataViewMappings for the projections. */
-        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef, objectDescriptors?: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): DataViewMapping[];
+        function chooseDataViewMappings(projections: QueryProjectionsByRole, mappings: DataViewMapping[], roleKindByQueryRef: RoleKindByQueryRef, objectDescriptors?: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): DataViewMappingResult;
         function getPropertyCount(roleName: string, projections: QueryProjectionsByRole, useActiveIfAvailable?: boolean): number;
         function hasSameCategoryIdentity(dataView1: DataView, dataView2: DataView): boolean;
         function areMetadataColumnsEquivalent(column1: DataViewMetadataColumn, column2: DataViewMetadataColumn): boolean;
@@ -5293,7 +5320,6 @@ declare module powerbi.data {
         function isDefaultValue(expr: SQExpr): boolean;
         function discourageAggregation(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
         function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities;
-        function getKpiStatus(expr: SQExpr, schema: FederatedConceptualSchema): SQExpr;
         function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata;
         function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr;
         function getDefaultValues(fieldSQExprs: SQExpr[], schema: FederatedConceptualSchema): SQConstantExpr[];
@@ -5552,7 +5578,7 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module DataViewConcatenateCategoricalColumns {
-        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[]): DataView;
+        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering): DataView;
     }
 }
 ;declare module powerbi.visuals {
@@ -6062,7 +6088,6 @@ declare module powerbi.visuals {
         dataPoint: {
             defaultColor: DataViewObjectPropertyIdentifier;
             fill: DataViewObjectPropertyIdentifier;
-            showAllDataPoints: DataViewObjectPropertyIdentifier;
         };
         legend: {
             show: DataViewObjectPropertyIdentifier;
@@ -6141,6 +6166,9 @@ declare module powerbi.visuals {
             defaultColor: DataViewObjectPropertyIdentifier;
             fill: DataViewObjectPropertyIdentifier;
         };
+        trend: {
+            show: DataViewObjectPropertyIdentifier;
+        };
         categoryAxis: {
             axisType: DataViewObjectPropertyIdentifier;
         };
@@ -6193,6 +6221,9 @@ declare module powerbi.visuals {
         dataPoint: {
             defaultColor: DataViewObjectPropertyIdentifier;
             fill: DataViewObjectPropertyIdentifier;
+        };
+        trend: {
+            show: DataViewObjectPropertyIdentifier;
         };
         colorBorder: {
             show: DataViewObjectPropertyIdentifier;
@@ -7187,6 +7218,7 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import ISize = shapes.ISize;
     module NewDataLabelUtils {
         const DefaultLabelFontSizeInPt: number;
         const MapPolylineOpacity: number;
@@ -7215,6 +7247,7 @@ declare module powerbi.visuals {
         function createColumnFormatterCacheManager(): IColumnFormatterCacheManager;
         function removeDuplicates(labelDataPoints: LabelDataPoint[]): LabelDataPoint[];
         function getDataLabelLayoutOptions(type: CartesianChartType): DataLabelLayoutOptions;
+        function getTextSize(text: string, fontSize: number): ISize;
     }
 }
 declare module powerbi.visuals {
@@ -9110,7 +9143,6 @@ declare module powerbi.visuals {
         filledMapDataLabelsEnabled?: boolean;
         backgroundImageEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
-        latLongGroupEnabled?: boolean;
     }
     interface SmallViewPortProperties {
         cartesianSmallViewPortProperties: CartesianSmallViewPortProperties;
@@ -11445,6 +11477,7 @@ declare module powerbi.visuals {
         static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean;
         private populateObjectProperties(dataViews);
         private updateInternal(options, dataChanged);
+        private isTrendPropertySet(dataViews);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
         scrollTo(position: number): void;
@@ -11453,11 +11486,11 @@ declare module powerbi.visuals {
         private getCategoryAxisValues(enumeration);
         private getValueAxisValues(enumeration);
         onClearSelection(): void;
+        private extractMetadataObjects(dataViews);
         private createAndInitLayers(dataViews);
         private renderLegend();
         private hideLegends();
         private render(suppressAnimations);
-        private runWithDetachedDom(element, fn);
         private getPlotAreaRect(axesLayout, legendMargins);
         private renderBackgroundImage(layout);
         private hideAxisLabels(legendMargins);
@@ -11867,6 +11900,7 @@ declare module powerbi.visuals {
     module ComboChart {
         const capabilities: VisualCapabilities;
         function customizeQuery(options: CustomizeQueryOptions): void;
+        function getSortableRoles(options: VisualSortableOptions): string[];
         function isComboChart(chartType: CartesianChartType): boolean;
     }
 }
@@ -12444,6 +12478,7 @@ declare module powerbi.visuals {
     interface LineChartConstructorOptions extends CartesianVisualConstructorOptions {
         chartType?: LineChartType;
         lineChartLabelDensityEnabled?: boolean;
+        isTrendLayer?: boolean;
     }
     interface LineChartDataLabelsSettings extends PointDataLabelsSettings {
         labelDensity: number;
@@ -12510,6 +12545,8 @@ declare module powerbi.visuals {
         private static CategoryPointSelector;
         private static CategoryAreaSelector;
         private static HoverLineCircleDot;
+        private static LineClassSelector;
+        private static TrendLineClassSelector;
         private static PointRadius;
         private static CircleRadius;
         private static PathElementName;
@@ -12523,6 +12560,8 @@ declare module powerbi.visuals {
         private isInteractiveChart;
         private isScrollable;
         private tooltipsEnabled;
+        private suppressLegend;
+        private lineClassAndSelector;
         private element;
         private cartesainSVG;
         private mainGraphicsContext;
@@ -12643,6 +12682,7 @@ declare module powerbi.visuals {
     interface MapData {
         dataPoints: MapDataPoint[];
         geocodingCategory: string;
+        hasDynamicSeries: boolean;
     }
     /**
      * The main map data point, which exists for each category
@@ -12876,8 +12916,6 @@ declare module powerbi.visuals {
         static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): MapData;
         static createLegendData(dataView: DataView, colorHelper: ColorHelper): LegendData;
         private swapLogoContainerChildElement();
-        /** Note: Public for UnitTests */
-        static showLocationMissingWarningIfNecessary(dataView: powerbi.DataView): IVisualWarning[];
         onResizing(viewport: IViewport): void;
         private initialize(container);
         private onViewChanged();
@@ -12889,7 +12927,6 @@ declare module powerbi.visuals {
         onClearSelection(): void;
         private clearDataPoints();
         private getDefaultMapControlFactory();
-        static addLatLongGroupingToMapCapabilities(plugin: IVisualPlugin): void;
     }
 }
 declare module powerbi.visuals {
@@ -13199,7 +13236,7 @@ declare module powerbi.visuals {
         private static getObjectProperties(dataView, dataLabelsSettings?);
         static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
         private static getSizeRangeForGroups(dataViewValueGroups, sizeColumnIndex);
-        private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, defaultDataPointColor?, categoryQueryName?, colorByCategory?, playFrameInfo?, tooltipsEnabled?);
+        private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, gradientValueColumn, defaultDataPointColor?, categoryQueryName?, colorByCategory?, playFrameInfo?, tooltipsEnabled?);
         private static createSeriesLegend(dataValues, colorPalette, categorical, formatString, defaultDataPointColor);
         static getBubbleRadius(radiusData: RadiusData, sizeRange: NumberRange, viewport: IViewport): number;
         static getMeasureValue(measureIndex: number, seriesValues: DataViewValueColumn[]): DataViewValueColumn;
@@ -13506,6 +13543,7 @@ declare module powerbi.visuals {
         update(table: DataViewTable): void;
     }
     interface TableCell {
+        dataPoint: any;
         textContent?: string;
         domContent?: JQuery;
         isMeasure: boolean;
@@ -13579,7 +13617,7 @@ declare module powerbi.visuals {
          */
         getCorner(rowLevel: number, columnLevel: number): any;
         headerItemEquals(item1: any, item2: any): boolean;
-        bodyCellItemEquals(item1: any, item2: any): boolean;
+        bodyCellItemEquals(item1: TableCell, item2: TableCell): boolean;
         cornerCellItemEquals(item1: any, item2: any): boolean;
         update(table: DataViewVisualTable): void;
         static getIndex(items: any[], item: any): number;
@@ -13704,7 +13742,7 @@ declare module powerbi.visuals {
     }
 }
 declare module powerbi.visuals {
-    import TablixFormattingProperties = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
+    import TablixFormattingPropertiesMatrix = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
     /**
      * Extension of the Matrix node for Matrix visual.
      */
@@ -13738,6 +13776,7 @@ declare module powerbi.visuals {
         isRowHeaderLeaf: boolean;
     }
     interface MatrixVisualBodyItem {
+        dataPoint: DataViewMatrixNodeValue;
         textContent?: string;
         domContent?: JQuery;
         isSubtotal: boolean;
@@ -13792,7 +13831,7 @@ declare module powerbi.visuals {
         private hierarchyNavigator;
         private options;
         constructor(hierarchyNavigator: IMatrixHierarchyNavigator, options: MatrixBinderOptions);
-        onDataViewChanged(formattingProperties: TablixFormattingProperties): void;
+        onDataViewChanged(formattingProperties: TablixFormattingPropertiesMatrix): void;
         setTablixColumnSeparator(cell: controls.ITablixCell): void;
         setTablixRegionStyle(cell: controls.ITablixCell, fontColor: string, backgroundColor: any, outlineType: string, outlineWeight: number, outlineColor: string): void;
         onStartRenderingSession(): void;
@@ -13876,7 +13915,7 @@ declare module powerbi.visuals {
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(): string[];
         init(options: VisualInitOptions): void;
-        static converter(dataView: DataView, isFormattingPropertiesEnabled: boolean): TablixFormattingProperties;
+        static converter(dataView: DataView, isFormattingPropertiesEnabled: boolean): TablixFormattingPropertiesMatrix;
         onResizing(finalViewport: IViewport): void;
         getColumnWidthManager(): controls.TablixColumnWidthManager;
         onDataChanged(options: VisualDataChangedOptions): void;
@@ -14401,10 +14440,8 @@ declare module powerbi.visuals {
         maxValue?: number;
         visibleGeometryCulled?: boolean;
         defaultDataPointColor?: string;
-        showAllDataPoints?: boolean;
     }
     interface DonutLayout {
-        fontSize: string;
         shapeLayout: {
             d: (d: DonutArcDescriptor) => string;
         };
@@ -14494,7 +14531,6 @@ declare module powerbi.visuals {
         private updateInternal(data, suppressAnimations, duration?);
         private createLabels();
         private createLabelDataPoints();
-        private getTextSize(text, fontSize);
         private createLabelDataPoint(d, alternativeScale, measureFormatterCache);
         private renderLegend();
         private addInteractiveLegendArrow();
@@ -14520,7 +14556,7 @@ declare module powerbi.visuals {
         static isSingleColor(dataPoints: DonutArcDescriptor[]): void;
         static drawStrokeForDonutChart(radius: number, innerArcRadiusRatio: number, d: DonutArcDescriptor, sliceWidthRatio: number, highlightRatio?: number): string;
         onClearSelection(): void;
-        static getLayout(radius: number, sliceWidthRatio: number, viewport: IViewport, labelSettings: VisualDataLabelsSettings): DonutLayout;
+        static getLayout(radius: number, sliceWidthRatio: number, viewport: IViewport): DonutLayout;
         private static getHighlightRadius(radius, sliceWidthRatio, highlightRatio);
         static cullDataByViewport(dataPoints: DonutDataPoint[], maxValue: number, viewport: IViewport): DonutDataPoint[];
     }
@@ -14550,6 +14586,9 @@ declare module powerbi.visuals {
         constructor(options: ScriptVisualOptions);
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
+        onResizing(finalViewport: IViewport): void;
+        private getImageUrl(dataView);
+        private ensureHtmlElement();
         private getLastSavedImage(dataView);
         private updateLastSavedImage(dataView, imageUrl, viewport);
     }

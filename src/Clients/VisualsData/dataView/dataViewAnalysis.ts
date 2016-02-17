@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
+ *  All rights reserved. 
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
  *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -42,10 +42,32 @@ module powerbi {
             [queryRef: string]: VisualDataRoleKind;
         }
 
+        export interface DataViewMappingResult {
+            supportedMappings: DataViewMapping[];
+
+            /** A set of mapping errors if there are no supported mappings */
+            mappingErrors: DataViewMappingMatchError[];
+        }
+
+        export enum DataViewMappingMatchErrorCode {
+            conditionRangeTooLarge,
+            conditionRangeTooSmall,
+            conditionKindExpectedMeasure,
+            conditionKindExpectedGrouping,
+            conditionKindExpectedGroupingOrMeasure,
+        }
+
+        export interface DataViewMappingMatchError {
+            code: DataViewMappingMatchErrorCode;
+            roleName: string;
+            mappingIndex?: number;
+            conditionIndex?: number;
+        }
+
         /** Reshapes the data view to match the provided schema if possible. If not, returns null */
         export function validateAndReshape(dataView: DataView, dataViewMappings: DataViewMapping[]): ValidateAndReshapeResult {
             if (!dataViewMappings || dataViewMappings.length === 0)
-                return { dataView: dataView, isValid: true };
+                return { dataView: dataView, isValid: true };            
 
             if (dataView) {
                 for (let dataViewMapping of dataViewMappings) {
@@ -171,7 +193,7 @@ module powerbi {
 
             // TODO: Need to implement the reshaping of Tree
             let metadata = dataView.metadata;
-            if (conformsToRange(countGroups(metadata.columns), treeRoleMapping.depth) /*&& conforms(countMeasures(metadata.columns), treeRoleMapping.aggregates)*/)
+            if (validateRange(countGroups(metadata.columns), treeRoleMapping.depth) == null /*&& conforms(countMeasures(metadata.columns), treeRoleMapping.aggregates)*/)
                 return { dataView: dataView, isValid: true };
 
             return { isValid: false };
@@ -255,7 +277,7 @@ module powerbi {
                     else if (dataViewCategorical.categories && dataViewCategorical.categories.length)
                         len = dataViewCategorical.categories[0].values.length;
 
-                    if (!conformsToRange(len, rowCount))
+                    if (validateRange(len, rowCount) != null)
                         return false;
                 }
             }
@@ -276,7 +298,7 @@ module powerbi {
             debug.assertValue(treeRoleMapping, 'treeRoleMapping');
 
             let metadata = dataView.metadata;
-            return conformsToRange(countGroups(metadata.columns), treeRoleMapping.depth);
+            return validateRange(countGroups(metadata.columns), treeRoleMapping.depth) == null;
         }
 
         function supportsTable(dataViewTable: DataViewTable, tableRoleMapping: DataViewTableMapping, usePreferredDataViewSchema?: boolean): boolean {
@@ -295,7 +317,7 @@ module powerbi {
                     if (dataViewTable.rows && dataViewTable.rows.length)
                         len = dataViewTable.rows.length;
 
-                    if (!conformsToRange(len, rowCount))
+                    if (validateRange(len, rowCount) != null)
                         return false;
                 }
             }
@@ -315,37 +337,48 @@ module powerbi {
             return true;
         }
 
-        /** Determines whether the value conforms to the range in the role condition */
-        export function conformsToRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): boolean {
+        /** 
+         * Determines whether the value conforms to the range in the role condition, returning undefined
+         * if so or an appropriate error code if not.
+         */
+        export function validateRange(value: number, roleCondition: RoleCondition, ignoreMin?: boolean): DataViewMappingMatchErrorCode {
             debug.assertValue(value, 'value');
 
             if (!roleCondition)
-                return value === 0;
+                return;
 
             if (!ignoreMin && roleCondition.min !== undefined && roleCondition.min > value)
-                return false;
+                return DataViewMappingMatchErrorCode.conditionRangeTooSmall;
 
             if (roleCondition.max !== undefined && roleCondition.max < value)
-                return false;
-
-            return true;
+                return DataViewMappingMatchErrorCode.conditionRangeTooLarge;
         }
 
-        /** Determines whether the role conforms to the kind in the roleCondition */
-        function conformsToKind(roleCondition: RoleCondition, roleName: string, projections: QueryProjectionsByRole, roleKindByQueryRef: RoleKindByQueryRef): boolean {
+        /** 
+         * Determines whether the value conforms to the kind in the role condition, returning undefined
+         * if so or an appropriate error code if not.
+         */
+        function validateKind(roleCondition: RoleCondition, roleName: string, projections: QueryProjectionsByRole, roleKindByQueryRef: RoleKindByQueryRef): DataViewMappingMatchErrorCode {
             if (!roleCondition || roleCondition.kind === undefined) {
-                return true;
+                return;
             }
             let expectedKind = roleCondition.kind;
             let roleCollection = projections[roleName];
             if (roleCollection) {
                 let roleProjections = roleCollection.all();
                 for (let roleProjection of roleProjections) {
-                    if (roleKindByQueryRef[roleProjection.queryRef] !== expectedKind)
-                        return false;
+                    if (roleKindByQueryRef[roleProjection.queryRef] !== expectedKind) {
+                        switch (expectedKind) {
+                            case VisualDataRoleKind.Measure:
+                                return DataViewMappingMatchErrorCode.conditionKindExpectedMeasure;
+                            case VisualDataRoleKind.Grouping:
+                                return DataViewMappingMatchErrorCode.conditionKindExpectedGrouping;
+                            case VisualDataRoleKind.GroupingOrMeasure:
+                                return DataViewMappingMatchErrorCode.conditionKindExpectedGroupingOrMeasure;
+                        }
+                    }
                 }
             }
-            return true;
         }
 
         /** Determines the appropriate DataViewMappings for the projections. */
@@ -354,31 +387,79 @@ module powerbi {
             mappings: DataViewMapping[],
             roleKindByQueryRef: RoleKindByQueryRef,
             objectDescriptors?: DataViewObjectDescriptors,
-            objectDefinitions?: DataViewObjectDefinitions): DataViewMapping[]{
+            objectDefinitions?: DataViewObjectDefinitions): DataViewMappingResult {
             debug.assertValue(projections, 'projections');
             debug.assertValue(mappings, 'mappings');
 
             let supportedMappings: DataViewMapping[] = [];
+            let errors: DataViewMappingMatchError[] = [];
 
-            for (let i = 0, len = mappings.length; i < len; i++) {
-                let mapping = mappings[i],
+            for (let mappingIndex = 0, mappingCount = mappings.length; mappingIndex < mappingCount; mappingIndex++) {
+                let mapping = mappings[mappingIndex],
                     mappingConditions = mapping.conditions,
                     requiredProperties = mapping.requiredProperties;
-                let conditionsMet: boolean = isAnyConditionMet(mappingConditions, projections, roleKindByQueryRef);
+                let conditionsMet: boolean = false;
                 let allPropertiesValid: boolean = areAllPropertiesValid(requiredProperties, objectDescriptors, objectDefinitions);
+
+                if (!_.isEmpty(mappingConditions)) {
+                    for (let conditionIndex = 0, conditionCount = mappingConditions.length; conditionIndex < conditionCount; conditionIndex++) {
+                        let condition = mappingConditions[conditionIndex];
+                        let currentConditionErrors = checkForConditionErrors(projections, condition, roleKindByQueryRef);
+                        if (!_.isEmpty(currentConditionErrors)) {
+                            for (let error of currentConditionErrors) {
+                                error.mappingIndex = mappingIndex;
+                                error.conditionIndex = conditionIndex;
+                                errors.push(error);
+                            }
+                        }
+                        else
+                            conditionsMet = true;
+                    }
+                }
+                else {
+                    conditionsMet = true;
+                }
 
                 if (conditionsMet && allPropertiesValid)
                     supportedMappings.push(mapping);
             }
 
-            return ArrayExtensions.emptyToNull(supportedMappings);
+            return {
+                supportedMappings: ArrayExtensions.emptyToNull(supportedMappings),
+                mappingErrors: ArrayExtensions.emptyToNull(errors),
+            };
         }
+        
+        function checkForConditionErrors(projections: QueryProjectionsByRole, condition: DataViewMappingCondition, roleKindByQueryRef: RoleKindByQueryRef): DataViewMappingMatchError[] {
+            debug.assertValue(projections, 'projections');
+            debug.assertValue(condition, 'condition');
 
-        function isAnyConditionMet(mappingConditions: DataViewMappingCondition[], projections: QueryProjectionsByRole, roleKindByQueryRef: RoleKindByQueryRef): boolean {
-            if (_.isEmpty(mappingConditions))
-                return true;
+            let conditionRoles = Object.keys(condition);
+            let errors: DataViewMappingMatchError[] = [];
 
-            return _.some(mappingConditions, (condition) => matchesCondition(projections, condition, roleKindByQueryRef));
+            for (let i = 0, len = conditionRoles.length; i < len; i++) {
+                let roleName: string = conditionRoles[i],
+                    isDrillable = projections[roleName] && !_.isEmpty(projections[roleName].activeProjectionRefs),
+                    roleCondition = condition[roleName];
+
+                let roleCount = getPropertyCount(roleName, projections, isDrillable);
+                let rangeError = validateRange(roleCount, roleCondition);
+                if (rangeError != null) {
+                    errors.push({
+                        code: rangeError,
+                        roleName: roleName,
+                    });
+                }
+                let kindError = validateKind(roleCondition, roleName, projections, roleKindByQueryRef);
+                if (kindError != null) {
+                    errors.push({
+                        code: kindError,
+                        roleName: roleName,
+                    });
+                }
+            }
+
+            return errors;
         }
 
         function areAllPropertiesValid(requiredProperties: DataViewObjectPropertyIdentifier[], objectDescriptors: DataViewObjectDescriptors, objectDefinitions?: DataViewObjectDefinitions): boolean {
@@ -402,24 +483,6 @@ module powerbi {
 
                 return data.DataViewObjectEvaluator.evaluateProperty(staticEvalContext, objectDescriptorValue, objectDefinitionValue);
             });
-        }
-
-        function matchesCondition(projections: QueryProjectionsByRole, condition: DataViewMappingCondition, roleKindByQueryRef: RoleKindByQueryRef): boolean {
-            debug.assertValue(projections, 'projections');
-            debug.assertValue(condition, 'condition');
-
-            let conditionRoles = Object.keys(condition);
-            for (let i = 0, len = conditionRoles.length; i < len; i++) {
-                let roleName: string = conditionRoles[i],
-                    isDrillable = projections[roleName] && !_.isEmpty(projections[roleName].activeProjectionRefs),
-                    roleCondition = condition[roleName];
-
-                let roleCount = getPropertyCount(roleName, projections, isDrillable);
-                if (!conformsToRange(roleCount, roleCondition) || !conformsToKind(roleCondition, roleName, projections, roleKindByQueryRef))
-                    return false;
-            }
-
-            return true;
         }
 
         export function getPropertyCount(roleName: string, projections: QueryProjectionsByRole, useActiveIfAvailable?: boolean): number {

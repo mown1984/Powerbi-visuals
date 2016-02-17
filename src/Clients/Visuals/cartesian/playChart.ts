@@ -343,13 +343,12 @@ module powerbi.visuals {
 
             this.isPlaying = false;
 
-            if (frameIndex < 0 || frameIndex === playData.currentFrameIndex || frameIndex >= playData.allViewModels.length)
-                return;
-
-            playData.currentFrameIndex = frameIndex;
-            let data = playData.allViewModels[frameIndex];
-            playData.currentViewModel = data;
-            this.renderDelegate(data);
+            if (playData && frameIndex >= 0 && frameIndex < playData.allViewModels.length && frameIndex !== playData.currentFrameIndex) {
+                playData.currentFrameIndex = frameIndex;
+                let data = playData.allViewModels[frameIndex];
+                playData.currentViewModel = data;
+                this.renderDelegate(data);
+            }
         }
     }
 
@@ -528,12 +527,16 @@ module powerbi.visuals {
                 values: powerbi.data.DataViewTransform.createValueColumns()
             };
 
-            // If we only have a Play field, we don't have series or categories, then just return early
-            if (matrix.rows.levels.length < 2 && matrix.columns.levels.length === 0)
+            // If we don't have enough fields, just return early. We need at least:
+            // 2 rows and 1 column:  (play->category, measures)
+            // or:
+            // 1 row and 2 columns:  (play, series->measures)
+            if ((_.isEmpty(matrix.columns.levels)) || (matrix.rows.levels.length < 2 && matrix.columns.levels.length < 2))
                 return categorical;
 
             let category: DataViewCategoryColumn = {
-                source: matrix.rows.levels.length > 1 ? matrix.rows.levels[1].sources[0] : matrix.columns.levels[0].sources[0],
+                // ignore the play field, we use either the second row group (play->category) or we don't use this variable (category)
+                source: matrix.rows.levels.length > 1 ? matrix.rows.levels[1].sources[0] : null,
                 values: [],
                 objects: undefined,
                 identity: []
@@ -551,14 +554,12 @@ module powerbi.visuals {
             // ...
 
             // we are guaranteed at least one row (it will be the Play field)
-            let hasRowChildren = matrix.rows.root.children;
-            let hasColChildren = matrix.columns.root.children;
+            let hasRowChildren = !_.isEmpty(matrix.rows.root.children);
+            let hasColChildren = !_.isEmpty(matrix.columns.root.children);
             let hasSeries = matrix.columns.levels.length > 1 && hasColChildren;
             let hasPlayAndCategory = matrix.rows.levels.length > 1 && hasRowChildren;
 
             if (hasSeries && !hasPlayAndCategory) {
-                // special case - series but no categories - use series as categories
-                
                 // set categories to undefined
                 categorical.categories = undefined;
 
@@ -569,7 +570,8 @@ module powerbi.visuals {
                     // add all the value sources for each series
                     let columnNode = node.children[i];
                     for (let j = 0; j < columnLength; j++) {
-                        let source = <any>_.create(matrix.valueSources[j], { groupName: columnNode.value });
+                        // DEFECT 6547170: groupName must be null to turn into (Blank), undefined will use the field name
+                        let source = <any>_.create(matrix.valueSources[j], { groupName: columnNode.value === undefined ? null : columnNode.value });
                         let dataViewColumn: DataViewValueColumn = {
                             identity: columnNode.identity,
                             values: [],
@@ -596,6 +598,7 @@ module powerbi.visuals {
                     category.identity.push(innerNode.identity);
                     category.values.push(innerNode.value);
                 }
+                categorical.categories.push(category);
 
                 // now add the series info
                 categorical.values.source = matrix.columns.levels[0].sources[0];
@@ -658,10 +661,8 @@ module powerbi.visuals {
                         categorical.values[j].values.push(innerNode.values[j].value);
                     }
                 }
-            }
-
-            if (categorical.categories)
                 categorical.categories.push(category);
+            }
 
             return categorical;
         }

@@ -626,10 +626,6 @@ module powerbi.visuals {
                     false /*supportsNegativeInfinity*/,
                     false /*supportsPositiveInfinity*/);
 
-                if (this.data.dataWasCulled) {
-                    warnings.unshift(new GeometryCulledWarning());
-                }
-
                 this.hostService.setWarnings(warnings);
             }
         }

@@ -67,6 +67,8 @@ module powerbitests {
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('Grapes')),
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('retainedValue'))));
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
+            let spyOnGetLabelForScopeId = <any>spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
+            let spyOnSetLabelForScopeId = <any>spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(6);
             expect(slicerData.slicerDataPoints[0].tooltip).toBe('Apple');
@@ -77,6 +79,9 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[5].tooltip).toBe('retainedValue');
             expect(slicerData.slicerDataPoints[5].selected).toBe(true);
             expect(slicerData.slicerDataPoints[3].selected).toBe(true);
+            // Need to call host service to retrive the retainedValue, so the spyOnGetLabelForScopeId call count should be 1.
+            expect((<jasmine.Spy>spyOnGetLabelForScopeId).calls.count()).toBe(1);
+            expect((<jasmine.Spy>spyOnSetLabelForScopeId).calls.count()).toBe(1);
         });
 
         it("is not in filter", () => {
@@ -91,6 +96,8 @@ module powerbitests {
                             [SQExprBuilder.text('Banana')],
                         ])));
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
+            let spyOnGetLabelForScopeId = <any>spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
+            let spyOnSetLabelForScopeId = <any>spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(5);
             expect(slicerData.slicerDataPoints[0].tooltip).toBe('Apple');
@@ -100,6 +107,9 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[4].tooltip).toBe('Banana');
             expect(slicerData.slicerDataPoints[0].selected).toBe(true);
             expect(slicerData.slicerDataPoints[4].selected).toBe(true);
+            // All the selected items can be found in the dataView, so the spyOnGetLabelForScopeId call count should be 0.
+            expect((<jasmine.Spy>spyOnGetLabelForScopeId).calls.count()).toBe(0);
+            expect((<jasmine.Spy>spyOnSetLabelForScopeId).calls.count()).toBe(1);
         });
 
         it("all filter values selected with selectAllCheckbox disabled", () => {

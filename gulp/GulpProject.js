@@ -1,4 +1,4 @@
- /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -31,7 +31,7 @@ var gulp = require("gulp-help")(require("gulp")),
     runSequence = require("run-sequence").use(gulp),
     bondc = require("./bondc.js"),
     tsc = require("./tsc.js"),
-    tslint = require("./tslint.js"),
+    tslint = require("./tsLint/tslint.js"),
     less = require("./less.js"),
     cssTransform = require("./cssjanus.js"),
     watcher = require("./watcher.js"),
@@ -184,7 +184,12 @@ GulpProject.prototype.createTypeScriptTask = function () {
             out: path.join(/*me.projFolder,*/ JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js")
         });
         
-        tsc(me.projFolder, tsProject, cb);
+        tsc({
+            projectPath: me.projFolder,
+            tsProject: tsProject,
+            callback: cb,
+            mapConfig: me.params.tsc.mapConfig
+        });
     });
 
     return taskName;
@@ -401,7 +406,7 @@ GulpProject.prototype.createWatchTask = function () {
                         dropArtifacts(me);
                         tasksToRun = [];
                     }
-                    
+
                     if (copyDepsConfig.js && !evtType(evt).isDeleted()) {
                         utils.copy({
                             cwd: me.projFolder,

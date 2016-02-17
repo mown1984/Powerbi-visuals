@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -35,6 +35,7 @@ module powerbi.visuals {
     export interface LineChartConstructorOptions extends CartesianVisualConstructorOptions {
         chartType?: LineChartType;
         lineChartLabelDensityEnabled?: boolean;
+        isTrendLayer?: boolean;
     }
 
     export interface LineChartDataLabelsSettings extends PointDataLabelsSettings {
@@ -105,7 +106,7 @@ module powerbi.visuals {
         greater,
     };
 
-    /** 
+    /**
      * Renders a data series as a line visual.
      */
     export class LineChart implements ICartesianVisual {
@@ -116,6 +117,8 @@ module powerbi.visuals {
         private static CategoryPointSelector: ClassAndSelector = createClassAndSelector('point');
         private static CategoryAreaSelector: ClassAndSelector = createClassAndSelector('catArea');
         private static HoverLineCircleDot: ClassAndSelector = createClassAndSelector('circle-item');
+        private static LineClassSelector: ClassAndSelector = createClassAndSelector('line');
+        private static TrendLineClassSelector: ClassAndSelector = createClassAndSelector('trend-line');
         private static PointRadius = 5;
         private static CircleRadius = 4;
         private static PathElementName = 'path';
@@ -130,6 +133,8 @@ module powerbi.visuals {
         private isInteractiveChart: boolean;
         private isScrollable: boolean;
         private tooltipsEnabled: boolean;
+        private suppressLegend: boolean;
+        private lineClassAndSelector: ClassAndSelector;
 
         private element: JQuery;
         private cartesainSVG: D3.Selection;
@@ -214,10 +219,10 @@ module powerbi.visuals {
                     objects = dataViewMapping.metadata.objects;
 
                 //TODO: line chart should be sortable by X if it has scalar axis
-                // But currently it doesn't support this. Always return 'category' 
+                // But currently it doesn't support this. Always return 'category'
                 // once it is supported.
                 if (!CartesianChart.getIsScalar(objects, lineChartProps.categoryAxis.axisType, categoryType))
-                    return ['Category'];
+                    return ['Category', 'Y'];
             }
 
             return null;
@@ -273,7 +278,7 @@ module powerbi.visuals {
 
             let stackedValues;
             if (shouldCalculateStacked) {
-                //initialize array with zeros            
+                //initialize array with zeros
                 stackedValues = categorical.values && categorical.values.length > 0 ? _.times(categorical.values[0].values.length, () => 0) : [];
             }
 
@@ -374,7 +379,7 @@ module powerbi.visuals {
 
             xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataView.metadata);
             let valueAxisProperties = CartesianHelper.getValueAxisProperties(dataView.metadata);
-             
+
             // Convert to DataViewMetadataColumn
             let valuesMetadataArray: powerbi.DataViewMetadataColumn[] = [];
             if (values) {
@@ -448,6 +453,8 @@ module powerbi.visuals {
             this.animator = options.animator;
             this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
             this.lineChartLabelDensityEnabled = options.lineChartLabelDensityEnabled;
+            this.suppressLegend = options.isTrendLayer;
+            this.lineClassAndSelector = options.isTrendLayer ? LineChart.TrendLineClassSelector : LineChart.LineClassSelector;
         }
 
         public init(options: CartesianVisualInitOptions) {
@@ -492,7 +499,7 @@ module powerbi.visuals {
             }
             hoverLine.style('opacity', SVGUtil.AlmostZero);
 
-            // define circles object - which will hold the handle circles. 
+            // define circles object - which will hold the handle circles.
             // this object will be populated on render() function, with number of circles which matches the nubmer of lines.
             this.selectionCircles = [];
 
@@ -562,7 +569,7 @@ module powerbi.visuals {
         }
 
         public calculateLegend(): LegendData {
-            return this.createLegendDataPoints(0); // start with index 0 
+            return this.createLegendDataPoints(0); // start with index 0
         }
 
         public hasLegend(): boolean {
@@ -591,7 +598,7 @@ module powerbi.visuals {
 
             let preferredPlotArea = this.getPreferredPlotArea(isScalar, origCatgSize, categoryWidth);
 
-            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar. 
+            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar.
               In that case we want to calculate the available plot area for the shapes by subtracting the margin from available viewport */
             if (preferredPlotArea.width === this.currentViewport.width) {
                 preferredPlotArea.width -= (margin.left + margin.right);
@@ -767,13 +774,13 @@ module powerbi.visuals {
             let data = this.clippedData ? this.clippedData : this.data;
             if (!data)
                 return;
-                
+
             let dataPointCount = data.categories.length * data.series.length;
             if (dataPointCount > AnimatorCommon.MaxDataPointsToAnimate) {
                 // Too many data points to animate.
                 duration = 0;
             }
-                
+
             let isStackedArea = EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea);
             let margin = this.margin;
             let viewport = this.currentViewport;
@@ -795,7 +802,7 @@ module powerbi.visuals {
             else {
                 y0Position = yScale(0);
                 yPosition = (d: LineChartDataPoint) => { return yScale(d.value); };
-            } 
+            }
 
             let area;
             if (renderAreas) {
@@ -840,12 +847,12 @@ module powerbi.visuals {
                 areas.exit()
                     .remove();
             }
-            
+
             // Render Lines
-            let lines = this.mainGraphicsContext.selectAll(".line").data(data.series, (d: LineChartSeries) => d.identity.getKey());
+            let lines = this.mainGraphicsContext.selectAll(this.lineClassAndSelector.selector).data(data.series, (d: LineChartSeries) => d.identity.getKey());
             lines.enter()
                 .append(LineChart.PathElementName)
-                .classed('line', true);
+                .classed(this.lineClassAndSelector.class, true);
             lines
                 .style('stroke', (d: LineChartSeries) => d.color)
                 .style('stroke-opacity', (d: LineChartSeries) => ColumnUtil.getFillOpacity(d.selected, false, hasSelection, false))
@@ -856,7 +863,7 @@ module powerbi.visuals {
                     return line(d.data);
                 });
             lines.exit()
-                .remove();            
+                .remove();
 
             // Render extra lines that are wider and invisible used for better interactivity
             let interactivityLines;
@@ -913,31 +920,34 @@ module powerbi.visuals {
             dots.exit()
                 .remove();
 
-            // Render highlights
-            let highlights = dotGroups.selectAll(LineChart.CategoryPointSelector.selector)
-                .data((series: LineChartSeries) => {
-                    return _.filter(series.data, (value: LineChartDataPoint) => { return value.pointColor != null; });
-                }, (d: LineChartDataPoint) => d.key);
-            highlights.enter()
-                .append(LineChart.CircleElementName)
-                .classed(LineChart.CategoryPointSelector.class, true);
-            highlights
-                .style('fill', (d: LineChartDataPoint) => d.pointColor)
-                .transition()
-                .duration(duration)
-                .attr({
-                    cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
-                    cy: (d: LineChartDataPoint) => yScale(d.value),
-                    r: LineChart.PointRadius
-                });
-            highlights.exit()
-                .remove();
-            
+            // Render explicit dots
+            let explicitDots: D3.UpdateSelection;
+            if (!this.isComboChart) {
+                explicitDots = dotGroups.selectAll(LineChart.CategoryPointSelector.selector)
+                    .data((series: LineChartSeries) => {
+                        return _.filter(series.data, (value: LineChartDataPoint) => { return value.pointColor != null; });
+                    }, (d: LineChartDataPoint) => d.key);
+                explicitDots.enter()
+                    .append(LineChart.CircleElementName)
+                    .classed(LineChart.CategoryPointSelector.class, true);
+                explicitDots
+                    .style('fill', (d: LineChartDataPoint) => d.pointColor)
+                    .transition()
+                    .duration(duration)
+                    .attr({
+                        cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
+                        cy: (d: LineChartDataPoint) => yScale(d.value),
+                        r: LineChart.PointRadius
+                    });
+                explicitDots.exit()
+                    .remove();
+            }
+
             // Add data labels
             let LabelDataPointsGroups: LabelDataPointsGroup[];
             if (data.dataLabelsSettings.show)
                 LabelDataPointsGroups = this.createLabelDataPoints();
-            
+
             if (this.tooltipsEnabled) {
                 if (!this.isComboChart) {
                     this.overlayRect
@@ -969,7 +979,8 @@ module powerbi.visuals {
                         TooltipManager.addTooltip(interactivityLines, seriesTooltipApplier, true);
 
                     TooltipManager.addTooltip(dots, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
-                    TooltipManager.addTooltip(highlights, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
+                    if (explicitDots)
+                        TooltipManager.addTooltip(explicitDots, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
                 }
             }
 
@@ -1102,7 +1113,7 @@ module powerbi.visuals {
                     .classed('drag-handle', true);
             }
 
-            // Create the selection circles 
+            // Create the selection circles
             let linesCount = catSelect.data().length; // number of lines plotted
             while (this.selectionCircles.length < linesCount) {
                 let addedCircle = this.hoverLineContext.append(LineChart.CircleElementName)
@@ -1118,7 +1129,7 @@ module powerbi.visuals {
             let catUpdate = this.mainGraphicsContext.selectAll(LineChart.CategorySelector.selector);
 
             let lineSelection = catUpdate.select(LineChart.PathElementName)
-                .classed('line', true)
+                .classed(this.lineClassAndSelector.class, true)
                 .style('stroke', (d: LineChartSeries) => d.color)
                 .style('stroke-opacity', (d: LineChartSeries) => ColumnUtil.getFillOpacity(d.selected, false, hasSelection, false));
             lineSelection
@@ -1185,7 +1196,7 @@ module powerbi.visuals {
             else {
                 dataLabelUtils.cleanDataLabels(this.mainGraphicsSVG);
             }
-            
+
             catSelect.exit().remove();
 
             return null; // This render path doesn't use the interactivity service
@@ -1198,7 +1209,7 @@ module powerbi.visuals {
 
             let tooltipinfo: TooltipDataItem[] = [];
             const maxNumberOfItems = 10; // to limit the number of rows we display
-            
+
             // count to the maximum number of rows we can display
             let count = 0;
             for (let point of pointData) {
@@ -1309,7 +1320,7 @@ module powerbi.visuals {
         private findMaxDataPoint(series: LineChartSeries[]): number {
             if (series.length === 0)
                 return 0;
-            let maxLength: number = 0;           
+            let maxLength: number = 0;
             for (let singleSeries of series) {
                 let length = singleSeries.data.length;
                 if (length > maxLength)
@@ -1395,7 +1406,8 @@ module powerbi.visuals {
             let x = this.getChartX(columnIndex);
             this.setHoverLine(x);
             let legendItems = this.createLegendDataPoints(columnIndex);
-            this.options.cartesianHost.updateLegend(legendItems);
+            if (legendItems)
+                this.options.cartesianHost.updateLegend(legendItems);
         }
 
         private setHoverLine(chartX: number) {
@@ -1553,7 +1565,7 @@ module powerbi.visuals {
 
         private createLegendDataPoints(columnIndex: number): LegendData {
             let data = this.data;
-            if (!data || !data.series || data.series.length < 1)
+            if (!data || !data.series || data.series.length < 1 || this.suppressLegend)
                 return;
 
             let legendDataPoints: LegendDataPoint[] = [];
@@ -1652,7 +1664,7 @@ module powerbi.visuals {
                 let dataPoints = currentSeries.data;
                 seriesLabelDataPoints = [];
                 seriesDataPointsCandidates = [];
-                
+
                 let createLabelDataPoint: (dataPoint: LineChartDataPoint, seriesIndex) => LabelDataPoint = (dataPoint: LineChartDataPoint) => {
                     if (dataPoint.value == null)
                         return null;
@@ -1729,7 +1741,7 @@ module powerbi.visuals {
                             seriesLabelDataPoints.push(labelDataPoint);
                     }
                 }
-                
+
                 let maxLabelsToRender = dataPoints.length;
                 labelDataPointsGroups[seriesIndex] = {
                     labelDataPoints: seriesLabelDataPoints,
@@ -1781,15 +1793,15 @@ module powerbi.visuals {
         //    if ((a.weight && !b.weight) || (a.weight > b.weight)) return -1;
         //    return 0;
         //}
-        
+
         private showLabelPerSeries(): boolean {
             let data = this.data;
             return !data.hasDynamicSeries && (data.series.length > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled;
         }
-        
+
         /**
          * Obtains the pointLabelPosition for the category index within the given series
-         * 
+         *
          * Rules for line chart data labels:
          * 1. Top and bottom > left and right
          * 2. Top > bottom unless we're at a local minimum
@@ -1802,7 +1814,7 @@ module powerbi.visuals {
         //    let dataLength = data.length;
         //    let isLastPoint = categoryIndex === (dataLength - 1);
         //    let isFirstPoint = categoryIndex === 0;
-            
+
         //    let currentValue = data[categoryIndex].value;
         //    let previousValue = !isFirstPoint ? data[categoryIndex - 1].value : undefined;
         //    let nextValue = !isLastPoint ? data[categoryIndex + 1].value : undefined;

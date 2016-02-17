@@ -83,8 +83,6 @@ module powerbi.visuals {
         backgroundImageEnabled?: boolean;
 
         lineChartLabelDensityEnabled?: boolean;
-
-        latLongGroupEnabled?: boolean;
     }
 
     export interface SmallViewPortProperties {
@@ -321,7 +319,6 @@ module powerbi.visuals {
             let referenceLinesEnabled: boolean = featureSwitches ? featureSwitches.referenceLinesEnabled : false;
             let backgroundImageEnabled: boolean = featureSwitches ? featureSwitches.backgroundImageEnabled : false;
             let lineChartLabelDensityEnabled: boolean = featureSwitches ? featureSwitches.lineChartLabelDensityEnabled : false;
-            let latLongGroupEnabled: boolean = featureSwitches ? featureSwitches.latLongGroupEnabled : false;
 
             // Bar Chart
             createPlugin(plugins, powerbi.visuals.plugins.barChart, () => new CartesianChart({
@@ -528,7 +525,7 @@ module powerbi.visuals {
                 behavior: new MapBehavior(),
                 tooltipsEnabled: true,
                 isLegendScrollable: true,
-            }), latLongGroupEnabled ? Map.addLatLongGroupingToMapCapabilities : undefined);
+            }));
             // Filled Map
             createPlugin(plugins, powerbi.visuals.plugins.filledMap, () => new Map({
                 filledMap: true,

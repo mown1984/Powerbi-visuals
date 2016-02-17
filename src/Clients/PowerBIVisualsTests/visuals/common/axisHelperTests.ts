@@ -77,14 +77,15 @@ module powerbitests {
     });
 
     describe("AxisHelper createDomain tests", () => {
-        var scalarCartesianSeries = [
+        var cartesianSeries = [
             {
-                data: [{
-                    categoryValue: 7,
-                    value: 11,
-                    categoryIndex: 0,
-                    seriesIndex: 0,
-                }, {
+                data: [
+                    {
+                        categoryValue: 7,
+                        value: 11,
+                        categoryIndex: 0,
+                        seriesIndex: 0,
+                    }, {
                         categoryValue: 9,
                         value: 9,
                         categoryIndex: 1,
@@ -99,43 +100,100 @@ module powerbitests {
                         value: 7,
                         categoryIndex: 3,
                         seriesIndex: 0,
-                    }]
+                    }
+                ]
+            },
+        ];
+        var cartesianSeriesWithHighlights = [
+            {
+                data: [
+                    {
+                        categoryValue: 7,
+                        value: 3,
+                        categoryIndex: 0,
+                        seriesIndex: 0,
+                    }, {
+                        categoryValue: 7,
+                        value: 11,
+                        categoryIndex: 0,
+                        seriesIndex: 0,
+                        highlight: true,
+                    }, {
+                        categoryValue: 7,
+                        value: 11,
+                        categoryIndex: 1,
+                        seriesIndex: 0,
+                    }, {
+                        categoryValue: 7,
+                        value: 11,
+                        categoryIndex: 1,
+                        seriesIndex: 0,
+                        highlight: true,
+                    }, {
+                        categoryValue: 7,
+                        value: 11,
+                        categoryIndex: 2,
+                        seriesIndex: 0,
+                    },  {
+                        categoryValue: 9,
+                        value: 9,
+                        categoryIndex: 2,
+                        seriesIndex: 0,
+                        highlight: true,
+                    }, {
+                        categoryValue: 15,
+                        value: 6,
+                        categoryIndex: 3,
+                        seriesIndex: 0,
+                    }, {
+                        categoryValue: 22,
+                        value: 7,
+                        categoryIndex: 3,
+                        seriesIndex: 0,
+                        highlight: true,
+                    }
+                ]
             },
         ];
 
         it("ordinal - text",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ text: true }), false, []);
-            expect(domain).toEqual([0,1,2,3]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ text: true }), false, []);
+            expect(domain).toEqual([0, 1, 2, 3]);
+        });
+
+        it("ordinal - with highlights", () => {
+            var domain = AxisHelper.createDomain(cartesianSeriesWithHighlights, ValueType.fromDescriptor({ text: true }), false, []);
+            expect(domain).toEqual([0, 1, 2, 3]);
         });
 
         it("scalar - two values",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [5, 20]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [5, 20]);
             expect(domain).toEqual([5,20]);
         });
 
         it("scalar - undefined, val",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [undefined, 20]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [undefined, 20]);
             expect(domain).toEqual([7, 20]);
         });
 
         it("scalar - val, undefined",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [5, undefined]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [5, undefined]);
             expect(domain).toEqual([5, 22]);
         });
 
         it("scalar - undefined, undefined",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [undefined, undefined]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [undefined, undefined]);
             expect(domain).toEqual([7, 22]);
         });
 
         it("scalar - null",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, null);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, null);
             expect(domain).toEqual([7, 22]);
         });
 
         // invalid case with min > max, take actual domain
         it("scalar - min > max",() => {
-            var domain = AxisHelper.createDomain(scalarCartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [15, 10]);
+            var domain = AxisHelper.createDomain(cartesianSeries, ValueType.fromDescriptor({ numeric: true }), true, [15, 10]);
             expect(domain).toEqual([7, 22]);
         });
     });

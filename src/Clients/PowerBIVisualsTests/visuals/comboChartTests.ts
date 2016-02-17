@@ -27,6 +27,7 @@
 
 
 module powerbitests {
+    import DataViewObjects = powerbi.DataViewObjects;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
@@ -84,6 +85,36 @@ module powerbitests {
             });
 
             expect((<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMappings[0].categorical.values).group.by.items).toBeUndefined();
+        });
+
+        it('Sortable roles with categorical axis', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: 'Categorical',
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true);
+            expect(dataViewMappings.length).toBe(2);
+            dataViewMappings[0].metadata.objects = objects;
+
+            expect(ComboChart.getSortableRoles({
+                dataViewMappings: [dataViewMappings[0]]
+            })).toEqual(['Category', 'Y', 'Y2']);
+        });
+
+        it('Sortable roles with scalar axis', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: 'Scalar',
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true);
+            expect(dataViewMappings.length).toBe(2);
+            dataViewMappings[0].metadata.objects = objects;
+
+            expect(ComboChart.getSortableRoles({
+                dataViewMappings: [dataViewMappings[0]]
+            })).toBeNull();
         });
 
         it('CustomizeQuery does not remove series when there are column values', () => {
@@ -1091,6 +1122,34 @@ module powerbitests {
             setTimeout(() => {
                 expect($(".labelGraphicsContext")).toBeInDOM();
                 expect($(".labelGraphicsContext .label").length).toBe(6);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Ensure line layer doesn't inherit colors from bar layer", (done) => {
+            let dataViews: powerbi.DataView[] = [
+                dataViewFactory.buildDataViewDefault(),
+                dataViewFactory.buildDataViewInAnotherDomainOneValue()
+            ];
+
+            dataViews[0].metadata.columns[0].objects = {
+                dataPoint: {
+                    fill: {
+                        solid: {
+                            color: '#000001'
+                        }
+                    }
+                }
+            };
+
+            visualBuilder.onDataChanged({
+                dataViews: dataViews
+            });
+
+            setTimeout(() => {
+                let highlightPoints = $(".cat .point").length;
+                expect(highlightPoints).toBe(0);
 
                 done();
             }, DefaultWaitForRender);

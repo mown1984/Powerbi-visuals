@@ -41,6 +41,7 @@ module powerbi {
     }
 
     export interface IClientWarning extends ILocalizableError {
+        code: string;
         columnNameFromIndex: (index: number) => string;
     }
 
