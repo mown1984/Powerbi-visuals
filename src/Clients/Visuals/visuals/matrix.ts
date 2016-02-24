@@ -30,6 +30,8 @@ module powerbi.visuals {
 
     import TablixFormattingPropertiesMatrix = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
     import TablixUtils = controls.internal.TablixUtils;
+    import UrlUtils = jsCommon.UrlUtils;
+
     /**
      * Extension of the Matrix node for Matrix visual.
      */
@@ -146,7 +148,6 @@ module powerbi.visuals {
             if (matrixHierarchy)
                 return Math.max(matrixHierarchy.levels.length, 1);
 
-            debug.assertFail('Hierarchy cannot be found');
             return 0;
         }
         
@@ -158,7 +159,6 @@ module powerbi.visuals {
             if (matrixHierarchy)
                 return matrixHierarchy.leafNodes.length;
 
-            debug.assertFail('Hierarchy cannot be found');
             return 0;
         }
         
@@ -775,9 +775,9 @@ module powerbi.visuals {
                 return;
             }
 
-            if (metadata && UrlHelper.isValidUrl(metadata, value)) {
+            if (converterHelper.isWebUrlColumn(metadata) && UrlUtils.isValidUrl(value)) {
                 TablixUtils.appendATagToBodyCell(item.value, cell);
-            } else if (metadata && UrlHelper.isValidImage(metadata, value)) {
+            } else if (converterHelper.isImageUrlColumn(metadata) && UrlUtils.isValidImageUrl(value)) {
                 TablixUtils.appendImgTagToBodyCell(item.value, cell);
             }
             else {
@@ -1010,7 +1010,7 @@ module powerbi.visuals {
                     let binder = <MatrixBinder>this.tablixControl.getBinder();
                     binder.onDataViewChanged(formattingProperties);
                     this.populateColumnWidths();
-                    this.updateInternal(this.dataView, textSize, previousDataView);
+                    this.updateInternal(textSize, previousDataView);
                 }
             }
 
@@ -1110,18 +1110,18 @@ module powerbi.visuals {
             return new controls.TablixControl(matrixNavigator, layoutManager, matrixBinder, tablixContainer, tablixOptions);
         }
 
-        private updateInternal(dataView: DataView, textSize: number, previousDataView: DataView) {
+        private updateInternal(textSize: number, previousDataView: DataView) {
             if (this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
-                this.tablixControl.layoutManager.adjustContentSize(UrlHelper.hasImageColumn(dataView));
+                this.tablixControl.layoutManager.adjustContentSize(converterHelper.hasImageUrlColumn(this.dataView));
             }
 
             this.tablixControl.fontSize = TablixUtils.getTextSizeInPx(textSize);
             this.verifyHeaderResize();
 
             // Update models before the viewport to make sure column widths are computed correctly
-            this.tablixControl.updateModels(/*resetScrollOffsets*/true, dataView.matrix.rows.root.children, dataView.matrix.columns.root.children);
+            this.tablixControl.updateModels(/*resetScrollOffsets*/true, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
             this.tablixControl.viewport = this.currentViewport;
-            let shouldClearControl = this.shouldClearControl(previousDataView, dataView);
+            let shouldClearControl = this.shouldClearControl(previousDataView, this.dataView);
 
             // We need the layout for the DIV to be done so that the control can measure items correctly.
             setTimeout(() => {

@@ -467,16 +467,17 @@ module powerbitests {
 
             afterEach(() => builder.destroy());
 
+            // DEFECT 6875986 - test is failing
             xit("On Clear should reset the default value", (done) => {
+                jasmine.clock().uninstall();
                 (<visuals.Slicer>builder.visual).onClearSelection();
                 expect(filterAnalyzed).toBe(true);
-                helpers.executeWithDelay(() => {
+                setTimeout(() => {
                     let selectedContainer = getSelectedContainer();
                     expect(selectedContainer.length).toBe(1);
                     expect(selectedContainer.text()).toBe('Banana');
-
                     done();
-                }, 10);
+                }, 32);
             });
         }
 

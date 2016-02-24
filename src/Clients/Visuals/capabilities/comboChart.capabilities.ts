@@ -303,6 +303,18 @@ module powerbi.visuals {
                     },
                 },
             },
+            plotArea: {
+                displayName: data.createDisplayNameGetter('Visual_Plot'),
+                properties: {
+                    transparency: {
+                        displayName: data.createDisplayNameGetter('Visual_Background_Transparency'),
+                        type: { numeric: true },
+                    },
+                    image: {
+                        type: { image: {} },
+                    },
+                },
+            },
         },
         dataViewMappings: [
             {
@@ -340,7 +352,6 @@ module powerbi.visuals {
                         select: [
                             { for: { in: 'Y2' } }
                         ],
-                        dataReductionAlgorithm: { top: {} }
                     },
                     rowCount: { preferred: { min: 2 }, supported: { min: 0 } }
                 },

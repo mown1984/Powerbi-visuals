@@ -794,9 +794,6 @@ module powerbi.data {
 
             if (ruleType.fillRule)
                 return createRuleEvaluationInstanceFillRule(dataView, colorAllocatorFactory, ruleDesc, selectorToCreate, objectName, <FillRule>propertyValue);
-
-            if (ruleType.filter)
-                return createRuleEvaluationInstanceFilter(dataView, ruleDesc, selectorToCreate, objectName, <SemanticFilter>propertyValue);
         }
 
         function createRuleEvaluationInstanceFillRule(
@@ -901,42 +898,6 @@ module powerbi.data {
             }
 
             return colorAllocatorFactory.linearGradient3(propertyValueFillRule.linearGradient3, splitScales);
-        }
-
-        function createRuleEvaluationInstanceFilter(
-            dataView: DataView,
-            ruleDesc: DataViewObjectPropertyRuleDescriptor,
-            selectorToCreate: Selector,
-            objectName: string,
-            propertyValue: SemanticFilter): DataViewObjectDefinitionsForSelectorWithRule {
-            debug.assertValue(dataView, 'dataView');
-            debug.assertValue(ruleDesc, 'ruleDesc');
-            debug.assertValue(selectorToCreate, 'selectorToCreate');
-            debug.assertValue(propertyValue, 'propertyValue');
-
-            // NOTE: This is not right -- we ought to discover the keys from an IN operator expression to avoid additional dependencies.
-            if (!dataView.categorical || !dataView.categorical.categories || dataView.categorical.categories.length !== 1)
-                return;
-            let identityFields = dataView.categorical.categories[0].identityFields;
-            if (!identityFields)
-                return;
-
-            let scopeIds = SQExprConverter.asScopeIdsContainer(propertyValue, <SQExpr[]>identityFields);
-            if (!scopeIds)
-                return;
-
-            let rule = new FilterRuleEvaluation(scopeIds);
-            let properties: DataViewObjectPropertyDefinitions = {};
-            properties[ruleDesc.output.property] = rule;
-
-            return {
-                selector: selectorToCreate,
-                rules: [rule],
-                objects: [{
-                    name: objectName,
-                    properties: properties,
-                }]
-            };
         }
 
         function evaluateDataRepetition(

@@ -25,6 +25,7 @@ declare module jsCommon {
         const cKeyCode: number;
         const sKeyCode: number;
         const vKeyCode: number;
+        const wKeyCode: number;
         const xKeyCode: number;
         const yKeyCode: number;
         const zKeyCode: number;
@@ -980,6 +981,13 @@ declare module jsCommon {
         create(delayInMs: number): IRejectablePromise;
     }
 }
+declare module jsCommon {
+    module UrlUtils {
+        function isValidUrl(value: string): boolean;
+        function isValidImageUrl(url: string): boolean;
+        function findAllValidUrls(text: string): TextMatch[];
+    }
+}
 /**
  * Defined in host.
  */
@@ -1120,8 +1128,6 @@ declare module jsCommon {
         static HttpAcceptHeader: string;
         static Undefined: string;
         private static staticContentLocation;
-        private static urlRegex;
-        private static imageUrlRegex;
         /**
          * Ensures the specified value is not null or undefined. Throws a relevent exception if it is.
          * @param value The value to check.
@@ -1273,18 +1279,6 @@ declare module jsCommon {
          */
         static getIndexOfMinValue(a: number[]): number;
         /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        static isValidUrl(url: string): boolean;
-        /**
-         * Finds all valid urls.
-         * @param text The text to search.
-         * @returns An array of ranges corresponding to the urls.
-         */
-        static findAllValidUrls(text: string): TextMatch[];
-        /**
          * Extracts a url from a background image attribute in the format of: url('www.foobar.com/image.png').
          * @param input The value of the background-image attribute.
          * @returns The extracted url.
@@ -1294,12 +1288,6 @@ declare module jsCommon {
          * Verifies image data url of images.
          */
         static isValidImageDataUrl(url: string): boolean;
-        /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        static isValidImageUrl(url: string): boolean;
         /**
          * Downloads a content string as a file.
          * @param content Content stream.

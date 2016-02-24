@@ -9077,6 +9077,13 @@ module powerbitests {
         thirdColumnXCoordinateToClick: number,
         thirdColumnYCoordinateToClick: number) {
 
+        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
+        let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date) };
+        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
+        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+        let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+        let measure4Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let v: powerbi.IVisual, element: JQuery;
         let hexDefaultColorRed = "#ff0000";
@@ -9174,8 +9181,8 @@ module powerbitests {
             let cartesianVisualHost = barChart.cartesianVisualHost;
             spyOn(cartesianVisualHost, 'updateLegend').and.callThrough();
 
-            // first column is selected. try to select it again
-            barChart.selectColumn(0);
+            // last column is selected. try to select it again
+            barChart.selectColumn(4);
             
             // update legend should not be called again
             expect(cartesianVisualHost.updateLegend).not.toHaveBeenCalled();
@@ -9200,6 +9207,71 @@ module powerbitests {
             expect(item.find('.itemMeasure').text().trim()).toBe('490000');
             helpers.assertColorsMatch(item.find('.icon').css('color'), hexDefaultColorRed);
             expect(hoverLine.length).toBe(1);
+        });
+
+        it('Hover line start point is at last data point', () => {      
+            let barChart = (<any>v).layers[0];
+            spyOn(barChart, 'selectColumn').and.callThrough();
+            
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500000, 495000, 490000, 480000, 500000],
+                            subtotal: 246500
+                        }])
+                    }
+                }]
+            });
+
+            expect(barChart.selectColumn).toHaveBeenCalledWith(4,true);
+        });
+
+        it('Hover line start point is at last data point - multiple series with jagged categories', () => {
+            let metadata: powerbi.DataViewMetadata = {
+                columns: [categoryColumnDate, measure2Column, measure3Column]
+            };
+
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: 'Scalar',
+                }
+            };
+            metadata.objects = objects;
+
+            let valueColumns = DataViewTransform.createValueColumns([
+                {
+                    source: metadata.columns[1],
+                    values: [1, null, 3, null, 7],
+                },
+                {
+                    source: metadata.columns[2],
+                    values: [null, 2, null, 4, null],
+                }]);
+
+            let barChart = (<any>v).layers[0];
+            spyOn(barChart, 'selectColumn').and.callThrough();
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: metadata,
+                    categorical: {
+                        categories: [{
+                            source: metadata.columns[0],
+                            values: [new Date(2011), new Date(2012), new Date(2013), new Date(2014), new Date(2015)]
+                        }],
+                        values: valueColumns
+                    }
+                }]
+            });
+
+            expect(barChart.selectColumn).toHaveBeenCalledWith(4, true);
         });
     }
 

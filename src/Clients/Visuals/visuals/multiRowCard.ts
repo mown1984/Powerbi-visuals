@@ -31,6 +31,7 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import UrlUtils = jsCommon.UrlUtils;
 
     const TitleFontFamily = 'wf_segoe-ui_semibold';
     const DefaultFontFamily = 'wf_segoe-ui_normal';
@@ -322,8 +323,8 @@ module powerbi.visuals {
                         if (isValuePromoted === undefined) {
                             isValuePromoted = true;
                             title = columnCaption;
-                            showTitleAsURL = UrlHelper.isValidUrl(column, title);
-                            showTitleAsImage = UrlHelper.isValidImage(column, columnCaption);
+                            showTitleAsURL = converterHelper.isWebUrlColumn(column) && UrlUtils.isValidUrl(title);
+                            showTitleAsImage = converterHelper.isImageUrlColumn(column) && UrlUtils.isValidImageUrl(columnCaption);
                             showTitleAsKPI = showKPI;
                         }
                         else if (isValuePromoted) {
@@ -333,8 +334,8 @@ module powerbi.visuals {
                     cardData.push({
                         caption: columnCaption,
                         details: columnDetail,
-                        showURL: UrlHelper.isValidUrl(column, columnCaption),
-                        showImage: UrlHelper.isValidImage(column, columnCaption),
+                        showURL: converterHelper.isWebUrlColumn(column) && UrlUtils.isValidUrl(columnCaption),
+                        showImage: converterHelper.isImageUrlColumn(column) && UrlUtils.isValidImageUrl(columnCaption),
                         showKPI: showKPI,
                         columnIndex: j
                     });

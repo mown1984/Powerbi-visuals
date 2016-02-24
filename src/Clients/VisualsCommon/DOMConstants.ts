@@ -55,6 +55,7 @@ module jsCommon {
         export const cKeyCode = 67;
         export const sKeyCode = 83;
         export const vKeyCode = 86;
+        export const wKeyCode = 87;
         export const xKeyCode = 88;
         export const yKeyCode = 89;
         export const zKeyCode = 90;

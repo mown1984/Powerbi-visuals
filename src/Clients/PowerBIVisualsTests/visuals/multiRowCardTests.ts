@@ -541,8 +541,8 @@ module powerbitests {
 
                 expect(cardData.dataModel.length).toBe(2);
                 expect(cardData.dataModel).toEqual([
-                    { title: undefined, showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "123,456.79", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }, { caption: "8/31/1999", details: "date", showURL: false, showImage: undefined, showKPI: false, columnIndex: 1 }, { caption: "category1", details: "category", showURL: false, showImage: undefined, showKPI: false, columnIndex: 2 }] },
-                    { title: undefined, showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "12,345.00", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }, { caption: "8/1/2014", details: "date", showURL: false, showImage: undefined, showKPI: false, columnIndex: 1 }, { caption: "category2", details: "category", showURL: false, showImage: undefined, showKPI: false, columnIndex: 2 }] }
+                    { title: undefined, showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "123,456.79", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }, { caption: "8/31/1999", details: "date", showURL: false, showImage: false, showKPI: false, columnIndex: 1 }, { caption: "category1", details: "category", showURL: false, showImage: false, showKPI: false, columnIndex: 2 }] },
+                    { title: undefined, showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "12,345.00", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }, { caption: "8/1/2014", details: "date", showURL: false, showImage: false, showKPI: false, columnIndex: 1 }, { caption: "category2", details: "category", showURL: false, showImage: false, showKPI: false, columnIndex: 2 }] }
                 ]);
             });
 
@@ -551,8 +551,8 @@ module powerbitests {
 
                 expect(cardData.dataModel.length).toBe(2);
                 expect(cardData.dataModel).toEqual([
-                    { title: "Action", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "123,456.79", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }] },
-                    { title: "Adventure", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "12,345.00", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }] }
+                    { title: "Action", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "123,456.79", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }] },
+                    { title: "Adventure", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "12,345.00", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }] }
                 ]);
             });
 
@@ -561,8 +561,8 @@ module powerbitests {
 
                 expect(cardData.dataModel.length).toBe(2);
                 expect(cardData.dataModel).toEqual([
-                    { title: "Action", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "(Blank)", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }] },
-                    { title: "Adventure", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "(Blank)", details: "value", showURL: false, showImage: undefined, showKPI: false, columnIndex: 0 }] }
+                    { title: "Action", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "(Blank)", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }] },
+                    { title: "Adventure", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "(Blank)", details: "value", showURL: false, showImage: false, showKPI: false, columnIndex: 0 }] }
                 ]);
             });
 
@@ -571,8 +571,8 @@ module powerbitests {
 
                 expect(cardData.dataModel.length).toBe(2);
                 expect(cardData.dataModel).toEqual([
-                    { title: "test1", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "powervisuals-glyph bars-stacked bars-three", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] },
-                    { title: "test2", showTitleAsURL: false, showTitleAsImage: undefined, showTitleAsKPI: false, cardItemsData: [{ caption: "powervisuals-glyph bars-stacked bars-four", details: "KPI", showURL: false, showImage: undefined, showKPI: true, columnIndex: 0 }] }
+                    { title: "test1", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "powervisuals-glyph bars-stacked bars-three", details: "KPI", showURL: false, showImage: false, showKPI: true, columnIndex: 0 }] },
+                    { title: "test2", showTitleAsURL: false, showTitleAsImage: false, showTitleAsKPI: false, cardItemsData: [{ caption: "powervisuals-glyph bars-stacked bars-four", details: "KPI", showURL: false, showImage: false, showKPI: true, columnIndex: 0 }] }
                 ]);
             });
 

@@ -27,6 +27,8 @@
 
 
 module powerbitests {
+    import converterHelper = powerbi.visuals.converterHelper;
+
     describe("converterHelper tests", () => {
         let dataViewBuilder: DataViewBuilder;
         let dataView: powerbi.DataViewCategorical;
@@ -37,26 +39,26 @@ module powerbitests {
         });
 
         it("categoryIsAlsoSeriesRole default", () => {
-            expect(powerbi.visuals.converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
+            expect(converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
 
             // Only a "Series" role prevents us from using the Default strategy
             dataViewBuilder.buildWithUpdateRoles({ "Category": true });
-            expect(powerbi.visuals.converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
+            expect(converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
 
             dataView = dataViewBuilder.buildWithUpdateRoles({ "E === mc^2": true });
-            expect(powerbi.visuals.converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
+            expect(converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBeFalsy();
         });
 
         it("categoryIsAlsoSeriesRole series and category", () => {
             dataView = dataViewBuilder.buildWithUpdateRoles({ "Series": true, "Category": true });
-            expect(powerbi.visuals.converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBe(true);
+            expect(converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBe(true);
 
             dataView = dataViewBuilder.buildWithUpdateRoles({ "Series": true, "F === ma": true, "Category": true });
-            expect(powerbi.visuals.converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBe(true);
+            expect(converterHelper.categoryIsAlsoSeriesRole(dataView, "Series", "Category")).toBe(true);
         });
 
         it("getPivotedCategories default", () => {
-            let categoryInfo = powerbi.visuals.converterHelper.getPivotedCategories(dataView, formatStringProp());
+            let categoryInfo = converterHelper.getPivotedCategories(dataView, formatStringProp());
 
             // Note: Since the result includes a function property we can"t perform a toEqual directly on the result, so check each part individually.
             expect(categoryInfo.categories).toEqual(["a", "b"]);
@@ -67,7 +69,7 @@ module powerbitests {
             // Empty the categories array
             dataView.categories = [];
 
-            let categoryInfo = powerbi.visuals.converterHelper.getPivotedCategories(dataView, formatStringProp());
+            let categoryInfo = converterHelper.getPivotedCategories(dataView, formatStringProp());
             validateEmptyCategoryInfo(categoryInfo);
         });
 
@@ -75,9 +77,27 @@ module powerbitests {
             // Empty the category values array
             dataView.categories[0].values = [];
 
-            let categoryInfo = powerbi.visuals.converterHelper.getPivotedCategories(dataView, formatStringProp());
+            let categoryInfo = converterHelper.getPivotedCategories(dataView, formatStringProp());
             expect(categoryInfo.categories).toEqual([]);
             expect(categoryInfo.categoryIdentities).toBeUndefined();
+        });
+
+        it('isWebUrlColumn', () => {
+            let webUrlColumnMetadata: powerbi.DataViewMetadataColumn = {
+                displayName: "webUrl",
+                type: new powerbi.ValueType(powerbi.ExtendedType.WebUrl, "WebUrl")
+            };
+
+            converterHelper.isWebUrlColumn(webUrlColumnMetadata);
+        });
+
+        it('isImageUrlColumn', () => {
+            let imageColumnMetadata: powerbi.DataViewMetadataColumn = {
+                displayName: "imageUrl",
+                type: new powerbi.ValueType(powerbi.ExtendedType.ImageUrl, "ImageUrl")
+            };
+
+            converterHelper.isImageUrlColumn(imageColumnMetadata);
         });
 
         function validateEmptyCategoryInfo(categoryInfo: powerbi.visuals.PivotedCategoryInfo): void {

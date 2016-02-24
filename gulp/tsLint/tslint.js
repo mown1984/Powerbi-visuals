@@ -30,7 +30,7 @@ var gulp = require("gulp"),
     gulpTsLint = require("gulp-tslint"),
     lodash = require("lodash"),
     path = require("path"),
-    config = require("../config.js"),    
+    config = require("../config.js"),
     utils = require("../utils.js");
 
 /**
@@ -42,20 +42,17 @@ var gulp = require("gulp"),
  */
 function tslint(projectPath, includePaths, excludePaths, options) {
     var paths,
-        options = lodash.defaults(options || {}, {
+        reportOptions = lodash.defaults(options || {}, {
             emitError: config.emitTsLintError || false,
+        }),
+        includePaths = includePaths || "/**/*.ts",
+        paths = utils.getPaths(includePaths, excludePaths);
+
+    return gulp.src(paths, { cwd: projectPath })
+        .pipe(gulpTsLint({
             configuration: path.join(__dirname, "../../src/Clients/tslint.json")
-        });
-
-    includePaths = includePaths || "/**/*.ts";
-
-    paths = utils.getPaths(includePaths, excludePaths);
-
-    return gulp.src(paths, {
-        cwd: projectPath
-    })
-        .pipe(gulpTsLint())
-        .pipe(gulpTsLint.report("full", options));
+        }))
+        .pipe(gulpTsLint.report("full", reportOptions));
 }
 
 module.exports = tslint;

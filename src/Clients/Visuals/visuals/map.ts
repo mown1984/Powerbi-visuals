@@ -330,12 +330,12 @@ module powerbi.visuals {
                         let gradientToolTipData = TooltipBuilder.createGradientToolTipData(gradientValueColumn, categoryIndex);
                         if (gradientToolTipData != null)
                             seriesData.push(gradientToolTipData);
-                        
+
                         let tooltipInfo: TooltipDataItem[];
                         if (tooltipsEnabled) {
                             tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, null, categoryValue, null, categorical.categories, seriesData);
                         }
-                        
+
                         bubbleData.push({
                             x: x,
                             y: y,
@@ -851,9 +851,10 @@ module powerbi.visuals {
             for (let pathIndex = 0, pathCount = paths.length; pathIndex < pathCount; pathIndex++) {
                 let path = paths[pathIndex];
                         
-                // Using the area of the bounding box (and taking the largest)
-                let currentShapeArea = path.absoluteBounds.width * path.absoluteBounds.height; 
-                        
+                // Using the area of the polygon (and taking the largest)
+                let polygon = new Polygon(path.absolute);
+                let currentShapeArea = Math.abs(Polygon.calculateAbsolutePolygonArea(polygon.polygonPoints));
+
                 if (currentShapeArea > largestShapeArea) {
                     largestShapeIndex = pathIndex;
                     largestShapeArea = currentShapeArea;
@@ -1525,10 +1526,12 @@ module powerbi.visuals {
                         }
                         for (let dataPoint of data.dataPoints) {
                             if (!dataPoint.location) {
-                                if (enableGeoShaping)
-                                    this.enqueueGeoCodeAndGeoShape(dataPoint, params);
-                                else
-                                    this.enqueueGeoCode(dataPoint);
+                                if (!_.isEmpty(dataPoint.categoryValue)) { // If we don't have a location, but the category string is empty, skip geocoding so we don't geocode null/empty string
+                                    if (enableGeoShaping)
+                                        this.enqueueGeoCodeAndGeoShape(dataPoint, params);
+                                    else
+                                        this.enqueueGeoCode(dataPoint);
+                                }
                             }
                             else if (enableGeoShaping && !dataPoint.paths) {
                                 this.enqueueGeoShape(dataPoint, params);
@@ -1549,7 +1552,7 @@ module powerbi.visuals {
                         warnings.push(new FilledMapWithoutValidGeotagCategoryWarning());
                     }
                 }
-                    }
+            }
             else {
                 this.clearDataPoints();
                 this.renderLegend({
@@ -1557,7 +1560,7 @@ module powerbi.visuals {
                     title: undefined,
                 });
                 this.dataPointsToEnumerate = [];
-                    }
+            }
 
             if (!_.isEmpty(warnings))
                 this.host.setWarnings(warnings);
@@ -1600,7 +1603,7 @@ module powerbi.visuals {
                         max: categoryMax,
                         min: categoryMin,
                     } : undefined;
-                    }
+                }
 
                 let hasLatLongGroup = reader.hasCompositeCategories() && reader.hasCategoryWithRole('X') && reader.hasCategoryWithRole('Y');
                 let hasCategoryGroup = reader.hasCategoryWithRole('Category');
@@ -1620,20 +1623,23 @@ module powerbi.visuals {
 
                             // Create location from latitude and longitude if they exist as values
                             if (reader.hasValues('Y') && reader.hasValues('X')) {
-                                let latitude = reader.getValue('Y', categoryIndex);
-                                let longitude = reader.getValue('X', categoryIndex);
-                                location = { latitude: latitude, longitude: longitude };
-                                }
-                                }
-                                else {
-                            // Combine latitude and longitude to create the category value
+                                let latitude = reader.getFirstNonNullValueForCategory('Y', categoryIndex);
+                                let longitude = reader.getFirstNonNullValueForCategory('X', categoryIndex);
+                                if (latitude != null && longitude != null)
+                                    location = { latitude: latitude, longitude: longitude };
+                            }
+                        }
+                        else {
                             let latitude = reader.getCategoryValue(categoryIndex, 'Y');
                             let longitude = reader.getCategoryValue(categoryIndex, 'X');
-                            categoryValue = latitude + ', ' + longitude;
 
-                            // Create location from latitude and longitude
-                            location = { latitude: latitude, longitude: longitude };
-                                }
+                            if (latitude != null && longitude != null) {
+                                // Combine latitude and longitude to create the category value
+                                categoryValue = latitude + ', ' + longitude;
+                                // Create location from latitude and longitude
+                                location = { latitude: latitude, longitude: longitude };
+                            }
+                        }
                         let value: number = hasSize ? categoryTotals[categoryIndex] : undefined;
                     
                         // Calculate sub data points by series
@@ -1641,7 +1647,7 @@ module powerbi.visuals {
                         let seriesCount = reader.getSeriesCount();
                         if (!hasSize) {
                             seriesCount = 1;
-                            }
+                        }
                         for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                             let color = hasDynamicSeries
                                 ? colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>(reader.getSeriesName(seriesIndex)))
@@ -1657,7 +1663,7 @@ module powerbi.visuals {
                                 .withMeasure(sizeQueryName);
                             if (hasDynamicSeries && hasSize) {
                                 identityBuilder = identityBuilder.withSeries(reader.getSeriesColumns(), reader.getValueColumn('Size', seriesIndex));
-                        }
+                            }
 
                             let subsliceValue = hasSize ? reader.getValue('Size', categoryIndex, seriesIndex) : undefined;
                             // Do not create subslices for data points with 0 or null 
@@ -1680,10 +1686,10 @@ module powerbi.visuals {
                                 subDataPoints: subDataPoints,
                                 radius: Map.calculateRadius(categoryTotalRange, value),
                                 location: location,
-                    });
+                            });
+                        }
+                    }
                 }
-                }
-            }
             }
 
             let mapData: MapData = {
@@ -1703,7 +1709,7 @@ module powerbi.visuals {
                 legendTitle = reader.getSeriesDisplayName();
                 let seriesColumnIdentifier = reader.getSeriesColumnIdentifier();
                 for (let seriesIndex = 0, seriesCount = reader.getSeriesCount(); seriesIndex < seriesCount; seriesIndex++) {
-                    let color = colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, reader.getSeriesName(seriesIndex).toString());
+                    let color = colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>reader.getSeriesName(seriesIndex));
                     let identity = new SelectionIdBuilder().withSeries(reader.getSeriesColumns(), reader.getValueColumn('Size', seriesIndex)).createSelectionId();
                     legendDataPoints.push({
                         color: color,

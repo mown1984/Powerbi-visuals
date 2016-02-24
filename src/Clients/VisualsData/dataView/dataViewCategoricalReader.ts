@@ -47,6 +47,12 @@ module powerbi.data {
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains the first non-null value for the given role name and category index.
+         * It should mainly be used for values that are expected to be the same across
+         * series, but avoids false nulls when the data is sparse.
+         */
+        getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any;
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         // Series Methods
@@ -166,6 +172,22 @@ module powerbi.data {
             if (this.hasAnyValidValues) {
                 let values = this.getValues(roleName, seriesIndex);
                 return values ? values[categoryIndex] : undefined;
+            }
+        }
+
+        public getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any {
+            if (this.hasAnyValidValues) {
+                if (!this.dataHasDynamicSeries) {
+                    debug.assert(this.grouped.length === 1, "getFirstNonNullValueForCategory shouldn't be called if you have a static series");
+                    return this.getValue(roleName, categoryIndex);
+                }
+                for (let seriesIndex = 0, seriesCount = this.grouped.length; seriesIndex < seriesCount; seriesIndex++) {
+                    let values = this.getValues(roleName, seriesIndex);
+                    let value = !_.isEmpty(values) ? values[categoryIndex] : undefined;
+                    if (value != null) {
+                        return value;
+                    }
+                }
             }
         }
 

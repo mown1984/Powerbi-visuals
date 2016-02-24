@@ -1,4 +1,4 @@
- /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -51,6 +51,7 @@ module.exports = function () {
         showMSBuildLogOnError: strToBool("showMSBuildLogOnError"),
         sourceRootMapPrefix: cliOptions.sourceRootMapPrefix,
         sourceRootMapFullPath: cliOptions.sourceRootMapFullPath,
+        emitTsLintError: strToBool("emitTsLintError"),
         paths: {
             VisualsDropFolder: path.resolve(__dirname, confJSON.paths.VisualsDropFolder),
             VisualsDropStyles: path.resolve(__dirname, confJSON.paths.VisualsDropStyles),

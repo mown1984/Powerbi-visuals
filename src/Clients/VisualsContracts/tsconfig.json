@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
-        "suppressExcessPropertyErrors": true
+        "target": "es5"
     },
     "filesGlob": [
         "**/*.ts"

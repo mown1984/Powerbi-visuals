@@ -29,7 +29,7 @@
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import StringExtensions = jsCommon.StringExtensions;
-    import Utility = jsCommon.Utility;
+    import UrlUtils = jsCommon.UrlUtils;
 
     export interface TextboxDataViewObjects extends DataViewObjects {
         general: TextboxDataViewObject;
@@ -204,7 +204,7 @@ module powerbi.visuals {
                             let span = text.substring(start, end);
                             let textRun: TextRun = { value: span };
                             if (attributes) {
-                                if (attributes.link !== undefined && jsCommon.Utility.isValidUrl(attributes.link))
+                                if (attributes.link !== undefined && UrlUtils.isValidUrl(attributes.link))
                                     textRun.url = attributes.link;
 
                                 let textStyle = convertFormatAttributesToTextStyle(attributes);
@@ -291,7 +291,7 @@ module powerbi.visuals {
 
                     if (textRunDef.url !== undefined) {
                         let $link: JQuery;
-                        if (jsCommon.Utility.isValidUrl(textRunDef.url)) {
+                        if (UrlUtils.isValidUrl(textRunDef.url)) {
                             $link = $('<a>')
                                 .attr('href', textRunDef.url)
                                 .attr('target', '_blank')
@@ -350,7 +350,7 @@ module powerbi.visuals {
 
                     let text = textRunDef.value;
 
-                    if (textRunDef.url && Utility.isValidUrl(textRunDef.url))
+                    if (textRunDef.url && UrlUtils.isValidUrl(textRunDef.url))
                         formats.link = textRunDef.url;
 
                     let op: quill.InsertOp = {
@@ -603,7 +603,7 @@ module powerbi.visuals {
 
                 let text = this.editor.getText();
 
-                let urlMatches = jsCommon.Utility.findAllValidUrls(text);
+                let urlMatches = UrlUtils.findAllValidUrls(text);
                 for (let match of urlMatches) {
                     // Remove existing link
                     this.editor.formatText(match.start, match.end, 'link', false, 'api');

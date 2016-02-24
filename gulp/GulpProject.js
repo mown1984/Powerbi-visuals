@@ -101,6 +101,12 @@ GulpProject.prototype.createTasks = function () {
         return BUILD_TASK_PREFIX + dep.projName;
     }), function (callback) {
         me.initBuildTasks();
+        
+        //Run TsLint task in parallel with other tasks
+        if (config.tslintOnBuild && me.params.tsc) {
+            runSequence(me.lintTask);
+        }
+
         runSequence.apply(null, me.buildTasks.concat(callback));
     });
 
@@ -136,11 +142,7 @@ GulpProject.prototype.initBuildTasks = function () {
     }
 
     if (this.params.tsc) {
-        var tsLintTask = this.createTypeScriptLintTask();
-
-        if (config.tslintOnBuild) {
-            buildTasks.push(tsLintTask);
-        }
+        this.createTypeScriptLintTask();
 
         buildTasks.push(this.createTypeScriptTask());
     }

@@ -393,6 +393,67 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('background image', (done) => {
+                let dataViewMetadata: powerbi.DataViewMetadata = {
+                    columns: [
+                        {
+                            displayName: 'col1',
+                            queryName: 'col1',
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                        }, {
+                            displayName: 'col2',
+                            queryName: 'col2',
+                            isMeasure: true,
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        }, {
+                            displayName: 'col3',
+                            queryName: 'col3',
+                            isMeasure: true,
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        }, {
+                            displayName: 'col4',
+                            queryName: 'col4',
+                            isMeasure: true,
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        }]
+                };
+
+                let metadata = _.cloneDeep(dataViewMetadata);
+                metadata.objects = {
+                    plotArea: {
+                        image: {
+                            url: 'data:image/gif;base64,R0lGO',
+                            name: 'someName',
+                        },
+                    },
+                };
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: metadata,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e']
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadata.columns[1],
+                                values: [500000, 495000, 490000, 480000, 500000],
+                                subtotal: 246500
+                            }])
+                        }
+                    }]
+                });
+                setTimeout(() => {
+                    let backgroundImage = $('.waterfallChart .background-image');
+                    expect(backgroundImage.length).toBeGreaterThan(0);
+                    expect(backgroundImage.css('height')).toBeDefined();
+                    expect(backgroundImage.css('width')).toBeDefined();
+                    expect(backgroundImage.css('margin-left')).toBeDefined();
+                    expect(backgroundImage.css('margin-top')).toBeDefined();
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it('should have correct tick labels after scrolling', (done) => {
                 setTimeout(() => {
                     let tickCount = getTicks('x').length;

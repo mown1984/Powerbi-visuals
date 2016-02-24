@@ -1,6 +1,6 @@
 {
     "name": "powerbi-visuals",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Microsoft PowerBI Visuals",
     "devDependencies": {
         "fs": "0.0.2",

@@ -149,5 +149,19 @@ module powerbi.visuals {
 
             return index;
         }
+
+        export function findMaxCategoryIndex(series: CartesianSeries[]): number {
+            if (_.isEmpty(series)) {
+                return 0;
+            }
+            let maxCategoryIndex: number = 0;
+            for (let singleSeries of series) {
+                if (!_.isEmpty(singleSeries.data)) {
+                    let lastIndex = singleSeries.data[singleSeries.data.length - 1].categoryIndex;
+                    maxCategoryIndex = Math.max(lastIndex, maxCategoryIndex);
+                }
+            }
+            return maxCategoryIndex;
+        }
     }
 }

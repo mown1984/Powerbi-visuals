@@ -921,6 +921,12 @@ declare module powerbi.data {
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains the first non-null value for the given role name and category index.
+         * It should mainly be used for values that are expected to be the same across
+         * series, but avoids false nulls when the data is sparse.
+         */
+        getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any;
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         hasDynamicSeries(): boolean;
@@ -951,6 +957,7 @@ declare module powerbi.data {
         /** Creates or reuses a DataViewObjectDefinition for matching the given objectName and selector within the defns. */
         function ensure(defns: DataViewObjectDefinitions, objectName: string, selector: Selector): DataViewObjectDefinition;
         function deleteProperty(defns: DataViewObjectDefinitions, objectName: string, selector: Selector, propertyName: string): void;
+        function setValue(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector, value: DataViewObjectPropertyDefinition): void;
         function getValue(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector): DataViewObjectPropertyDefinition;
         function getPropertyContainer(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector): DataViewObjectPropertyDefinitions;
         function getObjectDefinition(defns: DataViewObjectDefinitions, objectName: string, selector: Selector): DataViewObjectDefinition;
@@ -1253,6 +1260,7 @@ declare module powerbi.data {
         additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
+        viewport?: IViewport;
     }
     interface AdditionalQueryProjection {
         queryName: string;
@@ -1498,13 +1506,6 @@ declare module powerbi.data {
         private inputRole;
         private allocator;
         constructor(inputRole: string, allocator: IColorAllocator);
-        evaluate(evalContext: IEvalContext): any;
-    }
-}
-declare module powerbi.data {
-    class FilterRuleEvaluation extends RuleEvaluation {
-        private selection;
-        constructor(scopeIds: FilterValueScopeIdsContainer);
         evaluate(evalContext: IEvalContext): any;
     }
 }

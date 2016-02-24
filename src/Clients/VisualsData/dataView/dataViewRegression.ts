@@ -214,7 +214,7 @@ module powerbi.data {
 
             let dataType: string = typeof values[0];
 
-            if (_.some(values, (value) => value == null || typeof value !== dataType))
+            if (_.some(values, (value) => value === null || typeof value !== dataType))
                 return;
 
             return dataType;

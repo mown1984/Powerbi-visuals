@@ -29,6 +29,7 @@
 module powerbi.visuals {
     import TablixFormattingProperties = powerbi.visuals.controls.TablixFormattingPropertiesTable;
     import TablixUtils = controls.internal.TablixUtils;
+    import UrlUtils = jsCommon.UrlUtils;
 
     export interface DataViewVisualTable extends DataViewTable {
         visualRows?: DataViewVisualTableRow[];
@@ -213,8 +214,8 @@ module powerbi.visuals {
                 isMeasure: columnItem.isMeasure,
                 isTotal: isTotal,
                 isBottomMost: isBottomMost,
-                showUrl: UrlHelper.isValidUrl(columnItem, formattedValue),
-                showImage: UrlHelper.isValidImage(columnItem, formattedValue),
+                showUrl: converterHelper.isWebUrlColumn(columnItem) && UrlUtils.isValidUrl(formattedValue),
+                showImage: converterHelper.isImageUrlColumn(columnItem) && UrlUtils.isValidImageUrl(formattedValue),
                 isLeftMost: isLeftMost
             };
         }
@@ -617,7 +618,7 @@ module powerbi.visuals {
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
                     this.hierarchyNavigator.update(visualTable);
-                    this.tablixControl.updateModels(/*resetScrollOffsets*/false, visualTable.visualRows);
+                    this.tablixControl.updateModels(/*resetScrollOffsets*/false, visualTable.visualRows, visualTable.columns);
                     this.refreshControl(/*clear*/false);
                 } else {
                     this.createOrUpdateHierarchyNavigator(visualTable);
@@ -626,7 +627,7 @@ module powerbi.visuals {
                     let binder = <TableBinder>this.tablixControl.getBinder();
                     binder.onDataViewChanged(visualTable);
                     this.populateColumnWidths();
-                    this.updateInternal(this.dataView, textSize, previousDataView, visualTable);
+                    this.updateInternal(textSize, previousDataView, visualTable);
                 }
             }
 
@@ -726,9 +727,9 @@ module powerbi.visuals {
             return new controls.TablixControl(dataNavigator, layoutManager, tableBinder, tablixContainer, tablixOptions);
         }
 
-        private updateInternal(dataView: DataView, textSize: number, previousDataView: DataView, visualTable: DataViewVisualTable) {
+        private updateInternal(textSize: number, previousDataView: DataView, visualTable: DataViewVisualTable) {
             if (this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
-                this.tablixControl.layoutManager.adjustContentSize(UrlHelper.hasImageColumn(dataView));
+                this.tablixControl.layoutManager.adjustContentSize(converterHelper.hasImageUrlColumn(this.dataView));
             }
 
             this.tablixControl.fontSize = TablixUtils.getTextSizeInPx(textSize);
@@ -737,11 +738,11 @@ module powerbi.visuals {
             // Update models before the viewport to make sure column widths are computed correctly
             this.tablixControl.updateModels(/*resetScrollOffsets*/true, visualTable.visualRows, visualTable.columns);
 
-            let totals = this.createTotalsRow(dataView);
+            let totals = this.createTotalsRow(this.dataView);
             this.tablixControl.rowDimension.setFooter(totals);
 
             this.tablixControl.viewport = this.currentViewport;
-            let shouldClearControl = this.shouldClearControl(previousDataView, dataView);
+            let shouldClearControl = this.shouldClearControl(previousDataView, this.dataView);
 
             // Render
             // We need the layout for the DIV to be done so that the control can measure items correctly.

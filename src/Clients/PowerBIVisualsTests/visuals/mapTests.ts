@@ -559,6 +559,57 @@ module powerbitests {
             });
         });
         
+        describe("Simple category with null measures", () => {
+            let colorHelper: ColorHelper;
+            let dataBuilder: MapDataBuilder;
+            let dataView: DataView;
+            let geoTaggingAnalyzerService: IGeoTaggingAnalyzerService;
+            let data: MapData;
+            let categoryCount: number;
+
+            beforeEach(() => {
+                dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.withNullLatLong().build(true, true);
+                let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
+                let palette = new powerbi.visuals.DataColorPalette();
+                colorHelper = new ColorHelper(palette, fillProp);
+                geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                categoryCount = data.dataPoints.length;
+            });
+
+            it("Size value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.value).toBe(dataBuilder.getSizeValue(categoryIndex));
+                }
+            });
+
+            it("Latitude value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    if (categoryIndex === 1) {
+                        expect(dataPoint.location).toBeUndefined();
+                    }
+                    else {
+                        expect(dataPoint.location.latitude).toBe(dataBuilder.getLatValue(categoryIndex));
+                    }
+                }
+            });
+
+            it("Longitude value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    if (categoryIndex === 1) {
+                        expect(dataPoint.location).toBeUndefined();
+                    }
+                    else {
+                        expect(dataPoint.location.longitude).toBe(dataBuilder.getLongValue(categoryIndex));
+                    }
+                }
+            });
+        });
+
         describe("Category and series", () => {
             let colorHelper: ColorHelper;
             let dataBuilder: MapDataBuilder;
@@ -613,7 +664,77 @@ module powerbitests {
             it("Null series name doesn't throw exception", () => {
                 dataView = dataBuilder.withNullSeriesName().buildWithSeries(true, true);
                 data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
-                expect(data).toBeTruthy(); // Simple check to expect this not to fail
+                let legendData = Map.createLegendData(dataView, colorHelper);
+                expect(data).toBeTruthy(); // Simple checks to expect this not to fail
+                expect(legendData).toBeTruthy();
+            });
+        });
+
+        describe("Category and series with category === series (rainbow chart/identity matrix)", () => {
+            let colorHelper: ColorHelper;
+            let dataBuilder: MapDataBuilder;
+            let dataView: DataView;
+            let geoTaggingAnalyzerService: IGeoTaggingAnalyzerService;
+            let data: MapData;
+            let categoryCount: number;
+            let seriesCount: number;
+            const colors = [
+                { value: "#000000" },
+                { value: "#000001" },
+                { value: "#000002" },
+                { value: "#000003" }
+            ];
+            const fills = [
+                'rgba(0,0,0,0.6)',
+                'rgba(0,0,1,0.6)',
+                'rgba(0,0,2,0.6)',
+                'rgba(0,0,3,0.6)',
+            ];
+
+            beforeEach(() => {
+                dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.withCategoriesAsSeries().buildWithSeries(true, true);
+                let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
+                let palette = new powerbi.visuals.DataColorPalette(colors);
+                colorHelper = new ColorHelper(palette, fillProp);
+                geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                categoryCount = data.dataPoints.length;
+                seriesCount = data.dataPoints[0].subDataPoints.length;
+            });
+
+            it("Category and series count", () => {
+                expect(categoryCount).toBe(3);
+                expect(seriesCount).toBe(1);
+            });
+
+            it("Size value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.value).toBe(dataBuilder.getSizeValue(categoryIndex, categoryIndex));
+                    expect(dataPoint.subDataPoints[0].value).toBe(dataBuilder.getSizeValue(categoryIndex, categoryIndex));
+                }
+            });
+
+            it("Fill value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].fill).toBe(fills[categoryIndex]);
+                }
+            });
+
+            it("Latitude value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.location.latitude).toBe(dataBuilder.getLatValue(categoryIndex, categoryIndex));
+                }
+            });
+
+            it("Longitude value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.location.longitude).toBe(dataBuilder.getLongValue(categoryIndex, categoryIndex));
+                }
             });
         });
 
@@ -797,39 +918,38 @@ module powerbitests {
                 done();
             }, powerbitests.DefaultWaitForRender);
         });
+        
+        it("Selecting the main shape of a location by polygon area", function () {
 
-        it("Selecting the main shape of a location", function () {
-            let smallShape: powerbi.IGeocodeBoundaryPolygon = {
+            let smallAreaShape: powerbi.IGeocodeBoundaryPolygon = {
                 nativeBing: '', //contents aren't used.
-                absoluteString: '',
-                absolute: new Float64Array(100),
-                geographic: new Float64Array(3),
-                absoluteBounds: {
-                    left: 10,
-                    top: 10,
-                    width: 34.2,
-                    height: 49,
-                }
-            };
-
-            let bigShape: powerbi.IGeocodeBoundaryPolygon = {
-                nativeBing: '', //contents aren't used.
-                absoluteString: '',
-                absolute: new Float64Array(100),
+                absoluteString: "",
+                absolute: convertStringToFloatArray("651.42857 598.07649 360.71069 399.14985 232.41705 700.51064 331.77076 362.54979 5.5147103 333.66089 357.63656 323.71624 284.29287 " +
+                    "4.5011369 402.56243 336.31585 683.48959 167.91896 404.46235 382.93639"),
                 geographic: new Float64Array(3),
                 absoluteBounds: {
                     left: 10,
                     top: 10,
                     width: 100,
                     height: 100,
+                },
+            };
+
+            let largeAreaShape: powerbi.IGeocodeBoundaryPolygon = {
+                nativeBing: '', //contents aren't used.
+                absoluteString: "",
+                absolute: convertStringToFloatArray("445.71429 812.36222 243.25675 885.30681 111.31949 715.29937 232.23533 537.2844 438.90267 597.27253"),
+                geographic: new Float64Array(3),
+                absoluteBounds: {
+                    left: 10,
+                    top: 10,
+                    width: 30,
+                    height: 30,
                 }
             };
 
-            let indexOfLargestShape: number = MapShapeDataPointRenderer.getIndexOfLargestShape([smallShape, bigShape]);
+            let indexOfLargestShape: number = MapShapeDataPointRenderer.getIndexOfLargestShape([smallAreaShape, largeAreaShape]);
             expect(indexOfLargestShape).toBe(1);
-            bigShape.absoluteBounds.width = bigShape.absoluteBounds.height = 1;
-            indexOfLargestShape = MapShapeDataPointRenderer.getIndexOfLargestShape([smallShape, bigShape]);
-            expect(indexOfLargestShape).toBe(0);
         });
 
         it("should have path for each category", (done) => {
@@ -972,6 +1092,16 @@ module powerbitests {
         return map.dataPointRenderer.createLabelDataPoints();
     }
 
+    function convertStringToFloatArray(path: string): Float64Array {
+        let stringArray = path.split(" ");
+        let f64s = new Float64Array(stringArray.length);
+
+        for (let i: number = 0; i < stringArray.length; i++) {
+            f64s[i] = parseFloat(stringArray[i]);
+        }
+        return f64s;
+    }
+
     class MapDataBuilder {
         public categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Category: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public categoryValues = ['Montana', 'California', 'Arizona'];
@@ -1055,6 +1185,55 @@ module powerbitests {
                 values: [80, 20, 70],
                 subtotal: 170,
             },
+        ];
+
+        private sizeValuesCatEqualsSer: SeriesValues[] = [
+            {
+                values: [100, null, null],
+                subtotal: 100,
+            }, {
+                values: [null, 20, null],
+                subtotal: 20,
+            }, {
+                values: [null, null, 300],
+                subtotal: 300,
+            }
+        ];
+        private longitudeValuesCatEqualsSer: SeriesValues[] = [
+            {
+                values: [46.87, null, null],
+                subtotal: 46.87
+            }, {
+                values: [null, 370.81, null],
+                subtotal: 370.81
+            }, {
+                values: [null, null, 3.68],
+                subtotal: 3.68
+            }
+        ];
+        private latitudeValuesCatEqualsSer: SeriesValues[] = [
+            {
+                values: [-114, null, null],
+                subtotal: -114
+            }, {
+                values: [null, -1220.46, null],
+                subtotal: -1220.46
+            }, {
+                values: [null, null, -11.76],
+                subtotal: -11.76
+            }
+        ];
+        private gradientValuesCatEqualsSer: SeriesValues[] = [
+            {
+                values: [75, null, null],
+                subtotal: 75,
+            }, {
+                values: [null, 10, null],
+                subtotal: 10,
+            }, {
+                values: [null, null, 20],
+                subtotal: 20,
+            }
         ];
 
         public build(size: boolean, longLat: boolean, gradient: boolean = false): powerbi.DataView {
@@ -1177,7 +1356,7 @@ module powerbitests {
                 }
             };
         }
-
+        
         public getSizeValue(categoryIndex: number, seriesIndex: number = 0): number {
             return this.sizeValues[seriesIndex].values[categoryIndex];
         }
@@ -1254,6 +1433,14 @@ module powerbitests {
             return this;
         }
 
+        public withNullLatLong(): MapDataBuilder {
+            for (let i = 0, ilen = this.latitudeValues.length; i < ilen; i++) {
+                this.latitudeValues[i].values[1] = null;
+                this.longitudeValues[i].values[1] = null;
+            }
+            return this;
+        }
+
         private clearNonDiagonalValues(array: SeriesValues[]): void {
             for (let i = 0; i < array.length; i++) {
                 for (let j = 0; j < array[i].values.length; j++) {
@@ -1283,7 +1470,6 @@ module powerbitests {
 
             return categories;
         }
-
     }
 
     interface SeriesValues {

@@ -283,13 +283,13 @@ module powerbi.visuals.controls.TouchUtils {
             for (let i = 0; i < length; i++) {
                 if (this.touchList[i].lastPoint.isMouseDown) {
                     eventPoint = this.touchList[i].converter.getPixelToItem(this.touchList[i].lastPoint.x,
-                                                                             this.touchList[i].lastPoint.y,
-                                                                             0, 0, false);
+                        this.touchList[i].lastPoint.y,
+                        0, 0, false);
                     this.touchList[i].handler.touchEvent(eventPoint);
                 }
 
                 this.touchList[i].lastPoint = new TouchEvent(this.touchList[i].lastPoint.x,
-                                                           this.touchList[i].lastPoint.y, false);
+                    this.touchList[i].lastPoint.y, false);
             }
 
             this.lastTouchEvent = new TouchEvent(0, 0, false);
@@ -437,6 +437,19 @@ module powerbi.visuals.controls.TouchUtils {
     }
 
     /**
+    * This interface defines the swipe data.
+    */
+    interface ISwipeInfo {
+        direction: number;
+        distance: number;
+        endTime: number;
+        time: number;
+    }
+
+    const MinDistanceForSwipe = 80;
+    const MaxTimeForSwipe = 600;
+
+    /**
      * This class is responsible for establishing connections to handle touch events
      * and to interpret those events so they're compatible with the touch abstractions.
      *
@@ -476,6 +489,28 @@ module powerbi.visuals.controls.TouchUtils {
         private documentMouseMoveWrapper: any;
         private documentMouseUpWrapper: any;
 
+        /**
+         * Those setting related to swipe detection  
+         * touchStartTime - the time that the user touched down the screen.
+         */
+        private touchStartTime: number;
+        /**
+         * The page y value of the touch event when the user touched down.
+         */
+        private touchStartPageY: number;
+        /**
+         * The last page y value befoer the user raised up his finger.
+         */
+        private touchLastPageY: number;
+        /**
+         * The last page x value befoer the user raised up his finger.
+         */
+        private touchLastPageX: number;
+        /**
+         * An indicator whether we are now running the slide affect.
+         */
+        private sliding: boolean;
+
         constructor(manager: TouchManager) {
             this.manager = manager;
             this.allowMouseDrag = true;
@@ -483,6 +518,7 @@ module powerbi.visuals.controls.TouchUtils {
             this.scale = 1;
             this.documentMouseMoveWrapper = null;
             this.documentMouseUpWrapper = null;
+            this.sliding = false;
         }
 
         public initTouch(panel: HTMLElement, touchReferencePoint?: HTMLElement, allowMouseDrag?: boolean): void {
@@ -496,15 +532,13 @@ module powerbi.visuals.controls.TouchUtils {
                 panel.addEventListener("touchstart", e => this.onTouchStart(e));
                 panel.addEventListener("touchend", e => this.onTouchEnd(e));
             }
-            else
-            {
+            else {
                 panel.addEventListener("mousedown", e => this.onTouchMouseDown(<MouseEvent>e));
                 panel.addEventListener("mouseup", e => this.onTouchMouseUp(<MouseEvent>e));
             }
         }
 
-        private getXYByClient(event: MouseEvent): Point {
-            let rect: any = this.rect;
+        private getXYByClient(pageX: number, pageY: number, rect: ClientRect): Point {
             let x: number = rect.left;
             let y: number = rect.top;
 
@@ -515,7 +549,7 @@ module powerbi.visuals.controls.TouchUtils {
             }
 
             let point: Point = new Point(0, 0);
-            point.offset(event.pageX - x, event.pageY - y);
+            point.offset(pageX - x, pageY - y);
 
             return point;
         }
@@ -523,7 +557,12 @@ module powerbi.visuals.controls.TouchUtils {
         public onTouchStart(e: any): void {
             if (e.touches.length === 1) {
                 e.cancelBubble = true;
-                this.onTouchMouseDown(e.touches[0]);
+
+                let mouchEvent: MouseEvent = e.touches[0];
+                this.touchStartTime = new Date().getTime();
+                this.touchStartPageY = mouchEvent.pageY;
+
+                this.onTouchMouseDown(mouchEvent);
             }
         }
 
@@ -533,12 +572,27 @@ module powerbi.visuals.controls.TouchUtils {
                     e.preventDefault();
                 }
 
-                this.onTouchMouseMove(e.touches[0]);
+                let mouchEvent: MouseEvent = e.touches[0];
+                this.touchLastPageY = mouchEvent.pageY;
+                this.touchLastPageX = mouchEvent.pageX;
+                // while sliding ignore the touch move event 
+                if (!this.sliding) {
+                    this.onTouchMouseMove(mouchEvent);
+                }
             }
         }
 
         public onTouchEnd(e: any): void {
-            this.onTouchMouseUp(e.touches.length === 1 ? e.touches[0] : e, true);
+            this.clearTouchEvents();
+
+            let swipeInfo = this.getSwipeInfo();
+            if (this.didUserSwipe(swipeInfo)) {
+                this.startSlideAffect(swipeInfo);
+            }
+            // in case this is not a swipe - we need to reset the rect and the touches 
+            else if (!this.sliding) {
+                this.upAllTouches();
+            }
         }
 
         public onTouchMouseDown(e: MouseEvent): void {
@@ -566,18 +620,19 @@ module powerbi.visuals.controls.TouchUtils {
                 this.touchPanel.setCapture();
             }
         }
-        
+
         public onTouchMouseMove(e: MouseEvent): void {
             let event: TouchEvent;
             let point: Point;
 
-            let validMouseDragEvent: boolean = (this.rect !== null) && (e.which !== MouseButton.NoClick);
+            let rect = this.rect;
+            let validMouseDragEvent: boolean = (rect !== null) && (e.which !== MouseButton.NoClick);
 
             // Ignore events that are not part of a drag event
-            if (!validMouseDragEvent)
+            if (!validMouseDragEvent || this.sliding)
                 return;
 
-            point = this.getXYByClient(e);
+            point = this.getXYByClient(e.pageX, e.pageY, rect);
             event = new TouchEvent(point.x / this.scale, point.y / this.scale, validMouseDragEvent);
 
             this.manager.touchEvent(event);
@@ -589,10 +644,83 @@ module powerbi.visuals.controls.TouchUtils {
         }
 
         public onTouchMouseUp(e: MouseEvent, bubble?: boolean): void {
+            this.upAllTouches();
+            this.clearTouchEvents();
+        }
+
+        private getSwipeInfo(): ISwipeInfo {
+            let touchEndTime = new Date().getTime();
+            let touchTime = touchEndTime - this.touchStartTime;
+            let touchDist = this.touchLastPageY - this.touchStartPageY;
+            let touchDirection = touchDist < 0 ? -1 : 1;
+
+            return {
+                direction: touchDirection,
+                distance: touchDist,
+                endTime: touchEndTime,
+                time: touchTime,
+            };
+        }
+
+        private didUserSwipe(swipeInfo: ISwipeInfo): boolean {
+            return swipeInfo.time < MaxTimeForSwipe && swipeInfo.distance * swipeInfo.direction > MinDistanceForSwipe;
+        }
+
+        /**
+         * In case of swipe - auto advance to the swipe direction in 2 steps.
+         */
+        private startSlideAffect(swipeInfo: ISwipeInfo): void {
+            if (this.sliding) {
+                return;
+            }
+
+            this.sliding = true;
+            let point = this.getXYByClient(this.touchLastPageX, this.touchLastPageY, this.rect);
+            this.slide(point, 300, swipeInfo);
+
+            // second step
+            requestAnimationFrame(() => {
+                // in case the user is now scrolling in the opposite direction stop the slide
+                if (!this.didUserChangeDirection(swipeInfo)) {
+                    this.slide(point, 200, swipeInfo);
+                }
+                this.clearSlide();
+            });
+        }
+
+        private didUserChangeDirection(swipeInfo: ISwipeInfo): boolean {
+            if (this.touchStartTime <= swipeInfo.endTime) {
+                return false;
+            }
+
+            let updatedDist = this.touchLastPageY - this.touchStartPageY;
+            let updatedDirection = updatedDist < 0 ? -1 : 1;
+            return updatedDirection !== swipeInfo.direction;
+        }
+
+        private slide(point: Point, slideDist: number, swipeInfo: ISwipeInfo): void {
+            let updatedDist = this.touchStartTime > swipeInfo.endTime ? this.touchLastPageY - this.touchStartPageY : 0;
+
+            point.y += slideDist * swipeInfo.direction + updatedDist;
+            let event = new TouchEvent(point.x / this.scale, point.y / this.scale, true);
+
+            this.manager.touchEvent(event);
+        }
+
+        private clearSlide(): void {
+            this.sliding = false;
+            this.upAllTouches();
+        }
+
+        private upAllTouches(): void {
+            if (this.documentMouseMoveWrapper !== null)
+                return;
+
             this.rect = null;
-
             this.manager.upAllTouches();
+        }
 
+        private clearTouchEvents(): void {
             if ("releaseCapture" in this.touchPanel) {
                 this.touchPanel.releaseCapture();
             }

@@ -134,5 +134,28 @@ module powerbi.visuals {
             }
             return { xAxisLabel: xAxisLabel, yAxisLabel: yAxisLabel };
         }
+
+        export function isImageUrlColumn(column: DataViewMetadataColumn): boolean {
+            let misc = getMiscellaneousTypeDescriptor(column);
+            return misc != null && misc.imageUrl === true;
+        }
+
+        export function isWebUrlColumn(column: DataViewMetadataColumn): boolean {
+            let misc = getMiscellaneousTypeDescriptor(column);
+            return misc != null && misc.webUrl === true;
+        }
+
+        function getMiscellaneousTypeDescriptor(column: DataViewMetadataColumn): MiscellaneousTypeDescriptor {
+            return column
+                && column.type
+                && column.type.misc;
+        }
+
+        export function hasImageUrlColumn(dataView: DataView): boolean {
+            if (!dataView || !dataView.metadata || _.isEmpty(dataView.metadata.columns))
+                return false;
+
+            return _.any(dataView.metadata.columns, column => isImageUrlColumn(column) === true);
+        }
     }
 }
