@@ -187,7 +187,7 @@ module powerbitests {
                         identity: selectionIds[0],
                         selected: false,
                         count: undefined,
-                        isImage: undefined,
+                        isImage: false,
                     },
                     {
                         value: "Orange",
@@ -195,7 +195,7 @@ module powerbitests {
                         identity: selectionIds[1],
                         selected: false,
                         count: 3,
-                        isImage: undefined,
+                        isImage: false,
                     },
                     {
                         value: "Kiwi",
@@ -203,7 +203,7 @@ module powerbitests {
                         identity: selectionIds[2],
                         selected: false,
                         count: 4,
-                        isImage: undefined,
+                        isImage: false,
                     },
                     {
                         value: "Grapes",
@@ -211,7 +211,7 @@ module powerbitests {
                         identity: selectionIds[3],
                         selected: false,
                         count: 5,
-                        isImage: undefined,
+                        isImage: false,
                     },
                     {
                         value: "Banana",
@@ -219,7 +219,7 @@ module powerbitests {
                         identity: selectionIds[4],
                         selected: false,
                         count: 6,
-                        isImage: undefined,
+                        isImage: false,
                     }];
 
                 let expectedSlicerData: powerbi.visuals.SlicerData = {

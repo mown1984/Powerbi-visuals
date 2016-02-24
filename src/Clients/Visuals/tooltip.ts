@@ -425,8 +425,6 @@ module powerbi.visuals {
             });
 
             selection.on(touchEndEventName, () => {
-                let target = <HTMLElement>d3.event.target;
-                /*let data = */d3.select(target).datum();
                 
                 clearTooltipTimeout();
                 if (handleTouchTimeoutId)

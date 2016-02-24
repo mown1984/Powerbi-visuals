@@ -40,17 +40,8 @@ module powerbi.visuals {
             general: {
                 displayName: data.createDisplayNameGetter('Visual_General'),
                 properties: {
-                    selected: {
-                        type: { bool: true }
-                    },
                     filter: {
                         type: { filter: {} },
-                        rule: {
-                            output: {
-                                property: 'selected',
-                                selector: ['Values'],
-                            }
-                        }
                     },
                     defaultValue: {
                         type: { expression: { defaultValue: true } },

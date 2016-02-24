@@ -86,6 +86,7 @@ module powerbi.data {
         additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
+        viewport?: IViewport;
     }
 
     export interface AdditionalQueryProjection {

@@ -56,6 +56,13 @@ module powerbi {
         positiveInfinity: string;
     }
 
+    /**
+     *  Creating a dummy module to declare cultureInfo string, so we could do a strongly typed usage in Visuals
+     */
+    declare module powerbi.common {
+        let cultureInfo: string;
+    }
+
     /** Formatting Encoder */
     module FormattingEncoder {
         export function preserveEscaped(format: string, specialChars: string): string {
@@ -212,7 +219,7 @@ module powerbi {
 
         /** By default the Globalization module initializes to the culture/calendar provided in the language/culture URL params */
         private initialize() {
-            let cultureName = this.getUrlParam("language") || window["cultureInfo"] || window.navigator.userLanguage || window.navigator["language"] || Globalize.culture().name;
+            let cultureName = this.getCurrentCulture();
             this.setCurrentCulture(cultureName);
             let calendarName = this.getUrlParam("calendar");
             if (calendarName) {
@@ -224,7 +231,29 @@ module powerbi {
             }
         }
 
-        private getUrlParam(name: string): string {
+        /**
+         *  Exposing this function for testability 
+         */
+        public getCurrentCulture(): string {
+            let urlParam = this.getUrlParam("language");
+
+            if (urlParam) {
+                return urlParam;
+            }
+
+            if (powerbi && powerbi.common && powerbi.common.cultureInfo) {
+                // Get cultureInfo set in powerbi
+                return powerbi.common.cultureInfo;
+            }
+
+            return window.navigator.userLanguage || window.navigator["language"] || Globalize.culture().name;
+        }
+
+        /**
+         *  Exposing this function for testability
+         *  @param name: queryString name
+         */
+        public getUrlParam(name: string): string {
             let param = window.location.search.match(RegExp("[?&]" + name + "=([^&]*)"));
             return param ? param[1] : undefined;
         }

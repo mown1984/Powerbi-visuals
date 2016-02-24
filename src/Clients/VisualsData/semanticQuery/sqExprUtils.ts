@@ -64,7 +64,10 @@ module powerbi.data {
                     aggregates.push(Agg.Median);
                 return aggregates;
             } else if (valueType.text || valueType.bool || valueType.dateTime) {
-                if (isPropertyIdentity)
+                // The supported aggregation types for an identity field are restricted to 'Count Non-Null' (e.g. for the field well aggregation options)
+                // but a valid semantic query can return a less-restricted aggregation option which we should honor. (e.g. this results from Q&A)
+                let distinctCountAggExists = SQExprInfo.getAggregate(expr) === Agg.Count;
+                if (isPropertyIdentity && !distinctCountAggExists)
                     return [Agg.CountNonNull];
                 return [Agg.Count, Agg.CountNonNull];
             }

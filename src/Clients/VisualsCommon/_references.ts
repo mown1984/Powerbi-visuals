@@ -52,6 +52,7 @@
 /// <reference path="services/textMeasurementService.ts"/>
 /// <reference path="Utility/ThrottleUtility.ts"/>
 /// <reference path="Utility/TimerPromiseFactory.ts"/>
+/// <reference path="Utility/urlUtils.ts"/>
 /// <reference path="Utility/Utility.ts"/>
 /// <reference path="tracing/traceItem.ts"/>
 /// <reference path="Utility/StandaloneUtility.ts"/>

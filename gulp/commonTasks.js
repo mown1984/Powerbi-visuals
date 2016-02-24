@@ -1,4 +1,4 @@
- /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -46,6 +46,14 @@ module.exports = function (pathToProj) {
         gulp.task("build-inc", depsToRun.map(function (proj) {
             return proj.buildWithDepsTask;
         }), function (cb) {
+
+            var config = require("./config.js");
+
+            //Run TsLint task in parallel with other tasks
+            if (config.tslintOnBuild && gulpProj.params.tsc) {
+                runSequence(gulpProj.lintTask);
+            }
+            
             runSequence.apply(null, gulpProj.buildTasks.concat(cb));
         });
 

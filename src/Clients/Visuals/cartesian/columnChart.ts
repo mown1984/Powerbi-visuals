@@ -1204,7 +1204,7 @@ module powerbi.visuals {
 
             if (this.interactivity && this.interactivity.isInteractiveLegend) {
                 if (this.data.series.length > 0) {
-                    this.selectColumn(0, true); // start with the first column
+                    this.selectColumn(CartesianHelper.findMaxCategoryIndex(this.data.series), true); // start with the last column
                 }
             }
             SVGUtil.flushAllD3TransitionsIfNeeded(this.options);

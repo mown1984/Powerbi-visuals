@@ -356,8 +356,7 @@ module jsCommon {
         public static Undefined = 'undefined';
 
         private static staticContentLocation: string = window.location.protocol + '//' + window.location.host;
-        private static urlRegex = /http[s]?:\/\/(\S)+/gi;
-        private static imageUrlRegex = /http[s]?:\/\/(\S)+(png|jpg|jpeg|gif|svg)/gi;
+        
         /**
          * Ensures the specified value is not null or undefined. Throws a relevent exception if it is.
          * @param value The value to check.
@@ -724,47 +723,6 @@ module jsCommon {
         }
         
         /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        public static isValidUrl(url: string): boolean {
-            if (StringExtensions.isNullOrEmpty(url))
-                return false;
-
-            let match = RegExpExtensions.run(Utility.urlRegex, url);
-            return !!match && match.index === 0;
-        }
-
-        /**
-         * Finds all valid urls.
-         * @param text The text to search.
-         * @returns An array of ranges corresponding to the urls.
-         */
-        public static findAllValidUrls(text: string): TextMatch[] {
-            if (StringExtensions.isNullOrEmpty(text))
-                return [];
-
-            // Find all urls in the text.
-            // TODO: This could potentially be expensive, maybe include a cap here for text with many urls?
-            let urlRanges: TextMatch[] = [];
-            let matches: RegExpExecArray;
-            let start = 0;
-            while ((matches = RegExpExtensions.run(Utility.urlRegex, text, start)) !== null) {
-                let url = matches[0];
-                let end = matches.index + url.length;
-                urlRanges.push({
-                    start: matches.index,
-                    end: end,
-                    text: url,
-                });
-                start = end;
-            }
-
-            return urlRanges;
-        }
-        
-        /**
          * Extracts a url from a background image attribute in the format of: url('www.foobar.com/image.png').
          * @param input The value of the background-image attribute.
          * @returns The extracted url.
@@ -779,19 +737,6 @@ module jsCommon {
         public static isValidImageDataUrl(url: string): boolean {
             let regex: RegExp = new RegExp('data:(image\/(png|jpg|jpeg|gif|svg))');
             return regex.test(url);
-        }
-
-        /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        public static isValidImageUrl(url: string): boolean {
-            if (_.isEmpty(url))
-                return false;
-            
-            let match = RegExpExtensions.run(Utility.imageUrlRegex, url);
-            return !!match && match.index === 0;
         }
         
         /**

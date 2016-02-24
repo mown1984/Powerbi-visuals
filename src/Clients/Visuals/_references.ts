@@ -120,7 +120,6 @@
 /// <reference path="common/tooltipUtils.ts"/>
 /// <reference path="common/svgUtil.ts"/>
 /// <reference path="common/textUtil.ts"/>
-/// <reference path="common/urlHelper.ts"/>
 /// <reference path="common/gradientHelper.ts"/>
 /// <reference path="common/visualBackgroundHelper.ts"/>
 /// <reference path="common/objectEnumerationBuilder.ts"/>

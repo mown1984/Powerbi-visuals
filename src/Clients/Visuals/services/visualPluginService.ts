@@ -39,6 +39,7 @@ module powerbi.visuals {
         // VSTS 6217994 - [R Viz] Remove temporary DataViewAnalysis validation workaround of static R Script Visual mappings
         isScriptVisualQueryable(): boolean;
         shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
+        getInteractivityOptions(visualType: string): InteractivityOptions;
     }
 
     export interface MinervaVisualFeatureSwitches {
@@ -173,6 +174,13 @@ module powerbi.visuals {
             public isScriptVisualQueryable(): boolean {
                 // Feature switch determines if Script visuals are query visuals - currently non-query in PBI site
                 return (this.featureSwitches !== undefined && this.featureSwitches.scriptVisualEnabled);
+            }
+
+            public getInteractivityOptions(visualType: string): InteractivityOptions {
+                let interactivityOptions: InteractivityOptions = {
+                    overflow: 'hidden',
+                };
+                return interactivityOptions;
             }
         }
 
@@ -380,6 +388,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Data Dot Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotStackedColumnComboChart, () => new CartesianChart({
@@ -389,6 +398,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Donut Chart
             createPlugin(plugins, powerbi.visuals.plugins.donutChart, () => new DonutChart({
@@ -456,6 +466,7 @@ module powerbi.visuals {
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
                 referenceLinesEnabled: referenceLinesEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Stacked Area Chart
             createPlugin(plugins, powerbi.visuals.plugins.stackedAreaChart, () => new CartesianChart({
@@ -466,6 +477,7 @@ module powerbi.visuals {
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Line Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({
@@ -475,6 +487,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Line Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({
@@ -484,6 +497,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Pie Chart
             createPlugin(plugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({
@@ -519,6 +533,7 @@ module powerbi.visuals {
                 behavior: new CartesianChartBehavior([new WaterfallChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
                 referenceLinesEnabled: referenceLinesEnabled,
+                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Map
             createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
@@ -1080,6 +1095,49 @@ module powerbi.visuals {
 
                 return undefined;
             }
+
+            public getInteractivityOptions(visualType: string): InteractivityOptions {
+                let mobileOptions: InteractivityOptions = {
+                    overflow: this.getMobileOverflowString(visualType),
+                    isInteractiveLegend: this.isChartSupportInteractivity(visualType),
+                    selection: true,
+                };
+
+                return mobileOptions;
+            }
+
+            private getMobileOverflowString(visualType: string): string {
+                switch (visualType) {
+                    case 'multiRowCard':
+                        return 'visible';
+
+                    default:
+                        return 'hidden';
+                }
+            }
+
+            private isChartSupportInteractivity(visualType: string): boolean {
+                switch (visualType) {
+                    case 'areaChart':
+                    case 'barChart':
+                    case 'clusteredBarChart':
+                    case 'clusteredColumnChart':
+                    case 'columnChart':
+                    case 'donutChart':
+                    case 'hundredPercentStackedBarChart':
+                    case 'hundredPercentStackedColumnChart':
+                    case 'lineChart':
+                    case 'pieChart':
+                    case 'scatterChart':
+                    case 'table':
+                    case 'matrix':
+                    case 'multiRowCard':
+                        return true;
+
+                    default:
+                        return false;
+                }
+            } 
         }
 
         // this function is called by tests

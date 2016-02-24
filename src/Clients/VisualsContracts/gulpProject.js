@@ -73,10 +73,12 @@ function combineVisualsContractsDTS(proj) {
     //      Ideally we could use gulp-decomment for this and trimming whitespace
     //      (maybe we should submit a pull request to add this feature?) 
     var jsCommentRegExp = /(?:\/\*(?:[\s\S]*?)(?:copyright)(?:[\s\S]*?)\*\/)|(?:([\s;]?)+\/\/(?:.*)(?:<reference)(?:.*)$)/igm;
-
+    var windowsNewLineRegExp = /\r\n/g;
     return merge(
         //copyright notice + external typedefs 
-        gulp.src(projectPath + '/typedefs/typedefs.ts'),
+        gulp.src(projectPath + '/typedefs/typedefs.ts')
+            //normalize line endings
+            .pipe(replace(windowsNewLineRegExp,'\n')),
 
         //compiled d.ts - contains definitions from enums.ts
         gulp.src(projectPath + '/obj/' + projectName + '.d.ts')
@@ -85,9 +87,11 @@ function combineVisualsContractsDTS(proj) {
 
         //concatenate all other d.ts files directly
         gulp.src(['!' + projectPath + '/obj/*.*', projectPath + '/**/*.d.ts'])
+            //normalize line endings
+            .pipe(replace(windowsNewLineRegExp,'\n'))
             //copyright comments and reference tags
             .pipe(replace(jsCommentRegExp,''))
     )
-    .pipe(concat(projectName + '.d.ts'))
+    .pipe(concat(projectName + '.d.ts', {newLine: '\n'}))
     .pipe(gulp.dest(projectPath + '/obj/'));
 }

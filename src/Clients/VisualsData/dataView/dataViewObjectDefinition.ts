@@ -87,6 +87,17 @@ module powerbi.data {
             DataViewObjectDefinition.deleteSingleProperty(defn, propertyName);
         }
         
+        export function setValue(
+            defns: DataViewObjectDefinitions,
+            propertyId: DataViewObjectPropertyIdentifier,
+            selector: Selector,
+            value: DataViewObjectPropertyDefinition): void {
+            debug.assertValue(defns, 'defns');
+            debug.assertValue(propertyId, 'propertyId');
+
+            ensure(defns, propertyId.objectName, selector).properties[propertyId.propertyName] = value;
+        }
+
         export function getValue(
             defns: DataViewObjectDefinitions,
             propertyId: DataViewObjectPropertyIdentifier,

@@ -73,7 +73,6 @@
 /// <reference path="dataView\rules\categoricalEvalContext.ts"/>
 /// <reference path="dataView\rules\ruleEvaluation.ts"/>
 /// <reference path="dataView\rules\colorRuleEvaluation.ts"/>
-/// <reference path="dataView\rules\filterRuleEvaluation.ts"/>
 /// <reference path="dataView\scriptResultUtil.ts"/>
 /// <reference path="segmentation\dataViewMerger.ts"/>
 /// <reference path="semanticQuery\sqExprRewriter.ts"/>

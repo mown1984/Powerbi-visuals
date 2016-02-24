@@ -355,17 +355,13 @@ module powerbi.visuals.controls {
             this.columnDim.scrollbar.height = this.scrollBarElementWidth + TablixControl.UnitOfMeasurement;
         }
 
-        public updateModels(resetScrollOffsets: boolean, rowModel?: any, columnModel?: any): void {
-            if (rowModel) {
-                this.rowDim.model = rowModel;
-                if (resetScrollOffsets)
-                    this.rowDim.scrollOffset = 0;
-            }
+        public updateModels(resetScrollOffsets: boolean, rowModel: any, columnModel: any): void {
+            this.rowDim.model = rowModel;
+            this.columnDim.model = columnModel;
 
-            if (columnModel) {
-                this.columnDim.model = columnModel;
-                if (resetScrollOffsets)
-                    this.columnDim.scrollOffset = 0;
+            if (resetScrollOffsets) {
+                this.rowDim.scrollOffset = 0;
+                this.columnDim.scrollOffset = 0;
             }
 
             this.layoutManager.updateColumnCount(this.rowDim, this.columnDim);

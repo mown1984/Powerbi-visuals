@@ -201,8 +201,10 @@ module powerbi.visuals {
          */
         public clearSelection(): void {
             // if default value is already applied, don't clear the default selection
-            if (this.slicerDefaultValueHandler && this.slicerDefaultValueHandler.getDefaultValue() && this.useDefaultValue)
+            if (this.slicerDefaultValueHandler && this.slicerDefaultValueHandler.getDefaultValue() && this.useDefaultValue) {
+                this.isInvertedSelectionMode = false;
                 return;
+            }
 
             this.hasSelectionOverride = undefined;
             ArrayExtensions.clear(this.selectedIds);

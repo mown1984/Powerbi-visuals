@@ -8,7 +8,6 @@
     ],
     "files": [
         "_references.ts",
-        "common/urlHelper.ts",
         "animators/columnChartAnimator.ts",
         "animators/donutChartAnimator.ts",
         "animators/funnelChartAnimator.ts",

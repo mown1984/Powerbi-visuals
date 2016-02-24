@@ -261,6 +261,18 @@ module powerbi.visuals {
                     },
                 },
             },
+            plotArea: {
+                displayName: data.createDisplayNameGetter('Visual_Plot'),
+                properties: {
+                    transparency: {
+                        displayName: data.createDisplayNameGetter('Visual_Background_Transparency'),
+                        type: { numeric: true },
+                    },
+                    image: {
+                        type: { image: {} },
+                    },
+                },
+            },
         },
         dataViewMappings: [{
             conditions: [

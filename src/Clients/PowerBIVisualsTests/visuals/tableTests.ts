@@ -512,7 +512,7 @@ module powerbitests {
                 expect(navigator.getDepth(dataView.table.columns)).toBe(1);
             });
 
-            xit("always returns 1", () => {
+            it("always returns 1", () => {
                 expect(navigator.getDepth(null)).toBe(1);
             });
         });
@@ -917,7 +917,7 @@ module powerbitests {
 
         it("loadMoreData calls control refresh", () => {
             let nav = { update() { } };
-            let control = { refresh() { }, rowDimension: {}, updateModels(resetScrollOffsets: boolean, rowModel?: any, columnModel?: any) { } };
+            let control = { refresh() { }, rowDimension: {}, updateModels(resetScrollOffsets: boolean, rowModel: any, columnModel: any) { } };
             let navSpy = spyOn(nav, "update");
             let controlSpy = spyOn(control, "refresh");
             v["hierarchyNavigator"] = nav;

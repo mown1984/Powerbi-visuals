@@ -1811,6 +1811,7 @@ declare module powerbi {
         const cKeyCode: number;
         const sKeyCode: number;
         const vKeyCode: number;
+        const wKeyCode: number;
         const xKeyCode: number;
         const yKeyCode: number;
         const zKeyCode: number;
@@ -2766,6 +2767,13 @@ declare module jsCommon {
         create(delayInMs: number): IRejectablePromise;
     }
 }
+declare module jsCommon {
+    module UrlUtils {
+        function isValidUrl(value: string): boolean;
+        function isValidImageUrl(url: string): boolean;
+        function findAllValidUrls(text: string): TextMatch[];
+    }
+}
 /**
  * Defined in host.
  */
@@ -2906,8 +2914,6 @@ declare module jsCommon {
         static HttpAcceptHeader: string;
         static Undefined: string;
         private static staticContentLocation;
-        private static urlRegex;
-        private static imageUrlRegex;
         /**
          * Ensures the specified value is not null or undefined. Throws a relevent exception if it is.
          * @param value The value to check.
@@ -3059,18 +3065,6 @@ declare module jsCommon {
          */
         static getIndexOfMinValue(a: number[]): number;
         /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        static isValidUrl(url: string): boolean;
-        /**
-         * Finds all valid urls.
-         * @param text The text to search.
-         * @returns An array of ranges corresponding to the urls.
-         */
-        static findAllValidUrls(text: string): TextMatch[];
-        /**
          * Extracts a url from a background image attribute in the format of: url('www.foobar.com/image.png').
          * @param input The value of the background-image attribute.
          * @returns The extracted url.
@@ -3080,12 +3074,6 @@ declare module jsCommon {
          * Verifies image data url of images.
          */
         static isValidImageDataUrl(url: string): boolean;
-        /**
-         * Tests whether a URL is valid.
-         * @param url The url to be tested.
-         * @returns Whether the provided url is valid.
-         */
-        static isValidImageUrl(url: string): boolean;
         /**
          * Downloads a content string as a file.
          * @param content Content stream.
@@ -4283,6 +4271,12 @@ declare module powerbi.data {
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains the first non-null value for the given role name and category index.
+         * It should mainly be used for values that are expected to be the same across
+         * series, but avoids false nulls when the data is sparse.
+         */
+        getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any;
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         hasDynamicSeries(): boolean;
@@ -4313,6 +4307,7 @@ declare module powerbi.data {
         /** Creates or reuses a DataViewObjectDefinition for matching the given objectName and selector within the defns. */
         function ensure(defns: DataViewObjectDefinitions, objectName: string, selector: Selector): DataViewObjectDefinition;
         function deleteProperty(defns: DataViewObjectDefinitions, objectName: string, selector: Selector, propertyName: string): void;
+        function setValue(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector, value: DataViewObjectPropertyDefinition): void;
         function getValue(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector): DataViewObjectPropertyDefinition;
         function getPropertyContainer(defns: DataViewObjectDefinitions, propertyId: DataViewObjectPropertyIdentifier, selector: Selector): DataViewObjectPropertyDefinitions;
         function getObjectDefinition(defns: DataViewObjectDefinitions, objectName: string, selector: Selector): DataViewObjectDefinition;
@@ -4615,6 +4610,7 @@ declare module powerbi.data {
         additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
+        viewport?: IViewport;
     }
     interface AdditionalQueryProjection {
         queryName: string;
@@ -4860,13 +4856,6 @@ declare module powerbi.data {
         private inputRole;
         private allocator;
         constructor(inputRole: string, allocator: IColorAllocator);
-        evaluate(evalContext: IEvalContext): any;
-    }
-}
-declare module powerbi.data {
-    class FilterRuleEvaluation extends RuleEvaluation {
-        private selection;
-        constructor(scopeIds: FilterValueScopeIdsContainer);
         evaluate(evalContext: IEvalContext): any;
     }
 }
@@ -6994,6 +6983,7 @@ declare module powerbi.visuals {
         function isScalar(isScalar: boolean, xAxisCardProperties: DataViewObject): boolean;
         function getPrecision(precision: DataViewPropertyValue): number;
         function lookupXValue(data: CartesianData, index: number, type: ValueType, isScalar: boolean): any;
+        function findMaxCategoryIndex(series: CartesianSeries[]): number;
     }
 }
 declare module powerbi.visuals {
@@ -7068,6 +7058,9 @@ declare module powerbi.visuals {
             xAxisLabel: any;
             yAxisLabel: any;
         };
+        function isImageUrlColumn(column: DataViewMetadataColumn): boolean;
+        function isWebUrlColumn(column: DataViewMetadataColumn): boolean;
+        function hasImageUrlColumn(dataView: DataView): boolean;
     }
 }
 declare module powerbi.visuals {
@@ -7788,13 +7781,6 @@ declare module powerbi.visuals {
          * Remove ellipses from a given string
          */
         function removeEllipses(str: string): string;
-    }
-}
-declare module powerbi.visuals {
-    module UrlHelper {
-        function isValidUrl(columnItem: DataViewMetadataColumn, value: string): boolean;
-        function isValidImage(columnItem: DataViewMetadataColumn, value: string): boolean;
-        function hasImageColumn(dataView: DataView): boolean;
     }
 }
 declare module powerbi.visuals {
@@ -9114,6 +9100,7 @@ declare module powerbi.visuals {
         isCustomVisual(visual: string): boolean;
         isScriptVisualQueryable(): boolean;
         shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
+        getInteractivityOptions(visualType: string): InteractivityOptions;
     }
     interface MinervaVisualFeatureSwitches {
         heatMap?: boolean;
@@ -9169,6 +9156,7 @@ declare module powerbi.visuals {
             isCustomVisual(visual: string): boolean;
             shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
             isScriptVisualQueryable(): boolean;
+            getInteractivityOptions(visualType: string): InteractivityOptions;
         }
         function createPlugin(visualPlugins: jsCommon.IStringDictionary<IVisualPlugin>, base: IVisualPlugin, create: IVisualFactoryMethod, modifyPluginFn?: (plugin: IVisualPlugin) => void): void;
         class MinervaVisualPluginService extends VisualPluginService {
@@ -9214,6 +9202,9 @@ declare module powerbi.visuals {
             constructor(smallViewPortProperties?: SmallViewPortProperties);
             getPlugin(type: string): IVisualPlugin;
             private getMapThrottleInterval();
+            getInteractivityOptions(visualType: string): InteractivityOptions;
+            private getMobileOverflowString(visualType);
+            private isChartSupportInteractivity(visualType);
         }
         function create(): IVisualPluginService;
         function createVisualPluginService(featureSwitch: MinervaVisualFeatureSwitches): IVisualPluginService;
@@ -10490,7 +10481,7 @@ declare module powerbi.visuals.controls {
         minHeight: number;
         fontSize: string;
         scrollbarWidth: number;
-        updateModels(resetScrollOffsets: boolean, rowModel?: any, columnModel?: any): void;
+        updateModels(resetScrollOffsets: boolean, rowModel: any, columnModel: any): void;
         updateColumnDimensions(rowHierarchyWidth: number, columnHierarchyWidth: number, count: number): void;
         updateRowDimensions(columnHierarchyHeight: number, rowHierarchyHeight: number, rowHierarchyContentHeight: number, count: number, footerHeight: any): void;
         private updateTouchDimensions();
@@ -10989,15 +10980,47 @@ declare module powerbi.visuals.controls.TouchUtils {
         private rect;
         private documentMouseMoveWrapper;
         private documentMouseUpWrapper;
+        /**
+         * Those setting related to swipe detection
+         * touchStartTime - the time that the user touched down the screen.
+         */
+        private touchStartTime;
+        /**
+         * The page y value of the touch event when the user touched down.
+         */
+        private touchStartPageY;
+        /**
+         * The last page y value befoer the user raised up his finger.
+         */
+        private touchLastPageY;
+        /**
+         * The last page x value befoer the user raised up his finger.
+         */
+        private touchLastPageX;
+        /**
+         * An indicator whether we are now running the slide affect.
+         */
+        private sliding;
         constructor(manager: TouchManager);
         initTouch(panel: HTMLElement, touchReferencePoint?: HTMLElement, allowMouseDrag?: boolean): void;
-        private getXYByClient(event);
+        private getXYByClient(pageX, pageY, rect);
         onTouchStart(e: any): void;
         onTouchMove(e: any): void;
         onTouchEnd(e: any): void;
         onTouchMouseDown(e: MouseEvent): void;
         onTouchMouseMove(e: MouseEvent): void;
         onTouchMouseUp(e: MouseEvent, bubble?: boolean): void;
+        private getSwipeInfo();
+        private didUserSwipe(swipeInfo);
+        /**
+         * In case of swipe - auto advance to the swipe direction in 2 steps.
+         */
+        private startSlideAffect(swipeInfo);
+        private didUserChangeDirection(swipeInfo);
+        private slide(point, slideDist, swipeInfo);
+        private clearSlide();
+        private upAllTouches();
+        private clearTouchEvents();
     }
 }
 declare module powerbi.visuals.controls {
@@ -12629,7 +12652,6 @@ declare module powerbi.visuals {
         private static sliceSeries(series, newLength, startIndex?);
         private extraLineShift();
         private hasDataPoint(series);
-        private findMaxDataPoint(series);
         private getXValue(d);
         /**
           * This checks to see if a data point is isolated, which means
@@ -13726,7 +13748,7 @@ declare module powerbi.visuals {
         private createTablixControl(textSize);
         private createColumnWidthManager();
         private createControl(dataNavigator, textSize);
-        private updateInternal(dataView, textSize, previousDataView, visualTable);
+        private updateInternal(textSize, previousDataView, visualTable);
         private shouldClearControl(previousDataView, newDataView);
         private createTotalsRow(dataView);
         private onBindRowHeader(item);
@@ -13929,7 +13951,7 @@ declare module powerbi.visuals {
         private createTablixControl(textSize);
         private createColumnWidthManager();
         private createControl(matrixNavigator, textSize);
-        private updateInternal(dataView, textSize, previousDataView);
+        private updateInternal(textSize, previousDataView);
         private shouldClearControl(previousDataView, newDataView);
         private onBindRowHeader(item);
         private onColumnHeaderClick(queryName);

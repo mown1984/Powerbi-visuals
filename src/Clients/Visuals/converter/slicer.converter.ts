@@ -28,7 +28,7 @@
 
 module powerbi.visuals {
     import SemanticFilter = powerbi.data.SemanticFilter;
-    import Utility = jsCommon.Utility;
+    import UrlUtils = jsCommon.UrlUtils;
 
     /** Helper module for converting a DataView into SlicerData. */
     export module DataConversion {
@@ -74,22 +74,20 @@ module powerbi.visuals {
                 hostServices.persistProperties(changes);
             }
 
-            let slicerData = getSlicerData(filter, analyzer, dataView.metadata, dataView.categorical, localizedSelectAllText, <IInteractivityService>interactivityService, hostServices);
+            let slicerData = getSlicerData(analyzer, dataView.metadata, dataView.categorical, localizedSelectAllText, <IInteractivityService>interactivityService, hostServices);
             return slicerData;
-
         }
 
         function getSlicerData(
-            filter: SemanticFilter,
             analyzer: AnalyzedFilter,
             dataViewMetadata: DataViewMetadata,
             categorical: DataViewCategorical,
             localizedSelectAllText: string, interactivityService: IInteractivityService, hostServices: IVisualHostServices): SlicerData {
             let isInvertedSelectionMode: boolean = interactivityService && interactivityService.isSelectionModeInverted();
-            let hasSelectionOverride: boolean = false;
             let selectedScopeIds = analyzer.selectedIdentities;
-            hasSelectionOverride = !_.isEmpty(selectedScopeIds);
-            if (filter)
+
+            let hasSelectionOverride = !_.isEmpty(selectedScopeIds) || isInvertedSelectionMode === true;
+            if (!isInvertedSelectionMode && analyzer.filter)
                 isInvertedSelectionMode = analyzer.isNotFilter;
 
             if (interactivityService)
@@ -106,11 +104,7 @@ module powerbi.visuals {
 
             debug.assert(!valueCounts || valueCounts.length === categoryValuesLen, "valueCounts doesn't match values");
             let isImageData = dataViewMetadata &&
-                !_.isEmpty(dataViewMetadata.columns) &&
-                dataViewMetadata.columns[0].type &&
-                dataViewMetadata.columns[0].type.misc &&
-                dataViewMetadata.columns[0].type.misc.imageUrl;
-
+                !_.isEmpty(dataViewMetadata.columns) && converterHelper.isImageUrlColumn(dataViewMetadata.columns[0]);
             let displayNameIdentityPairs: DisplayNameIdentityPair[] = [];
             for (let i = 0; i < categoryValuesLen; i++) {
                 let scopeId = category.identity && category.identity[i];
@@ -119,7 +113,7 @@ module powerbi.visuals {
 
                 let isRetained = hasSelectionOverride ? SlicerUtil.tryRemoveValueFromRetainedList(scopeId, selectedScopeIds) : false;
                 let label: string = valueFormatter.format(value, formatString);
-                let isImage = isImageData && Utility.isValidImageUrl(label);
+                let isImage = isImageData === true && UrlUtils.isValidImageUrl(label);
                 let slicerData: SlicerDataPoint = {
                     value: label,
                     tooltip: label,

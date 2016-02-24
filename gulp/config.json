@@ -5,7 +5,7 @@
     "generateMaps": true,
     "tslintOnBuild": false,
     "tslintOnChange": true,
-    "emitTsLintError": false,
+    "emitTsLintError": true,
     "includeContentToMap": true,
     "showMSBuildFullLog": false,
     "showMSBuildLogOnError": true,

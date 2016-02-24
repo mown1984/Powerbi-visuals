@@ -42,7 +42,6 @@
         "dataView/rules/categoricalEvalContext.ts",
         "dataView/rules/colorRuleEvaluation.ts",
         "dataView/rules/evalContext.ts",
-        "dataView/rules/filterRuleEvaluation.ts",
         "contracts/conceptualSchema.ts",
         "dataView/rules/ruleEvaluation.ts",
         "dataView/rules/staticEvalContext.ts",

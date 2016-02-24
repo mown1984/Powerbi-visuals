@@ -156,6 +156,17 @@ module powerbitests {
         });
 
 
+        it("isInvertedSelectionMode persisted for undefined filter", () => {
+            let hostServices = slicerHelper.createHostServices();
+            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
+            interactivityService.setSelectionModeInverted(true);
+            let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), undefined);
+            let spyOnGetLabelForScopeId = spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
+            let spyOnSetLabelForScopeId = spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
+            powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            expect(interactivityService.isSelectionModeInverted()).toBe(true);
+        });
+
         function allItemsSelectedSlicerTestHelper(
             interactivityService: powerbi.visuals.IInteractivityService,
             hostServices: powerbi.IVisualHostServices,
@@ -197,21 +208,6 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[index + 4].selected).toBe(selected);
             expect(slicerData.slicerDataPoints[index + 5].selected).toBe(selected);
         }
-
-        it('slicer convert boolean values', () => {
-            let hostServices = slicerHelper.createHostServices();
-            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            let descriptor: powerbi.ValueTypeDescriptor = { bool: true };
-            let dataView = applyDataTransform(slicerHelper.buildBooleanValuesDataView(field), undefined, descriptor);
-            let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
-            expect(slicerData.slicerDataPoints.length).toBe(3);
-            expect(slicerData.slicerDataPoints[0].value).toBe('True');
-            expect(slicerData.slicerDataPoints[1].value).toBe('False');
-            expect(slicerData.slicerDataPoints[2].value).toBe('False');
-            expect(slicerData.slicerDataPoints[0].count).toBeUndefined();
-            expect(slicerData.slicerDataPoints[1].count).toBe(3);
-            expect(slicerData.slicerDataPoints[2].count).toBe(4);
-        });
 
         it('slicer convert boolean values', () => {
             let hostServices = slicerHelper.createHostServices();

@@ -131,6 +131,22 @@ module powerbitests {
             expect(interactivityService.hasSelection()).toBeFalsy();
         });
 
+        it('Clear selection should reset isInvertedSelectionMode for defaultValue ', () => {
+            let slicerDefaultValueHandler = new MockDefaultValueHandler();
+            interactivityService.bind(
+                selectableDataPoints,
+                behavior,
+                null,
+                {
+                    overrideSelectionFromData: true,
+                    hasSelectionOverride: false,
+                    slicerDefaultValueHandler: slicerDefaultValueHandler,
+                });
+            interactivityService.setSelectionModeInverted(true);
+            interactivityService.clearSelection();
+            expect(interactivityService.isSelectionModeInverted()).toBe(false);
+        });
+
         it('Selection sent to host', () => {
             spyOn(host, "onSelect");
             interactivityService.bind(selectableDataPoints, behavior, null);
