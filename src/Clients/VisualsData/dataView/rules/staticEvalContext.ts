@@ -55,11 +55,7 @@ module powerbi.data {
             let dataView = this.dataView,
                 selectTransforms = this.selectTransforms;
             if (dataView && dataView.table && selectTransforms)
-                return getExprValue(expr, selectTransforms, dataView.table);
-        }
-
-        public getCurrentIdentity(): DataViewScopeIdentity {
-            return;
+                return getExprValueFromTable(expr, selectTransforms, dataView.table, /*rowIdx*/ 0);
         }
 
         public getRoleValue(roleName: string): PrimitiveValue {
@@ -67,13 +63,14 @@ module powerbi.data {
         }
     }
 
-    function getExprValue(expr: SQExpr, selectTransforms: DataViewSelectTransform[], table: DataViewTable): PrimitiveValue {
+    export function getExprValueFromTable(expr: SQExpr, selectTransforms: DataViewSelectTransform[], table: DataViewTable, rowIdx: number): PrimitiveValue {
         debug.assertValue(expr, 'expr');
         debug.assertValue(selectTransforms, 'selectTransforms');
         debug.assertValue(table, 'table');
+        debug.assertValue(rowIdx, 'rowIdx');
 
         let rows = table.rows;
-        if (rows && rows.length !== 1)
+        if (_.isEmpty(rows) || rows.length <= rowIdx)
             return;
 
         let cols = table.columns;
@@ -86,7 +83,7 @@ module powerbi.data {
                 if (selectIdx !== cols[colIdx].index)
                     continue;
 
-                return rows[0][colIdx];
+                return rows[rowIdx][colIdx];
             }
         }
 

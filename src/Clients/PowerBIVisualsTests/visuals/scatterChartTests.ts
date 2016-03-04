@@ -1524,6 +1524,7 @@ module powerbitests {
                     dataLabelDecimalPoints: 0,
                     dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
                     dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                    dataLabelDisplayUnits: 0,
                 };
 
                 let xAxisReferenceLine: powerbi.DataViewObject = {
@@ -1538,6 +1539,7 @@ module powerbitests {
                     dataLabelDecimalPoints: 0,
                     dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
                     dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                    dataLabelDisplayUnits: 1000,
                 };
 
                 dataView.metadata.objects = {
@@ -1579,6 +1581,7 @@ module powerbitests {
                                 horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
                                 text: '340',
                                 verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                displayUnits: 0,
                             },
                         });
 
@@ -1597,8 +1600,9 @@ module powerbitests {
                             label: {
                                 color: refLineColor1,
                                 horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                text: '140',
+                                text: '0K',
                                 verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                displayUnits: 1000,
                             },
                         });
 
@@ -1607,12 +1611,14 @@ module powerbitests {
                     yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     yAxisReferenceLine['transparency'] = 0;
                     yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+                    yAxisReferenceLine['dataLabelDisplayUnits'] = 1000;
 
                     xAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
                     xAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
                     xAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     xAxisReferenceLine['transparency'] = 0;
                     xAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+                    xAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
 
                     v.onDataChanged({
                         dataViews: [dataView]
@@ -1634,8 +1640,9 @@ module powerbitests {
                                 label: {
                                     color: refLineColor2,
                                     horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                    text: '340',
+                                    text: '0K',
                                     verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                    displayUnits: 1000,
                                 },
                             });
 
@@ -1654,8 +1661,9 @@ module powerbitests {
                                 label: {
                                     color: refLineColor2,
                                     horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                    text: '140',
+                                    text: '0M',
                                     verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                    displayUnits: 1000000,
                                 },
                             });
 

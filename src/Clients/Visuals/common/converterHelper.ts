@@ -157,5 +157,12 @@ module powerbi.visuals {
 
             return _.any(dataView.metadata.columns, column => isImageUrlColumn(column) === true);
         }
+
+        export function formatFromMetadataColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string {
+            debug.assertValue(column, 'column should exist');
+            let formatString: string = valueFormatter.getFormatString(column, formatStringProp, true);
+            formatString = formatString || column ? column.format : undefined;
+            return valueFormatter.format(value, formatString);
+        }
     }
 }

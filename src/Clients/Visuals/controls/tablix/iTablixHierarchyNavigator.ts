@@ -30,11 +30,14 @@ module powerbi.visuals.controls {
 
     export interface ITablixHierarchyNavigator {
         /**
-         * Returns the depth of a hierarchy.
-         *
-         * @param hierarchy Object representing the hierarchy.
-         */
-        getDepth(hierarchy: any): number;
+        * Returns the depth of the column hierarchy.
+        */
+        getColumnHierarchyDepth(): number;
+
+        /**
+        * Returns the depth of the Row hierarchy.
+        */
+        getRowHierarchyDepth(): number;
 
         /**
          * Returns the leaf count of a hierarchy.

@@ -28,7 +28,8 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ChordChart;
-
+	powerbitests.mocks.setLocale();
+	
     describe("ChordChart", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());

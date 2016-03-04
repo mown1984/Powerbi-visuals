@@ -24,10 +24,9 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.BulletChart;
+    powerbitests.mocks.setLocale();
 
     describe("BulletChart", () => {
         describe('capabilities', () => {

@@ -185,7 +185,7 @@ module powerbi.visuals {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            return ObjectEnumerator.enumerateObjectInstances(options, this.slicerData, this.settings);
+            return ObjectEnumerator.enumerateObjectInstances(options, this.slicerData, this.settings, this.dataView);
         }
 
         // public for testability
@@ -272,7 +272,7 @@ module powerbi.visuals {
 
     /** Helper class for calculating the current slicer settings. */
     module ObjectEnumerator {
-        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {
+        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, data: SlicerData, settings: SlicerSettings, dataView: DataView): VisualObjectInstance[] {
             if (!data)
                 return;
 
@@ -284,8 +284,16 @@ module powerbi.visuals {
                 case 'general':
                     return enumerateGeneral(data, settings);
                 case 'selection':
-                    return enumerateSelection(data, settings);
+                    if (shouldShowSelectionOption(dataView))
+                        return enumerateSelection(data, settings);
             }
+        }
+
+        function shouldShowSelectionOption(dataView: DataView): boolean {
+            return !(dataView &&
+                dataView.metadata &&
+                dataView.metadata.columns &&
+                _.some(dataView.metadata.columns, (column) => column.discourageAggregationAcrossGroups));
         }
 
         function enumerateSelection(data: SlicerData, settings: SlicerSettings): VisualObjectInstance[] {

@@ -67,7 +67,7 @@ module powerbi {
         /** Reshapes the data view to match the provided schema if possible. If not, returns null */
         export function validateAndReshape(dataView: DataView, dataViewMappings: DataViewMapping[]): ValidateAndReshapeResult {
             if (!dataViewMappings || dataViewMappings.length === 0)
-                return { dataView: dataView, isValid: true };            
+                return { dataView: dataView, isValid: true };
 
             if (dataView) {
                 for (let dataViewMapping of dataViewMappings) {
@@ -398,8 +398,8 @@ module powerbi {
                 let mapping = mappings[mappingIndex],
                     mappingConditions = mapping.conditions,
                     requiredProperties = mapping.requiredProperties;
-                let conditionsMet: boolean = false;
                 let allPropertiesValid: boolean = areAllPropertiesValid(requiredProperties, objectDescriptors, objectDefinitions);
+                let conditionsMet: DataViewMappingCondition[] = [];
 
                 if (!_.isEmpty(mappingConditions)) {
                     for (let conditionIndex = 0, conditionCount = mappingConditions.length; conditionIndex < conditionCount; conditionIndex++) {
@@ -413,15 +413,21 @@ module powerbi {
                             }
                         }
                         else
-                            conditionsMet = true;
+                            conditionsMet.push(condition);
                     }
                 }
                 else {
-                    conditionsMet = true;
+                    conditionsMet.push({});
                 }
 
-                if (conditionsMet && allPropertiesValid)
-                    supportedMappings.push(mapping);
+                if (!_.isEmpty(conditionsMet) && allPropertiesValid) {
+                    let supportedMapping = _.cloneDeep(mapping);
+
+                    let updatedConditions = _.filter(conditionsMet, (condition) => Object.keys(condition).length > 0);
+                    if (!_.isEmpty(updatedConditions))
+                        supportedMapping.conditions = updatedConditions;
+                    supportedMappings.push(supportedMapping);
+                }
             }
 
             return {
@@ -429,7 +435,7 @@ module powerbi {
                 mappingErrors: ArrayExtensions.emptyToNull(errors),
             };
         }
-        
+
         function checkForConditionErrors(projections: QueryProjectionsByRole, condition: DataViewMappingCondition, roleKindByQueryRef: RoleKindByQueryRef): DataViewMappingMatchError[] {
             debug.assertValue(projections, 'projections');
             debug.assertValue(condition, 'condition');

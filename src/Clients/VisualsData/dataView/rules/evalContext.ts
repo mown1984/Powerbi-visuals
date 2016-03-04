@@ -31,6 +31,5 @@ module powerbi.data {
     export interface IEvalContext {
         getExprValue(expr: SQExpr): PrimitiveValue;
         getRoleValue(roleName: string): PrimitiveValue;
-        getCurrentIdentity(): DataViewScopeIdentity;
     }
 }

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
     import CompiledDataViewRoleForMappingWithReduction = powerbi.data.CompiledDataViewRoleForMappingWithReduction;
@@ -46,6 +44,7 @@ module powerbitests {
     import valueFormatter = powerbi.visuals.valueFormatter;
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
+    import SortDirection = powerbi.SortDirection;
 
     powerbitests.mocks.setLocale();
 
@@ -65,6 +64,7 @@ module powerbitests {
     let rowGroupSource3formatted: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 2, objects: { general: { formatString: "0.0" } } };
     let rowGroupSource4: DataViewMetadataColumn = { displayName: "RowGroup4", queryName: "RowGroup4", type: dataTypeBoolean, index: 9 };
     let rowGroupSourceWebUrl: DataViewMetadataColumn = { displayName: "RowGroupWebUrl", queryName: "RowGroupWebUrl", type: dataTypeWebUrl, index: 0 };
+    let rowGroupSourceNonAggregatable: DataViewMetadataColumn = { displayName: "RowGroup4", queryName: "RowGroup4", type: dataTypeBoolean, index: 9, discourageAggregationAcrossGroups:true };
     let columnGroupSource1: DataViewMetadataColumn = { displayName: "ColGroup1", queryName: "ColGroup1", type: dataTypeString, index: 3 };
     let columnGroupSource2: DataViewMetadataColumn = { displayName: "ColGroup2", queryName: "ColGroup2", type: dataTypeString, index: 4 };
     let columnGroupSource3: DataViewMetadataColumn = { displayName: "ColGroup3", queryName: "ColGroup3", type: dataTypeString, index: 5 };    
@@ -87,9 +87,13 @@ module powerbitests {
             },
         },
     };
+    let columnGroupSourceNonAggregatable: DataViewMetadataColumn = { displayName: "ColGroup4", queryName: "ColGroup4", type: dataTypeBoolean, index: 10, discourageAggregationAcrossGroups: true };
     let measureSource1: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 6 };
     let measureSource2: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 7 };
     let measureSource3: DataViewMetadataColumn = { displayName: "Measure3", queryName: "Measure3", type: dataTypeNumber, isMeasure: true, index: 8 };
+
+    let measureSourceAscending: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 9, objects: {}, sort: SortDirection.Ascending };
+    let measureSourceDescending: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 10, objects: {}, sort: SortDirection.Descending };
 
     // ------------
     // | Measure1 |
@@ -118,9 +122,68 @@ module powerbitests {
         },
         valueSources: [measureSource1]
     };
+
+    let matrixOneMeasureSortAscending: DataViewMatrix = {
+        rows: {
+            root: {
+                children: [{
+                    level: 0,
+                    values: {
+                        0: { value: 100 }
+                    }
+                }]
+            },
+            levels: [{sources: [measureSourceAscending]}]
+        },
+        columns: {
+            root: {
+                children: [{ level: 0 }]
+            },
+            levels: [{
+                sources: [measureSource1]
+            }]
+        },
+        valueSources: [measureSource1]
+    };
+
+    let matrixOneMeasureSortDescending: DataViewMatrix = {
+        rows: {
+            root: {
+                children: [{
+                    level: 0,
+                    values: {
+                        0: { value: 100 }
+                    }
+                }]
+            },
+            levels: [{
+                sources: [measureSourceDescending]
+            }]
+        },
+        columns: {
+            root: {
+                children: [{ level: 0 }]
+            },
+            levels: [{
+                sources: [measureSource1]
+            }]
+        },
+        valueSources: [measureSource1]
+    };
+   
     let matrixOneMeasureDataView: powerbi.DataView = {
         metadata: { columns: [measureSource1] },
         matrix: matrixOneMeasure
+    };
+
+    let matrixOneMeasureDataViewSortAscending: powerbi.DataView = {
+        metadata: { columns: [measureSourceAscending] },
+        matrix: matrixOneMeasureSortAscending
+    };
+
+    let matrixOneMeasureDataViewSortDescending: powerbi.DataView = {
+        metadata: { columns: [measureSourceDescending] },
+        matrix: matrixOneMeasureSortDescending
     };
 
     // -----------------------
@@ -201,7 +264,7 @@ module powerbitests {
         metadata: { columns: [columnGroupSource1, measureSource1] },
         matrix: matrixOneMeasureOneColumnGroupOneGroupInstance
     };
-
+    
     // ---------------------------
     // | http://www.validurl.com |
     // +-------------------------|
@@ -679,7 +742,6 @@ module powerbitests {
         metadata: { columns: [rowGroupSource1, columnGroupSource1] },
         matrix: matrixOneRowGroupOneColumnGroupOneGroupInstance
     };
-
 
     // ------------------------------------
     // |     Col    Group1 |      G    C1 |
@@ -2096,12 +2158,7 @@ module powerbitests {
             levels: [
                 { sources: [columnGroupSource1] },
                 { sources: [columnGroupSource2] },
-                {
-                    sources: [
-                        measureSource1,
-                        measureSource2
-                    ]
-                }
+                { sources: [measureSource1, measureSource2] }
             ]
         },
         valueSources: [
@@ -2375,9 +2432,11 @@ module powerbitests {
                     ])
                 };
 
-            var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = matrixCapabilities.dataViewMappings;
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[0]];
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups only", () => {
@@ -2394,9 +2453,13 @@ module powerbitests {
                     ])
                 };
 
-            var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = matrixCapabilities.dataViewMappings;
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            // with one item in the rows, it satisfies  { 'Rows': { min: 1 }, 'Columns': { min: 0 }, 'Values': { min: 0 } },
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[1]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups and arbitrary number of measures", () => {
@@ -2441,11 +2504,14 @@ module powerbitests {
                     ])
                 };
 
-            var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = matrixCapabilities.dataViewMappings;
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[1]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
         });
 
         it("Capabilities should allow matrices with column groups only", () => {
@@ -2463,8 +2529,11 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[2]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
         });
 
         it("Capabilities should allow matrices with column groups and measures", () => {
@@ -2510,10 +2579,13 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[2]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
         });
 
         it("Capabilities should allow matrices with row groups and arbitrary number of column groups and measures", () => {
@@ -2573,10 +2645,13 @@ module powerbitests {
                 };
 
             var dataViewMappings = matrixCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let expectedDataViewMapping = _.cloneDeep(dataViewMappings);
+            expectedDataViewMapping[0].conditions.splice(0, 1);
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMapping);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMapping);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMapping);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMapping);
         });
 
         it("Capabilities should suppressDefaultTitle", () => {
@@ -2771,35 +2846,40 @@ module powerbitests {
         describe("getDepth", () => {
 
             it("returns the correct depth for an empty hierarchy", () => {
-                let matrix = matrixThreeRowGroupsOneGroupInstance;
-                let columnHierarchy = matrix.columns.root.children;
+                let matrix = _.cloneDeep(matrixThreeRowGroupsOneGroupInstance);
+                matrix.columns.root = {};
+                matrix.rows.root = {};
                 let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
 
-                expect(navigator.getDepth(columnHierarchy)).toBe(1);
+                expect(navigator.getRowHierarchyDepth()).toBe(3);
+                expect(navigator.getColumnHierarchyDepth()).toBe(1);
             });
 
             it("returns the correct depth for a measure only hierarchy", () => {
-                let matrix = matrixOneMeasure;
-                let columnHierarchy = matrix.columns.root.children;
+                let matrix = _.cloneDeep(matrixOneMeasure);
+                matrix.columns.root = {};
+                matrix.rows.root = {};
                 let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
 
-                expect(navigator.getDepth(columnHierarchy)).toBe(1);
+                expect(navigator.getRowHierarchyDepth()).toBe(1);
+                expect(navigator.getColumnHierarchyDepth()).toBe(1);
+
             });
 
             it("returns the correct depth for group only hierarchy", () => {
                 let matrix = matrixThreeMeasuresThreeRowGroups;
-                let rowHierarchy = matrix.rows.root.children;
-
                 let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
-                expect(navigator.getDepth(rowHierarchy)).toBe(3);
+
+                expect(navigator.getRowHierarchyDepth()).toBe(3);
+                expect(navigator.getColumnHierarchyDepth()).toBe(1);
             });
 
             it("returns the correct depth for group and measure hierarchy", () => {
                 let matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasures;
-                let columnHierarchy = matrix.columns.root.children;
-
                 let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
-                expect(navigator.getDepth(columnHierarchy)).toBe(3);
+                
+                expect(navigator.getRowHierarchyDepth()).toBe(2);
+                expect(navigator.getColumnHierarchyDepth()).toBe(3);
             });
         });
 
@@ -3544,6 +3624,197 @@ module powerbitests {
             });
         });
 
+        it("enumerateObjectInstances general both totals on but suppressed by no aggregation", () => {
+            let matrix = _.cloneDeep(matrixRowGroupColumnGroupWithBooleanAndNullOneMeasureBothTotals);
+            matrix.columns.levels[0].sources[0] = columnGroupSourceNonAggregatable;
+            matrix.rows.levels[0].sources[0] = rowGroupSourceNonAggregatable;
+
+            let objects: powerbi.DataViewObjects = {
+                general: {
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    //TODO: add after featureswitch
+                    //outlineColor: "#E8E8E8",
+                    // outlineWeight: 2
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: {
+                        columns:
+                        [
+                            rowGroupSource4,
+                            columnGroupSource4,
+                            measureSource1
+                        ],
+                        objects: objects
+                    },
+                    matrix: matrix
+                }]
+            });
+
+            let result = v.enumerateObjectInstances({ objectName: "general" });
+            expect(result).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+        });
+
+        it("enumerateObjectInstances - non-aggregatable field is NOT the last row field", () => {
+            let matrix = _.cloneDeep(matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals);
+            matrix.rows.levels[0].sources[0].discourageAggregationAcrossGroups = true;
+
+            let objects: powerbi.DataViewObjects = {
+                general: {
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    //TODO: add after featureswitch
+                    //outlineColor: "#E8E8E8",
+                    // outlineWeight: 2
+                }
+            };
+            let dataView = getMatrixColumnWidthDataView(matrix, objects);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let result = v.enumerateObjectInstances({ objectName: "general" });
+            expect(result).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        rowSubtotals: true,
+                        columnSubtotals: true,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+        });
+
+        it("enumerateObjectInstances - non-aggregatable field is NOT the last column field", () => {
+            let matrix = _.cloneDeep(matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals);
+            matrix.columns.levels[0].sources[0].discourageAggregationAcrossGroups = true;
+
+            let objects: powerbi.DataViewObjects = {
+                general: {
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    //TODO: add after featureswitch
+                    //outlineColor: "#E8E8E8",
+                    // outlineWeight: 2
+                }
+            };
+            let dataView = getMatrixColumnWidthDataView(matrix, objects);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let result = v.enumerateObjectInstances({ objectName: "general" });
+            expect(result).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        rowSubtotals: true,
+                        columnSubtotals: true,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+            matrix.columns.levels[0].sources[0].discourageAggregationAcrossGroups = false;
+        });
+
+        it("enumerateObjectInstances - non-aggregatable field is the last row field", () => {
+            let matrix = _.cloneDeep(matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals);
+            matrix.rows.levels[1].sources[0].discourageAggregationAcrossGroups = true;
+
+            let objects: powerbi.DataViewObjects = {
+                general: {
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    //TODO: add after featureswitch
+                    //outlineColor: "#E8E8E8",
+                    // outlineWeight: 2
+                }
+            };
+            let dataView = getMatrixColumnWidthDataView(matrix, objects);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let result = v.enumerateObjectInstances({ objectName: "general" });
+            expect(result).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        columnSubtotals: true,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+        });
+
+        it("enumerateObjectInstances - non-aggregatable field is the last column field", () => {
+            let matrix = _.cloneDeep(matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals);
+            matrix.columns.levels[2].sources[0].discourageAggregationAcrossGroups = true;
+
+            let objects: powerbi.DataViewObjects = {
+                general: {
+                    autoSizeColumnWidth: true,
+                    textSize: 8,
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    //TODO: add after featureswitch
+                    //outlineColor: "#E8E8E8",
+                    // outlineWeight: 2
+                }
+            };
+            let dataView = getMatrixColumnWidthDataView(matrix, objects);
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let result = v.enumerateObjectInstances({ objectName: "general" });
+            expect(result).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        rowSubtotals: true,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+            matrix.columns.levels[0].sources[0].discourageAggregationAcrossGroups = false;
+        });
+
         it("enumerateObjectInstances general no objects", () => {
             let matrix = matrixRowGroupColumnGroupWithBooleanAndNullOneMeasure;
             v.onDataChanged({
@@ -3878,6 +4149,10 @@ module powerbitests {
                 }
             });
         });
+
+        function validateSortIcons(expectedValues: string[]): void {
+            tablixHelper.validateSortIconClassNames(expectedValues, ".bi-tablix tr");
+        }
 
         function validateMatrix(expectedValues: string[][]): void {
             tablixHelper.validateMatrix(expectedValues, ".bi-tablix tr");
@@ -5089,6 +5364,34 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("header sort arrow up", (done) => {
+
+            let dataView = matrixOneMeasureDataViewSortAscending;
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                let expectedCells: string[] =
+                    ['powervisuals-glyph caret-up','powervisuals-glyph caret-down'];
+
+                validateSortIcons(expectedCells);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("header sort arrow down", (done) => {
+
+            let dataView = matrixOneMeasureDataViewSortDescending;
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                let expectedCells: string[] =
+                    ['powervisuals-glyph caret-down','powervisuals-glyph caret-up'];
+
+                validateSortIcons(expectedCells);
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it("Matrix with multiple row and column group hierarchy levels, one measure with subtotals", (done) => {
             let matrix = matrixTwoRowGroupsTwoColumnGroupsOneMeasureAndTotals;
             v.onDataChanged({
@@ -5272,7 +5575,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("Verify Interactivity modes", (done) => {
+        it("Verify Interactivity mode - Dashboard", (done) => {
 
             // Pick a matrix that exceeds the viewport
             v.init({
@@ -5280,12 +5583,11 @@ module powerbitests {
                 host: mocks.createVisualHostServices(),
                 style: powerbi.visuals.visualStyles.create(),
                 viewport: {
-                    height: element.height(),
-                    width: element.width()
+                    height: 100,
+                    width: 100
                 },
                 interactivity: {
-                    isInteractiveLegend: false,
-                    selection: true
+                    overflow: "hidden"
                 }
             });
 
@@ -5296,18 +5598,69 @@ module powerbitests {
             setTimeout(() => {
                 let scrollbars = $(".bi-tablix .scroll-bar-div");
 
-                let verticalScrollbar = scrollbars.eq(0);
-                let horizontalScrollbar = scrollbars.eq(1);
-
-                // Check Style
-                expect(verticalScrollbar.css("width")).toBe("0px");
-                expect(horizontalScrollbar.css("height")).toBe("0px");
-
-                // Check Values
-                expect(verticalScrollbar.width()).toBe(0);
-                expect(horizontalScrollbar.height()).toBe(0);
+                // Scrollbars are not attached to DOM for Dashboard
+                expect(scrollbars.length).toBe(0);
 
                 done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Verify Interactivity mode - Canvas", (done) => {
+            let viewPort: powerbi.IViewport = {
+                height: 100,
+                width: 100
+            };
+
+            // Pick a matrix that exceeds the viewport
+            v.init({
+                element: element,
+                host: mocks.createVisualHostServices(),
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: viewPort,
+                interactivity: {
+                    selection: true
+                }
+            });
+
+            v.onDataChanged({
+                dataViews: [matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresDataView]
+            });
+
+            setTimeout(() => {
+                let scrollbars = $(".bi-tablix .scroll-bar-div");
+                let verticalScrollBar = scrollbars.eq(0);
+                let horizontalScrollBar = scrollbars.eq(1);
+
+                // Scrollbars are attached to DOM for Canvas
+                expect(scrollbars.length).toBe(2);
+                expect(verticalScrollBar.css("width")).toBe("9px");
+                expect(verticalScrollBar.width()).toBe(9);
+                expect(horizontalScrollBar.css("height")).toBe("9px");
+                expect(horizontalScrollBar.height()).toBe(9);
+
+                viewPort = {
+                    height: element.height(),
+                    width: element.width()
+                };
+                v.onResizing(viewPort);
+
+                setTimeout(() => {
+                    scrollbars = $(".bi-tablix .scroll-bar-div");
+                    expect(scrollbars.length).toBe(2);
+                    if (scrollbars.length === 2) {
+                        verticalScrollBar = scrollbars.eq(0);
+                        horizontalScrollBar = scrollbars.eq(1);
+
+                        // Scrollbars are attached to DOM for Canvas
+                        expect(scrollbars.length).toBe(2);
+                        expect(verticalScrollBar.css("width")).toBe("0px");
+                        expect(verticalScrollBar.width()).toBe(0);
+                        expect(horizontalScrollBar.css("height")).toBe("0px");
+                        expect(horizontalScrollBar.height()).toBe(0);
+                    }
+
+                    done();
+                }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
 
@@ -6420,12 +6773,12 @@ module powerbitests {
                 { row: 0, col: 5, expectedText: "Measure3" }];
             let clicks = [{ row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 }, { row: 0, col: 5 }];
             let expectedSorts = [
-                [{ queryName: "RowGroup1" }],
-                [{ queryName: "RowGroup2" }],
-                [{ queryName: "RowGroup3" }],
-                [{ queryName: "Measure1" }],
-                [{ queryName: "Measure2" }],
-                [{ queryName: "Measure3" }]
+                [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }],
+                [{ queryName: "RowGroup2", sortDirection: powerbi.SortDirection.Descending }],
+                [{ queryName: "RowGroup3", sortDirection: powerbi.SortDirection.Descending }],
+                [{ queryName: "Measure1", sortDirection: powerbi.SortDirection.Descending }],
+                [{ queryName: "Measure2", sortDirection: powerbi.SortDirection.Descending }],
+                [{ queryName: "Measure3", sortDirection: powerbi.SortDirection.Descending }]
             ];
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);
         });
@@ -6438,7 +6791,7 @@ module powerbitests {
                 { row: 0, col: 1, expectedText: "10" }];
             let clicks = [{ row: 0, col: 0 }, { row: 0, col: 1 }, { row: 1, col: 0 }];
             let expectedSorts = [
-                [{ queryName: "RowGroup1" }]
+                [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }]
             ];
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);
         });
@@ -6452,7 +6805,7 @@ module powerbitests {
                 { row: 0, col: 2, expectedText: "RowGroup3" }];
             let clicks = [{ row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }];
             let expectedSorts = [
-                [{ queryName: "RowGroup1" }], [{ queryName: "RowGroup2" }], [{ queryName: "RowGroup3" }]
+                [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup2", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup3", sortDirection: powerbi.SortDirection.Descending }]
             ];
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);
         });
@@ -6488,7 +6841,7 @@ module powerbitests {
                 { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }, { row: 2, col: 4 }, { row: 2, col: 5 }, { row: 2, col: 6 }, { row: 2, col: 7 }, { row: 2, col: 8 }, { row: 2, col: 9 }, { row: 2, col: 10 }, { row: 2, col: 11 }, { row: 2, col: 12 }
             ];
             let expectedSorts = [
-                [{ queryName: "RowGroup1" }], [{ queryName: "RowGroup2" }]
+                [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup2", sortDirection: powerbi.SortDirection.Descending }]
             ];
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);
         });
@@ -6505,7 +6858,7 @@ module powerbitests {
                 { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 }, { row: 1, col: 4 }, { row: 1, col: 5 }, { row: 1, col: 6 }, { row: 1, col: 7 }
             ];
             let expectedSorts = [
-                [{ queryName: "Measure1" }], [{ queryName: "RowGroup1" }], [{ queryName: "RowGroup2" }]
+                [{ queryName: "Measure1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup2", sortDirection: powerbi.SortDirection.Descending }]
             ];
 
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);
@@ -6525,7 +6878,7 @@ module powerbitests {
                 { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }, { row: 2, col: 4 }, { row: 2, col: 5 }, { row: 2, col: 6 }, { row: 2, col: 7 }, { row: 2, col: 8 }, { row: 2, col: 9 }, { row: 2, col: 10 }, { row: 2, col: 11 }, { row: 2, col: 12 }, { row: 2, col: 13 }, { row: 2, col: 14 }, { row: 2, col: 15 }
             ];
             let expectedSorts = [
-                [{ queryName: "RowGroup1" }], [{ queryName: "RowGroup2" }], [{ queryName: "Measure1" }], [{ queryName: "Measure2" }]
+                [{ queryName: "RowGroup1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "RowGroup2", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "Measure1", sortDirection: powerbi.SortDirection.Descending }], [{ queryName: "Measure2", sortDirection: powerbi.SortDirection.Descending }]
             ];
 
             tablixHelper.runTablixSortTest(element, done, "matrix", data, expectedColumnHeaders, clicks, expectedSorts);

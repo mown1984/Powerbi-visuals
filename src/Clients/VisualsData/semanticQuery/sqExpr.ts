@@ -58,6 +58,36 @@ module powerbi.data {
             return this._kind;
         }
 
+        public static isColumn(expr: SQExpr): expr is SQColumnRefExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.ColumnRef;
+        }
+
+        public static isConstant(expr: SQExpr): expr is SQConstantExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.Constant;
+        }
+
+        public static isEntity(expr: SQExpr): expr is SQEntityExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.Entity;
+        }
+
+        public static isHierarchy(expr: SQExpr): expr is SQHierarchyExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.Hierarchy;
+        }
+
+        public static isHierarchyLevel(expr: SQExpr): expr is SQHierarchyLevelExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.HierarchyLevel;
+        }
+
         public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
             debug.assertValue(federatedSchema, 'federatedSchema');
 

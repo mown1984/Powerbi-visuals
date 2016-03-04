@@ -87,7 +87,6 @@ module powerbi.visuals {
 
     export interface IMatrixHierarchyNavigator extends controls.ITablixHierarchyNavigator, MatrixDataAdapter {
         getDataViewMatrix(): DataViewMatrix;
-        getDepth(hierarchy: MatrixVisualNode[]): number;
         getLeafCount(hierarchy: MatrixVisualNode[]): number;
         getLeafAt(hierarchy: MatrixVisualNode[], index: number): any;
         getLeafIndex(item: MatrixVisualNode): number;
@@ -138,17 +137,18 @@ module powerbi.visuals {
         public getDataViewMatrix(): DataViewMatrix {
             return this.matrix;
         }
+        /**
+        * Returns the depth of the column hierarchy.
+        */
+        public getColumnHierarchyDepth(): number {
+            return Math.max(this.columnHierarchy.levels.length, 1);
+        }
         
         /**
-         * Returns the depth of a hierarchy.
-         */
-        public getDepth(hierarchy: MatrixVisualNode[]): number {
-            let matrixHierarchy = this.getMatrixHierarchy(hierarchy);
-
-            if (matrixHierarchy)
-                return Math.max(matrixHierarchy.levels.length, 1);
-
-            return 0;
+        * Returns the depth of the Row hierarchy.
+        */
+        public getRowHierarchyDepth(): number {
+            return Math.max(this.rowHierarchy.levels.length, 1);
         }
         
         /**
@@ -462,7 +462,8 @@ module powerbi.visuals {
     export interface MatrixBinderOptions {
         onBindRowHeader?(item: MatrixVisualNode): void;
         totalLabel?: string;
-        onColumnHeaderClick?(queryName: string): void;
+        onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
+        showSortIcons?: boolean;
     }
 
     export class MatrixBinder implements controls.ITablixBinder {
@@ -656,10 +657,11 @@ module powerbi.visuals {
             cell.extension.clearTextAndTooltip();
         }
 
-        private registerColumnHeaderClickHandler(columnMetadata: DataViewMetadataColumn, cell: controls.ITablixCell) {
+        private registerColumnHeaderClickHandler(columnMetadata: DataViewMetadataColumn, cell: controls.ITablixCell): void {
             if (this.options.onColumnHeaderClick) {
                 let handler = (e: MouseEvent) => {
-                    this.options.onColumnHeaderClick(columnMetadata.queryName ? columnMetadata.queryName : columnMetadata.displayName);
+                    let sortDirection: SortDirection = TablixUtils.reverseSort(columnMetadata.sort);
+                    this.options.onColumnHeaderClick(columnMetadata.queryName ? columnMetadata.queryName : columnMetadata.displayName, sortDirection);
                 };
                 cell.extension.registerClickHandler(handler);
             }
@@ -676,12 +678,16 @@ module powerbi.visuals {
          */
         public bindCornerCell(item: MatrixCornerItem, cell: controls.ITablixCell): void {
             let styleClasses: string;
-
+            
             if (item.isColumnHeaderLeaf) {
                 styleClasses = MatrixBinder.columnHeaderLeafClassName;
                 let cornerHeaderMetadata = this.getSortableCornerColumnMetadata(item);
-                if (cornerHeaderMetadata)
+
+                if (cornerHeaderMetadata)                   
                     this.registerColumnHeaderClickHandler(cornerHeaderMetadata, cell);
+
+                if (this.options.showSortIcons)
+                    TablixUtils.appendSortImageToColumnHeader(cornerHeaderMetadata, cell);
             }
 
             if (item.isRowHeaderLeaf) {
@@ -711,6 +717,9 @@ module powerbi.visuals {
         public unbindCornerCell(item: MatrixCornerItem, cell: controls.ITablixCell): void {
             cell.extension.clearContainerStyle();
             cell.extension.clearTextAndTooltip();
+
+            if (this.options.showSortIcons)
+                TablixUtils.removeSortIcons(cell);
 
             if (item.isColumnHeaderLeaf) {
                 this.unregisterColumnHeaderClickHandler(cell);
@@ -1090,7 +1099,8 @@ module powerbi.visuals {
             let matrixBinderOptions: MatrixBinderOptions = {
                 onBindRowHeader: (item: MatrixVisualNode) => { this.onBindRowHeader(item); },
                 totalLabel: this.hostServices.getLocalizedString(Matrix.TotalLabel),
-                onColumnHeaderClick: (queryName: string) => this.onColumnHeaderClick(queryName),
+                onColumnHeaderClick: (queryName: string, sortDirection: SortDirection) => this.onColumnHeaderClick(queryName, sortDirection),
+                showSortIcons: layoutKind === controls.TablixLayoutKind.Canvas,
             };
             let matrixBinder = new MatrixBinder(this.hierarchyNavigator, matrixBinderOptions);
 
@@ -1104,6 +1114,7 @@ module powerbi.visuals {
             let tablixOptions: controls.TablixOptions = {
                 interactive: this.isInteractive,
                 enableTouchSupport: this.isTouchEnabled,
+                layoutKind: layoutKind,
                 fontSize: TablixUtils.getTextSizeInPx(textSize),
             };
 
@@ -1147,15 +1158,9 @@ module powerbi.visuals {
             }
         }
 
-        private onColumnHeaderClick(queryName: string) {
-            let sortDescriptors: SortableFieldDescriptor[] = [{
-                queryName: queryName,
-            }];
-            let args: CustomSortEventArgs = {
-                sortDescriptors: sortDescriptors
-            };
+        private onColumnHeaderClick(queryName: string, sortDirection: SortDirection): void {
             this.waitingForSort = true;
-            this.hostServices.onCustomSort(args);
+            this.hostServices.onCustomSort(TablixUtils.getCustomSortEventArgs(queryName, sortDirection));
         }
         
         /**

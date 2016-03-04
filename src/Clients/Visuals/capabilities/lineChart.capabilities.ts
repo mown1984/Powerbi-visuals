@@ -274,6 +274,12 @@ module powerbi.visuals {
                         description: data.createDisplayNameGetter('Visual_Reference_Line_Data_Label_Vertical_Position_Description'),
                         type: { enumeration: referenceLineDataLabelVerticalPosition.type }
                     },
+                    dataLabelDisplayUnits: {
+                        displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                        description: data.createDisplayNameGetter('Visual_DisplayUnitsDescription'),
+                        type: { formatting: { labelDisplayUnits: true } },
+                        suppressFormatPainterCopy: true,
+                    },
                 },
             },
             labels: {

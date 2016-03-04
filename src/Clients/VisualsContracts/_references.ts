@@ -58,6 +58,12 @@
 /// <reference path="types/structuralType.d.ts"/>
 /// <reference path="types/valueType.d.ts"/>
 
-/// <reference path="iVisualHostServices.d.ts"/>
-/// <reference path="iVisualStyle.d.ts"/>
-/// <reference path="iVisual.d.ts"/>
+/// <reference path="visual/iVisualStyle.d.ts"/>
+/// <reference path="visual/iVisual.d.ts"/>
+/// <reference path="visual/VisualObjectInstance.d.ts"/>
+/// <reference path="visual/iVisualPlugin.d.ts"/>
+
+/// <reference path="extensibility/VisualCapabilities.d.ts"/>
+/// <reference path="extensibility/iVisualHost.d.ts"/>
+/// <reference path="extensibility/iVisualOptions.d.ts"/>
+/// <reference path="extensibility/iVisual.d.ts"/>

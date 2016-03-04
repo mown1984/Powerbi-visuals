@@ -97,7 +97,7 @@ module powerbi.visuals.controls {
             return (str && (
                 str.match(/\d*\.\d*/) && Number(str.match(/\d*\.\d*/)[0]) ||
                 str.match(/\d+/) && Number(str.match(/\d+/)[0]))
-                ) || 1;
+            ) || 1;
         }
     }
 }
@@ -156,6 +156,8 @@ module powerbi.visuals.controls.internal {
         export const DefaultColumnSeparatorStyle: string = "solid";
         export const DefaultRowSeparatorStyle: string = 'solid';
         export const TableShowTotals: boolean = true;
+
+        const SortIconContainerClassName: string = "bi-sort-icon-container";
 
         export function createTable(): HTMLTableElement {
             return <HTMLTableElement>document.createElement("table");
@@ -221,6 +223,14 @@ module powerbi.visuals.controls.internal {
                 });
         }
 
+        export function getCustomSortEventArgs(queryName: string, sortDirection: SortDirection): CustomSortEventArgs {
+            let sortDescriptors: SortableFieldDescriptor[] = [{
+                queryName: queryName,
+                sortDirection: sortDirection
+            }];
+            return { sortDescriptors: sortDescriptors };
+        }
+
         export function appendSortImageToColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
             if (item.sort) {
                 let itemSort = item.sort;
@@ -236,7 +246,7 @@ module powerbi.visuals.controls.internal {
             let imgSortContainer: HTMLDivElement = TablixUtils.createDiv();
             let imgSort: HTMLPhraseElement = <HTMLPhraseElement>document.createElement('i');
             imgSort.className = (sort === SortDirection.Ascending) ? "powervisuals-glyph caret-up" : "powervisuals-glyph caret-down";
-            imgSortContainer.className = TableBinder.sortIconContainerClassName + " " + (isSorted ? "sorted" : "future");
+            imgSortContainer.className = SortIconContainerClassName + " " + (isSorted ? "sorted" : "future");
             imgSortContainer.appendChild(imgSort);
             cell.extension.contentElement.insertBefore(imgSortContainer, cell.extension.contentHost);
         }
@@ -266,7 +276,7 @@ module powerbi.visuals.controls.internal {
 
             switch (options.objectName) {
                 case 'general':
-                    TablixUtils.enumerateGeneralOptions(enumeration, tablixFormattingProperties, isFormattingPropertiesEnabled, tablixType);
+                    TablixUtils.enumerateGeneralOptions(enumeration, tablixFormattingProperties, isFormattingPropertiesEnabled, tablixType, dataView);
                     break;
                 case 'columns':
                     if (isFormattingPropertiesEnabled)
@@ -291,65 +301,83 @@ module powerbi.visuals.controls.internal {
             }
         }
 
-        export function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void {
+        export function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, isFormattingPropertiesEnabled: boolean, tablixType: TablixType, dataView: DataView): void {
             if (this.isFormattingPropertiesEnabled) {
+                let visualObjectinstance: VisualObjectInstance;
                 switch (tablixType) {
                     case TablixType.Table:
-                        enumeration.pushInstance({
+                        visualObjectinstance = {
                             selector: null,
                             objectName: 'general',
                             properties: {
-                                totals: TablixUtils.shouldShowTableTotals(objects),
                                 autoSizeColumnWidth: TablixUtils.shouldAutoSizeColumnWidth(objects),
                                 textSize: TablixUtils.getTextSize(objects),
                                 outlineColor: TablixUtils.getTablixOutlineColor(objects),
                                 outlineWeight: TablixUtils.getTablixOutlineWeight(objects)
                             }
-                        });
+                        };
+
+                        if (shouldShowTableTotalsOption(dataView))
+                            visualObjectinstance.properties[TableTotalsProp.propertyName] = TablixUtils.shouldShowTableTotals(objects);
+
+                        enumeration.pushInstance(visualObjectinstance);
                         break;
                     case TablixType.Matrix:
-                        enumeration.pushInstance({
+                        visualObjectinstance = {
                             selector: null,
                             objectName: 'general',
                             properties: {
                                 autoSizeColumnWidth: TablixUtils.shouldAutoSizeColumnWidth(objects),
                                 textSize: TablixUtils.getTextSize(objects),
-                                rowSubtotals: TablixUtils.shouldShowRowSubtotals(objects),
-                                columnSubtotals: TablixUtils.shouldShowColumnSubtotals(objects),
                                 outlineColor: TablixUtils.getTablixOutlineColor(objects),
                                 outlineWeight: TablixUtils.getTablixOutlineWeight(objects)
                             }
-                        });
+                        };
+
+                        if (shouldShowRowSubtotalsOption(dataView))
+                            visualObjectinstance.properties[MatrixRowSubtotalsProp.propertyName] = TablixUtils.shouldShowRowSubtotals(objects);
+                        if (shouldShowColumnSubtotalsOption(dataView))
+                            visualObjectinstance.properties[MatrixColumnSubtotalsProp.propertyName] = TablixUtils.shouldShowColumnSubtotals(objects);
+                        enumeration.pushInstance(visualObjectinstance);
                         break;
                 }
             }
 
             else {
+                let visualObjectinstance: VisualObjectInstance;
                 switch (tablixType) {
                     case TablixType.Table:
-                        enumeration.pushInstance({
+                        visualObjectinstance = {
                             selector: null,
                             objectName: 'general',
                             properties: {
-                                totals: TablixUtils.shouldShowTableTotals(objects),
                                 autoSizeColumnWidth: TablixUtils.shouldAutoSizeColumnWidth(objects),
                                 textSize: TablixUtils.getTextSize(objects)
                             }
-                        });
+                        };
+
+                        if (shouldShowTableTotalsOption(dataView))
+                            visualObjectinstance.properties[TableTotalsProp.propertyName] = TablixUtils.shouldShowTableTotals(objects);
+
+                        enumeration.pushInstance(visualObjectinstance);
                         break;
 
                     case TablixType.Matrix:
-                    case TablixType.Table:
-                        enumeration.pushInstance({
+                        visualObjectinstance = {
                             selector: null,
                             objectName: 'general',
                             properties: {
                                 autoSizeColumnWidth: TablixUtils.shouldAutoSizeColumnWidth(objects),
                                 textSize: TablixUtils.getTextSize(objects),
-                                rowSubtotals: TablixUtils.shouldShowRowSubtotals(objects),
-                                columnSubtotals: TablixUtils.shouldShowColumnSubtotals(objects)
                             }
-                        });
+                        };
+
+                        if (shouldShowRowSubtotalsOption(dataView))
+                            visualObjectinstance.properties[MatrixRowSubtotalsProp.propertyName] = TablixUtils.shouldShowRowSubtotals(objects);
+                        if (shouldShowColumnSubtotalsOption(dataView))
+                            visualObjectinstance.properties[MatrixColumnSubtotalsProp.propertyName] = TablixUtils.shouldShowColumnSubtotals(objects);
+
+                        enumeration.pushInstance(visualObjectinstance);
                         break;
                 }
             }
@@ -524,6 +552,16 @@ module powerbi.visuals.controls.internal {
             return DataViewObjects.getValue<boolean>(objects, TablixUtils.TableTotalsProp, TablixUtils.TableShowTotals);
         }
 
+        function shouldShowTableTotalsOption(dataView: DataView): boolean {
+            if (dataView && dataView.table && !_.isEmpty(dataView.table.columns)) {
+                let columns = dataView.table.columns;
+                if (_.some(columns, (column) => column.discourageAggregationAcrossGroups))
+                    return false;
+            }
+
+            return true;
+        }
+
         export function shouldAutoSizeColumnWidth(objects: DataViewObjects): boolean {
             return DataViewObjects.getValue<boolean>(objects, TablixUtils.TablixColumnAutoSizeProp, controls.AutoSizeColumnWidthDefault);
         }
@@ -545,12 +583,34 @@ module powerbi.visuals.controls.internal {
             return true;
         }
 
+        function shouldShowRowSubtotalsOption(dataView: DataView): boolean {
+            return !(dataView &&
+                dataView.matrix &&
+                dataView.matrix.rows &&
+                isDiscourageAggregationAcrossGroups(dataView.matrix.rows.levels));
+        }
+
         export function shouldShowColumnSubtotals(objects: TablixFormattingPropertiesMatrix): boolean {
             if (objects && objects.general)
                 return objects.general.columnSubtotals !== false;
 
             // By default, totals are enabled
             return true;
+        }
+
+        function shouldShowColumnSubtotalsOption(dataView: DataView): boolean {
+            return !(dataView &&
+                dataView.matrix &&
+                dataView.matrix.columns &&
+                isDiscourageAggregationAcrossGroups(dataView.matrix.columns.levels));
+        }
+
+        function isDiscourageAggregationAcrossGroups(levels: DataViewHierarchyLevel[]): boolean {
+            let lastLevel = _.last(levels);
+            // If the last item is not Aggregatable, disable totals option since there will be no totals at all to display
+            // However, if the non-aggregatable filed is in the middle, there are totals showing up in matrix.
+            // Therefore, we still allow users to turn it off
+            return lastLevel && _.some(lastLevel.sources, source => source.discourageAggregationAcrossGroups);
         }
 
         export function getColumnSeparatorColor(objects: DataViewObjects): string {
@@ -634,7 +694,7 @@ module powerbi.visuals.controls.internal {
 
         function checkSortIconExists(cell: controls.ITablixCell): boolean {
             for (let element of cell.extension.contentElement.children) {
-                if (element.className.indexOf(TableBinder.sortIconContainerClassName) > -1)
+                if (element.className.indexOf(SortIconContainerClassName) > -1)
                     return true;
             }
             return false;
@@ -643,7 +703,7 @@ module powerbi.visuals.controls.internal {
         export function removeSortIcons(cell: controls.ITablixCell): void {
             if (!checkSortIconExists(cell))
                 return;
-            $((<HTMLElement>cell.extension.contentElement)).find('.' + TableBinder.sortIconContainerClassName).remove();
+            $((<HTMLElement>cell.extension.contentElement)).find('.' + SortIconContainerClassName).remove();
         }
     }
 }

@@ -141,7 +141,7 @@ module powerbi.visuals {
             default: {},
         },
         suppressDefaultTitle: true,
-        disableSeeData: true,
+        disableVisualDetails: true,
     };
 
     // TODO: Generate these from above, defining twice just introduces potential for error

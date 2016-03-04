@@ -516,6 +516,17 @@ module powerbitests {
                     expect(dataPoint.subDataPoints[0].fill).toEqual(fills[0]);
                 }
             });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                        {
+                            displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                        },
+                    ]);
+                }
+            });
         });
 
         describe("Simple category with measures", () => {
@@ -528,7 +539,7 @@ module powerbitests {
 
             beforeEach(() => {
                 dataBuilder = new MapDataBuilder();
-                dataView = dataBuilder.build(true, true);
+                dataView = dataBuilder.build(true, true, true);
                 let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
                 let palette = new powerbi.visuals.DataColorPalette();
                 colorHelper = new ColorHelper(palette, fillProp);
@@ -555,6 +566,29 @@ module powerbitests {
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     let dataPoint = data.dataPoints[categoryIndex];
                     expect(dataPoint.location.longitude).toBe(dataBuilder.getLongValue(categoryIndex));
+                }
+            });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                        {
+                            displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                        },
+                        {
+                            displayName: dataBuilder.latitudeColumn.displayName, value: dataBuilder.getLatValue(categoryIndex).toString(),
+                        },
+                        {
+                            displayName: dataBuilder.longitudeColumn.displayName, value: dataBuilder.getLongValue(categoryIndex).toString(),
+                        },
+                        {
+                            displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex), ',0.00'),
+                        },
+                        {
+                            displayName: dataBuilder.gradientColumn.displayName, value: dataBuilder.getGradientValue(categoryIndex).toString(),
+                        },
+                    ]);
                 }
             });
         });
@@ -608,6 +642,44 @@ module powerbitests {
                     }
                 }
             });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    if (categoryIndex === 1) {
+                        expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                            {
+                                displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                            },
+                            {
+                                displayName: dataBuilder.latitudeColumn.displayName, value: '(Blank)',
+                            },
+                            {
+                                displayName: dataBuilder.longitudeColumn.displayName, value: '(Blank)',
+                            },
+                            {
+                                displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex), ',0.00'),
+                            },
+                        ]);
+                    }
+                    else {
+                        expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                            {
+                                displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                            },
+                            {
+                                displayName: dataBuilder.latitudeColumn.displayName, value: dataBuilder.getLatValue(categoryIndex).toString(),
+                            },
+                            {
+                                displayName: dataBuilder.longitudeColumn.displayName, value: dataBuilder.getLongValue(categoryIndex).toString(),
+                            },
+                            {
+                                displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex), ',0.00'),
+                            },
+                        ]);
+                    }
+                }
+            });
         });
 
         describe("Category and series", () => {
@@ -657,6 +729,31 @@ module powerbitests {
                     let dataPoint = data.dataPoints[categoryIndex];
                     for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                         expect(dataPoint.subDataPoints[seriesIndex].fill).toBe(fills[seriesIndex]);
+                    }
+                }
+            });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
+                        let dataPoint = data.dataPoints[categoryIndex];
+                        expect(dataPoint.subDataPoints[seriesIndex].tooltipInfo).toEqual([
+                            {
+                                displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                            },
+                            {
+                                displayName: dataBuilder.seriesColumn.displayName, value: dataBuilder.seriesValues[seriesIndex],
+                            },
+                            {
+                                displayName: dataBuilder.latitudeColumn.displayName, value: dataBuilder.getLatValue(categoryIndex, seriesIndex).toString(),
+                            },
+                            {
+                                displayName: dataBuilder.longitudeColumn.displayName, value: dataBuilder.getLongValue(categoryIndex, seriesIndex).toString(),
+                            },
+                            {
+                                displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex, seriesIndex), ',0.00'),
+                            },
+                        ]);
                     }
                 }
             });
@@ -736,48 +833,29 @@ module powerbitests {
                     expect(dataPoint.location.longitude).toBe(dataBuilder.getLongValue(categoryIndex, categoryIndex));
                 }
             });
-        });
 
-        describe('tooltipInfo', () => {
-            let v: Map;
-            let visualBuilder: MapVisualBuilder;
-            var viewport = {
-                height: 800,
-                width: 500,
-            };
-            beforeEach(() => {
-                visualBuilder = new MapVisualBuilder();
-                v = visualBuilder.build(false);
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                        {
+                            displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                        },
+                        {
+                            displayName: dataBuilder.seriesSameAsCategoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                        },
+                        {
+                            displayName: dataBuilder.latitudeColumn.displayName, value: dataBuilder.getLatValue(categoryIndex, categoryIndex).toString(),
+                        },
+                        {
+                            displayName: dataBuilder.longitudeColumn.displayName, value: dataBuilder.getLongValue(categoryIndex, categoryIndex).toString(),
+                        },
+                        {
+                            displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex, categoryIndex), ',0.00'),
+                        },
+                    ]);
+                }
             });
-            //Test Defect 6170871 - Map tooltip doesn't show Color Saturation value
-            it('Map.calculateSeriesInfo - Gradient tooltip', () => {
-                let dataView = new MapDataBuilder().build(true, false, true);
-                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
-                let options = visualBuilder.buildInitOptions();
-                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
-                v.onDataChanged({ dataViews: [dataView] });
-                let map = <any>v;
-                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService);
-
-                expect(actualData.bubbleData[0].tooltipInfo).toEqual([{ displayName: 'state', value: 'Montana' }, { displayName: 'size', value: '100.00' }, { displayName: 'gradient', value: '75' }]);
-                expect(actualData.bubbleData[1].tooltipInfo).toEqual([{ displayName: 'state', value: 'California' }, { displayName: 'size', value: '200.00' }, { displayName: 'gradient', value: '50' }]);
-                expect(actualData.bubbleData[2].tooltipInfo).toEqual([{ displayName: 'state', value: 'Arizona' }, { displayName: 'size', value: '300.00' }, { displayName: 'gradient', value: '0' }]);
-            });
-
-            it('validate tooltip info not being created when tooltips are disabled', () => {
-                let dataView = new MapDataBuilder().build(true, false, true);
-                let labelSettings = dataLabelUtils.getDefaultMapLabelSettings();
-                let options = visualBuilder.buildInitOptions();
-                let interactivityService = powerbi.visuals.createInteractivityService(options.host);
-                v.onDataChanged({ dataViews: [dataView] });
-                let map = <any>v;
-                let actualData = map.dataPointRenderer.converter(viewport, dataView, labelSettings, interactivityService, false);
-
-                expect(actualData.bubbleData[0].tooltipInfo).toBeUndefined();
-                expect(actualData.bubbleData[1].tooltipInfo).toBeUndefined();
-                expect(actualData.bubbleData[2].tooltipInfo).toBeUndefined();
-            });
-
         });
     });
 
@@ -1112,6 +1190,7 @@ module powerbitests {
         public addressColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'address' });
 
         public seriesColumn: powerbi.DataViewMetadataColumn = { displayName: 'region', queryName: 'region', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
+        public seriesSameAsCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public seriesColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'region' });;
 
         public sizeColumn: powerbi.DataViewMetadataColumn = { displayName: 'size', queryName: 'size', isMeasure: true, format: '#,0.00', roles: { Size: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
@@ -1146,14 +1225,14 @@ module powerbitests {
                 values: [46.87, 37.81, 34.68],
                 subtotal: 119.36
             }, {
-                values: [460.87, 370.81, 340.68],
-                subtotal: 1172.36
+                values: [46.87, 37.81, 34.68],
+                subtotal: 119.36
             }, {
-                values: [4.87, 3.81, 3.68],
-                subtotal: 12.36
+                values: [46.87, 37.81, 34.68],
+                subtotal: 119.36
             }, {
-                values: [40.87, 30.81, 30.68],
-                subtotal: 101.36
+                values: [46.87, 37.81, 34.68],
+                subtotal: 119.36
             }
         ];
         private latitudeValues: SeriesValues[] = [
@@ -1161,14 +1240,14 @@ module powerbitests {
                 values: [-114, -122.46, -111.76],
                 subtotal: -348.22
             }, {
-                values: [-1140, -1220.46, -1110.76],
-                subtotal: -3471.22
+                values: [-114, -122.46, -111.76],
+                subtotal: -348.22
             }, {
-                values: [-11, -12.46, -11.76],
-                subtotal: -35.22
+                values: [-114, -122.46, -111.76],
+                subtotal: -348.22
             }, {
-                values: [-1, -1.46, -1.76],
-                subtotal: -4.22
+                values: [-114, -122.46, -111.76],
+                subtotal: -348.22
             }
         ];
         private gradientValues: SeriesValues[] = [
@@ -1416,7 +1495,7 @@ module powerbitests {
         }
 
         public withCategoriesAsSeries(): MapDataBuilder {
-            this.seriesColumn = this.categoryColumn;
+            this.seriesColumn = this.seriesSameAsCategoryColumn;
             this.seriesValues = this.categoryValues;
             this.seriesColumnExpr = this.categoryColumnExpr;
 

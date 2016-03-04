@@ -160,7 +160,7 @@ module powerbi.visuals.controls {
         private _width: string;
         private _height: string;
         private _visible: boolean;
-
+        
         private _element: HTMLDivElement;
         private _minButton: ScrollbarButton;
         private _maxButton: ScrollbarButton;
@@ -184,8 +184,8 @@ module powerbi.visuals.controls {
         private _touchStarted: boolean;
         private _allowMouseDrag: boolean;
 
-        constructor(parentElement: HTMLElement) {
-            this.createView(parentElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind) {
+            this.createView(parentElement, layoutKind);
             let that = this;
             this._element.addEventListener("mousedown", function (e) { that.onBackgroundMouseDown(<MouseEvent>e); });
             this._middleBar.addEventListener("mousedown", function (e) { that.onMiddleBarMouseDown(<MouseEvent>e); });
@@ -385,11 +385,13 @@ module powerbi.visuals.controls {
             element.addEventListener("DOMMouseScroll",(e) => { this.onFireFoxMouseWheel(<MouseWheelEvent>e); });
         }
 
-        private createView(parentElement: HTMLElement): void {
+        private createView(parentElement: HTMLElement, layoutKind: TablixLayoutKind): void {
             this._element = <HTMLDivElement>document.createElement("div");
             this._element.className = Scrollbar.className;
             this._element.setAttribute("drag-resize-disabled", "true");
-            parentElement.appendChild(this._element);
+
+            if (layoutKind === TablixLayoutKind.Canvas)
+                parentElement.appendChild(this._element);
 
             this._minButton = new ScrollbarButton(this, -1);
             this._maxButton = new ScrollbarButton(this, 1);
@@ -637,8 +639,8 @@ module powerbi.visuals.controls {
 
     /** Horizontal Scrollbar */
     export class HorizontalScrollbar extends Scrollbar {
-        constructor(parentElement: HTMLElement) {
-            super(parentElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind) {
+            super(parentElement, layoutKind);
             this.height = Scrollbar.DefaultScrollbarWidth;
         }
 
@@ -740,8 +742,8 @@ module powerbi.visuals.controls {
 
     /** Vertical Scrollbar */
     export class VerticalScrollbar extends Scrollbar {
-        constructor(parentElement: HTMLElement) {
-            super(parentElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind) {
+            super(parentElement, layoutKind);
             this.width = Scrollbar.DefaultScrollbarWidth;
         }
 

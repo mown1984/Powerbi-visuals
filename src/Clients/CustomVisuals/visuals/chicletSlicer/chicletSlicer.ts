@@ -560,9 +560,6 @@ module powerbi.visuals.samples {
             sorting: {
                 default: {},
             },
-            drilldown: {
-                roles: ['Category']
-            },
             suppressDefaultTitle: true,
         };
         private element: JQuery;

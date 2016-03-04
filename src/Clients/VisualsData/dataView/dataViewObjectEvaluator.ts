@@ -257,6 +257,10 @@ module powerbi.data {
                 return expr.accept(ExpressionEvaluator.instance, evalContext);
             }
 
+            public visitColumnRef(expr: SQColumnRefExpr, evalContext: IEvalContext): PrimitiveValue {
+                return evalContext.getExprValue(expr);
+            }
+
             public visitConstant(expr: SQConstantExpr, evalContext: IEvalContext): PrimitiveValue {
                 return expr.value;
             }

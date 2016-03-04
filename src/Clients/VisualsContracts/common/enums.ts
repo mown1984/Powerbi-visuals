@@ -36,11 +36,29 @@ module powerbi {
 
     export enum VisualDataChangeOperationKind {
         Create = 0,
-        Append = 1
+        Append = 1,
+    }
+    
+    export enum VisualUpdateType {
+        Data = 0,
+        Resize = 1 << 1,
+        ViewMode = 1 << 2,
+        //This is to replace onStyleChange (we can discuss if we want to support this)
+        //Style = 1 << 3,
+    }
+    
+    export enum VisualPermissions {
+        
     }
 
     export const enum CartesianRoleKind {
         X,
         Y,
     }
+    
+    export const enum ViewMode {
+        View = 0,
+        Edit = 1,
+    }
+    
 }

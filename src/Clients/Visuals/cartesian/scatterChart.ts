@@ -904,7 +904,7 @@ module powerbi.visuals {
             };
 
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
-            if (this.playAxis && duration > 0) {
+            if (this.playAxis && (this.isMobileChart || duration > 0)) {
                 duration = PlayChart.FrameAnimationDuration;
             }
 

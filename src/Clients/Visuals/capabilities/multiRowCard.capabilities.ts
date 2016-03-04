@@ -105,5 +105,6 @@ module powerbi.visuals {
         }],
         suppressDefaultTitle: true,
         supportsSelection: false,
+        disableVisualDetails: true,
     };
 }

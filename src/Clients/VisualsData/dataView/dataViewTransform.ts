@@ -53,8 +53,8 @@ module powerbi.data {
         /** Describes the splitting of a single input DataView into multiple DataViews. */
         splits?: DataViewSplitTransform[];
 
-        /** Describes the order of selects (referenced by query index) in each role. */
-        projectionOrdering?: DataViewProjectionOrdering;
+        /** Describes the projection metadata which includes projection ordering and active items. */
+        roles?: DataViewRoleTransformMetadata;
     }
 
     export interface DataViewSplitTransform {
@@ -63,6 +63,18 @@ module powerbi.data {
 
     export interface DataViewProjectionOrdering {
         [roleName: string]: number[];
+    }
+
+    export interface DataViewProjectionActiveItems {
+        [roleName: string]: string[];
+    }
+
+    export interface DataViewRoleTransformMetadata {
+        /** Describes the order of selects (referenced by query index) in each role. */
+        ordering?: DataViewProjectionOrdering;
+
+        /** Describes the active items in each role. */
+        activeItems?: DataViewProjectionActiveItems;
     }
 
     export interface MatrixTransformationContext {
@@ -190,11 +202,13 @@ module powerbi.data {
             let transformed = inherit(prototype);
             transformed.metadata = inherit(prototype.metadata);
 
-            transformed = transformSelects(transformed, roleMappings, transforms.selects, transforms.projectionOrdering, selectsToInclude);
+            let projectionOrdering = transforms.roles && transforms.roles.ordering;
+            let projectionActiveItems = transforms.roles && transforms.roles.activeItems;
+            transformed = transformSelects(transformed, roleMappings, transforms.selects, projectionOrdering, selectsToInclude);
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
 
             // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
-            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings, transforms.projectionOrdering);
+            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings, projectionOrdering, transforms.selects, projectionActiveItems);
 
             DataViewNormalizeValues.apply({
                 dataview: transformed,
@@ -302,6 +316,8 @@ module powerbi.data {
                     column.kpi = select.kpi;
                 if (select.sort)
                     column.sort = select.sort;
+                if (select.discourageAggregationAcrossGroups)
+                    column.discourageAggregationAcrossGroups = select.discourageAggregationAcrossGroups;
 
                 rewrites.push({
                     from: prototypeColumn,
@@ -680,7 +696,7 @@ module powerbi.data {
 
             for (let i = 0, len = dataObjects.length; i < len; i++) {
                 let dataObject = dataObjects[i];
-                evaluateDataRepetition(dataView, targetDataViewKinds, objectDescriptors, dataObject.selector, dataObject.rules, dataObject.objects);
+                evaluateDataRepetition(dataView, targetDataViewKinds, selectTransforms, objectDescriptors, dataObject.selector, dataObject.rules, dataObject.objects);
             }
 
             let userDefined = objectsForAllSelectors.userDefined;
@@ -903,12 +919,14 @@ module powerbi.data {
         function evaluateDataRepetition(
             dataView: DataView,
             targetDataViewKinds: StandardDataViewKinds,
+            selectTransforms: DataViewSelectTransform[],
             objectDescriptors: DataViewObjectDescriptors,
             selector: Selector,
             rules: RuleEvaluation[],
             objectDefns: DataViewNamedObjectDefinition[]): void {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(targetDataViewKinds, 'targetDataViewKinds');
+            debug.assertValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
@@ -930,8 +948,23 @@ module powerbi.data {
             let dataViewMatrix = dataView.matrix;
             if (dataViewMatrix && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Matrix)) {
                 let rewrittenMatrix = evaluateDataRepetitionMatrix(dataViewMatrix, objectDescriptors, selector, rules, containsWildcard, objectDefns);
-                if (rewrittenMatrix)
+                if (rewrittenMatrix) {
+                    // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
+                    // revisit this, likely when we do lazy evaluation of DataView.
                     dataView.matrix = rewrittenMatrix;
+                }
+
+                // Consider capturing diagnostics for unmatched selectors to help debugging.
+            }
+
+            let dataViewTable = dataView.table;
+            if (dataViewTable && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Table)) {
+                let rewrittenTable = evaluateDataRepetitionTable(dataViewTable, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns);
+                if (rewrittenTable) {
+                    // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
+                    // revisit this, likely when we do lazy evaluation of DataView.
+                    dataView.table = rewrittenTable;
+                }
 
                 // Consider capturing diagnostics for unmatched selectors to help debugging.
             }
@@ -960,7 +993,7 @@ module powerbi.data {
 
             let identities = targetColumn.identities,
                 foundMatch: boolean,
-                evalContext = createCategoricalEvalContext(dataViewCategorical, identities);
+                evalContext = createCategoricalEvalContext(dataViewCategorical);
 
             if (!identities)
                 return;
@@ -1196,6 +1229,105 @@ module powerbi.data {
             let inherited = inheritSingle(node);
             inherited.children = inherit(node.children);
             return inherited;
+        }
+
+        function evaluateDataRepetitionTable(
+            dataViewTable: DataViewTable,
+            selectTransforms: DataViewSelectTransform[],
+            objectDescriptors: DataViewObjectDescriptors,
+            selector: Selector,
+            rules: RuleEvaluation[],
+            containsWildcard: boolean,
+            objectDefns: DataViewNamedObjectDefinition[]): DataViewTable {
+            debug.assertValue(dataViewTable, 'dataViewTable');
+            debug.assertValue(selectTransforms, 'selectTransforms');
+            debug.assertValue(objectDescriptors, 'objectDescriptors');
+            debug.assertValue(selector, 'selector');
+            debug.assertAnyValue(rules, 'rules');
+            debug.assertValue(objectDefns, 'objectDefns');
+
+            let evalContext = createTableEvalContext(dataViewTable, selectTransforms);
+            let rewrittenRows = evaluateDataRepetitionTableRows(
+                evalContext,
+                dataViewTable.columns,
+                dataViewTable.rows,
+                dataViewTable.identity,
+                dataViewTable.identityFields,
+                objectDescriptors,
+                selector,
+                rules,
+                containsWildcard,
+                objectDefns);
+
+            if (rewrittenRows) {
+                let rewrittenTable = inheritSingle(dataViewTable);
+                rewrittenTable.rows = rewrittenRows;
+
+                return rewrittenTable;
+            }
+        }
+
+        function evaluateDataRepetitionTableRows(
+            evalContext: ITableEvalContext,
+            columns: DataViewMetadataColumn[],
+            rows: DataViewTableRow[],
+            identities: DataViewScopeIdentity[],
+            identityFields: ISQExpr[],
+            objectDescriptors: DataViewObjectDescriptors,
+            selector: Selector,
+            rules: RuleEvaluation[],
+            containsWildcard: boolean,
+            objectDefns: DataViewNamedObjectDefinition[]): DataViewTableRow[] {
+            debug.assertValue(evalContext, 'evalContext');
+            debug.assertValue(columns, 'columns');
+            debug.assertValue(rows, 'rows');
+            debug.assertAnyValue(identities, 'identities');
+            debug.assertAnyValue(identityFields, 'identityFields');
+            debug.assertValue(objectDescriptors, 'objectDescriptors');
+            debug.assertValue(selector, 'selector');
+            debug.assertAnyValue(rules, 'rules');
+            debug.assertValue(objectDefns, 'objectDefns');
+
+            if (_.isEmpty(identities) || _.isEmpty(identityFields))
+                return;
+
+            if (!selector.metadata &&
+                !Selector.matchesKeys(selector, <SQExpr[][]>[identityFields]))
+                return;
+
+            let colIdx = _.findIndex(columns, col => col.queryName === selector.metadata);
+            if (colIdx < 0)
+                return;
+
+            debug.assert(rows.length === identities.length, 'row length mismatch');
+            let colLen = columns.length;
+            let inheritedRows: DataViewTableRow[];
+
+            for (let rowIdx = 0, rowLen = identities.length; rowIdx < rowLen; rowIdx++) {
+                let identity = identities[rowIdx];
+
+                if (containsWildcard || Selector.matchesData(selector, [identity])) {
+                    evalContext.setCurrentRowIndex(rowIdx);
+
+                    let objects = DataViewObjectEvaluationUtils.evaluateDataViewObjects(evalContext, objectDescriptors, objectDefns);
+                    if (objects) {
+                        if (!inheritedRows)
+                            inheritedRows = inheritSingle(rows);
+
+                        let inheritedRow = inheritedRows[rowIdx] = inheritSingle(inheritedRows[rowIdx]);
+                        let objectsForColumns = inheritedRow.objects;
+                        if (!objectsForColumns)
+                            inheritedRow.objects = objectsForColumns = new Array(colLen);
+
+                        objectsForColumns[colIdx] = objects;
+                    }
+
+                    if (!containsWildcard)
+                        break;
+                }
+            }
+
+            return inheritedRows;
         }
 
         function evaluateMetadataRepetition(
