@@ -228,3 +228,5 @@ function buildVisualsTests() {
         copyExternalDependencies
     ]);
 }
+
+module.exports.copyExternalDependencies = copyExternalDependencies;

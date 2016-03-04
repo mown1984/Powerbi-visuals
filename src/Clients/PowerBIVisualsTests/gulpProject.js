@@ -34,6 +34,7 @@ var projects = require("../../../gulp/projects.js"),
     ts = require("gulp-typescript");
 
 var config = require("../../../gulp/config.js");
+var visualsTest = require("../../../gulp/visualsTest.js");
 
 module.exports = projects.initProject(
     "powerBIVisualsTests", // proj name
@@ -51,10 +52,14 @@ module.exports = projects.initProject(
                 dest: [config.paths.VisualsDropTests]
             }
         ],
-        afterBuild:function() {
+        afterBuild: function() {
             var taskName = "powerBIVisualsTests:compile";
-
-            gulp.task(taskName, buildTests);
+            
+            gulp.task("powerBIVisualsTests:copyExternals", function(){
+                return visualsTest.copyExternalDependencies();
+            });
+            
+            gulp.task(taskName, ["powerBIVisualsTests:copyExternals"], buildTests);
 
             return taskName;
         },

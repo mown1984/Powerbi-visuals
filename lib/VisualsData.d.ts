@@ -415,6 +415,7 @@ declare module powerbi.data {
         calculated?: boolean;
         defaultValue?: SQConstantExpr;
         variations?: ArrayNamedItems<ConceptualVariationSource>;
+        aggregateBehavior?: ConceptualAggregateBehavior;
     }
     interface ConceptualMeasure {
         kpi?: ConceptualPropertyKpi;
@@ -475,6 +476,10 @@ declare module powerbi.data {
         Product = 15,
         StateOrProvince = 16,
         WebUrl = 17,
+    }
+    const enum ConceptualAggregateBehavior {
+        Default = 0,
+        DiscourageAcrossGroups = 1,
     }
 }
 declare module powerbi.data {
@@ -594,6 +599,7 @@ declare module powerbi.data {
         Where?: QueryFilter[];
         OrderBy?: QuerySortClause[];
         Select: QueryExpressionContainer[];
+        GroupBy?: QueryExpressionContainer[];
     }
     interface FilterDefinition {
         Version?: number;
@@ -915,6 +921,8 @@ declare module powerbi.data {
         getCategoryValues(roleName: string): any;
         getCategoryValue(categoryIndex: number, roleName: string): any;
         getCategoryColumn(roleName: string): DataViewCategoryColumn;
+        getCategoryMetadataColumn(roleName: string): DataViewMetadataColumn;
+        getCategoryDisplayName(roleName: string): string;
         hasCompositeCategories(): boolean;
         hasCategoryWithRole(roleName: string): boolean;
         getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects;
@@ -929,12 +937,14 @@ declare module powerbi.data {
         getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any;
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
+        getValueMetadataColumn(roleName: string, seriesIndex?: number): DataViewMetadataColumn;
+        getValueDisplayName(roleName: string, seriesIndex?: number): string;
         hasDynamicSeries(): boolean;
         getSeriesCount(): number;
         getSeriesObjects(seriesIndex: number): DataViewObjects;
         getSeriesColumn(seriesIndex: number): DataViewValueColumn;
         getSeriesColumns(): DataViewValueColumns;
-        getSeriesSource(): DataViewMetadataColumn;
+        getSeriesMetadataColumn(): DataViewMetadataColumn;
         getSeriesColumnIdentifier(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
@@ -1086,14 +1096,23 @@ declare module powerbi.data {
         objects?: DataViewObjectDefinitions;
         /** Describes the splitting of a single input DataView into multiple DataViews. */
         splits?: DataViewSplitTransform[];
-        /** Describes the order of selects (referenced by query index) in each role. */
-        projectionOrdering?: DataViewProjectionOrdering;
+        /** Describes the projection metadata which includes projection ordering and active items. */
+        roles?: DataViewRoleTransformMetadata;
     }
     interface DataViewSplitTransform {
         selects: INumberDictionary<boolean>;
     }
     interface DataViewProjectionOrdering {
         [roleName: string]: number[];
+    }
+    interface DataViewProjectionActiveItems {
+        [roleName: string]: string[];
+    }
+    interface DataViewRoleTransformMetadata {
+        /** Describes the order of selects (referenced by query index) in each role. */
+        ordering?: DataViewProjectionOrdering;
+        /** Describes the active items in each role. */
+        activeItems?: DataViewProjectionActiveItems;
     }
     interface MatrixTransformationContext {
         rowHierarchyRewritten: boolean;
@@ -1161,12 +1180,13 @@ declare module powerbi.data {
         kpi?: DataViewKpiColumnMetadata;
         sort?: SortDirection;
         expr?: SQExpr;
+        discourageAggregationAcrossGroups?: boolean;
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
     }
     module DataViewSelectTransform {
         /** Convert selection info to projections */
-        function projectionsFromSelects(selects: DataViewSelectTransform[]): QueryProjectionsByRole;
+        function projectionsFromSelects(selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): QueryProjectionsByRole;
         /** Use selections and metadata to fashion query role kinds */
         function createRoleKindFromMetadata(selects: DataViewSelectTransform[], metadata: DataViewMetadata): RoleKindByQueryRef;
     }
@@ -1487,14 +1507,13 @@ declare module powerbi.data {
     interface IEvalContext {
         getExprValue(expr: SQExpr): PrimitiveValue;
         getRoleValue(roleName: string): PrimitiveValue;
-        getCurrentIdentity(): DataViewScopeIdentity;
     }
 }
 declare module powerbi.data {
     interface ICategoricalEvalContext extends IEvalContext {
         setCurrentRowIndex(index: number): void;
     }
-    function createCategoricalEvalContext(dataViewCategorical: DataViewCategorical, identities?: DataViewScopeIdentity[]): ICategoricalEvalContext;
+    function createCategoricalEvalContext(dataViewCategorical: DataViewCategorical): ICategoricalEvalContext;
 }
 declare module powerbi.data {
     class RuleEvaluation {
@@ -1672,6 +1691,11 @@ declare module powerbi.data {
         validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
         kind: SQExprKind;
+        static isColumn(expr: SQExpr): expr is SQColumnRefExpr;
+        static isConstant(expr: SQExpr): expr is SQConstantExpr;
+        static isEntity(expr: SQExpr): expr is SQEntityExpr;
+        static isHierarchy(expr: SQExpr): expr is SQHierarchyExpr;
+        static isHierarchyLevel(expr: SQExpr): expr is SQHierarchyLevelExpr;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
         /** Return the SQExpr[] of group on columns if it has group on keys otherwise return the SQExpr of the column.*/
@@ -1958,6 +1982,7 @@ declare module powerbi.data {
         /** Gets a value indicating whether the expr is a DefaultValue or equals comparison to DefaultValue*/
         function isDefaultValue(expr: SQExpr): boolean;
         function discourageAggregation(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
+        function getAggregateBehavior(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualAggregateBehavior;
         function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities;
         function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata;
         function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr;
@@ -1973,6 +1998,8 @@ declare module powerbi.data {
         constructor(exprRewriter: ISQExprVisitor<SQExpr>);
         rewriteFrom(fromValue: SQFrom): SQFrom;
         rewriteSelect(selectItems: NamedSQExpr[], from: SQFrom): NamedSQExpr[];
+        rewriteGroupBy(groupByitems: NamedSQExpr[], from: SQFrom): NamedSQExpr[];
+        private rewriteNamedSQExpressions(expressions, from);
         rewriteOrderBy(orderByItems: SQSortDefinition[], from: SQFrom): SQSortDefinition[];
         rewriteWhere(whereItems: SQFilter[], from: SQFrom): SQFilter[];
     }
@@ -2016,16 +2043,19 @@ declare module powerbi.data {
         private whereItems;
         private orderByItems;
         private selectItems;
-        constructor(from: any, where: any, orderBy: any, select: NamedSQExpr[]);
+        private groupByItems;
+        constructor(from: SQFrom, where: SQFilter[], orderBy: SQSortDefinition[], select: NamedSQExpr[], groupBy: NamedSQExpr[]);
         static create(): SemanticQuery;
-        private static createWithTrimmedFrom(from, where, orderBy, select);
+        private static createWithTrimmedFrom(from, where, orderBy, select, groupBy);
         from(): SQFrom;
         /** Returns a query equivalent to this, with the specified selected items. */
         select(values: NamedSQExpr[]): SemanticQuery;
         /** Gets the items being selected in this query. */
         select(): ArrayNamedItems<NamedSQExpr>;
         private getSelect();
+        private static createNamedExpressionArray(items);
         private setSelect(values);
+        private static rewriteExpressionsWithSourceRenames(values, from);
         /** Removes the given expression from the select. */
         removeSelect(expr: SQExpr): SemanticQuery;
         /** Removes the given expression from order by. */
@@ -2034,6 +2064,12 @@ declare module powerbi.data {
         setSelectAt(index: number, expr: SQExpr): SemanticQuery;
         /** Adds a the expression to the select clause. */
         addSelect(expr: SQExpr): SemanticQuery;
+        /** Returns a query equivalent to this, with the specified groupBy items. */
+        groupBy(values: NamedSQExpr[]): SemanticQuery;
+        /** Gets the groupby items in this query. */
+        groupBy(): ArrayNamedItems<NamedSQExpr>;
+        private getGroupBy();
+        private setGroupBy(values);
         /** Gets or sets the sorting for this query. */
         orderBy(values: SQSortDefinition[]): SemanticQuery;
         orderBy(): SQSortDefinition[];
@@ -2133,8 +2169,10 @@ declare module powerbi.data {
     function createCategoricalDataViewBuilder(): IDataViewBuilderCategorical;
 }
 declare module powerbi.data {
+    import SQExpr = powerbi.data.SQExpr;
     function createStaticEvalContext(): IEvalContext;
     function createStaticEvalContext(dataView: DataView, selectTransforms: DataViewSelectTransform[]): IEvalContext;
+    function getExprValueFromTable(expr: SQExpr, selectTransforms: DataViewSelectTransform[], table: DataViewTable, rowIdx: number): PrimitiveValue;
 }
 declare module powerbi.data {
     function createMatrixEvalContext(dataViewMatrix: DataViewMatrix): IEvalContext;
@@ -2217,6 +2255,33 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module DataViewConcatenateCategoricalColumns {
-        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering): DataView;
+        function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering, selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): DataView;
     }
+}
+declare module powerbi {
+    const enum RoleItemContext {
+        CategoricalValue = 0,
+        CategoricalValueGroup = 1,
+    }
+    interface IDataViewMappingVisitor {
+        visitRole(role: string, context?: RoleItemContext): void;
+        visitReduction?(reductionAlgorithm?: ReductionAlgorithm): void;
+    }
+    module DataViewMapping {
+        function visitMapping(mapping: DataViewMapping, visitor: IDataViewMappingVisitor): void;
+        function visitCategorical(mapping: DataViewCategoricalMapping, visitor: IDataViewMappingVisitor): void;
+        function visitCategoricalCategories(mapping: DataViewRoleMappingWithReduction | DataViewListRoleMappingWithReduction, visitor: IDataViewMappingVisitor): void;
+        function visitCategoricalValues(mapping: DataViewRoleMapping | DataViewGroupedRoleMapping | DataViewListRoleMapping, visitor: IDataViewMappingVisitor): void;
+        function visitTable(mapping: DataViewTableMapping, visitor: IDataViewMappingVisitor): void;
+        function visitMatrixItems(mapping: DataViewRoleForMappingWithReduction | DataViewListRoleMappingWithReduction, visitor: IDataViewMappingVisitor): void;
+        function visitTreeNodes(mapping: DataViewRoleForMappingWithReduction, visitor: IDataViewMappingVisitor): void;
+        function visitTreeValues(mapping: DataViewRoleForMapping, visitor: IDataViewMappingVisitor): void;
+        function visitGrouped(mapping: DataViewGroupedRoleMapping, visitor: IDataViewMappingVisitor): void;
+    }
+}
+declare module powerbi.data {
+    interface ITableEvalContext extends IEvalContext {
+        setCurrentRowIndex(index: number): void;
+    }
+    function createTableEvalContext(dataViewTable: DataViewTable, selectTransforms: DataViewSelectTransform[]): ITableEvalContext;
 }

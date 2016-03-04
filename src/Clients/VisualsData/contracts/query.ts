@@ -34,6 +34,7 @@ module powerbi.data {
         Where?: QueryFilter[];
         OrderBy?: QuerySortClause[];
         Select: QueryExpressionContainer[];
+        GroupBy?: QueryExpressionContainer[];
     }
 
     export interface FilterDefinition {

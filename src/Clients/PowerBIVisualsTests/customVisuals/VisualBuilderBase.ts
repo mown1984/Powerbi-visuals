@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     export class VisualBuilderBase<T extends powerbi.IVisual> {
         public element: JQuery;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import Controls = powerbi.visuals.controls;
     import InternalControls = powerbi.visuals.controls.internal;
@@ -212,10 +210,12 @@ module powerbitests {
 
     describe("Scrollbar", () => {
 
-        let scrollbar;
+        let scrollbar: Controls.Scrollbar;
+        let parentDiv: HTMLDivElement;
 
         beforeEach(() => {
-            scrollbar = new Controls.Scrollbar(document.createElement("div"));
+            parentDiv = document.createElement("div");
+            scrollbar = new Controls.Scrollbar(parentDiv, Controls.TablixLayoutKind.Canvas);
         });
 
         it("Uses mouse wheel range", () => {
@@ -235,6 +235,21 @@ module powerbitests {
             scrollbar.onMouseWheel(helpers.createMouseWheelEvent("mousewheel", -240));
 
             expect(callbackCalled).toBeFalsy();
+        });
+
+        it("Scrollbar is attached for Canvas", (done) => {
+            expect(parentDiv.children.length).toBe(1);
+            done();
+        });
+
+        it("Scrollbar is not attached for Dashboard", (done) => {
+            while (parentDiv.firstChild) {
+                parentDiv.removeChild(parentDiv.firstChild);
+            }
+
+            scrollbar = new Controls.Scrollbar(parentDiv, Controls.TablixLayoutKind.DashboardTile);
+            expect(parentDiv.children.length).toBe(0);
+            done();
         });
     });
 
@@ -288,7 +303,8 @@ module powerbitests {
 
     function createMockNavigator(): Controls.ITablixHierarchyNavigator {
         return {
-            getDepth: (hierarchy: any): number=> 1,
+            getColumnHierarchyDepth: (): number=> 1,
+            getRowHierarchyDepth: (): number=> 1,
             getLeafCount: (hierarchy: any): number=> 1,
             getLeafAt: (hierarchy: any, index: number): any=> 1,
             getParent: (item: any): any=> { },

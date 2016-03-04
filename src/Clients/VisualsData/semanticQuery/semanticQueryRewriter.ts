@@ -57,16 +57,28 @@ module powerbi.data {
             debug.assertValue(selectItems, 'selectItems');
             debug.assertValue(from, 'from');
 
-            let select: NamedSQExpr[] = [];
-            for (let i = 0, len = selectItems.length; i < len; i++) {
-                let item = selectItems[i];
-                select.push({
+            return this.rewriteNamedSQExpressions(selectItems, from);
+        }
+
+        public rewriteGroupBy(groupByitems: NamedSQExpr[], from: SQFrom): NamedSQExpr[] {
+            debug.assertAnyValue(groupByitems, 'groupByitems');
+            debug.assertValue(from, 'from');
+
+            if (_.isEmpty(groupByitems))
+                return;
+
+            return this.rewriteNamedSQExpressions(groupByitems, from);
+        }
+
+        private rewriteNamedSQExpressions(expressions: NamedSQExpr[], from: SQFrom): NamedSQExpr[] {
+            debug.assertValue(expressions, 'expressions');
+
+            return _.map(expressions, item => {
+                return {
                     name: item.name,
                     expr: SQExprRewriterWithSourceRenames.rewrite(item.expr.accept(this.exprRewriter), from)
-                });
-            }
-
-            return select;
+                };
+            });
         }
 
         public rewriteOrderBy(orderByItems: SQSortDefinition[], from: SQFrom): SQSortDefinition[]{

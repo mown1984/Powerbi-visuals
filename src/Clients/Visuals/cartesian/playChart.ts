@@ -197,6 +197,24 @@ module powerbi.visuals {
                 hasSelection = this.interactivityService.hasSelection();
             }
 
+            this.updateCallout(viewport, margin);
+
+            if (this.playControl && resized) {
+                this.playControl.rebuild(playData, viewport);
+            }
+
+            let allDataPoints = playData.allViewModels.map((vm) => vm.dataPoints);
+            let flatAllDataPoints = _.flatten<SelectableDataPoint>(allDataPoints);
+            
+            // NOTE: Return data points to keep track of current selected bubble even if it drops out for a few frames
+            return {
+                allDataPoints: flatAllDataPoints,
+                viewModel: playViewModel,
+            };
+        }
+
+        private updateCallout(viewport: IViewport, margin: IMargin): void {
+            let playData = this.playData;
             let frameKeys = playData.frameKeys;
             let currentFrameIndex = playData.currentFrameIndex;
             let height = viewport.height;
@@ -204,24 +222,22 @@ module powerbi.visuals {
             let width = viewport.width;
             let plotAreaWidth = width - margin.left - margin.right;
 
-            if (this.playControl && resized) {
-                this.playControl.rebuild(playData, viewport);
-            }
-
-            // update callout to current frame index
             let calloutDimension = Math.min(height, width * 1.3); //1.3 to compensate for tall, narrow-width viewport
             let fontSize = Math.max(12, Math.round(calloutDimension / 7));
             fontSize = Math.min(fontSize, 70);
             let textProperties = {
-                fontSize: "" + fontSize,
+                fontSize: jsCommon.PixelConverter.toString(fontSize),
                 text: frameKeys[currentFrameIndex] || "",
-                fontFamily: "Segoe UI",
+                fontFamily: "wf_segoe-ui_normal",
             };
             let textHeight = TextMeasurementService.estimateSvgTextHeight(textProperties) - TextMeasurementService.estimateSvgTextBaselineDelta(textProperties);
 
             let calloutData: string[] = [];;
-            if (currentFrameIndex < frameKeys.length && currentFrameIndex >= 0 && textHeight < plotAreaHeight)
-                calloutData = [TextMeasurementService.getTailoredTextOrDefault(textProperties, plotAreaWidth - (2 * PlayAxis.calloutOffsetMultiplier * textHeight))];
+            if (currentFrameIndex < frameKeys.length && currentFrameIndex >= 0 && textHeight < plotAreaHeight) {
+                let maxTextWidth = plotAreaWidth - (2 * PlayAxis.calloutOffsetMultiplier * textHeight);
+                let calloutText = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxTextWidth);
+                calloutData = [calloutText];
+            }
 
             let callout = this.svg.selectAll(PlayAxis.PlayCallout.selector).data(calloutData);
 
@@ -241,15 +257,6 @@ module powerbi.visuals {
                 });
 
             callout.exit().remove();
-
-            let allDataPoints = playData.allViewModels.map((vm) => vm.dataPoints);
-            let flatAllDataPoints = _.flatten<SelectableDataPoint>(allDataPoints);
-            
-            // NOTE: Return data points to keep track of current selected bubble even if it drops out for a few frames
-            return {
-                allDataPoints: flatAllDataPoints,
-                viewModel: playViewModel,
-            };
         }
 
         public play(): void {

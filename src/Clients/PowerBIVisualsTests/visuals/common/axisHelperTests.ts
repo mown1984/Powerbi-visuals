@@ -1054,7 +1054,7 @@ module powerbitests {
 
         private textProperties: powerbi.TextProperties = {
             fontFamily: "",
-            fontSize: "16"
+            fontSize: "16px"
         };
 
         constructor(viewport?: powerbi.IViewport, xValues?: any[]) {

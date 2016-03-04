@@ -29,6 +29,7 @@
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.EnhancedScatterChart;
     import DataView = powerbi.DataView;
+	powerbitests.mocks.setLocale();
 
     describe("EnchancedScatterChart", () => {
         describe('capabilities', () => {

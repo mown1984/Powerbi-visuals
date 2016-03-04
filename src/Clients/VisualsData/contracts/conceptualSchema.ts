@@ -175,6 +175,7 @@ module powerbi.data {
         calculated?: boolean;
         defaultValue?: SQConstantExpr;
         variations?: ArrayNamedItems<ConceptualVariationSource>;
+        aggregateBehavior?: ConceptualAggregateBehavior;
     }
 
     export interface ConceptualMeasure {
@@ -244,5 +245,10 @@ module powerbi.data {
         Product,
         StateOrProvince,
         WebUrl,
+    }
+
+    export const enum ConceptualAggregateBehavior {
+        Default,
+        DiscourageAcrossGroups,
     }
 }

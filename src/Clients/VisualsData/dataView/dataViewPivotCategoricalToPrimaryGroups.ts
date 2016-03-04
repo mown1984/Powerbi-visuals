@@ -158,7 +158,7 @@ module powerbi.data {
 
             // select applicable mappings based on select roles
             let roleKinds: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(selects, dataView.metadata);
-            let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(selects);
+            let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(selects, null);
             dataViewMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
 
             // NOTE: limiting to simple situation that handles scatter for now - see the other side in canPivotCategorical

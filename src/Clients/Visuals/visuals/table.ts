@@ -75,9 +75,16 @@ module powerbi.visuals {
         }
         
         /**
-         * Returns the depth of a hierarchy.
-         */
-        public getDepth(hierarchy: any): number {
+        * Returns the depth of the Columnm hierarchy.
+        */
+        public getColumnHierarchyDepth(): number {
+            return 1;
+        }
+
+        /**
+        * Returns the depth of the Row hierarchy.
+        */
+        public getRowHierarchyDepth(): number {
             return 1;
         }
         
@@ -290,7 +297,6 @@ module powerbi.visuals {
      */
     export class TableBinder implements controls.ITablixBinder {
 
-        public static sortIconContainerClassName = "bi-sort-icon-container";
         public static columnHeaderClassName = 'bi-table-column-header';
         private static rowClassName = 'bi-table-row';
         private static lastRowClassName = 'bi-table-last-row';
@@ -799,16 +805,9 @@ module powerbi.visuals {
             }
         }
 
-        private onColumnHeaderClick(queryName: string, sortDirection: SortDirection) {
-            let sortDescriptors: SortableFieldDescriptor[] = [{
-                queryName: queryName,
-                sortDirection: sortDirection
-            }];
-            let args: CustomSortEventArgs = {
-                sortDescriptors: sortDescriptors
-            };
+        private onColumnHeaderClick(queryName: string, sortDirection: SortDirection): void {
             this.waitingForSort = true;
-            this.hostServices.onCustomSort(args);
+            this.hostServices.onCustomSort(TablixUtils.getCustomSortEventArgs(queryName, sortDirection));
         }
         
         /**

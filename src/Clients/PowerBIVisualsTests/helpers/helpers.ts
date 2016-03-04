@@ -611,6 +611,7 @@ module powerbitests.helpers {
             color: string;
             horizontalPosition: string;
             verticalPosition: string;
+            displayUnits: number;
         };
     };
 
@@ -660,10 +661,10 @@ module powerbitests.helpers {
         let labelY = parseFloat(label.attr('y'));
         if (properties.isHorizontal) {
             if (properties.label.horizontalPosition === powerbi.visuals.referenceLineDataLabelHorizontalPosition.left) {
-                expect(helpers.isCloseTo(labelX, parseFloat(x1), 20)).toBeTruthy();
+                expect(helpers.isCloseTo(labelX, parseFloat(x1), 30)).toBeTruthy();
             }
             else {
-                expect(helpers.isCloseTo(labelX + label.width(), parseFloat(x2), 20)).toBeTruthy();
+                expect(helpers.isCloseTo(labelX + label.width(), parseFloat(x2), 30)).toBeTruthy();
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {
@@ -682,10 +683,10 @@ module powerbitests.helpers {
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {
-                expect(helpers.isCloseTo(labelY, parseFloat(y1), 20)).toBeTruthy();
+                expect(helpers.isCloseTo(labelY, parseFloat(y1), 30)).toBeTruthy();
             }
             else {
-                expect(helpers.isCloseTo(labelY, parseFloat(y2), 20)).toBeTruthy();
+                expect(helpers.isCloseTo(labelY, parseFloat(y2), 30)).toBeTruthy();
             }
         }
     }

@@ -81,6 +81,9 @@ declare module powerbi {
 
         /** The KPI metadata to use to convert a numeric status value into its visual representation. */
         kpi?: DataViewKpiColumnMetadata;
+
+        /** Indicates that aggregates should not be computed across groups with different values of this column. */
+        discourageAggregationAcrossGroups?: boolean;
     }
 
     export interface DataViewSegmentMetadata {
@@ -188,14 +191,18 @@ declare module powerbi {
 
     export interface DataViewTable {
         columns: DataViewMetadataColumn[];
+
         identity?: DataViewScopeIdentity[];
-        rows?: any[][]; // TODO: Should become a DataViewTableRow[]
+
+        /** The set of expressions that define the identity for rows of the table.  This must match items in the DataViewScopeIdentity in the identity. */
+        identityFields?: data.ISQExpr[];
+
+        rows?: DataViewTableRow[];
+
         totals?: any[];
     }
 
-    export interface DataViewTableRow {
-        values: any[];
-
+    export interface DataViewTableRow extends Array<any> {
         /** The metadata repetition objects. */
         objects?: DataViewObjects[];
     }

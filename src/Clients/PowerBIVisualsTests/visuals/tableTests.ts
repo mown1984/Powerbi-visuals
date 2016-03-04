@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
     import CompiledDataViewRoleForMapping = powerbi.data.CompiledDataViewRoleForMapping;
@@ -505,15 +503,11 @@ module powerbitests {
             let navigator = createNavigator(dataView.table);
 
             it("returns 1 for row dimension", () => {
-                expect(navigator.getDepth(dataView.table.rows)).toBe(1);
+                expect(navigator.getRowHierarchyDepth()).toBe(1);
             });
 
             it("returns 1 for column dimension", () => {
-                expect(navigator.getDepth(dataView.table.columns)).toBe(1);
-            });
-
-            it("always returns 1", () => {
-                expect(navigator.getDepth(null)).toBe(1);
+                expect(navigator.getColumnHierarchyDepth()).toBe(1);
             });
         });
 
@@ -1062,6 +1056,27 @@ module powerbitests {
             });
         });
 
+        it("enumerateObjectInstances general totals on but suppressed by no aggregation", () => {
+            let dataViews = _.cloneDeep(tableOneMeasureOneGroupSubtotals);
+            dataViews.table.columns[0].discourageAggregationAcrossGroups = true;
+
+            v.onDataChanged({ dataViews: [dataViews] });
+
+            expect(v.enumerateObjectInstances({ objectName: "general" })).toEqual({
+                instances: [{
+                    selector: null,
+                    objectName: "general",
+                    properties: {
+                        autoSizeColumnWidth: true,
+                        textSize: 8,
+                        //TODO: add after featureswitch
+                        //outlineColor: "#E8E8E8",
+                        // outlineWeight: 2
+                    }
+                }]
+            });
+        });
+
         it("enumerateObjectInstances general no objects", () => {
             let dataView: DataView = {
                 metadata: {
@@ -1411,7 +1426,7 @@ module powerbitests {
                 expect(layoutManager["_allowHeaderResize"]).toBe(false);
                 let viewMode = powerbi.ViewMode.Edit;
                 tableVisual["hostServices"] = {
-                    getViewMode: () => { return viewMode }
+                    getViewMode: () => { return viewMode; }
                 };
                 tableVisual.onViewModeChanged(viewMode);
 
@@ -2369,8 +2384,10 @@ module powerbitests {
                         type: powerbi.ValueType.fromDescriptor({ text: true })
                     }
                 ],
-                projectionOrdering: {
-                    Values: [1, 0]
+                roles: {
+                    ordering: {
+                        Values: [1, 0]
+                    }
                 }
             };
 

@@ -28,7 +28,8 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.RadarChart;
-
+	powerbitests.mocks.setLocale();
+	
     describe("RadarChart", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());

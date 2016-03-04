@@ -38,6 +38,7 @@ module powerbi.data {
         kpi?: DataViewKpiColumnMetadata;
         sort?: SortDirection;
         expr?: SQExpr;
+        discourageAggregationAcrossGroups?: boolean;
 
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
@@ -45,7 +46,10 @@ module powerbi.data {
 
     export module DataViewSelectTransform {
         /** Convert selection info to projections */
-        export function projectionsFromSelects(selects: DataViewSelectTransform[]): QueryProjectionsByRole {
+        export function projectionsFromSelects(selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): QueryProjectionsByRole {
+            debug.assertAnyValue(selects, "selects");
+            debug.assertAnyValue(projectionActiveItems, "projectionActiveItems");
+
             let projections: QueryProjectionsByRole = {};
             for (let select of selects) {
                 let roles = select.roles;
@@ -58,6 +62,9 @@ module powerbi.data {
                         if (!qp)
                             qp = projections[roleName] = new QueryProjectionCollection([]);
                         qp.all().push({ queryRef: select.queryName });
+
+                        if (projectionActiveItems && projectionActiveItems[roleName])
+                            qp.activeProjectionRefs = projectionActiveItems[roleName];
                     }
                 }
             }

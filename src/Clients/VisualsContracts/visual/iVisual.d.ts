@@ -24,11 +24,11 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
+/// <reference path="../_references.ts"/>
 
 declare module powerbi {
-    import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
     import DataViewObjectDescriptor = powerbi.data.DataViewObjectDescriptor;
+    import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
     import Selector = powerbi.data.Selector;
     import ISemanticFilter = powerbi.data.ISemanticFilter;
     import ISQExpr = powerbi.data.ISQExpr;
@@ -85,43 +85,6 @@ declare module powerbi {
 
         /** Gets the set of objects that the visual is currently displaying. */
         enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-    }
-
-    export interface IVisualPlugin {
-        /** The name of the plugin.  Must match the property name in powerbi.visuals. */
-        name: string;
-
-        /** The key for the watermark style of this visual. Must match the id name in ExploreUI/views/svg/visualsWatermarks.svg */
-        watermarkKey?: string;
-
-        /** Declares the capabilities for this IVisualPlugin type. */
-        capabilities?: VisualCapabilities;
-
-        /** Function to call to create the visual. */
-        create: IVisualFactoryMethod;
-
-        /** 
-          * Function to allow the visual to influence query generation. Called each time a query is generated
-          * so the visual can translate its state into options understood by the query generator. 
-          */
-        customizeQuery?: CustomizeQueryMethod;
-
-        /** The class of the plugin.  At the moment it is only used to have a way to indicate the class name that a custom visual has. */
-        class?: string;
-
-        /** The url to the icon to display within the visualization pane. */
-        iconUrl?: string;
-
-        /** Check if a visual is custom */
-        custom?: boolean;
-
-        /* Function to get the list of sortable roles */
-        getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
-    }
-
-    /** Factory method for an IVisual.  This factory method should be registered on the powerbi.visuals object. */
-    export interface IVisualFactoryMethod {
-        (): IVisual;
     }
 
     /** Parameters available to a CustomizeQueryMethod */
@@ -199,7 +162,7 @@ declare module powerbi {
         canRotate?: boolean;
 
         /** Indicates whether showing the data underlying this visual would be helpful.  Visuals that already show raw data can specify this. */
-        disableSeeData?: boolean;
+        disableVisualDetails?: boolean;
     }
 
     /** Defines the visual sorting capability. */
@@ -228,7 +191,7 @@ declare module powerbi {
     export interface VisualImplicitSortingClause {
         role: string;
         direction: SortDirection;
-    }
+    }    
 
     /** Defines the capabilities of an IVisual. */
     export interface VisualInitOptions {
@@ -269,10 +232,6 @@ declare module powerbi {
         operationKind?: VisualDataChangeOperationKind;
     }
 
-    export interface EnumerateVisualObjectInstancesOptions {
-        objectName: string;
-    }
-
     export interface CustomSortEventArgs {
         sortDescriptors: SortableFieldDescriptor[];
     }
@@ -280,11 +239,6 @@ declare module powerbi {
     export interface SortableFieldDescriptor {
         queryName: string;
         sortDirection?: SortDirection;
-    }
-
-    export const enum ViewMode {
-        View = 0,
-        Edit = 1,
     }
 
     export interface IVisualErrorMessage {
@@ -385,55 +339,6 @@ declare module powerbi {
         object: DataViewObjectDescriptor;
     }
 
-    export interface VisualObjectInstance {
-        /** The name of the object (as defined in VisualCapabilities). */
-        objectName: string;
-
-        /** A display name for the object instance. */
-        displayName?: string;
-
-        /** The set of property values for this object.  Some of these properties may be defaults provided by the IVisual. */
-        properties: {
-            [propertyName: string]: DataViewPropertyValue;
-        };
-
-        /** The selector that identifies this object. */
-        selector: Selector;
-
-        /** Defines the constrained set of valid values for a property. */
-        validValues?: {
-            [propertyName: string]: string[];
-        };
-
-        /** (Optional) VisualObjectInstanceEnumeration category index. */
-        containerIdx?: number;
-    }
-
-    export type VisualObjectInstanceEnumeration = VisualObjectInstance[] | VisualObjectInstanceEnumerationObject;
-
-    export interface VisualObjectInstanceEnumerationObject {
-        /** The visual object instances. */
-        instances: VisualObjectInstance[];
-
-        /** Defines a set of containers for related object instances. */
-        containers?: VisualObjectInstanceContainer[];
-    }
-
-    export interface VisualObjectInstanceContainer {
-        displayName: data.DisplayNameGetter;
-    }
-
-    export interface VisualObjectInstancesToPersist {
-        /** Instances which should be merged with existing instances. */
-        merge?: VisualObjectInstance[];
-
-        /** Instances which should replace existing instances. */
-        replace?: VisualObjectInstance[];
-
-        /** Instances which should be deleted from the existing instances. */
-        remove?: VisualObjectInstance[];
-    }
-
     export interface FilterAnalyzerOptions {
         dataView: DataView;
 
@@ -459,5 +364,91 @@ declare module powerbi {
 
         /** The filter after analyzed. It will be the default filter if it has defaultValue and the pre-analyzed filter is undefined. */
         filter: ISemanticFilter;
+    }
+    
+
+    /** Defines behavior for IVisual interaction with the host environment. */
+    export interface IVisualHostServices {
+        /** Returns the localized form of a string. */
+        getLocalizedString(stringId: string): string;
+
+        /** Notifies of a DragStart event. */
+        onDragStart(args: DragEventArgs): void;
+
+        ///** Indicates whether the drag payload is compatible with the IVisual's data role.  This is useful when dropping to a particular drop area within the visual (e.g., dropping on a legend). */
+        //canDropAs(payload: DragPayload, dataRole?: string): boolean;
+
+        ///** Notifies of a Drop event. */
+        //onDrop(args: DragEventArgs, dataRole?: string);
+
+        /** Gets a value indicating whether the given selection is valid. */
+        canSelect(args: SelectEventArgs): boolean;
+
+        /** Notifies of a data point being selected. */
+        onSelect(args: SelectEventArgs): void;  // TODO: Revisit onSelect vs. onSelectObject.
+
+        /** Check if selection is sticky or otherwise. */
+        shouldRetainSelection(): boolean;
+
+        /** Notifies of a visual object being selected. */
+        onSelectObject?(args: SelectObjectEventArgs): void;  // TODO: make this mandatory, not optional.
+
+        /** Notifies that properties of the IVisual have changed. */
+        persistProperties(changes: VisualObjectInstance[]): void;
+        persistProperties(changes: VisualObjectInstancesToPersist): void;
+
+        ///** This information will be part of the query. */
+        //onDataRangeChanged(range: {
+        //    categorical: { // TODO: this structure is affected by the reduction algorithm as well as the data view type
+        //        categories?: {
+        //            /** Index of the category. */
+        //            index: number;
+        //            lower?: DataViewScopeIdentity;
+        //            upper?: DataViewScopeIdentity;
+        //        }[]
+        //    }
+        // });
+
+        ///** Notifies of a drill down on the specified data point. */
+        //onDrillDown(data: DataViewScopeIdentity): void;
+
+        /** Requests more data to be loaded. */
+        loadMoreData(): void;
+
+        /** Notification to sort on the specified column */
+        onCustomSort(args: CustomSortEventArgs): void;
+
+        /** Indicates which view mode the host is in. */
+        getViewMode(): ViewMode;
+
+        /** Notify any warning that happened during update of the visual. */
+        setWarnings(clientWarnings: IVisualWarning[]): void;
+
+        /** Sets a toolbar on the host. */
+        setToolbar($selector: JQuery): void;
+
+        /** Gets Geocoding Service. */
+        geocoder(): IGeocoder;
+
+        /** Gets the locale string */
+        locale?(): string;
+
+        /** Gets the promise factory. */
+        promiseFactory(): IPromiseFactory;
+
+        /** Gets filter analyzer */
+        analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter;
+
+        /** Gets display name for the identities */
+        getIdentityDisplayNames(identities: DataViewScopeIdentity[]): DisplayNameIdentityPair[];
+
+        /** Set the display names for their corresponding DataViewScopeIdentity */
+        setIdentityDisplayNames(displayNamesIdentityPairs: DisplayNameIdentityPair[]): void;
+
+    }
+
+    export interface DisplayNameIdentityPair {
+        displayName: string;
+        identity: DataViewScopeIdentity;
     }
 }

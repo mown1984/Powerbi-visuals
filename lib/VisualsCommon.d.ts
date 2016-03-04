@@ -919,7 +919,7 @@ declare module powerbi {
          * @param textProperties The text properties (including text content) to use for text measurement.
          * @param maxWidth The maximum width available for rendering the text.
          */
-        function getTailoredTextOrDefault(properties: TextProperties, maxWidth: number): string;
+        function getTailoredTextOrDefault(textProperties: TextProperties, maxWidth: number): string;
         /**
          * Compares labels text size to the available size and renders ellipses when the available size is smaller.
          * @param textElement The SVGTextElement containing the text to render.

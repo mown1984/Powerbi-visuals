@@ -1489,6 +1489,7 @@ declare module powerbi.visuals {
         function isImageUrlColumn(column: DataViewMetadataColumn): boolean;
         function isWebUrlColumn(column: DataViewMetadataColumn): boolean;
         function hasImageUrlColumn(dataView: DataView): boolean;
+        function formatFromMetadataColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
     }
 }
 declare module powerbi.visuals {
@@ -1704,6 +1705,7 @@ declare module powerbi.visuals {
             dataLabelDecimalPoints: string;
             dataLabelHorizontalPosition: string;
             dataLabelVerticalPosition: string;
+            dataLabelDisplayUnits: string;
         };
         function enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, referenceLines: DataViewObjectMap, defaultColor: string, objectName: string): void;
         function render(options: ReferenceLineOptions): void;
@@ -3548,9 +3550,16 @@ declare module powerbi.visuals {
         /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
         categoricalPivotEnabled?: boolean;
         /**
-        * An R visual is available
+        * R visual is enabled for consumption.
+        * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
+        * When turned off, R script will not be executed and the visual is treated as a static image visual.
         */
         scriptVisualEnabled?: boolean;
+        /**
+        * R visual is enabled for authoring.
+        * When turned on, R visual will appear in the visual gallery.
+        */
+        scriptVisualAuthoringEnabled?: boolean;
         isLabelInteractivityEnabled?: boolean;
         referenceLinesEnabled?: boolean;
         sunburstVisualEnabled?: boolean;
@@ -3627,8 +3636,9 @@ declare module powerbi.visuals {
             static GaugeMarginsOnSmallViewPort: number;
             static MinHeightFunnelCategoryLabelsVisible: number;
             static MaxHeightToScaleDonutLegend: number;
-            constructor(smallViewPortProperties?: SmallViewPortProperties);
+            constructor(smallViewPortProperties?: SmallViewPortProperties, featureSwitches?: MinervaVisualFeatureSwitches);
             getPlugin(type: string): IVisualPlugin;
+            requireSandbox(plugin: IVisualPlugin): boolean;
             private getMapThrottleInterval();
             getInteractivityOptions(visualType: string): InteractivityOptions;
             private getMobileOverflowString(visualType);
@@ -3639,7 +3649,7 @@ declare module powerbi.visuals {
         function createMinerva(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
         function createDashboard(featureSwitches: MinervaVisualFeatureSwitches, options: CreateDashboardOptions): IVisualPluginService;
         function createInsights(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
-        function createMobile(smallViewPortProperties?: SmallViewPortProperties): IVisualPluginService;
+        function createMobile(smallViewPortProperties?: SmallViewPortProperties, featureSwitches?: MinervaVisualFeatureSwitches): IVisualPluginService;
     }
 }
 declare module powerbi.visuals.controls {
@@ -3701,7 +3711,7 @@ declare module powerbi.visuals.controls {
         private _offsetTouchPrevPos;
         private _touchStarted;
         private _allowMouseDrag;
-        constructor(parentElement: HTMLElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind);
         scrollBy(delta: number): void;
         scrollUp(): void;
         scrollDown(): void;
@@ -3734,7 +3744,7 @@ declare module powerbi.visuals.controls {
         onTouchMouseMove(e: MouseEvent): void;
         onTouchMouseUp(e: MouseEvent, bubble?: boolean): void;
         registerElementForMouseWheelScrolling(element: HTMLElement): void;
-        private createView(parentElement);
+        private createView(parentElement, layoutKind);
         private scrollTo(pos);
         _scrollByPage(event: MouseEvent): void;
         _getRunningSize(net: boolean): number;
@@ -3771,7 +3781,7 @@ declare module powerbi.visuals.controls {
     }
     /** Horizontal Scrollbar */
     class HorizontalScrollbar extends Scrollbar {
-        constructor(parentElement: HTMLElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind);
         _calculateButtonWidth(): number;
         _calculateButtonHeight(): number;
         _getMinButtonAngle(): number;
@@ -3789,7 +3799,7 @@ declare module powerbi.visuals.controls {
     }
     /** Vertical Scrollbar */
     class VerticalScrollbar extends Scrollbar {
-        constructor(parentElement: HTMLElement);
+        constructor(parentElement: HTMLElement, layoutKind: TablixLayoutKind);
         _calculateButtonWidth(): number;
         _calculateButtonHeight(): number;
         _getMinButtonAngle(): number;
@@ -4633,6 +4643,7 @@ declare module powerbi.visuals.controls.internal {
         function appendATagToBodyCell(value: string, cell: controls.ITablixCell): void;
         function appendImgTagToBodyCell(value: string, cell: controls.ITablixCell): void;
         function createKpiDom(kpi: DataViewKpiColumnMetadata, kpiValue: string): JQuery;
+        function getCustomSortEventArgs(queryName: string, sortDirection: SortDirection): CustomSortEventArgs;
         function appendSortImageToColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void;
         function isValidStatusGraphic(kpi: DataViewKpiColumnMetadata, kpiValue: string): boolean;
         /**
@@ -4642,7 +4653,7 @@ declare module powerbi.visuals.controls.internal {
          */
         function replaceSpaceWithNBSP(txt: string): string;
         function setEnumeration(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void;
-        function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void;
+        function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, isFormattingPropertiesEnabled: boolean, tablixType: TablixType, dataView: DataView): void;
         function enumerateColumnsOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateHeaderOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateRowsOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
@@ -4682,11 +4693,13 @@ declare module powerbi.visuals.controls.internal {
 declare module powerbi.visuals.controls {
     interface ITablixHierarchyNavigator {
         /**
-         * Returns the depth of a hierarchy.
-         *
-         * @param hierarchy Object representing the hierarchy.
-         */
-        getDepth(hierarchy: any): number;
+        * Returns the depth of the column hierarchy.
+        */
+        getColumnHierarchyDepth(): number;
+        /**
+        * Returns the depth of the Row hierarchy.
+        */
+        getRowHierarchyDepth(): number;
         /**
          * Returns the leaf count of a hierarchy.
          *
@@ -4945,6 +4958,7 @@ declare module powerbi.visuals.controls {
         _tablixLayoutManager: internal.TablixLayoutManager;
         _layoutManager: IDimensionLayoutManager;
         model: any;
+        modelDepth: number;
         scrollOffset: number;
         private _scrollStep;
         private _firstVisibleScrollIndex;
@@ -4961,13 +4975,13 @@ declare module powerbi.visuals.controls {
         getFirstVisibleItem(level: number): any;
         getFirstVisibleChild(item: any): any;
         getFirstVisibleChildIndex(item: any): number;
-        _initializeScrollbar(parentElement: HTMLElement, touchDiv: HTMLDivElement): void;
+        _initializeScrollbar(parentElement: HTMLElement, touchDiv: HTMLDivElement, layoutKind: TablixLayoutKind): void;
         getItemsCount(): number;
         getDepth(): number;
         private onScroll();
         otherDimension: TablixDimension;
         layoutManager: IDimensionLayoutManager;
-        _createScrollbar(parentElement: HTMLElement): Scrollbar;
+        _createScrollbar(parentElement: HTMLElement, layoutKind: TablixLayoutKind): Scrollbar;
         private updateScrollPosition();
     }
     class TablixRowDimension extends TablixDimension {
@@ -4979,7 +4993,7 @@ declare module powerbi.visuals.controls {
          * This method first populates the footer followed by each row and their correlating body cells from top to bottom.
          */
         _render(): void;
-        _createScrollbar(parentElement: HTMLElement): Scrollbar;
+        _createScrollbar(parentElement: HTMLElement, layoutKind: TablixLayoutKind): Scrollbar;
         /**
          * This function is a recursive call (with its recursive behavior in addNode()) that will navigate
          * through the row hierarchy in DFS (Depth First Search) order and continue into a single row
@@ -5006,7 +5020,7 @@ declare module powerbi.visuals.controls {
     class TablixColumnDimension extends TablixDimension {
         constructor(tablixControl: TablixControl);
         _render(): void;
-        _createScrollbar(parentElement: HTMLElement): Scrollbar;
+        _createScrollbar(parentElement: HTMLElement, layoutKind: TablixLayoutKind): Scrollbar;
         private addNodes(items, columnIndex, depth, firstVisibleIndex);
         private addNode(item, items, columnIndex, depth);
         columnHeaderMatch(item: any, cell: ITablixCell): boolean;
@@ -7156,6 +7170,7 @@ declare module powerbi.visuals {
         fill: string;
         stroke: string;
         identity: SelectionId;
+        tooltipInfo: TooltipDataItem[];
     }
     interface MapRendererData {
         bubbleData?: MapBubble[];
@@ -7784,6 +7799,7 @@ declare module powerbi.visuals {
         init(options: PlayInitOptions): void;
         setData(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T>;
         render<TViewModel>(suppressAnimations: boolean, viewModel: TViewModel, viewport: IViewport, margin: IMargin): PlayChartRenderResult<T, TViewModel>;
+        private updateCallout(viewport, margin);
         play(): void;
         private playNextFrame(playData, startFrame?, endFrame?);
         stop(): void;
@@ -8011,9 +8027,13 @@ declare module powerbi.visuals {
         private formatter;
         constructor(tableDataView: DataViewVisualTable, formatter: ICustomValueColumnFormatter);
         /**
-         * Returns the depth of a hierarchy.
-         */
-        getDepth(hierarchy: any): number;
+        * Returns the depth of the Columnm hierarchy.
+        */
+        getColumnHierarchyDepth(): number;
+        /**
+        * Returns the depth of the Row hierarchy.
+        */
+        getRowHierarchyDepth(): number;
         /**
          * Returns the leaf count of a hierarchy.
          */
@@ -8081,7 +8101,6 @@ declare module powerbi.visuals {
      * Note: Public for testability.
      */
     class TableBinder implements controls.ITablixBinder {
-        static sortIconContainerClassName: string;
         static columnHeaderClassName: string;
         private static rowClassName;
         private static lastRowClassName;
@@ -8240,7 +8259,6 @@ declare module powerbi.visuals {
     }
     interface IMatrixHierarchyNavigator extends controls.ITablixHierarchyNavigator, MatrixDataAdapter {
         getDataViewMatrix(): DataViewMatrix;
-        getDepth(hierarchy: MatrixVisualNode[]): number;
         getLeafCount(hierarchy: MatrixVisualNode[]): number;
         getLeafAt(hierarchy: MatrixVisualNode[], index: number): any;
         getLeafIndex(item: MatrixVisualNode): number;
@@ -8265,7 +8283,8 @@ declare module powerbi.visuals {
     interface MatrixBinderOptions {
         onBindRowHeader?(item: MatrixVisualNode): void;
         totalLabel?: string;
-        onColumnHeaderClick?(queryName: string): void;
+        onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
+        showSortIcons?: boolean;
     }
     class MatrixBinder implements controls.ITablixBinder {
         private static headerClassName;
@@ -8382,7 +8401,7 @@ declare module powerbi.visuals {
         private updateInternal(textSize, previousDataView);
         private shouldClearControl(previousDataView, newDataView);
         private onBindRowHeader(item);
-        private onColumnHeaderClick(queryName);
+        private onColumnHeaderClick(queryName, sortDirection);
         /**
          * Note: Public for testability.
          */

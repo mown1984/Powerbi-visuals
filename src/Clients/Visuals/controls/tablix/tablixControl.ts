@@ -215,7 +215,7 @@ module powerbi.visuals.controls {
 
         private InitializeScrollbars(): void {
             // Row Dimension
-            this.rowDim._initializeScrollbar(this.containerElement, null);
+            this.rowDim._initializeScrollbar(this.containerElement, null, this.options.layoutKind);
 
             let rowDimensionScrollbarStyle = this.rowDim.scrollbar.element.style;
             rowDimensionScrollbarStyle.position = "absolute";
@@ -228,7 +228,7 @@ module powerbi.visuals.controls {
             this.rowDim.scrollbar.show(true);
 
             // Column Dimension
-            this.columnDim._initializeScrollbar(this.containerElement, null);
+            this.columnDim._initializeScrollbar(this.containerElement, null, this.options.layoutKind);
 
             let columnDimensionScrollbarStyle = this.columnDim.scrollbar.element.style;
             columnDimensionScrollbarStyle.position = "absolute";
@@ -357,7 +357,9 @@ module powerbi.visuals.controls {
 
         public updateModels(resetScrollOffsets: boolean, rowModel: any, columnModel: any): void {
             this.rowDim.model = rowModel;
+            this.rowDim.modelDepth = this.hierarchyNavigator.getRowHierarchyDepth();
             this.columnDim.model = columnModel;
+            this.columnDim.modelDepth = this.hierarchyNavigator.getColumnHierarchyDepth();
 
             if (resetScrollOffsets) {
                 this.rowDim.scrollOffset = 0;

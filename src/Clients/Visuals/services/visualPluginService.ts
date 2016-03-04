@@ -66,9 +66,17 @@ module powerbi.visuals {
         categoricalPivotEnabled?: boolean;
 
         /**
-        * An R visual is available
+        * R visual is enabled for consumption. 
+        * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
+        * When turned off, R script will not be executed and the visual is treated as a static image visual.
         */
         scriptVisualEnabled?: boolean;
+
+        /**
+        * R visual is enabled for authoring. 
+        * When turned on, R visual will appear in the visual gallery.
+        */
+        scriptVisualAuthoringEnabled?: boolean;
 
         isLabelInteractivityEnabled?: boolean;
 
@@ -318,9 +326,10 @@ module powerbi.visuals {
         }
 
         function createMinervaPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
-            let categoricalPivotEnabled: boolean = featureSwitches ? featureSwitches.categoricalPivotEnabled : false;
+            let categoricalPivotEnabled: boolean = false; //featureSwitches ? featureSwitches.categoricalPivotEnabled : false;
             let seriesLabelFormattingEnabled: boolean = featureSwitches ? featureSwitches.seriesLabelFormattingEnabled : false;
             let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
+            let scriptVisualAuthoringEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualAuthoringEnabled : false;
             let isLabelInteractivityEnabled: boolean = featureSwitches ? featureSwitches.isLabelInteractivityEnabled : false;
             let formattingPropertiesEnabled = featureSwitches ? featureSwitches.matrixFormattingEnabled : false;
             let fillMapDataLabelsEnabled: boolean = featureSwitches ? featureSwitches.filledMapDataLabelsEnabled : false;
@@ -562,7 +571,7 @@ module powerbi.visuals {
                 isFormattingPropertiesEnabled: formattingPropertiesEnabled
             }));;
 
-            if (scriptVisualEnabled) {
+            if (scriptVisualEnabled && scriptVisualAuthoringEnabled) {
                 // R visual
                 createPlugin(
                     plugins,
@@ -662,7 +671,7 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.donutChart
                 ];
 
-                if (this.featureSwitches.scriptVisualEnabled) {
+                if (this.featureSwitches.scriptVisualEnabled && this.featureSwitches.scriptVisualAuthoringEnabled) {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.scriptVisual);
                 }
 
@@ -915,8 +924,8 @@ module powerbi.visuals {
             public static MinHeightFunnelCategoryLabelsVisible = 80;
             public static MaxHeightToScaleDonutLegend = 300;
 
-            public constructor(smallViewPortProperties?: SmallViewPortProperties) {
-                super(undefined);
+            public constructor(smallViewPortProperties?: SmallViewPortProperties, featureSwitches?: MinervaVisualFeatureSwitches) {
+                super(featureSwitches);
 
                 this.smallViewPortProperties = smallViewPortProperties || {
                     CartesianSmallViewPortProperties: {
@@ -1084,6 +1093,13 @@ module powerbi.visuals {
                 return super.getPlugin(type);
             }
 
+            public requireSandbox(plugin: IVisualPlugin): boolean {
+                if (this.featureSwitches)
+                    return this.featureSwitches.sandboxVisualsEnabled && (!plugin || (plugin && plugin.custom));
+                else
+                    return super.requireSandbox(plugin);
+            }
+
             // Windows phone webView chokes when zooming on heavy maps,
             // this is a workaround to allow a relatively smooth pinch to zoom experience.
             private getMapThrottleInterval(): number {
@@ -1161,8 +1177,8 @@ module powerbi.visuals {
             return new InsightsPluginService(featureSwitches);
         }
 
-        export function createMobile(smallViewPortProperties?: SmallViewPortProperties): IVisualPluginService {
-            return new MobileVisualPluginService(smallViewPortProperties);
+        export function createMobile(smallViewPortProperties?: SmallViewPortProperties, featureSwitches?: MinervaVisualFeatureSwitches): IVisualPluginService {
+            return new MobileVisualPluginService(smallViewPortProperties, featureSwitches);
         }
     }
 }

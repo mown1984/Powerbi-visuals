@@ -108,6 +108,7 @@ module powerbi.visuals.samples {
         private AxisGraphicsContextClassName = 'axisGraphicsContext';
         public static DefaultBubbleOpacity = 0.85;
         public static DimmedBubbleOpacity = 0.4;
+        private static DataLabelsOffset = 5;
         private static ClassName = 'enhancedScatterChart';
         private static MainGraphicsContextClassName = 'mainGraphicsContext';
         private static LegendLabelFontSizeDefault: number = 9;
@@ -1648,7 +1649,9 @@ module powerbi.visuals.samples {
             let dataLabelsSettings = this.data.dataLabelsSettings;
             if (dataLabelsSettings.show) {
                 let layout = this.getEnhanchedScatterChartLabelLayout(dataLabelsSettings, this.viewportIn, data.sizeRange);
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.viewportIn, !suppressAnimations, duration);
+                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.viewportIn);
+                let offset = dataLabelsSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
+                this.mainGraphicsG.select('.labels').attr('transform', SVGUtil.translate(offset, 0));
             }
             else {
                 dataLabelUtils.cleanDataLabels(this.mainGraphicsG);
@@ -1704,6 +1707,7 @@ module powerbi.visuals.samples {
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
             let fontSizeInPx = jsCommon.PixelConverter.fromPoint(labelSettings.fontSize);
+            let offset = labelSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
 
             return {
                 labelText: function (d) {
@@ -1714,7 +1718,7 @@ module powerbi.visuals.samples {
                     });
                 },
                 labelLayout: {
-                    x: function (d) { return xScale(d.x); },
+                    x: function (d) { return xScale(d.x) - offset; },
                     y: function (d) {
                         let margin = visuals.ScatterChart.getBubbleRadius(d.radius, sizeRange, viewport) + dataLabelUtils.labelMargin;
                         return labelSettings.position === 0 /* Above */ ? yScale(d.y) - margin : yScale(d.y) + margin;

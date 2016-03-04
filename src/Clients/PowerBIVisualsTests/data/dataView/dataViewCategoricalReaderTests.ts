@@ -1,4 +1,4 @@
-﻿/*
+﻿ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -182,6 +182,8 @@ module powerbitests {
         reader.getCategoryValues("");
         reader.getCategoryValue(0, "");
         reader.getCategoryColumn("");
+        reader.getCategoryMetadataColumn("");
+        reader.getCategoryDisplayName("");
         reader.hasCompositeCategories();
         reader.hasCategoryWithRole("");
         reader.getCategoryObjects(0, "");
@@ -193,6 +195,8 @@ module powerbitests {
         reader.getFirstNonNullValueForCategory("", 0);
         reader.getMeasureQueryName("");
         reader.getValueColumn("");
+        reader.getValueMetadataColumn("");
+        reader.getValueDisplayName("");
         
         // Series methods
         reader.hasDynamicSeries();
@@ -200,7 +204,7 @@ module powerbitests {
         reader.getSeriesObjects(0);
         reader.getSeriesColumn(0);
         reader.getSeriesColumns();
-        reader.getSeriesSource();
+        reader.getSeriesMetadataColumn();
         reader.getSeriesColumnIdentifier();
         reader.getSeriesName(0);
         reader.getSeriesDisplayName();

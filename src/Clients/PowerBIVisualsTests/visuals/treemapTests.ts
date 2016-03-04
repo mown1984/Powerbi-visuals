@@ -188,8 +188,11 @@ module powerbitests {
                     ])
                 };
 
-            var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
+
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[1]];
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
             expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections1, dataViewMappings, {}).supportedMappings).toBe(null);
             expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections2, dataViewMappings, {}).supportedMappings).toBe(null);
         });
@@ -209,8 +212,11 @@ module powerbitests {
                     ]),
                 };
 
-            var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[1]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
             expect(DataViewAnalysis.chooseDataViewMappings(disallowedProjections, dataViewMappings, {}).supportedMappings).toBe(null);
         });
 
@@ -248,11 +254,15 @@ module powerbitests {
                     ]),
                 };
 
-            var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
+            
+            let expectedDataViewMappingsWithMultiValues = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappingsWithMultiValues[0].conditions = [expectedDataViewMappingsWithMultiValues[0].conditions[0]];
+
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappingsWithMultiValues);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappingsWithMultiValues);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappingsWithMultiValues);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappingsWithMultiValues);
         });
 
         it('Capabilities should not allow multiple category groups',() => {
@@ -331,13 +341,13 @@ module powerbitests {
 
             let allowedProjections2: QueryProjectionsByRole =
                 {
-                    'Detail': new QueryProjectionCollection([{ queryRef: '0' }])
+                    'Details': new QueryProjectionCollection([{ queryRef: '0' }])
                 };
 
             let allowedProjections3: QueryProjectionsByRole =
                 {
                     'Group': new QueryProjectionCollection([{ queryRef: '0' }]),
-                    'Detail': new QueryProjectionCollection([{ queryRef: '1' }]),
+                    'Details': new QueryProjectionCollection([{ queryRef: '1' }]),
                 };
 
             let allowedProjections4: QueryProjectionsByRole =
@@ -345,11 +355,18 @@ module powerbitests {
                     'Values': new QueryProjectionCollection([{ queryRef: '0' }]),
                 };
 
-            var dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
-            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(dataViewMappings);
+            let dataViewMappings = powerbi.visuals.treemapCapabilities.dataViewMappings;
+            let expectedDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedDataViewMappings[0].conditions = [expectedDataViewMappings[0].conditions[0]];
+
+            let expectedOneDetailDataViewMappings = _.cloneDeep(dataViewMappings);
+            expectedOneDetailDataViewMappings[0].conditions = [expectedOneDetailDataViewMappings[0].conditions[1]];
+
+            let expectValuesOnlyDataViewMappings = _.cloneDeep(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections1, dataViewMappings, {}).supportedMappings).toEqual(expectedDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections2, dataViewMappings, {}).supportedMappings).toEqual(expectedOneDetailDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections3, dataViewMappings, {}).supportedMappings).toEqual(expectedOneDetailDataViewMappings);
+            expect(DataViewAnalysis.chooseDataViewMappings(allowedProjections4, dataViewMappings, {}).supportedMappings).toEqual(expectValuesOnlyDataViewMappings);
         });
     });
 

@@ -61,7 +61,7 @@ module powerbi.data {
             if (transformedDataViews.length === 1  && transformSelects && dataView.metadata) {
                 // compute linear regression line if applicable
                 let roleKindByQueryRef: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(transformSelects, dataView.metadata);
-                let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(transformSelects);
+                let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(transformSelects, null);
                 if (!roleKindByQueryRef || !projections || !dataViewMappings || !objectDescriptors || !objectDefinitions)
                     return transformedDataViews;
 

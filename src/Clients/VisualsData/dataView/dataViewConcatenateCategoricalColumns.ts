@@ -28,6 +28,7 @@
 
 module powerbi.data {
     import inheritSingle = Prototype.inheritSingle;
+    import RoleKindByQueryRef = DataViewAnalysis.RoleKindByQueryRef;
 
     export module DataViewConcatenateCategoricalColumns {
 
@@ -43,7 +44,7 @@ module powerbi.data {
             categories: DataViewCategoryColumn[];
         }
 
-        export function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering): DataView {
+        export function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering, selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): DataView {
             debug.assertValue(dataView, 'dataView');
             debug.assertAnyValue(roleMappings, 'roleMappings');
             debug.assertAnyValue(projectionOrdering, 'projectionOrdering');
@@ -52,7 +53,7 @@ module powerbi.data {
             let dataViewCategorical: DataViewCategorical = dataView.categorical;
 
             if (dataViewCategorical) {
-                let concatenationSource: CategoryColumnsByRole = detectCategoricalRoleForHierarchicalGroup(dataViewCategorical, roleMappings);
+                let concatenationSource: CategoryColumnsByRole = detectCategoricalRoleForHierarchicalGroup(dataViewCategorical, dataView.metadata, roleMappings, selects, projectionActiveItems);
 
                 if (concatenationSource) {
                     let columnsSortedByProjectionOrdering = sortColumnsByProjectionOrdering(projectionOrdering, concatenationSource.roleName, concatenationSource.categories);
@@ -72,15 +73,19 @@ module powerbi.data {
          * Note: In the future if we support sibling hierarchical groups in categorical,
          * change the return type to CategoryColumnsByRole[] and update detection logic.
          */
-        function detectCategoricalRoleForHierarchicalGroup(dataViewCategorical: DataViewCategorical, roleMappings: DataViewMapping[]): CategoryColumnsByRole {
+        function detectCategoricalRoleForHierarchicalGroup(dataViewCategorical: DataViewCategorical, metadata: DataViewMetadata, dataViewMappings: DataViewMapping[], selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): CategoryColumnsByRole {
             debug.assertValue(dataViewCategorical, 'dataViewCategorical');
-            debug.assertAnyValue(roleMappings, 'roleMappings');
+            debug.assertAnyValue(dataViewMappings, 'dataViewMappings');
 
             let result: CategoryColumnsByRole;
 
             // For now, just handle the case where roleMappings.length === 1.
             // In the future, if there is more than 1, we might want to proceed if, 
             // for example, all role mappings map category to the same role name and they all have { max: 1 } conditions.
+            let roleKinds: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(selects, metadata);
+            let projections = DataViewSelectTransform.projectionsFromSelects(selects, projectionActiveItems);
+            let roleMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
+
             let roleMappingForCategorical: DataViewMapping = (roleMappings && roleMappings.length === 1 && !!roleMappings[0].categorical) ? roleMappings[0] : undefined;
             if (roleMappingForCategorical) {
                 let roleNamesForCategory: string[] = getAllRolesInCategories(roleMappingForCategorical.categorical);
@@ -98,7 +103,7 @@ module powerbi.data {
                     if (isVisualExpectingMaxOneCategoryColumn) {
                         let categoriesForTargetRole: DataViewCategoryColumn[] = _.filter(
                             dataViewCategorical.categories,
-                            (categoryColumn: DataViewCategoryColumn) => categoryColumn.source.roles && !!categoryColumn.source.roles[targetRoleName] );
+                            (categoryColumn: DataViewCategoryColumn) => categoryColumn.source.roles && !!categoryColumn.source.roles[targetRoleName]);
 
                         // At least for now, we expect all category columns for the same role to have the same number of value entries.
                         // If that's not the case, we won't run the concatenate logic for that role at all...
@@ -120,7 +125,7 @@ module powerbi.data {
 
             return result;
         }
-
+        
         /**
          * Returns the array of role names that are mapped to categorical categories.
          * Returns an empty array if none exists.
@@ -129,28 +134,13 @@ module powerbi.data {
             debug.assertValue(categoricalRoleMapping, 'categoricalRoleMapping');
 
             let roleNames: string[] = [];
-            if (categoricalRoleMapping.categories) {
-                // TODO VSTS 6842137: Handle roleMapping.categorical.categories with a visitor class (see DataViewRoleForMapping, DataViewRoleBindMapping, and DataViewListRoleMapping).
-                // For reference implementation, see visitCategoricalCategories(...) in src\Clients\Data\dataView\compiledDataViewMappingVisitor.ts
-
-                let mappings: (DataViewRoleForMapping | DataViewRoleBindMapping)[] = (<DataViewListRoleMapping>categoricalRoleMapping.categories).select;
-                if (!mappings) {
-                    mappings = [<DataViewRoleMappingWithReduction>categoricalRoleMapping.categories];
-                }
-
-                for (let mapping of mappings) {
-                    let forValue = (<DataViewRoleForMapping>mapping).for;
-                    if (forValue) {
-                        roleNames.push(forValue.in);
+            DataViewMapping.visitCategoricalCategories(
+                categoricalRoleMapping.categories,
+                {
+                    visitRole: (roleName: string) => {
+                        roleNames.push(roleName);
                     }
-                    else {
-                        let bindValue = (<DataViewRoleBindMapping>mapping).bind;
-                        if (bindValue) {
-                            roleNames.push(bindValue.to);
-                        }
-                    }
-                }
-            }
+                });
 
             return roleNames;
         }
@@ -170,7 +160,7 @@ module powerbi.data {
                 columnsSortedByProjectionOrdering,
                 concatenatedColumnMetadata,
                 concatenatedValues);
-            
+
             let dataViewCategorical: DataViewCategorical = dataView.categorical;
 
             let transformedCategoricalCategories: DataViewCategoryColumn[] = _.difference(dataViewCategorical.categories, columnsSortedByProjectionOrdering);

@@ -156,6 +156,15 @@ module powerbi.data {
             return capabilities && capabilities.discourageQueryAggregateUsage;
         }
 
+        export function getAggregateBehavior(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualAggregateBehavior {
+            debug.assertValue(expr, 'expr');
+            debug.assertValue(schema, 'schema');
+
+            let column = getConceptualColumn(expr, schema);
+            if (column)
+                return column.aggregateBehavior;
+        }
+
         export function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities {
             debug.assertValue(expr, 'expr');
             debug.assertValue(schema, 'schema');
@@ -211,6 +220,12 @@ module powerbi.data {
         }
 
         export function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr {
+            let column = getConceptualColumn(fieldSQExpr, schema);
+            if (column)
+                return column.defaultValue;
+        }
+
+        function getConceptualColumn(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): ConceptualColumn {
             if (!fieldSQExpr || !schema)
                 return;
 
@@ -224,8 +239,8 @@ module powerbi.data {
                 if (schema.schema(column.schema) && sqField.column.name) {
                     let property = schema.schema(column.schema).findProperty(column.entity, sqField.column.name);
 
-                    if (property && property.column)
-                        return property.column.defaultValue;
+                    if (property)
+                        return property.column;
                 }
             }
             else {
@@ -239,8 +254,8 @@ module powerbi.data {
 
                         if (hierarchy) {
                             let hierarchyLevel: ConceptualHierarchyLevel = hierarchy.levels.withName(hierarchyLevelField.level);
-                            if (hierarchyLevel && hierarchyLevel.column && hierarchyLevel.column.column)
-                                return hierarchyLevel.column.column.defaultValue;
+                            if (hierarchyLevel && hierarchyLevel.column)
+                                return hierarchyLevel.column.column;
                         }
                     }
                 }

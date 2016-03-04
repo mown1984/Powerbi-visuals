@@ -31,33 +31,20 @@ module powerbi.data {
         setCurrentRowIndex(index: number): void;
     }
 
-    export function createCategoricalEvalContext(
-        dataViewCategorical: DataViewCategorical,
-        identities?: DataViewScopeIdentity[]): ICategoricalEvalContext {
-        return new CategoricalEvalContext(dataViewCategorical, identities);
+    export function createCategoricalEvalContext(dataViewCategorical: DataViewCategorical): ICategoricalEvalContext {
+        return new CategoricalEvalContext(dataViewCategorical);
     }
 
     class CategoricalEvalContext implements ICategoricalEvalContext {
         private dataView: DataViewCategorical;
-        private identities: DataViewScopeIdentity[];
         private columnsByRole: { [name: string]: DataViewCategoricalColumn };
         private index: number;
 
-        constructor(dataView: DataViewCategorical, identities?: DataViewScopeIdentity[]) {
+        constructor(dataView: DataViewCategorical) {
             debug.assertValue(dataView, 'dataView');
-            debug.assertAnyValue(identities, 'identities');
 
             this.dataView = dataView;
-            this.identities = identities;
             this.columnsByRole = {};
-        }
-
-        public getCurrentIdentity(): DataViewScopeIdentity {
-            let identities = this.identities,
-                index = this.index;
-
-            if (identities && index != null)
-                return identities[index];
         }
 
         public getExprValue(expr: SQExpr): PrimitiveValue {
