@@ -24,7 +24,6 @@
  *  THE SOFTWARE.
  */
  
-/// <reference path="../_references.ts"/>
 
 module powerbi.data {
     /** Responsible for evaluating object property expressions to be applied at various scopes in a DataView. */

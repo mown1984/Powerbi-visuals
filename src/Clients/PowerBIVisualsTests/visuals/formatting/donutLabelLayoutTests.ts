@@ -24,30 +24,18 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
-    import LabelDataPoint = powerbi.LabelDataPoint;
     
-    //TODO: Remove redundant declerations and sort
-    import LabelParentRect = powerbi.LabelParentRect;
-    import LabelParentPoint = powerbi.LabelParentPoint;
-    import IRect = powerbi.visuals.IRect;
-    import IPoint = powerbi.visuals.shapes.IPoint;
-    import ISize = powerbi.visuals.shapes.ISize;
-    import RectOrientation = powerbi.NewRectOrientation;
-    import RectLabelPosition = powerbi.RectLabelPosition;
-    import PointLabelPosition = powerbi.NewPointLabelPosition;
-    import DataLabelRectPositioner = powerbi.DataLabelRectPositioner;
-    import DataLabelPointPositioner = powerbi.DataLabelPointPositioner;
-    import LabelLayout = powerbi.LabelLayout;
+    import dataLabelUtils = powerbi.visuals.dataLabelUtils;
+    import labelStyle = powerbi.visuals.labelStyle;
     import DonutLabelLayout = powerbi.DonutLabelLayout;
     import DonutLabelUtils = powerbi.visuals.DonutLabelUtils;
+    import ISize = powerbi.visuals.shapes.ISize;
     import LabelDataPointParentType = powerbi.LabelDataPointParentType;
-    import dataLabelUtils = powerbi.visuals.dataLabelUtils;
+    import LabelParentPoint = powerbi.LabelParentPoint;
     import NewDataLabelUtils = powerbi.visuals.NewDataLabelUtils;
-    import labelStyle = powerbi.visuals.labelStyle;
-   
+    import PointLabelPosition = powerbi.NewPointLabelPosition;
+
     describe("DonutLabelLayout tests", () => {
         const outerArcRadiusRatio = 0.9;
         const innerArcRadiusRatio = 0.8;
@@ -273,7 +261,7 @@ module powerbitests {
                 identity: undefined,
                 selected: false,
                 tooltipInfo: undefined,
-            }
+            };
             let donutArcDescriptor: powerbi.visuals.DonutArcDescriptor = {
                 data: data,
                 value: value,
@@ -350,14 +338,14 @@ module powerbitests {
             };
         }
 
-        function createRect(left: number, top: number, width: number, height: number): IRect {
-            return {
-                left: left,
-                top: top,
-                width: width,
-                height: height,
-            };
-        }
+        // function createRect(left: number, top: number, width: number, height: number): IRect {
+            // return {
+                // left: left,
+                // top: top,
+                // width: width,
+                // height: height,
+            // };
+        // }
 
         function createDonutLabelLayoutWithLabelSettingsStyle(customLabelSettings: powerbi.visuals.VisualDataLabelsSettings): powerbi.DonutLabelLayout {
             let donutPropertiesWithCustomLabelSettingsStyle: powerbi.DonutChartProperties = {

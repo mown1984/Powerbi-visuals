@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module powerbi.extensibility {
 
     /** Defines behavior for IVisual interaction with the host environment. */

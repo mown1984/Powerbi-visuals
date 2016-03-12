@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import getKpiImageMetadata = powerbi.visuals.KpiUtil.getKpiImageMetadata;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;

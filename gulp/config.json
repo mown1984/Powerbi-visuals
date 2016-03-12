@@ -10,8 +10,10 @@
     "showMSBuildFullLog": false,
     "showMSBuildLogOnError": true,
     "skipBuildOnInit": false,
+    "enableIncrementalBuild": false,
     "sourceRootMapPrefix": "../ts/",
     "sourceRootMapFullPath": "",
+    "cacheFileName": "gulp.tsc.cache",
     "paths": {
         "VisualsDropFolder": "../lib/",
         "VisualsDropStyles": "../lib/",

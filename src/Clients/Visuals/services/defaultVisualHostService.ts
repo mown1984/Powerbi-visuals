@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
 
     const BeautifiedFormat: { [x: string]: string } = {
@@ -145,6 +143,7 @@ module powerbi.visuals {
         public onDragStart(): void { }
         public canSelect(): boolean { return false; }
         public onSelect(): void { }
+        public onContextMenu(): void { }
         public loadMoreData(): void { }
         public persistProperties(changes: VisualObjectInstance[] | VisualObjectInstancesToPersist): void { }
         public onCustomSort(args: CustomSortEventArgs) { }

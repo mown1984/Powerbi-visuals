@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import AxisType = powerbi.visuals.axisType;
     import AxisScale = powerbi.visuals.axisScale;
@@ -2879,14 +2877,33 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('line chart reference line dom validation', (done) => {
+            it('line chart reference line extends y scale validation', (done) => {
                 let refLineColor1 = '#ff0000';
-                let refLineColor2 = '#ff00ff';
+                let maxValue: number = 1000;
+
                 let metadata: powerbi.DataViewMetadata = {
                     columns: [
                         dataViewMetadata.columns[0],
                         dataViewMetadata.columns[1],
                     ],
+                    objects: {
+                        y1AxisReferenceLine: [{
+                            id: '0',
+                            object: {
+                                show: true,
+                                value: 450,
+                                lineColor: { solid: { color: refLineColor1 } },
+                                transparency: 60,
+                                style: powerbi.visuals.lineStyle.dashed,
+                                position: powerbi.visuals.referenceLinePosition.back,
+                                dataLabelShow: true,
+                                dataLabelColor: { solid: { color: refLineColor1 } },
+                                dataLabelDecimalPoints: 0,
+                                dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                            },
+                        },
+                    ]},
                 };
 
                 let dataView: powerbi.DataView = {
@@ -2899,35 +2916,9 @@ module powerbitests {
                         values: DataViewTransform.createValueColumns([
                             {
                                 source: metadata.columns[1],
-                                values: [100, 200, 700],
-                            }],
-                            undefined,
-                            metadata.columns[2])
+                                values: [100, 200, maxValue],
+                            }])
                     },
-                };
-
-                let yAxisReferenceLine: powerbi.DataViewObject = {
-                    show: true,
-                    value: 450,
-                    lineColor: { solid: { color: refLineColor1 } },
-                    transparency: 60,
-                    style: powerbi.visuals.lineStyle.dashed,
-                    position: powerbi.visuals.referenceLinePosition.back,
-                    dataLabelShow: true,
-                    dataLabelColor: { solid: { color: refLineColor1 } },
-                    dataLabelDecimalPoints: 0,
-                    dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                    dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                    dataLabelDisplayUnits: 0,
-                };
-
-                dataView.metadata.objects = {
-                    y1AxisReferenceLine: [
-                        {
-                            id: '0',
-                            object: yAxisReferenceLine,
-                        }
-                    ]
                 };
 
                 v.onDataChanged({
@@ -2935,75 +2926,37 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                    let graphicsContext = $('.lineChart .lineChartSVG');
+                    let labels = $('.y.axis').children('.tick');
+                    let yAxisMaxValueBefore: number = parseInt(labels[labels.length - 1].textContent, 10);
 
-                    let yLine = $('.y1-ref-line');
-                    let yLabel = $('.labelGraphicsContext .label').eq(0);
-                    helpers.verifyReferenceLine(
-                        yLine,
-                        yLabel,
-                        graphicsContext,
-                        {
-                            inFront: false,
-                            isHorizontal: true,
-                            color: refLineColor1,
-                            style: powerbi.visuals.lineStyle.dashed,
-                            opacity: 0.4,
-                            label: {
-                                color: refLineColor1,
-                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                text: '450',
-                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                                displayUnits: 0,
+                    metadata.objects = {
+                        y1AxisReferenceLine: [{
+                            id: '0',
+                            object: {
+                                show: true,
+                                value: maxValue + 500,
+                                lineColor: { solid: { color: refLineColor1 } },
+                                transparency: 0,
+                                style: powerbi.visuals.lineStyle.dotted,
+                                position: powerbi.visuals.referenceLinePosition.front,
+                                dataLabelShow: true,
+                                dataLabelColor: { solid: { color: refLineColor1 } },
+                                dataLabelDecimalPoints: 0,
+                                dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
                             },
-                        });
-
-                    yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
-                    yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
-                    yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
-                    yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
-                    yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
+                        }],
+                    };
 
                     v.onDataChanged({
                         dataViews: [dataView]
                     });
-
                     setTimeout(() => {
-                        yLine = $('.y1-ref-line');
-                        yLabel = $('.labelGraphicsContext .label').eq(0);
-                        helpers.verifyReferenceLine(
-                            yLine,
-                            yLabel,
-                            graphicsContext,
-                            {
-                                inFront: true,
-                                isHorizontal: true,
-                                color: refLineColor2,
-                                style: powerbi.visuals.lineStyle.dotted,
-                                opacity: 1.0,
-                                label: {
-                                    color: refLineColor2,
-                                    horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                    text: '0M',
-                                    verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                                    displayUnits: 1000000,
-                                },
-                            });
+                        labels = $('.y.axis').children('.tick');
+                        let yAxisMaxValueAfter: number = parseInt(labels[labels.length - 1].textContent, 10);
+                        expect(yAxisMaxValueAfter > yAxisMaxValueBefore).toEqual(true);
 
-                        yAxisReferenceLine['show'] = false;
-                        yAxisReferenceLine['dataLabelShow'] = false;
-
-                        v.onDataChanged({
-                            dataViews: [dataView]
-                        });
-
-                        setTimeout(() => {
-                            expect($('.y1-ref-line').length).toBe(0);
-                            expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
-
-                            done();
-                        }, DefaultWaitForRender);
+                        done();
                     }, DefaultWaitForRender);
                 }, DefaultWaitForRender);
             });
@@ -3137,6 +3090,134 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('line chart reference line dom validation', (done) => {
+                let refLineColor1 = '#ff0000';
+                let refLineColor2 = '#ff00ff';
+                let metadata: powerbi.DataViewMetadata = {
+                    columns: [
+                        dataViewMetadata.columns[0],
+                        dataViewMetadata.columns[1],
+                    ],
+                };
+
+                let dataView: powerbi.DataView = {
+                    metadata: metadata,
+                    categorical: {
+                        categories: [{
+                            source: metadata.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Jean Tablau']
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: metadata.columns[1],
+                                values: [100, 200, 700],
+                            }],
+                            undefined,
+                            metadata.columns[2])
+                    },
+                };
+
+                let yAxisReferenceLine: powerbi.DataViewObject = {
+                    show: true,
+                    value: 450,
+                    lineColor: { solid: { color: refLineColor1 } },
+                    transparency: 60,
+                    style: powerbi.visuals.lineStyle.dashed,
+                    position: powerbi.visuals.referenceLinePosition.back,
+                    dataLabelShow: true,
+                    dataLabelColor: { solid: { color: refLineColor1 } },
+                    dataLabelDecimalPoints: 0,
+                    dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                    dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                    dataLabelDisplayUnits: 0,
+                };
+
+                dataView.metadata.objects = {
+                    y1AxisReferenceLine: [
+                        {
+                            id: '0',
+                            object: yAxisReferenceLine,
+                        }
+                    ]
+                };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                setTimeout(() => {
+                    let graphicsContext = $('.lineChart .lineChartSVG');
+
+                    let yLine = $('.y1-ref-line');
+                    let yLabel = $('.labelGraphicsContext .label').eq(0);
+                    helpers.verifyReferenceLine(
+                        yLine,
+                        yLabel,
+                        graphicsContext,
+                        {
+                            inFront: false,
+                            isHorizontal: true,
+                            color: refLineColor1,
+                            style: powerbi.visuals.lineStyle.dashed,
+                            opacity: 0.4,
+                            label: {
+                                color: refLineColor1,
+                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                text: '450',
+                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                displayUnits: 0,
+                            },
+                        });
+
+                    yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
+                    yAxisReferenceLine['transparency'] = 0;
+                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
+                    yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+                    yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
+
+                    v.onDataChanged({
+                        dataViews: [dataView]
+                    });
+
+                    setTimeout(() => {
+                        yLine = $('.y1-ref-line');
+                        yLabel = $('.labelGraphicsContext .label').eq(0);
+                        helpers.verifyReferenceLine(
+                            yLine,
+                            yLabel,
+                            graphicsContext,
+                            {
+                                inFront: true,
+                                isHorizontal: true,
+                                color: refLineColor2,
+                                style: powerbi.visuals.lineStyle.dotted,
+                                opacity: 1.0,
+                                label: {
+                                    color: refLineColor2,
+                                    horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                    text: '0M',
+                                    verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                    displayUnits: 1000000,
+                                },
+                            });
+
+                        yAxisReferenceLine['show'] = false;
+                        yAxisReferenceLine['dataLabelShow'] = false;
+
+                        v.onDataChanged({
+                            dataViews: [dataView]
+                        });
+
+                        setTimeout(() => {
+                            expect($('.y1-ref-line').length).toBe(0);
+                            expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
+
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);
+            });
 
             it('line chart reference line dom validation with values', (done) => {
                 let refLineColor1 = '#ff0000';
@@ -3758,6 +3839,179 @@ module powerbitests {
                 });
             });
 
+            it('Stacked Area Chart circle positions', (done) => {
+                let valueColumns = DataViewTransform.createValueColumns([
+                    {
+                        source: dataViewMetadata.columns[2],
+                        values: [null, 66, null],
+                    },
+                    {
+                        source: dataViewMetadata.columns[3],
+                        values: [null, 10, null],
+                    },
+                    {
+                        source: dataViewMetadata.columns[1],
+                        values: [20, 50, 0],
+                    }]);
+
+                let dataView = {
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: [2001, 2002, 2003, 2004, 2005]
+                        }],
+                        values: valueColumns
+                    }
+                };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                setTimeout(() => {
+                    if (!interactiveChart) {
+                        let dots = $('.dot');
+                        expect(dots.length).toBe(2);
+
+                        let visibleDots = dots.filter('[r^="4"]');
+                        expect(visibleDots.length).toBe(2);
+                        expect(Math.round(+$(visibleDots[0]).attr('cy'))).toEqual(234);//scale(66+10) - done have access to scale function
+                        expect(Math.round(+$(visibleDots[1]).attr('cy'))).toEqual(203);//scale(66)                    
+                    }
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('stacked area chart reference line dom validation', (done) => {
+                let refLineColor1 = '#ff0000';
+                let refLineColor2 = '#ff00ff';
+                let metadata: powerbi.DataViewMetadata = {
+                    columns: [
+                        dataViewMetadata.columns[0],
+                        dataViewMetadata.columns[1],
+                    ],
+                };
+
+                let dataView: powerbi.DataView = {
+                    metadata: metadata,
+                    categorical: {
+                        categories: [{
+                            source: metadata.columns[0],
+                            values: ['John Domo', 'Delta Force', 'Jean Tablau']
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: metadata.columns[1],
+                                values: [100, 200, 700],
+                            }],
+                            undefined,
+                            metadata.columns[2])
+                    },
+                };
+
+                let yAxisReferenceLine: powerbi.DataViewObject = {
+                    show: true,
+                    value: 450,
+                    lineColor: { solid: { color: refLineColor1 } },
+                    transparency: 60,
+                    style: powerbi.visuals.lineStyle.dashed,
+                    position: powerbi.visuals.referenceLinePosition.back,
+                    dataLabelShow: true,
+                    dataLabelColor: { solid: { color: refLineColor1 } },
+                    dataLabelDecimalPoints: 0,
+                    dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                    dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                    dataLabelDisplayUnits: 0,
+                };
+
+                dataView.metadata.objects = {
+                    y1AxisReferenceLine: [
+                        {
+                            id: '0',
+                            object: yAxisReferenceLine,
+                        }
+                    ]
+                };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                setTimeout(() => {
+                    let graphicsContext = $('.lineChart .lineChartSVG');
+
+                    let yLine = $('.y1-ref-line');
+                    let yLabel = $('.labelGraphicsContext .label').eq(0);
+                    helpers.verifyReferenceLine(
+                        yLine,
+                        yLabel,
+                        graphicsContext,
+                        {
+                            inFront: false,
+                            isHorizontal: true,
+                            color: refLineColor1,
+                            style: powerbi.visuals.lineStyle.dashed,
+                            opacity: 0.4,
+                            label: {
+                                color: refLineColor1,
+                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                text: '450',
+                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                displayUnits: 0,
+                            },
+                        });
+
+                    yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
+                    yAxisReferenceLine['transparency'] = 0;
+                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
+                    yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
+                    yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
+
+                    v.onDataChanged({
+                        dataViews: [dataView]
+                    });
+
+                    setTimeout(() => {
+                        yLine = $('.y1-ref-line');
+                        yLabel = $('.labelGraphicsContext .label').eq(0);
+                        helpers.verifyReferenceLine(
+                            yLine,
+                            yLabel,
+                            graphicsContext,
+                            {
+                                inFront: true,
+                                isHorizontal: true,
+                                color: refLineColor2,
+                                style: powerbi.visuals.lineStyle.dotted,
+                                opacity: 1.0,
+                                label: {
+                                    color: refLineColor2,
+                                    horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
+                                    text: '0M',
+                                    verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
+                                    displayUnits: 1000000,
+                                },
+                            });
+
+                        yAxisReferenceLine['show'] = false;
+                        yAxisReferenceLine['dataLabelShow'] = false;
+
+                        v.onDataChanged({
+                            dataViews: [dataView]
+                        });
+
+                        setTimeout(() => {
+                            expect($('.y1-ref-line').length).toBe(0);
+                            expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
+
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);
+            });
+
             it('Check positive domain on stacked area', (done) => {
                 let valueColumns = DataViewTransform.createValueColumns([
                     {
@@ -4334,7 +4588,6 @@ module powerbitests {
 
         it('Data label per series when container visible and collapsed', (done) => {
             let featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-                seriesLabelFormattingEnabled: true,
             };
             let metadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
             metadataWithLabels.objects = {
@@ -5862,7 +6115,7 @@ module powerbitests {
 
     //    beforeEach(() => {
     //        element = powerbitests.helpers.testDom('500', '500');
-    //        v = powerbi.visuals.visualPluginFactory.createMinerva({ seriesLabelFormattingEnabled: true, lineChartLabelDensityEnabled: true, }).getPlugin('lineChart').create();
+    //        v = powerbi.visuals.visualPluginFactory.createMinerva({ lineChartLabelDensityEnabled: true, }).getPlugin('lineChart').create();
 
     //        v.init({
     //            element: element,
@@ -5998,9 +6251,9 @@ module powerbitests {
         return labelDataPointsGroups[0].labelDataPoints;
     }
 
-    function callCreateLabelDataPointsObj(v: powerbi.IVisual): powerbi.LabelDataPointsGroup[] {
-        return (<any>v).layers[0].createLabelDataPoints();
-    }
+//    function callCreateLabelDataPointsObj(v: powerbi.IVisual): powerbi.LabelDataPointsGroup[] {
+//        return (<any>v).layers[0].createLabelDataPoints();
+//    }
 
     function createTooltipEvent(data: any, context?: HTMLElement): powerbi.visuals.TooltipEvent {
         return {

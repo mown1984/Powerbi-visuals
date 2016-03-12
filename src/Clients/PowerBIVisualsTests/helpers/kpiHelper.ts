@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.kpiHelper {
     import ValueType = powerbi.ValueType;
     import DataViewTransform = powerbi.data.DataViewTransform;

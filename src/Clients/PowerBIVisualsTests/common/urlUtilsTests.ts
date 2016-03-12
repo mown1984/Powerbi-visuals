@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import UrlUtils = jsCommon.UrlUtils;
 
@@ -82,7 +80,6 @@ module powerbitests {
             expect(UrlUtils.isValidUrl('javascript:alert("Hello")')).toBe(false);
         });
     });
-
 
     describe("UrlUtils.findAllValidUrls tests", () => {
         it("null string", () => {

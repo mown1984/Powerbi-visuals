@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     export interface CompiledDataViewRoleBindMappingWithReduction extends CompiledDataViewRoleBindMapping, HasReductionAlgorithm {
     }

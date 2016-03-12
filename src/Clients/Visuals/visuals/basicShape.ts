@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface BasicShapeDataViewObjects extends DataViewObjects {
         general: BasicShapeDataViewObject;
@@ -78,9 +76,9 @@ module powerbi.visuals {
         public static DefaultStrokeColor: string = '#00B8AA';
         public static DefaultFillColor: string = '#E6E6E6';
         public static DefaultFillShowValue: boolean = true; 
-        public static DefaultFillTransValue: number = 100;
+        public static DefaultFillTransValue: number = 0;
         public static DefaultWeightValue: number = 3;
-        public static DefaultLineTransValue: number = 100;
+        public static DefaultLineTransValue: number = 0;
         public static DefaultRoundEdgeValue: number = 0;
         public static DefaultAngle: number = 0;
 

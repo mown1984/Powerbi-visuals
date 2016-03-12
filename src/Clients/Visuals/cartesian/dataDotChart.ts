@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 /**
  * IMPORTANT: This chart is not currently enabled in the PBI system and is under development.
  */
@@ -217,7 +215,7 @@ module powerbi.visuals {
 
             let yDomain = AxisHelper.createValueDomain(seriesArray, /*includeZero:*/ true) || fallBackDomain;
 
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, yDomain);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, yDomain, options.y1ReferenceLineValue);
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: height,
@@ -233,7 +231,7 @@ module powerbi.visuals {
             });
 
             let axisType = this.xAxisProperties ? this.xAxisProperties.axisType : ValueType.fromDescriptor({ text: true });
-            let xDomain = AxisHelper.createDomain(seriesArray, axisType, /*isScalar:*/ false, options.forcedXDomain);
+            let xDomain = AxisHelper.createDomain(seriesArray, axisType, /*isScalar:*/ false, options.forcedXDomain, options.xReferenceLineValue);
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: width,
                 dataDomain: xDomain,

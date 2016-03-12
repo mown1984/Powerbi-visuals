@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi {
     import ISize = powerbi.visuals.shapes.ISize;
     import IVector = powerbi.visuals.shapes.IVector;
@@ -348,7 +346,7 @@ module powerbi {
                     }
                     else {
                         text = formattedDataLabel;
-                        labelPoint.secondRowText = formattedCategoryLabel;
+                        labelPoint.secondRowText = formattedCategoryLabel;                
                     }
                     break;
                 case labelStyle.data:
@@ -365,6 +363,7 @@ module powerbi {
             return {
                 boundingBox: boundingBox,
                 text: text,
+                tooltip: labelPoint.tooltip,
                 isVisible: true,
                 fill: labelPoint.outsideFill,
                 identity: labelPoint.identity,

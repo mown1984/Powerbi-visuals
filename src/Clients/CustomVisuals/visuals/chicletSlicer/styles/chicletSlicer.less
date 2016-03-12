@@ -51,6 +51,8 @@
     }
 
     .slicerBody {
+        margin-left: -5px;
+
         .cell {
             box-sizing: border-box;
             padding: 2px 5px;
@@ -105,6 +107,16 @@
             .slicerItem-disabled {
                 opacity: 0.4;
                 color: #fff !important;
+            }
+        }
+
+        &.slicerBody-vertical {
+            .cell {
+                clear:both;
+                float:left;
+            }
+            .row {
+                float:left;
             }
         }
     }

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.DotPlot;
 
@@ -43,14 +41,14 @@ module powerbitests.customVisuals {
                 dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
             });
 
-            it("svg element created", () =>expect(visualBuilder.mainElement[0]).toBeInDOM());
+            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
-                    expect(visualBuilder.mainElement.children(".dotPlot").children(".dot").length)
+                    expect(visualBuilder.mainElement.children(".dotplotSelector").children(".dotplotGroup").length)
                         .toBeGreaterThan(0);
-                    expect(visualBuilder.mainElement.children(".x.axis").children(".tick").length)
+                    expect(visualBuilder.mainElement.children('.axisGraphicsContext').children(".x.axis").children(".tick").length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
                     done();
                 }, powerbitests.DefaultWaitForRender);
@@ -64,9 +62,9 @@ module powerbitests.customVisuals {
             this.build();
             this.init();
         }
-        
+
         public get mainElement() {
-            return this.element.children('svg.dotPlot');
+            return this.element.children('svg');
         }
 
         private build(): void {

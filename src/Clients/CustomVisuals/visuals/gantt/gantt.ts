@@ -27,84 +27,145 @@
 module powerbi.visuals.samples {
     import ValueFormatter = powerbi.visuals.valueFormatter;
     import SelectionManager = utility.SelectionManager;
-    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
-    import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
+    import IStringResourceProvider = jsCommon.IStringResourceProvider;
 
-    export interface Task {
-        duration: number;
-        index: number;
-        description: string;
-        shape: string;
-        resource: string;
-        id: string;
-        group: string;
-        start: Date;
-        end: Date;
-        completion: number;
-        color: string;
+    const PercentFormat: string = "0.00 %;-0.00 %;0.00 %";
+    const MillisecondsInAWeek: number = 604800000;
+    const ChartLineHeight: number = 45;
+    const PaddingTasks: number = 5;
+    const DefaultTaskColor: string = "#01b8aa";
+    const AxisTickPadding = 10;
+
+    export interface Task extends SelectableDataPoint {
+        id: number;
         name: string;
-        selectionId: SelectionId;
+        start: Date;
+        duration: number;
+        completion: number;
+        resource: string;
+        end: Date;
+        taskType: string;
+        description: string;
+        color: string;
         tooltipInfo: TooltipDataItem[];
     }
 
-    export interface GanttChartSettings {
+    export interface GanttChartFormatters {
         startDateFormatter: IValueFormatter;
         completionFormatter: IValueFormatter;
         durationFormatter: IValueFormatter;
     }
 
-    export interface GanttViewModel {
-        tasks: Task[];
-        fixedHeight: number;
-        paddingLines: number;
-        paddingTasks: number;
+    export interface GanttChartData {
+        legendData: LegendData;
+        series: GanttSeries[];
+        showLegend: boolean;
     }
 
-    interface GanttLine {
+    export interface GanttViewModel {
+        taskLabelsShow: boolean;
+        taskLabelsColor: string;
+        taskLabelsFontSize: number;
+        taskLabelsWidth: number;
+        taskProgressColor: string;
+        taskResourceShow: boolean;
+        taskResourceColor: string;
+        taskResourceFontSize: number;
+    }
+
+    export interface GanttSeries {
+        typeName: string;
+        color: string;
+        values: any[];
+        selectionId: SelectionId;
+    }
+
+    interface Line {
         x1: number;
         y1: number;
         x2: number;
         y2: number;
     }
 
-    interface DurationAndCompletion {
-        duration: number;
-        completion: number;
+    export const GanttChartProps = {
+        taskCompletion: {
+            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskCompletion', propertyName: 'fill' },
+        },
+        dataPoint: {
+            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
+        },
+        taskLabels: {
+            show: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'show' },
+            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'fill' },
+            fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'fontSize' },
+            width: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'width' },
+        },
+        taskResource: {
+            show: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'show' },
+            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'fill' },
+            fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'fontSize' },
+        }
+    };
+
+    module Selectors {
+
+        import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+        import CreateClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
+        export const ClassName: ClassAndSelector = CreateClassAndSelector("gantt");
+        export const Chart: ClassAndSelector = CreateClassAndSelector("chart");
+        export const ChartLine: ClassAndSelector = CreateClassAndSelector("chart-line");
+        export const Body: ClassAndSelector = CreateClassAndSelector("gantt-body");
+        export const AxisGroup: ClassAndSelector = CreateClassAndSelector("axis");
+        export const Domain: ClassAndSelector = CreateClassAndSelector("domain");
+        export const AxisTick: ClassAndSelector = CreateClassAndSelector("tick");
+
+        export const Tasks: ClassAndSelector = CreateClassAndSelector("tasks");
+        export const SingleTask: ClassAndSelector = CreateClassAndSelector("task");
+        export const TaskRect: ClassAndSelector = CreateClassAndSelector("task-rect");
+        export const TaskProgress: ClassAndSelector = CreateClassAndSelector("task-progress");
+        export const TaskResource: ClassAndSelector = CreateClassAndSelector("task-resource");
+        export const SingleMilestone: ClassAndSelector = CreateClassAndSelector("milestone");
+
+        export const TaskLabels: ClassAndSelector = CreateClassAndSelector("task-labels");
+        export const TaskLines: ClassAndSelector = CreateClassAndSelector("task-lines");
+        export const SingleTaskLine: ClassAndSelector = CreateClassAndSelector("task-line");
+        export const Label: ClassAndSelector = CreateClassAndSelector("label");
     }
 
     export class Gantt implements IVisual {
-        private static ClassName: string = "gantt";
 
-        private static ChartSelector: ClassAndSelector = createClassAndSelector("chart");
-        private static ChartLineSelector: ClassAndSelector = createClassAndSelector("chart-line");
+        private data: GanttChartData;
+        private dataView: DataView;
+        private viewport: IViewport;
+        private timeInterval: D3.Time.Range;
 
-        private static BodySelector: ClassAndSelector = createClassAndSelector("gantt-body");
-        private static AxisGroupSelector: ClassAndSelector = createClassAndSelector("axis");
-
-        private static TasksSelector: ClassAndSelector = createClassAndSelector("tasks");
-        private static TaskSelector: ClassAndSelector = createClassAndSelector("task");
-        private static TaskRectSelector: ClassAndSelector = createClassAndSelector("task-rect");
-        private static TaskProgressSelector: ClassAndSelector = createClassAndSelector("task-progress");
-
-        private static MilestonesSelector: ClassAndSelector = createClassAndSelector("milestones");
-        private static MilestoneSelector: ClassAndSelector = createClassAndSelector("milestone");
-
-        private static TaskLabelsSelector: ClassAndSelector = createClassAndSelector("task-labels");
-
-        private static TaskLinesSelector: ClassAndSelector = createClassAndSelector("task-lines");
-        private static TaskLineSelector: ClassAndSelector = createClassAndSelector("task-line");
-
-        private static LabelSelector: ClassAndSelector = createClassAndSelector("label");
-
-        private static FixedHeight: number = 45;
-        private static PaddingLines: number = 0;
-        private static PaddingTasks: number = 0.15;
-
-        private static OpacityOfSelectionTask: number = 0.2;
+        private static DefaultValues = {
+            AxisTickSize: 6,
+            LabelFontSize: 14,
+            LegendFontSize: 8,
+            LegendLabelColor: "#000000",
+            MaxTaskOpacity: 1,
+            MinTaskOpacity: 0.4,
+            ProgressBarHeight: 4,
+            ProgressColor: "#000000",
+            ResourceFontSize: 12,
+            ResourceWidth: 100,
+            TaskColor: "#00B099",
+            TaskLabelColor: "#000000",
+            TaskLabelWidth: 140,
+            TaskLineWidth: 15,
+            TaskResourceColor: "#000000",
+        };
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
+                    name: "Series",
+                    kind: VisualDataRoleKind.Grouping,
+                    displayName: "Legend",
+                }, {
                     name: "Task",
                     kind: VisualDataRoleKind.Grouping,
                     displayName: "Task"
@@ -131,546 +192,700 @@ module powerbi.visuals.samples {
             dataViewMappings: [{
                 conditions: [
                     {
+                        "Series": { min: 0, max: 1 },
                         "Task": { min: 1, max: 1 },
                         "StartDate": { min: 0, max: 0 },
                         "Duration": { min: 0, max: 0 },
                         "Completion": { min: 0, max: 0 },
                         "Resource": { min: 0, max: 0 }
                     }, {
+                        "Series": { min: 0, max: 1 },
                         "Task": { min: 1, max: 1 },
-                        "StartDate": { min: 1, max: 1 },
+                        "StartDate": { min: 0, max: 1 },
                         "Duration": { min: 0, max: 0 },
                         "Completion": { min: 0, max: 0 },
                         "Resource": { min: 0, max: 0 }
                     }, {
-                        "Task": { min: 1, max: 1 },
-                        "StartDate": { min: 1, max: 1 },
+                        "Series": { min: 0, max: 1 },
+                        "Task": { min: 0, max: 1 },
+                        "StartDate": { min: 0, max: 1 },
                         "Duration": { min: 0, max: 1 },
                         "Completion": { min: 0, max: 1 },
                         "Resource": { min: 0, max: 1 },
                     }
                 ],
-                matrix: {
+                table: {
                     rows: {
-                        select: [
+                        select:
+                        [
+                            { for: { in: "Series" } },
                             { for: { in: "Task" } },
                             { for: { in: "StartDate" } },
-                            { for: { in: "Resource" } }
-
-                        ]
-                    },
-                    values: {
-                        select: [
-                            { bind: { to: "Duration" } },
-                            { bind: { to: "Completion" } }
+                            { for: { in: "Resource" } },
+                            { for: { in: "Duration" } },
+                            { for: { in: "Completion" } }
                         ]
                     }
-                }
-            }]
+                },
+            }],
+            objects: {
+                taskLabels: {
+                    displayName: 'Category Labels',
+                    properties: {
+                        show: {
+                            displayName: "Show",
+                            type: { bool: true }
+                        },
+                        fill: {
+                            displayName: 'Fill',
+                            type: { fill: { solid: { color: true } } }
+                        },
+                        fontSize: {
+                            displayName: 'Font Size',
+                            type: { formatting: { fontSize: true } }
+                        },
+                        width: {
+                            displayName: 'Width',
+                            type: { numeric: true }
+                        }
+                    }
+                },
+                taskCompletion: {
+                    displayName: 'Task Completion',
+                    properties: {
+                        show: {
+                            type: { bool: true }
+                        },
+                        fill: {
+                            displayName: 'Completion Color',
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
+                taskResource: {
+                    displayName: 'Data Labels',
+                    properties: {
+                        show: {
+                            displayName: "Show",
+                            type: { bool: true }
+                        },
+                        fill: {
+                            displayName: 'Color',
+                            type: { fill: { solid: { color: true } } }
+                        },
+                        fontSize: {
+                            displayName: 'Font Size',
+                            type: { formatting: { fontSize: true } }
+                        }
+                    }
+                },
+            }
         };
 
-        // Configuration
         private margin: IMargin = {
             top: 30,
             right: 40,
             bottom: 40,
-            left: 100
+            left: 10
         };
 
         private style: IVisualStyle;
-        private root: D3.Selection;
+        private body: D3.Selection;
+        private ganttSvg: D3.Selection;
         private viewModel: GanttViewModel;
-        private xScale: D3.Scale.LinearScale;
-        private yScale: D3.Scale.TimeScale;
-        private yAxis: D3.Svg.Axis;
-        private yAxisGroup: D3.Selection;
+        private timeScale: D3.Scale.TimeScale;
+        private timeAxis: D3.Svg.Axis;
+        private axisGroup: D3.Selection;
 
         private chartGroup: D3.Selection;
         private taskGroup: D3.Selection;
-        private milestoneGroup: D3.Selection;
         private labelGroup: D3.Selection;
         private lineGroup: D3.Selection;
 
         private clearCatcher: D3.Selection;
-        private ganttBody: D3.Selection;
-        private scrollContainer: D3.Selection;
-
+        private ganttDiv: D3.Selection;
         private selectionManager: SelectionManager;
+        private behavior: GanttChartBehavior;
+        private interactivityService: IInteractivityService;
+        private hostServices: IVisualHostServices;
 
-        /**
-        * Core: init, convert and update, destroy
-        */
+        public static getMaxTaskOpacity(): number {
+            return Gantt.DefaultValues.MaxTaskOpacity;
+        }
+
+        public static getMinTaskOpacity(): number {
+            return Gantt.DefaultValues.MinTaskOpacity;
+        }
+
         public init(options: VisualInitOptions): void {
             this.style = options.style;
+            this.body = d3.select(options.element.get(0));
 
-            var body = d3.select(options.element.get(0));
+            this.hostServices = options.host;
+            this.selectionManager = new SelectionManager({ hostServices: options.host });
 
-            this.clearCatcher = appendClearCatcher(body);
-            this.ganttBody = this.clearCatcher
-                .append("div")
-                .classed(Gantt.ChartSelector.class, true)
-                .style({ "overflow": "auto" });
+            this.createViewport();
+            this.updateChartSize(options.viewport);
+            this.behavior = new GanttChartBehavior();
+            this.interactivityService = createInteractivityService(this.hostServices);
 
-            this.scrollContainer = this.ganttBody.append("div")
-                .classed(Gantt.BodySelector.class, true);
+            this.timeScale = d3.time.scale();
+            this.data = {
+                legendData: null,
+                series: null,
+                showLegend: null
+            };
+        }
 
-            this.root = this.scrollContainer
+        private createViewport(): void {
+
+            //create div container to the whole viewport area
+            this.ganttDiv = this.body.append("div")
+                .classed(Selectors.Body.class, true);
+
+            //create container to the svg area
+            this.ganttSvg = this.ganttDiv
                 .append("svg")
-                .classed(Gantt.ClassName, true);
+                .classed(Selectors.ClassName.class, true);
+         
+            //create clear catcher
+            this.clearCatcher = appendClearCatcher(this.ganttSvg);
 
-            this.yAxisGroup = this.root
+            //create axis container
+            this.axisGroup = this.ganttSvg
                 .append("g")
-                .classed(Gantt.AxisGroupSelector.class, true);
-
-            this.lineGroup = this.root
+                .classed(Selectors.AxisGroup.class, true);
+            
+            //create task lines container
+            this.lineGroup = this.ganttSvg
                 .append("g")
-                .classed(Gantt.TaskLinesSelector.class, true);
-
-            this.chartGroup = this.root
+                .classed(Selectors.TaskLines.class, true);
+            
+            //create chart container
+            this.chartGroup = this.ganttSvg
                 .append("g")
-                .classed(Gantt.ChartSelector.class, true);
-
+                .classed(Selectors.Chart.class, true);
+            
+            //create tasks container
             this.taskGroup = this.chartGroup
                 .append("g")
-                .classed(Gantt.TasksSelector.class, true);
-
-            this.milestoneGroup = this.chartGroup
+                .classed(Selectors.Tasks.class, true);
+            
+            //create tasks labels container
+            this.labelGroup = this.chartGroup
                 .append("g")
-                .classed(Gantt.MilestonesSelector.class, true);
-
-            this.labelGroup = this.root
-                .append("g")
-                .classed(Gantt.TaskLabelsSelector.class, true);
-
-            this.xScale = d3.scale.linear();
-            this.yScale = d3.time.scale();
-
-            this.selectionManager = new SelectionManager({ hostServices: options.host });
+                .classed(Selectors.TaskLabels.class, true);
         }
 
-        public converter(dataView: DataView): GanttViewModel {
+        private clearViewport(): void {
+            this.axisGroup.selectAll(Selectors.AxisTick.selector).remove();
+            this.axisGroup.selectAll(Selectors.Domain.selector).remove();
+            this.lineGroup.selectAll("*").remove();
+            this.chartGroup.selectAll(Selectors.ChartLine.selector).remove();
+            this.chartGroup.selectAll(Selectors.SingleTask.selector).remove();
+        }
+
+        /**
+         * Update div container size to the whole viewport area
+         * @param viewport The vieport to change it size 
+         */
+        private updateChartSize(viewport: IViewport): void {
+            this.ganttDiv.style({
+                height: PixelConverter.toString(viewport.height),
+                width: PixelConverter.toString(viewport.width)
+            });
+        }
+
+        /**
+        * Convert the dataView to view model
+        * @param dataView The data Model
+        */
+        public static converter(dataView: DataView): GanttViewModel {
+            let taskLabelsShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, GanttChartProps.taskLabels.show, true);
+            let taskLabelsColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor);
+            let taskLabelsFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
+            let taskLabelsWidth: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskLabels.width, Gantt.DefaultValues.TaskLabelWidth);
+            let taskProgressColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskCompletion.fill, Gantt.DefaultValues.ProgressColor);
+            let taskResourceShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, GanttChartProps.taskResource.show, true);
+            let taskResourceColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskResource.fill, Gantt.DefaultValues.TaskResourceColor);
+            let taskResourceFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize);
+
+            let settings: GanttViewModel = {
+                taskLabelsShow: taskLabelsShow,
+                taskLabelsColor: taskLabelsColor,
+                taskLabelsFontSize: taskLabelsFontSize,
+                taskLabelsWidth: taskLabelsWidth,
+                taskProgressColor: taskProgressColor,
+                taskResourceShow: taskResourceShow,
+                taskResourceColor: taskResourceColor,
+                taskResourceFontSize: taskResourceFontSize,
+            };
+
+            return settings;
+        }
+
+        /**
+         * Returns the chart formatters
+         * @param dataView The data Model
+         */
+        private parseSettings(dataView: DataView): GanttChartFormatters {
             if (!dataView ||
-                !dataView.matrix ||
-                !dataView.matrix.rows ||
-                !dataView.matrix.rows.root) {
-                return {
-                    tasks: [],
-                    fixedHeight: Gantt.FixedHeight,
-                    paddingLines: Gantt.PaddingLines,
-                    paddingTasks: Gantt.PaddingTasks
+                !dataView.metadata ||
+                !dataView.metadata.columns)
+                return null;
+
+            let dateFormat = "d";
+            let numberFormat = "#";
+
+            for (let dvColumn of dataView.metadata.columns) {
+                let startNameInCapabilitiesName = Gantt.capabilities.dataRoles.filter((d) => d.name === "StartDate");
+                if (dvColumn.queryName.indexOf(startNameInCapabilitiesName[0].displayName.toString()) > -1)
+                    dateFormat = dvColumn.format;
+            }
+
+            return <GanttChartFormatters>{
+                startDateFormatter: valueFormatter.create({ format: dateFormat }),
+                durationFormatter: valueFormatter.create({ format: numberFormat }),
+                completionFormatter: valueFormatter.create({ format: PercentFormat, value: 1, allowFormatBeautification: true })
+            };
+        }
+
+        /**
+        * Create task objects dataView
+        * @param dataView The data Model.
+        * @param formatters task attributes represented format.
+        * @param series An array that holds the color data of different task groups.
+        */
+        private createTasks(dataView: DataView, formatters: GanttChartFormatters): Task[] {
+
+            let columnSource = dataView.table.columns;
+            let data = dataView.table.rows;
+            let categories = dataView.categorical.categories[0];
+
+            return data.map((child: DataViewTableRow, index: number) => {
+
+                let dateString = this.getTaskProperty<string>(columnSource, child, "StartDate");
+                let startDate = new Date(dateString);
+
+                let duration = this.getTaskProperty<number>(columnSource, child, "Duration");
+
+                let completion = this.getTaskProperty<number>(columnSource, child, "Completion");
+                completion = completion <= 1 ? completion : 1;
+
+                let taskType = this.getTaskProperty<string>(columnSource, child, "Series");
+
+                let task: Task = {
+                    id: index,
+                    name: this.getTaskProperty<string>(columnSource, child, "Task"),
+                    start: dateString ? startDate : new Date(Date.now()),
+                    duration: duration > 0 ? duration : 1,
+                    end: null,
+                    completion: completion > 0 ? completion : 0,
+                    resource: this.getTaskProperty<string>(columnSource, child, "Resource"),
+                    taskType: taskType,
+                    color: DefaultTaskColor,
+                    tooltipInfo: null,
+                    description: "",
+                    identity: SelectionId.createWithId(categories.identity[index]),
+                    selected: false
                 };
-            }
-
-            var tasks: Task[],
-                columnSource: DataViewMetadataColumn[] = [],
-                settings: GanttChartSettings;
-
-            settings = this.parseSettings(dataView);
-
-            if (dataView.matrix.columns &&
-                dataView.matrix.columns.levels &&
-                dataView.matrix.columns.levels[0] &&
-                dataView.matrix.columns.levels[0].sources) {
-                columnSource = dataView.matrix.columns.levels[0].sources;
-            }
-
-            tasks = this.getTasks(columnSource, dataView.matrix.rows.root, settings);
-
-            return {
-                tasks: tasks,
-                fixedHeight: Gantt.FixedHeight,
-                paddingLines: Gantt.PaddingLines,
-                paddingTasks: Gantt.PaddingTasks
-            };
-        }
-
-        private parseSettings(dataView: DataView): GanttChartSettings {
-            var rolesFormats: string[] = Gantt.capabilities.dataRoles
-                .map(x => dataView.metadata.columns.filter(y => y.roles[x.name])[0])
-                .map(x => x ? x.format : undefined);
-            return <GanttChartSettings>{
-                startDateFormatter: valueFormatter.create({ format: rolesFormats[1] }),
-                durationFormatter: valueFormatter.create({ format: rolesFormats[2] }),
-                completionFormatter: valueFormatter.create({ format: rolesFormats[3] })
-            };
-        }
-
-        private getTasks(columnSource: DataViewMetadataColumn[], root: DataViewMatrixNode, settings: GanttChartSettings): Task[] {
-            return root.children.map((child: DataViewTreeNode, index: number) => {
-                var task: Task = <Task>{},
-                    durationAndCompletion: DurationAndCompletion;
-
-                task.index = index;
-                task.name = child.value;
-                task.start = this.getStartDateOfTask(child);
-                task.resource = this.getResource(child);
-                task.id = "ID" + index;
-
-                durationAndCompletion = this.getDurationAndCompletion(columnSource, child);
-
-                task.duration = durationAndCompletion.duration;
-                task.completion = durationAndCompletion.completion * 100;
-
-                task.shape = "none";
-                task.color = "green";
-                task.group = null;
-                task.description = "";
 
                 task.end = d3.time.day.offset(task.start, task.duration);
-                task.selectionId = SelectionId.createWithId(child.identity);
-                task.tooltipInfo = this.getTooltipInfo(task, settings);
-
+                task.tooltipInfo = this.getTooltipInfo(task, formatters);
                 return task;
             });
         }
 
-        private getTooltipInfo(task: Task, settings: GanttChartSettings) {
-            var result: TooltipDataItem[] = [];
-            result.push({ displayName: Gantt.capabilities.dataRoles[0].name, value: task.name });
-            if (!isNaN(task.start.getDate())) {
-                result.push({ displayName: Gantt.capabilities.dataRoles[1].name, value: settings.startDateFormatter.format(task.start) });
-            }
+        /**
+        * Get the tooltip info (data display names & formated values)
+        * @param task All task attributes.
+        * @param formatters Formatting options for gantt attributes.
+        */
+        private getTooltipInfo(task: Task, formatters: GanttChartFormatters, timeInterval: string = "Days") {
+            let tooltipDataArray: TooltipDataItem[] = [];
 
-            result.push({ displayName: Gantt.capabilities.dataRoles[2].name, value: settings.durationFormatter.format(task.duration) });
-            result.push({ displayName: Gantt.capabilities.dataRoles[3].name, value: settings.completionFormatter.format(task.completion / 100) });
+            if (task.taskType)
+                tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[0].name, value: task.taskType });
 
-            if (task.resource) {
-                result.push({ displayName: Gantt.capabilities.dataRoles[4].name, value: task.resource });
-            }
+            tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[1].name, value: task.name });
+            if (!isNaN(task.start.getDate()))
+                tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[2].name, value: formatters.startDateFormatter.format(task.start.toLocaleDateString()) });
 
-            return result;
+            tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[3].name, value: formatters.durationFormatter.format(task.duration) + " " + timeInterval });
+            tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[4].name, value: formatters.completionFormatter.format(task.completion) });
+
+            if (task.resource)
+                tooltipDataArray.push({ displayName: Gantt.capabilities.dataRoles[5].name, value: task.resource });
+
+            return tooltipDataArray;
         }
 
-        private getStartDateOfTask(child: DataViewTreeNode): Date {
-            if (!child || !child.children || !child.children[0]) {
-                return null;
-            }
-
-            return child.children[0].value;
-        }
-
-        private getResource(child: DataViewTreeNode): any {
+        /**
+         * Get task property from the data view
+         * @param columnSource
+         * @param child
+         * @param propertyName The property to get
+         */
+        private getTaskProperty<T>(columnSource: DataViewMetadataColumn[], child: DataViewTableRow, propertyName: string): T {
             if (!child ||
-                !child.children ||
-                !child.children[0] ||
-                !child.children[0].children ||
-                !child.children[0].children[0]) {
-                return "";
-            }
+                !columnSource ||
+                !(columnSource.length > 0) ||
+                !columnSource[0].roles)
+                return null;
 
-            return !child.children[0].children[0].value;
+            let index = columnSource.indexOf(columnSource.filter(x=> x.roles[propertyName])[0]);
+            return index !== -1 ? <T>child[index] : null;
         }
 
-        private getDurationAndCompletion(columnSource: DataViewMetadataColumn[], child: DataViewTreeNode): DurationAndCompletion {
-            if (!child || !columnSource || !(columnSource.length > 0)) {
-                return {
-                    duration: 0,
-                    completion: 0
-                };
+        private isChartHasTask(dataView: DataView): boolean {
+            for (let dvCategory of dataView.categorical.categories) {
+                let taskInCapabilitiesName = Gantt.capabilities.dataRoles.filter((d) => d.name === "Task");
+                if (dvCategory.source.queryName.indexOf(taskInCapabilitiesName[0].displayName.toString()) > -1)
+                    return true;
             }
-
-            if (child.values && child.values[0]) {
-                return {
-                    duration: this.getValue(columnSource, "Duration", child.values),
-                    completion: this.getValue(columnSource, "Completion", child.values)
-                };
-            } else if (child.children) {
-                return this.getDurationAndCompletion(columnSource, child.children[0]);
-            } else {
-                return this.getDurationAndCompletion([], null);
-            }
+            return false;
         }
 
-        private getValue(columnSource: DataViewMetadataColumn[], roleName: string, values: { [id: number]: DataViewTreeNodeValue }): number {
-            if (!columnSource[0] || !columnSource[0].roles) {
-                return 0;
+        /**
+         * check if data is filtered data
+         * @param dataView The new data model
+         */
+        public isDataViewFiltered(dataView: DataView): boolean {
+            if (!dataView.table ||
+                !dataView.table.rows ||
+                !this.dataView ||
+                !this.dataView.table ||
+                !this.dataView.table.rows) {
+
+                return false;
             }
 
-            var nodeValue: DataViewTreeNodeValue = columnSource[0].roles[roleName] ? values[0] : values[1];
+            let currentRows = dataView.table.rows;
+            let previousRows = this.dataView.table.rows;
 
-            return nodeValue ? nodeValue.value || 0 : 0;
+            if (currentRows.length > previousRows.length)
+                return false;
+
+            let numOfIdenticalRows = 0;
+            let rowFound: boolean;
+
+            for (let row of previousRows) {
+                rowFound = false;
+                for (let prevRow of currentRows) {
+                    if (_.isEqual(prevRow, row))
+                        rowFound = true;
+                }
+                if (rowFound)
+                    numOfIdenticalRows++;
+            }
+
+            if (currentRows.length === numOfIdenticalRows &&
+                currentRows.length !== previousRows.length)
+                return true;
+            return false;
         }
 
+        /**
+        * Called on data change or resizing
+        * @param options The visual option that contains the dataview and the viewport
+        */
         public update(options: VisualUpdateOptions) {
-            if (!options.dataViews || !options.dataViews[0]) {
+            if (!options.dataViews || !options.dataViews[0])
                 return;
-            };
+            let dataView = options.dataViews[0];
 
-            var viewport = options.viewport,
-                viewModel: GanttViewModel = this.converter(options.dataViews[0]),
-                tasks: Task[] = viewModel.tasks,
-                width = viewport.width - this.margin.left - this.margin.right,
+            if (!this.isChartHasTask(dataView)) {
+                this.clearViewport();
+                return;
+            }
+
+            let viewport = options.viewport;
+            this.viewport = viewport;
+
+            this.updateChartSize(viewport);
+
+            let viewModel: GanttViewModel = Gantt.converter(dataView),
+                tasks: Task[] = [],
                 height = viewport.height - this.margin.top - this.margin.bottom,
-                taskSelection: D3.Selection;
+                updateTaskSelection: D3.UpdateSelection,
+                taskSelection: D3.Selection,
+                filteredDataView: DataView;
 
+            let formatters: GanttChartFormatters = this.parseSettings(dataView);
+
+            if (this.isDataViewFiltered(dataView))
+                filteredDataView = dataView;
+
+            if (!this.dataView || dataView.metadata.objects)
+                this.dataView = dataView;
+
+            tasks = this.createTasks(dataView, formatters);
             this.viewModel = viewModel;
 
-            // add changes for scrolling
-            this.ganttBody.style({
-                "height": viewport.height + "px",
-                "width": viewport.width + "px",
-            });
+            if (this.interactivityService)
+                this.interactivityService.applySelectionStateToData(tasks);
 
-            this.scrollContainer.style({
-                "height": (tasks.length * 45 + this.margin.top) + "px",
-                "width": "100%"
-            });
+            let tasksSortedByStartDate = _.sortBy(tasks, (t) => t.start);
+            let tasksSortedByEndDate = _.sortBy(tasks, (t) => t.end);
 
-            this.root
-                .attr("fill-opacity", 0.5)
-                .style({
-                    "height": (tasks.length * 45 + this.margin.top) + "px",
-                    "width": "100%",
-                    "font-size": 10
+            this.timeAxis = d3.svg.axis().orient("bottom");
+            let t1: Date = tasksSortedByStartDate[0].start,
+                t2: Date = tasksSortedByEndDate[tasks.length - 1].end;
+ 
+            let weeks: number = Math.ceil(Math.round(t2.valueOf() - t1.valueOf()) / MillisecondsInAWeek);
+            let axisLength = weeks * 50;
+            this.ganttSvg
+                .attr({
+                    "fill-opacity": 1,
+                    height: PixelConverter.toString(tasks.length * ChartLineHeight + this.margin.top),
+                    width: PixelConverter.toString(this.margin.left + this.viewModel.taskLabelsWidth + axisLength + Gantt.DefaultValues.ResourceWidth)
                 });
+            this.timeInterval = weeks === 1 ? d3.time.scale.utc() : d3.time.weeks;
 
-            this.yAxis = d3.svg.axis().orient("bottom");
+            this.setAxisAttributes(tasks, axisLength, height, this.timeInterval);
+            this.updateElementsPositions(viewport, this.margin);
 
-            this.updateMisc(viewModel.tasks, width, height);
-            this.updateNowLine(viewModel.tasks);
-            this.updateTaskLines(viewModel.tasks, width);
+            this.createMilestoneLine(tasks);
+            this.updateTaskLabels(tasks, viewModel.taskLabelsWidth);
+            updateTaskSelection = this.updateTasks(tasks);
+            this.addTaskTooltips(updateTaskSelection);
+            taskSelection = this.getAllTaskSelection();
 
-            taskSelection = this.updateTasks(viewModel.tasks);
-
-            this.updateMilestoneShapes(viewModel.tasks);
-            this.updateLabels(viewModel.tasks);
-
-            this.bindSelectionHandler(taskSelection);
+            if (this.interactivityService) {
+                let behaviorOptions: GanttBehaviorOptions = {
+                    clearCatcher: this.clearCatcher,
+                    taskSelection: taskSelection,
+                    interactivityService: this.interactivityService
+                };
+                this.interactivityService.bind(tasks, this.behavior, behaviorOptions);
+            }
         }
 
-        private updateLabels(tasks: Task[]): void {
-            var labelSelection: D3.UpdateSelection;
+        /**
+        * Update task labels and add its tooltips 
+        * @param tasks All tasks array
+        * @param width The task label width
+        */
+        private updateTaskLabels(tasks: Task[], width: number): void {
+            let axisLabel: D3.UpdateSelection;
+            let taskLineCoordinateX: number = 15;
+            let taskLabelsShow = this.viewModel ? this.viewModel.taskLabelsShow : true;
+            let taskLabelsColor = this.viewModel ? this.viewModel.taskLabelsColor : Gantt.DefaultValues.TaskLabelColor;
+            let taskLabelsFontSize = this.viewModel ? this.viewModel.taskLabelsFontSize : Gantt.DefaultValues.LabelFontSize;
 
-            labelSelection = this.labelGroup
-                .selectAll(Gantt.LabelSelector.selector)
-                .data(tasks);
+            if (taskLabelsShow) {
+                axisLabel = this.lineGroup
+                    .selectAll(Selectors.Label.selector)
+                    .data(tasks);
 
-            labelSelection
-                .enter()
-                .append("text");
+                axisLabel
+                    .enter()
+                    .append("text");
 
-            labelSelection
-                .attr("x", 10)
-                .attr("y", (task: Task, i: number) => this.getLabelY(task.index))
-                .attr("fill", "black")
-                .attr("stroke-width", 1)
-                .text((task) => { return task.name; })
-                .classed(Gantt.LabelSelector.class, true);
+                axisLabel
+                    .attr({
+                        x: taskLineCoordinateX,
+                        y: (task: Task, i: number) => this.getTaskLabelCoordinateY(task.id),
+                        fill: taskLabelsColor,
+                        "stroke-width": 1
+                    })
+                    .style("font-size", PixelConverter.fromPoint(taskLabelsFontSize))
+                    .text((task) => { return task.name; })
+                    .classed(Selectors.Label.class, true);
 
-            labelSelection
-                .exit()
-                .remove();
+                axisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
+                    width - 20,
+                    TextMeasurementService.svgEllipsis);
+
+                axisLabel
+                    .append("title")
+                    .text((task) => { return task.name; });
+
+                axisLabel
+                    .exit()
+                    .remove();
+            }
+            else {
+                this.lineGroup
+                    .selectAll(Selectors.Label.selector)
+                    .remove();
+            }
         }
 
-        private updateTaskLines(tasks: Task[], width: number): void {
-            var taskLinesSelection: D3.UpdateSelection;
-
-            taskLinesSelection = this.lineGroup
-                .selectAll(Gantt.TaskLineSelector.selector)
-                .data(tasks);
-
-            taskLinesSelection
-                .enter()
-                .append("rect");
-
-            taskLinesSelection
-                .attr("x", 0)
-                .attr("y", (task: Task, i: number): number => this.getBarLineY(task.index))
-                .attr("width", width + this.margin.left + this.margin.right)
-                .attr("height", (): number => this.getBarLineHeight())
-                .attr("fill", "black")
-                .attr("opacity", (task: Task, i: number): number => this.getTasklineOpacity(i))
-                .classed(Gantt.TaskLineSelector.class, true);
-
-            taskLinesSelection
-                .exit()
-                .remove();
+        private getAllTaskSelection(): D3.Selection {
+            return this.taskGroup
+                .selectAll(Selectors.SingleTask.selector);
         }
 
-        private updateMilestoneShapes(tasks: Task[]): void {
-            var milestoneSelection: D3.UpdateSelection;
+        private updateTasks(tasks: Task[]): D3.UpdateSelection {
 
-            milestoneSelection = this.milestoneGroup
-                .selectAll(Gantt.MilestoneSelector.selector)
-                .data(tasks.filter(function(task) {
-                    return task.shape !== "none";
-                }), (task: Task) => task.index);
+            let taskSelection: D3.UpdateSelection;
 
-            milestoneSelection
-                .enter()
-                .append("path");
-
-            milestoneSelection
-                .attr("d", this.getMilestone())
-                .attr("transform", (task: Task, i: number) => this.getMilestonePos(task))
-                .style("fill", "black")
-                .classed(Gantt.MilestoneSelector.class, true);
-
-            milestoneSelection
-                .exit()
-                .remove();
-        }
-
-        private updateTasks(tasks: Task[]): D3.Selection {
-            var taskSelection: D3.UpdateSelection,
-                taskEnterSelection: D3.Selection;
-
+            //init the task selection add bind it to the data
             taskSelection = this.taskGroup
-                .selectAll(Gantt.TaskSelector.selector)
-                .data(tasks.filter((task: Task) => { return task.shape === "none"; }),
-                    (task: Task) => task.index);
+                .selectAll(Selectors.SingleTask.selector)
+                .data(tasks);
 
-            taskEnterSelection = taskSelection
-                .enter()
-                .append("g");
-
-            taskEnterSelection
-                .append("rect")
-                .classed(Gantt.TaskRectSelector.class, true);
-
-            taskEnterSelection
-                .append("rect")
-                .classed(Gantt.TaskProgressSelector.class, true);
-
-            taskSelection.classed(Gantt.TaskSelector.class, true);
-
-            taskSelection
-                .select(Gantt.TaskRectSelector.selector)
-                .attr("x", (task: Task, i: number) => this.yScale(task.start))
-                .attr("y", (task: Task, i: number) => this.getBarY(task.index))
-                .attr("width", (task: any, i: number) => this.taskDurationToWidth(task))
-                .attr("height", () => this.getBarHeight());
-
-            taskSelection
-                .select(Gantt.TaskProgressSelector.selector)
-                .attr("x", (task: Task, i: number) => this.yScale(task.start))
-                .attr("y", (task: Task, i: number) => this.getBarY(task.index))
-                .attr("width", (task: Task, i) => this.taskProgress(task))
-                .attr("height", () => this.getBarHeight())
-                .style("fill", (task: Task, i: number) => this.getColorByIndex(i));
-
-            taskSelection
-                .exit()
-                .remove();
-
-            this.updateTooltips(taskSelection);
+            //add tasks that not exist in dom yet
+            this.addTasksOnDataChanged(taskSelection);
+            
+            //add or remove task resource
+            this.updateTaskResource(taskSelection);
+         
+            //update the DOM attributes of all tasks 
+            this.renderTasks(taskSelection);
 
             return taskSelection;
         }
 
-        private updateTooltips(selection: D3.Selection): void {
-            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => (<Task>tooltipEvent.data).tooltipInfo);
+        private addTasksOnDataChanged(taskSelection: D3.UpdateSelection) {
+            let taskEnterSelection: D3.Selection;      
+
+            //add tasks that not exist in dom yet
+            taskEnterSelection = taskSelection
+                .enter()
+                .append("g");
+
+            //Add the task rect
+            taskEnterSelection
+                .append("rect")
+                .classed(Selectors.TaskRect.class, true);
+            
+            //add the task progress rect
+            taskEnterSelection
+                .append("rect")
+                .classed(Selectors.TaskProgress.class, true);
+                   
+            //removing task data not bound to any data
+            taskSelection
+                .exit()
+                .remove();
         }
 
-        private bindSelectionHandler(taskSelection: D3.Selection): void {
-            taskSelection.on("click", (task: Task) => {
-                var isMultiSelect: boolean = d3.event.altKey || d3.event.ctrlKey;
+        private updateTaskResource(taskSelection: D3.Selection) {
+            let taskResourceShow = this.viewModel ? this.viewModel.taskResourceShow : true;
 
-                this.selectionManager.select(task.selectionId, isMultiSelect).then((selectionIds: SelectionId[]) => {
-                    this.setSelection(taskSelection, selectionIds);
-                });
+            taskSelection.selectAll("text").remove();
 
-                d3.event.stopPropagation();
-            });
-        }
-
-        private setSelection(taskSelection: D3.Selection, selectionIds: SelectionId[]): void {
-            taskSelection.style("opacity", null);
-
-            if (selectionIds.length === 0) {
-                return;
+            //add text that represents the task resource
+            if (taskResourceShow) {
+                taskSelection
+                    .append("text")
+                    .classed(Selectors.TaskResource.class, true);
             }
-
-            taskSelection.filter((task: Task) => {
-                return !selectionIds.some((selectionId: SelectionId) => {
-                    return task.selectionId === selectionId;
-                });
-            })
-            .style("opacity", Gantt.OpacityOfSelectionTask);
         }
 
-        private getColorByIndex(index: number): string {
-            return this.style.colorPalette.dataColors.getColorByIndex(index).value;
+        /**
+        * Update DOM attributes of selected tasks
+        * @param taskSelection The task selection to render
+        */
+        private renderTasks(taskSelection: D3.UpdateSelection) {
+            let padding: number = 4;
+
+            taskSelection.classed(Selectors.SingleTask.class, true);
+
+            let taskProgressColor = this.viewModel ? this.viewModel.taskProgressColor : Gantt.DefaultValues.ProgressColor;
+            let taskResourceColor = this.viewModel ? this.viewModel.taskResourceColor : Gantt.DefaultValues.TaskResourceColor;
+            let taskResourceFontSize: number = this.viewModel ? this.viewModel.taskResourceFontSize : Gantt.DefaultValues.ResourceFontSize;
+
+            taskSelection
+                .select(Selectors.TaskRect.selector)
+                .attr({
+                    x: (task: Task, i: number) => this.timeScale(task.start),
+                    y: (task: Task, i: number) => this.getBarYCoordinate(task.id),
+                    width: (task: any, i: number) => this.taskDurationToWidth(task),
+                    height: () => this.getBarHeight()
+                })
+                .style("fill", (task: Task) => task.color);
+
+            taskSelection
+                .select(Selectors.TaskProgress.selector)
+                .attr({
+                    x: (task: Task) => this.timeScale(task.start),
+                    y: (task: Task) => (this.getBarYCoordinate(task.id) + (this.getBarHeight() / 2) - (Gantt.DefaultValues.ProgressBarHeight / 2)),
+                    width: (task: Task) => this.setTaskProgress(task),
+                    height: Gantt.DefaultValues.ProgressBarHeight
+                })
+                .style("fill", taskProgressColor);
+
+            taskSelection
+                .select(Selectors.TaskResource.selector)
+                .attr({
+                    "x": (task: Task) => this.timeScale(task.end) + padding,
+                    "y": (task: Task) => (this.getBarYCoordinate(task.id) + (this.getBarHeight() / 2) + padding)
+                })
+                .text((task: Task) => task.resource)
+                .style("fill", taskResourceColor)
+                .style("font-size", PixelConverter.fromPoint(taskResourceFontSize));
         }
 
-        private getMilestone(): any {
-            return d3.svg.symbol().type("triangle-up").size(80);
+        private addTaskTooltips(selection: D3.UpdateSelection): void {
+            selection.enter();
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => (<Task>tooltipEvent.data).tooltipInfo);
+            selection.exit();
         }
 
-        private getLabelY(i: number): number {
-            var m = this.viewModel,
-                y = (m.fixedHeight * i) + (m.fixedHeight * m.paddingTasks) + this.getFontSize();
-
-            y = y - 16;
-
-            return y;
+        public onClearSelection() {
+            this.selectionManager.clear();
         }
 
-        private getMilestonePos(task: Task): string {
-            return SVGUtil.translate(this.yScale(task.start), (task.index + 0.5) * this.viewModel.fixedHeight);
+        /**
+         * Returns the matching Y coordinate for a given task index 
+         * @param taskIndex Task Number
+         */
+        private getTaskLabelCoordinateY(taskIndex: number): number {
+            let fontSize: number = +this.getTaskLabelFontSize();
+            return (ChartLineHeight * taskIndex) + (20 - (40 - fontSize) / 4);
         }
 
-        private taskProgress(task: Task): number {
-            var fraction = (task.completion / 100),
-                y = this.yScale,
+        /**
+         * Set the task progress bar in the gantt
+         * @param task All task attributes
+         */
+        private setTaskProgress(task: Task): number {
+            let fraction = task.completion / 1.0,
+                y = this.timeScale,
                 progress = (y(task.end) - y(task.start)) * fraction;
 
             return progress;
         }
 
-        private getBarY(i: number): number {
-            var m = this.viewModel,
-                y = (m.fixedHeight * i) + (m.fixedHeight * m.paddingTasks);
-
-            return y;
+        /**
+         * Set the task progress bar in the gantt
+         * @param lineNumber Line number that represents the task number
+         */
+        private getBarYCoordinate(lineNumber: number): number {
+            return (ChartLineHeight * lineNumber) + (PaddingTasks);
         }
 
         private getBarHeight(): number {
-            return this.viewModel.fixedHeight - (this.viewModel.fixedHeight * this.viewModel.paddingTasks * 2);
+            return ChartLineHeight / 2;
         }
 
-        private getBarLineY(i: number): number {
-            var m = this.viewModel,
-                y = (m.fixedHeight * i) + (m.fixedHeight * m.paddingLines);
-
-            return y;
-        }
-
-        private getBarLineHeight(): number {
-            var m = this.viewModel,
-                height = m.fixedHeight - (m.fixedHeight * m.paddingLines * 2);
-
-            return height;
-        }
-
+        /**
+        * convert task duration to width in the time scale
+        * @param task The task to convert
+        */
         private taskDurationToWidth(task: Task): number {
-            return this.yScale(task.end) - this.yScale(task.start);
+            return this.timeScale(task.end) - this.timeScale(task.start);
         }
 
-        private getTasklineOpacity(i: number): number {
-            var opacity: number;
-
-            if (i % 2) {
-                opacity = 0;
-            }
-            else {
-                opacity = 0.04;
-            }
-
-            return opacity;
-        }
-
-        private updateNowLine(tasks: Task[]): void {
-            var chartLineSelection: D3.UpdateSelection,
-                lines: GanttLine[] = [{
-                    x1: this.yScale(Date.now()),
+        /**
+        * Create vertical dotted line that represent milestone in the time axis (by default it shows not time)
+        * @param tasks All tasks array
+        * @param timestamp the milestone to be shown in the time axis (default Date.now())
+        */
+        private createMilestoneLine(tasks: Task[], timestamp: number = Date.now()): void {
+            let chartLineSelection: D3.UpdateSelection,
+                lines: Line[] = [{
+                    x1: this.timeScale(timestamp),
                     y1: 0,
-                    x2: this.yScale(Date.now()),
-                    y2: this.getNowlineY()
+                    x2: this.timeScale(timestamp),
+                    y2: this.getMilestoneLineWidth(tasks.length)
                 }];
 
             chartLineSelection = this.chartGroup
-                .selectAll(Gantt.ChartLineSelector.selector)
+                .selectAll(Selectors.ChartLine.selector)
                 .data(lines);
 
             chartLineSelection
@@ -678,71 +893,218 @@ module powerbi.visuals.samples {
                 .append("line");
 
             chartLineSelection
-                .attr("x1", (line: GanttLine) => line.x1)
-                .attr("y1", (line: GanttLine) => line.y1)
-                .attr("x2", (line: GanttLine) => line.x2)
-                .attr("y2", (line: GanttLine) => line.y2)
-                .classed(Gantt.ChartLineSelector.class, true);
+                .attr({
+                    x1: (line: Line) => line.x1,
+                    y1: (line: Line) => line.y1,
+                    x2: (line: Line) => line.x2,
+                    y2: (line: Line) => line.y2
+                })
+                .classed(Selectors.ChartLine.class, true);
 
             chartLineSelection
                 .exit()
                 .remove();
         }
 
-        private updateMisc(tasks: Task[], width: number, height: number): void {
-            var margin: IMargin = this.margin,
-                t1: Date = tasks[0].start,
-                t2: Date = tasks[tasks.length - 1].end;
+        /** 
+        * Returns the minimal start date
+        @param tasks All tasks array
+        */
+        private getTaskMinDate(tasks: Task[]): Date {
+            let minDate = tasks[0].start;
+            for (let task of tasks) {
+                if (task.start < minDate)
+                    minDate = task.start;
+            }
+            return minDate;
+        }
 
-            this.xScale = this.xScale.range([0, height]).domain([0, tasks.length]);
-            this.yScale = this.yScale.range([0, width]).domain([t1, t2]);
-
-            this.yAxis = this.yAxis.scale(this.yScale).tickPadding(10).tickFormat((x: Date) => {
-                    if (x.getDate() === 1) {
-                        if (x.getMonth() === 0) {
-                            return ValueFormatter.format(x, "yyyy");
-                        }
-
-                        return ValueFormatter.format(x, "MMMM");
-                    }
-
-                    return ValueFormatter.format(x, "MMM d");
-                });
-
-            this.root.attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom);
-
-            this.yAxisGroup
-                .attr("transform", SVGUtil.translate(margin.left, 5))
-                .call(this.yAxis);
-
-            this.chartGroup.attr("transform", SVGUtil.translate(margin.left, margin.top));
-            this.lineGroup.attr("transform", SVGUtil.translate(0, margin.top));
-            this.labelGroup.attr("transform", SVGUtil.translate(0, margin.top));
+        /** Returns the maximal start date
+        @param tasks All tasks array
+        */
+        private getTaskMaxDate(tasks: Task[]): Date {
+            let maxDate = tasks[0].end;
+            for (let task of tasks) {
+                if (task.end > maxDate)
+                    maxDate = task.end;
+            }
+            return maxDate;
         }
 
         /**
-        * Misc
+         * set the axis attributes 
+         * @param tasks All tasks array
+         * @param width Minimal axis width
+         * @param height Minimal axis height
+         * @param interval The time interval to show
+         */
+        private setAxisAttributes(tasks: Task[], width: number, height: number, interval: D3.Time.Range): void {
+            let t1: Date = this.getTaskMinDate(tasks),
+                t2: Date = this.getTaskMaxDate(tasks);
+            this.timeScale = this.timeScale.domain([t1, t2]).range([0, width]);
+
+            this.timeAxis = this.timeAxis
+                .scale(this.timeScale)
+                .tickSize(Gantt.DefaultValues.AxisTickSize)
+                .ticks(interval)
+                .tickPadding(AxisTickPadding)
+                .tickFormat((x) => ValueFormatter.format(x, "MMM d"));
+        }
+
+        private updateElementsPositions(viewport: IViewport, margin: IMargin): void {
+            let viewModel = this.viewModel;
+            let axisYCoordinateMargin = 5;
+
+            this.axisGroup
+                .attr("transform", SVGUtil.translate(viewModel.taskLabelsWidth + margin.left, axisYCoordinateMargin))
+                .call(this.timeAxis);
+
+            this.chartGroup.attr("transform", SVGUtil.translate(viewModel.taskLabelsWidth + margin.left, margin.top));
+            this.lineGroup.attr("transform", SVGUtil.translate(0, margin.top + Gantt.DefaultValues.TaskLineWidth / 2));
+            this.labelGroup.attr("transform", SVGUtil.translate(0, margin.top));
+        }
+       
+        /**
+         * Returns the width of the now line based on num of tasks
+         * @param numOfTasks Number of tasks
+         */
+        private getMilestoneLineWidth(numOfTasks: number): number {
+            return numOfTasks * ChartLineHeight;
+        }
+
+        private getTaskLabelFontSize(): number {
+            return DataViewObjects.getValue<number>(this.dataView.metadata.objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
+        }
+            
+        /** 
+        * handle "Task Completion" card
+        * @param enumeration The instance to be pushed into "Task Completion" card
+        * @param objects Dataview objects
         */
-        private getNowlineY() {
-            var taskNumber: number = this.viewModel.tasks.length;
+        private enumerateTaskCompletion(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects) {
+            enumeration.pushInstance({
+                selector: null,
+                properties: {
+                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskCompletion.fill, Gantt.DefaultValues.ProgressColor)
+                },
+                objectName: GanttChartProps.taskCompletion.fill.propertyName
+            });
+        }
+        
+        /** 
+        * handle "Labels" card
+        * @param enumeration The instance to be pushed into "Data Labels" card
+        * @param objects Dataview objects
+        */
+        private enumerateTaskLabels(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects) {
+            enumeration.pushInstance({
+                selector: null,
+                properties: {
+                    show: DataViewObjects.getValue<boolean>(objects, GanttChartProps.taskLabels.show, true),
+                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor),
+                    fontSize: DataViewObjects.getValue<number>(objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize),
+                    width: DataViewObjects.getValue<number>(objects, GanttChartProps.taskLabels.width, Gantt.DefaultValues.TaskLabelWidth),
+                },
+                objectName: GanttChartProps.taskLabels.show.propertyName
+            });
+        }
+      
+        /** 
+        * handle "Data Labels" card
+        * @param enumeration The instance to be pushed into "Task Resource" card
+        * @param objects Dataview objects
+        */
+        private enumerateDataLabels(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects) {
+            enumeration.pushInstance({
+                selector: null,
+                properties: {
+                    show: DataViewObjects.getValue<boolean>(objects, GanttChartProps.taskResource.show, true),
+                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskResource.fill, Gantt.DefaultValues.TaskResourceColor),
+                    fontSize: DataViewObjects.getValue<number>(objects, GanttChartProps.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize)
+                },
+                objectName: GanttChartProps.taskResource.show.propertyName
+            });
+        }        
 
-            return taskNumber * this.viewModel.fixedHeight;
+        /** 
+        * handle the property pane options
+        * @param objects Dataview enumerate objects
+        */
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+            let dataView = this.dataView;
+            if (!dataView)
+                return;
+
+            let enumeration = new ObjectEnumerationBuilder();
+
+            switch (options.objectName) {
+                case 'taskLabels':
+                    this.enumerateTaskLabels(enumeration, dataView.metadata.objects);
+                    break;
+                case 'taskCompletion':
+                    this.enumerateTaskCompletion(enumeration, dataView.metadata.objects);
+                    break;
+                case 'taskResource':
+                    this.enumerateDataLabels(enumeration, dataView.metadata.objects);
+                    break;
+            }
+            return enumeration.complete();
+        }
+    }
+
+    export interface GanttBehaviorOptions {
+        clearCatcher: D3.Selection;
+        taskSelection: D3.Selection;
+        interactivityService: IInteractivityService;
+    }
+
+    export class GanttChartBehavior implements IInteractiveBehavior {
+        private options: GanttBehaviorOptions;
+
+        public bindEvents(options: GanttBehaviorOptions, selectionHandler: ISelectionHandler) {
+            this.options = options;
+            let clearCatcher = options.clearCatcher;
+
+            options.taskSelection.on('click', (d: Task) => {
+                d3.event.stopPropagation();
+                selectionHandler.handleSelection(d, d3.event.ctrlKey);
+            });
+
+            clearCatcher.on('click', () => {
+                selectionHandler.handleClearSelection();
+            });
         }
 
-        private getFontSize(): number {
-            var m = this.viewModel;
+        public renderSelection(hasSelection: boolean) {
+            let options = this.options;
+            let ganttMaxOpacity = Gantt.getMaxTaskOpacity();
+            let ganttMinOpacity = Gantt.getMinTaskOpacity();
 
-            return (m.fixedHeight) - (m.fixedHeight * m.paddingTasks * 2);
+            options.taskSelection.style("opacity", (d: Task) => {
+                return hasSelection ? (d.selected ? ganttMaxOpacity : ganttMinOpacity) : ganttMaxOpacity;
+            });
+
+        }
+    }
+
+    export class GanttChartWarning implements IVisualWarning {
+        public get code(): string {
+            return "GanttChartWarning";
         }
 
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            var instances: VisualObjectInstance[] = [];
-            return instances;
-        }
+        public getMessages(resourceProvider: IStringResourceProvider): IVisualErrorMessage {
+            let message: string = "This visual requires task value",
+                titleKey: string = "",
+                detailKey: string = "",
+                visualMessage: IVisualErrorMessage;
 
-        public destroy(): void {
-            this.root = null;
+            visualMessage = {
+                message: message,
+                title: resourceProvider.get(titleKey),
+                detail: resourceProvider.get(detailKey)
+            };
+
+            return visualMessage;
         }
     }
 }

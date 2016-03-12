@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
 

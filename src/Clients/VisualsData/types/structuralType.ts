@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi {
     import SemanticFilter = powerbi.data.SemanticFilter;
 

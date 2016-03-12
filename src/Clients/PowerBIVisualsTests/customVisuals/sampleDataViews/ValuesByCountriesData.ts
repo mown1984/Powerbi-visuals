@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals.sampleDataViews {
     import DataViewMetadata = powerbi.DataViewMetadata;
     import DataView = powerbi.DataView;

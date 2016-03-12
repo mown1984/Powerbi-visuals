@@ -24,12 +24,11 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module powerbi {
     import DataViewObjectDescriptor = powerbi.data.DataViewObjectDescriptor;
     import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
     import Selector = powerbi.data.Selector;
+    import IPoint = powerbi.visuals.IPoint;
     import ISemanticFilter = powerbi.data.ISemanticFilter;
     import ISQExpr = powerbi.data.ISQExpr;
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
@@ -335,6 +334,13 @@ declare module powerbi {
         data2?: SelectorsByColumn[];
     }
 
+    export interface ContextMenuArgs {
+        data: SelectorsByColumn[];
+
+        /** Absolute coordinates for the top-left anchor of the context menu. */
+        position: IPoint;
+    }
+
     export interface SelectObjectEventArgs {
         object: DataViewObjectDescriptor;
     }
@@ -386,6 +392,9 @@ declare module powerbi {
 
         /** Notifies of a data point being selected. */
         onSelect(args: SelectEventArgs): void;  // TODO: Revisit onSelect vs. onSelectObject.
+
+        /** Notifies of a request for a context menu. */
+        onContextMenu(args: ContextMenuArgs): void;
 
         /** Check if selection is sticky or otherwise. */
         shouldRetainSelection(): boolean;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
 
     import TablixFormattingPropertiesMatrix = powerbi.visuals.controls.TablixFormattingPropertiesMatrix;
@@ -139,11 +137,11 @@ module powerbi.visuals {
         }
         /**
         * Returns the depth of the column hierarchy.
-        */
+         */
         public getColumnHierarchyDepth(): number {
             return Math.max(this.columnHierarchy.levels.length, 1);
         }
-        
+
         /**
         * Returns the depth of the Row hierarchy.
         */
@@ -557,7 +555,7 @@ module powerbi.visuals {
                 if (this.formattingProperties.rows.showSeparators)
                     cell.extension.setRowSeparator();
 
-                //set leading spaces for totals
+                // set leading spaces for totals
                 if (item.isSubtotal)
                     cell.extension.setLeadingSpace(this.formattingProperties.totals.leadingSpace);
             }
@@ -641,7 +639,7 @@ module powerbi.visuals {
                 let backgroundColor = item.isSubtotal ? this.formattingProperties.totals.backgroundColor : this.formattingProperties.values.backgroundColor;
 
                 this.setTablixRegionStyle(cell, fontColor, backgroundColor, outlineStyle, this.formattingProperties.general.outlineWeight, this.formattingProperties.general.outlineColor);
-                //set leading spaces for totals
+                // set leading spaces for totals
                 if (item.isSubtotal)
                     cell.extension.setLeadingSpace(this.formattingProperties.totals.leadingSpace);
 
@@ -922,6 +920,11 @@ module powerbi.visuals {
         private columnWidthManager: controls.TablixColumnWidthManager;
         private isFormattingPropertiesEnabled: boolean;
 
+        /**
+        * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
+        */
+        public persistingObjects: boolean;
+
         constructor(options?: MatrixConstructorOptions) {
             if (options) {
                 this.isFormattingPropertiesEnabled = options.isFormattingPropertiesEnabled;
@@ -936,7 +939,7 @@ module powerbi.visuals {
 
             let dataViewMatrix: data.CompiledDataViewMatrixMapping = <data.CompiledDataViewMatrixMapping>dataViewMapping.matrix;
 
-            //If Columns Hierarchy is not empty, set Window DataReduction Count to 100
+            // If Columns Hierarchy is not empty, set Window DataReduction Count to 100
             if (!_.isEmpty(dataViewMatrix.columns.for.in.items)) {
                 dataViewMatrix.rows.dataReductionAlgorithm.window.count = 100;
             }
@@ -956,6 +959,7 @@ module powerbi.visuals {
             this.formatter = valueFormatter.formatValueColumn;
             this.isInteractive = options.interactivity && options.interactivity.selection != null;
             this.hostServices = options.host;
+            this.persistingObjects = false;
 
             this.waitingForData = false;
             this.lastAllowHeaderResize = true;
@@ -993,12 +997,9 @@ module powerbi.visuals {
                 let previousDataView = this.dataView;
                 this.dataView = dataViews[0];
 
-                // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
-                if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
-                    // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
-                    this.columnWidthManager.suppressOnDataChangedNotification = false;
-                    return;
-                }
+                // We don't check for persisting flag
+                // Any change to the Column Widths need to go through to update all column group instances
+                // ToDo: Consider not resetting scrollbar everytime
 
                 let formattingProperties = Matrix.converter(this.dataView, this.isFormattingPropertiesEnabled);
                 let textSize = formattingProperties ? formattingProperties.general.textSize : TablixUtils.getTextSize(this.dataView.metadata.objects);
@@ -1007,7 +1008,7 @@ module powerbi.visuals {
                     let rootChanged = previousDataView.matrix.rows.root !== this.dataView.matrix.rows.root;
 
                     this.hierarchyNavigator.update(this.dataView.matrix, rootChanged);
-                    //If Root for Rows or Columns has changed by the DataViewTransform (e.g. when having reorders in values)
+                    // If Root for Rows or Columns has changed by the DataViewTransform (e.g. when having reorders in values)
                     if (rootChanged)
                         this.tablixControl.updateModels(/*resetScrollOffsets*/false, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
 
@@ -1018,7 +1019,7 @@ module powerbi.visuals {
                     this.createTablixControl(textSize);
                     let binder = <MatrixBinder>this.tablixControl.getBinder();
                     binder.onDataViewChanged(formattingProperties);
-                    this.populateColumnWidths();
+
                     this.updateInternal(textSize, previousDataView);
                 }
             }
@@ -1027,20 +1028,19 @@ module powerbi.visuals {
             this.waitingForSort = false;
         }
 
-        private populateColumnWidths(): void {
-            if (this.columnWidthManager) {
-                this.columnWidthManager.deserializeTablixColumnWidths();
-                if (this.columnWidthManager.persistColumnWidthsOnHost())
-                    this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+        private createColumnWidthManager(): void {
+            let columnHierarchy: MatrixHierarchy = (<MatrixHierarchyNavigator>this.hierarchyNavigator).getMatrixColumnHierarchy();
+            if (!this.columnWidthManager) {
+                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView, true /* isMatrix */, (objectInstances: VisualObjectInstancesToPersist) => this.persistColumnWidths(objectInstances), columnHierarchy.leafNodes);
             }
+            // Dont update if dataView is coming from persisting
+            else if (!this.persistingObjects){
+                this.columnWidthManager.updateDataView(this.dataView, columnHierarchy.leafNodes);
         }
-
-        public columnWidthChanged(index: number, width: number): void {
-            this.columnWidthManager.columnWidthChanged(index, width);
-            this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
         }
 
         private persistColumnWidths(objectInstances: VisualObjectInstancesToPersist): void {
+            this.persistingObjects = true;
             this.hostServices.persistProperties(objectInstances);
         }
 
@@ -1082,17 +1082,6 @@ module powerbi.visuals {
             }
         }
 
-        private createColumnWidthManager(): void {
-            let columnHierarchy: MatrixHierarchy = (<MatrixHierarchyNavigator>this.hierarchyNavigator).getMatrixColumnHierarchy();
-            if (!this.columnWidthManager) {
-                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView, true /* isMatrix */, columnHierarchy.leafNodes);
-                this.columnWidthManager.columnWidthResizeCallback = (i, w) => this.columnWidthChanged(i, w);
-            }
-            else {
-                this.columnWidthManager.updateDataView(this.dataView, columnHierarchy.leafNodes);
-            }
-        }
-
         private createControl(matrixNavigator: IMatrixHierarchyNavigator, textSize: number): controls.TablixControl {
             let layoutKind = this.getLayoutKind();
 
@@ -1129,8 +1118,15 @@ module powerbi.visuals {
             this.tablixControl.fontSize = TablixUtils.getTextSizeInPx(textSize);
             this.verifyHeaderResize();
 
+            /* To avoid resetting scrollbar every time we persist Objects. If:
+            * AutoSizeColumns options was flipped
+            * A Column was resized manually
+            * A Column was auto-sized
+            */
+
             // Update models before the viewport to make sure column widths are computed correctly
-            this.tablixControl.updateModels(/*resetScrollOffsets*/true, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
+            // if a persisting operation is going, don't reset the scrollbar (column resize)
+            this.tablixControl.updateModels(/*resetScrollOffsets*/!this.persistingObjects, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
             this.tablixControl.viewport = this.currentViewport;
             let shouldClearControl = this.shouldClearControl(previousDataView, this.dataView);
 
@@ -1138,9 +1134,17 @@ module powerbi.visuals {
             setTimeout(() => {
                 // Render
                 this.refreshControl(shouldClearControl);
-                this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
-                if (this.columnWidthManager.persistColumnWidthsOnHost())
-                    this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+
+                // At this point, all columns are rendered with proper width, reset the flag if it was raised
+                if (this.persistingObjects) {
+                    this.persistingObjects = false;
+                    return;
+                }
+
+                // if AutoSize option was set to OFF, persist all columns width
+                if (this.columnWidthManager.shouldPersistAllColumnWidths()) {
+                    this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
+                }
             }, 0);
         }
 
@@ -1148,6 +1152,7 @@ module powerbi.visuals {
             if (!this.waitingForSort || !previousDataView || !newDataView)
                 return true;
 
+            // ToDo: Get better criteria
             return !DataViewAnalysis.isMetadataEquivalent(previousDataView.metadata, newDataView.metadata);
         }
 

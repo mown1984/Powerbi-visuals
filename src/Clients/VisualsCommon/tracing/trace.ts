@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module jsCommon {
     export interface ITraceListener {
         logTrace(trace: TraceItem): void;

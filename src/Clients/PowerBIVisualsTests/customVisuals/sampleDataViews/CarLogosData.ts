@@ -112,5 +112,63 @@ module powerbitests.customVisuals.sampleDataViews {
                 }
             };
         }
+
+        public getDataViewWithoutImages(): DataView {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'Car',
+                        queryName: 'Country',
+                        roles: { Category: true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    {
+                        displayName: 'Sales Count',
+                        format: "g",
+                        isMeasure: true,
+                        queryName: 'sales',
+                        roles: { Values: true },
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
+                    },
+                ],
+                objects: {
+                    general: {
+                        columns: 1
+                    }
+                }
+            };
+
+            let sampleData: number[] = [5, 10, 15, 20, 25];
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
+            let imageFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "Image" } });
+            let categoryIdentities = this.categoryValues.map((value) =>
+                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
+
+            let columns: DataViewValueColumn[] = this.categoryValues.map((car, i): DataViewValueColumn => {
+
+                let source = dataViewMetadata.columns[1];
+                source.groupName = this.categoryValues[i];
+                return {
+                    source: source,
+                    identity: null,
+                    values: sampleData
+                };
+            });
+
+            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns, [fieldExpr, imageFieldExpr], dataViewMetadata.columns[2]);
+
+            return {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: this.categoryValues,
+                        identity: categoryIdentities,
+                    }],
+                    values: dataValues
+                }
+            };
+        }
     }
 }

@@ -24,10 +24,9 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils;
 
     export interface PlayConstructorOptions extends CartesianVisualConstructorOptions {
     }
@@ -543,7 +542,8 @@ module powerbi.visuals {
 
             let category: DataViewCategoryColumn = {
                 // ignore the play field, we use either the second row group (play->category) or we don't use this variable (category)
-                source: matrix.rows.levels.length > 1 ? matrix.rows.levels[1].sources[0] : null,
+                // Note related to VSTS 6986788: use the leaf node for category as there can be multiple levels for category during drilldown.
+                source: matrix.rows.levels.length > 1 ? _.last(matrix.rows.levels).sources[0] : null,
                 values: [],
                 objects: undefined,
                 identity: []
@@ -588,23 +588,25 @@ module powerbi.visuals {
                     }
                 }
 
-                let innerValueNode = matrix.rows.root.children[frame];
-                for (let i = 0, len = node.children.length; i < len; i++) {
-                    for (let j = 0; j < columnLength; j++) {
-                        categorical.values[i * columnLength + j].values.push(innerValueNode.values[i * columnLength + j].value);
+                let categoryFrameRootNode = matrix.rows.root.children[frame];
+                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, (leafNode, leafNodeIndex) => {
+                    debug.assert(leafNodeIndex === 0, 'expecting only one leafNode under categoryFrameRootNode in this case');
+                    for (var i = 0, len = node.children.length; i < len; i++) {
+                        for (let j = 0; j < columnLength; j++) {
+                            categorical.values[i * columnLength + j].values.push(leafNode.values[i * columnLength + j].value);
+                        }
                     }
-                }
+                });
             }
             else if (hasSeries && hasRowChildren) {
                 // series and categories
-                let node = matrix.rows.root.children[frame];
+                let categoryFrameRootNode = matrix.rows.root.children[frame];
                 
                 // create the categories first
-                for (let i = 0, len = node.children.length; i < len; i++) {
-                    let innerNode = node.children[i];
-                    category.identity.push(innerNode.identity);
-                    category.values.push(innerNode.value);
-                }
+                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
+                    category.identity.push(leafNode.identity);
+                    category.values.push(leafNode.value);
+                });
                 categorical.categories.push(category);
 
                 // now add the series info
@@ -618,9 +620,9 @@ module powerbi.visuals {
                             // each of these is a "series"
                             nodeQueue.push(columnNode.children[j]);
                         }
-                    } else if (columnNode.children && node.children) {
+                    } else if (columnNode.children && categoryFrameRootNode.children) {
                         // Processing a single series under here, push all the value sources for every series.
-                        let columnLength = columnNode.children.length;
+                        var columnLength = columnNode.children.length;
                         for (let j = 0; j < columnLength; j++) {
                             let source = <any>_.create(matrix.valueSources[j], { groupName: columnNode.value });
                             let dataViewColumn: DataViewValueColumn = {
@@ -630,12 +632,11 @@ module powerbi.visuals {
                             };
                             categorical.values.push(dataViewColumn);
                         }
-                        for (let i = 0, len = node.children.length; i < len; i++) {
-                            let innerNode = node.children[i];
+                        DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
                             for (let j = 0; j < columnLength; j++) {
-                                categorical.values[seriesIndex * columnLength + j].values.push(innerNode.values[seriesIndex * columnLength + j].value);
+                                categorical.values[seriesIndex * columnLength + j].values.push(leafNode.values[seriesIndex * columnLength + j].value);
                             }
-                        }
+                        });
                     }
 
                     if (nodeQueue.length > 0) {
@@ -648,7 +649,7 @@ module powerbi.visuals {
             }
             else if (hasPlayAndCategory) {
                 // no series, just play and category
-                let node = matrix.rows.root.children[frame];
+                let categoryFrameRootNode = matrix.rows.root.children[frame];
                 let measureLength = matrix.valueSources.length;
                 for (let j = 0; j < measureLength; j++) {
                     let dataViewColumn: DataViewValueColumn = {
@@ -659,15 +660,15 @@ module powerbi.visuals {
                     categorical.values.push(dataViewColumn);
                 }
 
-                for (let i = 0, len = node.children.length; i < len; i++) {
-                    let innerNode = node.children[i];
-                    category.identity.push(innerNode.identity);
-                    category.values.push(innerNode.value);
+                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
+                    category.identity.push(leafNode.identity);
+                    category.values.push(leafNode.value);
 
                     for (let j = 0; j < measureLength; j++) {
-                        categorical.values[j].values.push(innerNode.values[j].value);
+                        categorical.values[j].values.push(leafNode.values[j].value);
                     }
-                }
+                });
+
                 categorical.categories.push(category);
             }
 

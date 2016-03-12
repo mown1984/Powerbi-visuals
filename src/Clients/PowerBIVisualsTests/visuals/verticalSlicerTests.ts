@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import SelectionId = powerbi.visuals.SelectionId;
@@ -64,8 +62,12 @@ module powerbitests {
                 expect($(slicerHelper.slicerTextClassSelector).first().attr('title')).toBe(slicerHelper.SelectAllTextKey);
                 expect($(slicerHelper.slicerTextClassSelector).last().text()).toBe("Banana");
                 expect($(slicerHelper.slicerTextClassSelector).last().attr('title')).toBe("Banana");
-                expect($(slicerHelper.slicerCountTextClassSelector)[1].textContent).toBe("");
-                expect($(slicerHelper.slicerCountTextClassSelector)[5].textContent).toBe("6");
+
+                expect($(slicerHelper.slicerCountTextClassSelector).length).toBe(4);
+                expect($(slicerHelper.slicerCountTextClassSelector)[0].textContent).toBe('3');
+                expect($(slicerHelper.slicerCountTextClassSelector)[1].textContent).toBe('4');
+                expect($(slicerHelper.slicerCountTextClassSelector)[2].textContent).toBe('5');
+                expect($(slicerHelper.slicerCountTextClassSelector)[3].textContent).toBe('6');
 
                 expect(powerbi.visuals.valueFormatter.format).toHaveBeenCalledWith("Apple", undefined);
                 expect(powerbi.visuals.valueFormatter.format).toHaveBeenCalledWith("Orange", undefined);
@@ -108,10 +110,10 @@ module powerbitests {
                 expect($(slicerHelper.slicerTextClassSelector).first().attr('title')).toBe(slicerHelper.SelectAllTextKey);
                 expect($(slicerHelper.slicerTextClassSelector).last().text()).toBe("Blackberry");
                 expect($(slicerHelper.slicerTextClassSelector).last().attr('title')).toBe("Blackberry");
-                expect($(slicerHelper.slicerCountTextClassSelector)[0].textContent).toBe("");
-                expect($(slicerHelper.slicerCountTextClassSelector)[1].textContent).toBe("40");
-                expect($(slicerHelper.slicerCountTextClassSelector)[2].textContent).toBe("25");
-                expect($(slicerHelper.slicerCountTextClassSelector)[3].textContent).toBe("22");
+                expect($(slicerHelper.slicerCountTextClassSelector).length).toBe(3);
+                expect($(slicerHelper.slicerCountTextClassSelector)[0].textContent).toBe('40');
+                expect($(slicerHelper.slicerCountTextClassSelector)[1].textContent).toBe('25');
+                expect($(slicerHelper.slicerCountTextClassSelector)[2].textContent).toBe('22');
             });
 
             it("DOM Validation - Tooltip of Long Text", () => {
@@ -354,7 +356,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            xit("Filtering -> Scroll Reset", (done) => {
+           xit("Filtering -> Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10
@@ -379,7 +381,7 @@ module powerbitests {
         describe("Interactivity tests", () => {
             it("slicer item selectby checkbox", () => {
                 jasmine.clock().tick(0);
-                (<any>builder.slicerCheckbox.eq(1)).d3Click(0, 0);
+                builder.slicerCheckbox.eq(1).d3Click(0, 0);
 
                 slicerHelper.validateSelectionState(SlicerOrientation.Vertical, [1], builder);
                 expect(builder.hostServices.onSelect).toHaveBeenCalledWith({

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.tableDataViewHelper {
     import ValueType = powerbi.ValueType;
 

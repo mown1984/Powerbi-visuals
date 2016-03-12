@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module jsCommon {
     /** 
      * The types of possible traces within the system, this aligns to the traces available in Cloud Platform.

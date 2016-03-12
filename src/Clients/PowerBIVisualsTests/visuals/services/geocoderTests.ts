@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import MapUtil = powerbi.visuals.MapUtil;
     import services = powerbi.visuals.services;

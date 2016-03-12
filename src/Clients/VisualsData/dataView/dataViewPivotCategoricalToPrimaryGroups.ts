@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     import ArrayExtensions = jsCommon.ArrayExtensions;
     import DataShapeBindingDataReduction = powerbi.data.DataShapeBindingDataReduction;
@@ -89,8 +87,8 @@ module powerbi.data {
             return true;
         }
 
-        export function unpivotResult(oldDataView: DataView, selects: DataViewSelectTransform[], dataViewMappings: DataViewMapping[]): DataView {
-            if (!inferUnpivotTransform(selects, dataViewMappings, oldDataView))
+        export function unpivotResult(oldDataView: DataView, selects: DataViewSelectTransform[], dataViewMappings: DataViewMapping[], projectionActiveItems: DataViewProjectionActiveItems): DataView {
+            if (!inferUnpivotTransform(selects, dataViewMappings, oldDataView, projectionActiveItems))
                 return oldDataView;
 
             // This returns a subsetted version of the DataView rather than using prototypal inheritance because
@@ -152,13 +150,13 @@ module powerbi.data {
          * Infer from the query result and the visual mappings whether the query was pivoted.
          * Narrowly targets scatter chart scenario for now to keep code simple
          */
-        function inferUnpivotTransform(selects: DataViewSelectTransform[], dataViewMappings: DataViewMapping[], dataView: DataView): boolean {
+        function inferUnpivotTransform(selects: DataViewSelectTransform[], dataViewMappings: DataViewMapping[], dataView: DataView, projectionActiveItems: DataViewProjectionActiveItems): boolean {
             if (!selects || !dataViewMappings || !dataView)
                 return false;
 
             // select applicable mappings based on select roles
             let roleKinds: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(selects, dataView.metadata);
-            let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(selects, null);
+            let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(selects, projectionActiveItems);
             dataViewMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
 
             // NOTE: limiting to simple situation that handles scatter for now - see the other side in canPivotCategorical

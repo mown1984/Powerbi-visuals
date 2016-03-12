@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface FunnelBehaviorOptions {
         bars: D3.Selection;
@@ -47,13 +45,8 @@ module powerbi.visuals {
 
             this.hasHighlights = options.hasHighlights;
 
-            bars.on('click', (d: SelectableDataPoint, i: number) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
-
-            interactors.on('click', (d: SelectableDataPoint, i: number) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
+            InteractivityUtils.registerStandardInteractivityHandlers(bars, selectionHandler);
+            InteractivityUtils.registerStandardInteractivityHandlers(interactors, selectionHandler);
 
             clearCatcher.on('click', () => {
                 selectionHandler.handleClearSelection();

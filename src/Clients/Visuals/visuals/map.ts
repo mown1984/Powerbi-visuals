@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import Color = jsCommon.Color;
     import PixelConverter = jsCommon.PixelConverter;
@@ -489,6 +487,7 @@ module powerbi.visuals {
             let labelSettings = this.dataLabelsSettings;
 
             for (let dataPoint of dataPoints) {
+                debug.assertValue(dataPoint, 'dataPoint should never be null/undefined');
                 let text = dataPoint.labeltext;
 
                 let properties: TextProperties = {

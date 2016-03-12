@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import IDataLabelInfo = powerbi.IDataLabelInfo;
     import ContentPositions = powerbi.ContentPositions;

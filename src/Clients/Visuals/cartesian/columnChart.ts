@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
- /// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
@@ -157,8 +155,8 @@ module powerbi.visuals {
     export interface IColumnChartStrategy {
         setData(data: ColumnChartData): void;
         setupVisualProps(columnChartProps: ColumnChartContext): void;
-        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
-        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
+        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties;
+        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties;
         drawColumns(useAnimation: boolean): ColumnChartDrawInfo;
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
@@ -224,7 +222,6 @@ module powerbi.visuals {
         private isScrollable: boolean;
         private tooltipsEnabled: boolean;
         private element: JQuery;
-        private seriesLabelFormattingEnabled: boolean;
         private isComboChart: boolean;
 
         constructor(options: ColumnChartConstructorOptions) {
@@ -238,7 +235,6 @@ module powerbi.visuals {
             this.isScrollable = options.isScrollable;
             this.tooltipsEnabled = options.tooltipsEnabled;
             this.interactivityService = options.interactivityService;
-            this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
         }
 
         public static customizeQuery(options: CustomizeQueryOptions): void {
@@ -313,7 +309,7 @@ module powerbi.visuals {
             let metaDataColumn = this.data ? this.data.categoryMetadata : undefined;
             let categoryDataType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(metaDataColumn);
             let isScalar = this.data ? this.data.scalarCategoryAxis : false;
-            let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain);
+            let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain, options.xReferenceLineValue);
             return CartesianChart.getLayout(
                 this.data,
                 {
@@ -872,7 +868,7 @@ module powerbi.visuals {
             let data = this.data,
                 labelSettings = this.data.labelSettings,
                 seriesCount = data.series.length,
-                showLabelPerSeries = !data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled;
+                showLabelPerSeries = !data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata);
 
             //Draw default settings
             dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings, null, showLabelPerSeries));
@@ -1021,13 +1017,22 @@ module powerbi.visuals {
             this.ApplyInteractivity(chartContext);
             this.columnChart.setupVisualProps(chartContext);
 
+            let xReferenceLineValue: number;
+            let y1ReferenceLineValue: number;
+
             let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
 
             if (isBarChart) {
                 let temp = options.forcedXDomain;
                 options.forcedXDomain = options.forcedYDomain;
                 options.forcedYDomain = temp;
+
+                // In the case of clustered and stacked bar charts, the y1 reference line is a vertical line
+                xReferenceLineValue = options.y1ReferenceLineValue;
             }
+            else {
+                y1ReferenceLineValue = options.y1ReferenceLineValue;
+            }                
 
             this.xAxisProperties = this.columnChart.setXScale(
                 is100Pct,
@@ -1035,7 +1040,8 @@ module powerbi.visuals {
                 options.forcedXDomain,
                 isBarChart ? options.valueAxisScaleType : options.categoryAxisScaleType,
                 isBarChart ? options.valueAxisDisplayUnits : options.categoryAxisDisplayUnits,
-                isBarChart ? options.valueAxisPrecision : options.categoryAxisPrecision);
+                isBarChart ? options.valueAxisPrecision : options.categoryAxisPrecision,
+                xReferenceLineValue);
 
             this.yAxisProperties = this.columnChart.setYScale(
                 is100Pct,
@@ -1043,7 +1049,8 @@ module powerbi.visuals {
                 options.forcedYDomain,
                 isBarChart ? options.categoryAxisScaleType : options.valueAxisScaleType,
                 isBarChart ? options.categoryAxisDisplayUnits : options.valueAxisDisplayUnits,
-                isBarChart ? options.categoryAxisPrecision : options.valueAxisPrecision);
+                isBarChart ? options.categoryAxisPrecision : options.valueAxisPrecision,
+                y1ReferenceLineValue);
 
             if (options.showCategoryAxisLabel && this.xAxisProperties.isCategoryAxis || options.showValueAxisLabel && !this.xAxisProperties.isCategoryAxis) {
                 this.xAxisProperties.axisLabel = data.axesLabels.x;

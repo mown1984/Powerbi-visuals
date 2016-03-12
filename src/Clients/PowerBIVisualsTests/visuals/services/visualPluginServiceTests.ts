@@ -24,32 +24,70 @@
 *  THE SOFTWARE.
 */
 
-
-
 module powerbitests {
+    import visuals = powerbi.visuals;
     import IVisualPluginService = powerbi.visuals.IVisualPluginService;
 
     describe('visual plugin service tests', () => {
+        let featureSwitchService: visuals.MinervaVisualFeatureSwitches;
         let pluginService: IVisualPluginService;
+        let minervaVisualPluginService: IVisualPluginService;
 
         beforeEach(() => {
-            pluginService = powerbi.visuals.visualPluginFactory.create();
+            featureSwitchService = {};
+            pluginService = visuals.visualPluginFactory.create();
+            minervaVisualPluginService = visuals.visualPluginFactory.createMinerva(featureSwitchService);
+        });
+
+        afterEach(() => {
+            delete (localStorage['customVisualMetaData']);
         });
 
         it("Disables map when locale doesn't support maps", () => {
             expect(pluginService.shouldDisableVisual(powerbi.visuals.plugins.map.name, true)).toBe(true);
         });
+
         it("Disables filled map when locale doesn't support maps", () => {
             expect(pluginService.shouldDisableVisual(powerbi.visuals.plugins.filledMap.name, true)).toBe(true);
         });
+
         it("Doesn't disable map when locale supports maps", () => {
             expect(pluginService.shouldDisableVisual(powerbi.visuals.plugins.map.name, false)).toBe(false);
         });
+
         it("Doesn't disable filled map when locale supports maps", () => {
             expect(pluginService.shouldDisableVisual(powerbi.visuals.plugins.filledMap.name, false)).toBe(false);
         });
+
         it("Doesn't disable non-map visuals when locale doesn't support maps", () => {
             expect(pluginService.shouldDisableVisual(powerbi.visuals.plugins.pieChart.name, true)).toBe(false);
+        });
+
+        it('Should validate plugin and not pushPluginIntoConvertibleTypes', () => {
+            let visualMetaDataMock = { "Test": { "visualSettings": { "visualName": "Test", "version": "1.0.0" }, "sourceCode": { "typescriptCode": "// Example ts", "cssCode": "// Example css" } } };
+            let spy = spyOn(minervaVisualPluginService, 'pushPluginIntoConvertibleTypes');
+
+            powerbi.localStorageService.setData('customVisualMetaData', visualMetaDataMock);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('Should validate javascript sourcecode and not pushPluginIntoConvertibleTypes', () => {
+            let visualMetaDataMock = { "Test": { "visualSettings": { "visualName": "Test", "version": "1.0.0" }, "pluginName": "Test1450902079303" } };
+            let spy = spyOn(minervaVisualPluginService, 'pushPluginIntoConvertibleTypes');
+
+            powerbi.localStorageService.setData('customVisualMetaData', visualMetaDataMock);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('Should validate javascript sourcecode and not pushPluginIntoConvertibleTypes', () => {
+            let visualMetaDataMock = { "Test": { "visualSettings": { "visualName": "Test", "version": "1.0.0" }, "sourceCode": { "typescriptCode": "// Example ts", "cssCode": "// Example css" }, "pluginName": "Test1450902079303" } };
+            let spy = spyOn(minervaVisualPluginService, 'pushPluginIntoConvertibleTypes');
+
+            powerbi.localStorageService.setData('customVisualMetaData', visualMetaDataMock);
+
+            expect(spy).not.toHaveBeenCalled();
         });
     });
 }

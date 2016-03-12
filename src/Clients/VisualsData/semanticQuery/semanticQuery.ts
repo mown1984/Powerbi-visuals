@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     import ArrayExtensions = jsCommon.ArrayExtensions;
     import ArrayNamedItems = jsCommon.ArrayNamedItems;
@@ -241,13 +239,13 @@ module powerbi.data {
         }
 
         /** Adds a the expression to the select clause. */
-        public addSelect(expr: SQExpr): SemanticQuery {
+        public addSelect(expr: SQExpr, exprName?: string): SemanticQuery {
             debug.assertValue(expr, 'expr');
 
             let selectItems = this.select(),
                 from = this.fromValue.clone();
             selectItems.push({
-                name: SQExprUtils.uniqueName(selectItems, expr),
+                name: SQExprUtils.uniqueName(selectItems, expr, exprName),
                 expr: SQExprRewriterWithSourceRenames.rewrite(expr, from)
             });
 

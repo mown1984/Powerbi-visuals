@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ImageVisual = powerbi.visuals.ImageVisual;
     import imageVisualCapabilities = powerbi.visuals.imageVisualCapabilities;

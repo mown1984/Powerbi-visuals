@@ -195,7 +195,10 @@ module powerbi.visuals {
                 this.dataViewsSelect.append(option);
             });
 
-            this.dataViewsSelect.change(() => this.onChangeDataViewSelection(this.dataViewsSelect.val()));
+            this.dataViewsSelect.change(() => {
+                this.onChangeDataViewSelection(this.dataViewsSelect.val());
+                this.update();
+            });
 
             if (defaultDataView) {
                 this.onChangeDataViewSelection(defaultDataView);
@@ -204,7 +207,6 @@ module powerbi.visuals {
 
         private onChangeDataViewSelection(sampleName: string): void {
             this.sampleDataViews = SampleData.getDataViewsBySampleName(sampleName);
-            this.update();
         }
 
         private findHostByContainerElement(container: JQuery): IHost {

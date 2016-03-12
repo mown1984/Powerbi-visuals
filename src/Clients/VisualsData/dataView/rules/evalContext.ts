@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbi.data {
     /** Responsible for providing specific values to be used by expression and rule evaluation. */
     export interface IEvalContext {

@@ -53,24 +53,20 @@ module powerbitests.customVisuals.sampleDataViews {
             let dataViewMetadata: DataViewMetadata = {
                 columns: [
                     {
-                        displayName: 'Team',
-                        queryName: 'Team',
-                        type: ValueType.fromDescriptor({ text: true })
-                    },
-                    {
-                        displayName: 'Volume',
-                        isMeasure: true,
-                        queryName: 'volume1',
-                        type: ValueType.fromDescriptor({ numeric: true }),
-                    },
+                        displayName: 'Date',
+                        queryName: 'Date',
+                        type: powerbi.ValueType.fromDescriptor({ dateTime: true })
+                    }
                 ]
             };
-
             let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'series' } });
-
-            let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
+			let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime);
             let groupSource1: DataViewMetadataColumn = { displayName: 'group1', type: dataTypeString, index: 0 };
-
+			let tree: powerbi.DataViewTree = {
+				root: {
+					childIdentityFields: [{ ref: "Date" }]
+				}
+			};
             return {
                 metadata: { columns: [groupSource1] },
                 categorical: {
@@ -103,7 +99,8 @@ module powerbitests.customVisuals.sampleDataViews {
                 table: {
                     columns: [groupSource1],
                     rows: []
-                }
+                },
+				tree: tree
             };
         }
     }

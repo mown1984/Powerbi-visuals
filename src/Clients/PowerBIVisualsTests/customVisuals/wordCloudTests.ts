@@ -24,34 +24,141 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
+    powerbitests.mocks.setLocale();
     import VisualClass = powerbi.visuals.samples.WordCloud;
+    import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     describe("WordCloud", () => {
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
+        // function that returns afghanistan from an array
+        const func = e => e.innerHTML === "Afghanistan" || e.textContent === "Afghanistan";
+
+        // function that uses grep to filter
+        const grep = (val) => {
+            return $.grep(val, func);
+        };
+
         describe("DOM tests", () => {
             let visualBuilder: WordCloudBuilder;
             let dataViews: powerbi.DataView[];
-            
+            let timeOutTime: number = DefaultWaitForRender;
+
             beforeEach(() => {
                 visualBuilder = new WordCloudBuilder();
                 dataViews = [new powerbitests.customVisuals.sampleDataViews.CountriesData().getDataView()];
             });
 
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
-            //it("update", (done) => {
-            //    visualBuilder.update(dataViews);
-            //    setTimeout(() => {
-            //        expect(visualBuilder.mainElement.children("g").children("g.words").children("text.word").length)
-            //            .toBeGreaterThan(0);
-            //        done();
-            //    }, DefaultWaitForRender);
-            //});
+
+            it("basic update", (done) => {
+                let defaultView = _.cloneDeep(dataViews);
+                visualBuilder.update(defaultView);
+
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children("g").children("g.words").children("text.word").length)
+                        .toBeGreaterThan(0);
+                    done();
+                }, timeOutTime);
+            });
+
+            it("Word stop property change", (done) => {
+                let defaultView = _.cloneDeep(dataViews);
+                visualBuilder.update(defaultView);
+
+                setTimeout(() => {
+                    expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
+                        .toBeGreaterThan(0);
+
+                    let item: powerbi.DataViewObjects = {
+                        stopWords: {
+                            show: true,
+                            words: "Afghanistan"
+                        }
+                    };
+
+                    let clonedView = _.cloneDeep(defaultView);
+                    clonedView[0].metadata.objects = item;
+                    visualBuilder.update(clonedView);
+
+                    setTimeout(() => {
+                        expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
+                            .toBe(0);
+                        done();
+                    }, timeOutTime);
+                }, timeOutTime * 2);
+            });
+
+            it("Word returns after word stop property is changed back", (done) => {
+                let defaultView = _.cloneDeep(dataViews);
+                visualBuilder.update(defaultView);
+                setTimeout(() => {
+                    expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
+                        .toBeGreaterThan(0);
+
+                    let item: powerbi.DataViewObjects = {
+                        stopWords: {
+                            show: true,
+                            words: "Afghanistan"
+                        }
+                    };
+                    let clonedView = _.cloneDeep(defaultView);
+                    clonedView[0].metadata.objects = item;
+                    visualBuilder.update(clonedView);
+
+                    setTimeout(() => {
+                        expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
+                            .toBe(0);
+
+                        item = {
+                            stopWords: {
+                                show: false,
+                            }
+                        };
+                        let secondView = _.cloneDeep(clonedView);
+                        secondView[0].metadata.objects = item;
+                        visualBuilder.update(secondView);
+
+                        setTimeout(() => {
+                            expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
+                                .toBeGreaterThan(0);
+                            done();
+                        }, timeOutTime);
+                    }, timeOutTime * 2);
+                }, 2 * (timeOutTime * 2));
+            });
+
+            it("change color for first country (Afghanistan)", (done) => {
+                let defaultView = _.cloneDeep(dataViews);
+                visualBuilder.update(defaultView);
+
+                setTimeout(() => {
+                    let item: powerbi.DataViewObjects = {
+                        dataPoint: {
+                            fill: {
+                                solid: {
+                                    color: "#00B8AA"
+                                }
+                            }
+                        }
+                    };
+
+                    let baseWordColor = $(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray())).css('fill');
+
+                    defaultView[0].categorical.categories[0].objects = [item];
+                    visualBuilder.update(defaultView);
+
+                    setTimeout(() => {
+                        colorAssert(($(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray())).css('fill')), baseWordColor, true);
+                        done();
+                    }, timeOutTime);
+                }, timeOutTime * 2);
+            });
+
         });
     });
 

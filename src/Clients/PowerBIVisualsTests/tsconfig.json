@@ -109,6 +109,7 @@
         "customVisuals/sampleDataViews/TimelineData.ts",
         "customVisuals/sampleDataViews/valueByAgeData.ts",
         "customVisuals/sampleDataViews/ValuesByCountriesData.ts",
+        "customVisuals/sampleDataViews/EnhancedScatterChartData.ts",
 
         "customVisuals/areaRangeChartTests.ts",
         "customVisuals/asterPlotTests.ts",
@@ -116,7 +117,7 @@
         "customVisuals/chicletSlicerTests.ts",
         "customVisuals/chordChartTests.ts",
         "customVisuals/dotPlotTests.ts",
-        "customVisuals/enchancedScatterChartTests.ts",
+        "customVisuals/enhancedScatterChartTests.ts",
         "customVisuals/forceGraphTests.ts",
         "customVisuals/ganttTests.ts",
         "customVisuals/histogramChartTests.ts",

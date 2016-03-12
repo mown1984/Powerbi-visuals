@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ITextAsSVGMeasurer = powerbi.ITextAsSVGMeasurer;
 
@@ -134,7 +132,7 @@ module powerbi.visuals {
         /**
          * If true and the dataType is numeric or dateTime,
          * create a linear axis, else create an ordinal axis.
-         */       
+         */
         isScalar?: boolean;
         /**
          * (optional) The scale is inverted for a vertical axis,
@@ -252,7 +250,7 @@ module powerbi.visuals {
             scale: D3.Scale.GenericScale<any>,
             axisType: ValueType,
             isScalar: boolean,
-            minTickInterval?: number): any[]{
+            minTickInterval?: number): any[] {
 
             if (!isScalar || isOrdinalScale(scale)) {
                 return getRecommendedTickValuesForAnOrdinalRange(maxTicks, scale.domain());
@@ -315,7 +313,7 @@ module powerbi.visuals {
             }
 
             debug.assertFail('must pass a quantitative scale to this method');
-            
+
             return tickLabels;
         }
 
@@ -331,7 +329,7 @@ module powerbi.visuals {
          *     // Tick values <= 1e-5 replaced with 0
          *     return [-2, -1, 0, 3, 4];
          */
-        function createTrueZeroTickLabel(ticks: number[], epsilon: number = 1e-5): number[]{
+        function createTrueZeroTickLabel(ticks: number[], epsilon: number = 1e-5): number[] {
             if (!ticks || ticks.length < 2)
                 return ticks;
 
@@ -445,7 +443,7 @@ module powerbi.visuals {
                 if (scrollbarVisible)
                     rotation = LabelLayoutStrategy.DefaultRotationWithScrollbar;
                 else
-                    rotation = LabelLayoutStrategy.DefaultRotation;                     
+                    rotation = LabelLayoutStrategy.DefaultRotation;
 
                 if (renderY1Axis) {
                     for (let i = 0, len = y1Labels.length; i < len; i++) {
@@ -587,7 +585,7 @@ module powerbi.visuals {
 
             let width = scale.rangeBand();
             let halfInnerPadding = (leftEdges[1] - leftEdges[0] - width) / 2;
-            
+
             let j;
             for (j = 0; x > (leftEdges[j] + width + halfInnerPadding) && j < (leftEdges.length - 1); j++)
                 ;
@@ -623,14 +621,14 @@ module powerbi.visuals {
             return Math.max(value, 1);
         }
 
-        export function createDomain(data: CartesianSeries[], axisType: ValueTypeDescriptor, isScalar: boolean, forcedScalarDomain: any[]): number[]{
+        export function createDomain(data: CartesianSeries[], axisType: ValueTypeDescriptor, isScalar: boolean, forcedScalarDomain: any[], referenceLineValue?: number): number[] {
             if (isScalar && !isOrdinal(axisType)) {
                 let userMin, userMax;
                 if (forcedScalarDomain && forcedScalarDomain.length === 2) {
                     userMin = forcedScalarDomain[0];
                     userMax = forcedScalarDomain[1];
                 }
-                return createScalarDomain(data, userMin, userMax, axisType);
+                return createScalarDomain(data, userMin, userMax, axisType, referenceLineValue);
             }
 
             return createOrdinalDomain(data);
@@ -654,7 +652,7 @@ module powerbi.visuals {
             if (isScalar) {
                 return ValueType.fromDescriptor({ numeric: true });
             }
-            
+
             return ValueType.fromDescriptor({ text: true });
         }
 
@@ -956,16 +954,16 @@ module powerbi.visuals {
             return 0;
         }
 
-        function createScalarDomain(data: CartesianSeries[], userMin: DataViewPropertyValue, userMax: DataViewPropertyValue, axisType: ValueTypeDescriptor): number[] {
+        function createScalarDomain(data: CartesianSeries[], userMin: DataViewPropertyValue, userMax: DataViewPropertyValue, axisType: ValueTypeDescriptor, referenceLineValue?: number): number[] {
             debug.assertValue(data, 'data');
             if (data.length === 0) {
                 return null;
             }
 
-            let defaultMinX = <number>d3.min(data,(kv) => { return d3.min(kv.data, d => { return d.categoryValue; }); });
-            let defaultMaxX = <number>d3.max(data,(kv) => { return d3.max(kv.data, d => { return d.categoryValue; }); });
+            let defaultMinX = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.categoryValue; }); });
+            let defaultMaxX = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.categoryValue; }); });
 
-            return combineDomain([userMin, userMax], [defaultMinX, defaultMaxX]);
+            return combineDomain([userMin, userMax], [defaultMinX, defaultMaxX], referenceLineValue);
         }
 
         /**
@@ -979,15 +977,15 @@ module powerbi.visuals {
             if (data.length === 0)
                 return null;
 
-            let minY = <number>d3.min(data,(kv) => { return d3.min(kv.data, d => { return d.value; }); });
-            let maxY = <number>d3.max(data,(kv) => { return d3.max(kv.data, d => { return d.value; }); });
+            let minY = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.value; }); });
+            let maxY = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.value; }); });
 
             if (includeZero)
                 return [Math.min(minY, 0), Math.max(maxY, 0)];
             return [minY, maxY];
         }
 
-        function createOrdinalDomain(data: CartesianSeries[]): number[]{
+        function createOrdinalDomain(data: CartesianSeries[]): number[] {
             if (_.isEmpty(data))
                 return [];
 
@@ -1105,8 +1103,8 @@ module powerbi.visuals {
                 let rotatedLength;
                 let defaultRotation: any;
 
-                if (scrollbarVisible) 
-                    defaultRotation = DefaultRotationWithScrollbar;               
+                if (scrollbarVisible)
+                    defaultRotation = DefaultRotationWithScrollbar;
                 else
                     defaultRotation = DefaultRotation;
 
@@ -1191,7 +1189,7 @@ module powerbi.visuals {
         export function createOrdinalScale(pixelSpan: number, dataDomain: any[], outerPaddingRatio: number = 0): D3.Scale.OrdinalScale {
             debug.assert(outerPaddingRatio >= 0 && outerPaddingRatio < 4, 'outerPaddingRatio should be a value between zero and four');
             let scale = d3.scale.ordinal()
-                /* Avoid using rangeRoundBands here as it is adding some extra padding to the axis*/
+            /* Avoid using rangeRoundBands here as it is adding some extra padding to the axis*/
                 .rangeBands([0, pixelSpan], CartesianChart.InnerPaddingRatio, outerPaddingRatio)
                 .domain(dataDomain);
             return scale;
@@ -1216,13 +1214,13 @@ module powerbi.visuals {
             outerPadding: number = 0,
             niceCount?: number,
             shouldClamp?: boolean): D3.Scale.GenericScale<any> {
-                                  
-            if (axisScaleType === axisScale.log && isLogScalePossible(dataDomain,dataType)) {
+
+            if (axisScaleType === axisScale.log && isLogScalePossible(dataDomain, dataType)) {
                 return createLogScale(pixelSpan, dataDomain, outerPadding, niceCount);
             }
             else {
                 return createLinearScale(pixelSpan, dataDomain, outerPadding, niceCount, shouldClamp);
-            }            
+            }
         }
 
         function createLogScale(pixelSpan: number, dataDomain: any[], outerPadding: number = 0, niceCount?: number): D3.Scale.LinearScale {
@@ -1231,7 +1229,7 @@ module powerbi.visuals {
                 .range([outerPadding, pixelSpan - outerPadding])
                 .domain([dataDomain[0], dataDomain[1]])
                 .clamp(true);
-            
+
             if (niceCount) {
                 scale.nice(niceCount);
             }
@@ -1252,7 +1250,7 @@ module powerbi.visuals {
             }
             return scale;
         }
-        
+
         export function getRangeForColumn(sizeColumn: DataViewValueColumn): NumberRange {
             let result: NumberRange = {};
             if (sizeColumn) {
@@ -1301,9 +1299,21 @@ module powerbi.visuals {
         
         /**
          * Combine the forced domain with the actual domain if one of the values was set.
+         * The forcedDomain is in 1st priority. Extends the domain if the reference line requires it.
          */
-        export function combineDomain(forcedDomain: any[], domain: any[]): any[] {
+        export function combineDomain(forcedDomain: any[], domain: any[], referenceLineValue?: number): any[] {
             let combinedDomain: any[] = domain ? [domain[0], domain[1]] : [];
+
+            if (referenceLineValue) {
+                if (combinedDomain[0] == null || referenceLineValue < combinedDomain[0])
+                    combinedDomain[0] = referenceLineValue;
+
+                if (combinedDomain[1] == null || referenceLineValue > combinedDomain[1])
+                    combinedDomain[1] = referenceLineValue;
+            }
+
+            let domainBeforeForced: any[] = [combinedDomain[0], combinedDomain[1]];
+
             if (forcedDomain && forcedDomain.length === 2) {
                 if (forcedDomain[0] != null) {
                     combinedDomain[0] = forcedDomain[0];
@@ -1312,7 +1322,7 @@ module powerbi.visuals {
                     combinedDomain[1] = forcedDomain[1];
                 }
                 if (combinedDomain[0] > combinedDomain[1]) {
-                    combinedDomain = domain;//this is invalid, so take the original domain
+                    combinedDomain = domainBeforeForced;//this is invalid, so take the original domain considering the values and the reference line
                 }
             }
             return combinedDomain;
@@ -1355,7 +1365,7 @@ module powerbi.visuals {
             return value;
         }
 
-        export function powerOfTen(d:any): boolean {
+        export function powerOfTen(d: any): boolean {
             return d / Math.pow(10, Math.ceil(Math.log(d) / Math.LN10 - 1e-12)) === 1;
         }
     }

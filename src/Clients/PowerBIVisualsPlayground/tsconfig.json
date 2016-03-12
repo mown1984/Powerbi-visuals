@@ -5,8 +5,10 @@
     },
     "files": [
         "typedefs/typedefs.ts",
-        "typedefs/typedefs.obj.ts",
-
+        "../Visuals/obj/Visuals.d.ts",
+        "../VisualsCommon/obj/VisualsCommon.d.ts",
+        "../VisualsContracts/obj/VisualsContracts.d.ts",
+        "../VisualsData/obj/VisualsData.d.ts",
         "sampleDataViews/sampleDataViews.ts",
         "sampleDataViews/CarLogosData.ts",
         "sampleDataViews/DistrictSalesData.ts",

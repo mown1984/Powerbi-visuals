@@ -24,11 +24,8 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Gantt;
-    import DataView = powerbi.DataView;
 
     describe("Gantt", () => {
         describe('capabilities', () => {
@@ -37,24 +34,28 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: GanttBuilder;
-            let dataViews: DataView[];
+            let dataViews: powerbi.DataView[];
 
             beforeEach(() => {
                 visualBuilder = new GanttBuilder();
-                dataViews = [new customVisuals.sampleDataViews.GanttData().getDataView()];
+                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews();
             });
 
-            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+            it("svg element created", () => {
+                expect(visualBuilder.mainElement[0]).toBeInDOM();
+            });
 
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
+                    let countOfTaskLabels = visualBuilder.mainElement
+                        .children("g.chart")
+                        .children("g.tasks")
+                        .children("g.task")
+                        .children(".task-resource")
+                        .length;
                     let countOfTaskLines = visualBuilder.mainElement
                         .children("g.task-lines")
-                        .children("rect")
-                        .length;
-                    let countOfTaskLabels = visualBuilder.mainElement
-                        .children("g.task-labels")
                         .children("text")
                         .length;
                     let countOfTasks = visualBuilder.mainElement
@@ -63,9 +64,9 @@ module powerbitests.customVisuals {
                         .children("g.task")
                         .length;
 
-                    expect(countOfTaskLines).toBe(dataViews[0].matrix.rows.root.children.length);
-                    expect(countOfTaskLabels).toBe(dataViews[0].matrix.rows.root.children.length);
-                    expect(countOfTasks).toBe(dataViews[0].matrix.rows.root.children.length);
+                    expect(countOfTaskLabels).toBe(dataViews[0].table.rows.length);
+                    expect(countOfTaskLines).toBe(dataViews[0].table.rows.length);
+                    expect(countOfTasks).toBe(dataViews[0].table.rows.length);
 
                     done();
                 }, DefaultWaitForRender);
@@ -81,10 +82,7 @@ module powerbitests.customVisuals {
         }
 
         public get mainElement() {
-            return this.element
-                .children("rect.clearCatcher")
-                .children("div.chart")
-                .children("div.gantt-body")
+            return this.element.children("div.gantt-body")
                 .children("svg");
         }
 

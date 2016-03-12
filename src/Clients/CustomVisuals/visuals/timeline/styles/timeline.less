@@ -41,35 +41,36 @@
 }
 
 .selectionRangeContainer {
-    float: left;
+    float: none;
     position: absolute;
-    left: 10px;
+    text-anchor: middle;
 }
 
 .timelineSlicer {
-    position: absolute;
-    top: 20px;
-    right: 17px;
-    fill: #000000;
+	position: absolute;
+	top: 20px;
+	right: 17px;
+	fill: #000000;
+	
+	.periodSlicerRect {
+		stroke: #aaa;
+		stroke-width: 2px;
+		fill: transparent;
+	}
 
-    .periodSlicerRect {
-        stroke: #aaa;
-        stroke-width: 2px;
-        fill: transparent;
-    }
+	.periodSlicerGranularities {
+		font-family: sans-serif;
+		font-size: 10px;
+	}
+	
+	.periodSlicerSelection {
+		font-family: sans-serif;
+		font-size: 10px;
+		text-anchor: middle;
+	}
 
-    .periodSlicerGranularities {
-        font-family: sans-serif;
-        font-size: 10px;
-    }
-
-    .periodSlicerSelection {
-        font-family: sans-serif;
-        font-size: 10px;
-    }
-
-    .periodSlicerSelectionRect {
-        fill: transparent;
+	.periodSlicerSelectionRect {
+		fill: transparent;
     }
 }
 

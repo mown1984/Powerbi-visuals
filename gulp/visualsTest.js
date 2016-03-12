@@ -23,8 +23,7 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-
-var gulp = require('gulp-help')(require('gulp')),
+var gulp = require("gulp"),
     glob = require("glob"),
     runSequence = require("run-sequence").use(gulp),
     fs = require("fs"),
@@ -38,18 +37,14 @@ var gulp = require('gulp-help')(require('gulp')),
 // this loads PowerBIVisualsTests gulp tasks
 require("../src/Clients/PowerBIVisualsTests/gulpProject.js");
 
-var openInBrowser = cliParser.openInBrowser,
-    filesOption = common.getOptionFromCli(cliParser.files);
+var openInBrowser = Boolean(cliParser.openInBrowser);
+var filesOption = common.getOptionFromCli(cliParser.files);
 
 function copyExternalDependencies() {
     return gulp.src([
         "../lib/visuals.css",
         "../lib/powerbi-visuals.all.js",
-
-        "../src/Clients/CustomVisuals/styles/customVisuals.css",
-        "../src/Clients/CustomVisuals/obj/CustomVisuals.js",
-
-        "../src/Clients/externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js",
+        "../../../node_modules/jasmine-jquery/lib/jasmine-jquery.js",
         "../src/Clients/externals/ThirdPartyIP/MomentJS/moment.min.js",
         "../src/Clients/externals/ThirdPartyIP/Velocity/velocity.min.js",
         "../src/Clients/externals/ThirdPartyIP/Velocity/velocity.ui.min.js",
@@ -59,7 +54,11 @@ function copyExternalDependencies() {
         "../node_modules/jasmine-core/lib/jasmine-core/jasmine.js",
         "../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
         "../node_modules/jasmine-core/lib/jasmine-core/boot.js",
-        "../node_modules/jasmine-core/lib/jasmine-core/jasmine.css"], {cwd: __dirname})
+        "../node_modules/jasmine-core/lib/jasmine-core/jasmine.css",
+
+        "../src/Clients/CustomVisuals/styles/CustomVisuals.css",
+        "../src/Clients/CustomVisuals/obj/CustomVisuals.js",
+    ], {cwd: __dirname})
         .pipe(gulp.dest("../VisualsTests", {cwd: __dirname}));
 }
 
@@ -98,11 +97,11 @@ function addTestName(testName) {
 function createHtmlTestRunner(fileName, paths, testName) {
     var html = "<!DOCTYPE html><html>",
         head =
-            "<head>" +
-            '<meta charset="utf-8">' +
-            "<title>Jasmine Spec Runner</title>" +
-            addPaths(paths) +
-            addTestName(testName) + "</head>",
+        "<head>" +
+        '<meta charset="utf-8">' +
+        "<title>Jasmine Spec Runner</title>" +
+        addPaths(paths) +
+        addTestName(testName) + "</head>",
         body = "<body></body>";
 
     html = html + head + body + "</html>";
@@ -115,13 +114,14 @@ gulp.task("run:test:visuals", function (callback) {
 });
 
 function runTestVisuals(callback) {
+    
     copyExternalDependencies();
     
     // TODO read VisualsTests folder location from config
     var testFolder = "VisualsTests",
         specRunnerFileName = "runner.html",
-        specRunnerPath = path.resolve(__dirname, "../", testFolder + "/" + specRunnerFileName),
-        testsPath = path.resolve(__dirname, "../", testFolder),
+        testsPath = path.resolve(__dirname, "../" + testFolder),
+        specRunnerPath = path.join(testsPath, specRunnerFileName),
         tests = [];
 
     if (filesOption && filesOption.length > 0) {
@@ -132,66 +132,72 @@ function runTestVisuals(callback) {
         }
     }
     else {
-        tests = tests.concat(glob.sync("./**/*Test*.js", {
+        tests = tests.concat(glob.sync("./**/*Tests.js", {
             cwd: testsPath
         }));
     }
 
-    var src = [
-            "visuals.css",
-            "jquery.scrollbar.css",
-            "CustomVisuals.css",
-            "powerbi-visuals.all.js",
-            "CustomVisuals.js",
-            "jasmine-jquery.js",
-            "velocity.min.js",
-            "velocity.ui.min.js",
-            "quill.min.js",
-            "moment.min.js",
-            "mocks.js",
-            "common.js",
-            "sqFieldDef.js",
-            "./helpers/helpers.js",
-            "./helpers/kpiHelper.js",
-            "./helpers/slicerHelper.js",
-            "./helpers/tableDataViewHelper.js",
-            "./helpers/tablixHelper.js",
-            "./helpers/performanceTestsHelpers.js",
-            "./utils/bingSocial/NewsDataFactory.js",
-            "./utils/bingSocial/TweetFactory.js",
-            "./customVisuals/VisualBuilderBase.js",
-            "./customVisuals/helpers/dataViewHelper.js",
-            "./customVisuals/sampleDataViews/AreaRangeChartData.js",
-            "./customVisuals/sampleDataViews/BulletChartData.js",
-            "./customVisuals/sampleDataViews/CarLogosData.js",
-            "./customVisuals/sampleDataViews/chordChartData.js",
-            "./customVisuals/sampleDataViews/CountriesData.js",
-            "./customVisuals/sampleDataViews/DotPlotData.js",
-            "./customVisuals/sampleDataViews/forceGraphData.js",
-            "./customVisuals/sampleDataViews/GanttData.js",
-            "./customVisuals/sampleDataViews/MatrixData.js",
-            "./customVisuals/sampleDataViews/MekkoChartData.js",
-            "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
-            "./customVisuals/sampleDataViews/SalesByCountryData.js",
-            "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
-            "./customVisuals/sampleDataViews/TimelineData.js",
-            "./customVisuals/sampleDataViews/valueByAgeData.js",
-            "./customVisuals/sampleDataViews/ValuesByCountriesData.js"
-        ].concat(tests),
-        jasminePaths = [
-            "jasmine.css",
-            "jasmine.js",
-            "jasmine-html.js",
-            "boot.js"
-        ];
+    src = [
+        "visuals.css",
+        "jquery.scrollbar.css",
+        "powerbi-visuals.all.js",
+        "jasmine-jquery.js",
+        "velocity.min.js",
+        "velocity.ui.min.js",
+        "quill.min.js",
+        "moment.min.js",
+        "jquery.scrollbar.min.js",
+        "mocks.js",
+        "common.js",
+        "sqFieldDef.js",
+        "./helpers/helpers.js",
+        "./helpers/kpiHelper.js",
+        "./helpers/slicerHelper.js",
+        "./helpers/tableDataViewHelper.js",
+        "./helpers/tablixHelper.js",
+        "./helpers/performanceTestsHelpers.js",
+        "./utils/bingSocial/NewsDataFactory.js",
+        "./utils/bingSocial/TweetFactory.js",
+
+        "CustomVisuals.css",
+        "CustomVisuals.js",
+
+        "./customVisuals/helpers/dataViewHelper.js",
+        "./customVisuals/sampleDataViews/SalesByCountryData.js",
+        "./customVisuals/sampleDataViews/ValuesByCountriesData.js",
+        "./customVisuals/sampleDataViews/MekkoChartData.js",
+		"./customVisuals/sampleDataViews/BulletChartData.js",
+		"./customVisuals/sampleDataViews/CarLogosData.js",
+		"./customVisuals/sampleDataViews/CountriesData.js",
+		"./customVisuals/sampleDataViews/chordChartData.js",
+        "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
+		"./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
+		"./customVisuals/sampleDataViews/valueByAgeData.js",
+		"./customVisuals/sampleDataViews/ProductSalesByDateData.js",
+        "./customVisuals/sampleDataViews/MatrixData.js",
+		
+		"./customVisuals/sampleDataViews/AreaRangeChartData.js",
+		"./customVisuals/sampleDataViews/DotPlotData.js",
+		"./customVisuals/sampleDataViews/forceGraphData.js",
+		"./customVisuals/sampleDataViews/GanttData.js",
+		"./customVisuals/sampleDataViews/TimelineData.js",
+		
+        "./customVisuals/VisualBuilderBase.js"
+
+    ].concat(tests),
+    jasminePaths = [
+        "jasmine.css",
+        "jasmine.js",
+        "jasmine-html.js",
+        "boot.js"
+    ];
 
     createHtmlTestRunner(
         specRunnerPath,
         jasminePaths.concat(src),
-        common.getOptionFromCli(openInBrowser)[0]
-    );
+        common.getOptionFromCli(openInBrowser)[0]);
 
-    if (openInBrowser !== undefined && openInBrowser !== null) {
+    if (openInBrowser) {
         visualsCommon.runHttpServer({
             path: testFolder,
             port: 3001,
@@ -208,14 +214,21 @@ function runTestVisuals(callback) {
     }
 }
 
-gulp.task("test:visuals:performance", "Run only performance tests", function (callback) {
-    filesOption.push("visuals/performance/performanceTests.js");
+gulp.task("test:visuals:performance", function (callback) {
+    filesOption.push("performance/performanceTests.ts");
     runSequence("test:visuals", callback);
 });
 
-gulp.task("test:visuals", ["build:visualsTests"], function (callback) {
-    return runTestVisuals(callback);
+gulp.task("test:visuals", ["build:visuals","build:visualsTests"], function (callback) {
+    testVisuals(callback);
 });
+
+function testVisuals(callback) {
+    return visualsCommon.runScriptSequence([
+        runTestVisuals,
+        callback
+    ]);
+}
 
 gulp.task("build:visualsTests", ["build:powerBIVisualsTests"], function () {
     return buildVisualsTests();
@@ -223,9 +236,7 @@ gulp.task("build:visualsTests", ["build:powerBIVisualsTests"], function () {
 
 function buildVisualsTests() {
     return visualsCommon.runScriptSequence([
-        visualsDownload.installJasmine,
-        visualsDownload.installPhantomjs,
-        copyExternalDependencies
+        visualsDownload.installPhantomjs
     ]);
 }
 

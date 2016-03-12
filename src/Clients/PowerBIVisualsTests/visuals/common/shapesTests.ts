@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import Shapes = powerbi.visuals.shapes;
     import Point = powerbi.visuals.shapes.Point;

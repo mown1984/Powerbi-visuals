@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import SemanticFilter = powerbi.data.SemanticFilter;
     import UrlUtils = jsCommon.UrlUtils;
@@ -90,8 +88,13 @@ module powerbi.visuals {
             if (!isInvertedSelectionMode && analyzer.filter)
                 isInvertedSelectionMode = analyzer.isNotFilter;
 
-            if (interactivityService)
+            if (interactivityService) {
+                // To indicate whether the selection is Not selected items
                 interactivityService.setSelectionModeInverted(isInvertedSelectionMode);
+
+                // defaultValueMode will be used when determine show/hide clear button.
+                interactivityService.setDefaultValueMode(SemanticFilter.isDefaultFilter(<SemanticFilter>analyzer.filter));
+            }
 
             let category = categorical.categories[0];
             let categoryValuesLen: number = category && category.values ? category.values.length : 0;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ListViewFactory = powerbi.visuals.ListViewFactory;
     import ListViewOptions = powerbi.visuals.ListViewOptions;

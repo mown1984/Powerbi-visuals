@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Histogram;
 
@@ -51,6 +49,61 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.mainElement.find('.column').length).toBe(binsNumber);
                     done();
                 }, DefaultWaitForRender);
+            });
+        });
+
+        describe('property pane changes', () => {
+            let visualBuilder: HistogramChartBuilder;
+            let dataViews: powerbi.DataView[];
+
+            beforeEach(() => {
+                visualBuilder = new HistogramChartBuilder();
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.ValueByAgeData().getDataView()];
+            });
+
+            it('Validate data point color change', (done) => {
+                dataViews[0].metadata.objects = {
+                    dataPoint: {
+                        fill: {
+                            solid: { color: '#ff0000' }
+                        }
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    var elements = visualBuilder.mainElement.find('.column');
+                    expect(elements.first().css('fill')).toBe('#ff0000');
+                    expect(elements.last().css('fill')).toBe('#ff0000');
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('Validate bins count change', (done) => {
+                dataViews[0].metadata.objects = {
+                    general: {
+                        bins: 3
+                    }
+                };
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    var binsCount = visualBuilder.mainElement.find('.column').length;
+                    dataViews[0].metadata.objects = {
+                        general: {
+                            bins: 6
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        var binsAfterUpdate = visualBuilder.mainElement.find('.column').length;
+                        expect(binsCount).toBe(3);
+                        expect(binsAfterUpdate).toBeGreaterThan(binsCount);
+                        expect(binsAfterUpdate).toBe(6);
+                        done();
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);                
             });
         });
     });

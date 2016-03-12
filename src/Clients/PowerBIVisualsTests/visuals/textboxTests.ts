@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import Textbox = powerbi.visuals.Textbox;
     import richTextboxCapabilities = powerbi.visuals.textboxCapabilities;

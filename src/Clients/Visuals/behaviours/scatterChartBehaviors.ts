@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
@@ -68,9 +66,7 @@ module powerbi.visuals {
             this.shouldEnableFill = (!data.sizeRange || !data.sizeRange.min) && data.fillPoint;
             this.colorBorder = data.colorBorder;
 
-            bubbles.on('click', (d: SelectableDataPoint) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
+            InteractivityUtils.registerStandardInteractivityHandlers(bubbles, selectionHandler);
         }
 
         public renderSelection(hasSelection: boolean) {

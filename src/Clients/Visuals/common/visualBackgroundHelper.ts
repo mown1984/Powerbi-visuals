@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface VisualBackground {
         image?: ImageValue;
@@ -53,11 +51,7 @@ module powerbi.visuals {
             };
         }
 
-        export function enumeratePlot(enumeration: ObjectEnumerationBuilder, background: VisualBackground, backgroundImageEnabled: boolean): void {
-            // featureSwitch
-            if (!backgroundImageEnabled)
-                return;
-
+        export function enumeratePlot(enumeration: ObjectEnumerationBuilder, background: VisualBackground): void {
             let transparency = (background && background.transparency);
             if (transparency == null)
                 transparency = getDefaultTransparency();

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import KPIStatusWithHistory = powerbi.visuals.KPIStatusWithHistory;
     import kpiCapabilities = powerbi.visuals.KPIStatusWithHistoryCapabilities;

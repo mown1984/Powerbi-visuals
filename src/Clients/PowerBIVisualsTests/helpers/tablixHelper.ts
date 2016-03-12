@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.tablixHelper {
     import CssConstants = jsCommon.CssConstants;
     import DataView = powerbi.DataView;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import IGeocodeCache = powerbi.visuals.services.IGeocodingCache;
     import GeocodeQuery = powerbi.visuals.services.GeocodeQuery;

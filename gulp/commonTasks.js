@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -28,6 +28,7 @@
 
 var gulp = require("gulp"),
     path = require("path"),
+    config = require("./config.js"),
     runSequence = require("run-sequence").use(gulp);
 
 module.exports = function (pathToProj) {
@@ -37,15 +38,17 @@ module.exports = function (pathToProj) {
      */
     gulp.task("build", function (callback) {
 
-        var utils = require("./utils.js");
         var gulpProj = require(path.join(pathToProj, "gulpProject"));
 
-        gulpProj.initBuildTasks();
+        if (!config.enableIncrementalBuild) {
+            var utils = require("./utils.js");
 
-        var depsToRun = utils.checkDepsArtifacts(gulpProj);
-        gulp.task("build-inc", depsToRun.map(function (proj) {
-            return proj.buildWithDepsTask;
-        }), function (cb) {
+            gulpProj.initBuildTasks();
+
+            var depsToRun = utils.checkDepsArtifacts(gulpProj);
+            gulp.task("build-inc", depsToRun.map(function (proj) {
+                return proj.buildWithDepsTask;
+            }), function (cb) {
 
             var config = require("./config.js");
 
@@ -53,11 +56,14 @@ module.exports = function (pathToProj) {
             if (config.tslintOnBuild && gulpProj.params.tsc) {
                 runSequence(gulpProj.lintTask);
             }
-            
+
             runSequence.apply(null, gulpProj.buildTasks.concat(cb));
         });
 
-        runSequence("build-inc", callback);
+            runSequence("build-inc", callback);
+        } else {
+            runSequence(gulpProj.buildWithDepsTask, callback);
+        }
     });
 
     /**
@@ -66,7 +72,20 @@ module.exports = function (pathToProj) {
     gulp.task("rebuild", function (callback) {
 
         var gulpProj = require(path.join(pathToProj, "gulpProject"));
+        gulpProj.initBuildTasks();
+
+        if (config.enableIncrementalBuild) {
+            var fs = require("fs");
+
+            gulpProj.deps.forEach(rmCache);
+            rmCache(gulpProj);
+        }
+
         runSequence(gulpProj.buildWithDepsTask, callback);
+
+        function rmCache(proj) {
+            fs.unlinkSync(path.join(proj.projFolder, "obj", config.cacheFileName));
+        }
     });
 
     /**

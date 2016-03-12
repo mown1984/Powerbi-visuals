@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.mocks {
     import SemanticFilter = powerbi.data.SemanticFilter;
     import SQExpr = powerbi.data.SQExpr;
@@ -423,6 +421,14 @@ module powerbitests.mocks {
         }
     }
 
+    export class MockSelectionHandler implements powerbi.visuals.ISelectionHandler {
+        public handleSelection(dataPoint: SelectableDataPoint, multiSelect: boolean): void { }
+        public handleContextMenu(dataPoint: SelectableDataPoint, position: powerbi.visuals.IPoint): void { }
+        public handleClearSelection(): void { }
+        public toggleSelectionModeInversion(): boolean { return true; }
+        public persistSelectionFilter(filterPropertyIdentifier: powerbi.DataViewObjectPropertyIdentifier): void { }
+    }
+
     export class FilterAnalyzerMock implements powerbi.AnalyzedFilter {
         public filter: SemanticFilter;
         public defaultValue: powerbi.DefaultValueDefinition;
@@ -439,10 +445,14 @@ module powerbitests.mocks {
             this.filter = filter;
             this.fieldSQExprs = fieldSQExprs;
             
-            if (this.filter)
+            if (this.filter
+                && !SemanticFilter.isDefaultFilter(this.filter)
+                && !SemanticFilter.isAnyFilter(this.filter)) {
                 this.container = powerbi.data.SQExprConverter.asScopeIdsContainer(this.filter, this.fieldSQExprs);
-            else
+            }
+            else {
                 this.container = { isNot: false, scopeIds: [] };
+            }
 
             this.isNotFilter = this.container && this.container.isNot;
             this.selectedIdentities = selectedIdentities || (this.container && this.container.scopeIds);

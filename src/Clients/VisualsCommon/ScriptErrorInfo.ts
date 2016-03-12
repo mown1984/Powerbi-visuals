@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 interface ScriptErrorInfo {
     message: string;
     sourceUrl: string;

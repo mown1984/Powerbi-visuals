@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import KpiImageSize = powerbi.visuals.KpiUtil.KpiImageSize;
     import KpiImageMetadata = powerbi.visuals.KpiUtil.KpiImageMetadata;

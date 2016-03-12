@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     import RoleKindByQueryRef = DataViewAnalysis.RoleKindByQueryRef;
 
@@ -38,6 +36,7 @@ module powerbi.data {
         colorAllocatorFactory: IColorAllocatorFactory;
         transformSelects: DataViewSelectTransform[];
         dataView: DataView;
+        projectionActiveItems: DataViewProjectionActiveItems;
     }
 
     export module DataViewRegression {
@@ -56,12 +55,13 @@ module powerbi.data {
             let objectDefinitions: DataViewObjectDefinitions = options.objectDefinitions;
             let colorAllocatorFactory: IColorAllocatorFactory = options.colorAllocatorFactory;
             let transformSelects: DataViewSelectTransform[] = options.transformSelects;
+            let projectionActiveItems = options.projectionActiveItems;
             let dataView: DataView = options.dataView;
 
             if (transformedDataViews.length === 1  && transformSelects && dataView.metadata) {
                 // compute linear regression line if applicable
                 let roleKindByQueryRef: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(transformSelects, dataView.metadata);
-                let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(transformSelects, null);
+                let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(transformSelects, projectionActiveItems);
                 if (!roleKindByQueryRef || !projections || !dataViewMappings || !objectDescriptors || !objectDefinitions)
                     return transformedDataViews;
 

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface LabelsBehaviorOptions {
         labelItems: D3.Selection;
@@ -39,9 +37,7 @@ module powerbi.visuals {
         public bindEvents(options: LabelsBehaviorOptions, selectionHandler: ISelectionHandler): void {
             this.labelItems = options.labelItems;
 
-            this.labelItems.on('click', (d: Label) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
+            InteractivityUtils.registerStandardSelectionHandler(this.labelItems, selectionHandler);
         }
 
         public renderSelection(hasSelection: boolean): void {

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi {
     // Constants
     const maxExponent = 24;
@@ -36,7 +34,14 @@ module powerbi {
     const DEFAULT_SCIENTIFIC_FORMAT = '0.##' + SCIENTIFIC_FORMAT;
 
     // Regular expressions
-    const SUPPORTED_SCIENTIFIC_FORMATS = /^((0*\.*\,*#*-*)*|g)*$/i;
+    /**
+     * This regex looks for strings that match one of the following conditions:
+     *   - Optionally contain "0", "#", followed by a period, followed by at least one "0" or "#" (Ex. ###,000.###)
+     *   - Contains at least one of "0", "#", or "," (Ex. ###,000)
+     *   - Contain a "g" (indicates to use the general .NET numeric format string)
+     * The entire string (start to end) must match, and the match is not case-sensitive.
+     */
+    const SUPPORTED_SCIENTIFIC_FORMATS = /^([0\#,]*\.[0\#]+|[0\#,]+|g)$/i;
 
     export class DisplayUnit {
         // Fields
@@ -206,7 +211,7 @@ module powerbi {
             return true;
         }
 
-        protected shouldFallbackToScientific(value: number, format: string) {
+        protected shouldFallbackToScientific(value: number, format: string): boolean {
             return !this.hasScientitifcFormat(format)
                 && this.supportsScientificFormat(format)
                 && this.isScientific(value);

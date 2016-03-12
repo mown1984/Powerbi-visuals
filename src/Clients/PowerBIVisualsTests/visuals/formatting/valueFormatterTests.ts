@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;

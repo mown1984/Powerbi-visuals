@@ -24,8 +24,7 @@
 *  THE SOFTWARE.
 */
  
-/// <reference path="../_references.ts"/>
- 
+
 module powerbi.visuals {
 import SelectionManager = utility.SelectionManager;
 

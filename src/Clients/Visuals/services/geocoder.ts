@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals.services {
     import CategoryTypes = MapUtil.CategoryTypes;
     import Settings = MapUtil.Settings;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import DonutChart = powerbi.visuals.DonutChart;
@@ -346,9 +344,13 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("a (100)");
-                    expect($(labels[1]).text()).toBe("b (200)");
-                    expect($(labels[2]).text()).toBe("c (700)");
+                    expect(helpers.findElementText($(labels[0]).first())).toBe("a (100)");
+                    expect(helpers.findElementText($(labels[1]).first())).toBe("b (200)");
+                    expect(helpers.findElementText($(labels[2]).first())).toBe("c (700)");
+
+                    expect(helpers.findElementTitle($(labels[0]).first())).toBe("a (100)");
+                    expect(helpers.findElementTitle($(labels[1]).first())).toBe("b (200)");
+                    expect(helpers.findElementTitle($(labels[2]).first())).toBe("c (700)");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -379,9 +381,15 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("a (12.35K)");
-                    expect($(labels[1]).text()).toBe("b (15.53K)");
-                    expect($(labels[2]).text()).toBe("c (0.78K)");
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("a (12.35K)");
+                    expect(helpers.findElementText($(labels[1]))).toBe("b (15.53K)");
+                    expect(helpers.findElementText($(labels[2]))).toBe("c (0.78K)");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("a (12.35K)");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("b (15.53K)");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("c (0.78K)");
+
                     done();
                 }, DefaultWaitForRender);
             });
@@ -412,9 +420,15 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("a (12K)");
-                    expect($(labels[1]).text()).toBe("b (16K)");
-                    expect($(labels[2]).text()).toBe("c (1K)");
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("a (12K)");
+                    expect(helpers.findElementText($(labels[1]))).toBe("b (16K)");
+                    expect(helpers.findElementText($(labels[2]))).toBe("c (1K)");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("a (12K)");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("b (16K)");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("c (1K)");
+
                     done();
                 }, DefaultWaitForRender);
             });
@@ -445,9 +459,14 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("a (0.012M)");
-                    expect($(labels[1]).text()).toBe("b (0.016M)");
-                    expect($(labels[2]).text()).toBe("c (0.001M)");
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("a (0.012M)");
+                    expect(helpers.findElementText($(labels[1]))).toBe("b (0.016M)");
+                    expect(helpers.findElementText($(labels[2]))).toBe("c (0.001M)");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("a (0.012M)");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("b (0.016M)");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("c (0.001M)");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -477,9 +496,12 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("100");
-                    expect($(labels[1]).text()).toBe("200");
-                    expect($(labels[2]).text()).toBe("700");
+                    expect(helpers.findElementText($(labels[0]))).toBe("100");
+                    expect(helpers.findElementText($(labels[1]))).toBe("200");
+                    expect(helpers.findElementText($(labels[2]))).toBe("700");
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("100");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("200");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("700");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -509,9 +531,14 @@ module powerbitests {
 
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("a");
-                    expect($(labels[1]).text()).toBe("b");
-                    expect($(labels[2]).text()).toBe("c");
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("a");
+                    expect(helpers.findElementText($(labels[1]))).toBe("b");
+                    expect(helpers.findElementText($(labels[2]))).toBe("c");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("a");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("b");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("c");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -757,11 +784,18 @@ module powerbitests {
                 });
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toBe("abcdefghijklmnopqrstuvwxyz");
-                    expect($(labels[1]).text()).toBe("01234567890123456789");
-                    expect($(labels[2]).text()).toBe("abcdefg");
-                    expect($(labels[3]).text()).toBe("d");
-                    expect($(labels[4]).text()).toBe("e");
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("abcdefghijklmnopqrstuvwxyz");
+                    expect(helpers.findElementText($(labels[1]))).toBe("01234567890123456789");
+                    expect(helpers.findElementText($(labels[2]))).toBe("abcdefg");
+                    expect(helpers.findElementText($(labels[3]))).toBe("d");
+                    expect(helpers.findElementText($(labels[4]))).toBe("e");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("abcdefghijklmnopqrstuvwxyz");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("01234567890123456789");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("abcdefg");
+                    expect(helpers.findElementTitle($(labels[3]))).toBe("d");
+                    expect(helpers.findElementTitle($(labels[4]))).toBe("e");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -796,11 +830,17 @@ module powerbitests {
                 });
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect($(labels[0]).text()).toContain('…');
-                    expect($(labels[1]).text()).toContain('…');
-                    expect($(labels[2]).text()).toBe("abcdefg");
-                    expect($(labels[3]).text()).toBe("d");
-                    expect($(labels[4]).text()).toBe("e");
+                    expect(helpers.findElementText($(labels[0]))).toContain('…');
+                    expect(helpers.findElementText($(labels[1]))).toContain('…');
+                    expect(helpers.findElementText($(labels[2]))).toBe("abcdefg");
+                    expect(helpers.findElementText($(labels[3]))).toBe("d");
+                    expect(helpers.findElementText($(labels[4]))).toBe("e");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("01234567890123456789");
+                    expect(helpers.findElementTitle($(labels[2]))).toBe("abcdefg");
+                    expect(helpers.findElementTitle($(labels[3]))).toBe("d");
+                    expect(helpers.findElementTitle($(labels[4]))).toBe("e");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -963,8 +1003,10 @@ module powerbitests {
                 });
                 setTimeout(() => {
                     let labels = element.find(labelsElement);
-                    expect(labels.first().text()).toBe('%1,000');
-                    expect(labels.last().text()).toBe('7,000');
+                    expect(helpers.findElementText(labels.first())).toBe('%1,000');
+                    expect(helpers.findElementText(labels.last())).toBe('7,000');
+                    expect(helpers.findElementTitle(labels.first())).toBe('%1,000');
+                    expect(helpers.findElementTitle(labels.last())).toBe('7,000');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -1038,24 +1080,26 @@ module powerbitests {
                     }]
                 });
                 let labels = element.find(labelsElement);
-                expect($(labels[0]).text()).toBe("Category Label 1 (150)");
-                expect($(labels[1]).text()).toBe("Category Label 2 (150)");
+                expect(helpers.findElementText($(labels[0]))).toBe("Category Label 1 (150)");
+                expect(helpers.findElementText($(labels[1]))).toBe("Category Label 2 (150)");
+                expect(helpers.findElementTitle($(labels[0]))).toBe("Category Label 1 (150)");
+                expect(helpers.findElementTitle($(labels[1]))).toBe("Category Label 2 (150)");
 
                 // Label should be split into two lines
                 v.onResizing({ height: 500, width: 500 });
                 labels = element.find(labelsElement);
-                expect($(labels[0]).text()).toBe("150");
-                expect($(labels[1]).text()).toBe("150");
+                expect(helpers.findElementText($(labels[0]))).toBe("150");
+                expect(helpers.findElementText($(labels[1]))).toBe("150");
 
                 labels = element.find(secondLineSelector);
-                expect($(labels[0]).text()).toBe("Category Label 1");
-                expect($(labels[1]).text()).toBe("Category Label 2");
+                expect(helpers.findElementText($(labels[0]))).toBe("Category Label 1");
+                expect(helpers.findElementText($(labels[1]))).toBe("Category Label 2");
 
                 // Label should be split into two lines and be truncated
                 v.onResizing({ height: 500, width: 300 });
                 labels = element.find(secondLineSelector);
-                expect($(labels[0]).text()).toContain("…");
-                expect($(labels[1]).text()).toContain("…");
+                expect(helpers.findElementText($(labels[0]))).toContain("…");
+                expect(helpers.findElementText($(labels[1]))).toContain("…");
 
             });
         });
@@ -2371,7 +2415,6 @@ module powerbitests {
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('c').value,
                 ];
                 let categoryQueryName = dataView.categorical.categories[0].source.queryName;
-                let highlightName = powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName;
                 let expectSlices: DonutDataPoint[] = [
                     {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), 'col2'),
@@ -3188,7 +3231,7 @@ module powerbitests {
             }
 
             // Click the first slice
-            (<any>sliceToClick).d3Click();
+            sliceToClick.d3Click(0, 0);
 
             setTimeout(() => {
                 expect($('.donutChart .slice').length).toBe(3);
@@ -3214,7 +3257,7 @@ module powerbitests {
 
                 // Click the background
                 let clearCatcher = $('.clearCatcher');
-                (<any>clearCatcher).d3Click();
+                clearCatcher.d3Click(0, 0);
 
                 setTimeout(() => {
                     slices.each(function () {
@@ -3255,10 +3298,47 @@ module powerbitests {
 
             let slices = $('.donutChart .slice');
             let sliceToClick = 1;
-            (<any>$(slices[sliceToClick])).d3Click();
+            slices.eq(sliceToClick).d3Click(0, 0);
 
             expect(onSelectSpy).toHaveBeenCalled();
             expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({ data: [identities[sliceToClick]] });
+        });
+
+        it('pie chart: context menu for slice', () => {
+            if (interactiveChart) {
+                // not applicable to interactive charts
+                expect($('.donutChart')).toBeInDOM();
+                return;
+            }
+
+            let identities = [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: identities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100, 200, 700],
+                        }])
+                    }
+                }]
+            });
+
+            let onContextMenuSpy = spyOn(hostServices, 'onContextMenu');
+
+            let slices = $('.donutChart .slice');
+            let sliceToClick = 1;
+            slices.eq(sliceToClick).d3ContextMenu(5, 15);
+
+            expect(onContextMenuSpy).toHaveBeenCalled();
+            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({ dataMap: { col1: identities[sliceToClick] } });
+            expect(onContextMenuSpy.calls.argsFor(0)[0].position).toEqual({ x: 5, y: 15 });
         });
 
         it('pie chart highlighted slice select', (done) => {
@@ -3295,7 +3375,7 @@ module powerbitests {
             let otherSlices = slices.not(sliceToClick);
 
             // Click the first slice
-            (<any>sliceToClick).d3Click();
+            sliceToClick.d3Click(0, 0);
 
             setTimeout(() => {
                 expect($('.donutChart .slice').length).toBe(3);
@@ -3338,10 +3418,48 @@ module powerbitests {
 
             let slices = $('.donutChart .slice-highlight');
             let sliceToClick = 1;
-            (<any>$(slices[sliceToClick])).d3Click();
+            slices.eq(sliceToClick).d3Click(0, 0);
 
             expect(onSelectSpy).toHaveBeenCalled();
             expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({ data: [identities[sliceToClick]] });
+        });
+
+        it('pie chart: context menu for highlighted slice', () => {
+            if (interactiveChart) {
+                // not applicable to interactive charts
+                expect($('.donutChart')).toBeInDOM();
+                return;
+            }
+
+            let identities = [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: identities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [100, 200, 700],
+                            highlights: [50, 100, 350],
+                        }])
+                    }
+                }]
+            });
+
+            let onContextMenuSpy = spyOn(hostServices, 'onContextMenu');
+
+            let slices = $('.donutChart .slice-highlight');
+            let sliceToClick = 1;
+            slices.eq(sliceToClick).d3ContextMenu(5, 15);
+
+            expect(onContextMenuSpy).toHaveBeenCalled();
+            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({ dataMap: { col1: identities[sliceToClick] } });
+            expect(onContextMenuSpy.calls.argsFor(0)[0].position).toEqual({ x: 5, y: 15 });
         });
 
         it('pie chart slice multi-select', (done) => {
@@ -3383,8 +3501,8 @@ module powerbitests {
             }
 
             // Click the first slice, then the second with ctrl key
-            (<any>slicesToClick.eq(0)).d3Click();
-            (<any>slicesToClick.eq(1)).d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
+            slicesToClick.eq(0).d3Click(0, 0);
+            slicesToClick.eq(1).d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
 
             setTimeout(() => {
                 expect($('.donutChart .slice').length).toBe(3);
@@ -3419,7 +3537,7 @@ module powerbitests {
 
                 // Click the background
                 let clearCatcher = $('.clearCatcher');
-                (<any>clearCatcher).d3Click();
+                clearCatcher.d3Click(0, 0);
 
                 setTimeout(() => {
                     slices.each(function () {
@@ -3863,7 +3981,7 @@ module powerbitests {
                     let icons = $('.legend .icon.tall');
                     let slices = $('.donutChart .slice');
 
-                    (<any>icons.first()).d3Click(0, 0);
+                    icons.first().d3Click(0, 0);
                     setTimeout(() => {
                         expect(icons[0].style.backgroundColor).toBe('rgb(1, 184, 170)');
                         expect(icons[1].style.backgroundColor).toBe('rgb(166, 166, 166)');

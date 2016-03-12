@@ -55,7 +55,10 @@ module powerbi.visuals {
             "slicer",
             "bulletChart",
             "forceGraph",
-            "mekkoChart"
+            "mekkoChart",
+            "gantt",
+            "sunburstCustom",
+            "timeline"
         ];
 
         private static mobileInteractiveVisuals: string[] = [
@@ -234,6 +237,7 @@ module powerbi.visuals {
 
             this.hostControls.onPluginChange(pluginName);
             this.createVisualPlugin(pluginName);
+            // this.hostControls.update();
         }
 
         private static createVisualPlugin(pluginName: string): void {

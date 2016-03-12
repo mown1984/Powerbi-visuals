@@ -25,23 +25,14 @@
  */
 
 module powerbi.visuals.samples {
-    import SelectionManager = utility.SelectionManager;
     import ValueFormatter = powerbi.visuals.valueFormatter;
-    import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
 
-    type D3Element =
-        D3.UpdateSelection |
-        D3.Selection |
-        D3.Selectors |
-        D3.Transition.Transition;
-
     export interface TornadoChartSections {
         left: number;
         right?: number;
-        isPercent: boolean;
     }
 
     export interface TornadoChartTextOptions {
@@ -61,14 +52,8 @@ module powerbi.visuals.samples {
     export interface TornadoChartSeries {
         fill: string;
         name: string;
-        values: any[];
         selectionId: SelectionId;
         categoryAxisEnd: number;
-    }
-
-    export interface TornadoChartCategory {
-        value: string;
-        selectionId: SelectionId;
     }
 
     export interface TornadoChartSettings {
@@ -84,61 +69,83 @@ module powerbi.visuals.samples {
     }
 
     export interface TornadoChartDataView {
-        displayName: string;
-        categories: TornadoChartCategory[];
+        categories: TextData[];
         series: TornadoChartSeries[];
         settings: TornadoChartSettings;
         legend: LegendData;
+        dataPoints: TornadoChartPoint[];
+        highlightedDataPoints?: TornadoChartPoint[];
     }
 
-    interface TornadoChartPoint {
-        x: number;
-        y: number;
-    }
-
-    interface LabelData extends TornadoChartPoint {
+    export interface TornadoChartPoint extends SelectableDataPoint {
         dx: number;
-        dy: number;
+        px: number;
+        angle: number;
+        width: number;
+        label: LabelData;
+        color: string;
+        tooltipData: TooltipDataItem[];
+        categoryIndex: number;
+        highlight?: boolean;
+    }
+
+    export interface LabelData {
+        dx: number;
         value: number | string;
         source: number | string;
         color: string;
         width: number;
     }
 
-    interface ColumnData extends TornadoChartPoint {
-        dx: number;
-        dy: number;
-        px: number;
-        py: number;
-        angle: number;
-        height: number;
-        width: number;
-        label: LabelData;
-        color: string;
-        selectionId: SelectionId;
-        tooltipData: TooltipDataItem[];
-    }
-
-    interface LineData {
+    export interface LineData {
         x1: number;
         y1: number;
         x2: number;
         y2: number;
     }
 
-    interface TextData {
+    export interface TextData {
         text: string;
-        options: TornadoChartTextOptions;
         height: number;
         width: number;
         textProperties: TextProperties;
+    }
+
+    export interface TornadoBehaviorOptions {
+        columns: D3.Selection;
+        clearCatcher: D3.Selection;
+        interactivityService: IInteractivityService;
+    }
+
+    class TornadoWebBehavior implements IInteractiveBehavior {
+        private columns: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private interactivityService: IInteractivityService;
+
+        public bindEvents(options: TornadoBehaviorOptions, selectionHandler: ISelectionHandler) {
+            this.columns = options.columns;
+            this.clearCatcher = options.clearCatcher;
+            this.interactivityService = options.interactivityService;
+
+            this.columns.on('click', (d: SelectableDataPoint, i: number) => {
+                selectionHandler.handleSelection(d, d3.event.ctrlKey);
+            });
+
+            this.clearCatcher.on('click', () => {
+                selectionHandler.handleClearSelection();
+            });
+        }
+
+        public renderSelection(hasSelection: boolean) {
+            let hasHighlights = this.interactivityService.hasSelection();
+            this.columns.style("fill-opacity", (d: TornadoChartPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights));
+        }
     }
 
     class TornadoChartScrolling {
         public isScrollable: boolean;
         public scrollViewport: IViewport;
 
-        private static ScrollBarWidth = 10;
         private static ScrollBarMinLength = 15;
         private isYScrollBarVisible: boolean;
         private brushGraphicsContextY: D3.Selection;
@@ -206,7 +213,7 @@ module powerbi.visuals.samples {
             this.scrollViewport = { height: this.viewport.height, width: this.viewport.width };
 
             if (this.isYScrollBarVisible && this.isScrollable) {
-                this.scrollViewport.width -= TornadoChartScrolling.ScrollBarWidth;
+                this.scrollViewport.width -= TornadoChart.ScrollBarWidth;
             }
         }
 
@@ -241,7 +248,7 @@ module powerbi.visuals.samples {
         }
 
         private setScrollBarSize(brushGraphicsContext: D3.Selection, minExtent: number, isVertical: boolean): void {
-            brushGraphicsContext.selectAll("rect").attr(isVertical ? "width" : "height", TornadoChartScrolling.ScrollBarWidth);
+            brushGraphicsContext.selectAll("rect").attr(isVertical ? "width" : "height", TornadoChart.ScrollBarWidth);
             brushGraphicsContext.selectAll("rect").attr(isVertical ? "height" : "width", minExtent);
         }
 
@@ -424,23 +431,14 @@ module powerbi.visuals.samples {
         };
 
         private static MaxSeries: number = 2;
-
-        private static MinPrecision: number = 0;
         private static MaxPrecision: number = 17; // max number of decimals in float
-
-        private static MinOpacity: number = 0;
-        private static MinColumnOpacity: number = 0.2;
-        private static MaxOpacity: number = 1;
-
-        private static MaxSizeSections: number = 100;
-
         private static LabelPadding: number = 2.5;
-
         private static CategoryMinHeight: number = 25;
-
         private static DefaultFontSize: number = 9;
-
         private static DefaultLegendFontSize: number = 8;
+        private static HighlightedShapeFactor: number = 0.5;
+
+        public static ScrollBarWidth = 10;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
@@ -478,7 +476,7 @@ module powerbi.visuals.samples {
             }],
             objects: {
                 general: {
-                    displayName: data.createDisplayNameGetter("Visual_General"),
+                    displayName: 'General',
                     properties: {
                         formatString: {
                             type: {
@@ -490,7 +488,7 @@ module powerbi.visuals.samples {
                     }
                 },
                 dataPoint: {
-                    displayName: data.createDisplayNameGetter("Visual_DataPoint"),
+                    displayName: 'Data Colors',
                     properties: {
                         fill: {
                             displayName: data.createDisplayNameGetter('Visual_Fill'),
@@ -509,14 +507,15 @@ module powerbi.visuals.samples {
                     }
                 },
                 labels: {
-                    displayName: data.createDisplayNameGetter("Visual_DataPointsLabels"),
+                    displayName: 'Data Labels',
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            displayName: 'Show',
                             type: { bool: true }
                         },
                         labelPrecision: {
-                            displayName: data.createDisplayNameGetter("Visual_Precision"),
+                            displayName: 'Decimal Places',
+                            placeHolderText: 'Auto',
                             type: { numeric: true }
                         },
                         fontSize: {
@@ -524,72 +523,73 @@ module powerbi.visuals.samples {
                             type: { formatting: { fontSize: true } }
                         },
                         labelDisplayUnits: {
-                            displayName: data.createDisplayNameGetter('Visual_DisplayUnits'),
+                            displayName: 'Display Units',
                             type: { formatting: { labelDisplayUnits: true } },
                         },
                         insideFill: {
-                            displayName: "Inside fill",
+                            displayName: 'Inside fill',
                             type: { fill: { solid: { color: true } } }
                         },
                         outsideFill: {
-                            displayName: "Outside fill",
+                            displayName: 'Outside fill',
                             type: { fill: { solid: { color: true } } }
                         }
                     }
                 },
                 legend: {
-                    displayName: data.createDisplayNameGetter('Visual_Legend'),
+                    displayName: 'Legend',
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter('Visual_Show'),
+                            displayName: 'Show',
                             type: { bool: true }
                         },
                         position: {
-                            displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
+                            displayName: 'Position',
                             description: data.createDisplayNameGetter('Visual_LegendPositionDescription'),
                             type: { enumeration: legendPosition.type }
                         },
                         showTitle: {
-                            displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
+                            displayName: 'Title',
                             description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
                             type: { bool: true }
                         },
                         titleText: {
-                            displayName: data.createDisplayNameGetter('Visual_LegendName'),
+                            displayName: 'Legend Name',
                             description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                             type: { text: true }
                         },
                         labelColor: {
-                            displayName: data.createDisplayNameGetter('Visual_LegendTitleColor'),
+                            displayName: 'Color',
                             type: { fill: { solid: { color: true } } }
                         },
                         fontSize: {
-                            displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                            displayName: 'TextSize',
                             type: { formatting: { fontSize: true } }
                         },
                     }
                 },
                 categories: {
-                    displayName: data.createDisplayNameGetter("Role_DisplayName_Group"),
+                    displayName: 'Group',
                     properties: {
                         show: {
-                            displayName: data.createDisplayNameGetter("Visual_Show"),
+                            displayName: 'Show',
                             type: { bool: true }
                         },
                         fill: {
-                            displayName: data.createDisplayNameGetter('Visual_Fill'),
+                            displayName: 'Color',
                             type: { fill: { solid: { color: true } } }
                         }
                     }
                 }
-            }
+            },
+            supportsHighlight: true,
         };
 
         private DefaultTornadoChartSettings: TornadoChartSettings = {
             labelOutsideFillColor: dataLabelUtils.defaultLabelColor,
             labelSettings: {
                 show: true,
-                precision: 2,
+                precision: null,
                 fontSize: TornadoChart.DefaultFontSize,
                 displayUnits: 0,
                 labelColor: dataLabelUtils.defaultInsideLabelColor,
@@ -614,7 +614,6 @@ module powerbi.visuals.samples {
         private sections: TornadoChartSections = {
             left: 75,
             right: 0,
-            isPercent: false
         };
 
         private currentSections: TornadoChartSections = _.clone(this.sections);
@@ -626,7 +625,6 @@ module powerbi.visuals.samples {
             left: 10
         };
 
-        private element: JQuery;
         private root: D3.Selection;
         private svg: D3.Selection;
         private main: D3.Selection;
@@ -634,28 +632,26 @@ module powerbi.visuals.samples {
         private axes: D3.Selection;
         private labels: D3.Selection;
         private categories: D3.Selection;
+        private clearCatcher: D3.Selection;
 
         private legendObjectProperties: DataViewObject;
         private legend: ILegend;
-
+        private hasDynamicSeries: boolean;
+        private hasHighlights: boolean;
+        private behavior: IInteractiveBehavior;
         private colors: IDataColorPalette;
+        private interactivityService: IInteractivityService;
+        private animator: IGenericAnimator;
+        private hostService: IVisualHostServices;
+        private scrolling: TornadoChartScrolling;
 
         private viewport: IViewport;
-        private dataView: DataView;
         private tornadoChartDataView: TornadoChartDataView;
+        private defaultTornadoChartDataView: TornadoChartDataView;
         private labelHeight: number;
-
         private heightColumn: number = 0;
         private widthLeftSection: number = 0;
         private widthRightSection: number = 0;
-
-        private animator: IGenericAnimator;
-
-        private hostService: IVisualHostServices;
-
-        private selectionManager: SelectionManager;
-
-        private scrolling: TornadoChartScrolling;
 
         constructor(tornadoChartConstructorOptions?: TornadoChartConstructorOptions) {
             if (tornadoChartConstructorOptions) {
@@ -664,10 +660,7 @@ module powerbi.visuals.samples {
                 this.sections = tornadoChartConstructorOptions.sections || this.sections;
                 this.columnPadding = tornadoChartConstructorOptions.columnPadding || this.columnPadding;
                 this.currentSections = _.clone(this.sections);
-
-                if (tornadoChartConstructorOptions.animator) {
-                    this.animator = tornadoChartConstructorOptions.animator;
-                }
+                this.animator = tornadoChartConstructorOptions.animator;
             }
         }
 
@@ -676,17 +669,16 @@ module powerbi.visuals.samples {
                 fontSize: string;
 
             this.hostService = visualInitOptions.host;
-            this.selectionManager = new SelectionManager({ hostServices: this.hostService });
-
-            this.element = visualInitOptions.element;
-
+            let element: JQuery = visualInitOptions.element;
             this.colors = style.colorPalette.dataColors;
+            let interactivity = visualInitOptions.interactivity;
+            this.interactivityService = createInteractivityService(this.hostService);
 
             let root: D3.Selection;
             if (this.svg)
                 this.root = root = this.svg;
             else
-                this.root = root = d3.select(this.element.get(0))
+                this.root = root = d3.select(element.get(0))
                     .append("svg");
 
             root
@@ -698,27 +690,36 @@ module powerbi.visuals.samples {
             this.textOptions.sizeUnit = fontSize.slice(fontSize.length - 2);
             this.textOptions.fontSize = Number(fontSize.slice(0, fontSize.length - 2));
             this.textOptions.fontFamily = root.style("font-family");
-
             this.scrolling = new TornadoChartScrolling(() => root, () => this.viewport, () => this.margin, true);
-            this.main = root.append("g");
-
-            this.columns = this.main
+            let main: D3.Selection = this.main = root.append("g");
+            this.columns = main
                 .append("g")
-                .classed(TornadoChart.Columns["class"], true);
+                .classed(TornadoChart.Columns.class, true);
 
-            this.axes = this.main
+            this.axes = main
                 .append("g")
-                .classed(TornadoChart.Axes["class"], true);
+                .classed(TornadoChart.Axes.class, true);
 
-            this.labels = this.main
+            this.labels = main
                 .append("g")
-                .classed(TornadoChart.Labels["class"], true);
+                .classed(TornadoChart.Labels.class, true);
 
-            this.categories = this.main
+            this.categories = main
                 .append("g")
-                .classed(TornadoChart.Categories["class"], true);
+                .classed(TornadoChart.Categories.class, true);
 
-            this.legend = createLegend(this.element, false, null);
+            this.behavior = new TornadoWebBehavior();
+            this.clearCatcher = appendClearCatcher(this.columns);
+            this.defaultTornadoChartDataView = {
+                categories: [],
+                series: [],
+                settings: null,
+                legend: null,
+                dataPoints: [],
+                highlightedDataPoints: [],
+            };
+
+            this.legend = createLegend(element, interactivity && interactivity.isInteractiveLegend, this.interactivityService);
         }
 
         public update(visualUpdateOptions: VisualUpdateOptions): void {
@@ -728,18 +729,22 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            this.dataView = visualUpdateOptions.dataViews[0];
-
-            this.durationAnimations = getAnimationDuration(
-                this.animator,
-                visualUpdateOptions.suppressAnimations);
-
-            this.tornadoChartDataView = this.converter(this.dataView);
-
             this.viewport = {
                 height: visualUpdateOptions.viewport.height,
                 width: visualUpdateOptions.viewport.width
             };
+
+            if (this.animator)
+                this.durationAnimations = AnimatorCommon.GetAnimationDuration(this.animator, visualUpdateOptions.suppressAnimations);
+            else
+                this.durationAnimations = visualUpdateOptions.suppressAnimations ? 0 : 200;
+
+            this.tornadoChartDataView = this.converter(visualUpdateOptions.dataViews[0]);
+
+            if (this.interactivityService) {
+                this.interactivityService.applySelectionStateToData(this.tornadoChartDataView.dataPoints);
+                this.interactivityService.applySelectionStateToData(this.tornadoChartDataView.highlightedDataPoints);
+            }
 
             this.render();
         }
@@ -774,12 +779,6 @@ module powerbi.visuals.samples {
                 .attr("transform", elementsTranslate);
         }
 
-        private getValueByPercent(percent: number, maxValue: number, isPrecent: boolean = true): number {
-            return isPrecent
-                ? (percent * maxValue) / 100
-                : percent;
-        }
-
         public converter(dataView: DataView): TornadoChartDataView {
             if (!dataView ||
                 !dataView.categorical ||
@@ -788,118 +787,209 @@ module powerbi.visuals.samples {
                 !dataView.categorical.categories[0].source ||
                 !dataView.categorical.values ||
                 !dataView.categorical.values[0]) {
-                return null;
+                return this.defaultTornadoChartDataView;
             }
 
-            let categories: TornadoChartCategory[],
-                values: DataViewValueColumns = dataView.categorical.values,
-                series: TornadoChartSeries[],
-                displayName: string,
-                objects: DataViewObjects,
-                settings: TornadoChartSettings;
+            let categorical: DataViewCategorical = dataView.categorical;
+            let categories: DataViewCategoryColumn[] = categorical.categories || [];
+            let values: DataViewValueColumns = categorical.values;
+            if (values.length > TornadoChart.MaxSeries) {
+                this.hostService.setWarnings([getTornadoChartWarning()]);
+                return this.defaultTornadoChartDataView;
+            }
+            let category: DataViewCategoricalColumn = categories[0];
+            let categoryValues: number[] = category.values;
+            let categoryValuesLength: number = categoryValues.length;
+            let objects: DataViewObjects = this.getObjectsFromDataView(dataView);
 
-            categories = this.parseCategories(dataView);
-            displayName = dataView.categorical.categories[0].source.displayName;
-
-            objects = this.getObjectsFromDataView(dataView);
-
-            settings = this.parseSettings(dataView, objects, values[0].values[0]);
-
+            let minValue: number = Math.min(d3.min(values[0].values), 0);
+            let maxValue: number = d3.max(values[0].values);
+            let settings: TornadoChartSettings = this.parseSettings(dataView, objects, maxValue);
+            let formatStringProp: DataViewObjectPropertyIdentifier = TornadoChart.Properties.general.formatString;
+            let categorySourceFormatString: string = valueFormatter.getFormatString(category.source, formatStringProp);
+            this.hasDynamicSeries = !!values.source;
+            let hasHighlights: boolean = this.hasHighlights = !!(values.length > 0 && values[0].highlights);
             this.labelHeight = TextMeasurementService.estimateSvgTextHeight({
                 fontFamily: dataLabelUtils.StandardFontFamily,
                 fontSize: PixelConverter.fromPoint(settings.labelSettings.fontSize),
             });
 
-            series = this.parseSeries(values);
+            let series: TornadoChartSeries[] = [];
+            let dataPoints: TornadoChartPoint[] = [];
+            let highlightedDataPoints: TornadoChartPoint[] = [];
+            let categoriesLabels: TextData[] = [];
 
-            if (series.length === 0) {
-                categories = [];
+            let groupedValues: DataViewValueColumnGroup[] = [];
+            if (values.grouped)
+                groupedValues = values.grouped();
+            
+            // Parse category labels and compute maximum category length
+            let maxCategoryLength: number = 0;
+            let showCategories = settings.showCategories;
+            for (let i = 0; i < categoryValuesLength; i++) {
+                let formattedCategoryValue = valueFormatter.format(categoryValues[i], categorySourceFormatString);
+                let textData = this.getTextData(formattedCategoryValue, true);
+                categoriesLabels.push(textData);
+                if (showCategories && textData.width > maxCategoryLength)
+                    maxCategoryLength = textData.width;
+            }
+
+            let scrollBarWidth: number = (categoryValuesLength * TornadoChart.CategoryMinHeight > this.viewport.height) ? TornadoChart.ScrollBarWidth : 0;
+            this.widthLeftSection = maxCategoryLength + TornadoChart.LabelPadding;
+            let maxColumnWidth = this.widthRightSection = this.viewport.width - this.margin.right - this.widthLeftSection - scrollBarWidth;
+            this.updateElements();
+
+            if (values.length === TornadoChart.MaxSeries) {
+                minValue = d3.min([minValue, d3.min(values[1].values)]);
+                maxValue = d3.max([maxValue, d3.max(values[1].values)]);
+                maxColumnWidth = maxColumnWidth / TornadoChart.MaxSeries;
+            }
+
+            for (let seriesIndex = 0; seriesIndex < values.length; seriesIndex++) {
+                let parsedSeries: TornadoChartSeries = this.parseSeries(values, seriesIndex, this.hasDynamicSeries, groupedValues);
+                series.push(parsedSeries);
+                let currentSeries = values[seriesIndex];
+                let measureName = currentSeries.source.queryName;
+
+                for (let i = 0; i < categoryValuesLength; i++) {
+                    let value = currentSeries.values[i];
+                    let identity = SelectionIdBuilder.builder()
+                        .withCategory(category, i)
+                        .withSeries(values, currentSeries)
+                        .withMeasure(measureName)
+                        .createSelectionId();
+                    let formattedCategoryValue = categoriesLabels[i].text;
+                    let tooltipInfo: TooltipDataItem[];
+                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, null);
+
+                    let shiftToMiddle: boolean = seriesIndex === 0 && values.length === TornadoChart.MaxSeries;
+                    let shiftToRight: boolean = seriesIndex === 1;
+                
+                    // Limit maximum value with what the user choose
+                    maxValue = parsedSeries.categoryAxisEnd ? Math.min(parsedSeries.categoryAxisEnd, maxValue) : maxValue;
+                    let widthOfColumn: number = this.getColumnWidth(value, minValue, maxValue, maxColumnWidth);
+                    let shift: number = maxColumnWidth - widthOfColumn;
+
+                    let dx: number = shift * Number(shiftToMiddle) + maxColumnWidth * Number(shiftToRight);
+
+                    let label: LabelData = this.getLabelData(
+                        value,
+                        dx,
+                        widthOfColumn,
+                        shiftToMiddle,
+                        settings);
+
+                    dataPoints.push({
+                        dx: dx,
+                        px: widthOfColumn / 2,
+                        angle: shiftToMiddle ? 180 : 0,
+                        width: widthOfColumn,
+                        label: label,
+                        color: parsedSeries.fill,
+                        selected: false,
+                        identity: identity,
+                        tooltipData: tooltipInfo,
+                        categoryIndex: i,
+                    });
+
+                    if (hasHighlights) {
+                        let highlightIdentity = SelectionId.createWithHighlight(identity);
+                        let highlight = currentSeries.highlights[i];
+                        let highlightedValue = highlight != null ? highlight : 0;
+                        widthOfColumn = this.getColumnWidth(highlightedValue, minValue, maxValue, maxColumnWidth);
+                        shift = maxColumnWidth - widthOfColumn;
+
+                        dx = shift * Number(shiftToMiddle) + maxColumnWidth * Number(shiftToRight);
+
+                        label = this.getLabelData(
+                            highlightedValue,
+                            dx,
+                            widthOfColumn,
+                            shiftToMiddle,
+                            settings);
+
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, highlightedValue);
+
+                        highlightedDataPoints.push({
+                            dx: dx,
+                            px: widthOfColumn / 2,
+                            angle: shiftToMiddle ? 180 : 0,
+                            width: widthOfColumn,
+                            label: label,
+                            color: parsedSeries.fill,
+                            selected: false,
+                            identity: highlightIdentity,
+                            tooltipData: tooltipInfo,
+                            categoryIndex: i,
+                            tooltipInfo: tooltipInfo,
+                            highlight: true,
+                        });
+                    }
+                }
             }
 
             return {
-                displayName: displayName,
-                categories: categories,
+                categories: categoriesLabels,
                 series: series,
                 settings: settings,
-                legend: this.getLegendData(series)
+                legend: this.getLegendData(series),
+                dataPoints: dataPoints,
+                highlightedDataPoints: highlightedDataPoints,
             };
         }
 
         private parseSettings(dataView: DataView, objects: DataViewObjects, value: number): TornadoChartSettings {
-            let valueFormatter: IValueFormatter,
-                tooltipFormatter: IValueFormatter,
-                precision: number,
-                displayUnits: number;
+            let defaultTornadoChartSettings: TornadoChartSettings = this.DefaultTornadoChartSettings;
+            let precision: number = this.getPrecision(objects);
 
-            precision = this.getPrecision(objects);
-            displayUnits = DataViewObjects.getValue(
+            let displayUnits: number = DataViewObjects.getValue<number>(
                 objects,
                 TornadoChart.Properties.labels.labelDisplayUnits,
-                this.DefaultTornadoChartSettings.labelSettings.displayUnits);
+                defaultTornadoChartSettings.labelSettings.displayUnits);
 
-            valueFormatter = ValueFormatter.create({
+            let valueFormatter: IValueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, TornadoChart.Properties.general.formatString),
                 precision: precision,
                 value: (displayUnits === 0) && (value != null) ? value : displayUnits,
             });
 
-            tooltipFormatter = ValueFormatter.create({
+            let tooltipFormatter: IValueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(dataView.categorical.categories[0].source, TornadoChart.Properties.general.formatString),
                 precision: precision,
                 value: 0
             });
 
-            this.parseLegendProperties(dataView);
-
-            let labelSettings = this.DefaultTornadoChartSettings.labelSettings;
+            let labelSettings = defaultTornadoChartSettings.labelSettings;
 
             return {
-                labelOutsideFillColor: this.getColor(TornadoChart.Properties.labels.outsideFill, this.DefaultTornadoChartSettings.labelOutsideFillColor, objects),
+                labelOutsideFillColor: this.getColor(TornadoChart.Properties.labels.outsideFill, defaultTornadoChartSettings.labelOutsideFillColor, objects),
                 labelSettings: {
-                    show: DataViewObjects.getValue(objects, TornadoChart.Properties.labels.show, labelSettings.show),
+                    show: DataViewObjects.getValue<boolean>(objects, TornadoChart.Properties.labels.show, labelSettings.show),
                     precision: precision,
-                    fontSize: DataViewObjects.getValue(objects, TornadoChart.Properties.labels.fontSize, labelSettings.fontSize),
+                    fontSize: DataViewObjects.getValue<number>(objects, TornadoChart.Properties.labels.fontSize, labelSettings.fontSize),
                     displayUnits: displayUnits,
                     labelColor: this.getColor(TornadoChart.Properties.labels.insideFill, labelSettings.labelColor, objects),
                 },
                 formatter: valueFormatter,
-                showCategories: DataViewObjects.getValue(objects, TornadoChart.Properties.categories.show, this.DefaultTornadoChartSettings.showCategories),
-                showLegend: DataViewObjects.getValue(objects, TornadoChart.Properties.legend.show, this.DefaultTornadoChartSettings.showLegend),
-                legendFontSize: DataViewObjects.getValue(objects, TornadoChart.Properties.legend.fontSize, this.DefaultTornadoChartSettings.legendFontSize),
-                legendColor: this.getColor(TornadoChart.Properties.legend.labelColor, this.DefaultTornadoChartSettings.legendColor, objects),
-                categoriesFillColor: this.getColor(TornadoChart.Properties.categories.fill, this.DefaultTornadoChartSettings.categoriesFillColor, objects),
+                showCategories: DataViewObjects.getValue<boolean>(objects, TornadoChart.Properties.categories.show, defaultTornadoChartSettings.showCategories),
+                showLegend: DataViewObjects.getValue<boolean>(objects, TornadoChart.Properties.legend.show, defaultTornadoChartSettings.showLegend),
+                legendFontSize: DataViewObjects.getValue<number>(objects, TornadoChart.Properties.legend.fontSize, defaultTornadoChartSettings.legendFontSize),
+                legendColor: this.getColor(TornadoChart.Properties.legend.labelColor, defaultTornadoChartSettings.legendColor, objects),
+                categoriesFillColor: this.getColor(TornadoChart.Properties.categories.fill, defaultTornadoChartSettings.categoriesFillColor, objects),
                 tooltipFormatter: tooltipFormatter,
             };
         }
 
-        private parseLegendProperties(dataView: DataView): void {
-            if (!dataView || !dataView.metadata) {
-                this.legendObjectProperties = {};
-
-                return;
-            }
-
-            this.legendObjectProperties =
-                DataViewObjects.getObject(dataView.metadata.objects, "legend", {});
-        }
-
         private getColor(properties: any, defaultColor: string, objects: DataViewObjects): string {
-            let colorHelper: ColorHelper;
-
-            colorHelper = new ColorHelper(this.colors, properties, defaultColor);
-
+            let colorHelper: ColorHelper = new ColorHelper(this.colors, properties, defaultColor);
             return colorHelper.getColorForMeasure(objects, "");
         }
 
         private getPrecision(objects: DataViewObjects): number {
-            let precision: number = DataViewObjects.getValue(
+            let precision: number = DataViewObjects.getValue<number>(
                 objects,
                 TornadoChart.Properties.labels.labelPrecision,
                 this.DefaultTornadoChartSettings.labelSettings.precision);
-
-            if (precision <= TornadoChart.MinPrecision) {
-                return TornadoChart.MinPrecision;
-            }
 
             if (precision >= TornadoChart.MaxPrecision) {
                 return TornadoChart.MaxPrecision;
@@ -913,108 +1003,65 @@ module powerbi.visuals.samples {
                 !dataView.metadata ||
                 !dataView.metadata.columns ||
                 !dataView.metadata.objects) {
+                this.legendObjectProperties = {};
                 return null;
             }
-
+            this.legendObjectProperties = DataViewObjects.getObject(dataView.metadata.objects, "legend", {});
             return dataView.metadata.objects;
         }
 
-        private parseCategories(dataView: DataView): TornadoChartCategory[] {
-            return dataView.categorical.categories[0].values.map((x, i) => <TornadoChartCategory>{
-                value: x,
-                selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[i])
-            });
-        }
+        private parseSeries(dataViewValueColumns: DataViewValueColumns, index: number, isGrouped: boolean, grouped: DataViewValueColumnGroup[]): TornadoChartSeries {
+            let dataViewValueColumn: DataViewValueColumn = dataViewValueColumns[index];
+            let seriesGroup: DataViewValueColumnGroup | DataViewValueColumn = isGrouped ? grouped[index] : grouped[0].values[index];
+            let source: DataViewMetadataColumn = dataViewValueColumn.source;
 
-        private parseSeries(dataViewValueColumns: DataViewValueColumns): TornadoChartSeries[] {
-            if (dataViewValueColumns.length > TornadoChart.MaxSeries) {
-                this.hostService.setWarnings([getTornadoChartWarning()]);
+            let selectionId: SelectionId = seriesGroup.identity
+                ? SelectionId.createWithId(seriesGroup.identity)
+                : SelectionIdBuilder.builder()
+                    .withSeries(dataViewValueColumns, seriesGroup)
+                    .withMeasure(source.queryName)
+                    .createSelectionId();
 
-                return [];
-            }
+            let displayName: string = source.groupName ? source.groupName : source.displayName;
+            let objects: DataViewObjects = source.objects;
+            let categoryAxisObject: DataViewObject | DataViewObjectWithId[];
 
-            let isGrouped: boolean = !!dataViewValueColumns.source,
-                grouped: DataViewValueColumnGroup[] = [];
+            if (isGrouped)
+                categoryAxisObject = seriesGroup.objects ? seriesGroup.objects['categoryAxis'] : null;
+            else
+                categoryAxisObject = objects ? objects['categoryAxis'] : null;
 
-            if (dataViewValueColumns.grouped) {
-                grouped = dataViewValueColumns.grouped();
-            }
+            let color: string = this.getColor(
+                TornadoChart.Properties.dataPoint.fill,
+                this.DefaultFillColors[index],
+                objects);
+            let categoryAxisEnd: number = categoryAxisObject ? categoryAxisObject['end'] : null;
 
-            return dataViewValueColumns.map((dataViewValueColumn: DataViewValueColumn, index: number) => {
-                let displayName: string = "",
-                    color: string,
-                    selectionId: SelectionId,
-                    objects: DataViewObjects,
-                    categoryAxisObject: DataViewObject | DataViewObjectWithId[];
-
-                if (isGrouped && grouped[index]) {
-                    selectionId = SelectionId.createWithIdAndMeasure(
-                        dataViewValueColumn.identity,
-                        dataViewValueColumn.source.queryName);
-
-                    objects = grouped[index].objects;
-                } else {
-                    selectionId = SelectionId.createWithMeasure(dataViewValueColumn.source.queryName);
-                    objects = dataViewValueColumn.source.objects;
-                }
-                categoryAxisObject = dataViewValueColumn.source && dataViewValueColumn.source.objects ? dataViewValueColumn.source.objects['categoryAxis'] : null;
-
-                if (dataViewValueColumn.source.groupName) {
-                    displayName = dataViewValueColumn.source.groupName;
-                } else if (dataViewValueColumn.source.displayName) {
-                    displayName = dataViewValueColumn.source.displayName;
-                }
-
-                color = this.getColor(
-                    TornadoChart.Properties.dataPoint.fill,
-                    this.DefaultFillColors[index],
-                    objects);
-                let categoryAxisEnd: number = categoryAxisObject ? categoryAxisObject['end'] : null;
-
-                return <TornadoChartSeries>{
-                    fill: color,
-                    name: displayName,
-                    values: dataViewValueColumn.values,
-                    selectionId: selectionId,
-                    categoryAxisEnd: categoryAxisEnd,
-                };
-            });
+            return <TornadoChartSeries>{
+                fill: color,
+                name: displayName,
+                selectionId: selectionId,
+                categoryAxisEnd: categoryAxisEnd,
+            };
         }
 
         private getLegendData(series: TornadoChartSeries[]): LegendData {
-            let legendDataPoints: LegendDataPoint[];
+            let legendDataPoints: LegendDataPoint[] = [];
 
-            legendDataPoints = series.map((item: TornadoChartSeries) => {
-                return <LegendDataPoint>{
-                    label: item.name,
-                    color: item.fill,
-                    icon: LegendIcon.Box,
-                    selected: false,
-                    identity: item.selectionId
-                };
-            });
+            if (this.hasDynamicSeries)
+                legendDataPoints = series.map((item: TornadoChartSeries) => {
+                    return <LegendDataPoint>{
+                        label: item.name,
+                        color: item.fill,
+                        icon: LegendIcon.Box,
+                        selected: false,
+                        identity: item.selectionId
+                    };
+                });
 
             return {
                 dataPoints: legendDataPoints
             };
-        }
-
-        private updateSections(): void {
-            let dataView: TornadoChartDataView = this.tornadoChartDataView;
-            if (!dataView ||
-                !dataView.settings) {
-                return;
-            }
-
-            let settings: TornadoChartSettings = dataView.settings;
-
-            this.currentSections.left = settings.showCategories
-                ? this.sections.left
-                : 0;
-
-            this.currentSections.right = this.currentSections.isPercent
-                ? TornadoChart.MaxSizeSections - this.currentSections.left
-                : this.scrolling.scrollViewport.width - this.currentSections.left;
         }
 
         private clearData(): void {
@@ -1023,6 +1070,11 @@ module powerbi.visuals.samples {
             this.labels.selectAll("*").remove();
             this.categories.selectAll("*").remove();
             this.legend.drawLegend({ dataPoints: [] }, this.viewport);
+        }
+
+        public onClearSelection(): void {
+            if (this.interactivityService)
+                this.interactivityService.clearSelection();
         }
 
         private render(): void {
@@ -1034,20 +1086,12 @@ module powerbi.visuals.samples {
             }
 
             this.renderLegend();
-
             this.updateViewport();
 
             let viewport: IViewport = this.subtractMargin(this.viewport);
             if (viewport.width <= 0 || viewport.height <= 0) {
                 return;
             }
-
-            this.widthLeftSection = this.getValueByPercent(
-                this.currentSections.left,
-                this.viewport.width,
-                this.currentSections.isPercent);
-
-            this.updateElements();
             this.viewport = viewport;
 
             this.scrolling.renderY(
@@ -1056,7 +1100,7 @@ module powerbi.visuals.samples {
                 this.renderWithScrolling.bind(this));
         }
 
-        private renderWithScrolling(tornadoChartDataView: TornadoChartDataView, scrollStart: number, scrollEnd: number) {
+        private renderWithScrolling(tornadoChartDataView: TornadoChartDataView, scrollStart: number, scrollEnd: number): void {
             let categoriesLength = tornadoChartDataView.categories.length;
             let startIndex: number = scrollStart * categoriesLength;
             let endIndex: number = scrollEnd * categoriesLength;
@@ -1075,14 +1119,17 @@ module powerbi.visuals.samples {
                 }
             }
 
-            tornadoChartDataView.categories = tornadoChartDataView.categories.slice(startIndexRound, endIndexRound);
-            for (let item of tornadoChartDataView.series) {
-                item.values = item.values.slice(startIndexRound, endIndexRound);
+            if (this.interactivityService) {
+                this.interactivityService.applySelectionStateToData(tornadoChartDataView.dataPoints);
+                this.interactivityService.applySelectionStateToData(tornadoChartDataView.highlightedDataPoints);
             }
-            this.tornadoChartDataView = tornadoChartDataView;
+            
+            // Filter data according to the visible visual area
+            tornadoChartDataView.categories = tornadoChartDataView.categories.slice(startIndexRound, endIndexRound);
+            tornadoChartDataView.dataPoints = _.filter(tornadoChartDataView.dataPoints, (d: TornadoChartPoint) => d.categoryIndex >= startIndexRound && d.categoryIndex < endIndexRound);
+            tornadoChartDataView.highlightedDataPoints = _.filter(tornadoChartDataView.highlightedDataPoints, (d: TornadoChartPoint) => d.categoryIndex >= startIndexRound && d.categoryIndex < endIndexRound);
 
-            this.updateSections();
-            this.widthRightSection = this.getValueByPercent(this.currentSections.right, this.viewport.width, this.currentSections.isPercent);
+            this.tornadoChartDataView = tornadoChartDataView;
             this.computeHeightColumn();
             this.renderMiddleSection();
             this.renderAxes();
@@ -1121,215 +1168,67 @@ module powerbi.visuals.samples {
         }
 
         private renderMiddleSection(): void {
-            let columnsData: ColumnData[] = this.generateColumnDataBySeries();
             let tornadoChartDataView: TornadoChartDataView = this.tornadoChartDataView;
-            this.renderColumns(columnsData, tornadoChartDataView.series.length === 2);
-            this.renderLabels(columnsData, tornadoChartDataView.settings);
+            let dataPointsWithHighlights: TornadoChartPoint[] = tornadoChartDataView.dataPoints.concat(tornadoChartDataView.highlightedDataPoints);
+            this.renderColumns(dataPointsWithHighlights, tornadoChartDataView.series.length === 2);
+            this.renderLabels(this.hasHighlights ? tornadoChartDataView.highlightedDataPoints : tornadoChartDataView.dataPoints, tornadoChartDataView.settings.labelSettings);
         }
 
-        private renderColumns(columnsData: ColumnData[], selectSecondSeries: boolean = false): void {
-            let columnsSelection: D3.UpdateSelection,
-                columnElements: D3.Selection = this.main
-                    .select(TornadoChart.Columns.selector)
-                    .selectAll(TornadoChart.Column.selector);
+        private renderColumns(columnsData: TornadoChartPoint[], selectSecondSeries: boolean = false): void {
+            let columnsSelection: D3.UpdateSelection = this.main
+                .select(TornadoChart.Columns.selector)
+                .selectAll(TornadoChart.Column.selector)
+                .data(columnsData);
 
-            columnsSelection = columnElements.data(columnsData);
+            let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
+            let hasHighlights = this.hasHighlights;
+            let heightColumn = Math.max(this.heightColumn, 0);
+            let py = heightColumn / 2;
+            let pyHighlighted = heightColumn * TornadoChart.HighlightedShapeFactor / 2;
+            let categoriesLength = this.tornadoChartDataView.categories.length;
 
             columnsSelection
                 .enter()
-                .append("svg:rect");
+                .append("svg:rect")
+                .classed(TornadoChart.Column.class, true);
 
             columnsSelection
-                .attr("x", (item: ColumnData) => item.x)
-                .attr("y", (item: ColumnData) => item.y)
-                .on("click", (item: ColumnData, index: number) => {
-                    this.selectionManager
-                        .select(item.selectionId, false)
-                        .then(() => this.setSelection(columnsSelection, selectSecondSeries));
-
-                    d3.event.stopPropagation();
-                });
-            this.setSelection(columnsSelection, selectSecondSeries);
-
-            (columnElements[0] && columnElements[0].length === columnsData.length
-                ? <D3.UpdateSelection>this.animation(columnsSelection)
-                : columnsSelection)
-                .attr("width", (item: ColumnData) => Math.max(item.width, 0))
-                .attr("height", (item: ColumnData) => Math.max(item.height, 0))
-                .style("fill", (item: ColumnData) => item.color)
-                .attr("transform", (item: ColumnData) => SVGUtil.translateAndRotate(item.dx, item.dy, item.px, item.py, item.angle));
-
-            columnsSelection.classed(TornadoChart.Column["class"], true);
+                .style("fill", (item: TornadoChartPoint) => item.color)
+                .style("fill-opacity", (item: TornadoChartPoint) => ColumnUtil.getFillOpacity(item.selected, item.highlight, hasSelection, hasHighlights))
+                .attr("transform", (item: TornadoChartPoint, index: number) => {
+                    let highlighted: boolean = hasHighlights && item.highlight;
+                    let highlightOffset: number = highlighted ? heightColumn * (1 - TornadoChart.HighlightedShapeFactor) / 2 : 0;
+                    let dy: number = (heightColumn + this.columnPadding) * (index % categoriesLength) + highlightOffset;
+                    return SVGUtil.translateAndRotate(item.dx, dy, item.px, highlighted ? pyHighlighted : py, item.angle);
+                })
+                .transition()
+                .duration(this.durationAnimations)
+                .attr("width", (item: TornadoChartPoint) => Math.max(item.width, 0))
+                .attr("height", (item: TornadoChartPoint) => (hasHighlights && item.highlight) ? heightColumn * TornadoChart.HighlightedShapeFactor : heightColumn);
 
             columnsSelection
                 .exit()
                 .remove();
 
-            this.renderTooltip(columnsSelection);
+            let interactivityService = this.interactivityService;
 
-            this.root.on("click", () => {
-                let mousePosition: number[] = d3.mouse(this.root.node());
-                let rect: ClientRect = this.root.node().getBoundingClientRect();
-                let scrollWidth: TornadoChartPoint = {
-                    x: this.viewport.height - this.scrolling.scrollViewport.height,
-                    y: this.viewport.width - this.scrolling.scrollViewport.width
+            if (interactivityService) {
+                interactivityService.applySelectionStateToData(columnsData);
+                let behaviorOptions: TornadoBehaviorOptions = {
+                    columns: columnsSelection,
+                    clearCatcher: this.clearCatcher,
+                    interactivityService: this.interactivityService,
                 };
-
-                if ((!scrollWidth.y || (rect.width -
-                    (this.viewport.width - this.scrolling.scrollViewport.width) - this.margin.right > mousePosition[0]))
-                    && (!scrollWidth.x || (rect.height -
-                        (this.viewport.height - this.scrolling.scrollViewport.height) - this.margin.bottom > mousePosition[1]))) {
-                    this.selectionManager.clear();
-                    this.setSelection(columnsSelection, selectSecondSeries);
-                }
-            });
-        }
-
-        private setSelection(columns: D3.UpdateSelection, selectSecondSeries: boolean = false): void {
-            let selectionIds: SelectionId[] = this.selectionManager.getSelectionIds();
-
-            if (!selectionIds.length) {
-                this.setOpacity(columns, TornadoChart.MaxOpacity);
-                return;
+                interactivityService.bind(columnsData, this.behavior, behaviorOptions);
             }
 
-            let selectedColumns: D3.UpdateSelection = columns.filter((x: ColumnData) => {
-                return selectionIds.some((y: SelectionId) => y.getKey() === x.selectionId.getKey());
-            });
-
-            this.setOpacity(columns, TornadoChart.MinColumnOpacity);
-            this.setOpacity(selectedColumns, TornadoChart.MaxOpacity);
+            this.renderTooltip(columnsSelection);
         }
 
         private renderTooltip(selection: D3.UpdateSelection): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                return (<ColumnData>tooltipEvent.data).tooltipData;
+                return (<TornadoChartPoint>tooltipEvent.data).tooltipData;
             });
-        }
-
-        private generateColumnDataBySeries(): ColumnData[] {
-            let categories: TornadoChartCategory[] = this.tornadoChartDataView.categories,
-                series: TornadoChartSeries[] = this.tornadoChartDataView.series,
-                width: number,
-                minValue: number,
-                maxValue: number;
-
-            width = this.widthRightSection;
-
-            if (series && series.length === 0) {
-                return [];
-            }
-
-            minValue = Math.min(d3.min(series[0].values), 0);
-            maxValue = d3.max(series[0].values);
-
-            if (series.length === TornadoChart.MaxSeries) {
-                minValue = d3.min([minValue, d3.min(series[1].values)]);
-                maxValue = d3.max([maxValue, d3.max(series[1].values)]);
-
-                width = width / TornadoChart.MaxSeries;
-            }
-
-            return series.reduce((previousValue: ColumnData[], currentValue: TornadoChartSeries, index: number) => {
-                let shiftToMiddle: boolean = index === 0 && series.length === TornadoChart.MaxSeries,
-                    shiftToRight: boolean = index === 1,
-                    seriesName: string = currentValue.name;
-
-                return previousValue.concat(
-                    this.generateColumnDataByValues(
-                        currentValue,
-                        minValue,
-                        maxValue,
-                        width,
-                        shiftToRight,
-                        shiftToMiddle,
-                        categories,
-                        seriesName));
-            }, []);
-        }
-
-        private generateColumnDataByValues(
-            tornadoChartSeries: TornadoChartSeries,
-            minValue: number,
-            maxValue: number,
-            maxWidth: number,
-            shiftToRight: boolean,
-            shiftToMiddle: boolean,
-            categories: TornadoChartCategory[],
-            seriesName: string): ColumnData[] {
-            return tornadoChartSeries.values.map((value: number, index: number) => {
-                return this.generateColumnData(
-                    value ? value : 0,
-                    minValue,
-                    maxValue,
-                    maxWidth,
-                    shiftToMiddle,
-                    shiftToRight,
-                    tornadoChartSeries.fill,
-                    index,
-                    categories[index],
-                    seriesName,
-                    tornadoChartSeries.categoryAxisEnd);
-            });
-        }
-
-        private generateColumnData(
-            value: number,
-            minValue: number,
-            maxValue: number,
-            width: number,
-            shiftToMiddle: boolean,
-            shiftToRight: boolean,
-            color: string,
-            index: number,
-            categoryValue: TornadoChartCategory,
-            seriesName: string,
-            categoryAxisEnd: number): ColumnData {
-            let x: number = 0,
-                y: number = 0,
-                widthOfColumn: number,
-                shift: number = 0,
-                dy: number,
-                dx: number,
-                label: LabelData,
-                angle: number = 0;
-                
-            // Limit maximum value with what the user choose
-            maxValue = categoryAxisEnd ? Math.min(categoryAxisEnd, maxValue) : maxValue;
-            widthOfColumn = this.getColumnWidth(value, minValue, maxValue, width);
-            shift = width - widthOfColumn;
-
-            dx = shift * Number(shiftToMiddle) + width * Number(shiftToRight);
-            dy = (this.heightColumn + this.columnPadding) * index;
-
-            label = this.getLabelData(
-                value,
-                x,
-                y,
-                dx,
-                dy,
-                widthOfColumn,
-                shiftToMiddle);
-
-            if (shiftToMiddle) {
-                angle = 180;
-            }
-
-            return {
-                x: x,
-                y: y,
-                dx: dx,
-                dy: dy,
-                px: widthOfColumn / 2,
-                py: this.heightColumn / 2,
-                angle: angle,
-                width: widthOfColumn,
-                height: this.heightColumn,
-                label: label,
-                color: color,
-                selectionId: categoryValue.selectionId,
-                tooltipData: this.getTooltipData(this.tornadoChartDataView.displayName, categoryValue.value, seriesName, this.tornadoChartDataView.settings.tooltipFormatter.format(value))
-            };
         }
 
         private getColumnWidth(value: number, minValue: number, maxValue: number, width: number): number {
@@ -1345,16 +1244,13 @@ module powerbi.visuals.samples {
 
         private getLabelData(
             value: number,
-            xColumn: number,
-            yColumn: number,
             dxColumn: number,
-            dyColumn: number,
             columnWidth: number,
-            isColumnPositionLeft: boolean): LabelData {
+            isColumnPositionLeft: boolean,
+            settings?: TornadoChartSettings): LabelData {
+
             let dx: number,
-                valueAfterValueFormatter: string,
-                textDataAfterValueFormatter: TextData,
-                tornadoChartSettings: TornadoChartSettings = this.tornadoChartDataView.settings,
+                tornadoChartSettings: TornadoChartSettings = settings ? settings : this.tornadoChartDataView.settings,
                 labelSettings: VisualDataLabelsSettings = tornadoChartSettings.labelSettings,
                 fontSize: number = labelSettings.fontSize,
                 color: string = labelSettings.labelColor;
@@ -1368,8 +1264,8 @@ module powerbi.visuals.samples {
                 fontSize: PixelConverter.fromPoint(fontSize),
                 text: tornadoChartSettings.formatter.format(value),
             };
-            valueAfterValueFormatter = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxLabelWidth);
-            textDataAfterValueFormatter = this.getTextData(valueAfterValueFormatter, true, false, fontSize);
+            let valueAfterValueFormatter: string = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxLabelWidth);
+            let textDataAfterValueFormatter: TextData = this.getTextData(valueAfterValueFormatter, true, false, fontSize);
 
             if (columnWidth > textDataAfterValueFormatter.width + TornadoChart.LabelPadding) {
                 dx = dxColumn + columnWidth / 2 - textDataAfterValueFormatter.width / 2;
@@ -1383,25 +1279,12 @@ module powerbi.visuals.samples {
             }
 
             return {
-                x: xColumn,
-                y: yColumn,
                 dx: dx,
-                dy: dyColumn + this.heightColumn / 2 + this.labelHeight / 2 - this.InnerTextHeightDelta,
                 source: value,
                 value: valueAfterValueFormatter,
                 color: color,
                 width: textDataAfterValueFormatter.width
             };
-        }
-
-        private getTooltipData(displayName: string, categoryValue: string, seriesName, value: string): TooltipDataItem[] {
-            return [{
-                displayName: displayName,
-                value: categoryValue
-            }, {
-                    displayName: seriesName,
-                    value: value
-                }];
         }
 
         private renderAxes(): void {
@@ -1413,7 +1296,6 @@ module powerbi.visuals.samples {
 
             if (this.tornadoChartDataView.series.length !== TornadoChart.MaxSeries) {
                 axesElements.remove();
-
                 return;
             }
 
@@ -1424,9 +1306,11 @@ module powerbi.visuals.samples {
             axesSelection
                 .enter()
                 .append("svg:line")
-                .classed(TornadoChart.Axis["class"], true);
+                .classed(TornadoChart.Axis.class, true);
 
-            (<D3.UpdateSelection>this.animation(axesSelection))
+            axesSelection
+                .transition()
+                .duration(this.durationAnimations)
                 .attr("x1", (item: LineData) => item.x1)
                 .attr("y1", (item: LineData) => item.y1)
                 .attr("x2", (item: LineData) => item.x2)
@@ -1454,15 +1338,22 @@ module powerbi.visuals.samples {
             }];
         }
 
-        private renderLabels(columnsData: ColumnData[], settings: TornadoChartSettings): void {
+        private renderLabels(dataPoints: TornadoChartPoint[], labelsSettings: VisualDataLabelsSettings): void {
             let labelEnterSelection: D3.Selection,
-                labelSelection: D3.UpdateSelection,
-                labelSelectionAnimation: D3.UpdateSelection,
-                labelElements: D3.Selection = this.main
+                labelSelection: D3.UpdateSelection = this.main
                     .select(TornadoChart.Labels.selector)
-                    .selectAll(TornadoChart.Label.selector);
+                    .selectAll(TornadoChart.Label.selector)
+                    .data(dataPoints);
+            
+            // Check if labels can be displayed
+            if (!labelsSettings.show || this.labelHeight >= this.heightColumn) {
+                this.labels.selectAll("*").remove();
+                return;
+            }
 
-            labelSelection = labelElements.data(columnsData);
+            let fontSizeInPx: string = PixelConverter.fromPoint(labelsSettings.fontSize);
+            let labelYOffset: number = this.heightColumn / 2 + this.labelHeight / 2 - this.InnerTextHeightDelta;
+            let categoriesLength: number = this.tornadoChartDataView.categories.length;
 
             labelEnterSelection = labelSelection
                 .enter()
@@ -1470,53 +1361,32 @@ module powerbi.visuals.samples {
 
             labelEnterSelection
                 .append("svg:title")
-                .classed(TornadoChart.LabelTitle["class"], true);
+                .classed(TornadoChart.LabelTitle.class, true);
 
             labelEnterSelection
                 .append("svg:text")
                 .attr("dy", dataLabelUtils.DefaultDy)
-                .classed(TornadoChart.LabelText["class"], true);
+                .classed(TornadoChart.LabelText.class, true);
 
             labelSelection
-                .attr("x", (item: ColumnData) => item.label.x)
-                .attr("y", (item: ColumnData) => item.label.y)
-                .attr("display", (item: ColumnData) => {
-                    let leftBorder: number = 0,
-                        rightBorder: number = this.currentSections.right,
-                        x: number = item.label.x + item.label.dx;
-
-                    if (leftBorder < x &&
-                        rightBorder > x + item.label.width) {
-                        return null;
-                    } else {
-                        return "none";
-                    }
-                })
                 .attr("pointer-events", "none")
-                .classed(TornadoChart.Label["class"], true);
+                .classed(TornadoChart.Label.class, true);
 
             labelSelection
                 .select(TornadoChart.LabelTitle.selector)
-                .text((item: ColumnData) => item.label.source);
+                .text((item: TornadoChartPoint) => item.label.source);
 
-            labelSelectionAnimation = labelElements[0] && labelElements[0].length === columnsData.length
-                ? (<D3.UpdateSelection>this.animation(labelSelection))
-                : labelSelection;
+            labelSelection
+                .attr("transform", (item: TornadoChartPoint, index: number) => {
+                    let dy = (this.heightColumn + this.columnPadding) * (index % categoriesLength);
+                    return SVGUtil.translate(item.label.dx, dy + labelYOffset);
+                });
 
-            labelSelectionAnimation
-                .attr("transform", (item: ColumnData) => SVGUtil.translate(item.label.dx, item.label.dy));
-
-            (<D3.UpdateSelection>this.animation(labelSelection
-                .select(TornadoChart.LabelText.selector)))
-                .attr("fill", (item: ColumnData) => item.label.color)
-                .attr("font-size", (item: ColumnData) => PixelConverter.fromPoint(settings.labelSettings.fontSize))
-                .text((item: ColumnData) => item.label.value);
-
-            if (!settings.labelSettings.show || this.labelHeight > this.heightColumn) {
-                this.setOpacity(labelSelectionAnimation);
-            } else {
-                this.setOpacity(labelSelectionAnimation, TornadoChart.MaxOpacity);
-            }
+            labelSelection
+                .select(TornadoChart.LabelText.selector)
+                .attr("fill", (item: TornadoChartPoint) => item.label.color)
+                .attr("font-size", (item: TornadoChartPoint) => fontSizeInPx)
+                .text((item: TornadoChartPoint) => item.label.value);
 
             labelSelection
                 .exit()
@@ -1535,7 +1405,6 @@ module powerbi.visuals.samples {
 
             if (!settings.showCategories) {
                 categoryElements.remove();
-
                 return;
             }
 
@@ -1547,15 +1416,13 @@ module powerbi.visuals.samples {
 
             categoriesEnterSelection
                 .append("svg:title")
-                .classed(TornadoChart.CategoryTitle["class"], true);
+                .classed(TornadoChart.CategoryTitle.class, true);
 
             categoriesEnterSelection
                 .append("svg:text")
-                .classed(TornadoChart.CategoryText["class"], true);
+                .classed(TornadoChart.CategoryText.class, true);
 
             categoriesSelection
-                .attr("x", 0)
-                .attr("y", 0)
                 .attr("transform", (item: string, index: number) => {
                     let shift: number = (this.heightColumn + this.columnPadding) * index + this.heightColumn / 2,
                         textData: TextData = this.getTextData(item, false, true);
@@ -1564,17 +1431,17 @@ module powerbi.visuals.samples {
 
                     return SVGUtil.translate(0, shift);
                 })
-                .classed(TornadoChart.Category["class"], true);
+                .classed(TornadoChart.Category.class, true);
 
             categoriesSelection
                 .select(TornadoChart.CategoryTitle.selector)
-                .text((item: TornadoChartCategory) => item.value);
+                .text((item: string) => item);
 
             categoriesSelection
                 .select(TornadoChart.CategoryText.selector)
                 .attr("fill", color)
-                .text((item: TornadoChartCategory) => {
-                    let textData: TextData = self.getTextData(item.value);
+                .text((item: TextData) => {
+                    let textData: TextData = self.getTextData(item.text);
 
                     return TextMeasurementService.getTailoredTextOrDefault(textData.textProperties, self.widthLeftSection);
                 });
@@ -1610,7 +1477,7 @@ module powerbi.visuals.samples {
                 }
             }
 
-            this.legend.drawLegend(legendData, this.viewport);
+            this.legend.drawLegend(legendData, _.clone(this.viewport));
             Legend.positionChartArea(this.root, this.legend);
         }
 
@@ -1642,7 +1509,6 @@ module powerbi.visuals.samples {
 
             return {
                 text: text,
-                options: this.textOptions,
                 width: width,
                 height: height,
                 textProperties: textProperties
@@ -1673,7 +1539,7 @@ module powerbi.visuals.samples {
                     let labelSettings = settings.labelSettings;
                     let labels: VisualObjectInstance = {
                         objectName: "labels",
-                        displayName: "labels",
+                        displayName: "Labels",
                         selector: null,
                         properties: {
                             show: labelSettings.show,
@@ -1689,23 +1555,26 @@ module powerbi.visuals.samples {
                     break;
                 }
                 case "legend": {
+                    if (!this.hasDynamicSeries)
+                        return;
+
                     let showTitle: boolean = true,
                         titleText: string = "",
                         legend: VisualObjectInstance;
 
-                    showTitle = DataViewObject.getValue(
+                    showTitle = DataViewObject.getValue<boolean>(
                         this.legendObjectProperties,
                         legendProps.showTitle,
                         showTitle);
 
-                    titleText = DataViewObject.getValue(
+                    titleText = DataViewObject.getValue<string>(
                         this.legendObjectProperties,
                         legendProps.titleText,
                         titleText);
 
                     legend = {
                         objectName: "legend",
-                        displayName: "legend",
+                        displayName: "Legend",
                         selector: null,
                         properties: {
                             show: settings.showLegend,
@@ -1723,7 +1592,7 @@ module powerbi.visuals.samples {
                 case "categories": {
                     let categories: VisualObjectInstance = {
                         objectName: "categories",
-                        displayName: "categories",
+                        displayName: "Categories",
                         selector: null,
                         properties: {
                             show: settings.showCategories,
@@ -1775,26 +1644,6 @@ module powerbi.visuals.samples {
                     }
                 });
             }
-        }
-
-        private setOpacity(element: D3Element, opacityValue: number = TornadoChart.MinOpacity, disableAnimation: boolean = false): D3Element {
-            let elementAnimation: D3.Selection = disableAnimation
-                ? <D3.Selection>element
-                : <D3.Selection>this.animation(element);
-
-            return elementAnimation.style(
-                "fill-opacity",
-                opacityValue);
-        }
-
-        private animation(element: D3Element): D3Element {
-            if (!this.durationAnimations) {
-                return element;
-            }
-
-            return (<D3.Selection>element)
-                .transition()
-                .duration(this.durationAnimations);
         }
 
         public destroy(): void {

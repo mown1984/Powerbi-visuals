@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 $.fn.multiline = function (text) {
     this.text(text);
     this.html(this.html().replace(/\n/g, '<br/>'));

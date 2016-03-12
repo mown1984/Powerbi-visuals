@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ArrayExtensions = jsCommon.ArrayExtensions;
 
@@ -114,6 +112,9 @@ module powerbi.visuals {
     export interface ISelectionHandler {
         /** Handles a selection event by selecting the given data point */
         handleSelection(dataPoint: SelectableDataPoint, multiSelect: boolean): void;
+
+        /** Handles a request for a context menu. */
+        handleContextMenu(dataPoint: SelectableDataPoint, position: IPoint): void;
 
         /** Handles a selection clear, clearing all selection state */
         handleClearSelection(): void;
@@ -251,6 +252,10 @@ module powerbi.visuals {
             this.select(dataPoint, multiSelect);
             this.sendSelectionToHost();
             this.renderAll();
+        }
+
+        public handleContextMenu(dataPoint: SelectableDataPoint, point: IPoint): void {
+            this.sendContextMenuToHost(dataPoint, point);
         }
 
         public handleClearSelection(): void {
@@ -401,6 +406,23 @@ module powerbi.visuals {
             }
         }
 
+        private sendContextMenuToHost(dataPoint: SelectableDataPoint, position: IPoint): void {
+            let host = this.hostService;
+            if (!host.onContextMenu)
+                return;
+
+            let selectors = this.getSelectorsByColumn([dataPoint.identity]);
+            if (_.isEmpty(selectors))
+                return;
+
+            let args: ContextMenuArgs = {
+                data: selectors,
+                position: position
+            };
+
+            host.onContextMenu(args);
+        }
+
         private sendSelectionToHost() {
             let host = this.hostService;
             if (host.onSelect) {
@@ -408,13 +430,21 @@ module powerbi.visuals {
                     data: this.selectedIds.filter((value: SelectionId) => value.hasIdentity()).map((value: SelectionId) => value.getSelector())
                 };
 
-                let data2: SelectorsByColumn[] = this.selectedIds.filter((value: SelectionId) => value.getSelectorsByColumn() && value.hasIdentity()).map((value: SelectionId) => value.getSelectorsByColumn());
+                let data2 = this.getSelectorsByColumn(this.selectedIds);
 
-                if (data2 && data2.length > 0)
+                if (!_.isEmpty(data2))
                     selectArgs.data2 = data2;
 
                 host.onSelect(selectArgs);
             }
+        }
+
+        private getSelectorsByColumn(selectionIds: SelectionId[]): SelectorsByColumn[] {
+            return _(selectionIds)
+                .filter(value => value.hasIdentity)
+                .map(value => value.getSelectorsByColumn())
+                .compact()
+                .value();
         }
 
         private takeSelectionStateFromDataPoints(dataPoints: SelectableDataPoint[]): void {

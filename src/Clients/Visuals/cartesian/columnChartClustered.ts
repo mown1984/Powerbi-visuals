@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
 
@@ -72,7 +70,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties {
             let width = this.width;
 
             let forcedXMin, forcedXMax;
@@ -91,7 +89,8 @@ module powerbi.visuals {
                 forcedXMax,
                 axisScaleType,
                 axisDisplayUnits,
-                axisPrecision);
+                axisPrecision,
+                xReferenceLineValue);
 
             // create clustered offset scale
             let seriesLength = this.data.series.length;
@@ -103,14 +102,14 @@ module powerbi.visuals {
             return props;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
 
             let height = this.viewportHeight;
             let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
-            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomain);
+            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomain, y1ReferenceLineValue);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
-            
+
             this.yProps = AxisHelper.createAxis({
                 pixelSpan: height,
                 dataDomain: combinedDomain,
@@ -175,7 +174,7 @@ module powerbi.visuals {
             }
 
             ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
-           
+
             return {
                 eventGroup: this.graphicsContext.mainGraphicsContext,
                 shapesSelection: shapes,
@@ -221,18 +220,18 @@ module powerbi.visuals {
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({
-                    x1: x,
-                    x2: x,
-                    y1: 0,
-                    y2: this.height,
-                });
+                        x1: x,
+                        x2: x,
+                        y1: 0,
+                        y2: this.height,
+                    });
 
                 handle.append('circle')
                     .attr({
-                    cx: x,
-                    cy: this.height,
-                    r: '6px',
-                })
+                        cx: x,
+                        cy: this.height,
+                        r: '6px',
+                    })
                     .classed('drag-handle', true);
             }
             else {
@@ -387,7 +386,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties {
             let height = this.height;
             let forcedYMin, forcedYMax;
 
@@ -405,8 +404,9 @@ module powerbi.visuals {
                 forcedYMax,
                 axisScaleType,
                 axisDisplayUnits,
-                axisPrecision
-                );
+                axisPrecision,
+                y1ReferenceLineValue
+            );
 
             // create clustered offset scale
             let seriesLength = this.data.series.length;
@@ -418,13 +418,13 @@ module powerbi.visuals {
             return props;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
-            debug.assert(forcedTickCount === undefined, 'Cannot have clustered bar chart as combo chart.');            
+            debug.assert(forcedTickCount === undefined, 'Cannot have clustered bar chart as combo chart.');
 
             let width = this.width;
             let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
-            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomain);
+            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomain, xReferenceLineValue);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
 
             this.xProps = AxisHelper.createAxis({
@@ -539,17 +539,17 @@ module powerbi.visuals {
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({
-                    x1: 0,
-                    x2: this.width,
-                    y1: y,
-                    y2: y,
-                });
+                        x1: 0,
+                        x2: this.width,
+                        y1: y,
+                        y2: y,
+                    });
                 handle.append('circle')
                     .attr({
-                    cx: 0,
-                    cy: y,
-                    r: '6px',
-                })
+                        cx: 0,
+                        cy: y,
+                        r: '6px',
+                    })
                     .classed('drag-handle', true);
             }
             else {

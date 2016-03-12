@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     export module DataRoleHelper {
         export function getMeasureIndexOfRole(grouped: DataViewValueColumnGroup[], roleName: string): number {

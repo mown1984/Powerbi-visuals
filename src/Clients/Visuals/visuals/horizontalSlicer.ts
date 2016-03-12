@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
     import SlicerOrientation = slicerOrientation.Orientation;

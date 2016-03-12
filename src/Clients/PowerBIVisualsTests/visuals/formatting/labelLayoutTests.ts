@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import LabelArrangeGrid = powerbi.LabelArrangeGrid;
     import LabelDataPoint = powerbi.LabelDataPoint;

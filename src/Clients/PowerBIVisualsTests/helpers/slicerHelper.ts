@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.slicerHelper {
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
     import SQExpr = powerbi.data.SQExpr;

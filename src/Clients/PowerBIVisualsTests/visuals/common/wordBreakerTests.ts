@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import WordBreaker = jsCommon.WordBreaker;
     

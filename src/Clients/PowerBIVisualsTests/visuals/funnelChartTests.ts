@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataView = powerbi.DataView;
     import DataViewMetadata = powerbi.DataViewMetadata;
@@ -822,8 +820,7 @@ module powerbitests {
             
             visualBuilder = new VisualBuilder(
                 visualPluginFactory.createMinerva({
-                    dataDotChartEnabled: false,
-                    heatMap: false,
+                    dataDotChartEnabled: false
                 }),
                 "funnel",
                 500,
@@ -992,7 +989,7 @@ module powerbitests {
 
                 spyOn(visualBuilder.host, "onSelect").and.callThrough();
 
-                (<any>bars.first()).d3Click(0, 0);
+                bars.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
@@ -1016,6 +1013,33 @@ module powerbitests {
             });
         });
 
+        it("context menu", (done) => {
+            visualBuilder.visual.onDataChanged(interactiveDataViewOptions);
+
+            setTimeout(() => {
+                spyOn(visualBuilder.host, "onContextMenu").and.callThrough();
+
+                let bars = $(FunnelChart.Selectors.funnel.bars.selector);
+                bars.first().d3ContextMenu(5, 15);
+
+                expect(visualBuilder.host.onContextMenu).toHaveBeenCalledWith(
+                    {
+                        data: [
+                            {
+                                dataMap: {
+                                    "select0": interactiveDataViewOptions.dataViews[0].categorical.categories[0].identity[0]
+                                }
+                            }
+                        ],
+                        position: {
+                            x: 5,
+                            y: 15
+                        }
+                    });
+                done();
+            });
+        });
+
         it("funnel chart category select via interactor", (done) => {
             visualBuilder.visual.onDataChanged(smallerInteractiveDataViewOptions);
 
@@ -1025,7 +1049,7 @@ module powerbitests {
 
                 spyOn(visualBuilder.host, "onSelect").and.callThrough();
 
-                (<any>interactors.first()).d3Click(0, 0);
+                interactors.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
@@ -1056,7 +1080,7 @@ module powerbitests {
 
                 spyOn(visualBuilder.host, "onSelect").and.callThrough();
 
-                (<any>bars.first()).d3Click(0, 0);
+                bars.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
@@ -1076,7 +1100,7 @@ module powerbitests {
                         ]
                     });
 
-                (<any>bars.last()).d3Click(0, 0, EventType.CtrlKey);
+                bars.last().d3Click(0, 0, EventType.CtrlKey);
 
                 //expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DefaultOpacity);
@@ -1108,7 +1132,7 @@ module powerbitests {
 
                 spyOn(visualBuilder.host, "onSelect").and.callThrough();
 
-                (<any>bars.first()).d3Click(0, 0);
+                bars.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
@@ -1146,7 +1170,7 @@ module powerbitests {
 
                 spyOn(visualBuilder.host, "onSelect").and.callThrough();
 
-                (<any>bars.first()).d3Click(0, 0);
+                bars.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DimmedOpacity);
@@ -1167,7 +1191,7 @@ module powerbitests {
                     });
 
                 let clearCatcher: JQuery = $(".clearCatcher");
-                (<any>clearCatcher.first()).d3Click(0, 0);
+                clearCatcher.first().d3Click(0, 0);
 
                 expect(bars[0].style.fillOpacity).toBe(DefaultOpacity);
                 expect(bars[1].style.fillOpacity).toBe(DefaultOpacity);

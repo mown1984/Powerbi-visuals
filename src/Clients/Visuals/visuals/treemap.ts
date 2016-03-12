@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import CssConstants = jsCommon.CssConstants;
 
@@ -821,8 +819,12 @@ module powerbi.visuals {
             let textHeightWithMargin = Treemap.MinorLabelTextSize + Treemap.TextMargin * 2;
             if (node.dy < textHeightWithMargin)
                 return false;
-
-            if (node.depth === 2) {
+            if (node.depth === 1) {
+                let roomTop = node.y + Treemap.MajorLabelTextSize + Treemap.TextMargin * 2;
+                if (node.y + node.dy - roomTop < textHeightWithMargin)
+                    return false;
+            }
+            else if (node.depth === 2) {
                 let parent = node.parent;
                 let roomTop = Math.max(parent.y + Treemap.MajorLabelTextSize + Treemap.TextMargin * 2, node.y);
 

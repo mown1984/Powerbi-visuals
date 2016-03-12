@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module powerbi {
     /** Represents evaluated, named, custom objects in a DataView. */
     export interface DataViewObjects {
