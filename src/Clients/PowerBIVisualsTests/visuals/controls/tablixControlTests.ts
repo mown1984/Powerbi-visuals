@@ -29,8 +29,7 @@ module powerbitests {
     import InternalControls = powerbi.visuals.controls.internal;
     import TablixLayoutManager = powerbi.visuals.controls.internal.TablixLayoutManager;
 
-    let colWidthChangedCallback = false;
-    let colWidthCallback = [50];
+    let colWidths: Controls.ColumnWidthObject[] = [{ queryName: "Column", width: 50 }];
     let parentElement;
 
     describe("TablixGrid", () => {
@@ -62,8 +61,9 @@ module powerbitests {
             grid.onStartRenderingIteration();
             let col0 = grid.getOrCreateColumn(0);
             expect(col0.getContextualWidth()).toBe(50);
-            col0.resize(35);
-            expect(colWidthCallback[0]).toBe(35);
+            col0.onResize(35);
+            col0.onResizeEnd(35);
+            expect(colWidths[0].width).toBe(35);
         });
 
         it("CalculateWidth AutoSize property off ", function () {
@@ -326,13 +326,12 @@ module powerbitests {
     }
 
     function createMockColumnWidthManager(): Controls.TablixColumnWidthManager {
-        let columnWidthManager = new Controls.TablixColumnWidthManager(null /* dataView*/, false);
-        columnWidthManager.columnWidthResizeCallback = () => {
-            colWidthChangedCallback = true;
-            colWidthCallback[0] = 35;
+        let columnWidthManager = new Controls.TablixColumnWidthManager(null /* dataView*/, true, null);
+        columnWidthManager.onColumnWidthChanged = () => {
+            colWidths[0].width = 35;
         };
 
-        columnWidthManager.getColumnWidths = () => colWidthCallback;
+        columnWidthManager['columnWidthObjects'] = colWidths;
         return columnWidthManager;
     }
 } 

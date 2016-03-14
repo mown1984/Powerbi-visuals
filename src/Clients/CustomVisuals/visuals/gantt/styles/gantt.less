@@ -26,6 +26,10 @@
 
 @import (reference) "../../../styles/styles.less";
 
+.gantt-body {
+    overflow: auto;
+}
+
 .gantt {
     .axis {
         path {
@@ -34,25 +38,26 @@
 
         path, line {
             stroke: #000;
-            stroke-width: 0.5;
+            stroke-width: 1;
         }
+        font-size:10px;
     }
 
     .tasks {
         .task {
-            .task-rect {
-                fill: transparent;
-                stroke: #000;
-                stroke-width: 1px;
+            .task-resource {
+                font-size:medium;
+                font-weight: bold;
             }
         }
     }
 
-    .chart {
-        .chart-line {
-            stroke-width: 2px;
-            stroke-dasharray: 3, 3;
-            stroke: #000;
-        }
+    .chart-line {
+        stroke-width: 2px;
+        stroke-dasharray: 3, 3;
+        stroke: #000;
+    }
+    .task-labels{
+        width: 140px;
     }
 }

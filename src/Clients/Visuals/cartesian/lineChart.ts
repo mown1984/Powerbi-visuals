@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -163,7 +161,6 @@ module powerbi.visuals {
 
         private interactivityService: IInteractivityService;
         private animator: IGenericAnimator;
-        private seriesLabelFormattingEnabled: boolean;
         private lineChartLabelDensityEnabled: boolean;
 
         private static validLabelPositions = [
@@ -451,7 +448,6 @@ module powerbi.visuals {
             this.lineType = options.chartType ? options.chartType : LineChartType.default;
             this.interactivityService = options.interactivityService;
             this.animator = options.animator;
-            this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
             this.lineChartLabelDensityEnabled = options.lineChartLabelDensityEnabled;
             this.suppressLegend = options.isTrendLayer;
             this.lineClassAndSelector = options.isTrendLayer ? LineChart.TrendLineClassSelector : LineChart.LineClassSelector;
@@ -623,10 +619,10 @@ module powerbi.visuals {
                 xMetaDataColumn = data.series[0].xCol;
                 yMetaDataColumn = data.series[0].yCol;
             }
-
+            
             let valueDomain = EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) ? LineChart.createStackedValueDomain(data.series) : AxisHelper.createValueDomain(data.series, false);
             let hasZeroValueInYDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(valueDomain);
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, valueDomain);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, valueDomain, options.y1ReferenceLineValue);
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.height,
                 dataDomain: combinedDomain,
@@ -644,7 +640,7 @@ module powerbi.visuals {
                 shouldClamp: false, // clamping causes incorrect lines when you have axis extents specified, do not enable this.
             });
 
-            let xDomain = AxisHelper.createDomain(data.series, this.xAxisProperties.axisType, this.data.isScalar, options.forcedXDomain);
+            let xDomain = AxisHelper.createDomain(data.series, this.xAxisProperties.axisType, this.data.isScalar, options.forcedXDomain, options.xReferenceLineValue);
             let hasZeroValueInXDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(xDomain);
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.width,
@@ -914,7 +910,7 @@ module powerbi.visuals {
                 .duration(duration)
                 .attr({
                     cx: (d: LineChartDataPoint, i: number) => xScale(this.getXValue(d)) + horizontalOffset,
-                    cy: (d: LineChartDataPoint, i: number) => yScale(d.value),
+                    cy: (d: LineChartDataPoint, i: number) => yScale(isStackedArea ? d.stackedValue : d.value),
                     r: LineChart.CircleRadius
                 });
             dots.exit()
@@ -936,7 +932,7 @@ module powerbi.visuals {
                     .duration(duration)
                     .attr({
                         cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
-                        cy: (d: LineChartDataPoint) => yScale(d.value),
+                    cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
                         r: LineChart.PointRadius
                     });
                 explicitDots.exit()
@@ -944,9 +940,9 @@ module powerbi.visuals {
             }
 
             // Add data labels
-            let LabelDataPointsGroups: LabelDataPointsGroup[];
+            let labelDataPointsGroups: LabelDataPointsGroup[];
             if (data.dataLabelsSettings.show)
-                LabelDataPointsGroups = this.createLabelDataPoints();
+                labelDataPointsGroups = this.createLabelDataPoints();
 
             if (this.tooltipsEnabled) {
                 if (!this.isComboChart) {
@@ -1008,7 +1004,7 @@ module powerbi.visuals {
                 behaviorOptions: behaviorOptions,
                 labelDataPoints: [],
                 labelsAreNumeric: true,
-                labelDataPointGroups: LabelDataPointsGroups,
+                labelDataPointGroups: labelDataPointsGroups,
             };
         }
 
@@ -1182,24 +1178,30 @@ module powerbi.visuals {
                 });
             }
 
+            let dataPoints: LineChartDataPoint[] = null;
             if (data.dataLabelsSettings.show) {
-                let layout = dataLabelUtils.getLineChartLabelLayout(xScale, yScale, data.dataLabelsSettings, data.isScalar, this.yAxisProperties.formatter);
-                let dataPoints: LineChartDataPoint[] = [];
-
+                dataPoints = [];
                 for (let i = 0, ilen = data.series.length; i < ilen; i++) {
                     Array.prototype.push.apply(dataPoints, data.series[i].data);
                 }
-
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsSVG, layout, this.currentViewport);
-                this.mainGraphicsSVG.select('.labels').attr('transform', SVGUtil.translate(extraLineShift, 0));
-            }
-            else {
-                dataLabelUtils.cleanDataLabels(this.mainGraphicsSVG);
             }
 
             catSelect.exit().remove();
 
-            return null; // This render path doesn't use the interactivity service
+            // # Code from here is taken from renderNew:
+
+            // Add data labels
+            let labelDataPointsGroups: LabelDataPointsGroup[];
+            if (data.dataLabelsSettings.show)
+                labelDataPointsGroups = this.createLabelDataPoints();
+            
+            return dataPoints == null ? null : {
+                dataPoints: dataPoints,
+                behaviorOptions: null,
+                labelDataPoints: null,
+                labelsAreNumeric: null,
+                labelDataPointGroups: labelDataPointsGroups
+            }; 
         }
 
         /**
@@ -1784,7 +1786,7 @@ module powerbi.visuals {
 
         private showLabelPerSeries(): boolean {
             let data = this.data;
-            return !data.hasDynamicSeries && (data.series.length > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled;
+            return !data.hasDynamicSeries && (data.series.length > 1 || !data.categoryMetadata);
         }
 
         /**

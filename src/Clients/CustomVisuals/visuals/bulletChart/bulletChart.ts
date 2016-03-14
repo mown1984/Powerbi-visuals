@@ -37,6 +37,7 @@ module powerbi.visuals.samples {
             veryGoodPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'veryGoodPercent' },
             maximumPercent: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'maximumPercent' },
             targetValue2: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'targetValue2' },
+            secondTargetVisibility: <DataViewObjectPropertyIdentifier>{ objectName: 'values', propertyName: 'secondTargetVisibility' },
         },
         orientation: {
             orientation: <DataViewObjectPropertyIdentifier>{ objectName: 'orientation', propertyName: 'orientation' },
@@ -111,6 +112,7 @@ module powerbi.visuals.samples {
             veryGoodPercent: number;
             maximumPercent: number;
             targetValue2: number;
+            secondTargetVisibility: boolean;
         };
         orientation: {
             orientation: string;
@@ -256,6 +258,10 @@ module powerbi.visuals.samples {
                         targetValue2: {
                             displayName: 'Target Value 2',
                             type: { numeric: true },
+                        },
+                        secondTargetVisibility: {
+                            displayName: 'Second Target Visibility',
+                            type: { bool: true },
                         },
                         minimumPercent: {
                             displayName: 'Minimum %',
@@ -427,6 +433,7 @@ module powerbi.visuals.samples {
                     goodPercent: 100,
                     veryGoodPercent: 125,
                     maximumPercent: 200,
+                    secondTargetVisibility: false,
                 },
                 orientation: {
                     orientation: Orientation.HORIZONTALLEFT,
@@ -492,7 +499,7 @@ module powerbi.visuals.samples {
                 targetValues: [],
             };
 
-            if (!dataView || !dataView.categorical || !dataView.categorical.categories || !dataView.categorical.values || dataView.categorical.values.length === 0
+            if (!dataView || !dataView.categorical || !dataView.categorical.values || dataView.categorical.values.length === 0
                 || !dataView.metadata || !dataView.metadata.columns || dataView.metadata.columns.length === 0) {
                 return bulletModel;
             }
@@ -503,6 +510,7 @@ module powerbi.visuals.samples {
             if (objects) {
                 settings.values.targetValue = DataViewObjects.getValue<number>(objects, bulletChartProps.values.targetValue, defaultSettings.values.targetValue);
                 settings.values.targetValue2 = DataViewObjects.getValue<number>(objects, bulletChartProps.values.targetValue2, defaultSettings.values.targetValue2);
+                settings.values.secondTargetVisibility = DataViewObjects.getValue<boolean>(objects, bulletChartProps.values.secondTargetVisibility, defaultSettings.values.secondTargetVisibility);
                 settings.values.minimumPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.minimumPercent, defaultSettings.values.minimumPercent);
                 settings.values.needsImprovementPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.needsImprovementPercent, defaultSettings.values.needsImprovementPercent);
                 settings.values.satisfactoryPercent = DataViewObjects.getValue<number>(objects, bulletChartProps.values.satisfactoryPercent, defaultSettings.values.satisfactoryPercent);
@@ -838,31 +846,33 @@ module powerbi.visuals.samples {
                 'stroke-width': 2,
             });
 
-            markerSelection.enter().append('line').attr({
-                'x1': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
-                'x2': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
-                'y1': ((d: TargetValue) => bars[d.barIndex].y - BulletChart.MarkerMarginHorizontal),
-                'y2': ((d: TargetValue) => bars[d.barIndex].y + BulletChart.MarkerMarginHorizontal),
-            }).style({
-                'stroke': ((d: TargetValue) => d.fill),
-                'stroke-width': 2,
-                'transform': 'rotate(45deg)',
-                'transform-origin': '50% 50% 0',
-            });
+            if (model.bulletChartSettings.values.secondTargetVisibility) {
+                markerSelection.enter().append('line').attr({
+                    'x1': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
+                    'x2': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
+                    'y1': ((d: TargetValue) => bars[d.barIndex].y - BulletChart.MarkerMarginHorizontal),
+                    'y2': ((d: TargetValue) => bars[d.barIndex].y + BulletChart.MarkerMarginHorizontal),
+                }).style({
+                    'stroke': ((d: TargetValue) => d.fill),
+                    'stroke-width': 2,
+                    'transform': 'rotate(45deg)',
+                    'transform-origin': '50% 50% 0',
+                });
 
-            markerSelection.enter().append('line').attr({
-                'x1': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
-                'x2': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
-                'y1': ((d: TargetValue) => bars[d.barIndex].y - BulletChart.MarkerMarginHorizontal),
-                'y2': ((d: TargetValue) => bars[d.barIndex].y + BulletChart.MarkerMarginHorizontal),
-            }).style({
-                'stroke': ((d: TargetValue) => d.fill),
-                'stroke-width': 2,
-                'transform': 'rotate(315deg)',
-                'transform-origin': '50% 50% 0',
-            });
+                markerSelection.enter().append('line').attr({
+                    'x1': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
+                    'x2': ((d: TargetValue) => { return this.calculateLabelWidth(bars[d.barIndex], null, reveresed) + d.value2; }),
+                    'y1': ((d: TargetValue) => bars[d.barIndex].y - BulletChart.MarkerMarginHorizontal),
+                    'y2': ((d: TargetValue) => bars[d.barIndex].y + BulletChart.MarkerMarginHorizontal),
+                }).style({
+                    'stroke': ((d: TargetValue) => d.fill),
+                    'stroke-width': 2,
+                    'transform': 'rotate(315deg)',
+                    'transform-origin': '50% 50% 0',
+                });
 
-            markerSelection.exit();
+                markerSelection.exit();
+            }
 
             // Draw axes
             if (model.bulletChartSettings.axis.axis) {
@@ -1118,6 +1128,7 @@ module powerbi.visuals.samples {
                 properties: {
                     targetValue: this.model.bulletChartSettings.values.targetValue,
                     targetValue2: this.model.bulletChartSettings.values.targetValue2,
+                    secondTargetVisibility: this.model.bulletChartSettings.values.secondTargetVisibility,
                     minimumPercent: this.model.bulletChartSettings.values.minimumPercent,
                     needsImprovementPercent: this.model.bulletChartSettings.values.needsImprovementPercent,
                     satisfactoryPercent: this.model.bulletChartSettings.values.satisfactoryPercent,

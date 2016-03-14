@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../../_references.ts"/>
-
 module powerbi.visuals.controls.internal {
     import PixelConverter = jsCommon.PixelConverter;
 
@@ -276,7 +274,7 @@ module powerbi.visuals.controls.internal {
         /**
          * Implementing classes must override this to send dimentions to TablixControl.
          */
-        public _sendDimensionsToControl(): void { //extending class overrides this
+        public _sendDimensionsToControl(): void { // extending class overrides this
             debug.assertFail("PureVirtualMethod: DimensionLayoutManager._sendDimensionsToControl");
         }
 
@@ -703,6 +701,10 @@ module powerbi.visuals.controls.internal {
             this.animationFrame = null;
             this.scale = scale;
         }
+
+        public getNewSize(): number {
+            return this.startColumnWidth + this.resizingDelta;
+        }
     }
 
     export class ColumnLayoutManager extends DimensionLayoutManager implements ITablixResizeHandler {
@@ -838,12 +840,16 @@ module powerbi.visuals.controls.internal {
             if (this.isResizing() && this._resizeState.animationFrame !== null) {
                 this.performResizing(); // if we reached the end and we are still waiting for the last animation frame, perform the pending resizing and clear the state 
             }
+
+            this.endResizing();
+
             this._resizeState = null;
         }
 
         public onReset(cell: TablixCell) {
             this._resizeState = new ResizeState(cell._column, -1, 1);
             cell._column.clearSize();
+            this.endResizing();
             this.owner.owner.refresh(false);
             this._resizeState = null;
         }
@@ -867,7 +873,7 @@ module powerbi.visuals.controls.internal {
 
                 if (column !== this._resizeState.column) {  // we moved the item of the column that is being resized to another one 
                     this._resizeState.column = column;
-                    column.resize(this._resizeState.startColumnWidth + this._resizeState.resizingDelta);
+                    column.onResize(this._resizeState.getNewSize());
                     break;
                 }
             }
@@ -876,11 +882,18 @@ module powerbi.visuals.controls.internal {
         private performResizing(): void {
             if (this._resizeState === null) // in case of FireFox we cannot cancel the animation frame request
                 return;
-
             this._resizeState.animationFrame = null;
-            let newSize = this._resizeState.startColumnWidth + this._resizeState.resizingDelta;
-            this._resizeState.column.resize(newSize);
+            let newSize = this._resizeState.getNewSize();
+            this._resizeState.column.onResize(newSize);
             this.owner.owner.refresh(false);
+        }
+
+        private endResizing(): void {
+            if (this._resizeState === null) // in case of FireFox we cannot cancel the animation frame request
+                return;
+         
+            let newSize = this._resizeState.getNewSize();
+            this._resizeState.column.onResizeEnd(newSize);   
         }
 
         /**
@@ -934,7 +947,8 @@ module powerbi.visuals.controls.internal {
                 computedSize = this.owner.getContentWidth(undefined);
             }
 
-            item.resize(computedSize);
+            item.onResize(computedSize);
+            item.onResizeEnd(computedSize);
             return computedSize;
         }
 
@@ -1127,7 +1141,7 @@ module powerbi.visuals.controls.internal {
 
         protected _calculateSize(item: ITablixGridItem): number {
             let computedSize = this.owner.getEstimatedRowHeight();
-            item.resize(computedSize);
+            item.onResize(computedSize);
             return computedSize;
         }
 

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 module powerbi.data {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
 

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import TooltipBuilder = powerbi.visuals.TooltipBuilder;
     import TooltipManager = powerbi.visuals.TooltipManager;

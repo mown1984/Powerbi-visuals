@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import Card = powerbi.visuals.Card;
     import cardCapabilities = powerbi.visuals.cardCapabilities;

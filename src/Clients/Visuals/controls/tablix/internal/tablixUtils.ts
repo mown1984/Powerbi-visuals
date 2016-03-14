@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../../_references.ts"/>
-
 module powerbi.visuals.controls {
     export module HTMLElementUtils {
         export function clearChildren(element: HTMLElement): void {
@@ -106,6 +104,8 @@ module powerbi.visuals.controls.internal {
     import DomFactory = InJs.DomFactory;
 
     export module TablixUtils {
+        export const AutoSizeColumnWidthDefault: boolean = true;
+
         export const TablixFormatStringProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'formatString' };
         export const TableTotalsProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'totals' };
         export const TablixColumnAutoSizeProp: DataViewObjectPropertyIdentifier = { objectName: 'general', propertyName: 'autoSizeColumnWidth' };
@@ -268,6 +268,18 @@ module powerbi.visuals.controls.internal {
             if (txt != null)
                 return txt.replace(/ /g, "\xA0");
         }
+
+        /**
+         * Get the DataViewObject from the DataView
+         * @param {DataView} dataview The DataView
+         * @returns DataViewObjects (dataView.metadata.objects)
+         */
+        export function getMetadadataObjects(dataview: DataView): DataViewObjects {
+            if (dataview && dataview.metadata)
+                return dataview.metadata.objects;
+
+            return null;
+        } 
 
         export function setEnumeration(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isFormattingPropertiesEnabled: boolean, tablixType: TablixType): void {
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
@@ -563,7 +575,7 @@ module powerbi.visuals.controls.internal {
         }
 
         export function shouldAutoSizeColumnWidth(objects: DataViewObjects): boolean {
-            return DataViewObjects.getValue<boolean>(objects, TablixUtils.TablixColumnAutoSizeProp, controls.AutoSizeColumnWidthDefault);
+            return DataViewObjects.getValue<boolean>(objects, TablixUtils.TablixColumnAutoSizeProp, AutoSizeColumnWidthDefault);
         }
 
         export function getTextSize(objects: DataViewObjects): number {

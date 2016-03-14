@@ -28,12 +28,10 @@
 var projects = require("../../../gulp/projects.js"),
     config = require("../../../gulp/config.js"),
     utils = require("../../../gulp/utils.js"),
-    concat = require("gulp-concat"),
-    merge = require("merge2"),
-    replace = require("gulp-replace"),
-    gulp = require("gulp");
+    glob = require("glob"),
+    fs = require("fs");
 
-module.exports = projects.initProject(
+var project = module.exports = projects.initProject(
     "VisualsContracts", // proj name
     __dirname, // project folder
     {
@@ -49,49 +47,38 @@ module.exports = projects.initProject(
             }
         ],
         tsc: {
-            outFileName: 'VisualsContracts'
+            outFileName: "VisualsContracts",
+            transform: combineVisualsContractsDTS
         },
         watch: {
-            includes: ['/**/*.ts']
-        },
-        afterBuild: function(proj) {
-
-            var  taskName = "combineVisualsContracts.d.ts";
-
-            gulp.task(taskName, function() {
-                   return combineVisualsContractsDTS(proj);
-            });
-            return taskName;
-        },
+            includes: ["/**/*.ts"]
+        }
     });
 
-function combineVisualsContractsDTS(proj) {
-    var projectPath = proj.projFolder;
-    var projectName = proj.projName;
-    //Hack: Only remove multiline comments containing "copyright" and single line comments containing "<reference"
-    //TODO: ensure all comments are JSDoc style comments and adjust this to remove all non-JSDoc comments
-    //      Ideally we could use gulp-decomment for this and trimming whitespace
-    //      (maybe we should submit a pull request to add this feature?) 
+function combineVisualsContractsDTS(file, enc, callback) {
+    // TODO: check file extension to make sure it .d.ts file
+    // this function is currently called for .d.ts, but we should do the same for other artefacts
+    var projectPath = project.projFolder;
+
     var jsCommentRegExp = /(?:\/\*(?:[\s\S]*?)(?:copyright)(?:[\s\S]*?)\*\/)|(?:([\s;]?)+\/\/(?:.*)(?:<reference)(?:.*)$)/igm;
     var windowsNewLineRegExp = /\r\n/g;
-    return merge(
-        //copyright notice + external typedefs 
-        gulp.src(projectPath + '/typedefs/typedefs.ts')
-            //normalize line endings
-            .pipe(replace(windowsNewLineRegExp,'\n')),
+    var newLine = "\n";
+    // Note: logic below is sync as I was unable to get through2 transformation
+    // callback working correct - stream is closed before I call `callback` async.
 
-        //compiled d.ts - contains definitions from enums.ts
-        gulp.src(projectPath + '/obj/' + projectName + '.d.ts')
-            //copyright comments and reference tags
-            .pipe(replace(jsCommentRegExp,'')),
+    //copyright notice + external typedefs
+    var content = fs.readFileSync(projectPath + "/typedefs/typedefs.ts", "utf8") + newLine;
+    // compiled d.ts - contains definitions from enums.ts
+    content += file.contents.toString().replace(jsCommentRegExp,"");
+    // concatenate all other d.ts files directly
+    content += glob.sync(projectPath + "/**/*.d.ts", {
+        ignore: projectPath + "/obj/*.*"
+    }).map(function (filePath) {
+        return fs.readFileSync(filePath, "utf8").replace(jsCommentRegExp,"");
+    }).join(newLine);
 
-        //concatenate all other d.ts files directly
-        gulp.src(['!' + projectPath + '/obj/*.*', projectPath + '/**/*.d.ts'])
-            //normalize line endings
-            .pipe(replace(windowsNewLineRegExp,'\n'))
-            //copyright comments and reference tags
-            .pipe(replace(jsCommentRegExp,''))
-    )
-    .pipe(concat(projectName + '.d.ts', {newLine: '\n'}))
-    .pipe(gulp.dest(projectPath + '/obj/'));
+    // update resultant content
+    file.contents = new Buffer(content.replace(windowsNewLineRegExp, newLine), "utf8");
+
+    return callback(null, file);
 }

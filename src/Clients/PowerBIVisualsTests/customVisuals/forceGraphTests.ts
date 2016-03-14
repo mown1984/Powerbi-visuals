@@ -24,10 +24,9 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ForceGraph;
+    import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     describe("ForceGraph", () => {
         describe('capabilities', () => {
@@ -53,6 +52,79 @@ module powerbitests.customVisuals {
                     done();
                 }, powerbitests.DefaultWaitForRender);
             });
+
+            it("nodes labels on", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        show: true
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children("g.node").first().find('text').length).toBe(1);
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels off", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        show: false
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children("g.node").first().find('text').length).toBe(0);
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels change color", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        color: { solid: { color: "#123123" } }
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    colorAssert(visualBuilder.mainElement.children('g.node').first().find('text').css("fill"), "#123123");
+
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            color: { solid: { color: "#324435" } }
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(() => {
+                        colorAssert(visualBuilder.mainElement.children('g.node').first().find('text').css("fill"), "#324435");
+                        done();
+                    }, DefaultWaitForRender);
+
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels change font size", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        fontSize: 16
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children('g.node').first().find('text').css("font-size")).toBe('21px');
+                    done();
+                }, DefaultWaitForRender);
+            });
         });
     });
 
@@ -62,7 +134,7 @@ module powerbitests.customVisuals {
             this.build();
             this.init();
         }
-        
+
         public get mainElement() {
             return this.element.children("svg.forceGraph");
         }

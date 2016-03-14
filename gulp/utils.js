@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -33,6 +33,7 @@ var gulp = require("gulp"),
     os = require("os"),
     gutil = require("gulp-util"),
     expect = require("gulp-expect-file"),
+    consume = require('stream-consume'),
     thr = require("through2"),
     config = require("./config.js"),
     maps = require("gulp-sourcemaps"),
@@ -48,7 +49,12 @@ module.exports = {
     isBuildInsideVS: isBuildInsideVS,
     remove: remove,
     replaceInFile: replaceInFile,
+    streamToPromise: streamToPromise,
+    filterStream: filterStream,
+    removeSourceMapProp: removeSourceMapProp,
+    isAbsolute: isAbsolute,
     ErrorCache: ErrorCache,
+    CallbackHelper: CallbackHelper,
     transform: {
         replace: replaceTransformation,
         rmRefs: removeRefsTransformation
@@ -110,10 +116,14 @@ function copy(options) {
 
     srcResult = gulp
         .src(options.source, gulpOptions)
-        .pipe(options.produceMaps ? maps.init({ loadMaps: true }) : gutil.noop())
+        .pipe(options.produceMaps ? maps.init({
+            loadMaps: true
+        }) : gutil.noop())
         //TODO: enable errorIfMissing option
 //        .pipe(options.errorIfMissing ? expect("**") : gutil.noop())
-        .pipe(options.join ? concat(options.join, { newLine: ';' }) : gutil.noop())
+        .pipe(options.join ? concat(options.join, {
+            newLine: ';'
+        }) : gutil.noop())
         .pipe(options.produceMaps ? maps.write("./", {
             includeContent: config.includeContentToMap || false
         }) : gutil.noop());
@@ -148,6 +158,8 @@ function streamToPromise(stream) {
     stream
         .on("end", d.resolve)
         .on("error", d.reject);
+
+    consume(stream);
     return d.promise;
 }
 
@@ -214,8 +226,6 @@ function remove(options) {
     gulpOptions.cwd = options.cwd || process.cwd();
     options.source = normalizePaths([].concat(options.source));
 
-    console.log(options.source);
-
     // TODO: replace on stream - use through2
     options.source.forEach(function (src, index) {
         fs.unlinkSync(src);
@@ -232,10 +242,11 @@ function remove(options) {
         });
     }
 
-    // because path.isAbsolute is miss in node less than v0.12 
-    function isAbsolute(dir) {
-        return path.resolve(dir) === path.normalize(dir);
-    }
+}
+
+// because path.isAbsolute is miss in node less than v0.12 
+function isAbsolute(dir) {
+    return path.resolve(dir) === path.normalize(dir);
 }
 
 function removeRefsTransformation() {
@@ -249,6 +260,29 @@ function replaceTransformation(find, replace) {
     };
 }
 
+function filterStream(options) {
+    
+    var extArr = [].concat(options.ext);
+
+    return thr.obj(function (file, enc, cb) {
+        if (extArr.some(function (ext) { return path.extname(file.path) === ext; })) {
+            return cb(null, file);
+        }
+        return cb(null);
+    });
+}
+
+function removeSourceMapProp() {
+    return thr.obj(function (file, enc, cb) {
+        
+        if (!file.isNull() && file.sourceMap) {
+            file.sourceMap = undefined;
+        }
+        
+        return cb(null, file);
+    });
+}
+
 function replaceInFile(file, find, replace) {
     var UTF8 = "utf8";
     replace = replace || "";
@@ -257,12 +291,12 @@ function replaceInFile(file, find, replace) {
 }
 
 function ErrorCache() {
-    var self = this;
 
-    this.errorCache = [];
+    var self = this;
+    var errorCache = [];
 
     this.catchError = function (error) {
-        self.errorCache.push(error);
+        errorCache.push(error);
     };
 
     this.throwErrors = function () {
@@ -272,10 +306,36 @@ function ErrorCache() {
     };
 
     this.hasErrors = function () {
-        return self.errorCache.length > 0;
+        return errorCache.length > 0;
     };
 
     this.getErrors = function () {
-        return os.EOL + self.errorCache.join(os.EOL);
+        return os.EOL + errorCache.join(os.EOL);
+    };
+
+    this.getErrorsIfExist = function () {
+        return self.hasErrors() ? self.getErrors() : undefined;
+    };
+
+}
+
+function CallbackHelper(callback) {
+
+    if (!callback) {
+        throw new Error("callback have to be provided.");
+    }
+
+    var cb = callback,
+        called = false;
+
+    this.run = function (err) {
+        if (!called) {
+            cb(isFunction(err) ? err() : err);
+            called = true;
+        }
+    };
+
+    this.hasCalled = function () {
+        return called;
     };
 }

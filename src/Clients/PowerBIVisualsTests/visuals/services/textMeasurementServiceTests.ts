@@ -24,8 +24,6 @@
 *  THE SOFTWARE.
 */
 
-
-
 module powerbitests {
     import TextProperties = powerbi.TextProperties;
     import TextMeasurementService = powerbi.TextMeasurementService;
@@ -229,9 +227,12 @@ module powerbitests {
                     text: "PowerBI rocks!",
                 };
 
+                // Back up the original properties to make sure the service doesn't change them.
+                let originalProperties = _.cloneDeep(properties);
                 let text = TextMeasurementService.getTailoredTextOrDefault(properties, 100);
 
                 expect(text).toEqual("PowerBI rocks!");
+                expect(properties).toEqual(originalProperties);
             });
 
             it("with ellipsis", () => {
@@ -244,10 +245,13 @@ module powerbitests {
                     text: "PowerBI rocks!",
                 };
 
+                // Back up the original properties to make sure the service doesn't change them.
+                let originalProperties = _.cloneDeep(properties);
                 let text = TextMeasurementService.getTailoredTextOrDefault(properties, 45);
 
                 expect(jsCommon.StringExtensions.endsWith(text, Ellipsis)).toBeTruthy();
                 expect(jsCommon.StringExtensions.startsWithIgnoreCase(text, 'Pow')).toBeTruthy();
+                expect(properties).toEqual(originalProperties);
             });
         });
 

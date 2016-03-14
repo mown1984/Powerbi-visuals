@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataDotChart = powerbi.visuals.DataDotChart;
     import dataDotChartCapabilities = powerbi.visuals.dataDotChartCapabilities;
@@ -678,7 +676,7 @@ module powerbitests {
 
                 spyOn(dataViewBuilder.hostServices, "onSelect").and.callThrough();
 
-                (<any>dots.first()).d3Click(0, 0);
+                dots.first().d3Click(0, 0);
 
                 expect(dots[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
@@ -710,7 +708,7 @@ module powerbitests {
 
                 spyOn(dataViewBuilder.hostServices, "onSelect").and.callThrough();
 
-                (<any>dots.first()).d3Click(0, 0);
+                dots.first().d3Click(0, 0);
                 
                 expect(dots[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(dots[1].style.fillOpacity).toBe(dimmedOpacity);
@@ -741,8 +739,8 @@ module powerbitests {
 
                 spyOn(dataViewBuilder.hostServices, "onSelect").and.callThrough();
 
-                (<any>dots.first()).d3Click(0, 0);
-                (<any>dots.last()).d3Click(0, 0, EventType.CtrlKey);
+                dots.first().d3Click(0, 0);
+                dots.last().d3Click(0, 0, EventType.CtrlKey);
 
                 dataViewBuilder.visual.onClearSelection();
 
@@ -765,12 +763,12 @@ module powerbitests {
 
                 let dots = $(".dataDotChart .dot");                
 
-                (<any>dots.first()).d3Click(0, 0);
-                (<any>dots.last()).d3Click(0, 0, EventType.CtrlKey);
+                dots.first().d3Click(0, 0);
+                dots.last().d3Click(0, 0, EventType.CtrlKey);
 
                 spyOn(dataViewBuilder.hostServices, "onSelect").and.callThrough();
 
-                (<any>($(".clearCatcher").last())).d3Click(0, 0);
+                $(".clearCatcher").last().d3Click(0, 0);
 
                 expect(dots[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(dots[1].style.fillOpacity).toBe(defaultOpacity);

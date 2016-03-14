@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ILegend = powerbi.visuals.ILegend;
     import LegendIcon = powerbi.visuals.LegendIcon;
@@ -184,43 +182,43 @@ module powerbitests {
             });
 
             it('Click first legend', () => {
-                (<any>icons.first()).d3Click(0, 0);
+                icons.first().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
             });
 
             it('Click the last legend item, should just select current and clear others', () => {
-                (<any>icons.first()).d3Click(0, 0);
+                icons.first().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
 
-                (<any>icons.last()).d3Click(0, 0);
+                icons.last().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
             });
 
             it('Control + Click legend item, should multiselect', () => {
-                (<any>icons.last()).d3Click(0, 0);
+                icons.last().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
 
-                (<any>icons.first()).d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
+                icons.first().d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
                 helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
             });
 
             it('Click the clear catcher should clear the legend selection', () => {
-                (<any>icons.first()).d3Click(0, 0);
+                icons.first().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                 helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                 helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
 
-                (<any>($('.clearCatcher').first())).d3Click(0, 0);
+                $('.clearCatcher').first().d3Click(0, 0);
                 helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                 helpers.assertColorsMatch(icons[1].style.fill, '#0000ff');
                 helpers.assertColorsMatch(icons[2].style.fill, '#00ff00');
@@ -248,14 +246,14 @@ module powerbitests {
                 });
 
                 it('click selects corresponding item', () => {
-                    (<any>icons.first()).d3Click(0, 0);
+                    icons.first().d3Click(0, 0);
                     helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                     helpers.assertColorsMatch(icons[1].style.fill, '#a6a6a6');
                     helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
                 });
 
                 it('ctrl+click adds item to current selection', () => {
-                    (<any>icons.first()).d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
+                    icons.first().d3Click(0, 0, powerbitests.helpers.ClickEventType.CtrlKey);
                     helpers.assertColorsMatch(icons[0].style.fill, '#ff0000');
                     helpers.assertColorsMatch(icons[1].style.fill, '#0000ff');
                     helpers.assertColorsMatch(icons[2].style.fill, '#a6a6a6');
@@ -531,7 +529,7 @@ module powerbitests {
             legend.drawLegend({ dataPoints: legendData }, { height: 100, width: 900 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             expect($('.navArrow').length).toBe(1);
-            (<any>$('.navArrow').first()).d3Click(0, 0);
+            $('.navArrow').first().d3Click(0, 0);
             expect($('.navArrow').length).toBe(2);
         });
 
@@ -541,7 +539,7 @@ module powerbitests {
             legend.drawLegend({ dataPoints: legendData }, { height: 100, width: 1000 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             expect($('.navArrow').length).toBe(1);
-            (<any>$('.navArrow').first()).d3Click(0, 0);
+            $('.navArrow').first().d3Click(0, 0);
             expect($('.navArrow').length).toBe(2);
         });
 
@@ -551,9 +549,9 @@ module powerbitests {
             legend.drawLegend({ dataPoints: legendData, fontSize: 8 }, { height: 100, width: 900 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             expect($('.navArrow').length).toBe(1);
-            (<any>$('.navArrow').first()).d3Click(0, 0);
+            $('.navArrow').first().d3Click(0, 0);
             expect($('.navArrow').length).toBe(2);
-            (<any>$('.navArrow').last()).d3Click(0, 0);
+            $('.navArrow').last().d3Click(0, 0);
             expect($('.navArrow').length).toBe(1);
         });
 
@@ -563,9 +561,9 @@ module powerbitests {
             legend.drawLegend({ dataPoints: legendData }, { height: 500, width: 1000 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
             expect($('.navArrow').length).toBe(1);
-            (<any>$('.navArrow').first()).d3Click(0, 0);
+            $('.navArrow').first().d3Click(0, 0);
             expect($('.navArrow').length).toBe(2);
-            (<any>$('.navArrow').last()).d3Click(0, 0);
+            $('.navArrow').last().d3Click(0, 0);
             expect($('.navArrow').length).toBe(1);
         });
 
@@ -574,7 +572,7 @@ module powerbitests {
             legend.changeOrientation(LegendPosition.Top);
             legend.drawLegend({ fontSize: 40, dataPoints: legendData }, { height: 500, width: 1000 });
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
-            (<any>$('.navArrow').first()).d3Click(0, 0);
+            $('.navArrow').first().d3Click(0, 0);
             let firstArrowPosition = getPosition($('.navArrow').first()[0]);
             let firstArrowY = firstArrowPosition.top;
             let firstArrowHeight = firstArrowPosition.height;

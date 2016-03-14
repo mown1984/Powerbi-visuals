@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     const unsupportedVisuals: string[] = ['play', 'subview', 'smallMultiple'];
 
@@ -43,8 +41,6 @@ module powerbi.visuals {
     }
 
     export interface MinervaVisualFeatureSwitches {
-        heatMap?: boolean;
-        
         /**
          * This feature switch enables the data-dot & column combo charts.
          */
@@ -54,12 +50,7 @@ module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-
-        /**
-        * Is data label per series enabled for the visual
-        */
-        seriesLabelFormattingEnabled?: boolean;
-
+        
         sandboxVisualsEnabled?: boolean;
         
         /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
@@ -80,17 +71,12 @@ module powerbi.visuals {
 
         isLabelInteractivityEnabled?: boolean;
 
-        referenceLinesEnabled?: boolean;
-
         sunburstVisualEnabled?: boolean;
 
         matrixFormattingEnabled?: boolean;
 
         filledMapDataLabelsEnabled?: boolean;
-
-        // Control the imageUpload feature, If it will be disable there will be no image slices on cards
-        backgroundImageEnabled?: boolean;
-
+                
         lineChartLabelDensityEnabled?: boolean;
     }
 
@@ -326,15 +312,12 @@ module powerbi.visuals {
         }
 
         function createMinervaPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
-            let categoricalPivotEnabled: boolean = false; //featureSwitches ? featureSwitches.categoricalPivotEnabled : false;
-            let seriesLabelFormattingEnabled: boolean = featureSwitches ? featureSwitches.seriesLabelFormattingEnabled : false;
+            let categoricalPivotEnabled: boolean = featureSwitches ? featureSwitches.categoricalPivotEnabled : false;
             let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
             let scriptVisualAuthoringEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualAuthoringEnabled : false;
             let isLabelInteractivityEnabled: boolean = featureSwitches ? featureSwitches.isLabelInteractivityEnabled : false;
             let formattingPropertiesEnabled = featureSwitches ? featureSwitches.matrixFormattingEnabled : false;
             let fillMapDataLabelsEnabled: boolean = featureSwitches ? featureSwitches.filledMapDataLabelsEnabled : false;
-            let referenceLinesEnabled: boolean = featureSwitches ? featureSwitches.referenceLinesEnabled : false;
-            let backgroundImageEnabled: boolean = featureSwitches ? featureSwitches.backgroundImageEnabled : false;
             let lineChartLabelDensityEnabled: boolean = featureSwitches ? featureSwitches.lineChartLabelDensityEnabled : false;
 
             // Bar Chart
@@ -343,10 +326,7 @@ module powerbi.visuals {
                 isScrollable: true, animator: new WebColumnChartAnimator(),
                 tooltipsEnabled: true,
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Card
             createPlugin(plugins, powerbi.visuals.plugins.card, () => new Card({
@@ -360,10 +340,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Clustered Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.clusteredColumnChart, () => new CartesianChart({
@@ -372,10 +349,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.columnChart, () => new CartesianChart({
@@ -384,10 +358,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Data Dot Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotClusteredColumnComboChart, () => new CartesianChart({
@@ -397,7 +368,6 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Data Dot Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotStackedColumnComboChart, () => new CartesianChart({
@@ -407,7 +377,6 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Donut Chart
             createPlugin(plugins, powerbi.visuals.plugins.donutChart, () => new DonutChart({
@@ -434,10 +403,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Hundred Percent Stacked Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedColumnChart, () => new CartesianChart({
@@ -446,10 +412,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Line Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineChart, () => new CartesianChart({
@@ -458,10 +421,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
             }));
             // Area Chart
@@ -471,11 +431,8 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Stacked Area Chart
             createPlugin(plugins, powerbi.visuals.plugins.stackedAreaChart, () => new CartesianChart({
@@ -484,9 +441,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
-                seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Line Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({
@@ -496,7 +451,6 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Line Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({
@@ -506,7 +460,6 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Pie Chart
             createPlugin(plugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({
@@ -524,8 +477,6 @@ module powerbi.visuals {
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new ScatterChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Treemap
             createPlugin(plugins, powerbi.visuals.plugins.treemap, () => new Treemap({
@@ -533,7 +484,7 @@ module powerbi.visuals {
                 isScrollable: true,
                 behavior: new TreemapWebBehavior(),
                 tooltipsEnabled: true,
-            }));
+            }));           
             // Waterfall Chart
             createPlugin(plugins, powerbi.visuals.plugins.waterfallChart, () => new CartesianChart({
                 chartType: CartesianChartType.Waterfall,
@@ -541,8 +492,6 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 behavior: new CartesianChartBehavior([new WaterfallChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
-                referenceLinesEnabled: referenceLinesEnabled,
-                backgroundImageEnabled: backgroundImageEnabled,
             }));
             // Map
             createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
@@ -691,10 +640,6 @@ module powerbi.visuals {
                     convertibleVisualTypes.push(powerbi.visuals.plugins.dataDotStackedColumnComboChart);
                 }
 
-                // if (this.featureSwitches.sunburstVisualEnabled) {
-                //     convertibleVisualTypes.push(powerbi.visuals.plugins.sunburst);
-                // }
-
                 return convertibleVisualTypes;
             }
 
@@ -709,9 +654,14 @@ module powerbi.visuals {
                 let customVisualizationDict = localStorageService.getData('customVisualMetaData');
                 for (let visualName in customVisualizationDict) {
                     let customVisualMetaData = customVisualizationDict[visualName];
+
+                    if (!customVisualMetaData) {
+                        continue;
+                    }
+
                     let pluginName = customVisualMetaData.pluginName;
                     // Uncompiled new visuals should not be loaded into the report
-                    if (!pluginName) {
+                    if (!pluginName || !customVisualMetaData.sourceCode || !customVisualMetaData.sourceCode.javascriptCode) {
                         continue;
                     }
 
@@ -719,6 +669,7 @@ module powerbi.visuals {
                     // If the browser session got restarted or its a new window the plugin wont be available, so we need to add it
                     if (!plugin) {
                         let jsCode = customVisualMetaData.sourceCode.javascriptCode;
+
                         let script = $("<script/>", {
                             html: jsCode + '//# sourceURL=' + pluginName + '.js\n' + '//# sourceMappingURL=' + pluginName + '.js.map'
                         });
@@ -736,6 +687,10 @@ module powerbi.visuals {
                         $('head').append(style);
 
                         plugin = this.getPlugin(pluginName);
+
+                        if (!plugin) {
+                            continue;
+                        }
                     }
                     this.pushPluginIntoConvertibleTypes(convertibleVisualTypes, plugin);
                 }
@@ -831,23 +786,20 @@ module powerbi.visuals {
 
                 debug.assertValue(featureSwitches, 'featureSwitches');
 
-                let seriesLabelFormattingEnabled: boolean = featureSwitches ? featureSwitches.seriesLabelFormattingEnabled : false;
                 this.visualPlugins = {};
 
                 // Clustered Bar Chart
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.clusteredBarChart, () => new CartesianChart({
                     chartType: CartesianChartType.ClusteredBar,
                     animator: new WebColumnChartAnimator(),
-                    tooltipsEnabled: true,
-                    seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
+                    tooltipsEnabled: true
                 }));
 
                 // Column Chart
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.columnChart, () => new CartesianChart({
                     chartType: CartesianChartType.StackedColumn,
                     animator: new WebColumnChartAnimator(),
-                    tooltipsEnabled: true,
-                    seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
+                    tooltipsEnabled: true
                 }));
 
                 // Donut Chart
@@ -860,16 +812,14 @@ module powerbi.visuals {
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.hundredPercentStackedBarChart, () => new CartesianChart({
                     chartType: CartesianChartType.HundredPercentStackedBar,
                     animator: new WebColumnChartAnimator(),
-                    tooltipsEnabled: true,
-                    seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
+                    tooltipsEnabled: true
                 }));
 
                 // Hundred Percent Stacked Column Chart
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.hundredPercentStackedColumnChart, () => new CartesianChart({
                     chartType: CartesianChartType.HundredPercentStackedColumn,
                     animator: new WebColumnChartAnimator(),
-                    tooltipsEnabled: true,
-                    seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
+                    tooltipsEnabled: true
                 }));
                 
                 // Line Chart

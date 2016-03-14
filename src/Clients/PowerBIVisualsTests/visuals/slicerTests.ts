@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 // TODO: We should not be validating specific styles (e.g. RGB codes) in unit tests.
 
 module powerbitests {
@@ -90,7 +88,7 @@ module powerbitests {
 
                 validateSelectionState(orientation, [0, 1, 2, 3, 4, 5]);
 
-                (<any>builder.slicerText.eq(1)).d3Click(0, 0);
+                builder.slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [2, 3, 4, 5]);
                 let partialSelect = getPartiallySelectedContainer();
                 expect(partialSelect.length).toBe(1);
@@ -107,7 +105,7 @@ module powerbitests {
                 expect(partialSelect.length).toBe(0);
 
                 let slicerText = builder.slicerText;
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 partialSelect = getPartiallySelectedContainer();
                 expect(partialSelect.length).toBe(1);
                 validateSelectionState(orientation, [2, 3, 4, 5]);
@@ -117,7 +115,7 @@ module powerbitests {
                 partialSelect = getPartiallySelectedContainer();
                 expect(partialSelect.length).toBe(0);
 
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 partialSelect = getPartiallySelectedContainer();
                 expect(partialSelect.length).toBe(1);
                 validateSelectionState(orientation, [1]);
@@ -135,7 +133,7 @@ module powerbitests {
                 validateSelectionState(orientation, [0, 1, 2, 3, 4, 5]);
 
                 // Unselect a single checkbox. This should work even though multi-selection is disabled.
-                (<any>builder.slicerText.eq(1)).d3Click(0, 0);
+                builder.slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [2, 3, 4, 5]);
                 let partialSelect = getPartiallySelectedContainer();
                 expect(partialSelect.length).toBe(1);
@@ -146,14 +144,14 @@ module powerbitests {
                 let slicerText = builder.slicerText;
 
                 // Slicer click
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
-                (<any>slicerText.eq(2)).d3Click(0, 0);
+                slicerText.eq(2).d3Click(0, 0);
                 validateSelectionState(orientation, [1, 2]);
 
                 /* Slicer clear */
-                (<any>clearBtn.first()).d3Click(0, 0);
+                clearBtn.first().d3Click(0, 0);
 
                 validateSelectionState(orientation, []);
                 expect(builder.hostServices.onSelect).toHaveBeenCalledWith({ data: [] });
@@ -161,7 +159,7 @@ module powerbitests {
 
             it("Slicer item select by text", () => {
                 jasmine.clock().tick(0);
-                (<any>builder.slicerText.eq(1)).d3Click(0, 0);
+                builder.slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
                 expect(builder.hostServices.onSelect).toHaveBeenCalledWith({
@@ -178,13 +176,13 @@ module powerbitests {
 
             it("Slicer item repeated selection", () => {
                 let slicerText = builder.slicerText;
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
-                (<any>slicerText.last()).d3Click(0, 0);
+                slicerText.last().d3Click(0, 0);
                 validateSelectionState(orientation, [1, 5]);
 
-                (<any>slicerText.last()).d3Click(0, 0);
+                slicerText.last().d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
             });
 
@@ -197,11 +195,11 @@ module powerbitests {
                 builder.initializeHelperElements();
 
                 let slicerText = builder.slicerText;
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
                 // Select another checkbox. The previously selected one should be cleared.
-                (<any>slicerText.eq(2)).d3Click(0, 0);
+                slicerText.eq(2).d3Click(0, 0);
                 validateSelectionState(orientation, [2]);
 
                 // validate the style for select
@@ -210,11 +208,11 @@ module powerbitests {
 
             it("Multi-select mode", () => {
                 let slicerText = builder.slicerText;
-                (<any>slicerText.eq(1)).d3Click(0, 0);
+                slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
                 // Select another item. The previously selected one shouldn't be cleared.
-                (<any>slicerText.eq(2)).d3Click(0, 0);
+                slicerText.eq(2).d3Click(0, 0);
                 validateSelectionState(orientation, [1, 2]);
 
                 // validate the style for multi select
@@ -457,7 +455,7 @@ module powerbitests {
             let filterAnalyzed: boolean;
             beforeEach(() => {
                 filterAnalyzed = false;
-                builder = new slicerHelper.TestBuilder(orientation);
+                builder = new slicerHelper.TestBuilder(orientation, 200, 600);
                 builder.hostServices.analyzeFilter = (options: FilterAnalyzerOptions) => {
                     filterAnalyzed = true;
                     let defaultValueScopeIdentity = data.createDataViewScopeIdentity(data.SQExprUtils.getDataViewScopeIdentityComparisonExpr([builder.field], [data.SQExprBuilder.text('Banana')]));
@@ -467,17 +465,23 @@ module powerbitests {
 
             afterEach(() => builder.destroy());
 
-            // DEFECT 6875986 - test is failing
-            xit("On Clear should reset the default value", (done) => {
-                jasmine.clock().uninstall();
+            it("On Clear should reset the default value", () => {                
                 (<visuals.Slicer>builder.visual).onClearSelection();
                 expect(filterAnalyzed).toBe(true);
-                setTimeout(() => {
-                    let selectedContainer = getSelectedContainer();
-                    expect(selectedContainer.length).toBe(1);
+                jasmine.clock().tick(0);
+                let selectedContainer = getSelectedContainer();
+                expect(selectedContainer.length).toBe(1);
+
+                if (orientation === SlicerOrientation.Vertical) {
+                    // For vertical slicer, the element has .selected class is the checkbox.
+                    let item = $(selectedContainer).closest('.slicerItemContainer');
+                    let slicerText = $(item).find('.slicerText');
+                    expect(slicerText.text()).toBe('Banana');
+                }
+                else
+                {
                     expect(selectedContainer.text()).toBe('Banana');
-                    done();
-                }, 32);
+                }
             });
         }
 

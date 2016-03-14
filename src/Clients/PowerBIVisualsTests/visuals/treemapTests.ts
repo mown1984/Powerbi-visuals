@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ArrayExtensions = jsCommon.ArrayExtensions;
     import CssConstants = jsCommon.CssConstants;
@@ -2410,7 +2408,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = mocks.createVisualHostServices();
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false,}).getPlugin('treemap').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false }).getPlugin('treemap').create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -2473,7 +2471,7 @@ module powerbitests {
                 spyOn(hostServices, 'onSelect').and.callThrough();
 
                 // Select a major label
-                (<any>$('.majorLabel')).first().d3Click(0, 0);
+                $('.majorLabel').first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2496,10 +2494,10 @@ module powerbitests {
                             }
                         ]
                     });
-                (<any>$('.majorLabel')).first().d3Click(0, 0);
+                $('.majorLabel').first().d3Click(0, 0);
                 
                 // Select the first nested shape
-                (<any>$('.nodeGroup')).first().d3Click(0, 0);
+                $('.nodeGroup').first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2524,7 +2522,7 @@ module powerbitests {
                     });
 
                 // Select the last minor label
-                (<any>$('.minorLabel')).last().d3Click(0, 0);
+                $('.minorLabel').last().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2548,7 +2546,7 @@ module powerbitests {
                         ]
                     });
 
-                (<any>$('.minorLabel')).last().d3Click(0, 0);
+                $('.minorLabel').last().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2606,7 +2604,7 @@ module powerbitests {
                 spyOn(hostServices, 'onSelect').and.callThrough();
 
                 // Select the shape for the second category instance
-                (<any>$('.parentGroup')).last().d3Click(0, 0);
+                $('.parentGroup').last().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2626,6 +2624,54 @@ module powerbitests {
                                 dataMap: { 'select0': identities[1] }
                             }
                         ]
+                    });
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('context menu', (done) => {
+            let identities: powerbi.DataViewScopeIdentity[] = [
+                mocks.dataViewScopeIdentity('f'),
+                mocks.dataViewScopeIdentity('b'),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataCategoryAndMeasures,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataCategoryAndMeasures.columns[0],
+                            values: ['Front end', 'Back end'],
+                            identity: identities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadataCategoryAndMeasures.columns[1],
+                                values: [110, 120]
+                            }, {
+                                source: dataViewMetadataCategoryAndMeasures.columns[2],
+                                values: [210, 220]
+                            }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                spyOn(hostServices, 'onContextMenu').and.callThrough();
+
+                // Select the shape for the second category instance
+                $('.parentGroup').last().d3ContextMenu(5, 15);
+                expect(hostServices.onContextMenu).toHaveBeenCalledWith(
+                    {
+                        data: [
+                            {
+                                dataMap: { 'select0': identities[1] }
+                            }
+                        ], position: {
+                            x: 5,
+                            y: 15
+                        }
                     });
 
                 done();
@@ -2710,7 +2756,7 @@ module powerbitests {
                 spyOn(hostServices, 'onSelect').and.callThrough();
 
                 // Make a selection
-                (<any>$('.majorLabel')).first().d3Click(0, 0);
+                $('.majorLabel').first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2736,7 +2782,7 @@ module powerbitests {
                     expect(nestedShapes[3].style.fillOpacity).toBe(dimmedOpacity);
 
                     // Select a new shape
-                    (<any>$('.nodeGroup')).last().d3Click(0, 0);
+                    $('.nodeGroup').last().d3Click(0, 0);
                     expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                     expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                     expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2803,7 +2849,7 @@ module powerbitests {
                 spyOn(hostServices, 'onSelect').and.callThrough();
 
                 // Select a major label
-                (<any>$('.majorLabel')).first().d3Click(0, 0);
+                $('.majorLabel').first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);
@@ -2897,7 +2943,7 @@ module powerbitests {
 
                 spyOn(hostServices, 'onSelect').and.callThrough();
 
-                (<any>$('.nodeGroup')).first().d3Click(0, 0);
+                $('.nodeGroup').first().d3Click(0, 0);
                 expect(rootShape[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[0].style.fillOpacity).toBe(defaultOpacity);
                 expect(shapes[1].style.fillOpacity).toBe(defaultOpacity);

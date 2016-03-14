@@ -10,7 +10,7 @@ var powerBIVisualslayground = require("./Clients/PowerBIVisualsPlayground/gulpPr
     customVisuals = require("./Clients/CustomVisuals/gulpProject");
 
 require("../gulp/visualsPlayground.js");
-require("../gulp/visualsTest");
+require("../gulp/visualsTest.js");
 require("./Clients/VisualsContracts/gulpProject");
 require("./Clients/VisualsCommon/gulpProject");
 require("./Clients/VisualsData/gulpProject");

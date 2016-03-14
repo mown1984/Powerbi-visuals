@@ -59,12 +59,8 @@ module powerbitests {
 
         it('viewport change does not trigger conversion', () => {
             let visual = new CartesianChartBuilder().build(defaultChartType);
-
-            let categories = ['abc', 'def'];
-            let categoryIdentities = _.map(categories, (c) => mocks.dataViewScopeIdentity(c));
-            let values = [1, 2];
-
             let dataView: DataView = buildSimpleDataView();
+            
             visual.onDataChanged({ dataViews: [dataView] });
 
             let layers = getCartesianLayers(visual);

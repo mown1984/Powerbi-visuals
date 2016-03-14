@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
 
     import FilledMapLabelLayout = powerbi.FilledMapLabelLayout;
@@ -407,7 +405,6 @@ module powerbitests {
             let labelDataPoints = [
                 createLabelDataPoint("text to enusure label doesn't fit", parentShape)
             ];
-
 
             let prelabels = filledMapLabelLayout.layout(labelDataPoints, viewport, transform, true);
             let prelabelsAbsoluteBoundingBoxCenter: IPoint = {

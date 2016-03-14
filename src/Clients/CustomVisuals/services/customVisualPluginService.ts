@@ -1,3 +1,4 @@
+
 /*
  *  Power BI Visualizations
  *
@@ -66,11 +67,45 @@ module powerbi.visuals.visualPluginFactory {
         }
 
         private initCustomVisualPlugins(): void {
+            // Aster Plot
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.asterPlot, () => new samples.AsterPlot());
+
+            // Tornado Chart
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
+                animator: new BaseAnimator()
+            }));
+
+            // Sankey Diagram
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
+
+            // Mekko Chart
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.mekkoChart, () => new samples.MekkoChart({
+                chartType: samples.MekkoChartType.HundredPercentStackedColumn,
+                isScrollable: true,
+                animator: new WebColumnChartAnimator(),
+                behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()])
+            }));
+
+            // Bullet Chart
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.bulletChart, () => new samples.BulletChart());
+
+            // Word Cloud
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
+                animator: new BaseAnimator()
+            }));
+
+            // Chiclet Slicer
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.chicletSlicer, () => new samples.ChicletSlicer({
+                behavior: new samples.ChicletSlicerWebBehavior()
+            }));
+
+            // Enhanced Scatter Chart
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
+
             // Radar Chart
             createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.radarChart, () => new samples.RadarChart({
                 animator: new BaseAnimator()
             }));
-
             // DotPlot
             createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.dotPlot, () => new samples.DotPlot({
                 animator: new BaseAnimator()
@@ -86,42 +121,14 @@ module powerbi.visuals.visualPluginFactory {
                 animator: new BaseAnimator()
             }));
 
-            // Chiclet Slicer
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.chicletSlicer, () => new samples.ChicletSlicer({
-                behavior: new samples.ChicletSlicerWebBehavior()
-            }));
-
-            // Tornado Chart
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.tornadoChart, () => new samples.TornadoChart({
-                animator: new BaseAnimator()
-            }));
-
-            // Sankey Diagram
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.sankeyDiagram, () => new samples.SankeyDiagram());
-
-            // Word Cloud
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.wordCloud, () => new samples.WordCloud({
-                animator: new BaseAnimator()
-            }));
-
-            // Enhanced Scatter Chart
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.enhancedScatterChart, () => new samples.EnhancedScatterChart());
-
-            // Bullet Chart
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.bulletChart, () => new samples.BulletChart());
-
             // Force Graph
             createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.forceGraph, () => new samples.ForceGraph());
 
-            // Mekko Chart
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.mekkoChart, () => new samples.MekkoChart({
-                chartType: samples.MekkoChartType.HundredPercentStackedColumn,
-                isScrollable: true,
-                animator: new WebColumnChartAnimator(),
-                behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
-                //seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
-            }));
+            // Gantt Chart
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.gantt, () => new samples.Gantt());
 
+            // Stream Graph
+            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.streamGraph, () => new samples.StreamGraph());
         }
     }
 

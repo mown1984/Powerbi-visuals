@@ -24,10 +24,9 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.SankeyDiagram;
+    import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     describe("SankeyDiagram", () => {
         describe('capabilities', () => {
@@ -59,6 +58,67 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.nodesElement.children("g.node").length)
                         .toEqual(uniqueCountries.length);
 
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels on", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        show: true
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('block');
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels off", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        show: false
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('none');
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("nodes labels change color", done => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        fill: { solid: { color: "#123123" } }
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    colorAssert(visualBuilder.nodesElement.find('text').first().css('fill'), "#123123");
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("link change color", done => {
+                let objects = dataViews[0].categorical.categories[0].objects = [];
+                objects.push({
+                    links: {
+                        fill: { solid: { color: "#E0F600" } }
+                    }
+                });
+
+                visualBuilder.update(dataViews);
+
+                setTimeout(() => {
+                    colorAssert(visualBuilder.linksElement.find('.link').first().css('stroke'), "#E0F600");
                     done();
                 }, DefaultWaitForRender);
             });

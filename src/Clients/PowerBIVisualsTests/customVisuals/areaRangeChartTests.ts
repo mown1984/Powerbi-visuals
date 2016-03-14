@@ -24,10 +24,9 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.AreaRangeChart;
+    powerbitests.mocks.setLocale();
 
     describe("AreaRangeChart", () => {
         describe('capabilities', () => {

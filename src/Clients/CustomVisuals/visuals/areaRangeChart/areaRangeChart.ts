@@ -30,7 +30,7 @@ module powerbi.visuals.samples {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import AxisScale = powerbi.visuals.axisScale;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
-
+	
     export interface AreaRangeChartConstructorOptions {
         animator?: IGenericAnimator;
     }

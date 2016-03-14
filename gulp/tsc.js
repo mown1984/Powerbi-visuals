@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -31,18 +31,28 @@ var gulp = require("gulp"),
     maps = require("gulp-sourcemaps"),
     changed = require("gulp-changed"),
     uglify = require("gulp-uglify"),
+    path = require("path"),
     clone = require("gulp-clone"),
+    thr = require("through2"),
+    gutil = require("gulp-util"),
     rename = require("gulp-rename"),
     nop = require("gulp-nop"),
     merge = require("merge2"),
+    Q = require("q"),
     lodash = require("lodash"),
-    os = require("os");
+    plumber = require('gulp-plumber'),
+    consume = require('stream-consume');
+
+var FileCache = require("./utilities/FileCache");
+
+//To show correct error messages.
+Q.longStackSupport = true;
 
 var config = require("./config.js"),
     utils = require("./utils.js");
 
-var isDebug = config.debug || false,
-    nonminJs = config.nonminJs;
+var isDebug = config.debug || false;
+
 
 /**
  * TypeScript compile.
@@ -62,83 +72,124 @@ var isDebug = config.debug || false,
  * @param {Function} options.callback callback from gulp task that have to be called when this task is done.
  */
 function tsc(options) {
-    var gulpOptions = {
-        cwd: options.projectPath
-    },
-    tsProject = options.tsProject,
-    cb = options.callback,
-    // TODO: update config.json structure
-    mapConfig = lodash.defaults(options.mapConfig || {},{
-        sourceRootMapFullPath: config.sourceRootMapFullPath,
-        sourceRootMapPrefix: config.sourceRootMapPrefix,
-        includeContentToMap: config.includeContentToMap,
-        generateMaps: config.generateMaps,
-    }),
-    errorCache = new utils.ErrorCache();
 
-    process.chdir(options.projectPath);
+    var tsProject = options.tsProject,
+        cb = options.callback,
+        transform = options.transform,
+        projectPath = options.projectPath,
+        // TODO: update config.json structure
+        mapConfig = lodash.defaults(options.mapConfig || {}, {
+            sourceRootMapFullPath: config.sourceRootMapFullPath,
+            sourceRootMapPrefix: config.sourceRootMapPrefix,
+            includeContentToMap: config.includeContentToMap,
+            generateMaps: config.generateMaps,
+        }),
+        nonminJs = options.nonminJs !== undefined ? options.nonminJs : config.nonminJs,
+        uglifyJs = options.uglifyJs !== undefined ? options.uglifyJs : config.uglifyJs;
 
-    var PROJ_NAME = tsProject.options.projectName,
-        SOURCE_ROOT_PATH = mapConfig.sourceRootMapFullPath || mapConfig.sourceRootMapPrefix + PROJ_NAME,
-        OUT_FILE_NAME = tsProject.options.outFileName;
 
-    var tscResult = tsProject.src()
-        .pipe(mapConfig.generateMaps ? maps.init() : nop())
-        .pipe(ts(tsProject, undefined, ts.reporter.longReporter()))
-        .on("error", errorCache.catchError);
+    // TODO: refactor - super complex to understand/debug and maintain/modify.
 
-    process.chdir(options.projectPath);
+    var projectName = tsProject.options.projectName,
+        sourceRootPath = config.sourceRootMapFullPath || config.sourceRootMapPrefix + projectName,
+        outFileName = tsProject.options.outFileName;
 
-    return merge([
-        // .d.ts
-        tscResult.dts
-            .pipe(changed("./", {
+    var callback = new utils.CallbackHelper(cb);
+
+    var enableIncrementalBuild = config.enableIncrementalBuild;
+    var fileCache = enableIncrementalBuild ? new FileCache(path.join(projectPath, "obj", config.cacheFileName)) : null;
+
+    var isFileStreamChanged = enableIncrementalBuild ?
+        fileCache.isFileStreamChanged({ inputFiles: tsProject.src() }) :
+        // dummy promise in case incremental build is disabled
+        Q.resolve(true);
+
+    isFileStreamChanged.then(function (hasChanged) {
+        if (!hasChanged) {
+            gutil.log("Skipping target", gutil.colors.yellow("'build:" + projectName + "-ts'"), "bacause all output files are up-to-date");
+            callback.run();
+            return;
+        }
+
+        var gulpOptions = {
+            // cwd: projectPath
+        };
+        
+        var errorCache = new utils.ErrorCache();
+
+        process.chdir(projectPath);
+
+        var tscResult = tsProject.src()
+            .pipe(plumber({ errorHandler: errorCache.catchError }))
+            .pipe(mapConfig.generateMaps ? maps.init() : nop())
+            .pipe(ts(tsProject, undefined, ts.reporter.longReporter()))
+            .on("end", function () {
+                if (errorCache.hasErrors()) {
+                    callback.run(errorCache.getErrors());
+                }
+            });
+            
+        var dtsStream = tscResult.dts
+            .pipe(plumber({ errorHandler: errorCache.catchError }))
+            .pipe(enableIncrementalBuild ? fileCache.registerOutputFiles() : nop())
+            .pipe(transform ? thr.obj(transform) : gutil.noop())
+            .pipe(changed("./obj", {
                 hasChanged: changed.compareSha1Digest,
-                cwd: options.projectPath,
+                cwd: projectPath,
                 extension: ".ts"
             }))
-            .pipe(gulp.dest("./", gulpOptions)),
-        nonminJs
-            ? tscResult.js
-            .pipe(clone())
-            .pipe(changed("./", {
-                hasChanged: changed.compareSha1Digest,
-                cwd: options.projectPath,
-                extension: ".js"
-            }))
-            .pipe(rename({
-                extname: ".nonmin.js"
-            }))
-            .pipe(uglify(getNonminJsUglifyOptions()))
-            .pipe(gulp.dest("./", gulpOptions))
-            : nop(),
-        // .js
-        tscResult.js
-            .pipe(clone())
-            .pipe(changed("./", {
-                hasChanged: changed.compareSha1Digest,
-                cwd: options.projectPath,
-                extension: ".js"
-            }))
-            .pipe(mapConfig.generateMaps ? maps.write("./", getWriteMapOptions(SOURCE_ROOT_PATH)) : nop())
-            .pipe(gulp.dest("./", gulpOptions)).on("end", function () {
+            .pipe(gulp.dest("./obj", gulpOptions));
 
-            // reinit `maps` in order to use already generated .js and .map files.
-            gulp.src(["obj/" + OUT_FILE_NAME + ".js"], gulpOptions)
-                .pipe(mapConfig.generateMaps ? maps.init({ loadMaps: true }) : nop())
-                .pipe(config.uglifyJs ? uglify(getJsUglifyOptions(isDebug)) : nop())
-                .pipe(rename({ extname: ".min.js" }))
-                .pipe(maps.write("./", getWriteMapOptions()))
-                .pipe(gulp.dest("./obj", gulpOptions).on("end", function () {
-                    if (errorCache.hasErrors()) {
-                        cb && cb(errorCache.getErrors());
-                    } else {
-                        cb && cb();
-                    }
-                }));
-        }),
-    ]);
-    
+
+        var nonminJsStream = nonminJs ? tscResult.js.pipe(clone())
+            .pipe(plumber({ errorHandler: errorCache.catchError }))
+            .pipe(changed("./obj", {
+                hasChanged: changed.compareSha1Digest,
+                cwd: projectPath,
+                extension: ".js"
+            }))
+            .pipe(rename({ extname: ".nonmin.js" }))
+            .pipe(uglify(getNonminJsUglifyOptions()))
+            .pipe(gulp.dest("./obj", gulpOptions)) : nop();
+
+        var jsStream = tscResult.js
+            .pipe(plumber({ errorHandler: errorCache.catchError }))
+            .pipe(enableIncrementalBuild ? fileCache.registerOutputFiles() : nop())
+            .pipe(changed("./obj", {
+                hasChanged: changed.compareSha1Digest,
+                cwd: projectPath,
+                extension: ".js"
+            }))
+            .pipe(mapConfig.generateMaps ? maps.write("./", getWriteMapOptions(sourceRootPath)) : nop())
+            .pipe(gulp.dest("./obj", gulpOptions))
+            .pipe(utils.filterStream({ ext: ".js" }))
+            .pipe(utils.removeSourceMapProp()) //If file contains property sourceMap, gulp-sourcemap won't load map files during init
+            .pipe(mapConfig.generateMaps ? maps.init({loadMaps: true}) : nop())
+            .pipe(uglifyJs ? uglify(getJsUglifyOptions(isDebug)) : nop())
+            .pipe(rename({ extname: ".min.js" }))
+            .pipe(mapConfig.generateMaps ? maps.write("./", getWriteMapOptions()): nop())
+            .pipe(gulp.dest("./obj", gulpOptions));
+        
+        var streamsToRun = [dtsStream, jsStream];
+        
+        if (nonminJs) {
+            streamsToRun.push(nonminJsStream);
+        }
+        
+        // Note: merged stream doesn't stop if there is passed nop (noop) operation into merge sequence.
+        consume(merge(streamsToRun)
+            .on("end", function () {
+                if (!callback.hasCalled()) {
+                    callback.run(errorCache.getErrorsIfExist());
+                }
+
+                // if incremental build is enabled we should save file cache before exit
+                if (enableIncrementalBuild && !errorCache.hasErrors()) {
+                    fileCache.save();
+                }
+            }));
+    });
+
     /**
      * Options to generate source maps.
      * 

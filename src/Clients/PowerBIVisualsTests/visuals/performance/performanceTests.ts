@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import VisualPlugin = powerbi.IVisualPlugin;
     import VisualPluginFactory = powerbi.visuals.visualPluginFactory;
@@ -40,7 +38,7 @@ module powerbitests {
     const ESTIMATE_FOR_MEASURE_PLUGIN_NAME = "scatterChart";
     const DEFAULT_HEIGHT = "770";
     const DEFAULT_WIDTH = "770";
-    const EXCLUDED_VISUALS: string[] = [MEASURE_PLUGIN_NAME, "sunburst", "basicShape", "bingNews", "bingSocialNews", "bingSocialTweets", "partitionMap", "categoricalFilter", "map", "filledMap", "heatMap", undefined, "consoleWriter", "playChart", "owlGauge"];
+    const EXCLUDED_VISUALS: string[] = [MEASURE_PLUGIN_NAME, "sunburst", "sunburstCustom", "basicShape", "bingNews", "bingSocialNews", "bingSocialTweets", "partitionMap", "categoricalFilter", "map", "filledMap", "heatMap", undefined, "consoleWriter", "playChart", "owlGauge"];
     // Exclude map, filled map, and heat map because they require more advanced mocking in order to run in test mode
 
     describe("Performance measuring", () => {

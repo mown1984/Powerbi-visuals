@@ -41,7 +41,7 @@ module powerbitests.customVisuals.sampleDataViews {
                 }],
                 objects: {
                     rotateText: {
-                        show: true,
+                        show: false,
                         quantityAngles: 0
                     }
                 }

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import ValueType = powerbi.ValueType;

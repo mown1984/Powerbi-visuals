@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module jsCommon {
     export interface IStringResourceProvider {
         get(id: string): string;

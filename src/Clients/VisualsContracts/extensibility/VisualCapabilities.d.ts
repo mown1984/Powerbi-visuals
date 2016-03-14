@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module powerbi.extensibility {
     import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
 

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewSelfCrossJoin = powerbi.data.DataViewSelfCrossJoin;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -8219,7 +8217,6 @@ module powerbitests {
 
         it('enumerateObjectInstances: label settings per series where container visible and collapsed', (done) => {
             var featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-                seriesLabelFormattingEnabled: true,
             };
             v = powerbi.visuals.visualPluginFactory.createMinerva(featureSwitches).getPlugin('columnChart').create();
             v.init({
@@ -8271,7 +8268,6 @@ module powerbitests {
 
         it('enumerateObjectInstances: label settings per series where container not visible', (done) => {
             var featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-                seriesLabelFormattingEnabled: true,
             };
             v = powerbi.visuals.visualPluginFactory.createMinerva(featureSwitches).getPlugin('columnChart').create();
             v.init({
@@ -8318,7 +8314,6 @@ module powerbitests {
 
         it('enumerateObjectInstances: label settings per series where container visible and expanded', (done) => {
             let featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-                seriesLabelFormattingEnabled: true,
             };
 
             let expandedSeries = Prototype.inherit(measureColumn);
@@ -8369,7 +8364,6 @@ module powerbitests {
 
         it('enumerateObjectInstances: label settings per series where settings modified', (done) => {
             var featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-                seriesLabelFormattingEnabled: true,
             };
 
             var expandedSeries = Prototype.inherit(measureColumn);
@@ -8510,7 +8504,7 @@ module powerbitests {
         beforeEach(() => {
 
             element = powerbitests.helpers.testDom('200', '300');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, heatMap: false }).getPlugin('barChart').create();
+            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false }).getPlugin('barChart').create();
         });
 
         it('Bar chart with dragDataPoint enabled', () => {
@@ -8878,6 +8872,62 @@ module powerbitests {
                 });
         });
 
+        it('Bar chart context menu', () => {
+            let hostServices = mocks.createVisualHostServices();
+            v.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+                interactivity: { selection: true },
+            });
+
+            let identities: powerbi.DataViewScopeIdentity[] = [
+                mocks.dataViewScopeIdentity('a'),
+                mocks.dataViewScopeIdentity('b'),
+                mocks.dataViewScopeIdentity('c'),
+                mocks.dataViewScopeIdentity('d'),
+                mocks.dataViewScopeIdentity('e'),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e'],
+                            identity: identities,
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadataTwoColumn.columns[1],
+                            values: [0.5, 2.0, 1.5, 1.0, 2.5]
+                        }])
+                    }
+                }]
+            });
+
+            let bars = element.find('.bar');
+            expect(bars.length).toBe(5);
+            
+            spyOn(hostServices, 'onContextMenu').and.callThrough();
+
+            bars.eq(0).d3ContextMenu(5, 15);
+            expect(hostServices.onContextMenu).toHaveBeenCalledWith(
+                {
+                    data: [
+                        {
+                            dataMap: buildSelector('col1', identities[0]),
+                            metadata: 'col2',
+                        }
+                    ],
+                    position: { x: 5, y: 15 }
+                });
+        });
+
         it('Bar chart single and multi selection', () => {
             let hostServices = mocks.createVisualHostServices();
             v.init({
@@ -9213,12 +9263,9 @@ module powerbitests {
         thirdColumnXCoordinateToClick: number,
         thirdColumnYCoordinateToClick: number) {
 
-        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date) };
-        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
         let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
         let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-        let measure4Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
 
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let v: powerbi.IVisual, element: JQuery;
@@ -9281,7 +9328,7 @@ module powerbitests {
             spyOn(barChart, 'selectColumn').and.callThrough();
 
             // click on the graph, expect selectColumn to have been called
-            (<any>$('.columnChartMainGraphicsContext')).d3Click(thirdColumnXCoordinateToClick, thirdColumnYCoordinateToClick);
+            $('.columnChartMainGraphicsContext').d3Click(thirdColumnXCoordinateToClick, thirdColumnYCoordinateToClick);
             expect(barChart.selectColumn).toHaveBeenCalled();
 
             // now, instead of clicking on the graph, which can be unstable due to different user's configurations

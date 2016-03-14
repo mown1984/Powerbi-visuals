@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import ColorHelper = powerbi.visuals.ColorHelper;
     import SQExprShortSerializer = powerbi.data.SQExprShortSerializer;

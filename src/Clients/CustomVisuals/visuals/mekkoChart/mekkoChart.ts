@@ -100,7 +100,6 @@ module powerbi.visuals.samples {
         animator?: IGenericAnimator;
         cartesianSmallViewPortProperties?: CartesianSmallViewPortProperties;
         behavior?: IInteractiveBehavior;
-        seriesLabelFormattingEnabled?: boolean;
     }
 
     export interface MekkoColumnChartData extends ColumnChartData {
@@ -1202,8 +1201,7 @@ module powerbi.visuals.samples {
         private bottomMarginLimit: number;
         private leftRightMarginLimit: number;
         private sharedColorPalette: SharedColorPalette;
-        private seriesLabelFormattingEnabled: boolean;
-
+        
         public animator: IGenericAnimator;
 
         // Scrollbar related
@@ -1226,7 +1224,6 @@ module powerbi.visuals.samples {
             this.isScrollable = false;
             if (options) {
                 this.type = options.chartType;
-                this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
                 if (options.isScrollable)
                     this.isScrollable = options.isScrollable;
                 this.animator = options.animator;
@@ -1820,7 +1817,7 @@ module powerbi.visuals.samples {
             }
 
             // Create the layers
-            var layers: IMekkoColumnChartVisual[] = createLayers(this.type, objects, this.interactivityService, this.animator, this.isScrollable, this.seriesLabelFormattingEnabled);
+            var layers: IMekkoColumnChartVisual[] = createLayers(this.type, objects, this.interactivityService, this.animator, this.isScrollable);
 
             // Initialize the layers
             var cartesianOptions = <CartesianVisualInitOptions>Prototype.inherit(this.visualInitOptions);
@@ -2514,16 +2511,14 @@ module powerbi.visuals.samples {
         objects: DataViewObjects,
         interactivityService: IInteractivityService,
         animator?: any,
-        isScrollable: boolean = true,
-        seriesLabelFormattingEnabled: boolean = true): IMekkoColumnChartVisual[] {
+        isScrollable: boolean = true): IMekkoColumnChartVisual[] {
 
         var layers: IMekkoColumnChartVisual[] = [];
 
         var cartesianOptions: CartesianVisualConstructorOptions = {
             isScrollable: isScrollable,
             animator: animator,
-            interactivityService: interactivityService,
-            seriesLabelFormattingEnabled: seriesLabelFormattingEnabled,
+            interactivityService: interactivityService
         };
 
         layers.push(createMekkoChartLayer(ColumnChartType.hundredPercentStackedColumn, cartesianOptions));
@@ -2536,7 +2531,6 @@ module powerbi.visuals.samples {
             animator: <IColumnChartAnimator>defaultOptions.animator,
             interactivityService: defaultOptions.interactivityService,
             isScrollable: defaultOptions.isScrollable,
-            seriesLabelFormattingEnabled: defaultOptions.seriesLabelFormattingEnabled,
             chartType: type
         };
         return new MekkoColumnChart(options);
@@ -2620,8 +2614,7 @@ module powerbi.visuals.samples {
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
         private element: JQuery;
-        private seriesLabelFormattingEnabled: boolean;
-
+        
         constructor(options: ColumnChartConstructorOptions) {
             debug.assertValue(options, 'options');
 
@@ -2632,7 +2625,6 @@ module powerbi.visuals.samples {
             this.animator = options.animator;
             this.isScrollable = options.isScrollable;
             this.interactivityService = options.interactivityService;
-            this.seriesLabelFormattingEnabled = options.seriesLabelFormattingEnabled;
         }
 
         public init(options: CartesianVisualInitOptions) {
@@ -3338,7 +3330,7 @@ module powerbi.visuals.samples {
             }
 
             //Draw series settings
-            if (!data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled) {
+            if (!data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata)) {
                 for (var i = 0; i < seriesCount; i++) {
                     var series = data.series[i],
                         labelSettings: VisualDataLabelsSettings = (series.labelSettings) ? series.labelSettings : this.data.labelSettings;

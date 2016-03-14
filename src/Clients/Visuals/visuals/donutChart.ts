@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
@@ -632,7 +630,7 @@ module powerbi.visuals {
                 if (suppressAnimations || result.failed) {
                     shapes = DonutChart.drawDefaultShapes(this.svg, data, layout, this.colors, this.radius, this.interactivityService && this.interactivityService.hasSelection(), this.sliceWidthRatio, this.data.defaultDataPointColor);
                     highlightShapes = DonutChart.drawDefaultHighlightShapes(this.svg, data, layout, this.colors, this.radius, this.sliceWidthRatio);
-                    NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, labels, false, true);
+                    NewDataLabelUtils.drawDefaultLabels(this.labelGraphicsContext, labels, false, true, true /*has tooltip */);
                     NewDataLabelUtils.drawLabelLeaderLines(this.labelGraphicsContext, labels);
                 }
 
@@ -702,6 +700,7 @@ module powerbi.visuals {
             let textSize: ISize;
             let labelSettingsStyle = labelSettings.labelStyle;
             let fontSize = labelSettings.fontSize;
+            let tooltip: string = "";
 
             if (labelSettingsStyle === labelStyle.both || labelSettingsStyle === labelStyle.data) {
                 dataLabel = measureFormatter.format(d.data.highlightValue != null ? d.data.highlightValue : d.data.measure);
@@ -716,13 +715,16 @@ module powerbi.visuals {
             switch (labelSettingsStyle) {
                 case labelStyle.both:
                     let text = categoryLabel + " (" + dataLabel + ")";
+                    tooltip = text;
                     textSize = NewDataLabelUtils.getTextSize(text, fontSize);
                     break;
                 case labelStyle.category:
                     textSize = _.clone(categoryLabelSize);
+                    tooltip = categoryLabel;
                     break;
                 case labelStyle.data:
                     textSize = _.clone(dataLabelSize);
+                    tooltip = dataLabel;
                     break;
             }
 
@@ -732,6 +734,7 @@ module powerbi.visuals {
             return {
                 isPreferred: true,
                 text: "",
+                tooltip: tooltip,
                 textSize: textSize,
                 outsideFill: outsideFill,
                 fontSize: fontSize,

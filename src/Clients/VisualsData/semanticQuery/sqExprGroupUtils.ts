@@ -24,7 +24,6 @@
  *  THE SOFTWARE.
  */
 
-//// <reference path="../_references.ts"/>
 module powerbi.data {
     // A group can consist of either a single expression, or a collection of hierarchy expressions
     export interface SQExprGroup {

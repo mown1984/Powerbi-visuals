@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import WaterfallChart = powerbi.visuals.WaterfallChart;
     import ValueType = powerbi.ValueType;
@@ -688,7 +686,7 @@ module powerbitests {
                 setTimeout(() => {
                     let rects = getRects();
                     spyOn(visualBuilder.host, 'onSelect').and.callThrough();
-                    (<any>rects.first()).d3Click(0, 0);
+                    rects.first().d3Click(0, 0);
 
                     expect(visualBuilder.host.onSelect).toHaveBeenCalledWith(
                         {
@@ -707,6 +705,36 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('context menu', (done) => {
+                let dataView = dataBuilder.build();
+
+                v.onDataChanged({ dataViews: [dataView] });
+
+                let dataMap = {};
+                let data = dataBuilder.categoryIdentities[0];
+                dataMap[dataBuilder.categoryColumn.queryName] = data;
+
+                setTimeout(() => {
+                    spyOn(visualBuilder.host, 'onContextMenu').and.callThrough();
+                    let rects = getRects();
+                    rects.first().d3ContextMenu(5, 15);
+
+                    expect(visualBuilder.host.onContextMenu).toHaveBeenCalledWith(
+                        {
+                            data: [
+                                {
+                                    dataMap: dataMap
+                                }
+                            ],
+                            position: {
+                                x: 5,
+                                y: 15
+                            }
+                        });
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it('should clear chart on clearCatcher click', (done) => {
                 let dataView = dataBuilder.build();
 
@@ -715,10 +743,10 @@ module powerbitests {
                 setTimeout(() => {
                     let rects = getRects();
                     spyOn(visualBuilder.host, 'onSelect').and.callThrough();
-                    (<any>rects.first()).d3Click(0, 0);
+                    rects.first().d3Click(0, 0);
 
                     let clearCatcher = $('.clearCatcher');
-                    (<any>$(clearCatcher[0])).d3Click(0, 0);
+                    clearCatcher.eq(0).d3Click(0, 0);
 
                     expect(visualBuilder.host.onSelect).toHaveBeenCalledWith(
                         {

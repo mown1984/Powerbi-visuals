@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface ComboChartDataViewObjects extends DataViewObjects {
         general: ComboChartDataViewObject;

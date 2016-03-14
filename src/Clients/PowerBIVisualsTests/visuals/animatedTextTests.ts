@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import AnimatedText = powerbi.visuals.AnimatedText;
 

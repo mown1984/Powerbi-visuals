@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface LegendBehaviorOptions {
         legendItems: D3.Selection;
@@ -42,9 +40,7 @@ module powerbi.visuals {
             this.legendIcons = options.legendIcons;
             let clearCatcher = options.clearCatcher;
 
-            legendItems.on('click', (d: LegendDataPoint) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
+            InteractivityUtils.registerStandardSelectionHandler(legendItems, selectionHandler);
 
             clearCatcher.on('click', () => {
                 selectionHandler.handleClearSelection();

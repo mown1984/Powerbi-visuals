@@ -49,6 +49,7 @@ module powerbitests {
     let measureSource1: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 3 };
     let measureSource2: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 4 };
     let measureSource3: DataViewMetadataColumn = { displayName: "Measure3", queryName: "Measure3", type: dataTypeNumber, isMeasure: true, index: 5 };
+    let categorySource2: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 6 };
 
     //          | MeasureX | MeasureY | MeasureZ + MeasureX | MeasureY | MeasureZ |
     // |+++++++ +--------------------------------+--------------------------------+
@@ -282,7 +283,6 @@ module powerbitests {
     //    matrix: matrixCategoryAndPlay
     //};
 
-
     //                   | -----------------------------------------------------------------
     //                   |             Series1            |             Series2            |
     //                   |--------------------------------|--------------------------------|
@@ -415,6 +415,144 @@ module powerbitests {
     //    matrix: matrixSeriesAndCategoryAndPlay
     //};
 
+    // Related to VSTS 6986788: This matrix is what we get when we have feature switch "allowDrillGrouping" 
+    // turned on and a PlayChart with hierarchy on Details, and the user drills down (e.g. from Country to Region).
+    // 
+    // However, after VSTS 6885783 gets fixed by adding support for composite group in dataView matrix, then the PlayChart matrix 
+    // will probably have one row group level for Country + Region, and this test case will become obsolete and can be removed.
+    //
+    //         | Country | Region   | MeasureX | MeasureY | MeasureZ |
+    // |+++++++|+++++++++++++++++++++---------------------------------
+    // | Jan   | USA     |       OR |      100 |      200 |      300 |
+    // |       |         |       WA |      550 |      155 |      51  |
+    // |       | Canada  |       AB |      330 |      133 |      31  |
+    // |       |         |       BC |      335 |      135 |      35  |
+    // |-------|---------+--------------------------------------------
+    // | Feb   | USA     |       OR |       40 |       50 |       60 |
+    // |       |         |       WA |      770 |      177 |       71 |
+    // |       | Canada  |       AB |      440 |      144 |       41 |
+    // |       |         |       BC |      445 |      145 |       45 |
+    // |-------------------------------------------------------------|
+    let matrixGroupDrilldownCategoryAndPlay: DataViewMatrix = {
+        rows: {
+            root: {
+                children: [
+                {
+                    level: 0,
+                    value: 'Jan',
+                    children: [
+                        {
+                            level: 1,
+                            value: 'USA',
+                            children: [
+                                {
+                                    level: 2,
+                                    value: 'OR',
+                                    values: {
+                                        0: { value: 100 },
+                                        1: { value: 200, valueSourceIndex: 1 },
+                                        2: { value: 300, valueSourceIndex: 2 },
+                                    }
+                                }, {
+                                    level: 2,
+                                    value: 'WA',
+                                    values: {
+                                        0: { value: 550 },
+                                        1: { value: 155, valueSourceIndex: 1 },
+                                        2: { value: 51, valueSourceIndex: 2 },
+                                    }
+                                }]
+                        }, {
+                            level: 1,
+                            value: 'Canada',
+                            children: [
+                                {
+                                    level: 2,
+                                    value: 'AB',
+                                    values: {
+                                        0: { value: 330 },
+                                        1: { value: 133, valueSourceIndex: 1 },
+                                        2: { value: 31, valueSourceIndex: 2 },
+                                    }
+                                }, {
+                                    level: 2,
+                                    value: 'BC',
+                                    values: {
+                                        0: { value: 335 },
+                                        1: { value: 135, valueSourceIndex: 1 },
+                                        2: { value: 35, valueSourceIndex: 2 },
+                                    }
+                                }]
+                        }]
+                },
+                {
+                    level: 0,
+                    value: 'Feb',
+                    children: [
+                        {
+                            level: 1,
+                            value: 'USA',
+                            children: [
+                                {
+                                    level: 2,
+                                    value: 'OR',
+                                    values: {
+                                        0: { value: 40 },
+                                        1: { value: 50, valueSourceIndex: 1 },
+                                        2: { value: 60, valueSourceIndex: 2 },
+                                    }
+                                }, {
+                                    level: 2,
+                                    value: 'WA',
+                                    values: {
+                                        0: { value: 770 },
+                                        1: { value: 177, valueSourceIndex: 1 },
+                                        2: { value: 71, valueSourceIndex: 2 },
+                                    }
+                                }]
+                        }, {
+                            level: 1,
+                            value: 'Canada',
+                            children: [
+                                {
+                                    level: 2,
+                                    value: 'AB',
+                                    values: {
+                                        0: { value: 440 },
+                                        1: { value: 144, valueSourceIndex: 1 },
+                                        2: { value: 41, valueSourceIndex: 2 },
+                                    }
+                                }, {
+                                    level: 2,
+                                    value: 'BC',
+                                    values: {
+                                        0: { value: 445 },
+                                        1: { value: 145, valueSourceIndex: 1 },
+                                        2: { value: 45, valueSourceIndex: 2 },
+                                    }
+                                }]
+                        }]
+                }]
+            },
+            levels: [{ sources: [playSource] }, { sources: [categorySource] }, { sources: [categorySource2] }]
+        },
+        columns: {
+            root: {
+                children: [
+                    { level: 0 },
+                    { level: 0, levelSourceIndex: 1 },
+                    { level: 0, levelSourceIndex: 2 }
+                ]
+            },
+            levels: [
+                {
+                    sources: [measureSource1, measureSource2, measureSource3]
+                }
+            ]
+        },
+        valueSources: [measureSource1, measureSource2, measureSource3]
+    };
+
     describe("PlayChart", () => {
         it("convertMatrixToCategorical - Play", () => {
             let categoricalA = PlayChart.convertMatrixToCategorical(matrixPlay, 0);
@@ -476,6 +614,32 @@ module powerbitests {
             for (let values of categoricalB.values) {
                 expect(values.values.length).toBe(3);
             }
+        });
+
+        it("convertMatrixToCategorical- group drilldown on Category, and Play", () => {
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlay, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlay, 1);
+
+            expect(categoricalA.categories.length).toBe(1);
+            expect(categoricalA.categories[0].source.queryName).toBe('RowGroup3');
+            expect(categoricalA.categories[0].values).toEqual(['OR', 'WA', 'AB', 'BC']);
+            expect(categoricalB.categories.length).toBe(1);
+            expect(categoricalB.categories[0].source.queryName).toBe('RowGroup3');
+            expect(categoricalB.categories[0].values).toEqual(['OR', 'WA', 'AB', 'BC']);
+            expect(categoricalA.values.length).toBe(3);
+            expect(categoricalA.values[0].source.queryName).toBe('Measure1');
+            expect(categoricalA.values[1].source.queryName).toBe('Measure2');
+            expect(categoricalA.values[2].source.queryName).toBe('Measure3');
+            expect(categoricalA.values[0].values).toEqual([100, 550, 330, 335]);
+            expect(categoricalA.values[1].values).toEqual([200, 155, 133, 135]);
+            expect(categoricalA.values[2].values).toEqual([300, 51, 31, 35]);
+            expect(categoricalB.values.length).toBe(3);
+            expect(categoricalB.values[0].source.queryName).toBe('Measure1');
+            expect(categoricalB.values[1].source.queryName).toBe('Measure2');
+            expect(categoricalB.values[2].source.queryName).toBe('Measure3');
+            expect(categoricalB.values[0].values).toEqual([40, 770, 440, 445]);
+            expect(categoricalB.values[1].values).toEqual([50, 177, 144, 145]);
+            expect(categoricalB.values[2].values).toEqual([60, 71, 41, 45]);
         });
 
         // TODO: Two measures (X/Y no size, others... encouncentered while building the visual)

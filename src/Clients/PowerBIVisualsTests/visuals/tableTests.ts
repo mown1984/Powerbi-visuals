@@ -1215,14 +1215,9 @@ module powerbitests {
                 }
             };
 
-            let measureSource1WithWidth = powerbi.Prototype.inheritSingle(measureSource1);
-            measureSource1WithWidth.objects = { general: { columnWidth: 100 } };
-
-            let measureSource2WithWidth = powerbi.Prototype.inheritSingle(measureSource2);
-            measureSource2WithWidth.objects = { general: { columnWidth: 200 } };
-
-            let measureSource3WithWidth = powerbi.Prototype.inheritSingle(measureSource3);
-            measureSource3WithWidth.objects = { general: { columnWidth: 300 } };
+            let measureSource1WithWidth = createColumnWithWidth(measureSource1, 100);
+            let measureSource2WithWidth = createColumnWithWidth(measureSource2, 200);
+            let measureSource3WithWidth = createColumnWithWidth(measureSource3, 300);
 
             let dataView: DataView = {
                 metadata: {
@@ -1235,9 +1230,9 @@ module powerbitests {
             setTimeout(() => {
                 let tableVisual = <Table>v;
                 let colWidthManager = tableVisual.getColumnWidthManager();
-                let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
+                let persistedColWidths = colWidthManager.getColumnWidthObjects();
 
-                expect(colWidthManager.suppressOnDataChangedNotification).toBe(false);
+                expect(tableVisual.persistingObjects).toBe(false);
                 expect(persistedColWidths.length).toBe(3);
                 expect(persistedColWidths[0].queryName).toBe('measure1');
                 expect(persistedColWidths[0].width).toBe(100);
@@ -1267,9 +1262,9 @@ module powerbitests {
             v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
                 let tableVisual = <Table>v;
-                tableVisual.columnWidthChanged(2, 45);
                 let colWidthManager = tableVisual.getColumnWidthManager();
-                let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
+                colWidthManager.onColumnWidthChanged(2, 45);
+                let persistedColWidths = colWidthManager.getFixedColumnWidthObjects();
                 expect(persistedColWidths.length).toBe(1);
                 expect(persistedColWidths[0].queryName).toBe('measure2');
                 expect(persistedColWidths[0].width).toBe(45);
@@ -1277,7 +1272,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback ColumnAutoSizeProperty off", (done) => {
+        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1285,33 +1280,36 @@ module powerbitests {
                     textSize: 8,
                 }
             };
+
+            let measureSource1WithWidth = createColumnWithWidth(measureSource1, 100);
+            let measureSource2WithWidth = createColumnWithWidth(measureSource2, 200);
+            let measureSource3WithWidth = createColumnWithWidth(measureSource3, 300);
+
             let dataView: DataView = {
                 metadata: {
-                    columns: [measureSource1, measureSource2, measureSource3],
+                    columns: [measureSource1WithWidth, measureSource2WithWidth, measureSource3WithWidth],
                     objects: dataViewObjects
                 },
                 table: dataViewTableThreeMeasures
             };
             v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                v.onDataChanged({ dataViews: [dataView] });
-                setTimeout(() => {
-                    let tableVisual = <Table>v;
-                    let colWidthManager = tableVisual.getColumnWidthManager();
-                    let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
-                    expect(persistedColWidths.length).toBe(3);
-                    expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(48);
-                    expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
-                    expect(persistedColWidths[1].width).toBe(58);
-                    expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(50);
-                    done();
-                }, DefaultWaitForRender);
+                let tableVisual = <Table>v;
+                let colWidthManager = tableVisual.getColumnWidthManager();
+                let persistedColWidths = colWidthManager.getColumnWidthObjects();
+
+                expect(persistedColWidths.length).toBe(3);
+                expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
+                expect(persistedColWidths[0].width).toBe(100);
+                expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
+                expect(persistedColWidths[1].width).toBe(200);
+                expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
+                expect(persistedColWidths[2].width).toBe(300);
+                done();
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthChangedCallback ColumnAutoSizeProperty off then resize", (done) => {
+        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off then resize", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1319,38 +1317,42 @@ module powerbitests {
                     textSize: 8,
                 }
             };
+
+            let measureSource1WithWidth = createColumnWithWidth(measureSource1, 100);
+            let measureSource2WithWidth = createColumnWithWidth(measureSource2, 200);
+            let measureSource3WithWidth = createColumnWithWidth(measureSource3, 300);
+
             let dataView: DataView = {
                 metadata: {
-                    columns: [measureSource1, measureSource2, measureSource3],
+                    columns: [measureSource1WithWidth, measureSource2WithWidth, measureSource3WithWidth],
                     objects: dataViewObjects
                 },
                 table: dataViewTableThreeMeasures
             };
             v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                v.onDataChanged({ dataViews: [dataView] });
-                setTimeout(() => {
-                    let tableVisual = <Table>v;
-                    let colWidthManager = tableVisual.getColumnWidthManager();
-                    expect(colWidthManager.suppressOnDataChangedNotification).toBe(true);
+                let tableVisual = <Table>v;
+                let colWidthManager = tableVisual.getColumnWidthManager();
                     
-                    // Resize
-                    tableVisual.columnWidthChanged(2, 45);
-                    expect(colWidthManager.suppressOnDataChangedNotification).toBe(true);
-                    let persistedColWidths = colWidthManager.getTablixColumnWidthsObject();
-                    expect(persistedColWidths.length).toBe(3);
-                    expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
-                    expect(persistedColWidths[0].width).toBe(48);
-                    expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
-                    expect(persistedColWidths[1].width).toBe(45);
-                    expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
-                    expect(persistedColWidths[2].width).toBe(50);
-                    done();
-                }, DefaultWaitForRender);
+                //Initially, autoSizeColumnWidth is OFF, not persisting
+                expect(tableVisual.persistingObjects).toBe(false);
+
+                // Resize
+                colWidthManager.onColumnWidthChanged(2, 45);
+                expect(tableVisual.persistingObjects).toBe(true);
+                let persistedColWidths = colWidthManager.getColumnWidthObjects();
+                expect(persistedColWidths.length).toBe(3);
+                expect(persistedColWidths[0].queryName).toBe(measureSource1.queryName);
+                expect(persistedColWidths[0].width).toBe(100);
+                expect(persistedColWidths[1].queryName).toBe(measureSource2.queryName);
+                expect(persistedColWidths[1].width).toBe(45);
+                expect(persistedColWidths[2].queryName).toBe(measureSource3.queryName);
+                expect(persistedColWidths[2].width).toBe(300);
+                done();
             }, DefaultWaitForRender);
         });
 
-        xit("ColumnWidthManager ColumnAutoSizeProperty off malformed selector", (done) => {
+        it("ColumnWidthManager ColumnAutoSizeProperty off malformed selector", (done) => {
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
                     totals: true,
@@ -1358,14 +1360,19 @@ module powerbitests {
                     textSize: 8,
                 }
             };
-            let newMeasureSource2: DataViewMetadataColumn = { displayName: "", queryName: undefined, type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
+
+            let measureSource1WithWidth = createColumnWithWidth(measureSource1, 100);
+            let measureSource2WithWidth = createColumnWithWidth(measureSource2, 200);
+            measureSource2WithWidth.queryName = undefined;
+            let measureSource3WithWidth = createColumnWithWidth(measureSource3, 300);
+
             let dataView0: DataView = {
                 metadata: {
-                    columns: [measureSource1, newMeasureSource2, measureSource3],
+                    columns: [measureSource1WithWidth, measureSource2WithWidth, measureSource3WithWidth],
                     objects: dataViewObjects
                 },
                 table: {
-                    columns: [measureSource1, newMeasureSource2, measureSource3],
+                    columns: [measureSource1WithWidth, measureSource2WithWidth, measureSource3WithWidth],
                     rows: [
                         [100, 10100, 102000],
                         [103, 104000, 1050000],
@@ -1379,16 +1386,18 @@ module powerbitests {
                 setTimeout(() => {
                     let tableVisual = <Table>v;
                     let colWidthManager = tableVisual.getColumnWidthManager();
-                    let changes: powerbi.VisualObjectInstancesToPersist = colWidthManager.getVisualObjectInstancesToPersist();
+                    colWidthManager['generateVisualObjectInstancesToPersist']();
+                    let changes: powerbi.VisualObjectInstancesToPersist = colWidthManager['visualObjectInstancesToPersist'];
                     expect(changes.merge).toBeDefined();
                     expect(changes.merge.length).toBe(3);
 
                     let objectInstances = changes.merge;
+                    expect(objectInstances).toHaveLength(3);
                     expect(objectInstances[0].properties["autoSizeColumnWidth"]).toBe(false);
                     expect(objectInstances[1].selector.metadata).toBe(measureSource1.queryName);
-                    expect(objectInstances[1].properties["columnWidth"]).toBe(48);
+                    expect(objectInstances[1].properties["columnWidth"]).toBe(100);
                     expect(objectInstances[2].selector.metadata).toBe(measureSource3.queryName);
-                    expect(objectInstances[2].properties["columnWidth"]).toBe(50);
+                    expect(objectInstances[2].properties["columnWidth"]).toBe(300);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1563,11 +1572,10 @@ module powerbitests {
                     table: dataViewTableThreeMeasures
                 };
                 let tableVisual = <Table>v;
-                let colwidthManager = tableVisual.getColumnWidthManager();
                 
                 // Overriding suppress notification. For test purposes the call needs to go through
-                colwidthManager.suppressOnDataChangedNotification = false;
-                colwidthManager.updateDataView(dataView2);
+                // Normally, calling onDataChanged first time with autoSizeColumns OFF triggers a persistAllColumnWidths which triggers another onDataViewChanged
+                tableVisual.persistingObjects = false;
                 v.onDataChanged({ dataViews: [dataView2] });
                 setTimeout(() => {
                     let newRows = $(selector);
@@ -1601,12 +1609,15 @@ module powerbitests {
             // AutoSize property off
             v.onDataChanged({ dataViews: [dataView0] });
             setTimeout(() => {
+                let tableVisual = <Table>v;
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
                 expect(rowCells.eq(1).width()).toEqual(48);
                 expect(rowCells.eq(2).width()).toEqual(45);
                 expect(rowCells.eq(3).width()).toEqual(50);
-                
+
+                expect(tableVisual.persistingObjects).toBe(false);
+
                 // AutoSize property on
                 let dataViewObjects1: powerbi.DataViewObjects = {
                     general: {
@@ -1622,12 +1633,7 @@ module powerbitests {
                     },
                     table: dataViewTableThreeMeasures
                 };
-                let tableVisual = <Table>v;
-                let colwidthManager = tableVisual.getColumnWidthManager();
-                
-                // Overriding suppress notification. For test purposes the call needs to go through
-                colwidthManager.suppressOnDataChangedNotification = false;
-                colwidthManager.updateDataView(dataView1);
+
                 v.onDataChanged({ dataViews: [dataView1] });
                 setTimeout(() => {
                     let rows = $(selector);
@@ -2406,33 +2412,6 @@ module powerbitests {
 
     });
 
-    function formatter(value: any, source: DataViewMetadataColumn): string {
-        return valueFormatter.formatValueColumn(value, source, TablixUtils.TablixFormatStringProp);
-    }
-
-    function validateChildTag(expectedChildTag: string[][], rows: JQuery): void {
-        let result: string[][] = [];
-
-        for (let i = 0, ilen = rows.length; i < ilen; i++) {
-            result[i] = [];
-            let cells = rows.eq(i).find("td");
-            for (let j = 0, jlen = cells.length; j < jlen; j++) {
-                let childTag = expectedChildTag[i][j];
-                if (childTag) {
-                    let child = cells.eq(j).find(childTag);
-                    if (child.length > 0)
-                        result[i][j] = childTag;
-                    else
-                        result[i][j] = undefined;
-                }
-                else
-                    result[i][j] = undefined;
-            }
-        }
-
-        expect(result).toEqual(expectedChildTag);
-    }
-
     describe("Dashboard table DOM validation", () => {
         let v: powerbi.IVisual,
             element: JQuery,
@@ -3046,4 +3025,43 @@ module powerbitests {
             tablixHelper.runTablixSortTest(element, done, "table", data, expectedColumnHeaders, clicks, expectedSorts);
         });
     });
+
+    function formatter(value: any, source: DataViewMetadataColumn): string {
+        return valueFormatter.formatValueColumn(value, source, TablixUtils.TablixFormatStringProp);
+    }
+
+    function validateChildTag(expectedChildTag: string[][], rows: JQuery): void {
+        let result: string[][] = [];
+
+        for (let i = 0, ilen = rows.length; i < ilen; i++) {
+            result[i] = [];
+            let cells = rows.eq(i).find("td");
+            for (let j = 0, jlen = cells.length; j < jlen; j++) {
+                let childTag = expectedChildTag[i][j];
+                if (childTag) {
+                    let child = cells.eq(j).find(childTag);
+                    if (child.length > 0)
+                        result[i][j] = childTag;
+                    else
+                        result[i][j] = undefined;
+                }
+                else
+                    result[i][j] = undefined;
+            }
+        }
+
+        expect(result).toEqual(expectedChildTag);
+    }
+
+    function createColumnWithWidth(src: DataViewMetadataColumn, width: number): DataViewMetadataColumn {
+        let column = powerbi.Prototype.inheritSingle(src);
+        column.objects = { general: { columnWidth: width } };
+
+        return column;
+    }
+
+    interface TableColumn {
+        title: string;
+        width: number;
+    }
 }

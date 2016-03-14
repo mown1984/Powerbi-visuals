@@ -24,14 +24,11 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import Map = powerbi.visuals.Map;
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
-    import SQExprShortSerializer = powerbi.data.SQExprShortSerializer;
     import LegendPosition = powerbi.visuals.LegendPosition;
     import ILegend = powerbi.visuals.ILegend;
     import dataLabelUtils = powerbi.visuals.dataLabelUtils;
@@ -42,7 +39,6 @@ module powerbitests {
     import SelectionIdBuilder = powerbi.visuals.SelectionIdBuilder;
     import IGeoTaggingAnalyzerService = powerbi.IGeoTaggingAnalyzerService;
     import MapData = powerbi.visuals.MapData;
-    import Color = jsCommon.Color;
 
     powerbitests.mocks.setLocale();
 
@@ -395,8 +391,6 @@ module powerbitests {
             let dataBuilder = new MapDataBuilder();
             let dataView = dataBuilder.buildWithSeries(true, false);
 
-            let groupIndex: number = 0;
-            let sizeIndex = 0;
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
             let colorHelper = new ColorHelper(colors, fillProp);
@@ -1266,54 +1260,54 @@ module powerbitests {
             },
         ];
 
-        private sizeValuesCatEqualsSer: SeriesValues[] = [
-            {
-                values: [100, null, null],
-                subtotal: 100,
-            }, {
-                values: [null, 20, null],
-                subtotal: 20,
-            }, {
-                values: [null, null, 300],
-                subtotal: 300,
-            }
-        ];
-        private longitudeValuesCatEqualsSer: SeriesValues[] = [
-            {
-                values: [46.87, null, null],
-                subtotal: 46.87
-            }, {
-                values: [null, 370.81, null],
-                subtotal: 370.81
-            }, {
-                values: [null, null, 3.68],
-                subtotal: 3.68
-            }
-        ];
-        private latitudeValuesCatEqualsSer: SeriesValues[] = [
-            {
-                values: [-114, null, null],
-                subtotal: -114
-            }, {
-                values: [null, -1220.46, null],
-                subtotal: -1220.46
-            }, {
-                values: [null, null, -11.76],
-                subtotal: -11.76
-            }
-        ];
-        private gradientValuesCatEqualsSer: SeriesValues[] = [
-            {
-                values: [75, null, null],
-                subtotal: 75,
-            }, {
-                values: [null, 10, null],
-                subtotal: 10,
-            }, {
-                values: [null, null, 20],
-                subtotal: 20,
-            }
-        ];
+        // private sizeValuesCatEqualsSer: SeriesValues[] = [
+            // {
+                // values: [100, null, null],
+                // subtotal: 100,
+            // }, {
+                // values: [null, 20, null],
+                // subtotal: 20,
+            // }, {
+                // values: [null, null, 300],
+                // subtotal: 300,
+            // }
+        // ];
+        // private longitudeValuesCatEqualsSer: SeriesValues[] = [
+            // {
+                // values: [46.87, null, null],
+                // subtotal: 46.87
+            // }, {
+                // values: [null, 370.81, null],
+                // subtotal: 370.81
+            // }, {
+                // values: [null, null, 3.68],
+                // subtotal: 3.68
+            // }
+        // ];
+        // private latitudeValuesCatEqualsSer: SeriesValues[] = [
+            // {
+                // values: [-114, null, null],
+                // subtotal: -114
+            // }, {
+                // values: [null, -1220.46, null],
+                // subtotal: -1220.46
+            // }, {
+                // values: [null, null, -11.76],
+                // subtotal: -11.76
+            // }
+        // ];
+        // private gradientValuesCatEqualsSer: SeriesValues[] = [
+            // {
+                // values: [75, null, null],
+                // subtotal: 75,
+            // }, {
+                // values: [null, 10, null],
+                // subtotal: 10,
+            // }, {
+                // values: [null, null, 20],
+                // subtotal: 20,
+            // }
+        // ];
 
         public build(size: boolean, longLat: boolean, gradient: boolean = false): powerbi.DataView {
             var dataViewMetadata: powerbi.DataViewMetadata = {

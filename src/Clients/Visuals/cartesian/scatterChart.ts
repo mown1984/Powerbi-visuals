@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import Color = jsCommon.Color;
@@ -444,7 +442,7 @@ module powerbi.visuals {
                         size: size,
                         radius: { sizeMeasure: measureSize, index: categoryIdx },
                         fill: color,
-                        category: categories != null ? categoryFormatter.format(categoryValue) : grouping.name,
+                        category: categories != null ? categoryFormatter.format(categoryValue) : categoryFormatter.format(grouping.name),
                         selected: false,
                         identity: identity,
                         tooltipInfo: tooltipInfo,
@@ -840,7 +838,7 @@ module powerbi.visuals {
             }
 
             let xDomain = [extents.minX, extents.maxX];
-            let combinedXDomain = AxisHelper.combineDomain(options.forcedXDomain, xDomain);
+            let combinedXDomain = AxisHelper.combineDomain(options.forcedXDomain, xDomain, options.xReferenceLineValue);
 
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: width,
@@ -860,7 +858,7 @@ module powerbi.visuals {
             this.xAxisProperties.axis.tickSize(-height, 0);
             this.xAxisProperties.axisLabel = this.data.axesLabels.x;
 
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [extents.minY, extents.maxY]);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [extents.minY, extents.maxY], options.y1ReferenceLineValue);
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: height,

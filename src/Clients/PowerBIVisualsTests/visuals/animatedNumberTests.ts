@@ -24,10 +24,8 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
-    import AnimatedNumber = powerbi.visuals.AnimatedNumber;
+    import AnimatedNumber = powerbi.visuals.AnimatedNumber; 
     import animatedNumberCapabilities = powerbi.visuals.animatedNumberCapabilities;
 
     describe("AnimatedNumber", () => {

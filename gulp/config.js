@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -47,6 +47,7 @@ module.exports = function () {
         tslintOnBuild: strToBool("tslintOnBuild"),
         tslintOnChange: strToBool("tslintOnChange"),
         includeContentToMap: strToBool("includeContentToMap"),
+        enableIncrementalBuild: strToBool("enableIncrementalBuild"),
         showMSBuildFullLog: strToBool("showFullLog"),
         showMSBuildLogOnError: strToBool("showMSBuildLogOnError"),
         sourceRootMapPrefix: cliOptions.sourceRootMapPrefix,

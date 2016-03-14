@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import data = powerbi.data;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -67,8 +65,10 @@ module powerbitests {
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('Grapes')),
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('retainedValue'))));
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
-            let spyOnGetLabelForScopeId = <any>spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
-            let spyOnSetLabelForScopeId = <any>spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
+            let spyOnGetLabelForScopeId: jasmine.Spy = spyOn(hostServices, "getIdentityDisplayNames");
+            spyOnGetLabelForScopeId.and.callThrough();
+            let spyOnSetLabelForScopeId: jasmine.Spy = spyOn(hostServices, "setIdentityDisplayNames");
+            spyOnSetLabelForScopeId.and.callThrough();
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(6);
             expect(slicerData.slicerDataPoints[0].tooltip).toBe('Apple');
@@ -80,8 +80,8 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[5].selected).toBe(true);
             expect(slicerData.slicerDataPoints[3].selected).toBe(true);
             // Need to call host service to retrive the retainedValue, so the spyOnGetLabelForScopeId call count should be 1.
-            expect((<jasmine.Spy>spyOnGetLabelForScopeId).calls.count()).toBe(1);
-            expect((<jasmine.Spy>spyOnSetLabelForScopeId).calls.count()).toBe(1);
+            expect(spyOnGetLabelForScopeId.calls.count()).toBe(1);
+            expect(spyOnSetLabelForScopeId.calls.count()).toBe(1);
         });
 
         it("is not in filter", () => {
@@ -96,8 +96,10 @@ module powerbitests {
                             [SQExprBuilder.text('Banana')],
                         ])));
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
-            let spyOnGetLabelForScopeId = <any>spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
-            let spyOnSetLabelForScopeId = <any>spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
+            let spyOnGetLabelForScopeId = spyOn(hostServices, "getIdentityDisplayNames");
+            spyOnGetLabelForScopeId.and.callThrough();
+            let spyOnSetLabelForScopeId = spyOn(hostServices, "setIdentityDisplayNames");
+            spyOnSetLabelForScopeId.and.callThrough();
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(5);
             expect(slicerData.slicerDataPoints[0].tooltip).toBe('Apple');
@@ -108,8 +110,8 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[0].selected).toBe(true);
             expect(slicerData.slicerDataPoints[4].selected).toBe(true);
             // All the selected items can be found in the dataView, so the spyOnGetLabelForScopeId call count should be 0.
-            expect((<jasmine.Spy>spyOnGetLabelForScopeId).calls.count()).toBe(0);
-            expect((<jasmine.Spy>spyOnSetLabelForScopeId).calls.count()).toBe(1);
+            expect(spyOnGetLabelForScopeId.calls.count()).toBe(0);
+            expect(spyOnSetLabelForScopeId.calls.count()).toBe(1);
         });
 
         it("all filter values selected with selectAllCheckbox disabled", () => {
@@ -148,23 +150,33 @@ module powerbitests {
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('Grapes')),
                     SQExprBuilder.compare(data.QueryComparisonKind.Equal, field, SQExprBuilder.text('retainedValue'))));
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
-            let spyOnGetLabelForScopeId = <any> spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
-            let spyOnSetLabelForScopeId = <any> spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
-            let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
-            expect((<jasmine.Spy> spyOnGetLabelForScopeId).calls.count()).toBe(1);
-            expect((<jasmine.Spy> spyOnSetLabelForScopeId).calls.count()).toBe(1);
+            let spyOnGetLabelForScopeId = spyOn(hostServices, "getIdentityDisplayNames");
+            spyOnGetLabelForScopeId.and.callThrough();
+            let spyOnSetLabelForScopeId = spyOn(hostServices, "setIdentityDisplayNames");
+            spyOnSetLabelForScopeId.and.callThrough();
+            powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            expect(spyOnGetLabelForScopeId.calls.count()).toBe(1);
+            expect(spyOnSetLabelForScopeId.calls.count()).toBe(1);
         });
-
 
         it("isInvertedSelectionMode persisted for undefined filter", () => {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             interactivityService.setSelectionModeInverted(true);
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), undefined);
-            let spyOnGetLabelForScopeId = spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
-            let spyOnSetLabelForScopeId = spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
             powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(interactivityService.isSelectionModeInverted()).toBe(true);
+        });
+
+        it("isDefaultValueEnabled updated after convert for defaultFilter", () => {
+            let hostServices = slicerHelper.createHostServices();
+            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
+            interactivityService.setDefaultValueMode(false);
+            let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field),  powerbi.data.SemanticFilter.getDefaultValueFilter(field));
+            spyOn(hostServices, "getIdentityDisplayNames").and.callThrough();
+            spyOn(hostServices, "setIdentityDisplayNames").and.callThrough();
+            powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            expect(interactivityService.isDefaultValueEnabled()).toBe(true);
         });
 
         function allItemsSelectedSlicerTestHelper(
@@ -235,8 +247,8 @@ module powerbitests {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let descriptor: powerbi.ValueTypeDescriptor = { bool: true };
-            let dataViews = applyDataTransform(dataView, undefined, descriptor);
-            let slicerData = powerbi.visuals.DataConversion.convert(dataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            let transformedDataViews = applyDataTransform(dataView, undefined, descriptor);
+            let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(6);
             expect(slicerData.slicerDataPoints[5].value).toBe('(Blank)');
             expect(slicerData.slicerDataPoints[5].count).toBe(1);

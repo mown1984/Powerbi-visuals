@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     import inherit = Prototype.inherit;
     import inheritSingle = Prototype.inheritSingle;
@@ -118,6 +116,7 @@ module powerbi.data {
                 objectDescriptors = options.objectDescriptors,
                 dataViewMappings = options.dataViewMappings,
                 transforms = options.transforms,
+                projectionActiveItems = transforms && transforms.roles && transforms.roles.activeItems,
                 colorAllocatorFactory = options.colorAllocatorFactory,
                 dataRoles = options.dataRoles;
 
@@ -128,7 +127,7 @@ module powerbi.data {
                 return [prototype];
 
             // Transform Query DataView
-            prototype = DataViewPivotCategoricalToPrimaryGroups.unpivotResult(prototype, transforms.selects, dataViewMappings);
+            prototype = DataViewPivotCategoricalToPrimaryGroups.unpivotResult(prototype, transforms.selects, dataViewMappings, projectionActiveItems);
             let transformedDataViews: DataView[] = transformQueryToVisualDataView(prototype, transforms, objectDescriptors, dataViewMappings, colorAllocatorFactory, dataRoles);
 
             // Transform and generate derived visual DataViews
@@ -140,7 +139,8 @@ module powerbi.data {
                 objectDefinitions: transforms.objects,
                 colorAllocatorFactory: colorAllocatorFactory,
                 transformSelects: transforms.selects,
-                dataView: prototype
+                dataView: prototype,
+                projectionActiveItems: projectionActiveItems,
             });
 
             return transformedDataViews;

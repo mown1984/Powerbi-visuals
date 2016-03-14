@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import SelectionId = powerbi.visuals.SelectionId;
     import SelectionIdBuilder = powerbi.visuals.SelectionIdBuilder;

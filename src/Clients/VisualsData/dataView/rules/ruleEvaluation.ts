@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbi.data {
     export class RuleEvaluation {
         // NOTE: even though this class has no behaviour, we still use a class to facilitate instanceof checks.

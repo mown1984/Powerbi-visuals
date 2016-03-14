@@ -981,13 +981,6 @@ declare module jsCommon {
         create(delayInMs: number): IRejectablePromise;
     }
 }
-declare module jsCommon {
-    module UrlUtils {
-        function isValidUrl(value: string): boolean;
-        function isValidImageUrl(url: string): boolean;
-        function findAllValidUrls(text: string): TextMatch[];
-    }
-}
 /**
  * Defined in host.
  */
@@ -1384,6 +1377,13 @@ declare module jsCommon {
         private static traceTypeStrings;
         constructor(text: string, type: TraceType, sessionId: string, requestId?: string);
         toString(): string;
+    }
+}
+declare module jsCommon {
+    module UrlUtils {
+        function isValidUrl(value: string): boolean;
+        function isValidImageUrl(url: string): boolean;
+        function findAllValidUrls(text: string): TextMatch[];
     }
 }
 declare module jsCommon {

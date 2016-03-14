@@ -35,29 +35,8 @@ var gulp = require("gulp"),
     visualsCommon = require("./visualsCommon.js");
 
 module.exports = {
-    installJasmine: installJasmine,
     installPhantomjs: installPhantomjs,
 };
-    
-/**
- *  Download JasmineJQuery 
- */
-function installJasmine() {
-    var result = null,
-        jasmineLib = "jasmine-jquery.js",
-        jasminePath = path.join(__dirname, "../src/Clients/Externals/ThirdPartyIP/JasmineJQuery/"),
-        jasmineLibPath = path.join(jasminePath, jasmineLib),
-        exists = fs.existsSync(jasmineLibPath),
-        jasmineURL = "https://raw.githubusercontent.com/velesin/jasmine-jquery/6abe7e3a329c4332067db9d69b0cca43a605ff46/lib/jasmine-jquery.js";
-
-    if (!exists) {
-        gutil.log("JasmineJQuery missing. Downloading dependency...");
-        result = download(jasmineURL).pipe(gulp.dest(jasminePath));
-    } else {
-        gutil.log("JasmineJQuery lib already exists.");
-    }
-    return result;
-}
 
 /**
  *  Download phantomjs 

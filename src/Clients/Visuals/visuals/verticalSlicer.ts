@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
     import SlicerOrientation = slicerOrientation.Orientation;
@@ -184,11 +182,13 @@ module powerbi.visuals {
                     item.append('span')
                         .classed(SlicerUtil.Selectors.LabelText.class, true);
                 }
-            });
 
-            listItemElement.append('span')
-                .classed(SlicerUtil.Selectors.CountText.class, true)
-                .style('font-size', PixelConverter.fromPoint(settings.slicerText.textSize));
+                if (d.count != null) {
+                    item.append('span')
+                        .classed(SlicerUtil.Selectors.CountText.class, true)
+                        .style('font-size', PixelConverter.fromPoint(settings.slicerText.textSize));
+                }
+            });
         }
 
         private onUpdateSelection(rowSelection: D3.Selection, interactivityService: IInteractivityService): void {
@@ -209,13 +209,17 @@ module powerbi.visuals {
                 domHelper.setSlicerTextStyle(labelText, settings);
 
                 let labelImage = rowSelection.selectAll(SlicerUtil.Selectors.LabelImage.selector);
-                labelImage.attr('src', (d: SlicerDataPoint) => {
+                if (!labelImage.empty()) {
+                    labelImage.attr('src', (d: SlicerDataPoint) => {
                         return d.value;
-                });
+                    });
+                }
 
                 let countText = rowSelection.selectAll(SlicerUtil.Selectors.CountText.selector);
-                countText.text((d: SlicerDataPoint) =>  d.count);
-                domHelper.setSlicerTextStyle(countText, settings);
+                if (!countText.empty()) {
+                    countText.text((d: SlicerDataPoint) => d.count);
+                    domHelper.setSlicerTextStyle(countText, settings);
+                }
 
                 if (interactivityService && this.body) {
                     let body = this.body.attr('width', this.currentViewport.width);

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests.customVisuals.sampleDataViews {
     import SQExprBuilder = powerbi.data.SQExprBuilder;
     import DataView = powerbi.DataView;

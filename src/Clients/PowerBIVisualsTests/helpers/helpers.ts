@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 /* tslint:disable */
 const powerBIAccessToken = "fooBarBaz";
 const powerBIAccessTokenExpiry = "2115-01-01 00:00:00Z";
@@ -33,6 +31,7 @@ const powerBIAccessTokenExpiry = "2115-01-01 00:00:00Z";
 
 declare interface JQuery {
     d3Click(x: number, y: number, eventType?: powerbitests.helpers.ClickEventType): void;
+    d3ContextMenu(x: number, y: number): void;
 }
 
 module powerbitests.helpers {
@@ -128,6 +127,13 @@ module powerbitests.helpers {
         let type = eventType || ClickEventType.Default;
         this.each(function (i, e) {
             let evt = createMouseClickEvent(type, x, y);
+            e.dispatchEvent(evt);
+        });
+    };
+
+    jQuery.fn.d3ContextMenu = function (x: number, y: number): void {
+        this.each(function (i, e) {
+            let evt = createContextMenuEvent(x, y);
             e.dispatchEvent(evt);
         });
     };
@@ -252,6 +258,27 @@ module powerbitests.helpers {
             !!(type & ClickEventType.AltKey),  // altKey
             !!(type & ClickEventType.ShiftKey),  // shiftKey
             !!(type & ClickEventType.MetaKey),  // metaKey
+            0,      // button
+            null);  // relatedTarget
+        return evt;
+    }
+
+    export function createContextMenuEvent(x: number, y: number): MouseEvent {
+        let evt = document.createEvent("MouseEvents");
+        evt.initMouseEvent(
+            "contextmenu", // type
+            true,   // canBubble
+            true,   // cancelable
+            window, // view
+            0,      // detail
+            x,      // screenX
+            y,      // screenY
+            x,      // clientX
+            y,      // clientY
+            false,  // ctrlKey
+            false,  // altKey
+            false,  // shiftKey
+            false,  // metaKey
             0,      // button
             null);  // relatedTarget
         return evt;

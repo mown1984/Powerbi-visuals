@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -173,24 +173,28 @@ GulpProject.prototype.createTypeScriptTask = function () {
     var taskName = BUILD_TASK_PREFIX + this.projName + TS_TASK_SUFFIX;
     
     gulp.task(taskName, function (cb) {
+
         var tsProject = ts.createProject(path.join(me.projFolder, TS_CONFIG_FILE_NAME), {
-            typescript: require("typescript"),
             module: "amd",
             sortOutput: false,
             target: "ES5",
-            declarationFiles: true,
+            declarationFiles: me.params.tsc.declarationFiles !== undefined ? me.params.tsc.declarationFiles : true, //TODO: refactor this - use lodash
             noEmitOnError: false,
             //removeComments:true,
             projectName: me.projName, // custom property
             outFileName: me.params.tsc.outFileName, // custom property
-            out: path.join(/*me.projFolder,*/ JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js")
+            out: me.params.tsc.outFileName ? path.join(/*me.projFolder, */JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js") : undefined,
+            outDir: JS_OUT_FOLDER_NAME
         });
         
         tsc({
             projectPath: me.projFolder,
             tsProject: tsProject,
             callback: cb,
-            mapConfig: me.params.tsc.mapConfig
+            mapConfig: me.params.tsc.mapConfig,
+            transform: me.params.tsc.transform,
+            nonminJs: me.params.tsc.nonminJs,
+            uglifyJs: me.params.tsc.uglifyJs
         });
     });
 

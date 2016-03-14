@@ -24,11 +24,10 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import SelectableDataPoint = powerbi.visuals.SelectableDataPoint;
     import SelectionId = powerbi.visuals.SelectionId;
+    import SelectionIdBuilder = powerbi.visuals.SelectionIdBuilder;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
     import MockBehavior = powerbitests.mocks.MockBehavior;
 
@@ -152,6 +151,33 @@ module powerbitests {
             interactivityService.bind(selectableDataPoints, behavior, null);
             behavior.selectIndex(0, false);
             expect(host.onSelect).toHaveBeenCalledWith({ data: [selectableDataPoints[0].identity.getSelector()] });
+        });
+
+        it('ContextMenu request sent to host', () => {
+            let categoryA = mocks.dataViewScopeIdentity('A');
+            let categoryColumn: powerbi.DataViewCategoryColumn = {
+                source: {
+                    queryName: 'categoryA',
+                    displayName: 'testDisplayName'
+                },
+                identity: [categoryA],
+                values: []
+            };
+
+            let id = SelectionIdBuilder.builder().withCategory(categoryColumn, 0).createSelectionId();
+            let dataPoint: SelectableDataPoint = {
+                selected: false,
+                identity: id
+            };
+
+            let contextMenuSpy = spyOn(host, "onContextMenu");
+            interactivityService.handleContextMenu(dataPoint, { x: 5, y: 15 });
+
+            expect(contextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({
+                dataMap: {
+                    categoryA: id.getSelector().data[0]
+                }
+            });
         });
 
         it('persistSelectionFilter calls persistProperties', () => {

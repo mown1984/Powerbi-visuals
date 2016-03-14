@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import SVGUtil = powerbi.visuals.SVGUtil;
     

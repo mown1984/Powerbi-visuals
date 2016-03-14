@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface MapBehaviorOptions {
         dataPoints: SelectableDataPoint[];
@@ -82,6 +80,8 @@ module powerbi.visuals {
                         }, 200);
                     }
                 });
+
+                InteractivityUtils.registerStandardContextMenuHandler(bubbles, selectionHandler);
             }
 
             if (slices) {
@@ -123,6 +123,8 @@ module powerbi.visuals {
                         }, 200);
                     }
                 });
+
+                InteractivityUtils.registerStandardContextMenuHandler(shapes, selectionHandler);
             }
 
             clearCatcher.on('mouseup', () => {

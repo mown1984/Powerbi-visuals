@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 module jsCommon {
     export interface ArrayIdItems<T> extends Array<T> {
         withId(id: number): T;

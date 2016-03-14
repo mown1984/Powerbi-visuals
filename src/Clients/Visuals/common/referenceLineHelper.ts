@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export module ReferenceLineHelper {
         export const referenceLineProps = {
@@ -279,6 +277,15 @@ module powerbi.visuals {
                 secondRowText: null,
                 key: options.key,
             };
+        }
+
+        export function extractReferenceLineValue(referenceLineProperties: DataViewObject): number {
+            let referenceLineValue: number = null;
+
+            if (referenceLineProperties && DataViewObject.getValue(referenceLineProperties, ReferenceLineHelper.referenceLineProps.show, false))
+                referenceLineValue = DataViewObject.getValue(referenceLineProperties, ReferenceLineHelper.referenceLineProps.value, null);
+
+            return referenceLineValue;
         }
     }
 }

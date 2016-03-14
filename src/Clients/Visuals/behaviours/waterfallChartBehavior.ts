@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     export interface WaterfallChartBehaviorOptions {
         bars: D3.Selection;
@@ -40,6 +38,15 @@ module powerbi.visuals {
             bars.on('click', (d: WaterfallChartDataPoint) => {
                 if (!d.isTotal) {
                     selectionHandler.handleSelection(d, d3.event.ctrlKey);
+                }
+            });
+
+            bars.on('contextmenu', (d: WaterfallChartDataPoint) => {
+                d3.event.preventDefault();
+
+                if (!d.isTotal) {
+                    let position = InteractivityUtils.getPositionOfLastInputEvent();
+                    selectionHandler.handleContextMenu(d, position);
                 }
             });
         }

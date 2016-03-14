@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi {
     export interface ITextMeasurer {
         (textElement: SVGTextElement): number;
@@ -276,10 +274,13 @@ module powerbi {
             if (width < maxWidth)
                 return textProperties.text;
 
+            // Create a copy of the textProperties so we don't modify the one that's passed in.
+            let copiedTextProperties = Prototype.inherit(textProperties);
+
             // Take the properties and apply them to svgTextElement
             // Then, do the binary search to figure out the substring we want
             // Set the substring on textElement argument
-            let text = textProperties.text = ellipsis + textProperties.text;
+            let text = copiedTextProperties.text = ellipsis + copiedTextProperties.text;
 
             let min = 1;
             let max = text.length;
@@ -289,8 +290,8 @@ module powerbi {
                 // num | 0 prefered to Math.floor(num) for performance benefits
                 i = (min + max) / 2 | 0;
 
-                textProperties.text = text.substr(0, i);
-                width = measureSvgTextWidth(textProperties);
+                copiedTextProperties.text = text.substr(0, i);
+                width = measureSvgTextWidth(copiedTextProperties);
 
                 if (maxWidth > width)
                     min = i + 1;
@@ -304,8 +305,8 @@ module powerbi {
             // it will pick one of the closest two, which could result in a
             // value bigger with than 'maxWidth' thus we need to go back by 
             // one to guarantee a smaller width than 'maxWidth'.
-            textProperties.text = text.substr(0, i);
-            width = measureSvgTextWidth(textProperties);
+            copiedTextProperties.text = text.substr(0, i);
+            width = measureSvgTextWidth(copiedTextProperties);
             if (width > maxWidth)
                 i--;
 

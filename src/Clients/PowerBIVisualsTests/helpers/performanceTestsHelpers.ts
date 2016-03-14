@@ -24,8 +24,6 @@
 *  THE SOFTWARE.
 */
 
-
-
 module powerbitests.performanceTestsHelpers {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -552,12 +550,13 @@ module powerbitests.performanceTestsHelpers {
         switch (visualsType) {
             case "donutChart":
             case "pieChart":
-            case "enhancedScatterChart":
             case "wordCloud":
 	        case "bulletChart":
                 return 100;
             case "columnChart":
                 return 20;
+            case "enhancedScatterChart":
+                return 12;
             default:
                 return 6;
         }

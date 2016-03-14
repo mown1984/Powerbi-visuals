@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewObjects = powerbi.DataViewObjects;
     import DataViewTransform = powerbi.data.DataViewTransform;

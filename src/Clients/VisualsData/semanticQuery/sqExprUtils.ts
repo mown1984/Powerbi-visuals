@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.data {
     import StringExtensions = jsCommon.StringExtensions;
 
@@ -110,8 +108,8 @@ module powerbi.data {
 
             return true;
         }
-
-        export function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr): string {
+        
+        export function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr, exprDefaultName?: string): string {
             debug.assertValue(namedItems, 'namedItems');
 
             // Determine all names
@@ -119,7 +117,7 @@ module powerbi.data {
             for (let i = 0, len = namedItems.length; i < len; i++)
                 names[namedItems[i].name] = true;
 
-            return StringExtensions.findUniqueName(names, defaultName(expr));
+            return StringExtensions.findUniqueName(names, exprDefaultName || defaultName(expr));
         }
 
         /** Generates a default expression name  */

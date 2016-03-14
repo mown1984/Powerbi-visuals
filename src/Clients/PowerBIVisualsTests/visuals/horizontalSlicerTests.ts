@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
 
@@ -330,6 +328,6 @@ module powerbitests {
                 navigationButton = $(".navigationArrow.right");
                 break;           
         }
-        (<any>navigationButton.first()).d3Click(0, 0);
+        navigationButton.first().d3Click(0, 0);
     }
 }

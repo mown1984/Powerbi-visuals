@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../../_references.ts"/>
-
 module powerbi.visuals.controls.internal {
 
     const UNSELECTABLE_CLASS_NAME = "unselectable";
@@ -626,7 +624,11 @@ module powerbi.visuals.controls.internal {
             if (!(<TablixCell>cell)._presenter)
                 return 0;
 
-            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement) + 1; // Adding 1 because offsetWidth returns floored number, may risk getting ellipsis
+            let requiredWidth = HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement);
+            if (requiredWidth > 0)
+                requiredWidth += 1; // Adding 1px because offsetWidth returns floored number, may risk getting ellipsis
+
+            return requiredWidth; 
         }
     }
 
@@ -747,14 +749,14 @@ module powerbi.visuals.controls.internal {
             }
         }
 
-        public invokeColumnResizeCallBack(columnIndex: number, width: number): void {
+        public invokeColumnResizeEndCallback(columnIndex: number, width: number): void {
             if (this._columnWidthManager)
-                this._columnWidthManager.columnWidthResizeCallback(columnIndex, width);
+                this._columnWidthManager.onColumnWidthChanged(columnIndex, width);
         }
 
         public getPersistedCellWidth(columnIndex: number): number {
             if (this._columnWidthManager)
-                return this._columnWidthManager.getPersistedCellWidth(columnIndex);
+                return this._columnWidthManager.getPersistedColumnWidth(columnIndex);
         }
     }
 

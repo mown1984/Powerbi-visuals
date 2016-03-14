@@ -26,17 +26,19 @@
 
 @import (reference) "../../../styles/styles.less";
 
-.dotPlot {
-    .axis{
+.dotplot {
+    @dotplotFontSize: 11px;
+    @dotplotChartAxesColor: @neutralSecondaryAltColor;
+
+    .axis {
         path, line {
             fill: none;
-            stroke: black;
-            shape-rendering: crispEdges;
+            stroke: @dotplotChartAxesColor;
+            shape-rendering: @defaultShapeRendering;
         }
 
         text {
-            font-family: sans-serif;
-            font-size: 11px;
+            font-size: @dotplotFontSize;
         }
     }
 }

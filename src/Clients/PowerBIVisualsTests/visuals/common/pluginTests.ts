@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -220,8 +218,7 @@ module powerbitests {
                     visualPlugin: powerbi.IVisualPlugin = allVisuals[i];
 
                 if (visualPlugin.name !== "categoricalFilter" &&
-                    visualPlugin.name !== "consoleWriter" && 
-                    visualPlugin.name !== "streamGraph" &&
+                    visualPlugin.name !== "consoleWriter" &&
                     visualPlugin.capabilities &&
                     visualPlugin.capabilities.dataViewMappings &&
                     visualPlugin.capabilities.dataViewMappings.length > 0 &&

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
@@ -476,7 +474,7 @@ module powerbi.visuals {
 
             let categoryDataType: ValueType = AxisHelper.getCategoryValueType(data.categoryMetadata);
 
-            let domain = AxisHelper.createDomain(data.series, categoryDataType, /* isScalar */ false, options.forcedXDomain);
+            let domain = AxisHelper.createDomain(data.series, categoryDataType, /* isScalar */ false, options.forcedXDomain, options.xReferenceLineValue);
 
             let categoryThickness = layout.categoryThickness;
             let outerPadding = categoryThickness * layout.outerPaddingRatio;
@@ -501,7 +499,7 @@ module powerbi.visuals {
             debug.assertValue(data, 'data');
             debug.assertValue(options, 'options');
 
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [data.positionMin, data.positionMax]);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [data.positionMin, data.positionMax], options.y1ReferenceLineValue);
 
             return <CreateAxisOptions> {
                 pixelSpan: height,

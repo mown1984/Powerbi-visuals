@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 module powerbi.visuals {
     import TablixFormattingProperties = powerbi.visuals.controls.TablixFormattingPropertiesTable;
     import TablixUtils = controls.internal.TablixUtils;
@@ -503,10 +501,6 @@ module powerbi.visuals {
         }
     }
 
-    export interface ColumnWidthCallbackType {
-        (index: number, width: number): void;
-    }
-
     export interface TableConstructorOptions {
         isFormattingPropertiesEnabled?: boolean;
         isTouchEnabled?: boolean;
@@ -532,6 +526,11 @@ module powerbi.visuals {
         private columnWidthManager: controls.TablixColumnWidthManager;
         private dataView: DataView;
         private isFormattingPropertiesEnabled: boolean;
+
+        /**
+        * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
+        */
+        public persistingObjects: boolean;
 
         constructor(options?: TableConstructorOptions) {
             if (options) {
@@ -562,6 +561,7 @@ module powerbi.visuals {
             this.isInteractive = options.interactivity && options.interactivity.selection != null;
             this.getLocalizedString = options.host.getLocalizedString;
             this.hostServices = options.host;
+            this.persistingObjects = false;
 
             this.waitingForData = false;
             this.lastAllowHeaderResize = true;
@@ -612,10 +612,13 @@ module powerbi.visuals {
                 let previousDataView = this.dataView;
                 this.dataView = dataViews[0];
 
-                // To avoid OnDataChanged being called every time resize occurs or the auto-size property switch is flipped.
-                if (this.columnWidthManager && this.columnWidthManager.suppressOnDataChangedNotification) {
-                    // Reset flag for cases when cross-filter/cross-higlight happens right after. We do need onDataChanged call to go through
-                    this.columnWidthManager.suppressOnDataChangedNotification = false;
+                /* To avoid OnDataChanged being called every time we persist Objects. If:
+                * AutoSizeColumns options was flipped
+                * A Column was resized manually
+                * A Column was auto-sized
+                */
+                if (this.persistingObjects) {
+                    this.persistingObjects = false;
                     return;
                 }
 
@@ -632,7 +635,6 @@ module powerbi.visuals {
                     this.createTablixControl(textSize);
                     let binder = <TableBinder>this.tablixControl.getBinder();
                     binder.onDataViewChanged(visualTable);
-                    this.populateColumnWidths();
                     this.updateInternal(textSize, previousDataView, visualTable);
                 }
             }
@@ -641,20 +643,19 @@ module powerbi.visuals {
             this.waitingForSort = false;
         }
 
-        private populateColumnWidths(): void {
-            if (this.columnWidthManager) {
-                this.columnWidthManager.deserializeTablixColumnWidths();
-                if (this.columnWidthManager.persistColumnWidthsOnHost())
-                    this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+        private createColumnWidthManager(): void {
+            if (!this.columnWidthManager) {
+                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView,
+                    false /* isMatrix */,
+                    (objectInstances: VisualObjectInstancesToPersist) => this.persistColumnWidths(objectInstances));
+            }
+            else {
+                this.columnWidthManager.updateDataView(this.dataView);
             }
         }
 
-        public columnWidthChanged(index: number, width: number): void {
-            this.columnWidthManager.columnWidthChanged(index, width);
-            this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
-        }
-
         private persistColumnWidths(objectInstances: VisualObjectInstancesToPersist): void {
+            this.persistingObjects = true;
             this.hostServices.persistProperties(objectInstances);
         }
 
@@ -692,16 +693,6 @@ module powerbi.visuals {
             if (!this.tablixControl) {
                 // Create the control
                 this.tablixControl = this.createControl(this.hierarchyNavigator, textSize);
-            }
-        }
-
-        private createColumnWidthManager(): void {
-            if (!this.columnWidthManager) {
-                this.columnWidthManager = new controls.TablixColumnWidthManager(this.dataView, false /* isMatrix */);
-                this.columnWidthManager.columnWidthResizeCallback = (i, w) => this.columnWidthChanged(i, w);
-            }
-            else {
-                this.columnWidthManager.updateDataView(this.dataView);
             }
         }
 
@@ -755,9 +746,11 @@ module powerbi.visuals {
             setTimeout(() => {
                 // Render
                 this.refreshControl(shouldClearControl);
-                this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
-                if (this.columnWidthManager.persistColumnWidthsOnHost())
-                    this.persistColumnWidths(this.columnWidthManager.getVisualObjectInstancesToPersist());
+
+                //Persist actual widths if autoSize flipped to true
+                if (this.columnWidthManager.shouldPersistAllColumnWidths()) {
+                    this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
+                }
             }, 0);
         }
 

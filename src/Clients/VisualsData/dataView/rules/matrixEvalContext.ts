@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../../_references.ts"/>
-
 module powerbi.data {
     export function createMatrixEvalContext(dataViewMatrix: DataViewMatrix): IEvalContext {
         // NOTE: Matrix context-sensitive evaluation is not yet implemented.

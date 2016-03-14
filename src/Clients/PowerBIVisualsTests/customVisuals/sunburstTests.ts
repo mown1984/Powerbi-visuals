@@ -24,8 +24,6 @@
 *  THE SOFTWARE.
 */
 
-
-
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Sunburst;
     import DataView = powerbi.DataView;

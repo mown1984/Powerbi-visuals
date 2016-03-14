@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
-
 declare module powerbi.data {
     //intentionally blank interfaces since this is not part of the public API
 

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import BaseAnimator = powerbi.visuals.BaseAnimator;
     import IAnimatorOptions = powerbi.visuals.IAnimatorOptions;

@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-
-
 module powerbitests {
     import getLocalizedString = powerbi.visuals.valueFormatter.getLocalizedString;
      
