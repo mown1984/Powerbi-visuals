@@ -50,6 +50,9 @@ module powerbi.visuals {
             };
 
             let contextMenuHandler = (d: DonutArcDescriptor) => {
+                if (d3.event.ctrlKey)
+                    return;
+
                 let position = InteractivityUtils.getPositionOfLastInputEvent();
                 selectionHandler.handleContextMenu(d.data, position);
                 d3.event.preventDefault();

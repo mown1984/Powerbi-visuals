@@ -183,6 +183,96 @@ module powerbitests {
         return dataView;
     }
 
+    function getDataViewMultiSeriesNoSize(): powerbi.DataView {
+        let firstGroupName = 'Canada';
+        let secondGroupName = 'United States';
+
+        let dataViewMetadata: powerbi.DataViewMetadata = {
+            columns: [
+                {
+                    displayName: 'category',
+                    format: 'yyyy',
+                    type: ValueType.fromDescriptor({ dateTime: true })
+                }, {
+                    displayName: 'series'
+                }, {
+                    displayName: 'x',
+                    format: '#,0.00',
+                    isMeasure: true,
+                    roles: { 'X': true },
+                    groupName: firstGroupName,
+                }, {
+                    displayName: 'y',
+                    format: '#,0',
+                    isMeasure: true,
+                    roles: { 'Y': true },
+                    groupName: firstGroupName,
+                }, {
+                    displayName: 'x',
+                    format: '#,0.00',
+                    isMeasure: true,
+                    roles: { 'X': true },
+                    groupName: secondGroupName,
+                }, {
+                    displayName: 'y',
+                    format: '#,0',
+                    isMeasure: true,
+                    roles: { 'Y': true },
+                    groupName: secondGroupName,
+                }
+            ]
+        };
+
+        let colP1Ref = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 't', column: 'p1' });
+        let colP2Ref = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 't', column: 'p2' });
+
+        let seriesValues = [firstGroupName, secondGroupName];
+        let seriesIdentities = seriesValues.map(v => mocks.dataViewScopeIdentity(v));
+
+        let dataViewValueColumns: powerbi.DataViewValueColumn[] = [
+            {
+                source: dataViewMetadata.columns[2],
+                values: [150, 177, 157],
+                identity: seriesIdentities[0],
+            }, {
+                source: dataViewMetadata.columns[3],
+                values: [30, 25, 28],
+                identity: seriesIdentities[0],
+            }, {
+                source: dataViewMetadata.columns[5],
+                values: [100, 149, 144],
+                identity: seriesIdentities[1],
+            }, {
+                source: dataViewMetadata.columns[6],
+                values: [300, 250, 280],
+                identity: seriesIdentities[1],
+            }
+        ];
+
+        let dataView: powerbi.DataView = {
+            metadata: dataViewMetadata,
+            categorical: {
+                categories: [{
+                    source: dataViewMetadata.columns[0],
+                    values: [
+                        powerbitests.helpers.parseDateString("2012-01-01T00:00:00"),
+                        powerbitests.helpers.parseDateString("2011-01-01T00:00:00"),
+                        powerbitests.helpers.parseDateString("2010-01-01T00:00:00")
+                    ],
+                    identity: [seriesIdentities[0]],
+                    identityFields: [
+                        colP1Ref
+                    ]
+                }],
+                values: DataViewTransform.createValueColumns(dataViewValueColumns, [colP2Ref])
+            },
+        };
+
+        dataView.categorical.values.source = dataViewMetadata.columns[1];
+
+        return dataView;
+    }
+
     function getDataViewWithSharedCategoryAndSeries(): powerbi.DataView {
         // Category and series are the same field
         let metadata: powerbi.DataViewMetadata = {
@@ -256,6 +346,31 @@ module powerbitests {
                 values: valueColumns,
             }
         };
+    }
+
+    let dataViewMetadataCategorySeriesXY = {
+        Category: <powerbi.DataViewMetadataColumn>{ displayName: 'Category', queryName: 'Category', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) },
+        Series: <powerbi.DataViewMetadataColumn>{ displayName: 'Series', queryName: 'Series', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) },
+        X: <powerbi.DataViewMetadataColumn>{ displayName: 'X', queryName: 'X', isMeasure: true, roles: { "X": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+        Y: <powerbi.DataViewMetadataColumn>{ displayName: 'Y', queryName: 'Y', isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+
+        CategoryKey: powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: "T", column: "Category" }),
+        SeriesKey: powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: "T", column: "Series" }),
+    };
+
+    function setSeriesObjects(categorical: powerbi.DataViewCategorical, seriesObjects: _.Dictionary<powerbi.DataViewObjects>): void {
+        let groups = categorical.values.grouped();
+
+        for (let group of groups) {
+            if (group.name) {
+                let objects = seriesObjects[group.name];
+                if (objects) {
+                    group.objects = objects;
+                }
+            }
+        }
+
+        categorical.values.grouped = () => groups;
     }
 
     describe("ScatterChart", () => {
@@ -489,6 +604,72 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('scatter chart markers are grouped by series with fill', (done) => {
+                let categoryValues = [0, 1, 2];
+                let seriesValues = [1000, 2000];
+                let seriesColors = ["#ff0000", "#00ff00"];
+
+                let dataView = powerbi.data.createCategoricalDataViewBuilder()
+                    .withCategories([{
+                        source: dataViewMetadataCategorySeriesXY.Category,
+                        values: categoryValues,
+                        identity: _.map(categoryValues, value => mocks.dataViewScopeIdentity(value)),
+                    }])
+                    .withGroupedValues({
+                        groupColumn: {
+                            source: dataViewMetadataCategorySeriesXY.Series,
+                            values: seriesValues,
+                            identityFrom: {
+                                fields: [dataViewMetadataCategorySeriesXY.SeriesKey],
+                                identities: _.map(seriesValues, value => mocks.dataViewScopeIdentity(value)),
+                            },
+                        },
+                        valueColumns: [{ source: dataViewMetadataCategorySeriesXY.X }, { source: dataViewMetadataCategorySeriesXY.Y }],
+                        data: [
+                            [{ values: [1000, 1100, 1200] }, { values: [1000, 900, 800] }, ],
+                            [{ values: [2000, 2100, 2200] }, { values: [2000, 1900, 1800] }, ],
+                        ],
+                    })
+                    .build();
+
+                setSeriesObjects(dataView.categorical, _.mapValues(_.indexBy(_.range(0, seriesValues.length), i => seriesValues[i]), i => {
+                    return <powerbi.DataViewObjects>{ dataPoint: { fill: { solid: { color: seriesColors[i] } } } };
+                }));
+
+                v.onDataChanged({
+                    dataViews: [dataView],
+                    suppressAnimations: false,
+                });
+
+                setTimeout(() => {
+                    let actualFills = _.chain(getMarkerAndSeriesFills())
+                        .map(f => {
+                            return f.seriesIdentityKey + "-" + f.seriesFill + "-" + f.markerSeriesValue + "-" + f.markerFill;
+                        })
+                        .uniq()
+                        .sort()
+                        .value();
+
+                    // expect real series with fills and no fills on markers
+                    // e.g. ["2000-#FF0000-2000-", "3000-#00FF00-3000-"]
+                    let expectedFills = _.chain(_.range(0, seriesValues.length))
+                        .map(i => {
+                            let seriesValue = seriesValues[i];
+                            let seriesFill = jsCommon.Color.normalizeToHexString(seriesColors[i]);
+                            let seriesIdentityKey = mocks.dataViewScopeIdentity(seriesValue).key;
+                            let markerFill = "";
+
+                            return seriesIdentityKey + "-" + seriesFill + "-" + seriesValue.toString() + "-" + markerFill;
+                        })
+                        .sort()
+                        .value();
+
+                    expect(actualFills).toEqual(expectedFills);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it('scatter chart two measure dom validation', (done) => {
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
                     mocks.dataViewScopeIdentity('a'),
@@ -520,6 +701,7 @@ module powerbitests {
 
                 setTimeout(() => {
                     let markers = getMarkers();
+                    let m0 = markers[0];
 
                 expect(helpers.findElementText($(selectorXaxis).find('text').first())).toBe('110');
                 expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('0.21');
@@ -528,8 +710,8 @@ module powerbitests {
                 expect(helpers.findElementTitle($(selectorYaxis).find('text').first())).toBe('0.21');
 
                     expect(markers.length).toBe(5);
-                    expect(markers[0].style.fillOpacity).toBe("0");
-                    expect(markers[0].style.strokeOpacity).toBe("0.85");
+                    expect(markerStyle(m0, 'fill-opacity')).toBe("0");
+                    expect(markerStyle(m0, 'stroke-opacity')).toBe("0.85");
                     expect(markers[0].getAttribute('r')).toBe('6');
                     done();
                 }, DefaultWaitForRender);
@@ -2615,6 +2797,160 @@ module powerbitests {
                     done();
                 }, DefaultWaitForRender);
             });
+
+            it('scatter chart markers not grouped when animating becauser there are few data points', (done) => {
+                let NoAnimationThreshold = powerbi.visuals.ScatterChart.NoAnimationThreshold;
+
+                let categoryValues = [0, 1, 2];
+                let seriesValues = [1000, 2000];
+                let seriesColors = ["#ff0000", "#00ff00"];
+
+                let dataView = powerbi.data.createCategoricalDataViewBuilder()
+                    .withCategories([{
+                        source: dataViewMetadataCategorySeriesXY.Category,
+                        values: categoryValues,
+                        identity: _.map(categoryValues, value => mocks.dataViewScopeIdentity(value)),
+                    }])
+                    .withGroupedValues({
+                        groupColumn: {
+                            source: dataViewMetadataCategorySeriesXY.Series,
+                            values: seriesValues,
+                            identityFrom: {
+                                fields: [dataViewMetadataCategorySeriesXY.SeriesKey],
+                                identities: _.map(seriesValues, value => mocks.dataViewScopeIdentity(value)),
+                            },
+                        },
+                        valueColumns: [{ source: dataViewMetadataCategorySeriesXY.X }, { source: dataViewMetadataCategorySeriesXY.Y }],
+                        data: [
+                            [{ values: [1000, 1100, 1200] }, { values: [1000, 900, 800] }, ],
+                            [{ values: [2000, 2100, 2200] }, { values: [2000, 1900, 1800] }, ],
+                        ],
+                    })
+                    .build();
+
+                setSeriesObjects(dataView.categorical, _.mapValues(_.indexBy(_.range(0, seriesValues.length), i => seriesValues[i]), i => {
+                    return <powerbi.DataViewObjects>{ dataPoint: { fill: { solid: { color: seriesColors[i] } } } };
+                }));
+
+                // first render is with threshold set to our # of data points. since thise is the first
+                // time the chart area will have changed so animation will have been suppressed
+                // (even though the # of points doesn't exceed the threshold) and so markers will have
+                // been drawn grouped.
+                try {
+                    powerbi.visuals.ScatterChart.NoAnimationThreshold = 6;
+                    v.onDataChanged({
+                        dataViews: [dataView],
+                        suppressAnimations: false,
+                    });
+                }
+                finally {
+                    powerbi.visuals.ScatterChart.NoAnimationThreshold = NoAnimationThreshold;
+                }
+
+                setTimeout(() => {
+                    let actualFills1 = _.chain(getMarkerAndSeriesFills())
+                        .map(f => {
+                            return f.seriesIdentityKey + "-" + f.seriesFill + "-" + f.markerSeriesValue + "-" + f.markerFill;
+                        })
+                        .uniq()
+                        .sort()
+                        .value();
+
+                    // grouped so fill will be on the parent series
+                    // e.g. ["2000-#FF0000-2000-", "3000-#00FF00-3000-"]
+                    let expectedFills1 = _.chain(_.range(0, seriesValues.length))
+                        .map(i => {
+                            let seriesValue = seriesValues[i];
+                            let seriesFill = jsCommon.Color.normalizeToHexString(seriesColors[i]);
+                            let seriesIdentityKey = mocks.dataViewScopeIdentity(seriesValue).key;
+                            let markerFill = "";
+
+                            return seriesIdentityKey + "-" + seriesFill + "-" + seriesValue.toString() + "-" + markerFill;
+                        })
+                        .sort()
+                        .value();
+
+                    expect(actualFills1).toEqual(expectedFills1);
+
+                    // re-render but since the chart area isn't changed, it will animate and so fall into
+                    // the single grouping mode
+                    try {
+                        powerbi.visuals.ScatterChart.NoAnimationThreshold = 6;
+                        v.onDataChanged({
+                            dataViews: [dataView],
+                            suppressAnimations: false,
+                        });
+                    }
+                    finally {
+                        powerbi.visuals.ScatterChart.NoAnimationThreshold = NoAnimationThreshold;
+                    }
+
+                    setTimeout(() => {
+                        let actualFills2 = _.chain(getMarkerAndSeriesFills())
+                            .map(f => {
+                                return f.seriesIdentityKey + "-" + f.seriesFill + "-" + f.markerSeriesValue + "-" + f.markerFill;
+                            })
+                            .uniq()
+                            .sort()
+                            .value();
+
+                        // not grouped so fill will be on marker and parent will be a fake series
+                        let expectedFills2 = _.chain(_.range(0, seriesValues.length))
+                            .map(i => {
+                                let seriesValue = seriesValues[i];
+                                let seriesFill = "";
+                                let seriesIdentityKey = "";
+                                let markerFill = jsCommon.Color.normalizeToHexString(seriesColors[i]);
+
+                                return seriesIdentityKey + "-" + seriesFill + "-" + seriesValue.toString() + "-" + markerFill;
+                            })
+                            .sort()
+                            .value();
+
+                        expect(actualFills2).toEqual(expectedFills2);
+
+                        // now force grouping by setting the threshold below our data point count
+                        try {
+                            powerbi.visuals.ScatterChart.NoAnimationThreshold = 5;
+                            v.onDataChanged({
+                                dataViews: [dataView],
+                                suppressAnimations: false,
+                            });
+                        }
+                        finally {
+                            powerbi.visuals.ScatterChart.NoAnimationThreshold = NoAnimationThreshold;
+                        }
+
+                        setTimeout(() => {
+                            let actualFills3 = _.chain(getMarkerAndSeriesFills())
+                                .map(f => {
+                                    return f.seriesIdentityKey + "-" + f.seriesFill + "-" + f.markerSeriesValue + "-" + f.markerFill;
+                                })
+                                .uniq()
+                                .sort()
+                                .value();
+
+                            // grouped again so fill will be on the parent series
+                            let expectedFills3 = _.chain(_.range(0, seriesValues.length))
+                                .map(i => {
+                                    let seriesValue = seriesValues[i];
+                                    let seriesFill = jsCommon.Color.normalizeToHexString(seriesColors[i]);
+                                    let seriesIdentityKey = mocks.dataViewScopeIdentity(seriesValue).key;
+                                    let markerFill = "";
+
+                                    return seriesIdentityKey + "-" + seriesFill + "-" + seriesValue.toString() + "-" + markerFill;
+                                })
+                                .sort()
+                                .value();
+
+                            expect(actualFills3).toEqual(expectedFills3);
+
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+
+                }, DefaultWaitForRender);
+            });
         });
 
         describe("interactive legend scatterChart validation", () => {
@@ -4440,8 +4776,71 @@ module powerbitests {
             });
         }
 
+        describe('getAdditionalTelemetry', () => {
+            it('no size', () => {
+                let dataView = getDataViewMultiSeriesNoSize();
+
+                let telemetry = ScatterChart.getAdditionalTelemetry(dataView);
+                expect(telemetry).toEqual({
+                    hasSize: false,
+                    hasPlayAxis: false
+                });
+            });
+
+            it('with size', () => {
+                let dataView = getDataViewMultiSeries();
+
+                let telemetry = ScatterChart.getAdditionalTelemetry(dataView);
+                expect(telemetry).toEqual({
+                    hasSize: true,
+                    hasPlayAxis: false,
+                });
+            });
+        });
+
+        /**
+         * when markers are grouped by series, the style may be on the parent group
+         */
+        function markerStyle(m: HTMLElement, name: string): any {
+            let s = m.style[name];
+            if (s)
+                return s;
+
+            let p = m.parentElement;
+            if (p.tagName !== 'g')
+                return '';
+
+            return p.style[name];
+        }
+
         function getMarkers(): JQuery {
             return $('.scatterChart .mainGraphicsContext circle.dot');
+        }
+
+        function mapMarkersAndSeries<T>(callback: (markerElement: HTMLElement, markerDatum: powerbi.visuals.ScatterChartDataPoint, parentElement: HTMLElement, parentDatum: powerbi.visuals.ScatterChartDataPointSeries) => T): T[] {
+            return $.map(getMarkers(), (elem: HTMLElement, index) => {
+                return callback(elem, <powerbi.visuals.ScatterChartDataPoint>d3.select(elem).datum(),
+                    <HTMLElement>elem.parentNode, <powerbi.visuals.ScatterChartDataPointSeries>d3.select(elem.parentNode).datum());
+            });
+        }
+
+        interface MarkerAndSeriesFills {
+            markerSeriesValue: string;
+            seriesIdentityKey: string;
+            markerFill: string;
+            seriesFill: string;
+        }
+
+        function getMarkerAndSeriesFills(): MarkerAndSeriesFills[] {
+            return mapMarkersAndSeries((markerElement, markerDatum, seriesElement, seriesDatum) => {
+                let markerSeriesValue = _.find(markerDatum.tooltipInfo, tt => tt.displayName === "Series").value;
+                return <MarkerAndSeriesFills> {
+                    markerSeriesValue: markerSeriesValue && markerSeriesValue.toString() || "",
+                    seriesIdentityKey: seriesDatum && seriesDatum.identityKey || "",
+                    markerFill: markerElement.style.fill && jsCommon.Color.normalizeToHexString(markerElement.style.fill) || "",
+                    seriesFill: seriesElement && seriesElement.style.fill && jsCommon.Color.normalizeToHexString(seriesElement.style.fill) || "",
+                };
+            });
         }
 
         function getMarkersD3(): D3.Selection {
@@ -4563,14 +4962,21 @@ module powerbitests {
             // Show no tooltip item for null series
             // TODO: this is likely a bug
             expect(dataPoints.length).toBe(6);
-            expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: 'category', value: '2012' }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }]);
-            expect(dataPoints[1].tooltipInfo).toEqual([{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '100.00' }, { displayName: 'y', value: '300' }, { displayName: 'size', value: '150' }]);
 
-            expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: 'category', value: '2011' }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }]);
-            expect(dataPoints[3].tooltipInfo).toEqual([{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '149.00' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '250' }]);
+            let actualTooltips = _.map(dataPoints, d => JSON.stringify(d.tooltipInfo));
+            let expectTooltips = _.map([
+                [{ displayName: 'category', value: '2012' }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }],
+                [{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '100.00' }, { displayName: 'y', value: '300' }, { displayName: 'size', value: '150' }],
+                [{ displayName: 'category', value: '2011' }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }],
+                [{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '149.00' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '250' }],
+                [{ displayName: 'category', value: '2010' }, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }],
+                [{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '144.00' }, { displayName: 'y', value: '280' }, { displayName: 'size', value: '350' }],
+            ], d => JSON.stringify(d));
 
-            expect(dataPoints[4].tooltipInfo).toEqual([{ displayName: 'category', value: '2010' }, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }]);
-            expect(dataPoints[5].tooltipInfo).toEqual([{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '144.00' }, { displayName: 'y', value: '280' }, { displayName: 'size', value: '350' }]);
+            actualTooltips.sort();
+            expectTooltips.sort();
+
+            expect(actualTooltips).toEqual(expectTooltips);
         });
 
         it('scatter chart empty categories should return not-null category', () => {
@@ -4824,12 +5230,17 @@ module powerbitests {
             expect(scatterChartData[0].fill).not.toBe(scatterChartData[3].fill);
 
             //Tooltips
-            expect(scatterChartData[0].tooltipInfo).toEqual([{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }]);
-            expect(scatterChartData[1].tooltipInfo).toEqual([{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '100.00' }, { displayName: 'y', value: '300' }, { displayName: 'size', value: '150' }]);
-            expect(scatterChartData[2].tooltipInfo).toEqual([{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }]);
-            expect(scatterChartData[3].tooltipInfo).toEqual([{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '149.00' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '250' }]);
-            expect(scatterChartData[4].tooltipInfo).toEqual([{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }]);
-            expect(scatterChartData[5].tooltipInfo).toEqual([{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '144.00' }, { displayName: 'y', value: '280' }, { displayName: 'size', value: '350' }]);
+            let actualTooltips = _.map(scatterChartData, d => JSON.stringify(d.tooltipInfo));
+            let expectTooltips = _.map([
+                [{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }],
+                [{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }],
+                [{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }],
+                [{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '100.00' }, { displayName: 'y', value: '300' }, { displayName: 'size', value: '150' }],
+                [{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '149.00' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '250' }],
+                [{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'United States' }, { displayName: 'x', value: '144.00' }, { displayName: 'y', value: '280' }, { displayName: 'size', value: '350' }],
+            ], d => JSON.stringify(d));
+
+            expect(actualTooltips).toEqual(expectTooltips);
         });
 
         it('selection state set on converter result', () => {
@@ -4897,8 +5308,8 @@ module powerbitests {
             dataView.categorical.values.grouped = () => groupedValues;
 
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
-            expect(scatterChartData[0].fill).toBe('red');
-            expect(scatterChartData[1].fill).toBe('green');
+            let uniqFills = _.sortBy(_.uniq(_.map(scatterChartData, d => d.fill + "-" + _.find(d.tooltipInfo, tt => tt.displayName === "series").value)));
+            expect(uniqFills).toEqual(["green-United States", "red-Canada"]);
         });
 
         it('scatterChart categorical with explicit colors', () => {
@@ -4960,22 +5371,20 @@ module powerbitests {
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let dataPoints = scatterChartData.dataPoints;
 
-            let firstSeries = dataPoints[0];
-            expect(firstSeries.x).toBe(150);
-            expect(firstSeries.y).toBe(30);
-            expect(firstSeries.size).toBe(100);
-            expect(ScatterChart.getBubbleRadius(firstSeries.radius, scatterChartData.sizeRange, viewport)).toBe(26);
-            expect(firstSeries.fill).toBeDefined();
+            let actualData = _.map(dataPoints, d => JSON.stringify({ category: d.category, fill: d.fill, x: d.x, y: d.y, size: d.size, radius: ScatterChart.getBubbleRadius(d.radius, scatterChartData.sizeRange, viewport) }));
+            let expectData = _.map([
+                { category: "1\/1\/2012", fill: "#01B8AA", x: 150, y: 30, size: 100, radius: 26 },
+                { category: "1\/1\/2011", fill: "#01B8AA", x: 177, y: 25, size: 200, radius: 34 },
+                { category: "1\/1\/2010", fill: "#01B8AA", x: 157, y: 28, size: 300, radius: 41 },
+                { category: "1\/1\/2012", fill: "#374649", x: 100, y: 300, size: 150, radius: 30.5 },
+                { category: "1\/1\/2011", fill: "#374649", x: 149, y: 250, size: 250, radius: 37.5 },
+                { category: "1\/1\/2010", fill: "#374649", x: 144, y: 280, size: 350, radius: 43.5 }
+            ], d => JSON.stringify(d));
 
-            let secondSeries = dataPoints[1];
-            expect(secondSeries.x).toBe(100);
-            expect(secondSeries.y).toBe(300);
-            expect(secondSeries.size).toBe(150);
-            expect(ScatterChart.getBubbleRadius(secondSeries.radius, scatterChartData.sizeRange, viewport)).toBe(30.5);
-            expect(secondSeries.fill).toBeDefined();
+            actualData.sort();
+            expectData.sort();
 
-            expect(firstSeries.category).toBe(secondSeries.category);
-            expect(firstSeries.fill).not.toBe(secondSeries.fill);
+            expect(actualData).toEqual(expectData);
         });
 
         it('scatter chart dataView that should pivot categories', () => {

@@ -124,6 +124,22 @@ module powerbi.visuals.samples {
                 show: <DataViewObjectPropertyIdentifier>{
                     objectName: "legend",
                     propertyName: "show"
+                },
+                showTitle: <DataViewObjectPropertyIdentifier>{
+                    objectName: "legend",
+                    propertyName: "showTitle"
+                },
+                titleText: <DataViewObjectPropertyIdentifier>{
+                    objectName: "legend",
+                    propertyName: "titleText"
+                },
+                labelColor: <DataViewObjectPropertyIdentifier>{
+                    objectName: "legend",
+                    propertyName: "labelColor"
+                },
+                fontSize: <DataViewObjectPropertyIdentifier>{
+                    objectName: "legend",
+                    propertyName: "fontSize"
                 }
             },
             categoryAxis: {
@@ -436,12 +452,17 @@ module powerbi.visuals.samples {
             dataLabelsSettings.labelColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.labels.color, dataLabelsSettings.labelColor);
             dataLabelsSettings.fontSize = DataViewObjects.getValue<number>(objects, StreamGraph.Properties.labels.fontSize, dataLabelsSettings.fontSize);
 
-            let legendSettings = streamGraphSettings.legendSettings;
-            legendSettings.show = DataViewObject.getValue<boolean>(objects, legendProps.show, legendSettings.show);
-            legendSettings.showTitle = DataViewObject.getValue<boolean>(objects, legendProps.showTitle, legendSettings.showTitle);
-            legendSettings.titleText = DataViewObject.getValue<string>(objects, legendProps.titleText, legendSettings.titleText);
-            legendSettings.labelColor = DataViewObject.getValue<string>(objects, legendProps.labelColor, legendSettings.labelColor);
-            legendSettings.fontSize = DataViewObject.getValue<number>(objects, legendProps.fontSize, legendSettings.fontSize);
+            let legendSettings: StreamGraphLegendSettings = streamGraphSettings.legendSettings;
+            let valuesSource: DataViewMetadataColumn = dataView.categorical.values.source;
+            let titleTextDefault: string = valuesSource && _.isEmpty(legendSettings.titleText) ? valuesSource.displayName : legendSettings.titleText;
+
+            legendSettings.show = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.legend.show, legendSettings.show);
+            legendSettings.showTitle = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.legend.showTitle, legendSettings.showTitle);
+            legendSettings.titleText = DataViewObjects.getValue<string>(objects, StreamGraph.Properties.legend.titleText, titleTextDefault);
+            legendSettings.labelColor = DataViewObjects.getValue<string>(objects, StreamGraph.Properties.legend.labelColor, legendSettings.labelColor);
+            legendSettings.fontSize = DataViewObjects.getValue<number>(objects, StreamGraph.Properties.legend.fontSize, legendSettings.fontSize);
+            if (_.isEmpty(legendSettings.titleText))
+                legendSettings.titleText = titleTextDefault; // Force a value (shouldn't be empty with show=true)
 
             return streamGraphSettings;
         }
@@ -760,12 +781,13 @@ module powerbi.visuals.samples {
         }
 
         private renderLegend(streamGraphData: StreamData): void {
+            let legendSettings: StreamGraphLegendSettings = streamGraphData.streamGraphSettings.legendSettings;
             let legendData: LegendData = streamGraphData.legendData;
-            let showLegend: boolean = streamGraphData.streamGraphSettings.legendSettings.show;
-            if (!legendData || legendData.dataPoints.length === 0 || !this.dataView || !this.dataView.metadata || !showLegend)
+            if (!this.dataView || !this.dataView.metadata)
                 return;
 
             let legendObjectProperties: DataViewObject = DataViewObjects.getObject(this.dataView.metadata.objects, "legend", {});
+            legendObjectProperties['titleText'] = legendSettings.titleText; // Force legend title when show = true
             LegendData.update(legendData, legendObjectProperties);
 
             let position: string = <string>legendObjectProperties[legendProps.position];

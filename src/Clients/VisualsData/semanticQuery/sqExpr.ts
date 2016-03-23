@@ -357,6 +357,8 @@ module powerbi.data {
         Now,
         AnyValue,
         DefaultValue,
+        Arithmetic,
+        FillRule,
     }
 
     export interface SQExprMetadata {
@@ -421,6 +423,27 @@ module powerbi.data {
 
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitEntity(this, arg);
+        }
+    }
+
+    export class SQArithmeticExpr extends SQExpr {
+        public left: SQExpr;
+        public right: SQExpr;
+        public operator: ArithmeticOperatorKind;
+
+        constructor(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind) {
+            debug.assertValue(left, 'left');
+            debug.assertValue(right, 'right');
+            debug.assertValue(operator, 'operator');
+
+            super(SQExprKind.Arithmetic);
+            this.left = left;
+            this.right = right;
+            this.operator = operator;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitArithmetic(this, arg);
         }
     }
 
@@ -799,6 +822,26 @@ module powerbi.data {
         }
     }
 
+    export class SQFillRuleExpr extends SQExpr {
+        public input: SQExpr;
+        public rule: FillRuleDefinition;
+
+        constructor(
+            input: SQExpr,
+            fillRule: FillRuleDefinition) {
+            debug.assertValue(input, 'input');
+            debug.assertValue(fillRule, 'fillRule');
+
+            super(SQExprKind.FillRule);
+            this.input = input;
+            this.rule = fillRule;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitFillRule(this, arg);
+        }
+    }
+
     /** Provides utilities for creating & manipulating expressions. */
     export module SQExprBuilder {
         export function entity(schema: string, entity: string, variable?: string): SQEntityExpr {
@@ -998,6 +1041,10 @@ module powerbi.data {
             }
         }
 
+        export function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQExpr {
+            return new SQArithmeticExpr(left, right, operator);
+        }
+
         export function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr {
             return SQExprChangeAggregateRewriter.rewrite(expr, aggregate);
         }
@@ -1031,6 +1078,13 @@ module powerbi.data {
 
             return expr;
         }
+
+        export function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr {
+            debug.assertValue(expr, 'expr');
+            debug.assertValue(rule, 'rule');
+
+            return new SQFillRuleExpr(expr, rule);
+    }
     }
 
     /** Provides utilities for obtaining information about expressions. */
@@ -1040,7 +1094,7 @@ module powerbi.data {
         }
     }
 
-    class SQExprEqualityVisitor implements ISQExprVisitorWithArg<boolean, SQExpr> {
+    class SQExprEqualityVisitor implements ISQExprVisitorWithArg<boolean, SQExpr>, IFillRuleDefinitionVisitor<boolean, boolean> {
         private static instance: SQExprEqualityVisitor = new SQExprEqualityVisitor(/* ignoreCase */ false);
         private static ignoreCaseInstance: SQExprEqualityVisitor = new SQExprEqualityVisitor(true);
         private ignoreCase: boolean;
@@ -1211,6 +1265,67 @@ module powerbi.data {
             return false;
         }
 
+        public visitFillRule(expr: SQFillRuleExpr, comparand: SQExpr): boolean {
+            if (comparand instanceof SQFillRuleExpr && this.equals(expr.input, comparand.input)) {
+                let leftRule = expr.rule,
+                    rightRule = comparand.rule;
+
+                if (leftRule === rightRule)
+                    return true;
+
+                let leftLinearGradient2 = leftRule.linearGradient2,
+                    rightLinearGradient2 = rightRule.linearGradient2;
+                if (leftLinearGradient2 && rightLinearGradient2) {
+                    return this.visitLinearGradient2(leftLinearGradient2, rightLinearGradient2);
+                }
+
+                let leftLinearGradient3 = leftRule.linearGradient3,
+                    rightLinearGradient3 = rightRule.linearGradient3;
+                if (leftLinearGradient3 && rightLinearGradient3) {
+                    return this.visitLinearGradient3(leftLinearGradient3, rightLinearGradient3);
+                }
+            }
+
+            return false;
+        }
+
+        public visitLinearGradient2(left2: LinearGradient2Definition, right2: LinearGradient2Definition): boolean {
+            debug.assertValue(left2, 'left2');
+            debug.assertValue(right2, 'right2');
+
+            return this.equalsFillRuleStop(left2.min, right2.min) &&
+                this.equalsFillRuleStop(left2.max, right2.max);
+        }
+
+        public visitLinearGradient3(left3: LinearGradient3Definition, right3: LinearGradient3Definition): boolean {
+            debug.assertValue(left3, 'left3');
+            debug.assertValue(right3, 'right3');
+
+            return this.equalsFillRuleStop(left3.min, right3.min) &&
+                this.equalsFillRuleStop(left3.mid, right3.mid) &&
+                this.equalsFillRuleStop(left3.max, right3.max);
+        }
+
+        private equalsFillRuleStop(stop1: RuleColorStopDefinition, stop2: RuleColorStopDefinition): boolean {
+            debug.assertValue(stop1, 'stop1');
+            debug.assertValue(stop2, 'stop2');
+
+            if (!this.equals(stop1.color, stop2.color))
+            return false;
+            
+            if (!stop1.value)
+                return stop1.value === stop2.value;
+
+            return this.equals(stop1.value, stop2.value);
+        }
+
+        public visitArithmetic(expr: SQArithmeticExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQArithmeticExpr &&
+                expr.operator === (<SQArithmeticExpr>comparand).operator &&
+                this.equals(expr.left, (<SQArithmeticExpr>comparand).left) &&
+                this.equals(expr.right, (<SQArithmeticExpr>comparand).right);
+        }
+
         private optionalEqual(x: string, y: string) {
             // Only check equality if both values are specified.
             if (x && y)
@@ -1375,6 +1490,11 @@ module powerbi.data {
             return expr;
         }
 
+        public visitArithmetic(expr: SQArithmeticExpr): SQExpr {
+            this.validateArithmeticTypes(expr.left, expr.right);
+            return expr;
+        }
+
         private validateOperandsAndTypeForStartOrContains(left: SQExpr, right: SQExpr): void {
             if (left instanceof SQColumnRefExpr) {
                 this.visitColumnRef(<SQColumnRefExpr>left);
@@ -1388,6 +1508,13 @@ module powerbi.data {
                 this.register(SQExprValidationError.invalidRightOperandType);
             else
                 this.validateCompatibleType(left, right);
+        }
+
+        private validateArithmeticTypes(left: SQExpr, right: SQExpr): void {
+            if (!SQExprUtils.supportsArithmetic(left, this.schema))
+                this.register(SQExprValidationError.invalidLeftOperandType);
+            if (!SQExprUtils.supportsArithmetic(right, this.schema))
+                this.register(SQExprValidationError.invalidRightOperandType);
         }
 
         private validateCompatibleType(left: SQExpr, right: SQExpr): void {

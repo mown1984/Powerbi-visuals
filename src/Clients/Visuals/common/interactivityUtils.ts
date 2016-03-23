@@ -46,7 +46,31 @@ module powerbi.visuals {
             selection.on('contextmenu', (d: SelectableDataPoint) => handleContextMenu(d, selectionHandler));
         }
 
+        export function registerGroupInteractivityHandlers(group: D3.Selection, selectionHandler: ISelectionHandler): void {
+            registerGroupSelectionHandler(group, selectionHandler);
+            registerGroupContextMenuHandler(group, selectionHandler);
+        }
+
+        export function registerGroupSelectionHandler(group: D3.Selection, selectionHandler: ISelectionHandler): void {
+            group.on('click', () => {
+                let target = d3.event.target;
+                let d = <SelectableDataPoint>d3.select(target).datum();
+                handleSelection(d, selectionHandler);
+            });
+        }
+
+        export function registerGroupContextMenuHandler(group: D3.Selection, selectionHandler: ISelectionHandler): void {
+            group.on('contextmenu', () => {
+                let target = d3.event.target;
+                let d = <SelectableDataPoint>d3.select(target).datum();
+                handleContextMenu(d, selectionHandler);
+            });
+        }
+
         function handleContextMenu(d: SelectableDataPoint, selectionHandler: ISelectionHandler): void {
+            if (d3.event.ctrlKey)
+                return;
+
             d3.event.preventDefault();
             let position = InteractivityUtils.getPositionOfLastInputEvent();
             selectionHandler.handleContextMenu(d, position);

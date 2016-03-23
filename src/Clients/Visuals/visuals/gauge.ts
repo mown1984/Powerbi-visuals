@@ -38,6 +38,7 @@ module powerbi.visuals {
         targetSettings: GaugeTargetSettings;
         dataLabelsSettings: VisualDataLabelsSettings;
         calloutValueLabelsSettings: VisualDataLabelsSettings;
+        dataPointSettings: GaugeDataPointSettings;
     }
 
     interface KpiArcAttributes {
@@ -55,6 +56,11 @@ module powerbi.visuals {
     export interface GaugeTargetData extends GaugeTargetSettings {
         total: number;
         tooltipItems: TooltipSeriesDataItem[];
+    }
+    
+    export interface GaugeDataPointSettings {
+        fillColor:  string;
+        targetColor: string;
     }
 
     interface GaugeStyle {
@@ -165,6 +171,10 @@ module powerbi.visuals {
             max: 1,
             target: undefined
         };
+        private static DefaultDataPointSettings: GaugeDataPointSettings = {
+            fillColor: Gauge.DefaultStyleProperties.arcColors.foreground,
+            targetColor: Gauge.DefaultStyleProperties.targetLine.color
+        };
 
         private static InnerRadiusFactor = 0.7;
         private static KpiBandDistanceFromMainArc = 2;
@@ -245,6 +255,10 @@ module powerbi.visuals {
                     dataLabelUtils.enumerateDataLabels(this.getDataLabelSettingsOptions(enumeration, labelSettings));
                     break;
                 }
+                case 'dataPoint': {
+                    this.enumerateDataPoint(enumeration);
+                    break;
+                }
             }
             return enumeration.complete();
         }
@@ -273,6 +287,23 @@ module powerbi.visuals {
             }
         }
 
+        private enumerateDataPoint(enumeration: ObjectEnumerationBuilder): void {
+            let dataPointSettings = this.data ? this.data.dataPointSettings : Gauge.DefaultDataPointSettings;
+            let properties: any = {};
+
+            properties.fill = { solid: { color: dataPointSettings.fillColor } };
+
+            if (dataPointSettings.targetColor != null) {
+                properties.target = { solid: { color: dataPointSettings.targetColor } };
+            }
+
+            enumeration.pushInstance({
+                selector: null,
+                objectName: gaugeProps.dataPoint.target.objectName,
+                properties: properties
+            });
+        }
+        
         private static getGaugeObjectsProperties(dataView: DataView): GaugeTargetSettings {
             let properties: any = {};
             let objects: GaugeDataViewObjects = <GaugeDataViewObjects>dataView.metadata.objects;
@@ -531,7 +562,7 @@ module powerbi.visuals {
 
             let settings: GaugeTargetSettings = Gauge.getValidSettings(gaugeData);
 
-            //Checking that the value is plotted inside the guage boundries
+            //Checking that the value is plotted inside the gauge boundaries
             let adjustedTotal = Math.max(total, settings.min);
             adjustedTotal = Math.min(adjustedTotal, settings.max);
 
@@ -564,24 +595,52 @@ module powerbi.visuals {
                 metadataColumn: Gauge.getMetaDataColumn(dataView),
                 targetSettings: settings,
                 tooltipInfo: tooltipInfo,
-                dataLabelsSettings: Gauge.convertDataLableSettings(dataView, "labels"),
-                calloutValueLabelsSettings: Gauge.convertDataLableSettings(dataView, "calloutValue"),
+                dataLabelsSettings: Gauge.convertDataLabelSettings(dataView, "labels"),
+                calloutValueLabelsSettings: Gauge.convertDataLabelSettings(dataView, "calloutValue"),
+                dataPointSettings: Gauge.convertDataPointSettings(dataView, settings)
             };
         }
 
-        private static convertDataLableSettings(dataview: DataView, objectName: string): VisualDataLabelsSettings {
+        private static convertDataLabelSettings(dataview: DataView, objectName: string): VisualDataLabelsSettings {
             let dataViewMetadata = dataview.metadata;
             let dataLabelsSettings = dataLabelUtils.getDefaultGaugeLabelSettings();
             if (dataViewMetadata) {
                 let objects: DataViewObjects = dataViewMetadata.objects;
                 if (objects) {
-                    // Handle lables settings
+                    // Handle label settings
                     let labelsObj = <DataLabelObject>objects[objectName];
                     dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, dataLabelsSettings);
                 }
             }
 
             return dataLabelsSettings;
+        }
+        
+        private static convertDataPointSettings(dataView: DataView, targetSettings: GaugeTargetSettings): GaugeDataPointSettings {
+            
+            // Default the fill color the the default fill color. Default the target to undefined as it's only used if there's a target.
+            let fillColor = Gauge.DefaultDataPointSettings.fillColor;
+            let targetColor: string;
+            
+            if (dataView && dataView.metadata && dataView.metadata.objects) {
+                // If there is saved metadata, use it for the colors
+                let objects = dataView.metadata.objects;
+
+                fillColor = DataViewObjects.getFillColor(objects, gaugeProps.dataPoint.fill, Gauge.DefaultDataPointSettings.fillColor);
+
+                if (targetSettings && (targetSettings.target != null)) {
+                    targetColor = DataViewObjects.getFillColor(objects, gaugeProps.dataPoint.target, Gauge.DefaultDataPointSettings.targetColor);
+                }
+            } 
+            else if (targetSettings && (targetSettings.target != null)) {
+                // If there isn't metadata, but a target is set, default to the default target color
+                targetColor = Gauge.DefaultDataPointSettings.targetColor;
+            }
+            
+            return {
+                fillColor: fillColor,
+                targetColor: targetColor
+            };
         }
 
         public static getMetaDataColumn(dataView: DataView) {
@@ -853,16 +912,17 @@ module powerbi.visuals {
 
         private updateVisualConfigurations() {
             let configOptions = this.settings;
+            let dataPointSettings = this.data.dataPointSettings;
 
             this.mainGraphicsContext
                 .select('line')
                 .attr({
-                    stroke: configOptions.targetLine.color,
+                    stroke: dataPointSettings.targetColor,
                     'stroke-width': configOptions.targetLine.thickness,
                 });
 
             this.backgroundArcPath.style('fill', configOptions.arcColors.background);
-            this.foregroundArcPath.style('fill', configOptions.arcColors.foreground);
+            this.foregroundArcPath.style('fill', dataPointSettings.fillColor);
         }
 
         private appendTextAlongArc(ticks: string[], radius: number, height: number, width: number, margin: IMargin) {

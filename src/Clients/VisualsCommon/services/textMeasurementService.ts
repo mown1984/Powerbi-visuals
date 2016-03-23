@@ -165,7 +165,7 @@ module powerbi {
                     text: "M",
                 };
 
-                rect = measureSvgTextRect(estimatedTextProperties);
+                rect = TextMeasurementService.measureSvgTextRect(estimatedTextProperties);
 
                 // NOTE: In some cases (disconnected/hidden DOM) we may provide incorrect measurement results (zero sized bounding-box), so
                 // we only store values in the cache if we are confident they are correct.

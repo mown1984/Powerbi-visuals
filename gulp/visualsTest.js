@@ -174,7 +174,6 @@ function runTestVisuals(callback) {
 		"./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
 		"./customVisuals/sampleDataViews/valueByAgeData.js",
 		"./customVisuals/sampleDataViews/ProductSalesByDateData.js",
-        "./customVisuals/sampleDataViews/MatrixData.js",
 		
 		"./customVisuals/sampleDataViews/AreaRangeChartData.js",
 		"./customVisuals/sampleDataViews/DotPlotData.js",

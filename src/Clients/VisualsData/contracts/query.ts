@@ -106,7 +106,10 @@ module powerbi.data {
         DefaultValue?: QueryDefaultValueExpression;
         AnyValue?: QueryAnyValueExpression;
 
-        // TODO: Still need to add the rest of the QueryExpression types.
+        Arithmetic?: QueryArithmeticExpression;
+
+        // Client-only expressions
+        FillRule?: QueryFillRuleExpression;
     }
 
     export interface QueryPropertyExpression {
@@ -117,7 +120,7 @@ module powerbi.data {
     export interface QueryColumnExpression extends QueryPropertyExpression {
     }
 
-    export interface QueryMeasureExpression extends QueryPropertyExpression  {
+    export interface QueryMeasureExpression extends QueryPropertyExpression {
     }
 
     export interface QuerySourceRefExpression {
@@ -210,6 +213,38 @@ module powerbi.data {
     export interface QueryDefaultValueExpression { }
 
     export interface QueryAnyValueExpression { }
+
+    export interface QueryArithmeticExpression {
+        Left: QueryExpressionContainer;
+        Right: QueryExpressionContainer;
+        Operator: ArithmeticOperatorKind;
+    }
+
+    export const enum ArithmeticOperatorKind {
+        Add = 0,
+        Subtract = 1,
+        Multiply = 2,
+        Divide = 3,
+    }
+
+    export function getArithmeticOperatorName(arithmeticOperatorKind: ArithmeticOperatorKind): string {
+        switch (arithmeticOperatorKind) {
+            case ArithmeticOperatorKind.Add:
+                return "Add";
+            case ArithmeticOperatorKind.Subtract:
+                return "Subtract";
+            case ArithmeticOperatorKind.Multiply:
+                return "Multiply";
+            case ArithmeticOperatorKind.Divide:
+                return "Divide";
+        }
+        throw new Error('Unexpected ArithmeticOperatorKind: ' + arithmeticOperatorKind);
+    }
+
+    export interface QueryFillRuleExpression {
+        Input: QueryExpressionContainer;
+        FillRule: FillRuleGeneric<QueryExpressionContainer, QueryExpressionContainer>;
+    }
 
     export enum TimeUnit {
         Day = 0,

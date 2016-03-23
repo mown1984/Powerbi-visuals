@@ -116,25 +116,25 @@ module powerbitests {
                 expect(setDataSpy.calls.count()).toBe(3);
             });
 
-            xit('estimateSvgTextHeight does not cache when results are wrong', () => {
-                // Ask for a measurement so we put the measurement svg into the DOM
-                TextMeasurementService.estimateSvgTextHeight(getTextProperties(2, 'X', 'Primer'));
-                expect(setDataSpy.calls.count()).toBe(1);
+            it('estimateSvgTextHeight does not cache when results are wrong', () => {
+                let textProperties = getTextProperties(10, 'A', 'RandomFont');
 
-                // Measurements will be wrong when the element is disconnected
-                let measurementElement = d3.select('body').select('svg').node();
-                let parent = measurementElement.parentElement;
-                measurementElement.remove();
+                // Mock measureSvgTextRect() to mimic the behavior when the iframe is disconnected / hidden.
+                let measureSvgTextRectSpy = spyOn(TextMeasurementService, 'measureSvgTextRect');
+                measureSvgTextRectSpy.and.returnValue({
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 0,
+                });
 
-                let wrongHeight = TextMeasurementService.estimateSvgTextHeight(getTextProperties(10, 'A', 'RandomFont'));
+                let wrongHeight = TextMeasurementService.estimateSvgTextHeight(textProperties);
                 expect(wrongHeight).toBe(0);
-                expect(setDataSpy.calls.count()).toBe(1);
 
-                // Connect and remeasure
-                parent.appendChild(measurementElement);
-                let correctHeight = TextMeasurementService.estimateSvgTextHeight(getTextProperties(10, 'A', 'RandomFont'));
+                // Calling again with the same text properties should not retrieve the incorrect height from the cache.
+                measureSvgTextRectSpy.and.callThrough();
+                let correctHeight = TextMeasurementService.estimateSvgTextHeight(textProperties);
                 expect(correctHeight).toBeGreaterThan(0);
-                expect(setDataSpy.calls.count()).toBe(2);
             });
         });
 

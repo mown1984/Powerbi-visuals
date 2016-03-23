@@ -28,10 +28,11 @@ module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
-
+    const DEFAULT_AXIS_SCALE_TYPE: string = axisScale.linear;
     const COMBOCHART_DOMAIN_OVERLAP_TRESHOLD_PERCENTAGE = 0.1;
     // the interactive right margin is set to be the circle selection radius of the hover line
     const INTERACTIVITY_RIGHT_MARGIN = 6;
+    export const DEFAULT_AXIS_COLOR = '#777';
 
     export const enum CartesianChartType {
         Line,
@@ -284,7 +285,7 @@ module powerbi.visuals {
 
         private xRefLine: ClassAndSelector = createClassAndSelector('x-ref-line');
         private y1RefLine: ClassAndSelector = createClassAndSelector('y1-ref-line');
-        
+
         public animator: IGenericAnimator;
 
         private axes: CartesianAxes;
@@ -406,6 +407,19 @@ module powerbi.visuals {
 
             // also checking type here to be in sync with AxisHelper, which ignores scalar if the type is non-numeric.
             return (axisTypeValue === axisType.scalar) && !AxisHelper.isOrdinal(type);
+        }
+
+        public static getAdditionalTelemetry(dataView: DataView): any {
+            let telemetry: any = {};
+
+            let categoryColumn = dataView && dataView.categorical && _.first(dataView.categorical.categories);
+            if (categoryColumn) {
+                telemetry.axisType = visuals.CartesianChart.getIsScalar(dataView.metadata.objects, visuals.columnChartProps.categoryAxis.axisType, categoryColumn.source.type)
+                    ? 'scalar'
+                    : 'categorical';
+            }
+
+            return telemetry;
         }
 
         public static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean {
@@ -540,7 +554,7 @@ module powerbi.visuals {
                 let show = DataViewObject.getValue(this.legendObjectProperties, legendProps.show, this.legend.isVisible());
                 let showTitle = DataViewObject.getValue(this.legendObjectProperties, legendProps.showTitle, true);
                 let titleText = DataViewObject.getValue(this.legendObjectProperties, legendProps.titleText, this.layerLegendData ? this.layerLegendData.title : '');
-                let labelColor = DataViewObject.getValue(this.legendObjectProperties, legendProps.labelColor, this.layerLegendData ? this.layerLegendData.labelColor : LegendData.DefaultLegendLabelFillColor);
+                let labelColor = DataViewObject.getValue(this.legendObjectProperties, legendProps.labelColor, LegendData.DefaultLegendLabelFillColor);
                 let fontSize = DataViewObject.getValue(this.legendObjectProperties, legendProps.fontSize, this.layerLegendData && this.layerLegendData.fontSize ? this.layerLegendData.fontSize : SVGLegend.DefaultFontSizeInPt);
 
                 enumeration.pushInstance({
@@ -611,14 +625,20 @@ module powerbi.visuals {
             return false;
         }
 
+        private getAxisScaleOptions(axisType: AxisLocation): string[] {
+            let scaleOptions = [DEFAULT_AXIS_SCALE_TYPE];
+            if (this.axes.isLogScaleAllowed(axisType))
+                scaleOptions.push(axisScale.log);
+            return scaleOptions;
+        }
+
         private getCategoryAxisValues(enumeration: ObjectEnumerationBuilder): void {
             if (!this.categoryAxisProperties) {
                 return;
             }
             let supportedType = axisType.both;
             let isScalar = false;
-            let logPossible = this.axes.isLogScaleAllowed(AxisLocation.X);
-            let scaleOptions = [axisScale.log, axisScale.linear];//until options can be update in propPane, show all options
+            let scaleOptions = this.getAxisScaleOptions(AxisLocation.X);
 
             if (this.layers && this.layers[0].getSupportedCategoryAxisType) {
                 supportedType = this.layers[0].getSupportedCategoryAxisType();
@@ -652,14 +672,15 @@ module powerbi.visuals {
                 instance.properties['axisType'] = isScalar ? axisType.scalar : axisType.categorical;
             }
             if (isScalar) {
-                instance.properties['axisScale'] = (this.categoryAxisProperties['axisScale'] != null && logPossible) ? this.categoryAxisProperties['axisScale'] : axisScale.linear;
+                instance.properties['axisScale'] = this.categoryAxisProperties['axisScale'] || DEFAULT_AXIS_SCALE_TYPE;
                 instance.properties['start'] = this.categoryAxisProperties['start'];
                 instance.properties['end'] = this.categoryAxisProperties['end'];
             }
             instance.properties['showAxisTitle'] = this.categoryAxisProperties['showAxisTitle'] != null ? this.categoryAxisProperties['showAxisTitle'] : false;
 
             instance.properties['axisStyle'] = this.categoryAxisProperties['axisStyle'] ? this.categoryAxisProperties['axisStyle'] : axisStyle.showTitleOnly;
-            instance.properties['labelColor'] = this.categoryAxisProperties['labelColor'];
+            instance.properties['labelColor'] = this.categoryAxisProperties['labelColor'] || DEFAULT_AXIS_COLOR;
+
             if (isScalar) {
                 instance.properties['labelDisplayUnits'] = this.categoryAxisProperties['labelDisplayUnits'] ? this.categoryAxisProperties['labelDisplayUnits'] : 0;
                 let labelPrecision = this.categoryAxisProperties['labelPrecision'];
@@ -675,9 +696,8 @@ module powerbi.visuals {
             if (!this.valueAxisProperties) {
                 return;
             }
-            let scaleOptions = [axisScale.log, axisScale.linear];  //until options can be update in propPane, show all options
-            let logPossible = this.axes.isLogScaleAllowed(AxisLocation.Y1);
-            let secLogPossible = this.axes.isLogScaleAllowed(AxisLocation.Y2);
+            let scaleOptions = this.getAxisScaleOptions(AxisLocation.Y1);
+            let secScaleOption = this.getAxisScaleOptions(AxisLocation.Y2);
 
             let instance: VisualObjectInstance = {
                 selector: null,
@@ -685,7 +705,7 @@ module powerbi.visuals {
                 objectName: 'valueAxis',
                 validValues: {
                     axisScale: scaleOptions,
-                    secAxisScale: scaleOptions,
+                    secAxisScale: secScaleOption,
                     axisStyle: this.axes.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
                 }
             };
@@ -695,12 +715,12 @@ module powerbi.visuals {
             if (!this.axes.isYAxisCategorical()) {
                 instance.properties['position'] = this.valueAxisProperties['position'] != null ? this.valueAxisProperties['position'] : yAxisPosition.left;
             }
-            instance.properties['axisScale'] = (this.valueAxisProperties['axisScale'] != null && logPossible) ? this.valueAxisProperties['axisScale'] : axisScale.linear;
+            instance.properties['axisScale'] = this.valueAxisProperties['axisScale'] || DEFAULT_AXIS_SCALE_TYPE;
             instance.properties['start'] = this.valueAxisProperties['start'];
             instance.properties['end'] = this.valueAxisProperties['end'];
             instance.properties['showAxisTitle'] = this.valueAxisProperties['showAxisTitle'] != null ? this.valueAxisProperties['showAxisTitle'] : false;
             instance.properties['axisStyle'] = this.valueAxisProperties['axisStyle'] != null ? this.valueAxisProperties['axisStyle'] : axisStyle.showTitleOnly;
-            instance.properties['labelColor'] = this.valueAxisProperties['labelColor'];
+            instance.properties['labelColor'] = this.valueAxisProperties['labelColor'] || DEFAULT_AXIS_COLOR;
 
             if (this.type !== CartesianChartType.HundredPercentStackedBar && this.type !== CartesianChartType.HundredPercentStackedColumn) {
                 instance.properties['labelDisplayUnits'] = this.valueAxisProperties['labelDisplayUnits'] ? this.valueAxisProperties['labelDisplayUnits'] : 0;
@@ -731,7 +751,7 @@ module powerbi.visuals {
                 };
                 secInstance.properties['secAxisLabel'] = '';
                 secInstance.properties['secPosition'] = this.valueAxisProperties['secPosition'] != null ? this.valueAxisProperties['secPosition'] : yAxisPosition.right;
-                secInstance.properties['secAxisScale'] = this.valueAxisProperties['secAxisScale'] != null && secLogPossible ? this.valueAxisProperties['secAxisScale'] : axisScale.linear;
+                secInstance.properties['secAxisScale'] = this.valueAxisProperties['secAxisScale'] || DEFAULT_AXIS_SCALE_TYPE;
                 secInstance.properties['secStart'] = this.valueAxisProperties['secStart'];
                 secInstance.properties['secEnd'] = this.valueAxisProperties['secEnd'];
                 secInstance.properties['secShowAxisTitle'] = this.valueAxisProperties['secShowAxisTitle'] != null ? this.valueAxisProperties['secShowAxisTitle'] : false;
@@ -748,7 +768,8 @@ module powerbi.visuals {
                         },
                         objectName: 'valueAxis',
                         validValues: {
-                            secAxisStyle: this.axes.secondaryValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                            secAxisStyle: this.axes.secondaryValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly],
+                            axisScale: scaleOptions
                         },
                     });
 
@@ -1464,8 +1485,8 @@ module powerbi.visuals {
             showCategoryAxisLabel: false,
             showValueAxisLabel: false,
             trimOrdinalDataOnOverflow: trimOrdinalDataOnOverflow,
-            categoryAxisScaleType: categoryAxisProperties && categoryAxisProperties['axisScale'] != null ? <string>categoryAxisProperties['axisScale'] : axisScale.linear,
-            valueAxisScaleType: valueAxisProperties && valueAxisProperties['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : axisScale.linear,
+            categoryAxisScaleType: categoryAxisProperties && categoryAxisProperties['axisScale'] != null ? <string>categoryAxisProperties['axisScale'] : DEFAULT_AXIS_SCALE_TYPE,
+            valueAxisScaleType: valueAxisProperties && valueAxisProperties['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : DEFAULT_AXIS_SCALE_TYPE,
             categoryAxisDisplayUnits: categoryAxisProperties && categoryAxisProperties['labelDisplayUnits'] != null ? <number>categoryAxisProperties['labelDisplayUnits'] : 0,
             valueAxisDisplayUnits: valueAxisProperties && valueAxisProperties['labelDisplayUnits'] != null ? <number>valueAxisProperties['labelDisplayUnits'] : 0,
             categoryAxisPrecision: categoryAxisProperties ? CartesianHelper.getPrecision(categoryAxisProperties['labelPrecision']) : null,
@@ -1499,7 +1520,7 @@ module powerbi.visuals {
 
             if (layerNumber === 1 && !yAxisWillMerge) {
                 visualOptions.forcedYDomain = valueAxisProperties ? [valueAxisProperties['secStart'], valueAxisProperties['secEnd']] : null;
-                visualOptions.valueAxisScaleType = valueAxisProperties && valueAxisProperties['secAxisScale'] != null ? <string>valueAxisProperties['secAxisScale'] : axisScale.linear;
+                visualOptions.valueAxisScaleType = valueAxisProperties && valueAxisProperties['secAxisScale'] != null ? <string>valueAxisProperties['secAxisScale'] : DEFAULT_AXIS_SCALE_TYPE;
                 visualOptions.valueAxisDisplayUnits = valueAxisProperties && valueAxisProperties['secLabelDisplayUnits'] != null ? <number>valueAxisProperties['secLabelDisplayUnits'] : 0;
                 visualOptions.valueAxisPrecision = valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['secLabelPrecision']) : null;
                 if (mergeResult && mergeResult.forceStartToZero) {
@@ -2377,8 +2398,8 @@ module powerbi.visuals {
                 return false;
 
             return this.isYAxisCategorical()
-                ? axes.y1 && axes.y1.values.length > 0
-                : axes.x && axes.x.values.length > 0;
+                ? axes.y1 && axes.y1.axis != null
+                : axes.x && axes.x.axis != null;
         }
 
         public hasY2Axis(): boolean {
@@ -2581,7 +2602,7 @@ module powerbi.visuals {
                     textProperties,
                     this.isXScrollBarVisible || this.isYScrollBarVisible,
                      /*axes*/ axes,
-                     this.trimOrdinalDataOnOverflow,
+                    this.trimOrdinalDataOnOverflow,
                     xReferenceLineValue,
                     y1ReferenceLineValue);
 

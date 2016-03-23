@@ -118,6 +118,7 @@
         "services/interactivityService.ts",
         "services/geocoder.ts",
         "services/geocodingCache.ts",
+        "services/geolocationService.ts",
         "services/visualPluginService.ts",
         "controls/scrollbar/scrollbar.ts",
         "controls/tablix/internal/tablixGridPresenter.ts",

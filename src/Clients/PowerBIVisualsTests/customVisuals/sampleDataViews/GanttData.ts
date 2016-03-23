@@ -34,6 +34,48 @@ module powerbitests.customVisuals.sampleDataViews {
 
         public visuals: string[] = ['gantt'];
 
+        private sampleDataLongNames = [
+            [null, "MOLAP connectivity MOLAP connectivity", "1/10/2016", 10, "Mey", 0.95],
+            [null, "Clickthrough Clickthrough Clickthrough", "12/22/2015", 3, "John", 1],
+            [null, "Tech design Tech design Tech design", "1/20/2016", 20, "JohnV", 0.5],
+        ];
+
+        private sampleDataNoType = [
+            [null, "MOLAP connectivity", "1/10/2016", 10, "Mey", 0.95],
+            [null, "Clickthrough", "12/22/2015", 3, "John", 1],
+            [null, "Tech design", "1/20/2016", 20, "JohnV", 0.5],
+        ];
+
+        private sampleDataNoTask = [
+            ["Spec", null, "1/10/2016", 10, "Mey", 0.95],
+            ["Dev", null, "12/22/2015", 3, "John", 1],
+            ["Design", null, "1/20/2016", 20, "JohnV", 0.5],
+        ];
+
+        private sampleDataNoStartDate = [
+            ["Spec", "Query Pipeline", null, 10, "Mey", 0.95],
+            ["Dev", "Gateway", null, 3, "John", 1],
+            ["Design", "Desktop", null, 20, "JohnV", 0.5],
+        ];
+
+        private sampleDataNoDuration = [
+            ["Spec", "Query Pipeline", "1/20/2016", null, "Mey", 0.95],
+            ["Dev", "Gateway", "1/10/2016", null, "James", 1],
+            ["Design", "Desktop", "12/22/2015", null, "JohnV", 0.5],
+        ];
+
+        private sampleDataNoResource = [
+            ["Spec", "Query Pipeline", "1/20/2016", 10, null, 0.95],
+            ["Dev", "Gateway", "1/10/2016", 3, null, 1],
+            ["Design", "Desktop", "12/22/2015", 20, null, 0.5],
+        ];
+
+        private sampleDataNoCompletion = [
+            ["Spec", "Query Pipeline", "1/20/2016", 10, "Mey", null],
+            ["Dev", "Gateway", "1/10/2016", 3, "James", null],
+            ["Design", "Desktop", "12/22/2015", 20, "JohnV", null],
+        ];
+
         private sampleData = [
             ["Spec", "MOLAP connectivity", "1/10/2016", 10, "Mey", 0.95],
             ["Design", "Clickthrough", "12/22/2015", 3, "John", 1],
@@ -68,7 +110,39 @@ module powerbitests.customVisuals.sampleDataViews {
             ["Dev", "BugFixing", "1/4/2017", 20, "Last Name", 0],
         ];
 
-        public getDataViews(): powerbi.DataView[] {
+        public getSampleData(): any[][] {
+            return this.sampleData;
+        }
+
+        public getSampleDataLongNames(): any[][] {
+            return this.sampleDataLongNames;
+        }
+
+        public getSampleDataNoType(): any[][] {
+            return this.sampleDataNoType;
+        }
+
+        public getSampleDataNoTask(): any[][] {
+            return this.sampleDataNoTask;
+        }
+
+        public getSampleDataNoStartDate(): any[][] {
+            return this.sampleDataNoStartDate;
+        }
+
+        public getSampleDataNoDuration(): any[][] {
+            return this.sampleDataNoDuration;
+        }
+
+        public getSampleDataNoResource(): any[][] {
+            return this.sampleDataNoResource;
+        }
+
+        public getSampleDataNoCompletion(): any[][] {
+            return this.sampleDataNoCompletion;
+        }
+
+        public getDataViews(ganttSampleData: any[][], hasTask: boolean = true): powerbi.DataView[] {
 
             var fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
 
@@ -121,31 +195,38 @@ module powerbitests.customVisuals.sampleDataViews {
                 ]
             };
 
+            if (!hasTask)
+                dataViewMetadata.columns.splice(1, 1);
+
+            var tableDataValues = ganttSampleData;
+
             var columns = [
                 {
                     source: dataViewMetadata.columns[1],
-                    values: this.sampleData[0],
+                    values: tableDataValues[0],
                 },
                 {
                     source: dataViewMetadata.columns[2],
-                    values: this.sampleData[1],
+                    values: tableDataValues[1],
                 },
                 {
                     source: dataViewMetadata.columns[3],
-                    values: this.sampleData[2],
+                    values: tableDataValues[2],
                 },
                 {
                     source: dataViewMetadata.columns[4],
-                    values: this.sampleData[3],
+                    values: tableDataValues[3],
                 },
                 {
                     source: dataViewMetadata.columns[5],
-                    values: this.sampleData[4],
+                    values: tableDataValues[4],
                 }
             ];
 
+            if (!hasTask)
+                columns.splice(1, 1);
+
             var dataValues: powerbi.DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-            var tableDataValues = this.sampleData;
 
             return [{
                 metadata: dataViewMetadata,

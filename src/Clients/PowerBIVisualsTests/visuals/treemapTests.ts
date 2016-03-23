@@ -2982,7 +2982,7 @@ module powerbitests {
         });
     });
 
-    describe("treemap converter validation",() => {
+    describe("treemap converter validation", () => {
 
         let viewport: powerbi.IViewport = {
             width: 500,
@@ -3978,15 +3978,11 @@ module powerbitests {
             let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
-            let node1: TreemapNode = <TreemapNode>rootNode.children[0].children[0];
-            let node2: TreemapNode = <TreemapNode>rootNode.children[0].children[1];
-            let node3: TreemapNode = <TreemapNode>rootNode.children[1].children[0];
-            let node4: TreemapNode = <TreemapNode>rootNode.children[1].children[1];
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
 
             expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col2', value: '110' }, { displayName: 'col3', value: '210' }]);
-            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col3', value: '210' }]);
-            expect(node3.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col2', value: '120' }, { displayName: 'col3', value: '220' }]);
-            expect(node4.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col3', value: '220' }]);
+            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col2', value: '120' }, { displayName: 'col3', value: '220' }]);
         });
 
         it("treemap Gradient and Y have the index - validate tool tip", () => {
@@ -4038,8 +4034,8 @@ module powerbitests {
 
             helpers.assertColorsMatch(node1.color, dataPointColors[0]);
             helpers.assertColorsMatch(node2.color, dataPointColors[1]);
-            expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col2', value: '110' }]);
-            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col2', value: '120' }]);
+            expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col3', value: '210' }, { displayName: 'col2', value: '110' }]);
+            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col3', value: '220' }, { displayName: 'col2', value: '120' }]);
         });
 
         it('treemap non-categorical series, formatted color', () => {
@@ -4088,6 +4084,163 @@ module powerbitests {
 
             helpers.assertColorsMatch(node1.color, '#00FF00');
             helpers.assertColorsMatch(node2.color, '#FF0000' );
-        });    
+        });
+
+        describe("Correct number of nodes", () => {
+            let dataBuilder: TreemapDataBuilder;
+
+            beforeEach(() => {
+                dataBuilder = new TreemapDataBuilder();
+            });
+
+            it("Categorial treemap with gradient (multiple value columns)", () => {
+
+                let dataView = dataBuilder.build(true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure the number of categories in the node match the number of categories in the data view
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.categories[0].values.length);
+
+                // Make sure the right number of values are nested in each of the categories 
+                // (number of values per category minus 1 for the gradient)
+                let valueCount = dataView.categorical.values.length - 1;
+                let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+                let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+                expect(node1.children.length).toEqual(valueCount);
+                expect(node2.children.length).toEqual(valueCount);
+            });
+
+            it("Categorial treemap with gradient (single value column)", () => {
+
+                let dataView = dataBuilder.withOneValueColumn().build(true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure the number of categories in the node match the number of categories in the data view
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.categories[0].values.length);
+
+                // Since there's only 1 value for each category, we should have one node under the root for each
+                // category and no children under that node.
+                let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+                let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+                expect(node1.children).toBeUndefined();
+                expect(node2.children).toBeUndefined();
+            });
+
+            it("Non-categorial treemap with gradient", () => {
+
+                let dataView = dataBuilder.withSingleValues().withoutCategory().build(true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure we're getting the right number of values back (number of values minus 1 for the gradient)
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.values.length - 1);
+            });
+        });
     });
+
+    /**
+     * Note: This is a very bare-bones builder class. It will need more work to properly support all of the test scenarios.
+     */
+    class TreemapDataBuilder {
+
+        public categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'cat1' };
+        public categoryValues = ['Front end', 'Back end'];
+        public singleCategoryValues = ['Front end'];
+
+        public valueColumns: powerbi.DataViewMetadataColumn[] = [
+            { displayName: 'value1', isMeasure: true, queryName: 'value1' },
+            { displayName: 'value2', isMeasure: true, queryName: 'value2' },
+            { displayName: 'value3', isMeasure: true, queryName: 'value3' },
+        ];
+        public values = [[110, 120], [210, 220], [310, 320]];
+        public singleValues = [[110], [210], [310]];
+
+        public gradientColumn: powerbi.DataViewMetadataColumn = { displayName: 'gradient', roles: { 'Gradient': true } };
+        public gradientValues = [410, 420]; 
+        public gradientSingleValues = [410];
+
+        public build(gradient: boolean): powerbi.DataView {
+
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: []
+            };
+                
+            debug.assert(this.valueColumns.length === this.values.length, 'The number of columns does not match the number of values.');
+
+            let valueDataArray: powerbi.DataViewValueColumn[] = [];
+
+            for (let i = 0; i < this.valueColumns.length; i++) {
+
+                let valueColumn = this.valueColumns[i];
+                dataViewMetadata.columns.push(valueColumn);
+
+                let value = this.values[i];
+                valueDataArray.push({
+                    source: valueColumn,
+                    values: value
+                });
+            }
+            
+            if (gradient) {
+                dataViewMetadata.columns.push(this.gradientColumn);
+                valueDataArray.push({
+                    source: this.gradientColumn,
+                    values: this.gradientValues
+                });
+            }
+            
+            let categories: powerbi.DataViewCategoryColumn[] = this.buildCategories(dataViewMetadata);
+
+            return <powerbi.DataView>{
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: categories,
+                    values: DataViewTransform.createValueColumns(valueDataArray)
+                }
+            };
+        }
+
+        public withSingleValues(): TreemapDataBuilder {
+            this.values = this.singleValues;
+            this.gradientValues = this.gradientSingleValues;
+            return this;
+        }
+
+        public withoutCategory(): TreemapDataBuilder {
+            this.categoryColumn = null;
+            this.categoryValues = null;
+            return this;
+        }
+
+        public withOneValueColumn(): TreemapDataBuilder {
+            this.valueColumns = [this.valueColumns[0]];
+            this.values = [this.values[0]];
+
+            return this;
+        }
+
+        private buildCategories(dataViewMetadata: powerbi.DataViewMetadata): powerbi.DataViewCategoryColumn[] {
+
+            if (!this.categoryColumn) {
+                return;
+            }
+
+            dataViewMetadata.columns.push(this.categoryColumn);
+
+            let categoryIdentities = this.categoryValues.map((v) => mocks.dataViewScopeIdentity(v[0]));
+            let categories: powerbi.DataViewCategoryColumn[] = [{
+                source: this.categoryColumn,
+                values: this.categoryValues,
+                identity: categoryIdentities
+            }];
+
+            return categories;
+        }
+
+    }
 }

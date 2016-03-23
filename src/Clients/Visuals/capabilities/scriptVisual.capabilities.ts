@@ -69,19 +69,6 @@ module powerbi.visuals {
                     },
                 }
             },
-            lastSavedImage: {
-                properties: {
-                    imageUrl: {
-                        type: { misc: { imageUrl: true } }
-                    },
-                    viewportHeight: {
-                        type: { numeric: true }
-                    },
-                    viewportWidth: {
-                        type: { numeric: true }
-                    }
-                }
-            }
         },
     };
 } 

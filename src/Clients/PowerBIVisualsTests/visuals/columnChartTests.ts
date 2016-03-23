@@ -8149,6 +8149,114 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it('Verify axis scale type valid values is "Linear" when Start value is equal to zero', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("5000"),
+                mocks.dataViewScopeIdentity("10000"),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: {
+                        columns: [measureColumn, measureColumn],
+                        objects: {
+                            categoryAxis: {
+                                start: 0,
+                                end: 1
+                            }
+                        }
+                    },
+                    categorical: {
+                        categories: [{
+                            source: measureColumn,
+                            values: [5000, 10000],
+                            identity: categoryIdentities,
+                        }]
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances[0].validValues["axisScale"][0]).toBe("linear");
+                expect(points.instances[0].validValues["axisScale"][1]).toBeUndefined();
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('Verify axis scale type valid values is "Linear" when Ends value is equal to zero', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("5000"),
+                mocks.dataViewScopeIdentity("10000"),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: {
+                        columns: [measureColumn, measureColumn],
+                        objects: {
+                            categoryAxis: {
+                                start: 1,
+                                end: 0
+                            }
+                        }
+                    },
+                    categorical: {
+                        categories: [{
+                            source: measureColumn,
+                            values: [5000, 10000],
+                            identity: categoryIdentities,
+                        }]
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances[0].validValues["axisScale"][0]).toBe("linear");
+                expect(points.instances[0].validValues["axisScale"][1]).toBeUndefined();
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('Verify axis scale type valid values are "Linear" and "Log" when start and end are above zero', (done) => {
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity("5000"),
+                mocks.dataViewScopeIdentity("10000"),
+            ];
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: {
+                        columns: [measureColumn, measureColumn],
+                        objects: {
+                            categoryAxis: {
+                                start: 1,
+                                end: 2
+                            }
+                        }
+                    },
+                    categorical: {
+                        categories: [{
+                            source: measureColumn,
+                            values: [5000, 10000],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: measureColumn,
+                            min: 100000,
+                            max: 200000,
+                            values: [100000, 200000]
+                        }])
+                    }
+                }]
+            });
+
+            setTimeout(() => {
+                var points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                expect(points.instances[0].validValues["axisScale"][0]).toBe("linear");
+                expect(points.instances[0].validValues["axisScale"][1]).toBe("log");
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it('enumerateObjectInstances: category+multi-measure', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("red"),

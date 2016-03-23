@@ -29,6 +29,7 @@ module powerbi {
     import StringExtensions = jsCommon.StringExtensions;
     import FederatedConceptualSchema = powerbi.data.FederatedConceptualSchema;
     import DefaultSQExprVisitor = powerbi.data.DefaultSQExprVisitor;
+    import SQArithmeticExpr = powerbi.data.SQArithmeticExpr;
     import SQEntityExpr = powerbi.data.SQEntityExpr;
     import SQExprConverter = powerbi.data.SQExprConverter;
     import SQAggregationExpr = powerbi.data.SQAggregationExpr;
@@ -47,7 +48,7 @@ module powerbi {
 
     export module ScriptResultUtil {
 
-        export function findScriptResult(dataViewMappings: DataViewMapping[]| data.CompiledDataViewMapping[]): DataViewScriptResultMapping | data.CompiledDataViewScriptResultMapping {
+        export function findScriptResult(dataViewMappings: DataViewMapping[] | data.CompiledDataViewMapping[]): DataViewScriptResultMapping | data.CompiledDataViewScriptResultMapping {
             if (dataViewMappings && dataViewMappings.length === 1) {
                 return dataViewMappings[0].scriptResult;
             }
@@ -73,7 +74,7 @@ module powerbi {
         export function extractScriptResultFromVisualConfig(dataViewMappings: DataViewMapping[], objects: powerbi.data.DataViewObjectDefinitions): ScriptResult {
             let scriptResult = findScriptResult(dataViewMappings);
             if (scriptResult && objects) {
-                let scriptSource= <data.SQConstantExpr>data.DataViewObjectDefinitions.getValue(objects, scriptResult.script.source, null);
+                let scriptSource = <data.SQConstantExpr>data.DataViewObjectDefinitions.getValue(objects, scriptResult.script.source, null);
                 let provider = <data.SQConstantExpr>data.DataViewObjectDefinitions.getValue(objects, scriptResult.script.provider, null);
                 return {
                     source: scriptSource ? scriptSource.value : null,
@@ -156,6 +157,10 @@ module powerbi {
 
             public visitHierarchyLevel(expr: SQHierarchyLevelExpr): string {
                 return ScriptInputColumnNameVisitor.getNameForHierarchyLevel(expr, this.federatedSchema);
+            }
+
+            public visitArithmetic(expr: SQArithmeticExpr): string {
+                return powerbi.data.getArithmeticOperatorName(expr.operator) + '__' + expr.left.accept(this) + '_' +  expr.right.accept(this) + '__';
             }
 
             public static getNameForProperty(expr: SQPropRefExpr, federatedSchema: FederatedConceptualSchema): string {

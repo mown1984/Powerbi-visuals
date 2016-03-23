@@ -31,6 +31,7 @@ module powerbitests {
     import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
     import DataViewMatrix = powerbi.DataViewMatrix;
     import PlayChart = powerbi.visuals.PlayChart;
+    import ScatterChart = powerbi.visuals.ScatterChart;
 
     powerbitests.mocks.setLocale();
 
@@ -43,13 +44,13 @@ module powerbitests {
     let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
 
     // DataViewMetadataColumns
-    let playSource: DataViewMetadataColumn = { displayName: "Month", queryName: "Month1", type: dataTypeString, index: 0 };
-    let categorySource: DataViewMetadataColumn = { displayName: "RowGroup2", queryName: "RowGroup2", type: dataTypeString, index: 1 };
-    let seriesSource: DataViewMetadataColumn = { displayName: "ColGroup1", queryName: "ColGroup1", type: dataTypeString, index: 2 };
-    let measureSource1: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 3 };
-    let measureSource2: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 4 };
-    let measureSource3: DataViewMetadataColumn = { displayName: "Measure3", queryName: "Measure3", type: dataTypeNumber, isMeasure: true, index: 5 };
-    let categorySource2: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 6 };
+    let playSource: DataViewMetadataColumn = { displayName: "Month", queryName: "Month1", type: dataTypeString, index: 0, roles: { 'Play': true } };
+    let categorySource: DataViewMetadataColumn = { displayName: "RowGroup2", queryName: "RowGroup2", type: dataTypeString, index: 1, roles: { 'Category': true } };
+    let seriesSource: DataViewMetadataColumn = { displayName: "ColGroup1", queryName: "ColGroup1", type: dataTypeString, index: 2, roles: { 'Series': true } };
+    let measureSource1: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 3, roles: { 'X': true } };
+    let measureSource2: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 4, roles: { 'Y': true } };
+    let measureSource3: DataViewMetadataColumn = { displayName: "Measure3", queryName: "Measure3", type: dataTypeNumber, isMeasure: true, index: 5, roles: { 'Size': true } };
+    let categorySource2: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 6, roles: { 'Category': true } };
 
     //          | MeasureX | MeasureY | MeasureZ + MeasureX | MeasureY | MeasureZ |
     // |+++++++ +--------------------------------+--------------------------------+
@@ -645,5 +646,25 @@ module powerbitests {
         // TODO: Two measures (X/Y no size, others... encouncentered while building the visual)
         // TODO: One measure (X or Y or size)
         // TODO: Zero measures, can still play through the frame names
+    });
+
+    it('getAdditionalTelemetry with size', () => {
+        let telemetry = ScatterChart.getAdditionalTelemetry({
+            matrix: matrixCategoryAndPlay,
+            metadata: {
+                columns: [
+                    categorySource,
+                    playSource,
+                    measureSource1,
+                    measureSource2,
+                    measureSource3,
+                ]
+            }
+        });
+
+        expect(telemetry).toEqual({
+            hasPlayAxis: true,
+            hasSize: true,
+        });
     });
 }

@@ -246,6 +246,33 @@ module powerbitests {
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
                 expect(getSelectAllItem().length).toBe(0);
             });
+
+            it('Single select only for non-aggregateable column', () => {
+                let dataView = builder.dataView;
+                let visual = builder.visual;
+                dataView.metadata.objects["selection"] = { selectAllCheckboxEnabled: true };
+
+                helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
+                expect(getSelectAllItem().length).toBe(1);
+
+                dataView.metadata.columns[0].discourageAggregationAcrossGroups = true;
+
+                helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
+                expect(getSelectAllItem().length).toBe(0);
+
+                builder.initializeHelperElements();
+
+                let slicerText = builder.slicerText;
+                slicerText.eq(1).d3Click(0, 0);
+                validateSelectionState(orientation, [1]);
+
+                // Select another checkbox. The previously selected one should be cleared.
+                slicerText.eq(2).d3Click(0, 0);
+                validateSelectionState(orientation, [2]);
+
+                // validate the style for select
+                expect(getSlicerContainer(orientation).hasClass('isMultiSelectEnabled')).toBe(false);
+            });
         }
 
         describe("VerticalSlicer selection validation", () => validateSelection(SlicerOrientation.Vertical));

@@ -356,7 +356,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-           xit("Filtering -> Scroll Reset", (done) => {
+            xit("Filtering -> Scroll Reset", (done) => {
                 loadFirstSegment();
 
                 // Scroll by 10 items, assert first rendered element is #10

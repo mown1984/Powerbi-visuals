@@ -162,6 +162,9 @@ declare module powerbi {
 
         /** Indicates whether showing the data underlying this visual would be helpful.  Visuals that already show raw data can specify this. */
         disableVisualDetails?: boolean;
+
+        /** Indicates whether focus mode is supported for the visual. Visuals that would not benefit from focus mode (such as non-data-bound ones) can set it to true.  */
+        disableFocusMode?: boolean;
     }
 
     /** Defines the visual sorting capability. */
@@ -438,6 +441,9 @@ declare module powerbi {
 
         /** Gets Geocoding Service. */
         geocoder(): IGeocoder;
+
+        /** Gets IGeolocation Service */
+        geolocation(): IGeolocation;
 
         /** Gets the locale string */
         locale?(): string;

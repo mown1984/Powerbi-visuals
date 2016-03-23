@@ -125,6 +125,12 @@ module powerbi {
             visitMatrixItems(mapping.values, visitor);
         }
 
+        /**
+         * For visiting DataViewMatrixMapping.rows, DataViewMatrixMapping.columns, or DataViewMatrixMapping.values.
+         *
+         * @param mapping Can be one of DataViewMatrixMapping.rows, DataViewMatrixMapping.columns, or DataViewMatrixMapping.values.
+         * @param visitor The visitor.
+         */
         export function visitMatrixItems(mapping: DataViewRoleForMappingWithReduction | DataViewListRoleMappingWithReduction, visitor: IDataViewMappingVisitor): void {
             debug.assertAnyValue(mapping, 'mapping');
             debug.assertValue(visitor, 'visitor');

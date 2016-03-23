@@ -869,7 +869,7 @@ module powerbi.visuals {
                 instance.properties['show'] = options.dataLabelsSettings.show;
             }
 
-            instance.properties['color'] = options.dataLabelsSettings.labelColor;
+            instance.properties['color'] = options.dataLabelsSettings.labelColor || defaultLabelColor;
 
             if (options.displayUnits) {
                 instance.properties['labelDisplayUnits'] = options.dataLabelsSettings.displayUnits;
