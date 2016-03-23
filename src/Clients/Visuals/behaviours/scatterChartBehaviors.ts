@@ -28,9 +28,22 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 
+    export interface ScatterBehaviorChartData {
+        xCol: DataViewMetadataColumn;
+        yCol: DataViewMetadataColumn;
+        dataPoints: ScatterChartDataPoint[];
+        legendData: LegendData;
+        axesLabels: ChartAxesLabels;
+        size?: DataViewMetadataColumn;
+        sizeRange: NumberRange;
+        fillPoint?: boolean;
+        colorBorder?: boolean;
+    }
+
     export interface ScatterBehaviorOptions {
         dataPointsSelection: D3.Selection;
-        data: ScatterChartData;
+        eventGroup?: D3.Selection;
+        data: ScatterBehaviorChartData;
         plotContext: D3.Selection;
         playOptions?: PlayBehaviorOptions;
     }
@@ -53,6 +66,7 @@ module powerbi.visuals {
         public bindEvents(options: ScatterBehaviorOptions, selectionHandler: ISelectionHandler): void {
             let bubbles = this.bubbles = options.dataPointsSelection;
             let data = options.data;
+            let eventGroup = options.eventGroup;
 
             // If we are removing play-axis, remove the trace lines as well
             // TODO: revisit this design, I think ideally this is done when rendering scatter.
@@ -66,20 +80,24 @@ module powerbi.visuals {
             this.shouldEnableFill = (!data.sizeRange || !data.sizeRange.min) && data.fillPoint;
             this.colorBorder = data.colorBorder;
 
-            InteractivityUtils.registerStandardInteractivityHandlers(bubbles, selectionHandler);
+            if (eventGroup) {
+                InteractivityUtils.registerGroupInteractivityHandlers(eventGroup, selectionHandler);
+            } else {
+                InteractivityUtils.registerStandardInteractivityHandlers(bubbles, selectionHandler);
+            }
         }
 
         public renderSelection(hasSelection: boolean) {
             let shouldEnableFill = this.shouldEnableFill;
             let colorBorder = this.colorBorder;
-            this.bubbles.style("fill-opacity", (d: ScatterChartDataPoint) => (d.size != null || shouldEnableFill) ? ScatterChart.getBubbleOpacity(d, hasSelection) : 0);
-            this.bubbles.style("stroke-opacity", (d: ScatterChartDataPoint) => (d.size != null && colorBorder) ? 1 : ScatterChart.getBubbleOpacity(d, hasSelection));
+            this.bubbles.style("fill-opacity", (d: ScatterChartDataPoint) => ScatterChart.getMarkerFillOpacity(d.size != null, shouldEnableFill, hasSelection, d.selected));
+            this.bubbles.style("stroke-opacity", (d: ScatterChartDataPoint) => ScatterChart.getMarkerStrokeOpacity(d.size != null, colorBorder, hasSelection, d.selected));
 
             if (this.playOptions && this.bubbles) {
-                let selectedPoints = this.bubbles.filter((d: SelectableDataPoint) => d.selected);
+                let selectedPoints = this.bubbles.filter((d: SelectableDataPoint) => d.selected).data();
                 let traceLineRenderer = this.playOptions.traceLineRenderer;
-                if (selectedPoints && selectedPoints.data().length > 0 && traceLineRenderer != null) {
-                    traceLineRenderer.render(selectedPoints.data(), true);
+                if (selectedPoints && selectedPoints.length > 0 && traceLineRenderer != null) {
+                    traceLineRenderer.render(selectedPoints, true);
                 }
                 else {
                     traceLineRenderer.remove();
@@ -109,7 +127,7 @@ module powerbi.visuals {
 
         private host: ICartesianVisualHost;
         private mainGraphicsContext: D3.Selection;
-        private data: ScatterChartData;
+        private data: ScatterBehaviorChartData;
         private crosshair: D3.Selection;
         private crosshairHorizontal: D3.Selection;
         private crosshairVertical: D3.Selection;
@@ -142,7 +160,7 @@ module powerbi.visuals {
                 var sel = selection[i];
 
                 sel.on('click', (d: SelectableDataPoint, i: number) => {
-                    this.select(true, sel, d, i);
+                    this.select(i);
                 });
             }
         }
@@ -177,7 +195,7 @@ module powerbi.visuals {
             this.host = options.host;
         }
 
-        public select(hasSelection: boolean, datapoints: D3.Selection, dataPoint: SelectableDataPoint, index: number) {
+        private select(index: number) {
             this.selectDotByIndex(index);
         }
 
@@ -379,4 +397,4 @@ module powerbi.visuals {
             return {dataPoints: legendItems };
         }
     }
-} 
+}

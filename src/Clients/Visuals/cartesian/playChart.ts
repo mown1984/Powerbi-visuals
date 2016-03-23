@@ -26,7 +26,7 @@
 
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
-    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils;
+    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils ;
 
     export interface PlayConstructorOptions extends CartesianVisualConstructorOptions {
     }
@@ -231,7 +231,7 @@ module powerbi.visuals {
             };
             let textHeight = TextMeasurementService.estimateSvgTextHeight(textProperties) - TextMeasurementService.estimateSvgTextBaselineDelta(textProperties);
 
-            let calloutData: string[] = [];;
+            let calloutData: string[] = [];
             if (currentFrameIndex < frameKeys.length && currentFrameIndex >= 0 && textHeight < plotAreaHeight) {
                 let maxTextWidth = plotAreaWidth - (2 * PlayAxis.calloutOffsetMultiplier * textHeight);
                 let calloutText = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxTextWidth);
@@ -589,7 +589,7 @@ module powerbi.visuals {
                 }
 
                 let categoryFrameRootNode = matrix.rows.root.children[frame];
-                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, (leafNode, leafNodeIndex) => {
+                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, (leafNode, leafNodeIndex) => {
                     debug.assert(leafNodeIndex === 0, 'expecting only one leafNode under categoryFrameRootNode in this case');
                     for (var i = 0, len = node.children.length; i < len; i++) {
                         for (let j = 0; j < columnLength; j++) {
@@ -603,7 +603,7 @@ module powerbi.visuals {
                 let categoryFrameRootNode = matrix.rows.root.children[frame];
                 
                 // create the categories first
-                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
+                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
                     category.identity.push(leafNode.identity);
                     category.values.push(leafNode.value);
                 });
@@ -632,7 +632,7 @@ module powerbi.visuals {
                             };
                             categorical.values.push(dataViewColumn);
                         }
-                        DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
+                        DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
                             for (let j = 0; j < columnLength; j++) {
                                 categorical.values[seriesIndex * columnLength + j].values.push(leafNode.values[seriesIndex * columnLength + j].value);
                             }
@@ -660,7 +660,7 @@ module powerbi.visuals {
                     categorical.values.push(dataViewColumn);
                 }
 
-                DataViewMatrixUtils.visitLeafNodes(categoryFrameRootNode, leafNode => {
+                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
                     category.identity.push(leafNode.identity);
                     category.values.push(leafNode.value);
 

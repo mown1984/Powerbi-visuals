@@ -203,7 +203,7 @@ module powerbi.visuals {
                 return minimumVisibleRows;
             
             if (this.options.scrollEnabled)
-                return Math.min(Math.ceil(viewportHeight / rowHeight) + 1, this._totalRows) || minimumVisibleRows;
+                return Math.min(Math.ceil(viewportHeight / rowHeight), this._totalRows) || minimumVisibleRows;
 
             return Math.min(Math.floor(viewportHeight / rowHeight), this._totalRows) || minimumVisibleRows;
         }
@@ -225,10 +225,14 @@ module powerbi.visuals {
             this.scrollToFrame(false /*loadMoreData*/);
             let requestAnimationFrameId = window.requestAnimationFrame(() => {
                 //measure row height
-                let firstRow = listView.visibleGroupContainer.select(".row").node().firstChild;
-                let rowHeight: number = $(firstRow).outerHeight(true);
-                listView.rowHeight(rowHeight);
-                deferred.resolve(rowHeight);
+                let rows = listView.visibleGroupContainer.select(".row");
+                if (rows.length > 0) {
+                    let firstRow = rows.node().firstChild;
+                    let rowHeight: number = $(firstRow).outerHeight(true);
+                    listView.rowHeight(rowHeight);
+                    deferred.resolve(rowHeight);
+                }
+
                 listView.cancelMeasurePass = undefined;
                 window.cancelAnimationFrame(requestAnimationFrameId);
             });

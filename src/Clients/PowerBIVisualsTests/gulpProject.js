@@ -104,32 +104,27 @@ module.exports = projects.initProject(
                         "./helpers/performanceTestsHelpers.js",
                         "./utils/bingSocial/NewsDataFactory.js",
                         "./utils/bingSocial/TweetFactory.js",
-
                         "CustomVisuals.css",
                         "CustomVisuals.js",
-
                         "./customVisuals/helpers/dataViewHelper.js",
                         "./customVisuals/sampleDataViews/SalesByCountryData.js",
                         "./customVisuals/sampleDataViews/ValuesByCountriesData.js",
                         "./customVisuals/sampleDataViews/MekkoChartData.js",
                         "./customVisuals/sampleDataViews/BulletChartData.js",
-                        "./customVisuals/sampleDataViews/CarLogosData.js",
                         "./customVisuals/sampleDataViews/CountriesData.js",
+                        "./customVisuals/sampleDataViews/CarLogosData.js",
                         "./customVisuals/sampleDataViews/chordChartData.js",
-                        "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
                         "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
-                        "./customVisuals/sampleDataViews/valueByAgeData.js",
-                        "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
-                        "./customVisuals/sampleDataViews/MatrixData.js",
-                        
                         "./customVisuals/sampleDataViews/AreaRangeChartData.js",
                         "./customVisuals/sampleDataViews/DotPlotData.js",
                         "./customVisuals/sampleDataViews/forceGraphData.js",
                         "./customVisuals/sampleDataViews/GanttData.js",
                         "./customVisuals/sampleDataViews/TimelineData.js",
-                        
+                        "./customVisuals/sampleDataViews/valueByAgeData.js",
+                        "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
+                        "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
+                        "./customVisuals/sampleDataViews/MatrixData.js",
                         "./customVisuals/VisualBuilderBase.js"
-
                     ].concat(tests),
                     jasminePaths = [
                         "jasmine.css",

@@ -260,6 +260,7 @@ module powerbi.data {
             if (dataView.categorical) {
                 dataView.categorical = applyRewritesToCategorical(dataView.categorical, columnRewrites, selectsToInclude);
 
+                // TODO VSTS 7024199: separate out structural transformations from dataViewTransform.transformSelects(...)
                 // NOTE: This is slightly DSR-specific.
                 dataView = pivotIfNecessary(dataView, roleMappings);
             }
@@ -272,6 +273,7 @@ module powerbi.data {
                 };
                 dataView.matrix = applyRewritesToMatrix(dataView.matrix, columnRewrites, roleMappings, projectionOrdering, matrixTransformationContext);
 
+                // TODO VSTS 7024199: separate out structural transformations from dataViewTransform.transformSelects(...)
                 if (shouldPivotMatrix(dataView.matrix, roleMappings))
                     DataViewPivotMatrix.apply(dataView.matrix, matrixTransformationContext);
             }
@@ -459,10 +461,6 @@ module powerbi.data {
                 originalOrder = _.map(columnRewrites, (rewrite: ValueRewrite<DataViewMetadataColumn>) => rewrite.from.index),
                 newOrder = projectionOrdering[role];
 
-            // Optimization: avoid rewriting the table if all columns are in their default positions.
-            if (ArrayExtensions.sequenceEqual(originalOrder, newOrder, (x: number, y: number) => x === y))
-                return;
-
             return createOrderMapping(originalOrder, newOrder);
         }
 
@@ -563,6 +561,8 @@ module powerbi.data {
                 }
             }
 
+            reorderMatrixCompositeGroups(matrix, matrixMapping, projectionOrdering);
+
             return matrix;
         }
 
@@ -586,7 +586,239 @@ module powerbi.data {
             }
         }
 
-        /** Creates a mapping of new position to original position. */
+        /**
+         * Returns a inheritSingle() version of the specified prototype DataViewMatrix with any composite group levels
+         * and values re-ordered by projection ordering.
+         * Returns undefined if no re-ordering under the specified prototype is necessary.
+         */
+        function reorderMatrixCompositeGroups(
+            prototype: DataViewMatrix,
+            supportedDataViewMapping: DataViewMatrixMapping,
+            projection: DataViewProjectionOrdering): DataViewMatrix {
+
+            let transformedDataView: DataViewMatrix;
+
+            if (prototype && supportedDataViewMapping && projection) {
+
+                // reorder levelValues in any composite groups in rows hierarchy
+                let transformedRowsHierarchy: DataViewHierarchy;
+                DataViewMapping.visitMatrixItems(supportedDataViewMapping.rows, {
+                    visitRole: (role: string, context?: RoleItemContext): void => {
+                        transformedRowsHierarchy = reorderMatrixHierarchyCompositeGroups(
+                            transformedRowsHierarchy || prototype.rows,
+                            role,
+                            projection);
+                    }
+                });
+                
+                // reorder levelValues in any composite groups in columns hierarchy
+                let transformedColumnsHierarchy: DataViewHierarchy;
+                DataViewMapping.visitMatrixItems(supportedDataViewMapping.columns, {
+                    visitRole: (role: string, context?: RoleItemContext): void => {
+                        transformedColumnsHierarchy = reorderMatrixHierarchyCompositeGroups(
+                            transformedColumnsHierarchy || prototype.columns,
+                            role,
+                            projection);
+                    }
+                });
+
+                if (transformedRowsHierarchy || transformedColumnsHierarchy) {
+                    transformedDataView = inheritSingle(prototype);
+                    transformedDataView.rows = transformedRowsHierarchy || transformedDataView.rows;
+                    transformedDataView.columns = transformedColumnsHierarchy || transformedDataView.columns;
+                }
+            }
+
+            return transformedDataView;
+        }
+
+        /**
+         * Returns a inheritSingle() version of the specified matrixHierarchy with any composite group levels and  
+         * values re-ordered by projection ordering.
+         * Returns undefined if no re-ordering under the specified matrixHierarchy is necessary.
+         */
+        function reorderMatrixHierarchyCompositeGroups(
+            matrixHierarchy: DataViewHierarchy,
+            hierarchyRole: string,
+            projection: DataViewProjectionOrdering): DataViewHierarchy {
+            debug.assertValue(matrixHierarchy, 'matrixHierarchy');
+            debug.assertValue(hierarchyRole, 'hierarchyRole');
+            debug.assertValue(projection, 'projection');
+
+            let transformedHierarchy: DataViewHierarchy;
+            let selectIndicesInProjectionOrder: number[] = projection[hierarchyRole];
+
+            // reordering needs to happen only if there are multiple columns for the hierarchy's role in the projection
+            let hasMultipleColumnsInProjection = selectIndicesInProjectionOrder && selectIndicesInProjectionOrder.length >= 2;
+            if (hasMultipleColumnsInProjection && !_.isEmpty(matrixHierarchy.levels)) {
+                for (let i = matrixHierarchy.levels.length - 1; i >= 0; i--) {
+                    var hierarchyLevel: DataViewHierarchyLevel = matrixHierarchy.levels[i];
+
+                    // compute a mapping for any necessary reordering of columns at this given level, based on projection ordering
+                    let newToOldLevelSourceIndicesMapping: NumberToNumberMapping =
+                        createMatrixHierarchyLevelSourcesPositionMapping(hierarchyLevel, hierarchyRole, projection);
+
+                    if (newToOldLevelSourceIndicesMapping) {
+                        if (_.isUndefined(transformedHierarchy)) {
+                            // Because we start inspecting the hierarchy from the deepest level and work backwards to the root,
+                            // the current hierarchyLevel is therefore the inner-most level that needs re-ordering of composite group values...
+                            transformedHierarchy = inheritSingle(matrixHierarchy);
+                            transformedHierarchy.levels = inheritSingle(matrixHierarchy.levels);
+
+                            // Because the current hierarchyLevel is the inner-most level that needs re-ordering of composite group values,
+                            // inheriting all nodes from root down to this level will also prepare the nodes for any transform that needs to 
+                            // happen in other hierarchy levels in the later iterations of this for-loop.
+                            transformedHierarchy.root = utils.DataViewMatrixUtils.inheritMatrixNodeHierarchy(matrixHierarchy.root, i, true);
+                        }
+
+                        // reorder the metadata columns in the sources array at that level
+                        let transformingHierarchyLevel = inheritSingle(matrixHierarchy.levels[i]); // inherit at most once during the whole dataViewTransform for this obj...
+                        transformedHierarchy.levels[i] = reorderMatrixHierarchyLevelColumnSources(transformingHierarchyLevel, newToOldLevelSourceIndicesMapping);
+
+                        // reorder the level values in the composite group nodes at the current hierarchy level
+                        reorderMatrixHierarchyLevelValues(transformedHierarchy.root, i, newToOldLevelSourceIndicesMapping);
+                    }
+                }
+            }
+
+            return transformedHierarchy;
+        }
+
+        /**
+         * If reordering is needed on the level's metadata column sources (i.e. hierarchyLevel.sources),
+         * returns the mapping from the target LevelSourceIndex (based on projection order) to original LevelSourceIndex.
+         *
+         * The returned value maps level source indices from the new target order (calculated from projection order)
+         * back to the original order as they appear in the specified hierarchyLevel's sources.
+         * Please refer to comments on the createOrderMapping() function for more explanation on the mappings in the return value.
+         *
+         * Note: The return value is the mapping from new index to old index, for consistency with existing and similar functions in this module.
+         *
+         * @param hierarchyLevel The hierarchy level that contains the metadata column sources.
+         * @param hierarchyRoleName The role name for the hierarchy where the specified hierarchyLevel belongs.
+         * @param projection The projection ordering that includes an ordering for the specified hierarchyRoleName.
+         */
+        function createMatrixHierarchyLevelSourcesPositionMapping(
+            hierarchyLevel: DataViewHierarchyLevel,
+            hierarchyRole: string,
+            projection: DataViewProjectionOrdering): NumberToNumberMapping {
+            debug.assertValue(hierarchyLevel, 'hierarchyLevel');
+            debug.assertValue(hierarchyRole, 'hierarchyRole');
+            debug.assertValue(projection, 'projection');
+            debug.assertValue(projection[hierarchyRole], 'pre-condition: The specified projection must contain an ordering for the specified hierarchyRoleName.');
+
+            let newToOldLevelSourceIndicesMapping: NumberToNumberMapping;
+            let levelSourceColumns = hierarchyLevel.sources;
+
+            if (levelSourceColumns && levelSourceColumns.length >= 2) {
+                // The hierarchy level has multiple columns, so it is possible to have composite group, go on to check other conditions...
+
+                let columnsForHierarchyRoleOrderedByLevelSourceIndex = utils.DataViewMetadataColumnUtils.joinMetadataColumnsAndProjectionOrder(
+                    levelSourceColumns,
+                    projection,
+                    hierarchyRole);
+
+                if (columnsForHierarchyRoleOrderedByLevelSourceIndex && columnsForHierarchyRoleOrderedByLevelSourceIndex.length >= 2) {
+                    // The hierarchy level has multiple columns for the hierarchy's role, go on to calculate newToOldLevelSourceIndicesMapping...
+                    let columnsForHierarchyRoleOrderedByProjection = _.sortBy(
+                        columnsForHierarchyRoleOrderedByLevelSourceIndex,
+                        columnInfo => columnInfo.projectionOrderIndex);
+
+                    newToOldLevelSourceIndicesMapping = createOrderMapping(
+                        _.map(columnsForHierarchyRoleOrderedByLevelSourceIndex, columnInfo => columnInfo.sourceIndex),
+                        _.map(columnsForHierarchyRoleOrderedByProjection, columnInfo => columnInfo.sourceIndex));
+                }
+            }
+
+            return newToOldLevelSourceIndicesMapping;
+        }
+
+        /**
+         * Applies re-ordering on the specified transformingHierarchyLevel's sources.
+         * Returns the same object as the specified transformingHierarchyLevel.
+         */
+        function reorderMatrixHierarchyLevelColumnSources(transformingHierarchyLevel: DataViewHierarchyLevel, newToOldLevelSourceIndicesMapping: NumberToNumberMapping): DataViewHierarchyLevel {
+            debug.assertValue(transformingHierarchyLevel, 'transformingHierarchyLevel');
+            debug.assertValue(newToOldLevelSourceIndicesMapping, 'newToOldLevelSourceIndicesMapping');
+
+            let originalLevelSources = transformingHierarchyLevel.sources;
+
+            transformingHierarchyLevel.sources = originalLevelSources.slice(0); // make a clone of the array before modifying it, because the for-loop depends on the origin array.
+            
+            let newLevelSourceIndices = Object.keys(newToOldLevelSourceIndicesMapping);
+            for (let i = 0, ilen = newLevelSourceIndices.length; i < ilen; i++) {
+                let newLevelSourceIndex = newLevelSourceIndices[i];
+                let oldLevelSourceIndex = newToOldLevelSourceIndicesMapping[newLevelSourceIndex];
+                
+                debug.assert(oldLevelSourceIndex < originalLevelSources.length,
+                    'pre-condition: The value in every mapping in the specified levelSourceIndicesReorderingMap must be a valid index to the specified hierarchyLevel.sources array property');
+
+                transformingHierarchyLevel.sources[newLevelSourceIndex] = originalLevelSources[oldLevelSourceIndex];
+            }
+
+            return transformingHierarchyLevel;
+        }
+
+        /**
+         * Reorders the elements in levelValues in each node under transformingHierarchyRootNode at the specified hierarchyLevel,
+         * and updates their DataViewMatrixGroupValue.levelSourceIndex property.
+         *
+         * Returns the same object as the specified transformingHierarchyRootNode.
+         */
+        function reorderMatrixHierarchyLevelValues(
+            transformingHierarchyRootNode: DataViewMatrixNode,
+            transformingHierarchyLevelIndex: number,
+            newToOldLevelSourceIndicesMapping: NumberToNumberMapping): DataViewMatrixNode {
+            debug.assertValue(transformingHierarchyRootNode, 'transformingHierarchyRootNode');
+            debug.assertValue(newToOldLevelSourceIndicesMapping, 'newToOldLevelSourceIndicesMapping');
+
+            let oldToNewLevelSourceIndicesMapping: NumberToNumberMapping = createReversedMapping(newToOldLevelSourceIndicesMapping);
+
+            forEachNodeAtLevel(transformingHierarchyRootNode, transformingHierarchyLevelIndex, (transformingMatrixNode: DataViewMatrixNode) => {
+                let originalLevelValues = transformingMatrixNode.levelValues;
+
+                // Note: Technically this function is incorrect, because the driving source of the new LevelValues is really
+                // the "projection for this composite group", a concept that isn't yet implemented in DataViewProjectionOrdering.
+                // The following code isn't correct in the special case where a column is projected twice in this composite group,
+                // in which case the DSR will not have the duplicate columns; DataViewTransform is supposed to expand the duplicates.
+                // Until we fully implement composite group projection, though, we'll just sort what we have in transformingMatrixNode.levelValues.
+
+                if (!_.isEmpty(originalLevelValues)) {
+                    // First, re-order the elements in transformingMatrixNode.levelValues by the new levelSourceIndex order.
+                    // _.sortBy() also creates a new array, which we want to do for all nodes (including when levelValues.length === 1)
+                    // because we don't want to accidentally modify the array AND its value references in Query DataView
+                    let newlyOrderedLevelValues = _.sortBy(originalLevelValues, levelValue => oldToNewLevelSourceIndicesMapping[levelValue.levelSourceIndex]);
+
+                    for (let i = 0, ilen = newlyOrderedLevelValues.length; i < ilen; i++) {
+                        let transformingLevelValue = inheritSingle(newlyOrderedLevelValues[i]);
+                        transformingLevelValue.levelSourceIndex = oldToNewLevelSourceIndicesMapping[transformingLevelValue.levelSourceIndex];
+                        newlyOrderedLevelValues[i] = transformingLevelValue;
+                    }
+
+                    transformingMatrixNode.levelValues = newlyOrderedLevelValues;
+
+                    // For consistency with how DataViewTreeNode.value works, and for a bit of backward compatibility,
+                    // copy the last value from DataViewMatrixNode.levelValues to DataViewMatrixNode.value.
+                    let newlyOrderedLastLevelValue = _.last(newlyOrderedLevelValues);
+                    if (transformingMatrixNode.value !== newlyOrderedLastLevelValue.value) {
+                        transformingMatrixNode.value = newlyOrderedLastLevelValue.value;
+                    }
+                    if ((transformingMatrixNode.levelSourceIndex || 0) !== newlyOrderedLastLevelValue.levelSourceIndex) {
+                        transformingMatrixNode.levelSourceIndex = newlyOrderedLastLevelValue.levelSourceIndex;
+                    }
+                }
+            });
+
+            return transformingHierarchyRootNode;
+        }
+
+        /**
+         * Creates a mapping of new position to original position.
+         *
+         * The return value is a mapping where each key-value pair represent the order  mapping of a particular column:
+         * - the key in the key-value pair is the index of the particular column in the new order (e.g. projection order)
+         * - the value in the key-value pair is the index of the particular column in the original order
+         */
         function createMatrixValuesPositionMapping(
             matrixValues: DataViewRoleForMapping,
             projectionOrdering: DataViewProjectionOrdering,
@@ -594,33 +826,40 @@ module powerbi.data {
             columnRewrites: ValueRewrite<DataViewMetadataColumn>[]): NumberToNumberMapping {
 
             let role = matrixValues.for.in;
-
-            function matchValueSource(columnRewrite: ValueRewrite<DataViewMetadataColumn>) {
-                for (let i = 0, len = valueSources.length; i < len; i++) {
-                    let valueSource = valueSources[i];
-                    if (valueSource === columnRewrite.to)
-                        return columnRewrite;
-                }
-            }
-
-            let valueRewrites: ValueRewrite<DataViewMetadataColumn>[] = [];
-            for (let i = 0, len = columnRewrites.length; i < len; i++) {
-                let columnRewrite = columnRewrites[i];
-                if (matchValueSource(columnRewrite))
-                    valueRewrites.push(columnRewrite);
-            }
-
             let newOrder = projectionOrdering[role];
-            let originalOrder = _.map(valueRewrites, (rewrite: ValueRewrite<DataViewMetadataColumn>) => rewrite.from.index);
 
-            // Optimization: avoid rewriting the matrix if all leaf nodes are in their default positions.
-            if (ArrayExtensions.sequenceEqual(originalOrder, newOrder, (x: number, y: number) => x === y))
-                return;
+            let originalOrder = _.chain(columnRewrites)
+                                .filter(rewrite => _.contains(valueSources, rewrite.to))
+                                .map(rewrite => rewrite.from.index)
+                                .value();
 
             return createOrderMapping(originalOrder, newOrder);
         }
 
+        /**
+         * Creates a mapping of indices, from indices to the specified newOrder array, back to indices to the specified
+         * originalOrder array.
+         * Each of the number value in originalOrder and newOrder is actually the unique key of a column (unqiue
+         * under the context of the caller code), e.g. the Select Index in projection ordering array.
+         * Also, the specified originalOrder must contain every value that exists in newOrder.
+         *
+         * If the specified originalOrder and newOrder are different in sequence order, then this function returns a collection of
+         * key-value pair, each of which represents the new and old indices of a particular column:
+         * - the key in each key-value pair is the index of the particular column key as it exists in the specified newOrder array
+         * - the value in each key-value pair is the index of the particular column key as it exists in the specified originalOrder array
+         *
+         * For example on how the return value is consumed, see functions such as reorderMatrixHierarchyLevelColumnSources(...).
+         *
+         * If the specified originalOrder and newOrder are same, then this function returns undefined.
+         *
+         * @param originalOrder E.g. an array of metadata column "select indices", in the original order as they exist in Query DataView.
+         * @param newOrder E.g. an array of metadata column "select indices", in rojection ordering.
+         */
         function createOrderMapping(originalOrder: number[], newOrder: number[]): NumberToNumberMapping {
+            // Optimization: avoid rewriting if the current order is correct
+            if (ArrayExtensions.sequenceEqual(originalOrder, newOrder, (x: number, y: number) => x === y))
+                return;
+
             let mapping: NumberToNumberMapping = {};
             for (let i = 0, len = newOrder.length; i < len; ++i) {
                 let newPosition = newOrder[i];
@@ -630,7 +869,30 @@ module powerbi.data {
             return mapping;
         }
 
-        function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void {
+        function createReversedMapping(mapping: NumberToNumberMapping): NumberToNumberMapping {
+            debug.assertValue(mapping, 'mapping');
+
+            let reversed: NumberToNumberMapping = {};
+            
+            for (let key in mapping) {
+                // Note: key is a string after we get it out from mapping, thus we need to parse it 
+                // back into a number before putting it as the value in the reversed mapping
+                let value = mapping[key];
+                let keyAsNumber = parseInt(key, 10);
+                reversed[value] = keyAsNumber;
+            }
+
+            debug.assertValue(Object.keys(mapping).length === Object.keys(reversed).length,
+                'pre-condition: The specified mapping must not contain any duplicate value because duplicate values are obmitted from the reversed mapping.');
+
+            return reversed;
+        }
+
+        export function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void {
+            debug.assertValue(node, 'node');
+            debug.assert(targetLevel >= 0, 'argetLevel >= 0');
+            debug.assertValue(callback, 'callback');
+
             if (node.level === targetLevel) {
                 callback(node);
                 return;

@@ -152,6 +152,7 @@ module powerbi.visuals {
         public setToolbar($toolbar: JQuery): void { }
         public shouldRetainSelection(): boolean { return false; }
         public geocoder(): IGeocoder { return services.createGeocoder(); }
+        public geolocation(): IGeolocation { return services.createGeolocation(); }
         public promiseFactory(): IPromiseFactory { return createJQueryPromiseFactory(); }
         public analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter {
             return {

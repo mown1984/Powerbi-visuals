@@ -302,6 +302,8 @@ GulpProject.prototype.createWatchTask = function () {
         if (me.params.less) {
             var watchPath = me.params.less.destinationPath ? me.params.less.destinationPath : "styles";
             includes.push(path.join(me.projFolder, watchPath, "*.css"));
+            includes.push("!" + path.join(me.projFolder, watchPath, "*.min.css"));
+            includes.push("!" + path.join(me.projFolder, watchPath, "*.rtl.css"));
         }
     } else {
         // exclude own obj folder (as we usually specify **/*.ts as watch target,
@@ -382,7 +384,6 @@ GulpProject.prototype.createWatchTask = function () {
                 notifyWaitingForChangesDelayed();
                 return;
             }
-
 
             //serviceMessageLog(me.projName + " watcher detected a change: " + JSON.stringify(evt));
 
@@ -680,6 +681,8 @@ function dropArtifacts(proj) {
             });
         }));
     }
+
+    return Q.resolve();    
 }
 
 function copyDeps(proj) {

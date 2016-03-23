@@ -25,6 +25,7 @@
  */
 
 module powerbitests.customVisuals {
+    import LegendData = powerbi.visuals.LegendData;
     import VisualClass = powerbi.visuals.samples.AsterPlot;
     import PixelConverter = jsCommon.PixelConverter;
     import Helpers = powerbitests.helpers;
@@ -68,8 +69,17 @@ module powerbitests.customVisuals {
             it("Should add center label", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
-                    let centerText: JQuery = $("svg.asterPlot g text:first");
+                    let centerText: JQuery = $(".asterPlot .centerLabel");
                     expect(centerText).toBeInDOM();
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("Should not add center label to DOM when there is no data", (done) => {
+                visualBuilder.update([]);
+                setTimeout(() => {
+                    let centerText: JQuery = $(".asterPlot .centerLabel");
+                    expect(centerText.length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             });
@@ -89,6 +99,14 @@ module powerbitests.customVisuals {
                 it("Should add legend", () => {
                     let legend: JQuery = $(".legend");
                     expect(legend).toBeInDOM();
+                });
+
+                it("Should color legend title & items with default color", () => {
+                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
+                    let legendTitle: JQuery = legendGroup.children('.legendTitle');
+                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
+                    Helpers.assertColorsMatch(legendTitle.css('fill'), LegendData.DefaultLegendLabelFillColor);
+                    Helpers.assertColorsMatch(firstLegendItemText.css('fill'), LegendData.DefaultLegendLabelFillColor);
                 });
 
                 it("Should set legend title & tooltip to text from dataview", () => {

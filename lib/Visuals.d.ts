@@ -562,6 +562,12 @@ declare module powerbi.visuals {
         targetValue: string;
     };
     const gaugeCapabilities: VisualCapabilities;
+    const gaugeProps: {
+        dataPoint: {
+            fill: DataViewObjectPropertyIdentifier;
+            target: DataViewObjectPropertyIdentifier;
+        };
+    };
 }
 declare module powerbi.visuals {
     const imageVisualCapabilities: VisualCapabilities;
@@ -910,9 +916,21 @@ declare module powerbi.visuals {
     }
 }
 declare module powerbi.visuals {
+    interface ScatterBehaviorChartData {
+        xCol: DataViewMetadataColumn;
+        yCol: DataViewMetadataColumn;
+        dataPoints: ScatterChartDataPoint[];
+        legendData: LegendData;
+        axesLabels: ChartAxesLabels;
+        size?: DataViewMetadataColumn;
+        sizeRange: NumberRange;
+        fillPoint?: boolean;
+        colorBorder?: boolean;
+    }
     interface ScatterBehaviorOptions {
         dataPointsSelection: D3.Selection;
-        data: ScatterChartData;
+        eventGroup?: D3.Selection;
+        data: ScatterBehaviorChartData;
         plotContext: D3.Selection;
         playOptions?: PlayBehaviorOptions;
     }
@@ -960,7 +978,7 @@ declare module powerbi.visuals {
         private makeDragable(...selection);
         private disableDefaultTouchInteractions(selection);
         setOptions(options: ScatterMobileBehaviorOptions): void;
-        select(hasSelection: boolean, datapoints: D3.Selection, dataPoint: SelectableDataPoint, index: number): void;
+        private select(index);
         selectRoot(): void;
         drag(t: DragType): void;
         private onDrag();
@@ -1696,6 +1714,9 @@ declare module powerbi.visuals {
         function registerStandardInteractivityHandlers(selection: D3.Selection, selectionHandler: ISelectionHandler): void;
         function registerStandardSelectionHandler(selection: D3.Selection, selectionHandler: ISelectionHandler): void;
         function registerStandardContextMenuHandler(selection: D3.Selection, selectionHandler: ISelectionHandler): void;
+        function registerGroupInteractivityHandlers(group: D3.Selection, selectionHandler: ISelectionHandler): void;
+        function registerGroupSelectionHandler(group: D3.Selection, selectionHandler: ISelectionHandler): void;
+        function registerGroupContextMenuHandler(group: D3.Selection, selectionHandler: ISelectionHandler): void;
     }
 }
 declare module powerbi.visuals {
@@ -1779,6 +1800,9 @@ declare module powerbi.visuals {
         function locationRectToRectXY(locationRect: Microsoft.Maps.LocationRect, levelOfDetail: number): powerbi.visuals.Rect;
         function latLongToPixelXY(latitude: number, longitude: number, levelOfDetail: number): powerbi.visuals.Point;
         function pixelXYToLocation(pixelX: number, pixelY: number, levelOfDetail: number): Microsoft.Maps.Location;
+        module CurrentLocation {
+            function createPushpin(location: Microsoft.Maps.Location): Microsoft.Maps.Pushpin;
+        }
     }
     class MapPolygonInfo {
         private _locationRect;
@@ -3307,6 +3331,7 @@ declare module powerbi.visuals {
         setToolbar($toolbar: JQuery): void;
         shouldRetainSelection(): boolean;
         geocoder(): IGeocoder;
+        geolocation(): IGeolocation;
         promiseFactory(): IPromiseFactory;
         analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter;
         getIdentityDisplayNames(dentities: DataViewScopeIdentity[]): DisplayNameIdentityPair[];
@@ -3516,6 +3541,9 @@ declare module powerbi.visuals.services {
     }
     function createGeocodingCache(maxCacheSize: number, maxCacheSizeOverflow: number): IGeocodingCache;
 }
+declare module powerbi.visuals.services {
+    function createGeolocation(): IGeolocation;
+}
 declare module powerbi.visuals {
     interface IVisualPluginService {
         getPlugin(type: string): IVisualPlugin;
@@ -3556,6 +3584,10 @@ declare module powerbi.visuals {
         matrixFormattingEnabled?: boolean;
         filledMapDataLabelsEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
+        /**
+         * Enables button to center map to the current location
+         */
+        mapCurrentLocationEnabled?: boolean;
     }
     interface SmallViewPortProperties {
         cartesianSmallViewPortProperties: CartesianSmallViewPortProperties;
@@ -5807,6 +5839,7 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    const DEFAULT_AXIS_COLOR: string;
     const enum CartesianChartType {
         Line = 0,
         Area = 1,
@@ -6039,6 +6072,7 @@ declare module powerbi.visuals {
         init(options: VisualInitOptions): void;
         private isPlayAxis();
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor): boolean;
+        static getAdditionalTelemetry(dataView: DataView): any;
         static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean;
         private populateObjectProperties(dataViews);
         private updateInternal(options, dataChanged);
@@ -6048,6 +6082,7 @@ declare module powerbi.visuals {
         scrollTo(position: number): void;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private shouldShowLegendCard();
+        private getAxisScaleOptions(axisType);
         private getCategoryAxisValues(enumeration);
         private getValueAxisValues(enumeration);
         onClearSelection(): void;
@@ -6472,17 +6507,12 @@ declare module powerbi.visuals {
     class DataColorPalette implements IDataColorPalette {
         private scales;
         private colors;
-        /**
-         * Colors used for sentiment visuals, e.g. KPI, Gauge. Since this is only a temporary implementation which will
-         * eventually be superseded by conditional formatting, we don't declare them as part of the theme and instead
-         * use a hardcoded color scheme here until conditional formatting is ready.
-         */
         private sentimentColors;
         private basePickerColors;
         /**
          * Creates a DataColorPalette using the given theme, or the default theme.
          */
-        constructor(colors?: IColorInfo[]);
+        constructor(colors?: IColorInfo[], sentimentcolors?: IColorInfo[]);
         getColorScaleByKey(key: string): IColorScale;
         getNewColorScale(): IColorScale;
         getColorByIndex(index: number): IColorInfo;
@@ -6784,6 +6814,7 @@ declare module powerbi.visuals {
         targetSettings: GaugeTargetSettings;
         dataLabelsSettings: VisualDataLabelsSettings;
         calloutValueLabelsSettings: VisualDataLabelsSettings;
+        dataPointSettings: GaugeDataPointSettings;
     }
     interface GaugeTargetSettings {
         min: number;
@@ -6793,6 +6824,10 @@ declare module powerbi.visuals {
     interface GaugeTargetData extends GaugeTargetSettings {
         total: number;
         tooltipItems: TooltipSeriesDataItem[];
+    }
+    interface GaugeDataPointSettings {
+        fillColor: string;
+        targetColor: string;
     }
     interface GaugeSmallViewPortProperties {
         hideGaugeSideNumbersOnSmallViewPort: boolean;
@@ -6844,6 +6879,7 @@ declare module powerbi.visuals {
         private static VisualClassName;
         private static DefaultStyleProperties;
         private static DefaultTargetSettings;
+        private static DefaultDataPointSettings;
         private static InnerRadiusFactor;
         private static KpiBandDistanceFromMainArc;
         private static MainGaugeGroupClassName;
@@ -6886,6 +6922,7 @@ declare module powerbi.visuals {
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private getDataLabelSettingsOptions(enumeration, labelSettings);
         private enumerateAxis(enumeration);
+        private enumerateDataPoint(enumeration);
         private static getGaugeObjectsProperties(dataView);
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
@@ -6898,7 +6935,8 @@ declare module powerbi.visuals {
         private static overrideGaugeSettings(settings, gaugeObjectsSettings);
         /** Note: Made public for testability */
         static converter(dataView: DataView, tooltipsEnabled?: boolean): GaugeData;
-        private static convertDataLableSettings(dataview, objectName);
+        private static convertDataLabelSettings(dataview, objectName);
+        private static convertDataPointSettings(dataView, targetSettings);
         static getMetaDataColumn(dataView: DataView): DataViewMetadataColumn;
         private initKpiBands();
         private updateKpiBands(radius, innerRadiusFactor, tString, kpiAngleAttr);
@@ -7119,6 +7157,8 @@ declare module powerbi.visuals {
         private static LineElementName;
         private static RectOverlayName;
         private static ScalarOuterPadding;
+        private static interactivityStrokeWidth;
+        private static pathXAdjustment;
         static AreaFillOpacity: number;
         static DimmedAreaFillOpacity: number;
         private isInteractiveChart;
@@ -7150,6 +7190,8 @@ declare module powerbi.visuals {
         private interactivityService;
         private animator;
         private lineChartLabelDensityEnabled;
+        private previousCategoryCount;
+        private shouldAdjustMouseCoordsOnPathsForStroke;
         private static validLabelPositions;
         private static validStackedLabelPositions;
         private overlayRect;
@@ -7179,10 +7221,17 @@ declare module powerbi.visuals {
         private renderNew(duration);
         private renderOld(duration);
         /**
-         * Note: Static for tests.
+         * Note: Public for tests.
          */
         getSeriesTooltipInfo(pointData: HoverLineDataPoint[]): TooltipDataItem[];
-        getTooltipInfoByPathPointX(tooltipEvent: TooltipEvent, pointX: number): TooltipDataItem[];
+        /**
+         * Note: Public for tests.
+         */
+        getTooltipInfoForCombo(tooltipEvent: TooltipEvent, pointX: number): TooltipDataItem[];
+        /**
+         * Note: Public for tests.
+         */
+        getCategoryIndexFromTooltipEvent(tooltipEvent: TooltipEvent, pointX: number): number;
         getVisualCategoryAxisIsScalar(): boolean;
         getSupportedCategoryAxisType(): string;
         getPreferredPlotArea(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
@@ -7190,7 +7239,7 @@ declare module powerbi.visuals {
         private getAvailableWidth();
         private getAvailableHeight();
         private static sliceSeries(series, newLength, startIndex?);
-        private extraLineShift();
+        private getXOfFirstCategory();
         private hasDataPoint(series);
         private getXValue(d);
         /**
@@ -7221,6 +7270,22 @@ declare module powerbi.visuals {
         private createTooltipDataPoints(columnIndex);
         private createLegendDataPoints(columnIndex);
         private createLabelDataPoints();
+        /**
+         * Adjust a mouse coordinate originating from a path; used to fix
+         * an inconsistency between Internet Explorer and other browsers.
+         *
+         * Internet explorer places the origin for the coordinate system of
+         * mouse events based on the stroke, so that the very edge of the stroke
+         * is zoro.  Chrome places the 0 on the edge of the path so that the
+         * edge of the stroke is -(strokeWidth / 2).  We adjust coordinates
+         * to match Chrome.
+         *
+         * TODO: Firefox is similar to IE, but does a very poor job at it, so
+         * the edge is inacurate.
+         *
+         * @param value The x coordinate to be adjusted
+         */
+        private adjustPathXCoordinate(x);
         private showLabelPerSeries();
     }
 }
@@ -7236,6 +7301,7 @@ declare module powerbi.visuals {
         disablePanning?: boolean;
         isLegendScrollable?: boolean;
         viewChangeThrottleInterval?: number;
+        enableCurrentLocation?: boolean;
     }
     interface IMapControlFactory {
         createMapControl(element: HTMLElement, options?: Microsoft.Maps.MapOptions): Microsoft.Maps.Map;
@@ -7444,8 +7510,11 @@ declare module powerbi.visuals {
         private isLegendScrollable;
         private viewChangeThrottleInterval;
         private root;
+        private enableCurrentLocation;
+        private isCurrentLocation;
         constructor(options: MapConstructionOptions);
         init(options: VisualInitOptions): void;
+        private createCurrentLocation(element);
         private addDataPoint(dataPoint);
         private scheduleRedraw();
         private enqueueGeoCode(dataPoint);
@@ -7486,6 +7555,7 @@ declare module powerbi.visuals {
         private getMapViewPort();
         static removeTransform3d(mapRoot: JQuery): void;
         private updateInternal(dataChanged, redrawDataLabels);
+        private updateMapView(center, levelOfDetail);
         private updateOffsets(dataChanged, redrawDataLabels);
         onClearSelection(): void;
         private clearDataPoints();
@@ -7605,7 +7675,14 @@ declare module powerbi.visuals {
     module RichText {
         let defaultFont: string;
         const defaultFontSize: string;
-        function getFontFamily(font: string): string;
+        /**
+         * Given a font family returns the value we should use for the font-family css property.
+         */
+        function getCssFontFamily(font: string): string;
+        /**
+         * Convert built-in font families back into their proper font families (e.g. wf_segoe-ui_normal -> Segoe UI)
+         */
+        function getFontFamilyForBuiltInFont(font: string): string;
         class QuillWrapper {
             private editor;
             private $editorDiv;
@@ -7710,6 +7787,12 @@ declare module powerbi.visuals {
         category: string;
         fontSize?: number;
     }
+    interface ScatterChartDataPointSeries {
+        identityKey: string;
+        dataPoints?: ScatterChartDataPoint[];
+        hasSize?: boolean;
+        fill?: string;
+    }
     interface RadiusData {
         sizeMeasure: DataViewValueColumn;
         index: number;
@@ -7719,10 +7802,11 @@ declare module powerbi.visuals {
         maxRange: number;
         delta: number;
     }
-    interface ScatterChartData extends PlayableChartData {
+    interface ScatterChartData extends PlayableChartData, ScatterBehaviorChartData {
         xCol: DataViewMetadataColumn;
         yCol: DataViewMetadataColumn;
         dataPoints: ScatterChartDataPoint[];
+        dataPointSeries: ScatterChartDataPointSeries[];
         legendData: LegendData;
         axesLabels: ChartAxesLabels;
         size?: DataViewMetadataColumn;
@@ -7741,6 +7825,7 @@ declare module powerbi.visuals {
         viewport: IViewport;
         data: ScatterChartData;
         drawBubbles: boolean;
+        isPlay: boolean;
         fillMarkers: boolean;
         hasSelection: boolean;
         animationDuration: number;
@@ -7753,6 +7838,14 @@ declare module powerbi.visuals {
         interactivityService?: any;
         categoryAxisProperties?: any;
         valueAxisProperties?: any;
+    }
+    /** Styles to apply to scatter chart data point marker */
+    interface ScatterMarkerStyle {
+        'stroke-opacity': number;
+        'stroke-width': string;
+        stroke: string;
+        fill: string;
+        'fill-opacity': number;
     }
     interface CartesianExtents {
         minX: number;
@@ -7772,6 +7865,7 @@ declare module powerbi.visuals {
         private static MinSizeRange;
         private static MaxSizeRange;
         private static ClassName;
+        static NoAnimationThreshold: number;
         private svg;
         private element;
         private currentViewport;
@@ -7796,10 +7890,12 @@ declare module powerbi.visuals {
         private playAxis;
         constructor(options: ScatterChartConstructorOptions);
         init(options: CartesianVisualInitOptions): void;
+        static customizeQuery(options: CustomizeQueryOptions): void;
+        static getAdditionalTelemetry(dataView: DataView): any;
         private static getObjectProperties(dataView, dataLabelsSettings?);
         static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
         private static getSizeRangeForGroups(dataViewValueGroups, sizeColumnIndex);
-        private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, gradientValueColumn, defaultDataPointColor?, categoryQueryName?, colorByCategory?, playFrameInfo?, tooltipsEnabled?);
+        private static createDataPointSeries(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, gradientValueColumn, defaultDataPointColor, categoryQueryName, colorByCategory, playFrameInfo, tooltipsEnabled);
         private static createSeriesLegend(dataValues, colorPalette, categorical, formatString, defaultDataPointColor);
         static getBubbleRadius(radiusData: RadiusData, sizeRange: NumberRange, viewport: IViewport): number;
         static getMeasureValue(measureIndex: number, seriesValues: DataViewValueColumn[]): DataViewValueColumn;
@@ -7823,6 +7919,11 @@ declare module powerbi.visuals {
         static project(value: number, actualSizeDataRange: DataRange, bubblePixelAreaSizeRange: DataRange): number;
         static projectSizeToPixels(size: number, actualSizeDataRange: DataRange, bubblePixelAreaSizeRange: DataRange): number;
         static rangeContains(range: DataRange, value: number): boolean;
+        static getMarkerFillOpacity(hasSize: boolean, shouldEnableFill: boolean, hasSelection: boolean, isSelected: boolean): number;
+        static getMarkerStrokeOpacity(hasSize: boolean, colorBorder: boolean, hasSelection: boolean, isSelected: boolean): number;
+        static getMarkerStrokeFill(hasSize: boolean, colorBorder: boolean, fill: string): string;
+        static getMarkerStyle(d: ScatterChartDataPoint, colorBorder: boolean, hasSelection: boolean, fillMarkers: boolean): ScatterMarkerStyle;
+        static getSeriesStyle(hasSize: boolean, colorBorder: boolean, hasSelection: boolean, fillMarkers: boolean, fill: string): ScatterMarkerStyle;
         static getBubbleOpacity(d: ScatterChartDataPoint, hasSelection: boolean): number;
         onClearSelection(): void;
         getSupportedCategoryAxisType(): string;
@@ -9131,13 +9232,7 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     interface ScriptVisualDataViewObjects extends DataViewObjects {
-        lastSavedImage: ScriptVisualDataViewObject;
         script: ScriptObject;
-    }
-    interface ScriptVisualDataViewObject extends DataViewObject {
-        imageUrl: string;
-        viewportHeight: number;
-        viewportWidth: number;
     }
     interface ScriptObject extends DataViewObject {
         provider: string;
@@ -9157,8 +9252,6 @@ declare module powerbi.visuals {
         onResizing(finalViewport: IViewport): void;
         private getImageUrl(dataView);
         private ensureHtmlElement();
-        private getLastSavedImage(dataView);
-        private updateLastSavedImage(dataView, imageUrl, viewport);
     }
 }
 declare module powerbi.visuals.plugins {

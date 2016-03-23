@@ -25,7 +25,7 @@
  */
 
 @import "sprites.less";
-@import "../../StyleLibrary/less/powervisuals-glyphs.less";
+@import "../../StyleLibrary/exports.less";
 @import "../../PowerBI/styles/colorPalette.less";
 @import "../../PowerBI/styles/fonts.less";
 @import "../../PowerBI/styles/mixins.less";
@@ -416,14 +416,6 @@
         font-family: @regularFontFamily;
         font-size: 11px;
 
-        .dot {
-            fill: @chartTemplateColor;
-        }
-
-        .dot:hover {
-            fill: @chartTemplateColorDarker;
-        }
-
         .dot.null-value {
             display: none;
         }
@@ -459,13 +451,6 @@
 }
 
 .waterfallChart {
-    .column {
-        fill: @chartTemplateColor;
-    }
-
-    .column:hover {
-        fill: @chartTemplateColorDarker;
-    }
 
     .axisGraphicsContext {
         font-family: @regularFontFamily;
@@ -505,7 +490,6 @@
         .interactivity-line {
             stroke: @whiteColor;
             stroke-opacity: 0;
-            stroke-width: 10px;
         }
     }
 
@@ -780,6 +764,10 @@
        left: -10px;
        touch-action: none;
     }
+}
+
+.play-callout {
+    pointer-events: none;
 }
 
 .tableContainer {
@@ -1218,6 +1206,16 @@
 
     .mapShapes {
         stroke-linejoin: round;
+    }
+
+    .mapCurrentLocation {
+        background-image: url('../images/locationButton.svg');
+        position: absolute;
+        width:60px;
+        height: 60px;
+        bottom:0;
+        right: 0;
+        pointer-events: all;
     }
 
     .textbox {

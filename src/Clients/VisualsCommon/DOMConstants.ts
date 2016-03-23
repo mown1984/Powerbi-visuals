@@ -64,6 +64,7 @@ module jsCommon {
         export const DocumentBody = 'body';
         export const Anchor = 'a';
         export const EditableTextElements = ':text, textarea';
+        export const EditableNumericElements = '[type="number"]';
 
         /** 
          * DOM Attributes and values.

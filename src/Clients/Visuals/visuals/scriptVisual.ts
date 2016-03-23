@@ -28,14 +28,7 @@ module powerbi.visuals {
     import Utility = jsCommon.Utility;
 
     export interface ScriptVisualDataViewObjects extends DataViewObjects {
-        lastSavedImage: ScriptVisualDataViewObject;
         script: ScriptObject;
-    }
-
-    export interface ScriptVisualDataViewObject extends DataViewObject {
-        imageUrl: string;
-        viewportHeight: number;
-        viewportWidth: number;
     }
 
     export interface ScriptObject extends DataViewObject {
@@ -84,11 +77,9 @@ module powerbi.visuals {
                 let viewport = options.viewport;
 
                 div.css({ height: viewport.height, width: viewport.width, backgroundImage: 'url(' + imageUrl + ')' });
-                if (imageUrl !== this.getLastSavedImage(dataView))
-                    this.updateLastSavedImage(dataView, imageUrl, viewport);
-            }
-            else
+            } else {
                 div.css({ backgroundImage: 'none' });
+            }
         }
 
         public onResizing(finalViewport: IViewport): void {
@@ -99,10 +90,11 @@ module powerbi.visuals {
         private getImageUrl(dataView: DataView): string {
             debug.assertValue(dataView, 'dataView');
 
-            if (!dataView.scriptResult || !dataView.scriptResult.imageBase64)
-                return this.getLastSavedImage(dataView);
+            if (dataView.scriptResult && dataView.scriptResult.imageBase64) {
+                return "data:image/png;base64," + dataView.scriptResult.imageBase64;
+            }
 
-            return "data:image/png;base64," + dataView.scriptResult.imageBase64;
+            return null;
         }
 
         private ensureHtmlElement(): JQuery {
@@ -112,48 +104,8 @@ module powerbi.visuals {
                 this.imageBackgroundElement = div;
                 this.imageBackgroundElement.appendTo(this.element);
             }
+
             return div;
-        }
-
-        private getLastSavedImage(dataView: DataView): string {
-            debug.assertValue(dataView, 'dataView');
-
-            let defaultImageUrl = null;
-            if (!dataView || !dataView.metadata)
-                return defaultImageUrl;
-
-            let objects = <ScriptVisualDataViewObjects>dataView.metadata.objects;
-            if (!objects || !objects.lastSavedImage)
-                return defaultImageUrl;
-
-            let imageUrl = objects.lastSavedImage.imageUrl;
-            if (!Utility.isValidImageDataUrl(imageUrl))
-                return defaultImageUrl;
-
-            return imageUrl;
-        }
-
-        private updateLastSavedImage(dataView: DataView, imageUrl: string, viewport: IViewport): void {
-            debug.assertValue(imageUrl, 'dataView');
-            debug.assertValue(imageUrl, 'imageUrl');
-
-            if (!Utility.isValidImageDataUrl(imageUrl))
-                return;
-
-            if (!dataView || !dataView.metadata)
-                return;
-
-            let changes: VisualObjectInstance[] = [{
-                objectName: 'lastSavedImage',
-                properties: {
-                    imageUrl: imageUrl,
-                    viewportHeight: viewport.height,
-                    viewportWidth: viewport.width,
-                },
-                selector: null,
-            }];
-
-            this.hostServices.persistProperties(changes);
         }
     }
 }

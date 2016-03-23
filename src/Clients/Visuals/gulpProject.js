@@ -32,11 +32,12 @@ var projects = require("../../../gulp/projects.js"),
 
 var externalsJs = [
     "../Externals/ThirdPartyIP/JQuery/2.1.3/jquery.min.js",
+    "../Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js",
     "../Externals/ThirdPartyIP/D3/d3.min.js",
     "../Externals/ThirdPartyIP/LoDash/lodash.min.js",
     "../Externals/ThirdPartyIP/GlobalizeJS/globalize.min.js",
-    "../Externals/ThirdPartyIP/GlobalizeJS/globalize.culture.en-US.js",
-    "../Externals/ThirdPartyIP/jqueryui/1.11.4/jquery-ui.min.js"];
+    "../Externals/ThirdPartyIP/GlobalizeJS/globalize.culture.en-US.js"
+    ];
 
 module.exports = projects.initProject(
     "visuals", // proj name
@@ -77,7 +78,7 @@ module.exports = projects.initProject(
                 dest: config.paths.VisualsDropStyles
             },
             {
-                source: ["./images/visuals.sprites.png"],
+                source: ["./images/visuals.sprites.png", "./images/locationButton.svg"],
                 dest: path.join(config.paths.VisualsDropStyles, "images")
             },
             {

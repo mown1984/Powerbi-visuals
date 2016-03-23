@@ -57,6 +57,7 @@
         "dataView/rules/ruleEvaluation.ts",
         "dataView/rules/colorRuleEvaluation.ts",
         "dataView/utils/dataViewMatrixUtils.ts",
+        "dataView/utils/dataViewMetadataColumnUtils.ts",
         "contracts/conceptualSchema.ts",
         "dataView/scriptResultUtil.ts",
         "segmentation/dataViewMerger.ts",

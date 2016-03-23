@@ -200,6 +200,7 @@ module powerbi.visuals {
         function createDefaultSettings(dataViewMetadata: DataViewMetadata): SlicerSettings {
             let defaultSettings = Slicer.DefaultStyleProperties();
             let objects = dataViewMetadata.objects;
+            let forceSingleSelect = dataViewMetadata.columns && _.some(dataViewMetadata.columns, (column) => column.discourageAggregationAcrossGroups);
 
             if (objects) {
                 defaultSettings.general.outlineColor = DataViewObjects.getFillColor(objects, slicerProps.general.outlineColor, defaultSettings.general.outlineColor);
@@ -222,8 +223,8 @@ module powerbi.visuals {
                 defaultSettings.slicerText.outline = DataViewObjects.getValue<string>(objects, slicerProps.items.outline, defaultSettings.slicerText.outline);
                 defaultSettings.slicerText.textSize = DataViewObjects.getValue<number>(objects, slicerProps.items.textSize, defaultSettings.slicerText.textSize);
 
-                defaultSettings.selection.selectAllCheckboxEnabled = DataViewObjects.getValue<boolean>(objects, slicerProps.selection.selectAllCheckboxEnabled, defaultSettings.selection.selectAllCheckboxEnabled);
-                defaultSettings.selection.singleSelect = DataViewObjects.getValue<boolean>(objects, slicerProps.selection.singleSelect, defaultSettings.selection.singleSelect);
+                defaultSettings.selection.selectAllCheckboxEnabled = !forceSingleSelect && DataViewObjects.getValue<boolean>(objects, slicerProps.selection.selectAllCheckboxEnabled, defaultSettings.selection.selectAllCheckboxEnabled);
+                defaultSettings.selection.singleSelect = forceSingleSelect || DataViewObjects.getValue<boolean>(objects, slicerProps.selection.singleSelect, defaultSettings.selection.singleSelect);
             }
 
             return defaultSettings;

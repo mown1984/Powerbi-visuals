@@ -36,6 +36,7 @@
         "Utility/Utility.ts",
         "tracing/traceItem.ts",
         "Utility/urlUtils.ts",
+        "Utility/browserUtils.ts",
         "Utility/StandaloneUtility.ts",
         "Utility/wordBreaker.ts",
         "tracing/trace.ts",

@@ -300,6 +300,12 @@ module powerbi.visuals {
                 if ((data.categories == null) && !_.isEmpty(values)) {
                     // No categories, sliced by series and measures
                     for (let i = 0, ilen = values[0].length; i < ilen; i++) {
+
+                        // Don't add the gradient data as a node
+                        if (i === gradientMeasureIndex) {
+                            continue;
+                        }
+
                         let value = values[0][i];
                         if (!Treemap.checkValueForShape(value)) {
                             continue;
@@ -360,36 +366,54 @@ module powerbi.visuals {
                     }
                 }
                 else if (data.categories && data.categories.length > 0) {
+                    // Remove 1 from the value column count if there is a gradient
+                    let valueColumnCount = valueColumns.length - (gradientMeasureIndex !== -1 ? 1 : 0);
+
+                    // Do not add second level if it's one and only one data point per shape and it's not a group value
+                    // e.g. Category/Series group plus only one Value field (excluding the gradient)
+                    let omitSecondLevel = valueColumnCount === 1 && (valueColumns[0].source.groupName == null);
+
                     // Create the first level from categories
                     let categoryColumn = data.categories[0];
-                    let valueColumnCount = valueColumns.length;
-                    let categoryFormat = valueFormatter.getFormatString(categoryColumn.source, formatStringProp);
 
                     legendTitle = categoryColumn.source ? categoryColumn.source.displayName : "";
                     let categorical = undefined;
-                    for (let i = 0, ilen = values.length; i < ilen; i++) {
+                    let categoryFormat = valueFormatter.getFormatString(categoryColumn.source, formatStringProp);
+
+                    for (let categoryIndex = 0, categoryLen = values.length; categoryIndex < categoryLen; categoryIndex++) {
                         let identity: SelectionId = SelectionIdBuilder.builder()
-                            .withCategory(categoryColumn, i)
+                            .withCategory(categoryColumn, categoryIndex)
                             .createSelectionId();
 
                         let key = JSON.stringify({ nodeKey: identity.getKey(), depth: 1 });
 
-                        let objects = categoryColumn.objects && categoryColumn.objects[i];
+                        let objects = categoryColumn.objects && categoryColumn.objects[categoryIndex];
 
-                        let color = colorHelper.getColorForSeriesValue(objects, categoryColumn.identityFields, categoryColumn.values[i]);
+                        let color = colorHelper.getColorForSeriesValue(objects, categoryColumn.identityFields, categoryColumn.values[categoryIndex]);
+                        
+                        let categoryValue = valueFormatter.format(categoryColumn.values[categoryIndex], categoryFormat);
 
-                        let categoryValue = valueFormatter.format(categoryColumn.values[i], categoryFormat);
-                        let value = values[i][0];
-                        let highlightValue = hasHighlights && highlights ? highlights[i][0] : undefined;
+                        let currentValues = values[categoryIndex];
                         categorical = dataView.categorical;
+
+                        // This section area builds the tooltip for the parent node. It's only displayed if the node doesn't have any children (essentially if omitSecondLevel is true).
+                        // seriesIndex is used to figure determine what the value is for this tooltip. 
+                        // If omitSecondLevel is true, currentValues should have (at most) 2 series - one for the value and optionally one for the gradient.
+                        // seriesIndex is set the 1st series that is not a gradient
+                        let seriesIndex = gradientMeasureIndex === 0 ? 1 : 0;
+                        let value = currentValues[seriesIndex];
+                        let highlightValue = hasHighlights && highlights ? highlights[categoryIndex][seriesIndex] : undefined;
+                                                
                         let tooltipInfo: TooltipDataItem[];
                         let highlightedTooltipInfo: TooltipDataItem[];
+
                         if (tooltipsEnabled) {
-                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value);
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex, categoryIndex, null, omitSecondLevel ? gradientValueColumn : undefined);
                             if (highlightValue !== undefined) {
-                                highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, 0, i, highlightValue);
+                                highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex, categoryIndex, highlightValue, omitSecondLevel ? gradientValueColumn : undefined);
                             }
                         }
+
                         let node: TreemapNode = {
                             key: key,
                             name: categoryValue,
@@ -416,12 +440,13 @@ module powerbi.visuals {
                         let total = 0;
                         let highlightTotal = 0; // Used if omitting second level
 
-                        // Do not add second level if it's one and only one data point per shape and it's not a group value
-                        // e.g. Category/Series group plus only one Value field
-                        let omitSecondLevel = valueColumnCount === 1 && (valueColumns[0].source.groupName == null);
-                        let currentValues = values[i];
-
                         for (let j = 0, jlen = currentValues.length; j < jlen; j++) {
+
+                            // Don't add the gradient data as a node
+                            if (j === gradientMeasureIndex) {
+                                continue;
+                            }
+
                             let valueColumn = valueColumns[j];
                             let value = currentValues[j];
                             let highlight: number;
@@ -435,7 +460,7 @@ module powerbi.visuals {
                             total += value;
 
                             if (hasHighlights) {
-                                highlight = highlights[i][j];
+                                highlight = highlights[categoryIndex][j];
                                 highlightTotal += highlight;
                             }
 
@@ -453,7 +478,7 @@ module powerbi.visuals {
                                 let categoricalValues = categorical ? categorical.values : null;
                                 let measureId = isMultiSeries ? valueColumn.source.queryName : undefined;
                                 let childIdentity = SelectionIdBuilder.builder()
-                                    .withCategory(categoryColumn, i)
+                                    .withCategory(categoryColumn, categoryIndex)
                                     .withSeries(categoricalValues, valueColumn)
                                     .withMeasure(measureId)
                                     .createSelectionId();
@@ -461,14 +486,12 @@ module powerbi.visuals {
 
                                 let highlightedValue = hasHighlights && highlight !== 0 ? highlight : undefined;
                                 categorical = dataView.categorical;
-                                //If j index equals to gradientIndex, the tooltip values are the same
-                                let gradientColumnForTooltip = gradientMeasureIndex === j ? null : gradientValueColumn;
                                 let tooltipInfo: TooltipDataItem[];
                                 let highlightedTooltipInfo: TooltipDataItem[];
                                 if (tooltipsEnabled) {
-                                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i, null, gradientColumnForTooltip);
+                                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, categoryIndex, null, gradientValueColumn);
                                     if (highlightedValue !== undefined) {
-                                        highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, i, highlightedValue, gradientColumnForTooltip);
+                                        highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, j, categoryIndex, highlightedValue, gradientValueColumn);
                                     }
                                 }
 

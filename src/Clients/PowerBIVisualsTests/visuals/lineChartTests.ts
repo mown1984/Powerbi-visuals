@@ -3769,9 +3769,10 @@ module powerbitests {
 
                 let lineChart = (<any>v).layers[0];
                 setTimeout(() => {
+                    let tooltipInfo = getTooltip(lineChart, lineChart.data.series[0], 5);
                     expect(helpers.findElementText($(yaxisSelector).find('text').first())).toBe('1');
                     expect(helpers.findElementTitle($(yaxisSelector).find('text').first())).toBe('1');
-                    expect(lineChart.getTooltipInfoByPathPointX(createTooltipEvent(lineChart.data.series[0]), 5)[0].value).toBe('1');
+                    expect(tooltipInfo[0].value).toBe('100.00');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -4087,6 +4088,63 @@ module powerbitests {
                     expect(helpers.findElementTitle($(yaxisSelector).find('text').last())).toBe('120');
                     done();
                 }, DefaultWaitForRender);
+            });
+
+            it("Check that data labels for stacked area has enough space in parent shape", () => {
+                let metadataWithDensity = powerbi.Prototype.inherit(dataViewMetadata);
+                metadataWithDensity.objects = {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                        labelDensity: labelDensityMax,
+                    },
+                    categoryAxis: {
+                        show: true,
+                        start: 0,
+                        end: 25,
+                        axisType: AxisType.categorical,
+                        showAxisTitle: true,
+                        axisStyle: true
+                    }
+
+                };
+                let valueColumns = DataViewTransform.createValueColumns([
+                    {
+                        source: metadataWithDensity.columns[1],
+                        values: [20, 40, 50, 0, 90],
+                        identity: seriesIdentities[0],
+                    }, {
+                        source: metadataWithDensity.columns[2],
+                        values: [90, 34, 56, 0, 50],
+                        identity: seriesIdentities[1],
+                    }],
+                    [measureColumnRef]);
+                valueColumns.source = metadataWithDensity.columns[2];
+
+                let dataView = {
+                    metadata: metadataWithDensity,
+                    categorical: {
+                        categories: [{
+                            source: metadataWithDensity.columns[0],
+                            values: [2001, 2002, 2003, 2004, 2005]
+                        }],
+                        values: valueColumns
+                    }
+                };
+
+                v.onDataChanged({
+                    dataViews: [dataView]
+                });
+
+                let labelDataPoints = callCreateLabelDataPoints(v);
+                
+                let parentShape = <powerbi.LabelParentRect>labelDataPoints[0].parentShape;
+                let actualWidth = parentShape.rect.width;
+                expect(actualWidth).toBeGreaterThan(118);
+                
             });
 
             it("Check that data labels are series value and not stack value", () => {
@@ -4833,7 +4891,92 @@ module powerbitests {
                 helpers.assertColorsMatch(labels.find('text').css('fill'), '#ff0000');
             });
 
-            it('enumerateObjectInstances: Verify instances on ordinal category axis', () => {
+            it('enumerateObjectInstances: legend color', () => {
+
+                dataViewMetadata.objects = {
+                    categoryAxis: {
+                        show: true,
+                        start: 0,
+                        end: 25,
+                        axisType: AxisType.scalar,
+                        showAxisTitle: true,
+                        axisStyle: true
+                    }
+                };
+                let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+                let col3Ref = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
+                let categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
+                let seriesIdentities = [
+                    mocks.dataViewScopeIdentity('col2'),
+                    mocks.dataViewScopeIdentity('col3'),
+                ];
+
+                let valueColumns = DataViewTransform.createValueColumns([
+                    {
+                        source: dataViewMetadata.columns[1],
+                        values: [110, 120, 130, 140, 150],
+                        identity: seriesIdentities[0],
+                    }, {
+                        source: dataViewMetadata.columns[2],
+                        values: [210, 220, 230, 240, 250],
+                        identity: seriesIdentities[1],
+                    }],
+                    [col3Ref]);
+                valueColumns.source = measureColumn;
+
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadata,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e'],
+                                identityFields: [categoryColumnRef],
+                            }],
+                            values: valueColumns
+                        }
+                    }]
+                });
+                let legend = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'legend' });
+
+                expect(legend.instances[0].properties['labelColor']).toBe(powerbi.visuals.LegendData.DefaultLegendLabelFillColor);
+            });
+
+            it('enumerateObjectInstances: Verify instances on ordinal value axis', () => {
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: nonNumericDataViewMetadata,
+                        categorical: {
+                            categories: [{
+                                source: nonNumericDataViewMetadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e']
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: nonNumericDataViewMetadata.columns[1],
+                                values: [1, 2, 3, 4, 5],
+                                subtotal: 15
+                            },
+                                {
+                                    source: nonNumericDataViewMetadata.columns[1],
+                                    values: [1, 2, 3, 4, 5],
+                                    subtotal: 15
+                                }])
+                        }
+                    }]
+                });
+                let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'valueAxis' });
+
+                expect(points.instances[0].properties['start']).toBeUndefined();
+                expect(points.instances[0].properties['end']).toBeUndefined();
+                expect(points.instances[0].properties['axisType']).toBeUndefined();
+
+                expect(points.instances[0].properties['show']).toBeDefined;
+                expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
+                expect(points.instances[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['labelColor']).toBe(powerbi.visuals.DEFAULT_AXIS_COLOR);
+            });
+
+            it('enumerateObjectInstances: Verify instances on ordinal value axis', () => {
 
                 dataViewMetadata.objects = {
                     categoryAxis: {
@@ -4867,7 +5010,7 @@ module powerbitests {
                         }
                     }]
                 });
-                let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+                let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'valueAxis' });
 
                 expect(points.instances[0].properties['start']).toBeUndefined();
                 expect(points.instances[0].properties['end']).toBeUndefined();
@@ -4876,6 +5019,7 @@ module powerbitests {
                 expect(points.instances[0].properties['show']).toBeDefined;
                 expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
                 expect(points.instances[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['labelColor']).toBe('#777');
             });
 
             it('enumerateObjectInstances: Verify instances on numerical category axis', () => {
@@ -4898,6 +5042,52 @@ module powerbitests {
                             categories: [{
                                 source: dataViewMetadata.columns[0],
                                 values: [1, 2, 3, 4, 5]
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadata.columns[1],
+                                values: [1, 2, 3, 4, 5],
+                                subtotal: 15
+                            },
+                                {
+                                    source: dataViewMetadata.columns[1],
+                                    values: [1, 2, 3, 4, 5],
+                                    subtotal: 15
+                                }])
+                        }
+                    }]
+                });
+                let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'categoryAxis' });
+
+                expect(points.instances[0].properties['start']).toBeDefined();
+                expect(points.instances[0].properties['end']).toBeDefined();
+                expect(points.instances[0].properties['axisType']).toBeDefined();
+
+                expect(points.instances[0].properties['show']).toBeDefined;
+                expect(points.instances[0].properties['showAxisTitle']).toBeDefined;
+                expect(points.instances[0].properties['axisStyle']).toBeDefined;
+                expect(points.instances[0].properties['labelColor']).toBe('#777');
+            });
+
+            it('enumerateObjectInstances: Verify instances on numerical category axis with empty values array', () => {
+
+                dataViewMetadata.objects = {
+                    categoryAxis: {
+                        show: true,
+                        start: 0,
+                        end: 25,
+                        axisType: AxisType.scalar,
+                        showAxisTitle: true,
+                        axisStyle: true
+                    }
+                };
+
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadata,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata.columns[0],
+                                values: []
                             }],
                             values: DataViewTransform.createValueColumns([{
                                 source: dataViewMetadata.columns[1],
@@ -5244,7 +5434,7 @@ module powerbitests {
                 let pointX = 25;
                 let seriesData = lineChart.data.series[0];
                 let svgPath = $('.interactivity-line')[0];
-                let tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData, svgPath), pointX);
+                let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX, svgPath);
                 expect(tooltipInfo[0].displayName).toBe('col1');
                 expect(tooltipInfo[0].value).toBe('VW');
                 expect(tooltipInfo[1].displayName).toBe('col2');
@@ -5279,13 +5469,143 @@ module powerbitests {
                 let pointX = 480; // test the last point to make sure we know how to skip that null value, defect 6546054
                 let seriesData = lineChart.data.series[0];
                 let svgPath = $('.interactivity-line')[0];
-                let tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData, svgPath), pointX);
+                let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX, svgPath);
                 expect(tooltipInfo[0].displayName).toBe('col3');
                 expect(tooltipInfo[0].value).toBe('07/15/2015');
                 expect(tooltipInfo[1].displayName).toBe('col2');
                 expect(tooltipInfo[1].value).toBe('500000');
                 done();
             }, DefaultWaitForRender);
+        });
+
+        it('getCategoryIndexFromTooltipEvent for dots', () => {
+            let categoryFieldDef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
+            let lineChart: LineChart = (<any>v).layers[0];
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['Ford', 'Chevrolet', 'VW', 'Cadillac', 'GM'],
+                            identityFields: [categoryFieldDef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [0, 495000, 490000, 480000, 500000],
+                        }])
+                    }
+                }]
+            });
+
+            let tooltipEvent0 = createTooltipEvent({ categoryIndex: 0 });
+            let tooltipEvent1 = createTooltipEvent({ categoryIndex: 1 });
+            let tooltipEvent2 = createTooltipEvent({ categoryIndex: 2 });
+            let tooltipEvent3 = createTooltipEvent({ categoryIndex: 3 });
+            let tooltipEvent4 = createTooltipEvent({ categoryIndex: 4 });
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent0, 400)).toBe(0);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent1, 200)).toBe(1);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent2, 350)).toBe(2);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent3, 10)).toBe(3);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent4, 180)).toBe(4);
+        });
+
+        it('getCategoryIndexFromTooltipEvent for lines', () => {
+            let categoryFieldDef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
+            let lineChart: LineChart = (<any>v).layers[0];
+            let values = [0, 495000, 490000, 480000, 500000];
+            let categoryValues = ['Ford', 'Chevrolet', 'VW', 'Cadillac', 'GM'];
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: categoryValues,
+                            identityFields: [categoryFieldDef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: values,
+                        }])
+                    }
+                }]
+            });
+
+            let tooltipEvent = createTooltipEvent({
+                data: _.map(values, (value, index) => {
+                    return { value: value, categoryValue: categoryValues[index], categoryIndex: index };
+                }),
+            });
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 0)).toBe(0);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 35)).toBe(0);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 180)).toBe(2);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 300)).toBe(3);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 490)).toBe(4);
+        });
+
+        it('getCategoryIndexFromTooltipEvent for lines with nulls', () => {
+            let categoryFieldDef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
+            let lineChart: LineChart = (<any>v).layers[0];
+            let values = [null, 495000, null, 480000, 500000];
+            let categoryValues = ['Ford', 'Chevrolet', 'VW', 'Cadillac', 'GM'];
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: categoryValues,
+                            identityFields: [categoryFieldDef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: values,
+                        }])
+                    }
+                }]
+            });
+
+            let tooltipEvent = createTooltipEvent({
+                data: _.map(values, (value, index) => {
+                    return { value: value, categoryValue: categoryValues[index], categoryIndex: index };
+                }),
+            });
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 0)).toBe(3);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 150)).toBe(4);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 230)).toBe(4);
+        });
+
+        it('getCategoryIndexFromTooltipEvent for background', () => {
+            let categoryFieldDef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
+            let lineChart: LineChart = (<any>v).layers[0];
+
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['Ford', 'Chevrolet', 'VW', 'Cadillac', 'GM'],
+                            identityFields: [categoryFieldDef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [0, 495000, 490000, 480000, 500000],
+                        }])
+                    }
+                }]
+            });
+
+            let tooltipEvent = createTooltipEvent(undefined);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 0)).toBe(0);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 140)).toBe(1);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 270)).toBe(2);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 335)).toBe(3);
+            expect(lineChart.getCategoryIndexFromTooltipEvent(tooltipEvent, 490)).toBe(4);
         });
     });
 
@@ -5352,19 +5672,19 @@ module powerbitests {
             lineChart = (<any>v).layers[0];
             let pointX: number = 10;
             let seriesData = lineChart.data.series[0];
-            let tooltipInfo: powerbi.visuals.TooltipDataItem[] = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2001' }, { displayName: 'col2', value: '500000' }]);
 
             pointX = 120;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2002' }, { displayName: 'col2', value: '495000' }]);
 
             pointX = 303;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2004' }, { displayName: 'col2', value: '480000' }]);
 
             pointX = 450;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2005' }, { displayName: 'col2', value: '500000' }]);
         });
 
@@ -5408,11 +5728,11 @@ module powerbitests {
             lineChart = (<any>v).layers[0];
             let pointX: number = 0;
             let seriesData = lineChart.data.series[0];
-            let tooltipInfo: powerbi.visuals.TooltipDataItem[] = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2001' }, { displayName: 'col2', value: '500000' }]);
 
             pointX = 500;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2005' }, { displayName: 'col2', value: '500000' }]);
         });
 
@@ -5478,19 +5798,19 @@ module powerbitests {
 
             let pointX: number = 10;
             let seriesData = lineChart.data.series[0];
-            let tooltipInfo: powerbi.visuals.TooltipDataItem[] = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2001' }, { displayName: 'col3', value: '(Blank)' }, { displayName: 'col2', value: '500000' }]);
 
             pointX = 120;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2002' }, { displayName: 'col3', value: '(Blank)' }, { displayName: 'col2', value: '495000' }]);
 
             pointX = 303;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2004' }, { displayName: 'col3', value: '(Blank)' }, { displayName: 'col2', value: '480000' }]);
 
             pointX = 450;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: '2005' }, { displayName: 'col3', value: '(Blank)' }, { displayName: 'col2', value: '500000' }]);
         });
 
@@ -5532,19 +5852,19 @@ module powerbitests {
             lineChart = (<any>v).layers[0];
             let pointX: number = 10;
             let seriesData = lineChart.data.series[0];
-            let tooltipInfo: powerbi.visuals.TooltipDataItem[] = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            let tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: 'a' }, { displayName: 'col2', value: '500000' }]);
 
             pointX = 120;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: 'b' }, { displayName: 'col2', value: '495000' }]);
 
             pointX = 303;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: 'd' }, { displayName: 'col2', value: '480000' }]);
 
             pointX = 450;
-            tooltipInfo = lineChart.getTooltipInfoByPathPointX(createTooltipEvent(seriesData), pointX);
+            tooltipInfo = getComboOrMobileTooltip(lineChart, seriesData, pointX);
             expect(tooltipInfo).toEqual([{ displayName: 'col1', value: 'e' }, { displayName: 'col2', value: '500000' }]);
         });
     });
@@ -6251,10 +6571,6 @@ module powerbitests {
         return labelDataPointsGroups[0].labelDataPoints;
     }
 
-//    function callCreateLabelDataPointsObj(v: powerbi.IVisual): powerbi.LabelDataPointsGroup[] {
-//        return (<any>v).layers[0].createLabelDataPoints();
-//    }
-
     function createTooltipEvent(data: any, context?: HTMLElement): powerbi.visuals.TooltipEvent {
         return {
             data: data,
@@ -6264,5 +6580,21 @@ module powerbitests {
             context: context,
             isTouchEvent: false,
         };
+    }
+
+    /**
+     * Obtains a tooltip using the appropriate set of functions from lineChart
+     */
+    function getTooltip(lineChart: LineChart, seriesData: any, pointX: number, context?: HTMLElement): powerbi.visuals.TooltipDataItem[] {
+        let index = lineChart.getCategoryIndexFromTooltipEvent(createTooltipEvent(seriesData, context), pointX);
+        let categoryData = lineChart.selectColumnForTooltip(index);
+        return lineChart.getSeriesTooltipInfo(categoryData);
+    }
+
+    /**
+     * Obtains a tooltip using the appropriate set of functions from lineChart
+     */
+    function getComboOrMobileTooltip(lineChart: LineChart, seriesData: any, pointX: number, context?: HTMLElement): powerbi.visuals.TooltipDataItem[] {
+        return lineChart.getTooltipInfoForCombo(createTooltipEvent(seriesData, context), pointX);
     }
 }
