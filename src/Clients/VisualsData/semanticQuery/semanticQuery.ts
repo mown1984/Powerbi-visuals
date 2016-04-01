@@ -244,13 +244,17 @@ module powerbi.data {
 
             let selectItems = this.select(),
                 from = this.fromValue.clone();
-            selectItems.push({
-                name: SQExprUtils.uniqueName(selectItems, expr, exprName),
-                expr: SQExprRewriterWithSourceRenames.rewrite(expr, from)
-            });
+            selectItems.push(this.createNamedExpr(selectItems, from, expr, exprName));
 
             return SemanticQuery.createWithTrimmedFrom(from, this.whereItems, this.orderByItems, selectItems, this.groupByItems);
         }
+
+        private createNamedExpr(currentNames: ArrayNamedItems<NamedSQExpr>, from: SQFrom, expr: SQExpr, exprName?: string): NamedSQExpr{
+            return {
+                name: SQExprUtils.uniqueName(currentNames, expr, exprName),
+                expr: SQExprRewriterWithSourceRenames.rewrite(expr, from)
+            };
+        } 
 
         /** Returns a query equivalent to this, with the specified groupBy items. */
         groupBy(values: NamedSQExpr[]): SemanticQuery;
@@ -270,6 +274,16 @@ module powerbi.data {
         private setGroupBy(values: NamedSQExpr[]): SemanticQuery {
             let from = this.fromValue.clone();
             let groupByItems = SemanticQuery.rewriteExpressionsWithSourceRenames(values, from);
+            return SemanticQuery.createWithTrimmedFrom(from, this.whereItems, this.orderByItems, this.selectItems, groupByItems);
+        }
+
+        public addGroupBy(expr: SQExpr): SemanticQuery {
+            debug.assertValue(expr, 'expr');
+
+            let groupByItems = this.groupBy(),
+                from = this.fromValue.clone();
+            groupByItems.push(this.createNamedExpr(groupByItems, from, expr));
+
             return SemanticQuery.createWithTrimmedFrom(from, this.whereItems, this.orderByItems, this.selectItems, groupByItems);
         }
 

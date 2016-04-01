@@ -4011,7 +4011,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('x').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -4054,7 +4054,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('x').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -4118,12 +4118,12 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBe(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                 expect(helpers.findElementText(ticksText.last())).toBe('10');
                 expect(helpers.findElementTitle(ticksText.last())).toBe('10');
                 done();
@@ -4155,12 +4155,12 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                 expect(helpers.findElementText(ticksText.last())).toBe('2.5');
                 expect(helpers.findElementTitle(ticksText.last())).toBe('2.5');
                 done();
@@ -4756,7 +4756,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -4813,7 +4813,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -5317,7 +5317,7 @@ module powerbitests {
             });
             v.onResizing({ height: 500, width: 500 });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('x').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -5387,12 +5387,12 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.column').length).toBe(2);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBe(4);
+                expect(helpers.getAxisTicks('y').length).toBe(4);
                 expect(helpers.findElementText(ticksText.last())).toBe('3');
                 expect(helpers.findElementTitle(ticksText.last())).toBe('3');
                 done();
@@ -5416,12 +5416,12 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBe(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                 expect(helpers.findElementText(ticksText.last())).toBe('10');
                 expect(helpers.findElementTitle(ticksText.last())).toBe('10');
                 done();
@@ -5453,12 +5453,12 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                 expect(helpers.findElementText(ticksText.last())).toBe('2.5');
                 expect(helpers.findElementTitle(ticksText.last())).toBe('2.5');
                 done();
@@ -5615,6 +5615,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        // TODO: should be moved to cartesian tests
         it('background image', (done) => {
             let categoryIdentities = [
                 mocks.dataViewScopeIdentity("abc"),
@@ -5650,7 +5651,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let backgroundImage = $('.columnChart .background-image');
+                let backgroundImage = $('.background-image');
                 expect(backgroundImage.length).toBeGreaterThan(0);
                 expect(backgroundImage.css('height')).toBeDefined();
                 expect(backgroundImage.css('width')).toBeDefined();
@@ -5746,7 +5747,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -5783,7 +5784,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -5832,7 +5833,7 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -5862,8 +5863,8 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBe(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                 done();
             }, DefaultWaitForRender);
         });
@@ -6117,11 +6118,11 @@ module powerbitests {
                 expect($('.label').length).toBe(0);
 
                 // Y-axis margin should be limited to a % of the chart area, and excess text should be replaced with an ellipsis.
-                expect($('.columnChart .axisGraphicsContext').attr('transform')).toBe('translate(135,8)');
+                expect($('.columnChart.axisGraphicsContext').attr('transform')).toBe('translate(135,8)');
 
                 // Note: the exact text will be different depending on the environment in which the test is run, so we can't do an exact match.
                 // Just check that the text is truncated with ellipses.
-                let labelText = helpers.findElementText($('.columnChart .axisGraphicsContext .y.axis .tick').find('text').first());
+                let labelText = helpers.findElementText(helpers.getAxisTicks('y').find('text').first());
                 expect(labelText.length).toBeLessThan(30);
                 expect(labelText.substr(labelText.length - 1)).toBe('…');
                 done();
@@ -6153,8 +6154,8 @@ module powerbitests {
                 }]
             });
 
-            let xTicksText: JQuery = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
-            let yTicksText: JQuery = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+            let xTicksText: JQuery = helpers.getAxisTicks('x').find('text');
+            let yTicksText: JQuery = helpers.getAxisTicks('y').find('text');
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
@@ -6521,12 +6522,12 @@ module powerbitests {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.bar').length).toBe(2);
 
-                let labels = $('.columnChart .axisGraphicsContext .x.axis .tick').find('text');
+                let labels = helpers.getAxisTicks('x').find('text');
 
                 expect(helpers.findElementText($(labels).last())).toBe('200K');
                 expect(helpers.findElementTitle($(labels).last())).toBe('200K');
 
-                labels = $('.columnChart .axisGraphicsContext .y.axis .tick').find('text');
+                labels = helpers.getAxisTicks('y').find('text');
 
                 expect(helpers.findElementText($(labels).last())).toBe('def');
                 expect(helpers.findElementTitle($(labels).last())).toBe('def');
@@ -6683,9 +6684,9 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.bar').length).toBe(2);
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBe(4);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('3');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('3');
+                expect(helpers.getAxisTicks('x').length).toBe(4);
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('3');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('3');
                 done();
             }, DefaultWaitForRender);
         });
@@ -6709,10 +6710,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('10');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('10');
+                expect(helpers.getAxisTicks('y').length).toBe(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('10');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('10');
                 done();
             }, DefaultWaitForRender);
         });
@@ -6744,10 +6745,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('2.5');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('2.5');
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('2.5');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('2.5');
                 done();
             }, DefaultWaitForRender);
         });
@@ -6991,8 +6992,8 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.bar').length).toBe(2);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7031,8 +7032,8 @@ module powerbitests {
                     .toBeLessThan(+$('.bar')[0].attributes.getNamedItem('width').value);
                 expect(+$('.highlight')[0].attributes.getNamedItem('x').value)
                     .toBe(+$('.bar')[0].attributes.getNamedItem('x').value);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7072,8 +7073,8 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.bar').length).toBe(4);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('100%');
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('100%');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7097,8 +7098,8 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBe(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
                 done();
             }, DefaultWaitForRender);
         });
@@ -7596,8 +7597,8 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect($('.bar').length).toBe(3);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .y.axis .tick').find('text').last())).toBe('def');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .y.axis .tick').find('text').last())).toBe('def');
+                expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').last())).toBe('def');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').last())).toBe('def');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7657,10 +7658,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBe(0);
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('10');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('10');
+                expect(helpers.getAxisTicks('y').length).toBe(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('10');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('10');
                 done();
             }, DefaultWaitForRender);
         });
@@ -7692,10 +7693,10 @@ module powerbitests {
 
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('.columnChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                expect($('.columnChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
-                expect(helpers.findElementText($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('2.5');
-                expect(helpers.findElementTitle($('.columnChart .axisGraphicsContext .x.axis .tick').find('text').last())).toBe('2.5');
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
+                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('2');
+                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('2');
                 done();
             }, DefaultWaitForRender);
         });
@@ -10186,7 +10187,7 @@ module powerbitests {
         let v: powerbi.IVisual;
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('100', '100');
+            element = powerbitests.helpers.testDom('140', '140');
             v = getChartWithTooManyValues(chartType, element);
         });
 
@@ -10196,10 +10197,10 @@ module powerbitests {
                 expect($('rect' + columnSelector).length).toBe(4);
                 expect($('rect.extent').length).toBe(1);
                 expect($('rect' + columnSelector)[3].attributes.getNamedItem('y').value).toBeLessThan(element.height());
-                let transform = SVGUtil.parseTranslateTransform($('.columnChart .axisGraphicsContext .y.axis .tick').last().attr('transform'));
+                let transform = SVGUtil.parseTranslateTransform(helpers.getAxisTicks('y').last().attr('transform'));
                 expect(transform.y).toBeLessThan(element.height());
                 expect(transform.x).toBe('0');
-                expect($('.brush').attr('transform')).toBe('translate(90,8)');
+                expect($('.brush').attr('transform')).toBe('translate(130,8)');
                 expect(parseInt($('.brush .extent')[0].attributes.getNamedItem('height').value, 0)).toBeGreaterThan(8);
                 expect($('.brush .extent')[0].attributes.getNamedItem('y').value).toBe('0');
 
@@ -10211,7 +10212,7 @@ module powerbitests {
 
         it('should have correct tick labels after scrolling', (done) => {
             setTimeout(() => {
-                let ticks = $('.columnChart .axisGraphicsContext .y.axis .tick');
+                let ticks = helpers.getAxisTicks('y');
                 let tickCount = ticks.length;
 
                 let startIndex = 10;
@@ -10221,7 +10222,7 @@ module powerbitests {
                     (<powerbi.visuals.CartesianChart>v).scrollTo(startIndex);
 
                     setTimeout(() => {
-                        ticks = $('.columnChart .axisGraphicsContext .y.axis .tick');
+                        ticks = helpers.getAxisTicks('y');
                         let tickValues = _.map(ticks.get(), (v) => $(v).clone().find('title').remove().end().text());
 
                         expect(tickValues).toEqual(expectedValues);
@@ -10241,26 +10242,26 @@ module powerbitests {
         let v: powerbi.IVisual;
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('100', '100');
+            element = powerbitests.helpers.testDom('140', '140');
             v = getChartWithTooManyValues(chartType, element);
         });
 
         it('DOM Validation', (done) => {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
-                expect($('rect' + columnSelector).length).toBe(4);
+                expect($('rect' + columnSelector).length).toBe(5);
                 expect($('rect.extent').length).toBe(1);
                 expect($('rect' + columnSelector)[3].attributes.getNamedItem('x').value).toBeLessThan(element.width());
-                let transform = SVGUtil.parseTranslateTransform($('.columnChart .axisGraphicsContext .x.axis .tick').last().attr('transform'));
+                let transform = SVGUtil.parseTranslateTransform(helpers.getAxisTicks('x').last().attr('transform'));
                 expect(transform.y).toBe('0');
                 expect(transform.x).toBeLessThan(element.width());
 
                 // Windows and Mac OS differ
-                expect(powerbitests.helpers.isTranslateCloseTo($('.brush').attr('transform'), 22, 90)).toBe(true);
+                expect(powerbitests.helpers.isTranslateCloseTo($('.brush').attr('transform'), 22, 130)).toBe(true);
                 let width = parseInt($('.brush .extent')[0].attributes.getNamedItem('width').value, 10);
                 
                 // Windows and Mac OS differ
-                expect(powerbitests.helpers.isInRange(width, 13, 15)).toBe(true);
+                expect(powerbitests.helpers.isInRange(width, 23, 25)).toBe(true);
                 expect($('.brush .extent')[0].attributes.getNamedItem('x').value).toBe('0');
                 v.onResizing({ height: 500, width: 500 });
                 expect($('.brush')).not.toBeInDOM();
@@ -10270,7 +10271,7 @@ module powerbitests {
 
         it('should have correct tick labels after scrolling', (done) => {
             setTimeout(() => {
-                let ticks = $('.columnChart .axisGraphicsContext .x.axis .tick');
+                let ticks = helpers.getAxisTicks('x');
                 let tickCount = ticks.length;
 
                 let startIndex = 10;
@@ -10280,7 +10281,7 @@ module powerbitests {
                     (<powerbi.visuals.CartesianChart>v).scrollTo(startIndex);
 
                     setTimeout(() => {
-                        ticks = $('.columnChart .axisGraphicsContext .x.axis .tick');
+                        ticks = helpers.getAxisTicks('x');
                         let tickValues = _.map(ticks.get(), (v) => $(v).clone().find('title').remove().end().text());
 
                         expect(tickValues).toEqual(expectedValues);
@@ -10355,8 +10356,9 @@ module powerbitests {
                 }]
             });
 
-            let actualLongLabelTextContent = element.find('.x.axis text')[0].textContent;
-            expect(actualLongLabelTextContent).toContain('…');
+            let lastTick = helpers.getAxisTicks('x').find('text').first();
+            expect(helpers.findElementText(lastTick)).toContain('…');
+            expect(helpers.findElementTitle(lastTick)).not.toContain('…');
         });
     });
 
@@ -10373,7 +10375,7 @@ module powerbitests {
         let dataViewMetadataTwoColumn: powerbi.DataViewMetadata;
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('500', '900');
+            element = powerbitests.helpers.testDom('600', '900');
             v = powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').create();
             v.init({
                 element: element,
@@ -10471,13 +10473,13 @@ module powerbitests {
                 }]
             });
 
-            labels = $('.x.axis').children('.tick').find('text');            
+            labels = helpers.getAxisTicks('x').find('text');
 
             //Verify begin&end labels
             expect(helpers.findElementText(labels.first())).toBe('0.00000M');
             expect(helpers.findElementText(labels.last())).toBe('0.10000M');
 
-            labels = $('.y.axis').children('.tick').find('text');            
+            labels = helpers.getAxisTicks('y').find('text');
 
             //Verify begin&end labels
             expect(helpers.findElementText(labels.first())).toBe('0.00000M');
@@ -10574,7 +10576,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
             unitLength = (bars[1].getAttribute('x') - bars[0].getAttribute('x')) / 1500;
             columnWidth = bars[0].getAttribute('width');
 
@@ -10636,7 +10638,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
             unitLength = (bars[1].getAttribute('x') - bars[0].getAttribute('x')) / 19950;
             columnWidth = bars[0].getAttribute('width');
 
@@ -10699,7 +10701,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
             unitLength = (+bars[1].getAttribute('x') - +bars[0].getAttribute('x')) / 50;
             columnWidth = bars[0].getAttribute('width');
 
@@ -10762,7 +10764,7 @@ module powerbitests {
                 }]
             };
             v.onDataChanged(dataChangedOptions);
-            let fill = $('.x.axis').children('.tick').find('text').css('fill');
+            let fill = helpers.getAxisTicks('x').find('text').css('fill');
             helpers.assertColorsMatch(fill, labelColor);
         });
 
@@ -10818,7 +10820,7 @@ module powerbitests {
 
             v.onDataChanged(dataChangedOptions);
 
-            let axisLabels = $('.x.axis .tick text');
+            let axisLabels = helpers.getAxisTicks('x').find('text');
             expect(axisLabels.length).toBe(4);
 
             //check text
@@ -10865,7 +10867,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('500.00');
             expect(helpers.findElementTitle(labels.first())).toBe('500.00');
@@ -10896,7 +10898,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('1,000.00');
             expect(helpers.findElementTitle(labels.first())).toBe('1,000.00');
@@ -10993,7 +10995,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.y.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('y').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('0K');
             expect(helpers.findElementTitle(labels.first())).toBe('0K');
@@ -11030,7 +11032,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.y.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('y').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('0K');
             expect(helpers.findElementTitle(labels.first())).toBe('0K');
@@ -11070,7 +11072,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.y.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('y').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('0K');
             expect(helpers.findElementTitle(labels.first())).toBe('0K');
@@ -11238,7 +11240,7 @@ module powerbitests {
                 }]
             });
 
-            labels = $('.y.axis').children('.tick').find('text');            
+            labels = helpers.getAxisTicks('y').find('text');            
 
             //Verify begin&end labels
             expect(helpers.findElementText(labels.first())).toBe('0.00000M');
@@ -11247,7 +11249,7 @@ module powerbitests {
             expect(helpers.findElementTitle(labels.first())).toBe('0.00000M');
             expect(helpers.findElementTitle(labels.last())).toBe('0.10000M');
 
-            labels = $('.x.axis').children('.tick').find('text');            
+            labels = helpers.getAxisTicks('x').find('text');            
 
             //Verify begin&end labels
             expect(helpers.findElementText(labels.first())).toBe('0.00000M');
@@ -11285,7 +11287,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('0K');
             expect(helpers.findElementTitle(labels.first())).toBe('0K');
@@ -11322,7 +11324,7 @@ module powerbitests {
                 }]
             });
             bars = $('.column');
-            labels = $('.x.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('x').find('text');
 
             expect(helpers.findElementText(labels.first())).toBe('0K');
             expect(helpers.findElementTitle(labels.first())).toBe('0K');
@@ -11423,7 +11425,7 @@ module powerbitests {
                 }]
             });
             bars = $('.bar');
-            labels = $('.y.axis').children('.tick').find('text');
+            labels = helpers.getAxisTicks('y').find('text');
             barHeight = bars[0].getAttribute('height');
             barHeightArray = [];
             barArrayLength = bars.length;
@@ -12245,8 +12247,8 @@ module powerbitests {
                     }
                 }]
             });
-            let valueAxisSelector = chartType.indexOf('bar') >= 0 ? '.x.axis' : '.y.axis';
-            let logLabels: any = $(valueAxisSelector).children('.tick').find('text');
+            let axis = chartType.indexOf('bar') >= 0 ? 'x' : 'y';
+            let logLabels: any = helpers.getAxisTicks(axis).find('text');
             expect(logLabels.length).toBeGreaterThan(0);
 
             for (let i = 0, ilen = logLabels.length; i < ilen; i++) {
@@ -12292,8 +12294,8 @@ module powerbitests {
                     }
                 }]
             });
-            let valueAxisSelector = chartType.indexOf('bar') >= 0 ? '.x.axis' : '.y.axis';
-            let logLabels: any = $(valueAxisSelector).children('.tick').find('text');
+            let axis = chartType.indexOf('bar') >= 0 ? 'x' : 'y';
+            let logLabels: any = helpers.getAxisTicks(axis).find('text');
             expect(logLabels.length).toBeGreaterThan(0);
 
             for (let i = 0, ilen = logLabels.length; i < ilen; i++) {
@@ -12359,7 +12361,7 @@ module powerbitests {
                     }
                 }]
             });
-            let logLabels: any = $('.y.axis').children('.tick');
+            let logLabels: any = helpers.getAxisTicks('y');
             expect(logLabels.length).toBe(6);
         });
     };
@@ -12406,7 +12408,7 @@ module powerbitests {
         let hostServices = powerbitests.mocks.createVisualHostServices();
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('500', '500');
+            element = powerbitests.helpers.testDom('600', '600');
             v = powerbi.visuals.visualPluginFactory.create().getPlugin(chartType).create();
             v.init({
                 element: element,
@@ -12527,7 +12529,7 @@ module powerbitests {
         let hostServices = powerbitests.mocks.createVisualHostServices();
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('500', '500');
+            element = powerbitests.helpers.testDom('600', '600');
             v = powerbi.visuals.visualPluginFactory.create().getPlugin(chartType).create();
             v.init({
                 element: element,

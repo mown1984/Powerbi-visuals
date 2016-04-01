@@ -68,7 +68,8 @@ module powerbi.visuals.controls {
     export class TablixControl {
         private static UnitOfMeasurement = 'px';
         private static TablixContainerClassName = 'tablixContainer';
-        private static TablixFixSizedClassName = "bi-tablix-fixed-size";
+        private static TablixTableAreaClassName = "tablixTableArea";
+        private static TablixFooterClassName = "tableFooterArea";
         private static DefaultFontSize = jsCommon.PixelConverter.fromPoint(controls.TablixDefaultTextSize);
         /*
         * This is workaround for the infinite loop in rendering
@@ -132,16 +133,11 @@ module powerbi.visuals.controls {
 
             // Main Div
             this.mainDiv = internal.TablixUtils.createDiv();
-            let mainDivStyle = this.mainDiv.style;
-            mainDivStyle.position = "absolute";
-            mainDivStyle.left = "0px";
-            mainDivStyle.top = "0px";
+            this.mainDiv.classList.add(TablixControl.TablixTableAreaClassName);
 
             // Footer Div
             this.footerDiv = internal.TablixUtils.createDiv();
-            let footerDivStyle = this.footerDiv.style;
-            footerDivStyle.position = "absolute";
-            footerDivStyle.left = "0px";
+            this.footerDiv.classList.add(TablixControl.TablixFooterClassName);
 
             if (this.isTouchEnabled)
                 this.InitializeTouchSupport();
@@ -157,8 +153,8 @@ module powerbi.visuals.controls {
             parentDomElement.className = TablixControl.TablixContainerClassName;
             parentDomElement.appendChild(this.containerElement);
 
-            this.containerElement.addEventListener("mousewheel",(e) => { this.onMouseWheel(<MouseWheelEvent>e); });
-            this.containerElement.addEventListener("DOMMouseScroll",(e) => { this.onFireFoxMouseWheel(<MouseWheelEvent>e); });
+            this.containerElement.addEventListener("mousewheel", (e) => { this.onMouseWheel(<MouseWheelEvent>e); });
+            this.containerElement.addEventListener("DOMMouseScroll", (e) => { this.onFireFoxMouseWheel(<MouseWheelEvent>e); });
             this.containerElement.appendChild(this.mainDiv);
             this.containerElement.appendChild(this.footerDiv);
 
@@ -268,10 +264,7 @@ module powerbi.visuals.controls {
         public set autoSizeWidth(value: boolean) {
             this._autoSizeWidth = value;
 
-            if (this._autoSizeWidth) {
-                this.removeFixSizedClassName();
-            } else {
-                this.addFixedSizeClassNameIfNeeded();
+            if (!value) {
                 this.containerElement.style.minWidth = this.containerElement.style.maxWidth = "none";
             }
         }
@@ -281,12 +274,7 @@ module powerbi.visuals.controls {
         }
 
         public set autoSizeHeight(value: boolean) {
-            this._autoSizeHeight = value;
-
-            if (this._autoSizeHeight) {
-                this.removeFixSizedClassName();
-            } else {
-                this.addFixedSizeClassNameIfNeeded();
+            if (!value) {
                 this.containerElement.style.minHeight = this.containerElement.style.maxHeight = "none";
             }
         }
@@ -475,20 +463,13 @@ module powerbi.visuals.controls {
 
         private updateVerticalPosition(): void {
 
-            // Set the height of the footer div to non-zero if we have a footer to render
-            let footerHeight = 0;
-            if (this.rowDim.hasFooter()) {
-                footerHeight = this.gridDimensions.footerHeight;
-            }
-            this.footerDiv.style.height = footerHeight + TablixControl.UnitOfMeasurement;
-
             let hasVerticalScrollbar = this.rowDim.scrollbar.visible;
             // TODO: ideally the tablix control would not know about where it is rendered but the layout manager
             //       would provider that information; we should refactor the layout manager so that getLayoutKind is not needed anymore.
             let isDashboardTile = this.controlLayoutManager.getLayoutKind() === TablixLayoutKind.DashboardTile;
             let showFooter = hasVerticalScrollbar || isDashboardTile;
             if (showFooter) {
-                let mainBottom = footerHeight;
+                let mainBottom = this.footerDiv.offsetHeight;
                 let footerBottom = 0;
                 let verticalScrollbarBottom = 0;
 
@@ -613,20 +594,20 @@ module powerbi.visuals.controls {
             if (this._autoSizeWidth) {
                 let vScrollBarWidth: number = this.rowDim.scrollbar.visible ? this.scrollBarElementWidth : 0;
                 this.containerElement.style.width =
-                gridDimensions.rowHierarchyWidth +
-                gridDimensions.columnHierarchyWidth +
-                vScrollBarWidth +
-                TablixControl.UnitOfMeasurement;
+                    gridDimensions.rowHierarchyWidth +
+                    gridDimensions.columnHierarchyWidth +
+                    vScrollBarWidth +
+                    TablixControl.UnitOfMeasurement;
             }
 
             if (this._autoSizeHeight) {
                 let hScrollBarHeight: number = this.columnDim.scrollbar.visible ? this.scrollBarElementWidth : 0;
                 this.containerElement.style.height =
-                gridDimensions.columnHierarchyHeight +
-                gridDimensions.rowHierarchyHeight +
-                gridDimensions.footerHeight +
-                hScrollBarHeight +
-                TablixControl.UnitOfMeasurement;
+                    gridDimensions.columnHierarchyHeight +
+                    gridDimensions.rowHierarchyHeight +
+                    gridDimensions.footerHeight +
+                    hScrollBarHeight +
+                    TablixControl.UnitOfMeasurement;
             }
         }
 
@@ -682,9 +663,9 @@ module powerbi.visuals.controls {
 
             if ((args) && (args.length > 0)) {
                 if (("columnDim" in args[0]) && ("rowDim" in args[0])) {
-                    that = <TablixControl> args[0];
-                    colShift = that.columnDim.scrollbar.visible ? <number> args[1] : 0;
-                    rowShift = that.rowDim.scrollbar.visible ? <number> args[2] : 0;
+                    that = <TablixControl>args[0];
+                    colShift = that.columnDim.scrollbar.visible ? <number>args[1] : 0;
+                    rowShift = that.rowDim.scrollbar.visible ? <number>args[2] : 0;
 
                     that.columnDim.scrollbar.viewMin = Math.max(0, that.columnDim.scrollbar.viewMin + colShift);
                     that.columnDim.scrollOffset = Math.max(0, that.columnDim.scrollOffset + colShift);
@@ -700,16 +681,6 @@ module powerbi.visuals.controls {
                     }
                 }
             }
-        }
-
-        private addFixedSizeClassNameIfNeeded(): void {
-            if (!this._autoSizeHeight && !this._autoSizeWidth && this.containerElement.className.indexOf(TablixControl.TablixFixSizedClassName) === -1) {
-                this.containerElement.className += " " + TablixControl.TablixFixSizedClassName;
-            }
-        }
-
-        private removeFixSizedClassName(): void {
-            this.containerElement.className = this.containerElement.className.replace(TablixControl.TablixFixSizedClassName, '');
         }
     }
 }

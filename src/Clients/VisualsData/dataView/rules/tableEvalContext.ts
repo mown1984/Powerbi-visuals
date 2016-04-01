@@ -31,21 +31,28 @@ module powerbi.data {
         setCurrentRowIndex(index: number): void;
     }
 
-    export function createTableEvalContext(dataViewTable: DataViewTable, selectTransforms: DataViewSelectTransform[]): ITableEvalContext {
-        return new TableEvalContext(dataViewTable, selectTransforms);
+    export function createTableEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewTable: DataViewTable, selectTransforms: DataViewSelectTransform[]): ITableEvalContext {
+        return new TableEvalContext(colorAllocatorProvider, dataViewTable, selectTransforms);
     }
 
     class TableEvalContext implements ITableEvalContext {
+        private colorAllocatorProvider: IColorAllocatorCache;
         private dataView: DataViewTable;
         private rowIdx: number;
         private selectTransforms: DataViewSelectTransform[];
 
-        constructor(dataView: DataViewTable, selectTransforms: DataViewSelectTransform[]) {
+        constructor(colorAllocatorProvider: IColorAllocatorCache, dataView: DataViewTable, selectTransforms: DataViewSelectTransform[]) {
+            debug.assertValue(colorAllocatorProvider, 'colorAllocatorProvider');
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(selectTransforms, 'selectTransforms');
 
+            this.colorAllocatorProvider = colorAllocatorProvider;
             this.dataView = dataView;
             this.selectTransforms = selectTransforms;
+        }
+
+        public getColorAllocator(expr: SQFillRuleExpr): IColorAllocator {
+            return this.colorAllocatorProvider.get(expr);
         }
 
         public getExprValue(expr: SQExpr): PrimitiveValue {

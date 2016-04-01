@@ -715,7 +715,8 @@ module powerbi.visuals.samples {
 
             this.bulletBody = body
                 .append('div')
-                .classed('bulletChart', true);
+                .classed('bulletChart', true)
+                .attr("drag-resize-disabled", true);
 
             this.scrollContainer = this.bulletBody.append('svg')
                 .classed('bullet-scroll-region', true);
@@ -910,18 +911,20 @@ module powerbi.visuals.samples {
                 }).text((d: BarData) => d.categoryLabel);
             }
 
+            let measureUnitsText = TextMeasurementService.getTailoredTextOrDefault(BulletChart.getTextProperties(model.bulletChartSettings.axis.measureUnits, BulletChart.DefaultSubtitleFontSizeInPt), BulletChart.BiggestLabelWidth);
+
             // Draw measure label
             if (model.bulletChartSettings.axis.measureUnits) {
                 barSelection.enter().append('text').attr({
                     'x': ((d: BarData) => {
                         if (reveresed)
-                            return this.bulletGraphicsContext.node<SVGElement>().getBoundingClientRect().width - BulletChart.StartMarginHorizontal + BulletChart.SubtitleMargin;
+                            return this.bulletGraphicsContext.node<SVGElement>().getBoundingClientRect().width + BulletChart.StartMarginHorizontal;
                         return d.x - BulletChart.SubtitleMargin;
                     }),
                     'y': ((d: BarData) => d.y + BulletChart.BulletSize),
                     'fill': model.bulletChartSettings.axis.unitsColor,
                     'font-size': PixelConverter.fromPoint(BulletChart.DefaultSubtitleFontSizeInPt)
-                }).text(model.bulletChartSettings.axis.measureUnits);
+                }).text(measureUnitsText);
             }
 
             if (this.interactivityService) {
@@ -1052,6 +1055,8 @@ module powerbi.visuals.samples {
                 }).text((d: BarData) => d.categoryLabel);
             }
 
+            let measureUnitsText = TextMeasurementService.getTailoredTextOrDefault(BulletChart.getTextProperties(model.bulletChartSettings.axis.measureUnits, BulletChart.DefaultSubtitleFontSizeInPt), BulletChart.BiggestLabelWidth);
+
             // Draw measure label
             if (model.bulletChartSettings.axis.measureUnits) {
                 barSelection.enter().append('text').attr({
@@ -1059,11 +1064,12 @@ module powerbi.visuals.samples {
                     'y': ((d: BarData) => {
                         if (reveresed)
                             return this.bulletGraphicsContext.node<SVGElement>().getBoundingClientRect().height + BulletChart.StartMarginVertical + BulletChart.SubtitleMargin;
-                        return d.y + BulletChart.StartMarginVertical + BulletChart.SubtitleMargin;
+                        return d.y + TextMeasurementService.estimateSvgTextHeight(BulletChart.getTextProperties(d.categoryLabel,
+                            model.bulletChartSettings.labelSettings.fontSize)) / 2 + BulletChart.SubtitleMargin;
                     }),
                     'fill': model.bulletChartSettings.axis.unitsColor,
                     'font-size': PixelConverter.fromPoint(BulletChart.DefaultSubtitleFontSizeInPt)
-                }).text(model.bulletChartSettings.axis.measureUnits);
+                }).text(measureUnitsText);
             }
 
             if (this.interactivityService) {

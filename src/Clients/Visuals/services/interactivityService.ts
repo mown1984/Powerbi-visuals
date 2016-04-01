@@ -248,6 +248,12 @@ module powerbi.visuals {
         // ISelectionHandler Implementation
 
         public handleSelection(dataPoint: SelectableDataPoint, multiSelect: boolean): void {
+            // defect 7067397: should not happen so assert but also don't continue as it's
+            // causing a lot of error telemetry in desktop.
+            debug.assertValue(dataPoint, 'dataPoint');
+            if (!dataPoint)
+                return;
+
             this.useDefaultValue = false;
             this.select(dataPoint, multiSelect);
             this.sendSelectionToHost();

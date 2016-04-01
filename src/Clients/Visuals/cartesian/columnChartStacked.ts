@@ -389,7 +389,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties {
             let height = this.height;
 
             let forcedYMin, forcedYMax;
@@ -409,18 +409,18 @@ module powerbi.visuals {
                 axisScaleType,
                 axisDisplayUnits,
                 axisPrecision,
-                y1ReferenceLineValue);
+                ensureYDomain);
 
             return props;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties {
             debug.assert(forcedTickCount === undefined, 'Cannot have stacked bar chart as combo chart.');
 
             let width = this.width;
             let valueDomain = StackedUtil.calcValueDomain(this.data.series, is100Pct);
             let valueDomainArr = [valueDomain.min, valueDomain.max];
-            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomainArr, xReferenceLineValue);
+            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomainArr, ensureXDomain);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomainArr);
             let metadataColumn = this.data.valuesMetadata[0];
             let formatString = is100Pct ?

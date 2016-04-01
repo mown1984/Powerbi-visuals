@@ -60,5 +60,9 @@ module powerbi {
         View = 0,
         Edit = 1,
     }
-    
+
+    export const enum ResizeMode {
+        Resizing = 1,
+        Resized = 2,
+    }    
 }

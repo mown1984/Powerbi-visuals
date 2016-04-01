@@ -53,6 +53,10 @@ declare module powerbi {
         View = 0,
         Edit = 1,
     }
+    const enum ResizeMode {
+        Resizing = 1,
+        Resized = 2,
+    }
 }
 
 
@@ -1054,6 +1058,7 @@ declare module powerbi.extensibility {
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
     }
     
     export interface VisualConstructorOptions {
@@ -1414,8 +1419,9 @@ declare module powerbi {
          * Notifies the IVisual to resize.
          *
          * @param finalViewport This is the viewport that the visual will eventually be resized to.
+         * @param resized true on on final call when resizing is complete.
          */
-        onResizing?(finalViewport: IViewport): void;
+        onResizing?(finalViewport: IViewport, resizeMode?: ResizeMode): void;
 
         /** 
          * Notifies the IVisual of new data being provided.
@@ -1577,6 +1583,7 @@ declare module powerbi {
         dataViews: DataView[];
         suppressAnimations?: boolean;
         viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
     }
 
     export interface VisualDataChangedOptions {

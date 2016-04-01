@@ -65,7 +65,7 @@ module powerbi.visuals.samples {
             },
             labelColor: <DataViewObjectPropertyIdentifier>{
                 objectName: "labels",
-                propertyName: "labelColor"
+                propertyName: "color"
             }
         },
         dataPoint: {
@@ -587,7 +587,7 @@ module powerbi.visuals.samples {
                     return (d != null && d.label != null);
                 },
                 style: {
-                    'fill': labelSettings.categoryLabelColor,
+                    'fill': labelSettings.labelColor,
                     'font-size': fontSizeInPx,
                 },
             };
@@ -604,7 +604,7 @@ module powerbi.visuals.samples {
                     fontSize: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.fontSize, this.DefaultDotPlotSettings.labelSettings.fontSize),
                     labelPrecision: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelPrecision, this.DefaultDotPlotSettings.labelSettings.precision),
                     labelDisplayUnits: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelDisplayUnits, this.DefaultDotPlotSettings.labelSettings.displayUnits),
-                    labelColor: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, this.DefaultDotPlotSettings.labelSettings.labelColor)
+                    color: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, this.DefaultDotPlotSettings.labelSettings.labelColor)
                 }
             });
         }

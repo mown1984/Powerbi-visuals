@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -210,7 +210,7 @@ module powerbi.visuals {
             this.style = options.style;
             let viewport = this.currentViewport = options.viewport;
             let interactivity = this.interactivity = options.interactivity;
-            
+
             if (interactivity && interactivity.overflow === 'hidden')
                 this.isInteractivityOverflowHidden = true;
 
@@ -468,10 +468,13 @@ module powerbi.visuals {
 
                 cardSelection
                     .selectAll(MultiRowCard.Caption.selector)
-                    .filter((d: CardItemData) => !(d.showImage || d.showKPI))
+                    .filter((d: CardItemData) => !d.showImage)
                     .style({
                         'line-height': PixelConverter.toString(dataLabelHeight),
                         'font-size': PixelConverter.fromPoint(style.caption.fontSize),
+                    })
+                    .filter((d: CardItemData) => !d.showKPI)
+                    .style({
                         'color': style.caption.color,
                     })
                     .filter((d: CardItemData) => !d.showURL)
@@ -506,7 +509,7 @@ module powerbi.visuals {
                         'target': '_blank',
                     })
                     .text((d: CardItemData) => d.caption);
-                    
+
                 if (style.details.isVisible) {
                     cardSelection
                         .selectAll(MultiRowCard.Details.selector)

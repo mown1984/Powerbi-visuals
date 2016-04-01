@@ -25,6 +25,7 @@ declare module powerbi.data {
         visitAnyValue(expr: SQAnyValueExpr, arg: TArg): T;
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
+        visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
     }
     interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
     }
@@ -54,6 +55,7 @@ declare module powerbi.data {
         visitAnyValue(expr: SQAnyValueExpr, arg: TArg): T;
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
+        visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
         visitDefault(expr: SQExpr, arg: TArg): T;
     }
     /** Default ISQExprVisitor implementation that others may derive from. */
@@ -87,6 +89,7 @@ declare module powerbi.data {
         visitFillRule(expr: SQFillRuleExpr): void;
         visitLinearGradient2(gradient2: LinearGradient2Definition): void;
         visitLinearGradient3(gradient3: LinearGradient3Definition): void;
+        visitResourcePackageItem(expr: SQResourcePackageItemExpr): void;
         visitDefault(expr: SQExpr): void;
         private visitFillRuleStop(stop);
     }
@@ -531,6 +534,7 @@ declare module powerbi.data {
         AnyValue?: QueryAnyValueExpression;
         Arithmetic?: QueryArithmeticExpression;
         FillRule?: QueryFillRuleExpression;
+        ResourcePackageItem?: QueryResourcePackageItem;
     }
     interface QueryPropertyExpression {
         Expression: QueryExpressionContainer;
@@ -638,6 +642,11 @@ declare module powerbi.data {
     interface QueryFillRuleExpression {
         Input: QueryExpressionContainer;
         FillRule: FillRuleGeneric<QueryExpressionContainer, QueryExpressionContainer>;
+    }
+    interface QueryResourcePackageItem {
+        PackageName: string;
+        PackageType: number;
+        ItemName: string;
     }
     enum TimeUnit {
         Day = 0,
@@ -779,7 +788,7 @@ declare module powerbi.data.contracts {
 declare module powerbi {
     interface IColorAllocator {
         /** Computes the color corresponding to the provided value. */
-        color(value: number): string;
+        color(value: PrimitiveValue): string;
     }
     interface IColorAllocatorFactory {
         /** Creates a gradient that that transitions between two colors. */
@@ -1181,6 +1190,7 @@ declare module powerbi.data {
         command: DataReaderCommand;
         allowCache?: boolean;
         cacheResponseOnServer?: boolean;
+        ignoreViewportForCache?: boolean;
     }
     interface FederatedConceptualSchemaReaderOptions {
         dataSources: ConceptualSchemaReaderDataSource[];
@@ -1367,8 +1377,16 @@ declare module powerbi.data {
     }
 }
 declare module powerbi.data {
+    interface IColorAllocatorCache {
+        get(key: SQFillRuleExpr): IColorAllocator;
+        register(key: SQFillRuleExpr, colorAllocator: IColorAllocator): this;
+    }
+    function createColorAllocatorCache(): IColorAllocatorCache;
+}
+declare module powerbi.data {
     /** Responsible for providing specific values to be used by expression and rule evaluation. */
     interface IEvalContext {
+        getColorAllocator(expr: SQFillRuleExpr): IColorAllocator;
         getExprValue(expr: SQExpr): PrimitiveValue;
         getRoleValue(roleName: string): PrimitiveValue;
     }
@@ -1436,13 +1454,13 @@ declare module powerbi.data {
     interface ICategoricalEvalContext extends IEvalContext {
         setCurrentRowIndex(index: number): void;
     }
-    function createCategoricalEvalContext(dataViewCategorical: DataViewCategorical): ICategoricalEvalContext;
+    function createCategoricalEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewCategorical: DataViewCategorical): ICategoricalEvalContext;
 }
 declare module powerbi.data {
     interface ITableEvalContext extends IEvalContext {
         setCurrentRowIndex(index: number): void;
     }
-    function createTableEvalContext(dataViewTable: DataViewTable, selectTransforms: DataViewSelectTransform[]): ITableEvalContext;
+    function createTableEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewTable: DataViewTable, selectTransforms: DataViewSelectTransform[]): ITableEvalContext;
 }
 declare module powerbi.data {
     class RuleEvaluation {
@@ -1751,6 +1769,7 @@ declare module powerbi.data {
         visitLinearGradient2(origGradient2: LinearGradient2Definition): LinearGradient2Definition;
         visitLinearGradient3(origGradient3: LinearGradient3Definition): LinearGradient3Definition;
         private visitFillRuleStop(stop);
+        visitResourcePackageItem(orig: SQResourcePackageItemExpr): SQExpr;
     }
 }
 declare module powerbi.data {
@@ -1838,6 +1857,8 @@ declare module powerbi.data {
         static isEntity(expr: SQExpr): expr is SQEntityExpr;
         static isHierarchy(expr: SQExpr): expr is SQHierarchyExpr;
         static isHierarchyLevel(expr: SQExpr): expr is SQHierarchyLevelExpr;
+        static isAggregation(expr: SQExpr): expr is SQAggregationExpr;
+        static isMeasure(expr: SQExpr): expr is SQMeasureRefExpr;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
         /** Return the SQExpr[] of group on columns if it has group on keys otherwise return the SQExpr of the column.*/
@@ -1847,6 +1868,7 @@ declare module powerbi.data {
         private getPropertyKeys(schema);
         getConceptualProperty(federatedSchema: FederatedConceptualSchema): ConceptualProperty;
         getTargetEntityForVariation(federatedSchema: FederatedConceptualSchema, variationName: string): string;
+        getTargetEntity(federatedSchema: FederatedConceptualSchema): SQEntityExpr;
         private getHierarchyLevelConceptualProperty(federatedSchema);
         private getMetadataForVariation(field, federatedSchema);
         private getMetadataForHierarchyLevel(field, federatedSchema);
@@ -1879,6 +1901,7 @@ declare module powerbi.data {
         DefaultValue = 21,
         Arithmetic = 22,
         FillRule = 23,
+        ResourcePackageItem = 24,
     }
     interface SQExprMetadata {
         kind: FieldKind;
@@ -2045,6 +2068,13 @@ declare module powerbi.data {
         constructor(input: SQExpr, fillRule: FillRuleDefinition);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
+    class SQResourcePackageItemExpr extends SQExpr {
+        packageName: string;
+        packageType: number;
+        itemName: string;
+        constructor(packageName: string, packageType: number, itemName: string);
+        accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+    }
     /** Provides utilities for creating & manipulating expressions. */
     module SQExprBuilder {
         function entity(schema: string, entity: string, variable?: string): SQEntityExpr;
@@ -2084,6 +2114,7 @@ declare module powerbi.data {
         function removeEntityVariables(expr: SQExpr): SQExpr;
         function createExprWithAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregateNonNumericFields: boolean, preferredAggregate?: QueryAggregateFunction): SQExpr;
         function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr;
+        function resourcePackageItem(packageName: string, packageType: number, itemName: string): SQResourcePackageItemExpr;
     }
     /** Provides utilities for obtaining information about expressions. */
     module SQExprInfo {
@@ -2147,6 +2178,7 @@ declare module powerbi.data {
         function getAggregateBehavior(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualAggregateBehavior;
         function getSchemaCapabilities(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualCapabilities;
         function getKpiMetadata(expr: SQExpr, schema: FederatedConceptualSchema): DataViewKpiColumnMetadata;
+        function getConceptualEntity(entityExpr: SQEntityExpr, schema: FederatedConceptualSchema): ConceptualEntity;
         function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr;
         function getDefaultValues(fieldSQExprs: SQExpr[], schema: FederatedConceptualSchema): SQConstantExpr[];
         /** Return compare or and expression for key value pairs. */
@@ -2226,12 +2258,14 @@ declare module powerbi.data {
         setSelectAt(index: number, expr: SQExpr): SemanticQuery;
         /** Adds a the expression to the select clause. */
         addSelect(expr: SQExpr, exprName?: string): SemanticQuery;
+        private createNamedExpr(currentNames, from, expr, exprName?);
         /** Returns a query equivalent to this, with the specified groupBy items. */
         groupBy(values: NamedSQExpr[]): SemanticQuery;
         /** Gets the groupby items in this query. */
         groupBy(): ArrayNamedItems<NamedSQExpr>;
         private getGroupBy();
         private setGroupBy(values);
+        addGroupBy(expr: SQExpr): SemanticQuery;
         /** Gets or sets the sorting for this query. */
         orderBy(values: SQSortDefinition[]): SemanticQuery;
         orderBy(): SQSortDefinition[];
@@ -2332,12 +2366,12 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     import SQExpr = powerbi.data.SQExpr;
-    function createStaticEvalContext(): IEvalContext;
-    function createStaticEvalContext(dataView: DataView, selectTransforms: DataViewSelectTransform[]): IEvalContext;
+    function createStaticEvalContext(colorAllocatorCache?: IColorAllocatorCache): IEvalContext;
+    function createStaticEvalContext(colorAllocatorCache: IColorAllocatorCache, dataView: DataView, selectTransforms: DataViewSelectTransform[]): IEvalContext;
     function getExprValueFromTable(expr: SQExpr, selectTransforms: DataViewSelectTransform[], table: DataViewTable, rowIdx: number): PrimitiveValue;
 }
 declare module powerbi.data {
-    function createMatrixEvalContext(dataViewMatrix: DataViewMatrix): IEvalContext;
+    function createMatrixEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewMatrix: DataViewMatrix): IEvalContext;
 }
 declare module powerbi {
     /** Culture interfaces. These match the Globalize library interfaces intentionally. */

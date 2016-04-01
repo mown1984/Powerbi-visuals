@@ -621,6 +621,28 @@ module powerbitests {
                 });
             });
 
+            it("Validate that multiRowCard displays KPI with label size", () => {
+                let dataLabelsData = $.extend(true, {}, dataWithKPI);
+                dataLabelsData.metadata.objects = {
+                    dataLabels: {
+                        show: true,
+                        fontSize: 12, // 16px
+                        color: { solid: { color: '#123456' } }, //rgb(18, 52, 86)
+                    }
+                };
+
+                helpers.runWithImmediateAnimationFrames(() => {
+                    fireOnDataChanged(v, { dataViews: [dataLabelsData] });
+                    
+                    let caption = $('.card .caption');
+                    expect(caption).toBeInDOM();
+                    expect(caption.find('div')).toBeInDOM(); // kpi glyph
+                    expect(caption.css('font-size')).toBe('16px');
+                    expect(caption.css('color')).not.toBe('rgb(18, 52, 86)'); // color for kpi is not set through metadata objects currently
+                    expect($(".caption div").hasClass('bars-stacked bars-four')).toBeTruthy();
+                });
+            });
+
             it("Validate multiRowCard last card styling on dashboard", () => {
                 let options = getVisualInitOptions(element = helpers.testDom("400", "400"));
 

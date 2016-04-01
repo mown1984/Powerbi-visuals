@@ -43,6 +43,7 @@ module powerbi.visuals.samples {
         x: number;
         y: number;
         y0?: number;
+        tooltipInfo?: TooltipDataItem[];
         identity: SelectionId;
         text: string;
         labelFontSize: string;
@@ -366,6 +367,7 @@ module powerbi.visuals.samples {
                 categoryFormatter: IValueFormatter;
 
             let category = categories && categories.length > 0 ? categories[0] : null;
+            let formatString = StreamGraph.Properties.general.formatString;
 
             let streamGraphSettings: StreamGraphSettings = this.parseSettings(dataView);
             let fontSizeInPx = PixelConverter.fromPoint(streamGraphSettings.dataLabelsSettings.fontSize);
@@ -382,8 +384,15 @@ module powerbi.visuals.samples {
                         selected: false,
                         identity: SelectionId.createWithId(values[i].identity)
                     });
-                else
-                    groupName = values[i].source.displayName;
+
+                var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
+                    formatString,
+                    catDv,
+                    category.values[i],
+                    null,
+                    null,
+                    null,
+                    i);
 
                 let dataPointsValues = values[i].values;
                 for (let k = 0; k < dataPointsValues.length; k++) {
@@ -403,6 +412,7 @@ module powerbi.visuals.samples {
                         x: k,
                         y: y,
                         identity: id,
+                        tooltipInfo: tooltipInfo,
                         text: groupName,
                         labelFontSize: fontSizeInPx
                     });
@@ -602,6 +612,10 @@ module powerbi.visuals.samples {
             else
                 dataLabelUtils.cleanDataLabels(this.svg);
 
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (tooltipEvent.data[0]).tooltipInfo;
+            });
+
             this.drawAxis(data, xScale, yScale);
         }
 
@@ -797,7 +811,7 @@ module powerbi.visuals.samples {
 
             this.legend.drawLegend(legendData, _.clone(this.viewport));
             Legend.positionChartArea(this.svg, this.legend);
-            
+
             this.updateViewPort();
         }
 

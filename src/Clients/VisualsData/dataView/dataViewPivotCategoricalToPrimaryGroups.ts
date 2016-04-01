@@ -151,7 +151,7 @@ module powerbi.data {
          * Narrowly targets scatter chart scenario for now to keep code simple
          */
         function inferUnpivotTransform(selects: DataViewSelectTransform[], dataViewMappings: DataViewMapping[], dataView: DataView, projectionActiveItems: DataViewProjectionActiveItems): boolean {
-            if (!selects || !dataViewMappings || !dataView)
+            if (_.isEmpty(selects) || _.isEmpty(dataViewMappings) || !dataView)
                 return false;
 
             // select applicable mappings based on select roles

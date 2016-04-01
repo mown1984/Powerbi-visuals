@@ -68,8 +68,8 @@ module powerbi.visuals {
         forcedTickCount?: number;
         forcedYDomain?: any[];
         forcedXDomain?: any[];
-        xReferenceLineValue?: number;
-        y1ReferenceLineValue?: number;
+        ensureXDomain?: NumberRange;
+        ensureYDomain?: NumberRange;
         categoryAxisDisplayUnits?: number;
         categoryAxisPrecision?: number;
         valueAxisDisplayUnits?: number;
@@ -113,6 +113,7 @@ module powerbi.visuals {
         tooltipsEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
         trimOrdinalDataOnOverflow?: boolean;
+        trendLinesEnabled?: boolean;
     }
 
     export interface ICartesianVisual {
@@ -120,7 +121,7 @@ module powerbi.visuals {
         setData(dataViews: DataView[]): void;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         overrideXScale(xProperties: IAxisProperties): void;
-        render(suppressAnimations: boolean): CartesianVisualRenderResult;
+        render(suppressAnimations: boolean, resizeMode?: ResizeMode): CartesianVisualRenderResult;
         calculateLegend(): LegendData;
         hasLegend(): boolean;
         onClearSelection(): void;
@@ -129,6 +130,7 @@ module powerbi.visuals {
         getSupportedCategoryAxisType?(): string;
         getPreferredPlotArea?(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         setFilteredData?(startIndex: number, endIndex: number): CartesianData;
+        supportsTrendLine?(): boolean;
     }
 
     export interface CartesianVisualConstructorOptions {
@@ -283,6 +285,9 @@ module powerbi.visuals {
         private trimOrdinalDataOnOverflow: boolean;
         private isMobileChart: boolean;
 
+        private trendLinesEnabled: boolean;
+        private trendLine: TrendLine;
+
         private xRefLine: ClassAndSelector = createClassAndSelector('x-ref-line');
         private y1RefLine: ClassAndSelector = createClassAndSelector('y1-ref-line');
 
@@ -332,6 +337,8 @@ module powerbi.visuals {
                 if (options.behavior) {
                     this.behavior = options.behavior;
                 }
+
+                this.trendLinesEnabled = !!options.trendLinesEnabled;
             }
 
             this.axes = new CartesianAxes(isScrollable, ScrollableAxes.ScrollbarWidth, this.trimOrdinalDataOnOverflow);
@@ -345,12 +352,12 @@ module powerbi.visuals {
             this.layers = [];
 
             let element = this.element = options.element;
-            element.addClass(CartesianChart.ClassName);
 
             this.currentViewport = options.viewport;
             this.hostServices = options.host;
 
             let chartAreaSvg = this.chartAreaSvg = d3.select(element.get(0)).append('svg');
+            chartAreaSvg.classed(CartesianChart.ClassName, true);
             chartAreaSvg.style('position', 'absolute');
 
             if (this.behavior) {
@@ -465,9 +472,7 @@ module powerbi.visuals {
 
             if (!dataViews) return;
 
-            let shouldAddTrendLayer: boolean = this.isTrendPropertySet(dataViews);
-
-            if (this.layers.length === 0 || (this.layers.length !== dataViews.length && shouldAddTrendLayer)) {
+            if (this.layers.length === 0) {
                 // Lazily instantiate the chart layers on the first data load.
                 this.layers = this.createAndInitLayers(dataViews);
 
@@ -497,9 +502,12 @@ module powerbi.visuals {
                     if (len > 1)
                         this.sharedColorPalette.rotateScale();
                 }
+
+                let shouldAddTrendLayer: boolean = this.isTrendPropertySet(dataViews) && dataViews.length > 1;
+                this.trendLine = shouldAddTrendLayer ? TrendLineHelper.readDataView(dataViews[1]) : undefined;
             }
 
-            this.render(!this.hasSetData || options.suppressAnimations);
+            this.render(!this.hasSetData || options.suppressAnimations, options.resizeMode);
 
             this.hasSetData = this.hasSetData || (dataViews && dataViews.length > 0);
 
@@ -532,11 +540,12 @@ module powerbi.visuals {
         }
 
         // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
-        public onResizing(viewport: IViewport): void {
+        public onResizing(viewport: IViewport, resizeMode?: ResizeMode): void {
             this.updateInternal({
                 dataViews: this.dataViews,
                 suppressAnimations: true,
-                viewport: viewport
+                viewport: viewport,
+                resizeMode: resizeMode,
             }, false);
         }
 
@@ -551,6 +560,7 @@ module powerbi.visuals {
             if (options.objectName === 'legend') {
                 if (!this.shouldShowLegendCard())
                     return;
+
                 let show = DataViewObject.getValue(this.legendObjectProperties, legendProps.show, this.legend.isVisible());
                 let showTitle = DataViewObject.getValue(this.legendObjectProperties, legendProps.showTitle, true);
                 let titleText = DataViewObject.getValue(this.legendObjectProperties, legendProps.titleText, this.layerLegendData ? this.layerLegendData.title : '');
@@ -583,6 +593,14 @@ module powerbi.visuals {
             else if (options.objectName === 'xAxisReferenceLine') {
                 let refLinedefaultColor = this.sharedColorPalette.getColorByIndex(0).value;
                 ReferenceLineHelper.enumerateObjectInstances(enumeration, this.xAxisReferenceLines, refLinedefaultColor, options.objectName);
+            }
+            else if (options.objectName === 'trend') {
+                // TODO: make sure we have a trend line, we should..
+                if (this.trendLinesEnabled) {
+                    if (!_.isEmpty(this.layers) && _.all(this.layers, (layer) => layer.supportsTrendLine())) {
+                        TrendLineHelper.enumerateObjectInstances(enumeration, this.trendLine);
+                    }
+                }
             }
             else if (options.objectName === 'plotArea') {
                 visualBackgroundHelper.enumeratePlot(enumeration, this.background);
@@ -874,7 +892,7 @@ module powerbi.visuals {
             return false;
         }
 
-        private render(suppressAnimations: boolean): void {
+        private render(suppressAnimations: boolean, resizeMode?: ResizeMode): void {
             // Note: interactive legend shouldn't be rendered explicitly here
             // The interactive legend is being rendered in the render method of ICartesianVisual
             if (!(this.visualInitOptions.interactivity && this.visualInitOptions.interactivity.isInteractiveLegend)) {
@@ -910,8 +928,7 @@ module powerbi.visuals {
 
             let interactivityRightMargin = this.calculateInteractivityRightMargin();
 
-            let xAxisReferenceLineProperties: DataViewObject = !_.isEmpty(this.xAxisReferenceLines) ? this.xAxisReferenceLines[0].object : undefined;
-            let y1AxisReferenceLineProperties: DataViewObject = !_.isEmpty(this.y1AxisReferenceLines) ? this.y1AxisReferenceLines[0].object : undefined;
+            let [ensureXDomain, ensureYDomain] = this.getMinimumDomainExtents();
 
             let axesLayout = this.axes.negotiateAxes(
                 this.layers,
@@ -921,8 +938,8 @@ module powerbi.visuals {
                 hideAxisLabels,
                 CartesianChart.TextProperties,
                 interactivityRightMargin,
-                ReferenceLineHelper.extractReferenceLineValue(xAxisReferenceLineProperties),
-                ReferenceLineHelper.extractReferenceLineValue(y1AxisReferenceLineProperties));
+                ensureXDomain,
+                ensureYDomain);
 
             // Even if the caller thinks animations are ok, now that we've laid out the axes and legend we should disable animations
             // if the plot area changed. Animations for property changes like legend on/off are not desired.
@@ -936,9 +953,47 @@ module powerbi.visuals {
                 axesLayout,
                 this.layers,
                 suppressAnimations,
-                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins));
+                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins, resizeMode));
 
             this.renderedPlotArea = axesLayout.plotArea;
+        }
+
+        /**
+         * Gets any minimum domain extents.
+         * Reference lines and trend lines may enforce minimum extents on X and/or Y domains.
+         */
+        private getMinimumDomainExtents(): NumberRange[] {
+            let xs: number[] = [];
+            let ys: number[] = [];
+
+            if (!_.isEmpty(this.xAxisReferenceLines)) {
+                let xAxisReferenceLineProperties: DataViewObject = this.xAxisReferenceLines[0].object;
+                let value = ReferenceLineHelper.extractReferenceLineValue(xAxisReferenceLineProperties);
+                xs.push(value);
+            }
+
+            if (!_.isEmpty(this.y1AxisReferenceLines)) {
+                let y1AxisReferenceLineProperties: DataViewObject = this.y1AxisReferenceLines[0].object;
+                let value = ReferenceLineHelper.extractReferenceLineValue(y1AxisReferenceLineProperties);
+                ys.push(value);
+            }
+
+            if (this.trendLine && !_.isEmpty(this.trendLine.points)) {
+                xs = xs.concat(_.map(this.trendLine.points, p => p.x));
+                ys = ys.concat(_.map(this.trendLine.points, p => p.y));
+            }
+
+            let ensureXDomain: NumberRange = {
+                min: d3.min(xs),
+                max: d3.max(xs)
+            };
+
+            let ensureYDomain: NumberRange = {
+                min: d3.min(ys),
+                max: d3.max(ys)
+            };
+
+            return [ensureXDomain, ensureYDomain];
         }
 
         private getPlotAreaRect(axesLayout: CartesianAxesLayout, legendMargins: IViewport): IRect {
@@ -973,7 +1028,7 @@ module powerbi.visuals {
 
         private hideAxisLabels(legendMargins: IViewport): boolean {
             if (this.cartesianSmallViewPortProperties) {
-                if (this.cartesianSmallViewPortProperties.hideAxesOnSmallViewPort && ((this.currentViewport.height + legendMargins.height) < this.cartesianSmallViewPortProperties.MinHeightAxesVisible) && !this.visualInitOptions.interactivity.isInteractiveLegend) {
+                if (this.cartesianSmallViewPortProperties.hideAxesOnSmallViewPort && (this.currentViewport.height < this.cartesianSmallViewPortProperties.MinHeightAxesVisible) && !this.visualInitOptions.interactivity.isInteractiveLegend) {
                     return true;
                 }
             }
@@ -993,7 +1048,8 @@ module powerbi.visuals {
             layers: ICartesianVisual[],
             axesLayout: CartesianAxesLayout,
             suppressAnimations: boolean,
-            legendMargins: IViewport): void {
+            legendMargins: IViewport,
+            resizeMode?: ResizeMode): void {
             debug.assertValue(layers, 'layers');
 
             let axes = axesLayout.axes;
@@ -1007,7 +1063,14 @@ module powerbi.visuals {
 
             this.renderReferenceLines(axesLayout);
 
-            this.renderLayers(layers, plotArea, axes, suppressAnimations);
+            this.renderLayers(layers, plotArea, axes, suppressAnimations, resizeMode);
+
+            this.renderTrendLine(axesLayout);
+        }
+
+        private renderTrendLine(axesLayout: CartesianAxesLayout): void {
+            let scrollableRegion = this.svgAxes.getScrollableRegion();
+            TrendLineHelper.render(this.trendLine, scrollableRegion, axesLayout.axes, axesLayout.plotArea);
         }
 
         private renderReferenceLines(axesLayout: CartesianAxesLayout): void {
@@ -1171,13 +1234,13 @@ module powerbi.visuals {
             }
         }
 
-        private renderLayers(layers: ICartesianVisual[], plotArea: IViewport, axes: CartesianAxisProperties, suppressAnimations: boolean): void {
+        private renderLayers(layers: ICartesianVisual[], plotArea: IViewport, axes: CartesianAxisProperties, suppressAnimations: boolean, resizeMode?: ResizeMode): void {
             let labelDataPointGroups: LabelDataPointsGroup[] = [];
             let dataPoints: SelectableDataPoint[] = [];
             let layerBehaviorOptions: any[] = [];
             let labelsAreNumeric: boolean = true;
             for (let i = 0, len = layers.length; i < len; i++) {
-                let result = layers[i].render(suppressAnimations);
+                let result = layers[i].render(suppressAnimations, resizeMode);
                 if (result) {
                     if (this.behavior) {
                         // NOTE: these are not needed if we don't have interactivity
@@ -1242,24 +1305,32 @@ module powerbi.visuals {
             categoryThickness: number,
             viewport: IViewport,
             isScrollable: boolean,
-            isScalar: boolean): IViewport {
+            isScalar: boolean,
+            margin?: IMargin,
+            noOuterPadding?: boolean): IViewport {
 
-            let preferredViewport: IViewport = {
-                height: viewport.height,
-                width: viewport.width
+            if (!margin)
+                margin = { top: 0, right: 0, bottom: 0, left: 0 };
+
+            let plotArea: IViewport = {
+                height: viewport.height - margin.top - margin.bottom,
+                width: viewport.width - margin.left - margin.right
             };
             if (!isScalar && isScrollable) {
-                let preferredWidth = CartesianChart.getPreferredCategorySpan(categoryCount, categoryThickness);
-                preferredViewport.width = Math.max(preferredWidth, viewport.width);
+                let preferredCategorySpan = CartesianChart.getPreferredCategorySpan(categoryCount, categoryThickness, noOuterPadding);
+                plotArea.width = Math.max(preferredCategorySpan, plotArea.width);
             }
-            return preferredViewport;
+            return plotArea;
         }
 
         /**
          * Returns preferred Category span if the visual is scrollable.
          */
-        public static getPreferredCategorySpan(categoryCount: number, categoryThickness: number): number {
-            return categoryThickness * (categoryCount + (CartesianChart.OuterPaddingRatio * 2));
+        public static getPreferredCategorySpan(categoryCount: number, categoryThickness: number, noOuterPadding?: boolean): number {
+            let span = (categoryThickness * categoryCount);
+            if (noOuterPadding)
+                return span;
+            return span + (categoryThickness * CartesianChart.OuterPaddingRatio * 2);
         }
         
         /**
@@ -1280,12 +1351,13 @@ module powerbi.visuals {
 
             // visibleCategoryCount will be used to discard data that overflows on ordinal-axis charts.
             // Needed for dashboard visuals            
-            let calculatedBarCount = Math.round((availableWidth - totalOuterPadding) / categoryThickness);
+            let calculatedBarCount = Double.floorWithPrecision((availableWidth - totalOuterPadding) / categoryThickness);
             let visibleCategoryCount = Math.min(calculatedBarCount, categoryCount);
+            let willScroll = visibleCategoryCount < categoryCount && isScrollable;
 
             let outerPaddingRatio = CartesianChart.OuterPaddingRatio;
-            if (!isScalar) {
-                // use dynamic outer padding
+            if (!isScalar && !willScroll) {
+                // use dynamic outer padding to improve spacing when we have few categories
                 let oneOuterPadding = (availableWidth - (categoryThickness * visibleCategoryCount)) / 2;
                 outerPaddingRatio = oneOuterPadding / categoryThickness;
             }
@@ -1473,8 +1545,8 @@ module powerbi.visuals {
         scrollbarVisible: boolean,
         existingAxisProperties: CartesianAxisProperties,
         trimOrdinalDataOnOverflow: boolean,
-        xReferenceLineValue?: number,
-        y1ReferenceLineValue?: number): CartesianAxisProperties {
+        ensureXDomain?: NumberRange,
+        ensureYDomain?: NumberRange): CartesianAxisProperties {
         debug.assertValue(layers, 'layers');
 
         let visualOptions: CalculateScaleAndDomainOptions = {
@@ -1492,11 +1564,13 @@ module powerbi.visuals {
             categoryAxisPrecision: categoryAxisProperties ? CartesianHelper.getPrecision(categoryAxisProperties['labelPrecision']) : null,
             valueAxisPrecision: valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['labelPrecision']) : null,
             playAxisControlLayout: playAxisControlLayout,
-            y1ReferenceLineValue: y1ReferenceLineValue,
-            xReferenceLineValue: xReferenceLineValue,
+            ensureXDomain: ensureXDomain,
+            ensureYDomain: ensureYDomain,
         };
 
         let skipMerge = valueAxisProperties && valueAxisProperties['secShow'] === true;
+        // TODO: should show trendline?
+
         let yAxisWillMerge = false;
         let mergeResult: MergedValueAxisResult;
         if (hasMultipleYAxes(layers) && !skipMerge) {
@@ -1588,13 +1662,13 @@ module powerbi.visuals {
         return result;
     }
 
-    const enum AxisLocation {
+    export const enum AxisLocation {
         X,
         Y1,
         Y2,
     }
 
-    interface CartesianAxesLayout {
+    export interface CartesianAxesLayout {
         axes: CartesianAxisProperties;
         margin: IMargin;
         marginLimits: IMargin;
@@ -1604,6 +1678,7 @@ module powerbi.visuals {
         preferredPlotArea: IViewport;
         tickLabelMargins: any;
         tickPadding: IMargin;
+        rotateXTickLabels90?: boolean;
     }
 
     class SvgBrush {
@@ -1720,21 +1795,29 @@ module powerbi.visuals {
             this.brush = svgBrush;
         }
 
-        private filterDataToViewport(mainAxisScale: D3.Scale.OrdinalScale, layers: ICartesianVisual[], axes: CartesianAxisProperties, scrollScale: D3.Scale.OrdinalScale, extent: number[]): void {
+        private filterDataToViewport(
+            mainAxisScale: D3.Scale.OrdinalScale,
+            layers: ICartesianVisual[],
+            axes: CartesianAxisProperties,
+            scrollScale: D3.Scale.OrdinalScale,
+            extent: number[],
+            visibleCategoryCount: number): void {
+
             if (scrollScale) {
                 let selected: number[];
                 let data: CartesianData[] = [];
 
-                let startValue = extent[0];
-                let endValue = extent[1];
+                // NOTE: using start + numVisibleCategories to make sure we don't have issues with exactness related to extent start/end
+                //      (don't use extent[1])
+                /*
+                 When extent[0] and extent[1] are very close to the boundary of a new index, due to floating point err,
+                 the "start" might move to the next index but the "end" might not change until you slide one more pixel.
+                 It makes things really jittery during scrolling, sometimes you see N columns and sometimes you briefly see N+1.
+                */
+                let startIndex = AxisHelper.lookupOrdinalIndex(scrollScale, extent[0]);
+                var endIndex = startIndex + visibleCategoryCount; // NOTE: intentionally 1 past end index
 
-                let pixelStepSize = scrollScale(1) - scrollScale(0);
-                let startIndex = Math.floor(startValue / pixelStepSize);
-                let sliceLength = Math.ceil((endValue - startValue) / pixelStepSize);
-                let endIndex = startIndex + sliceLength; // NOTE: Intentionally one past the end index for use with slice(start,end)
                 let domain = scrollScale.domain();
-
-                mainAxisScale.domain(domain);
                 selected = domain.slice(startIndex, endIndex); // NOTE: Up to but not including 'end'
                 if (selected && selected.length > 0) {
                     for (let i = 0; i < layers.length; i++) {
@@ -1767,24 +1850,35 @@ module powerbi.visuals {
         public render(axesLayout: CartesianAxesLayout, layers: ICartesianVisual[], suppressAnimations: boolean, renderDelegate: RenderPlotAreaDelegate): void {
             let plotArea = axesLayout.plotArea;
 
+            if (plotArea.width < 1 || plotArea.height < 1)
+                return; //do nothing - too small
+
             let axisScale: D3.Scale.OrdinalScale;
             let brushX: number;
             let brushY: number;
-            let scrollableLength: number;
             let scrollbarLength: number;
+            let numVisibleCategories: number;
+            let categoryThickness: number;
+            let newAxisLength: number;
             if (this.axes.isXScrollBarVisible) {
                 axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.x.scale;
                 brushX = axesLayout.margin.left;
-                brushY = axesLayout.viewport.height;  // - scrollbar width
-                scrollableLength = axesLayout.preferredPlotArea.width;
-                scrollbarLength = plotArea.width;
+                brushY = axesLayout.viewport.height;
+                categoryThickness = axesLayout.axes.x.categoryThickness;
+                let outerPadding = axesLayout.axes.x.outerPadding;
+                numVisibleCategories = Double.floorWithPrecision((plotArea.width - outerPadding * 2) / categoryThickness);
+                scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
+                newAxisLength = plotArea.width;
             }
             else if (this.axes.isYScrollBarVisible) {
                 axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.y1.scale;
                 brushX = axesLayout.viewport.width;
                 brushY = axesLayout.margin.top;
-                scrollableLength = axesLayout.preferredPlotArea.height;
-                scrollbarLength = plotArea.height;
+                categoryThickness = axesLayout.axes.y1.categoryThickness;
+                let outerPadding = axesLayout.axes.y1.outerPadding;
+                numVisibleCategories = Double.floorWithPrecision((plotArea.height - outerPadding * 2) / categoryThickness);
+                scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
+                newAxisLength = plotArea.height;
             }
             else {
                 // No scrollbars, render the chart normally.
@@ -1793,35 +1887,50 @@ module powerbi.visuals {
                 return;
             }
 
-            this.brushMinExtent = ScrollableAxes.getMinExtent(scrollableLength, scrollbarLength);
+            // viewport is REALLY small
+            if (numVisibleCategories < 1)
+                return; // don't do anything
+
             this.scrollScale = axisScale.copy();
-            this.scrollScale.rangeBands([0, scrollbarLength]);
+            this.scrollScale.rangeBands([0, scrollbarLength]); //no inner/outer padding, keep the math simple
+            this.brushMinExtent = this.scrollScale(numVisibleCategories - 1);
+
+            // Options: use newAxisLength to squeeze-pop and keep the chart balanced, 
+            //          or use scrollbarLength to keep rects still - but it leaves unbalanced right edge
+            // 1. newAxisLength ex: As you resize smaller we constantly adjust the inner/outer padding to keep things balanced with the same # of rects, 
+            //      when we need to drop a rect we pop out the rectangle and the padding seems to jump (to keep things cenetered and balanced). 
+            // 2. scrollbarLenghth ex: As you resize smaller we can leave all rectangles in the exact same place, no squeezing inner/outer padding,
+            //      when we need to drop a rect we just remove it - but this leaves the right side with lots of empty room (bad for dashboard tiles)
+            // we are using option 1 to squeeze pop and show balanced layout at all sizes, but this is the less ideal experience during resize.
+            // we should consider using option 2 during resize, then switch to option 1 when resize ends.
+            axisScale.rangeBands([0, newAxisLength], CartesianChart.InnerPaddingRatio, CartesianChart.OuterPaddingRatio);
+
             this.brush.setOrientation(this.axes.isXScrollBarVisible);
             this.brush.setScale(this.scrollScale);
             this.brush.setExtent([0, this.brushMinExtent]);
 
             // This function will be called whenever we scroll.
             let renderOnScroll = (extent: number[], suppressAnimations: boolean) => {
-                this.filterDataToViewport(axisScale, layers, axesLayout.axes, this.scrollScale, extent);
+                this.filterDataToViewport(axisScale, layers, axesLayout.axes, this.scrollScale, extent, numVisibleCategories);
                 renderDelegate(layers, axesLayout, suppressAnimations);
             };
 
-            let scrollCallback = () => this.onBrushed(this.scrollScale, axisScale, axesLayout, scrollbarLength, renderOnScroll);
+            let scrollCallback = () => this.onBrushed(scrollbarLength, renderOnScroll);
             this.brush.renderBrush(this.brushMinExtent, brushX, brushY, scrollCallback);
 
-            // TODO: why modify original scale?
-            axisScale.rangeBands([0, scrollbarLength]);
             renderOnScroll(this.brush.getExtent(), suppressAnimations);
         }
 
+        // FOR UNIT TESTING ONLY
         public scrollTo(position: number): void {
             debug.assert(this.axes.isXScrollBarVisible || this.axes.isYScrollBarVisible, 'scrolling is not available');
             debug.assertValue(this.scrollScale, 'scrollScale');
 
             let extent = this.brush.getExtent();
             let extentLength = extent[1] - extent[0];
-            extent[0] = this.scrollScale(position);
-            extent[1] = extent[0] + extentLength;
+            let halfCategoryThickness = (this.scrollScale(1) - this.scrollScale(0)) / 2;
+            extent[0] = this.scrollScale(position) + halfCategoryThickness;
+            extent[1] = extent[0] + extentLength + halfCategoryThickness;
             this.brush.setExtent(extent);
 
             let scrollbarLength = this.scrollScale.rangeExtent()[1];
@@ -1829,19 +1938,13 @@ module powerbi.visuals {
             this.brush.scroll();
         }
 
-        private static getMinExtent(scrollableLength: number, scrollbarLength: number): number {
-            return scrollbarLength * scrollbarLength / (scrollableLength);
-        }
-
-        private onBrushed(scrollScale: any, mainAxisScale: any, axesLayout, scrollbarLength: number, render: (extent: number[], suppressAnimations: boolean) => void): void {
+        private onBrushed(scrollbarLength: number, render: (extent: number[], suppressAnimations: boolean) => void): void {
             let brush = this.brush;
 
-            if (mainAxisScale && scrollScale) {
                 ScrollableAxes.clampBrushExtent(this.brush, scrollbarLength, this.brushMinExtent);
                 let extent = brush.getExtent();
-                render(extent, /* suppressAnimations */ true);
+            render(extent, /*suppressAnimations*/ true);
             }
-        }
 
         private static clampBrushExtent(brush: SvgBrush, scrollbarLength: number, minExtent: number): void {
             let extent = brush.getExtent();
@@ -1876,12 +1979,13 @@ module powerbi.visuals {
         }
     }
 
-    class SvgCartesianAxes {
+    export class SvgCartesianAxes {
+        // These match D3's internal axis padding values
         public static AxisPadding: IMargin = {
             left: 10,
             right: 10,
             top: 0,
-            bottom: 12,
+            bottom: 13, // don't change this - fixes defect 6658705 when in "Fit-to-Page" view and the scale factor is greater than 1.0
         };
 
         private axisGraphicsContext: D3.Selection;
@@ -2033,7 +2137,8 @@ module powerbi.visuals {
                     xLabelColor = this.valueAxisProperties && this.valueAxisProperties['labelColor'] ? this.valueAxisProperties['labelColor'] : null;
                 }
                 axes.x.axis.orient("bottom");
-                if (!axes.x.willLabelsFit)
+                // we only rotate ordinal tick labels
+                if (!axes.x.willLabelsFit && AxisHelper.isOrdinalScale(axes.x.scale))
                     axes.x.axis.tickPadding(SvgCartesianAxes.TickPaddingRotatedX);
 
                 let xAxisGraphicsElement = this.xAxisGraphicsContext;
@@ -2062,7 +2167,7 @@ module powerbi.visuals {
                         .call(AxisHelper.LabelLayoutStrategy.rotate,
                         bottomMarginLimit,
                         TextMeasurementService.svgEllipsis,
-                        !axes.x.willLabelsFit,
+                        !axes.x.willLabelsFit && AxisHelper.isOrdinalScale(axes.x.scale),
                         bottomMarginLimit === tickLabelMargins.xMax,
                         axes.x,
                         margin,
@@ -2334,6 +2439,8 @@ module powerbi.visuals {
          * 'Classed' is undefined for transition selections
          */
         private static darkenZeroLine(g: D3.Selection): void {
+            // remove zero-line class from all first, filtering can cause lines that are no longer zero to still be dark (since the key is index based)
+            g.selectAll('g.tick line').classed('zero-line', false);
             let zeroTick = g.selectAll('g.tick').filter((data) => data === 0).node();
             if (zeroTick) {
                 d3.select(zeroTick).select('line').classed('zero-line', true);
@@ -2345,14 +2452,14 @@ module powerbi.visuals {
         }
     }
 
-    class CartesianAxes {
+    export class CartesianAxes {
         private static YAxisLabelPadding = 20;
         private static XAxisLabelPadding = 18;
         private static MaxMarginFactor = 0.25;
         private static MinimumMargin: IMargin = {
             left: 1,
             right: 1,
-            top: 8,
+            top: 8, //half of the default font height
             bottom: 25,
         };
 
@@ -2362,7 +2469,6 @@ module powerbi.visuals {
         private maxMarginFactor: number;
         private yAxisOrientation: string;
         private scrollbarWidth: number;
-        private lastLeft: number;
         private trimOrdinalDataOnOverflow: boolean;
         public showLinesOnX: boolean;
         public showLinesOnY: boolean;
@@ -2380,7 +2486,6 @@ module powerbi.visuals {
             this.isScrollable = isScrollable;
             this.maxMarginFactor = CartesianAxes.MaxMarginFactor;
             this.yAxisOrientation = yAxisPosition.left;
-            this.lastLeft = 0;
             this.trimOrdinalDataOnOverflow = trimOrdinalDataOnOverflow;
         }
 
@@ -2442,6 +2547,18 @@ module powerbi.visuals {
             }
         }
 
+        /**
+         * Negotiate the axes regions, the plot area, and determine if we need a scrollbar for ordinal categories.
+         * @param layers an array of Cartesian layout layers (column, line, etc.)
+         * @param parentViewport the full viewport for the visual
+         * @param padding the D3 axis padding values
+         * @param playAxisControlLayout if this is a playable Cartesian chart, includes the layout for the play controls (start/stop, time slider)
+         * @param hideAxisLabels forces axis titles to be hidden
+         * @param textProperties text properties to be used by text measurement
+         * @param interactivityRightMargin extra right margin for the interactivity
+         * @param ensureXDomain if non null, includes values that must be part of the axis domain
+         * @param ensureYDomain if non null, includes values that must be part of the axis domain
+         */
         public negotiateAxes(
             layers: ICartesianVisual[],
             parentViewport: IViewport,
@@ -2450,12 +2567,19 @@ module powerbi.visuals {
             hideAxisLabels: boolean,
             textProperties: TextProperties,
             interactivityRightMargin: number,
-            xReferenceLineValue?: number,
-            y1ReferenceLineValue?: number): CartesianAxesLayout {
+            ensureXDomain?: NumberRange,
+            ensureYDomain?: NumberRange): CartesianAxesLayout {
 
+            // 1> MinMargins -> some initial axis properties / text
+            // 2> Get axis margins for the initial text, no rotateXTickLabels90. margins grown? -> axis properties / text again (possibly more tick labels now)
+            // ?> do we have more labels? do we need rotate? are we done?
+                // 3> margins again (rotate? margins grow?) -> text again (less tick labls now?)
+                    // FREEZE PROPERTIES THAT CAN CHANGE
+                    // 4> margins (final), axes (final)
+            
+            // 1.a) initialize margins
             let margin: IMargin = Prototype.inherit(CartesianAxes.MinimumMargin);
             let viewport: IViewport = Prototype.inherit(parentViewport);
-
             let leftRightMarginLimit = viewport.width * this.maxMarginFactor;
             let bottomMarginLimit = Math.max(CartesianAxes.MinimumMargin.bottom, Math.ceil(viewport.height * this.maxMarginFactor));
             let marginLimits = {
@@ -2465,9 +2589,7 @@ module powerbi.visuals {
                 bottom: bottomMarginLimit,
             };
 
-            // TODO: Remove this, without regressing tick label margins.
-            margin.left = this.lastLeft;
-
+            // 1.b) Calculate axis properties using initial margins
             let axes = calculateAxes(
                 layers,
                 viewport,
@@ -2476,48 +2598,54 @@ module powerbi.visuals {
                 this.categoryAxisProperties,
                 this.valueAxisProperties,
                 textProperties,
-                false,
-                null,
+                /*scrollbarVisible*/ false,
+                /*previousAxisProperties*/ null,
                 this.trimOrdinalDataOnOverflow,
-                xReferenceLineValue,
-                y1ReferenceLineValue);
+                ensureXDomain,
+                ensureYDomain);
 
+            // these are used by getTickLabelMargins
             let renderXAxis = this.shouldRenderAxis(axes.x);
             let renderY1Axis = this.shouldRenderAxis(axes.y1);
             let renderY2Axis = this.shouldRenderAxis(axes.y2, true);
-
-            // TODO: simplify places that width is set by using plot area
-            let width = viewport.width - (margin.left + margin.right);
-
-            let isScalar = false;
-            let preferredPlotArea: IViewport;
-            this.isXScrollBarVisible = false;
-            this.isYScrollBarVisible = false;
-
             let showY1OnRight = this.shouldShowY1OnRight();
 
-            if (layers) {
+            let plotArea: IViewport = {
+                width: viewport.width - (margin.left + margin.right),
+                height: viewport.height - (margin.top + margin.bottom)
+            };
+
+            let isScalar = false;
+            if (!_.isEmpty(layers)) {
                 if (layers[0].getVisualCategoryAxisIsScalar)
                     isScalar = layers[0].getVisualCategoryAxisIsScalar();
-
-                if (!isScalar && this.isScrollable && layers[0].getPreferredPlotArea) {
-                    let categoryThickness = this.showLinesOnY ? axes.x.categoryThickness : axes.y1.categoryThickness;
-                    let categoryCount = this.showLinesOnY ? axes.x.dataDomain.length : axes.y1.dataDomain.length;
-                    preferredPlotArea = layers[0].getPreferredPlotArea(isScalar, categoryCount, categoryThickness);
-                    if (this.showLinesOnY && preferredPlotArea && preferredPlotArea.width > viewport.width) {
-                        this.isXScrollBarVisible = true;
-                        viewport.height -= this.scrollbarWidth;
-                    }
-
-                    if (this.showLinesOnX && preferredPlotArea && preferredPlotArea.height > viewport.height) {
-                        this.isYScrollBarVisible = true;
-                        viewport.width -= this.scrollbarWidth;
-                        width = viewport.width - (margin.left + margin.right);
-                    }
-                }
             }
 
-            // Recalculate axes now that scrollbar visible variables have been set.
+            // 2.a) calculate axis tick margins
+            let tickLabelMargins = undefined;
+            tickLabelMargins = AxisHelper.getTickLabelMargins(
+                plotArea,
+                marginLimits.left,
+                TextMeasurementService.measureSvgTextWidth,
+                TextMeasurementService.estimateSvgTextHeight,
+                axes,
+                marginLimits.bottom,
+                textProperties,
+                /*scrolling*/ false,
+                showY1OnRight,
+                renderXAxis,
+                renderY1Axis,
+                renderY2Axis);
+
+            margin = this.updateAxisMargins(axes, tickLabelMargins, padding, showY1OnRight, renderY1Axis, renderY2Axis, hideAxisLabels, isScalar ? 0 : interactivityRightMargin);
+
+            // if any of these change, we need to calculate margins again
+            let previousTickCountY1 = axes.y1 && axes.y1.values.length;
+            let previousTickCountY2 = axes.y2 && axes.y2.values.length;
+            let previousWillFitX = axes.x && axes.x.willLabelsFit;
+            let previousWillBreakX = axes.x && axes.x.willLabelsWordBreak;
+
+            // 2.b) Re-calculate the axes with the new margins.
             axes = calculateAxes(
                 layers,
                 viewport,
@@ -2526,72 +2654,45 @@ module powerbi.visuals {
                 this.categoryAxisProperties,
                 this.valueAxisProperties,
                 textProperties,
-                this.isXScrollBarVisible || this.isYScrollBarVisible,
-                axes,
+                /*scrollbarVisible*/ false,
+                /*previousAxes*/ null,
                 this.trimOrdinalDataOnOverflow,
-                xReferenceLineValue,
-                y1ReferenceLineValue);
+                ensureXDomain,
+                ensureYDomain);
 
-            // We need to make two passes because the margin changes affect the chosen tick values, which then affect the margins again.
-            let tickLabelMargins = undefined;
-            let axisLabels: ChartAxesLabels = undefined;
-            for (let iteration = 0, doneWithMargins = false; iteration < 2 && !doneWithMargins; iteration++) {
+            plotArea.width = viewport.width - (margin.left + margin.right);
+            plotArea.height = viewport.height - (margin.top + margin.bottom);
+
+            // check properties that affect getTickLabelMargin - if these are the same, we don't need to calculate axis margins again
+            let preferredPlotArea: IViewport = this.getPreferredPlotArea(axes, layers, isScalar);
+            let rotateXTickLabels90 = !this.willAllCategoriesFitInPlotArea(plotArea, preferredPlotArea);
+            let allDone = ((!axes.y1 || axes.y1.values.length === previousTickCountY1)
+                && (!axes.y2 || axes.y2.values.length === previousTickCountY2)
+                && (!axes.x || axes.x.willLabelsFit === previousWillFitX)
+                && (!axes.x || axes.x.willLabelsWordBreak === previousWillBreakX)
+                && !rotateXTickLabels90);
+
+            this.isXScrollBarVisible = false;
+            this.isYScrollBarVisible = false;
+            if (!allDone) {
+                // 3.a) calculate axis tick margins
                 tickLabelMargins = AxisHelper.getTickLabelMargins(
-                    { width: width, height: viewport.height },
+                    plotArea,
                     marginLimits.left,
                     TextMeasurementService.measureSvgTextWidth,
                     TextMeasurementService.estimateSvgTextHeight,
                     axes,
                     marginLimits.bottom,
                     textProperties,
-                    this.isXScrollBarVisible || this.isYScrollBarVisible,
+                    rotateXTickLabels90,
                     showY1OnRight,
                     renderXAxis,
                     renderY1Axis,
                     renderY2Axis);
 
-                // We look at the y axes as main and second sides, if the y axis orientation is right then the main side represents the right side.
-                let maxMainYaxisSide = showY1OnRight ? tickLabelMargins.yRight : tickLabelMargins.yLeft,
-                    maxSecondYaxisSide = showY1OnRight ? tickLabelMargins.yLeft : tickLabelMargins.yRight,
-                    xMax = tickLabelMargins.xMax;
+                margin = this.updateAxisMargins(axes, tickLabelMargins, padding, showY1OnRight, renderY1Axis, renderY2Axis, hideAxisLabels, isScalar ? 0 : interactivityRightMargin);
 
-                maxMainYaxisSide += padding.left;
-                if ((renderY2Axis && !showY1OnRight) || (showY1OnRight && renderY1Axis))
-                    maxSecondYaxisSide += padding.right;
-                xMax += padding.bottom;
-
-                if (hideAxisLabels) {
-                    axes.x.axisLabel = null;
-                    axes.y1.axisLabel = null;
-                    if (axes.y2) {
-                        axes.y2.axisLabel = null;
-                    }
-                }
-
-                this.addUnitTypeToAxisLabels(axes);
-
-                axisLabels = { x: axes.x.axisLabel, y: axes.y1.axisLabel, y2: axes.y2 ? axes.y2.axisLabel : null };
-
-                if (axisLabels.x != null)
-                    xMax += CartesianAxes.XAxisLabelPadding;
-                if (axisLabels.y != null)
-                    maxMainYaxisSide += CartesianAxes.YAxisLabelPadding;
-                if (axisLabels.y2 != null)
-                    maxSecondYaxisSide += CartesianAxes.YAxisLabelPadding;
-
-                margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
-                margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
-                if (!isScalar) {
-                    margin.right += interactivityRightMargin;
-                }
-
-                margin.bottom = xMax;
-
-                width = viewport.width - (margin.left + margin.right);
-
-                // Re-calculate the axes with the new margins.
-                let previousTickCountY1 = axes.y1.values.length;
-                let previousTickCountY2 = axes.y2 && axes.y2.values.length;
+                // 3.b) Re-calculate the axes with the new final margins
                 axes = calculateAxes(
                     layers,
                     viewport,
@@ -2600,23 +2701,51 @@ module powerbi.visuals {
                     this.categoryAxisProperties,
                     this.valueAxisProperties,
                     textProperties,
-                    this.isXScrollBarVisible || this.isYScrollBarVisible,
-                     /*axes*/ axes,
+                    /*scrollbarVisible*/ rotateXTickLabels90,
+                    axes,
                     this.trimOrdinalDataOnOverflow,
-                    xReferenceLineValue,
-                    y1ReferenceLineValue);
+                    ensureXDomain,
+                    ensureYDomain);
 
-                // The minor padding adjustments could have affected the chosen tick values, which in turn requires us to calculate margins again.
-                // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
-                // TODO: This does not take into account other aspects of the axes that could change, e.g. willLabelsFit, etc.
-                if (axes.y1.values.length === previousTickCountY1 && (!axes.y2 || axes.y2.values.length === previousTickCountY2))
-                    doneWithMargins = true;
+                // now we can determine if we need actual scrolling
+                // rotateXTickLabels90 will give more plotArea to categories since the left-overflow of a rotated category label doesn't exist anymore
+                plotArea.width = viewport.width - (margin.left + margin.right);
+                plotArea.height = viewport.height - (margin.top + margin.bottom);
+                preferredPlotArea = this.getPreferredPlotArea(axes, layers, isScalar);
+                let willScroll = !this.willAllCategoriesFitInPlotArea(plotArea, preferredPlotArea);
+                if (willScroll) {
+                    if (this.showLinesOnY) {
+                        this.isXScrollBarVisible = true;
+                        plotArea.height -= this.scrollbarWidth;
+                        viewport.height -= this.scrollbarWidth;
+                }
+                    if (this.showLinesOnX) {
+                        this.isYScrollBarVisible = true;
+                        plotArea.width -= this.scrollbarWidth;
+                        viewport.width -= this.scrollbarWidth;
+                }
+
+                    // 3.c) Re-calculate the axes with the final margins (and the updated viewport - scrollbarWidth)
+                axes = calculateAxes(
+                    layers,
+                    viewport,
+                    margin,
+                    playAxisControlLayout,
+                    this.categoryAxisProperties,
+                    this.valueAxisProperties,
+                    textProperties,
+                    /*scrollbarVisible*/ true,
+                    axes,
+                    this.trimOrdinalDataOnOverflow,
+                    ensureXDomain,
+                    ensureYDomain);
+                }
             }
 
-            let plotArea: IViewport = {
-                width: viewport.width - (margin.left + margin.right),
-                height: viewport.height - (margin.top + margin.bottom),
-            };
+            ///////DONE
+            let axisLabels = hideAxisLabels ?
+                { x: null, y: null, y2: null } :
+                { x: axes.x.axisLabel, y: axes.y1.axisLabel, y2: axes.y2 ? axes.y2.axisLabel : null };
 
             this.layout = {
                 axes: axes,
@@ -2628,11 +2757,76 @@ module powerbi.visuals {
                 preferredPlotArea: preferredPlotArea,
                 tickLabelMargins: tickLabelMargins,
                 tickPadding: padding,
+                rotateXTickLabels90: rotateXTickLabels90,
             };
 
-            this.lastLeft = margin.left;
-
             return this.layout;
+        }
+
+        private getPreferredPlotArea(axes, layers, isScalar): IViewport {
+            let preferredPlotArea: IViewport;
+            if (!isScalar && this.isScrollable && !_.isEmpty(layers) && layers[0].getPreferredPlotArea) {
+                let categoryThickness = this.showLinesOnY ? axes.x.categoryThickness : axes.y1.categoryThickness;
+                let categoryCount = this.showLinesOnY ? axes.x.dataDomain.length : axes.y1.dataDomain.length;
+                preferredPlotArea = layers[0].getPreferredPlotArea(isScalar, categoryCount, categoryThickness);
+            }
+            return preferredPlotArea;
+        }
+
+        private willAllCategoriesFitInPlotArea(plotArea: IViewport, preferredPlotArea: IViewport): boolean {
+            if (this.showLinesOnY && preferredPlotArea && Double.greaterWithPrecision(preferredPlotArea.width, plotArea.width)) {
+                return false;
+            }
+            if (this.showLinesOnX && preferredPlotArea && Double.greaterWithPrecision(preferredPlotArea.height, plotArea.height)) {
+                return false;
+            }
+            return true;
+        }
+
+        private updateAxisMargins(
+            axes: CartesianAxisProperties,
+            tickLabelMargins: TickLabelMargins,
+            padding: IMargin,
+            showY1OnRight: boolean,
+            renderY1Axis: boolean, 
+            renderY2Axis: boolean,
+            hideAxisTitles: boolean,
+            interactivityRightMargin: number): IMargin {
+
+            // We look at the y axes as main and second sides, if the y axis orientation is right then the main side represents the right side.
+            let maxY1Padding = showY1OnRight ? tickLabelMargins.yRight : tickLabelMargins.yLeft,
+                maxY2Padding = showY1OnRight ? tickLabelMargins.yLeft : tickLabelMargins.yRight,
+                maxXAxisBottom = tickLabelMargins.xMax;
+
+            maxY1Padding += padding.left;
+            if ((renderY2Axis && !showY1OnRight) || (showY1OnRight && renderY1Axis))
+                maxY2Padding += padding.right;
+            maxXAxisBottom += padding.bottom;
+
+            // Adjust for axis titles
+            if (hideAxisTitles) {
+                axes.x.axisLabel = null;
+                axes.y1.axisLabel = null;
+                if (axes.y2) {
+                    axes.y2.axisLabel = null;
+                }
+            }
+            this.addUnitTypeToAxisLabels(axes);
+            let axisLabels = { x: axes.x.axisLabel, y: axes.y1.axisLabel, y2: axes.y2 ? axes.y2.axisLabel : null };
+            if (axisLabels.x != null)
+                maxXAxisBottom += CartesianAxes.XAxisLabelPadding;
+            if (axisLabels.y != null)
+                maxY1Padding += CartesianAxes.YAxisLabelPadding;
+            if (axisLabels.y2 != null)
+                maxY2Padding += CartesianAxes.YAxisLabelPadding;
+
+            let margin: IMargin = Prototype.inherit(CartesianAxes.MinimumMargin);
+            margin.left = showY1OnRight ? maxY2Padding : maxY1Padding;
+            margin.right = showY1OnRight ? maxY1Padding : maxY2Padding;
+            margin.right += interactivityRightMargin; // for mobile interactive legend
+            margin.bottom = maxXAxisBottom;
+
+            return margin;
         }
 
         public isLogScaleAllowed(axisType: AxisLocation): boolean {
@@ -2777,15 +2971,18 @@ module powerbi.visuals {
             switch (type) {
                 case CartesianChartType.Area:
                     layers.push(createLineChartLayer(LineChartType.area, /* inComboChart */ false, cartesianOptions));
+                    //layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
                     break;
                 case CartesianChartType.Line:
                     layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions));
+                    //layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
                     break;
                 case CartesianChartType.StackedArea:
                     layers.push(createLineChartLayer(LineChartType.stackedArea, /* inComboChart */ false, cartesianOptions));
                     break;
                 case CartesianChartType.Scatter:
                     layers.push(createScatterChartLayer(cartesianOptions));
+                    //layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
                     break;
                 case CartesianChartType.Waterfall:
                     layers.push(createWaterfallChartLayer(cartesianOptions));
@@ -2835,8 +3032,8 @@ module powerbi.visuals {
             }
 
             // Linear regression line layer
-            if (shouldAddTrendLayer(objects))
-                layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
+            //if (shouldAddTrendLayer(objects))
+            //    layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
 
             return layers;
         }

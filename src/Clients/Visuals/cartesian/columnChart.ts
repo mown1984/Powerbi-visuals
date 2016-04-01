@@ -155,8 +155,8 @@ module powerbi.visuals {
     export interface IColumnChartStrategy {
         setData(data: ColumnChartData): void;
         setupVisualProps(columnChartProps: ColumnChartContext): void;
-        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties;
-        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties;
+        setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties;
+        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties;
         drawColumns(useAnimation: boolean): ColumnChartDrawInfo;
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
@@ -199,6 +199,7 @@ module powerbi.visuals {
         public static SeriesClasses: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('series');
 
         private svg: D3.Selection;
+        private mainGraphicsSVG: D3.Selection;
         private mainGraphicsContext: D3.Selection;
         private labelGraphicsContext: D3.Selection;
         private xAxisProperties: IAxisProperties;
@@ -283,8 +284,13 @@ module powerbi.visuals {
 
         public init(options: CartesianVisualInitOptions) {
             this.svg = options.svg;
-            this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
-            this.labelGraphicsContext = this.svg.append('g').classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
+            this.svg.classed(ColumnChart.ColumnChartClassName, true);
+
+            let graphicsContextParent = this.mainGraphicsSVG = this.svg.append('svg')
+                .classed('columnChartSVG', true);
+
+            this.mainGraphicsContext = graphicsContextParent.classed('columnChartMainGraphicsContext', true);
+            this.labelGraphicsContext = graphicsContextParent.classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
             this.style = options.style;
             this.currentViewport = options.viewport;
             this.hostService = options.host;
@@ -293,8 +299,7 @@ module powerbi.visuals {
             this.cartesianVisualHost = options.cartesianHost;
             this.options = options;
             this.isComboChart = ComboChart.isComboChart(options.chartType);
-            let element = this.element = options.element;
-            element.addClass(ColumnChart.ColumnChartClassName);
+            this.element = options.element;
         }
 
         private getCategoryLayout(numCategoryValues: number, options: CalculateScaleAndDomainOptions): CategoryLayout {
@@ -309,7 +314,7 @@ module powerbi.visuals {
             let metaDataColumn = this.data ? this.data.categoryMetadata : undefined;
             let categoryDataType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(metaDataColumn);
             let isScalar = this.data ? this.data.scalarCategoryAxis : false;
-            let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain, options.xReferenceLineValue);
+            let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain, options.ensureXDomain);
             return CartesianChart.getLayout(
                 this.data,
                 {
@@ -986,18 +991,8 @@ module powerbi.visuals {
             this.columnChart.setData(data);
 
             let preferredPlotArea = this.getPreferredPlotArea(chartLayout.isScalar, chartLayout.categoryCount, chartLayout.categoryThickness);
-
-            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar. 
-             In that case we want to calculate the available plot area for the shapes by subtracting the margin from available viewport */
-            if (preferredPlotArea.width === this.currentViewport.width) {
-                preferredPlotArea.width -= (margin.left + margin.right);
-            }
-            preferredPlotArea.height -= (margin.top + margin.bottom);
-
             let is100Pct = EnumExtensions.hasFlag(this.chartType, flagStacked100); 
 
-            // When the category axis is scrollable the height of the category axis and value axis will be different
-            // The height of the value axis would be same as viewportHeight 
             let chartContext: ColumnChartContext = {
                 height: preferredPlotArea.height,
                 width: preferredPlotArea.width,
@@ -1017,8 +1012,8 @@ module powerbi.visuals {
             this.ApplyInteractivity(chartContext);
             this.columnChart.setupVisualProps(chartContext);
 
-            let xReferenceLineValue: number;
-            let y1ReferenceLineValue: number;
+            let ensureXDomain: NumberRange;
+            let ensureYDomain: NumberRange;
 
             let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
 
@@ -1028,10 +1023,10 @@ module powerbi.visuals {
                 options.forcedYDomain = temp;
 
                 // In the case of clustered and stacked bar charts, the y1 reference line is a vertical line
-                xReferenceLineValue = options.y1ReferenceLineValue;
+                ensureXDomain = options.ensureYDomain;
             }
             else {
-                y1ReferenceLineValue = options.y1ReferenceLineValue;
+                ensureYDomain = options.ensureYDomain;
             }                
 
             this.xAxisProperties = this.columnChart.setXScale(
@@ -1041,7 +1036,7 @@ module powerbi.visuals {
                 isBarChart ? options.valueAxisScaleType : options.categoryAxisScaleType,
                 isBarChart ? options.valueAxisDisplayUnits : options.categoryAxisDisplayUnits,
                 isBarChart ? options.valueAxisPrecision : options.categoryAxisPrecision,
-                xReferenceLineValue);
+                ensureXDomain);
 
             this.yAxisProperties = this.columnChart.setYScale(
                 is100Pct,
@@ -1050,7 +1045,7 @@ module powerbi.visuals {
                 isBarChart ? options.categoryAxisScaleType : options.valueAxisScaleType,
                 isBarChart ? options.categoryAxisDisplayUnits : options.valueAxisDisplayUnits,
                 isBarChart ? options.categoryAxisPrecision : options.valueAxisPrecision,
-                y1ReferenceLineValue);
+                ensureYDomain);
 
             if (options.showCategoryAxisLabel && this.xAxisProperties.isCategoryAxis || options.showValueAxisLabel && !this.xAxisProperties.isCategoryAxis) {
                 this.xAxisProperties.axisLabel = data.axesLabels.x;
@@ -1069,20 +1064,20 @@ module powerbi.visuals {
         }
 
         public getPreferredPlotArea(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport {
-            let viewport: IViewport = {
-                height: this.currentViewport.height,
-                width: this.currentViewport.width
+            let plotArea: IViewport = {
+                height: this.currentViewport.height - this.margin.top - this.margin.bottom,
+                width: this.currentViewport.width - this.margin.left - this.margin.right
             };
 
             if (this.isScrollable && !isScalar) {
-                let preferredWidth = CartesianChart.getPreferredCategorySpan(categoryCount, categoryThickness);
+                let preferredCategorySpan = CartesianChart.getPreferredCategorySpan(categoryCount, categoryThickness);
                 if (EnumExtensions.hasFlag(this.chartType, flagBar)) {
-                    viewport.height = Math.max(preferredWidth, viewport.height);
+                    plotArea.height = Math.max(preferredCategorySpan, plotArea.height);
                 }
                 else
-                    viewport.width = Math.max(preferredWidth, viewport.width);
+                    plotArea.width = Math.max(preferredCategorySpan, plotArea.width);
             }
-            return viewport;
+            return plotArea;
         }
 
         private ApplyInteractivity(chartContext: ColumnChartContext): void {
@@ -1187,6 +1182,15 @@ module powerbi.visuals {
         public render(suppressAnimations: boolean): CartesianVisualRenderResult {
             let columnChartDrawInfo = this.columnChart.drawColumns(!suppressAnimations /* useAnimations */);
             let data = this.data;
+
+            let margin = this.margin;
+            let viewport = this.currentViewport;
+            let height = viewport.height - (margin.top + margin.bottom);
+            let width = viewport.width - (margin.left + margin.right);
+
+            this.mainGraphicsSVG
+                .attr('height', height)
+                .attr('width', width);                
 
             if (this.tooltipsEnabled)
                 TooltipManager.addTooltip(columnChartDrawInfo.eventGroup, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);

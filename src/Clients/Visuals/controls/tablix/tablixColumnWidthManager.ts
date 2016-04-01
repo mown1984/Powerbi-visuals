@@ -25,8 +25,8 @@
  */
 
 module powerbi.visuals.controls {
-    import shouldAutoSizeColumnWidth = internal.TablixUtils.shouldAutoSizeColumnWidth;
-    import getMetadataObjects = internal.TablixUtils.getMetadadataObjects;
+    import PropAutoSizeWidth = internal.TablixObjects.PropGeneralAutoSizeColumns;
+    import getMetadataObjects = internal.TablixObjects.getMetadadataObjects;
 
     /**
      * Column Width Object identifying a certain column and its width
@@ -120,13 +120,13 @@ module powerbi.visuals.controls {
         public updateDataView(dataView: DataView, matrixLeafNodes?: MatrixVisualNode[]): void {
             this.previousDataView = this.currentDataView;
             if (this.previousDataView)
-                this.previousAutoColumnSizePropertyValue = shouldAutoSizeColumnWidth(getMetadataObjects(this.previousDataView));
+                this.previousAutoColumnSizePropertyValue = PropAutoSizeWidth.getValue<boolean>(getMetadataObjects(this.previousDataView));
             else
                 this.previousAutoColumnSizePropertyValue = undefined;
 
             this.currentDataView = dataView;
             if(this.currentDataView)
-                this.currentAutoColumnSizePropertyValue = shouldAutoSizeColumnWidth(getMetadataObjects(this.currentDataView));
+                this.currentAutoColumnSizePropertyValue = PropAutoSizeWidth.getValue<boolean>(getMetadataObjects(this.currentDataView));
             else
                 this.currentAutoColumnSizePropertyValue = undefined;
 

@@ -21,6 +21,7 @@
         "common/urlUtilsTests.ts",
         "common/colorTests.ts",
         "common/referenceLineHelperTests.ts",
+        "common/trendLineHelperTests.ts",
         "converters/slicerConverterTests.ts",
         "utils/kpiUtilTests.ts",
         "utils/newDataLabelUtilsTests.ts",

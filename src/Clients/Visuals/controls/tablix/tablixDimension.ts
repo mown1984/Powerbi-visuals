@@ -387,7 +387,14 @@ module powerbi.visuals.controls {
             } else {
                 let previousCount: number = this._layoutManager.getRealizedItemsCount();
                 this.addNodes(this._hierarchyNavigator.getChildren(item), columnIndex, depth, this.getFirstVisibleChildIndex(item));
-                cell.rowSpan = 1;
+
+                // In case we have a grand total with multiple measures, the multi-measures will be direct children
+                // There can be difference in level > 1. In this case, we want the Total cell to have rowspan = the difference
+                let childrenLevelDifference = this._hierarchyNavigator.getChildrenLevelDifference(item);
+                if (childrenLevelDifference === Infinity) // No Children
+                    cell.rowSpan = 1;
+                else
+                    cell.rowSpan = childrenLevelDifference;
                 cell.colSpan = this._layoutManager.getRealizedItemsCount() - previousCount + 1;
             }
 

@@ -62,7 +62,7 @@ module powerbi.data {
                 // compute linear regression line if applicable
                 let roleKindByQueryRef: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(transformSelects, dataView.metadata);
                 let projections: QueryProjectionsByRole = DataViewSelectTransform.projectionsFromSelects(transformSelects, projectionActiveItems);
-                if (!roleKindByQueryRef || !projections || !dataViewMappings || !objectDescriptors || !objectDefinitions)
+                if (!roleKindByQueryRef || !projections || _.isEmpty(dataViewMappings) || !objectDescriptors || !objectDefinitions)
                     return transformedDataViews;
 
                 let applicableDataViewMappings: DataViewMapping[] = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKindByQueryRef, objectDescriptors, objectDefinitions).supportedMappings;
@@ -115,6 +115,9 @@ module powerbi.data {
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(objectDefinitions, 'objectDefinitions');
             debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
+
+            if (!sourceDataView.categorical)
+                return;
 
             // Step 1
             let xRole: string = findRoleWithCartesianAxis(CartesianRoleKind.X, dataRoles);
@@ -181,15 +184,13 @@ module powerbi.data {
         function getColumnForCategoricalRole(roleName: string, categorical: DataViewCategorical): DataViewCategoryColumn | DataViewValueColumn {
             debug.assertValue(roleName, 'roleName');
             debug.assertValue(categorical, 'categorical');
-            debug.assertValue(categorical.categories, 'categorical.categories');
-            debug.assertValue(categorical.values, 'categorical.values');
 
             let categoryColumn = getRoleFromColumn(roleName, categorical.categories);
             if (categoryColumn)
                 return categoryColumn;
 
             // Regression is not supported for multiple series yet, so return null column back
-            if (categorical.values.source)
+            if (categorical.values && categorical.values.source)
                 return null;
 
             let valueColumn = getRoleFromColumn(roleName, categorical.values);
@@ -201,7 +202,9 @@ module powerbi.data {
 
         function getRoleFromColumn(roleName: string, columns: DataViewCategoricalColumn[] | DataViewValueColumn[]): DataViewCategoryColumn | DataViewValueColumn {
             debug.assertValue(roleName, 'roleName');
-            debug.assertValue(columns, 'columns');
+
+            if (_.isEmpty(columns))
+                return;
 
             return _.find(columns, (column) => {
                 return column.source.roles[roleName];
@@ -305,7 +308,7 @@ module powerbi.data {
                         displayName: xColumn.source.displayName,
                         queryName: regressionXQueryName,
                         type: xColumn.source.type,
-                        isMeasure: xColumn.source.isMeasure,
+                        isMeasure: xColumn.source.isMeasure,  // false?
                         roles: categoricalRoles
                     },
                     values: newCategories

@@ -376,7 +376,7 @@ module powerbi.visuals.samples {
                     orbitControls.update(clock.getDelta());
                     _zis.setEarthTexture();
                     _zis.intersectBars();
-                    if (_zis.heatmap.display) {
+                    if (_zis.heatmap &&_zis.heatmap.display) {
                         _zis.heatmap.display(); // Needed for IE/Edge to behave nicely
                     }
                     renderer.render(scene, camera);
@@ -526,7 +526,7 @@ module powerbi.visuals.samples {
             this.cleanHeatAndBar();
 
             // PowerBI fires two update calls, one for size, one for data
-            if (options.dataViews[0] && options.dataViews[0].categorical || options.dataViews[0].metadata) {
+            if (options.dataViews[0] && (options.dataViews[0].categorical || options.dataViews[0].metadata)) {
                 this.composeRenderData(options.dataViews[0].categorical, options.dataViews[0].metadata);
             }
         }

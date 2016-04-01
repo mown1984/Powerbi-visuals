@@ -466,11 +466,11 @@ module powerbitests {
 
             dataViewBuilder.onDataChanged();
 
-            let labels = $(".dataDotChart .axisGraphicsContext .y.axis .tick").find("text");
+            let labels = helpers.getAxisTicks('y').find("text");
 
             setTimeout(() => {
-                expect($(".dataDotChart .axisGraphicsContext .x.axis .tick").length).toBeGreaterThan(0);
-                expect($(".dataDotChart .axisGraphicsContext .y.axis .tick").length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
 
                 expect(helpers.findElementText($(labels).first())).toBe("0.0M");
                 expect(helpers.findElementTitle($(labels).first())).toBe("0.0M");

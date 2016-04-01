@@ -202,6 +202,15 @@ module powerbitests {
                 slicerText.eq(2).d3Click(0, 0);
                 validateSelectionState(orientation, [2]);
 
+                // Select another checkbox using touch. The previous one should not be cleared.
+                slicerText.eq(1).d3TouchStart();
+                slicerText.eq(1).d3Click(0, 0);
+                validateSelectionState(orientation, [1, 2]);
+
+                // Select another checkbox using ctrl. The prvious one should not be cleared.
+                slicerText.eq(3).d3Click(0, 0, 1);
+                validateSelectionState(orientation, [1, 2, 3]);
+
                 // validate the style for select
                 expect(getSlicerContainer(orientation).hasClass('isMultiSelectEnabled')).toBe(false);
             });

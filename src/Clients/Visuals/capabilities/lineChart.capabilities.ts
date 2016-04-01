@@ -105,9 +105,25 @@ module powerbi.visuals {
                 }
             },
             trend: {
+                displayName: data.createDisplayNameGetter('Visual_Trend_Line'),
                 properties: {
                     show: {
                         type: { bool: true }
+                    },
+                    lineColor: {
+                        displayName: data.createDisplayNameGetter('Visual_Trend_Line_Color'),
+                        description: data.createDisplayNameGetter('Visual_Trend_Line_Color_Description'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    transparency: {
+                        displayName: data.createDisplayNameGetter('Visual_Trend_Line_Transparency'),
+                        description: data.createDisplayNameGetter('Visual_Trend_Line_Transparency_Description'),
+                        type: { numeric: true }
+                    },
+                    style: {
+                        displayName: data.createDisplayNameGetter('Visual_Trend_Line_Style'),
+                        description: data.createDisplayNameGetter('Visual_Trend_Line_Style_Description'),
+                        type: { enumeration: lineStyle.type }
                     },
                 }
             },

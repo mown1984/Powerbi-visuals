@@ -306,7 +306,7 @@ module powerbitests {
                 }]
             });
             setTimeout(() => {
-                let backgroundImage = $('.columnChart.lineChart .background-image');
+                let backgroundImage = $('.background-image');
                 expect(backgroundImage.length).toBeGreaterThan(0);
                 expect(backgroundImage.css('height')).toBeDefined();
                 expect(backgroundImage.css('width')).toBeDefined();
@@ -563,7 +563,6 @@ module powerbitests {
 
             setTimeout(() => {
                 let yTranslate = parseFloat($(".axisGraphicsContext .x.axis").attr("transform").split(",")[1].replace("(", ""));
-                let xTranslate = parseFloat($(".axisGraphicsContext").attr("transform").split(",")[0].split("(")[1]);
 
                 visualBuilder.onDataChanged({
                     dataViews: [
@@ -574,9 +573,7 @@ module powerbitests {
 
                 setTimeout(() => {
                     let newYTranslate = parseFloat($(".axisGraphicsContext .x.axis").attr("transform").split(",")[1].replace("(", ""));
-                    let newXTranslate = parseFloat($(".axisGraphicsContext").attr("transform").split(",")[0].split("(")[1]);
                     expect(yTranslate).toBeGreaterThan(newYTranslate);
-                    expect(newXTranslate).toBeGreaterThan(xTranslate);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1256,6 +1253,7 @@ module powerbitests {
                 },
             ],
         };
+
         beforeEach(() => {
             dataColors = new powerbi.visuals.DataColorPalette(colors);
             sharedPalette = new powerbi.visuals.SharedColorPalette(dataColors);

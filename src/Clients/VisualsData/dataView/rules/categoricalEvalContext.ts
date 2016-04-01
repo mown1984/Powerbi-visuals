@@ -29,20 +29,27 @@ module powerbi.data {
         setCurrentRowIndex(index: number): void;
     }
 
-    export function createCategoricalEvalContext(dataViewCategorical: DataViewCategorical): ICategoricalEvalContext {
-        return new CategoricalEvalContext(dataViewCategorical);
+    export function createCategoricalEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewCategorical: DataViewCategorical): ICategoricalEvalContext {
+        return new CategoricalEvalContext(colorAllocatorProvider, dataViewCategorical);
     }
 
     class CategoricalEvalContext implements ICategoricalEvalContext {
+        private colorAllocatorProvider: IColorAllocatorCache;
         private dataView: DataViewCategorical;
         private columnsByRole: { [name: string]: DataViewCategoricalColumn };
         private index: number;
 
-        constructor(dataView: DataViewCategorical) {
+        constructor(colorAllocatorProvider: IColorAllocatorCache, dataView: DataViewCategorical) {
+            debug.assertValue(colorAllocatorProvider, 'colorAllocatorProvider');
             debug.assertValue(dataView, 'dataView');
 
+            this.colorAllocatorProvider = colorAllocatorProvider;
             this.dataView = dataView;
             this.columnsByRole = {};
+        }
+
+        public getColorAllocator(expr: SQFillRuleExpr): IColorAllocator {
+            return this.colorAllocatorProvider.get(expr);
         }
 
         public getExprValue(expr: SQExpr): PrimitiveValue {

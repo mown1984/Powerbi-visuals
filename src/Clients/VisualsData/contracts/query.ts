@@ -110,6 +110,7 @@ module powerbi.data {
 
         // Client-only expressions
         FillRule?: QueryFillRuleExpression;
+        ResourcePackageItem?: QueryResourcePackageItem;
     }
 
     export interface QueryPropertyExpression {
@@ -244,6 +245,12 @@ module powerbi.data {
     export interface QueryFillRuleExpression {
         Input: QueryExpressionContainer;
         FillRule: FillRuleGeneric<QueryExpressionContainer, QueryExpressionContainer>;
+    }
+
+    export interface QueryResourcePackageItem {
+        PackageName: string;
+        PackageType: number;
+        ItemName: string;
     }
 
     export enum TimeUnit {

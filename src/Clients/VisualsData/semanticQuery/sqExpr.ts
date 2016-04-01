@@ -86,6 +86,18 @@ module powerbi.data {
             return expr.kind === SQExprKind.HierarchyLevel;
         }
 
+        public static isAggregation(expr: SQExpr): expr is SQAggregationExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.Aggregation;
+        }
+
+        public static isMeasure(expr: SQExpr): expr is SQMeasureRefExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.MeasureRef;
+        }
+
         public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
             debug.assertValue(federatedSchema, 'federatedSchema');
 
@@ -200,6 +212,10 @@ module powerbi.data {
                     if (variation.name === variationName)
                         return variation.navigationProperty.targetEntity.name;
             }
+        }
+
+        public getTargetEntity(federatedSchema: FederatedConceptualSchema): SQEntityExpr {
+            return SQEntityExprInfoVisitor.getEntityExpr(federatedSchema, this);
         }
 
         private getHierarchyLevelConceptualProperty(federatedSchema: FederatedConceptualSchema): ConceptualProperty {
@@ -359,6 +375,7 @@ module powerbi.data {
         DefaultValue,
         Arithmetic,
         FillRule,
+        ResourcePackageItem,
     }
 
     export interface SQExprMetadata {
@@ -842,6 +859,26 @@ module powerbi.data {
         }
     }
 
+    export class SQResourcePackageItemExpr extends SQExpr {
+        public packageName: string;
+        public packageType: number;
+        public itemName: string;
+
+        constructor(packageName: string, packageType: number, itemName: string) {
+            debug.assertValue(packageName, 'packageName');
+            debug.assertValue(itemName, 'itemName');
+
+            super(SQExprKind.ResourcePackageItem);
+            this.packageName = packageName;
+            this.packageType = packageType;
+            this.itemName = itemName;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitResourcePackageItem(this, arg);
+        }
+    }
+
     /** Provides utilities for creating & manipulating expressions. */
     export module SQExprBuilder {
         export function entity(schema: string, entity: string, variable?: string): SQEntityExpr {
@@ -1084,7 +1121,11 @@ module powerbi.data {
             debug.assertValue(rule, 'rule');
 
             return new SQFillRuleExpr(expr, rule);
-    }
+        }
+
+        export function resourcePackageItem(packageName: string, packageType: number, itemName: string): SQResourcePackageItemExpr {
+            return new SQResourcePackageItemExpr(packageName, packageType, itemName);
+        }
     }
 
     /** Provides utilities for obtaining information about expressions. */
@@ -1248,6 +1289,13 @@ module powerbi.data {
 
         public visitAnyValue(expr: SQAnyValueExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQAnyValueExpr;
+        }
+
+        public visitResourcePackageItem(expr: SQResourcePackageItemExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQResourcePackageItemExpr &&
+                expr.packageName === comparand.packageName &&
+                expr.packageType === comparand.packageType &&
+                expr.itemName === comparand.itemName;
         }
 
         public visitStartsWith(expr: SQStartsWithExpr, comparand: SQExpr): boolean {
@@ -1652,12 +1700,69 @@ module powerbi.data {
             return new SQColumnRefExpr(expr.arg, propertyName);
         }
 
+        public visitAggr(expr: SQAggregationExpr): SQColumnRefExpr {
+            return expr.arg.accept(this);
+        }
+
         public visitDefault(expr: SQExpr): SQColumnRefExpr {
             return;
         }
 
         public static getColumnRefSQExpr(schema: FederatedConceptualSchema, expr: SQExpr): SQColumnRefExpr {
             let visitor = new SQExprColumnRefInfoVisitor(schema);
+            return expr.accept(visitor);
+        }
+    }
+
+    /** Returns a SQEntityExpr expression or undefined.*/
+    class SQEntityExprInfoVisitor extends DefaultSQExprVisitor<SQEntityExpr> {
+        private schema: FederatedConceptualSchema;
+
+        constructor(schema: FederatedConceptualSchema) {
+            super();
+            this.schema = schema;
+        }
+
+        public visitEntity(expr: SQEntityExpr): SQEntityExpr {
+            return expr;
+        }
+
+        public visitColumnRef(expr: SQColumnRefExpr): SQEntityExpr {
+            return SQEntityExprInfoVisitor.getEntity(expr);
+        }
+
+        public visitHierarchyLevel(expr: SQHierarchyLevelExpr): SQEntityExpr {
+            let columnRef = SQEntityExprInfoVisitor.getColumnRefSQExpr(this.schema, expr);
+            return SQEntityExprInfoVisitor.getEntity(columnRef);
+        }
+
+        public visitHierarchy(expr: SQHierarchyExpr): SQEntityExpr {
+            return expr.arg.accept(this);
+        }
+
+        public visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr): SQEntityExpr {
+            let columnRef = SQEntityExprInfoVisitor.getColumnRefSQExpr(this.schema, expr);
+            return SQEntityExprInfoVisitor.getEntity(columnRef);
+        }
+
+        public visitAggr(expr: SQAggregationExpr): SQEntityExpr {
+            let columnRef = SQEntityExprInfoVisitor.getColumnRefSQExpr(this.schema, expr);
+            return SQEntityExprInfoVisitor.getEntity(columnRef);
+        }
+
+        public static getColumnRefSQExpr(schema: FederatedConceptualSchema, expr: SQExpr): SQColumnRefExpr {
+            let visitor = new SQExprColumnRefInfoVisitor(schema);
+            return expr.accept(visitor);
+        }
+
+        public static getEntity(columnRef: SQColumnRefExpr): SQEntityExpr {
+            let field = SQExprConverter.asFieldPattern(columnRef);
+            let column = field.column;
+            return SQExprBuilder.entity(column.schema, column.entity, column.entityVar);
+        }
+
+        public static getEntityExpr(schema: FederatedConceptualSchema, expr: SQExpr): SQEntityExpr {
+            let visitor = new SQEntityExprInfoVisitor(schema);
             return expr.accept(visitor);
         }
     }

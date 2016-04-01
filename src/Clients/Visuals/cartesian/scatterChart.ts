@@ -40,7 +40,7 @@ module powerbi.visuals {
         size: any;
         radius: RadiusData;
         fill: string;
-        category: string;
+        formattedCategory: jsCommon.Lazy<string>;
         fontSize?: number;
     }
 
@@ -92,6 +92,7 @@ module powerbi.visuals {
         animationDuration: number;
         animationOptions: AnimationOptions;
         easeType: string;
+        suppressDataPointRendering: boolean;
     }
 
     interface ScatterChartMeasureMetadata {
@@ -161,6 +162,8 @@ module powerbi.visuals {
         private static ClassName = 'scatterChart';
         // Animated rendering threshold - if more than this number of data points, rendering is grouped by series and not animated
         public static NoAnimationThreshold = 1000;
+        // No render resize threshold - if more than this number of data points, rendering is suppressed during resize
+        public static NoRenderResizeThreshold = 1000;
 
         private svg: D3.Selection;
         private element: JQuery;
@@ -200,7 +203,7 @@ module powerbi.visuals {
 
         public init(options: CartesianVisualInitOptions) {
             this.options = options;
-            let element = this.element = options.element;
+            this.element = options.element;
             this.currentViewport = options.viewport;
             this.style = options.style;
             this.host = options.host;
@@ -209,10 +212,10 @@ module powerbi.visuals {
             this.cartesianVisualHost = options.cartesianHost;
             this.isMobileChart = options.interactivity && options.interactivity.isInteractiveLegend;
 
-            // TODO: should we always be adding the playchart class name?
-            element.addClass(ScatterChart.ClassName + ' ' + PlayChart.ClassName);
-
             let svg = this.svg = options.svg;
+
+            // TODO: should we always be adding the playchart class name?
+            svg.classed(ScatterChart.ClassName + ' ' + PlayChart.ClassName, true);
 
             this.renderer.init(svg, options.labelsContext, this.isMobileChart, this.tooltipsEnabled);
         }
@@ -507,7 +510,7 @@ module powerbi.visuals {
                         size: size,
                         radius: { sizeMeasure: measureSize, index: categoryIdx },
                         fill: color,
-                        category: categories != null ? categoryFormatter.format(categoryValue) : categoryFormatter.format(grouping.name),
+                        formattedCategory: ScatterChart.createLazyFormattedCategory(categoryFormatter, categories != null ? categoryValue : grouping.name),
                         selected: false,
                         identity: identity,
                         tooltipInfo: tooltipInfo,
@@ -518,6 +521,10 @@ module powerbi.visuals {
                 }
             }
             return dataPointSeries;
+        }
+
+        public static createLazyFormattedCategory(formatter: IValueFormatter, value: string): jsCommon.Lazy<string> {
+            return new jsCommon.Lazy(() => formatter.format(value));
         }
 
         private static createSeriesLegend(
@@ -834,7 +841,7 @@ module powerbi.visuals {
                     let seriesDataPoints = data.dataPoints[i];
                     enumeration.pushInstance({
                         objectName: 'dataPoint',
-                        displayName: seriesDataPoints.category,
+                        displayName: seriesDataPoints.formattedCategory.getValue(),
                         selector: ColorHelper.normalizeSelector(seriesDataPoints.identity.getSelector(), /*isSingleSeries*/ true),
                         properties: {
                             fill: { solid: { color: seriesDataPoints.fill } }
@@ -856,6 +863,15 @@ module powerbi.visuals {
                     });
                 }
             }
+        }
+
+        public supportsTrendLine(): boolean {
+            let data = this.data;
+            if (!data)
+                return false;
+
+            // TODO: should support regression on bubble as well
+            return !this.hasSizeMeasure() && data.dataPointSeries.length === 1;
         }
 
         private static getExtents(data: ScatterChartData): CartesianExtents {
@@ -904,7 +920,7 @@ module powerbi.visuals {
             }
 
             let xDomain = [extents.minX, extents.maxX];
-            let combinedXDomain = AxisHelper.combineDomain(options.forcedXDomain, xDomain, options.xReferenceLineValue);
+            let combinedXDomain = AxisHelper.combineDomain(options.forcedXDomain, xDomain, options.ensureXDomain);
 
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: width,
@@ -924,7 +940,7 @@ module powerbi.visuals {
             this.xAxisProperties.axis.tickSize(-height, 0);
             this.xAxisProperties.axisLabel = this.data.axesLabels.x;
 
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [extents.minY, extents.maxY], options.y1ReferenceLineValue);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [extents.minY, extents.maxY], options.ensureYDomain);
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: height,
@@ -951,7 +967,7 @@ module powerbi.visuals {
             this.xAxisProperties = xProperties;
         }
 
-        public render(suppressAnimations: boolean): CartesianVisualRenderResult {
+        public render(suppressAnimations: boolean, resizeMode?: ResizeMode): CartesianVisualRenderResult {
             if (!this.data)
                 return;
 
@@ -975,6 +991,7 @@ module powerbi.visuals {
             let easeType = this.playAxis ? 'linear' : 'cubic-in-out'; // cubic-in-out is the d3.ease default
             let fillMarkers = (!data.sizeRange || !data.sizeRange.min) && data.fillPoint;
             let drawBubbles = this.hasSizeMeasure();
+            let suppressDataPointRendering = resizeMode === ResizeMode.Resizing && data.dataPoints && data.dataPoints.length > ScatterChart.NoRenderResizeThreshold;
 
             let viewModel: ScatterChartViewModel = {
                 data: data,
@@ -988,6 +1005,7 @@ module powerbi.visuals {
                 animationOptions: this.options.animation,
                 fillMarkers: fillMarkers,
                 easeType: easeType,
+                suppressDataPointRendering: suppressDataPointRendering,
             };
 
             if (drawBubbles) {
@@ -1213,7 +1231,10 @@ module powerbi.visuals {
                 });
 
             let scatterMarkers: D3.Selection;
-            if (viewModel.animationDuration > 0 && viewModel.data.dataPoints.length <= ScatterChart.NoAnimationThreshold) {
+            if (viewModel.suppressDataPointRendering) {
+                scatterMarkers = this.removeScatterMarkers();
+            }
+            else if (viewModel.animationDuration > 0 && viewModel.data.dataPoints.length <= ScatterChart.NoAnimationThreshold) {
                 scatterMarkers = this.drawScatterMarkers(viewModel);
             }
             else {
@@ -1238,6 +1259,13 @@ module powerbi.visuals {
 
         public createTraceLineRenderer(viewModel: PlayChartViewModel<ScatterChartData, ScatterChartViewModel>): ScatterTraceLineRenderer {
             return new ScatterTraceLineRenderer(viewModel, this.mainGraphicsContext, this.tooltipsEnabled);
+        }
+
+        private removeScatterMarkers(): D3.Selection {
+            this.mainGraphicsContext.selectAll(SvgRenderer.ScatterMarkerSeriesGroup.selector)
+                .remove();
+
+            return this.mainGraphicsContext.selectAll(SvgRenderer.DotClass.selector);
         }
 
         private drawScatterMarkers(viewModel: ScatterChartViewModel): D3.UpdateSelection {
@@ -1427,7 +1455,7 @@ module powerbi.visuals {
             let preferredLabelsKeys = getPreferredLabelsKeys(viewModel);
 
             for (let dataPoint of dataPoints) {
-                let text = dataPoint.category;
+                let text = dataPoint.formattedCategory.getValue();
 
                 let properties: TextProperties = {
                     text: text,
@@ -1575,7 +1603,7 @@ module powerbi.visuals {
             let scatterViewModel = viewModel.viewModel;
             let seriesPoints: ScatterChartDataPoint[][] = [];
 
-            if (!_.isEmpty(selectedPoints)) {
+            if (!_.isEmpty(selectedPoints) && !scatterViewModel.suppressDataPointRendering) {
                 let currentFrameIndex = viewModel.data.currentFrameIndex;
 
                 // filter to the selected identity, only up to and including the current frame. Add frames during play.

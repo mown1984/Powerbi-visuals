@@ -349,8 +349,9 @@ module powerbi.visuals {
             debug.assertValue(legendData, "legendData");
             debug.assertValue(legendData.dataPoints, "legendData");
             let legendDataPoints = legendData.dataPoints;
-            if (point.category !== blank) {
-                title = point.category;
+            let category = point.formattedCategory.getValue();
+            if (category !== blank) {
+                title = category;
             } else if (point.radius.sizeMeasure != null) {
                 title = valueFormatter.format(point.radius.sizeMeasure.source.groupName);
             } else if (legendDataPoints.length >= dotIndex && legendDataPoints[dotIndex].label !== blank) {

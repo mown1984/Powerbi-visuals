@@ -31,10 +31,15 @@ const powerBIAccessTokenExpiry = "2115-01-01 00:00:00Z";
 
 declare interface JQuery {
     d3Click(x: number, y: number, eventType?: powerbitests.helpers.ClickEventType): void;
+    d3TouchStart(): void;
     d3ContextMenu(x: number, y: number): void;
 }
 
 module powerbitests.helpers {
+    import AxisHelper = powerbi.visuals.AxisHelper;
+    import ValueType = powerbi.ValueType;
+    import valueFormatter = powerbi.visuals.valueFormatter;
+
     debug.assertFailFunction = (message: string) => {
         expect(message).toBe('DEBUG asserts should never happen.  There is a product or test bug.');
     };
@@ -50,12 +55,12 @@ module powerbitests.helpers {
         jasmine.clock().tick(0);
     }
 
-    export function testDom(height: string, width: string, cssClass: string = ''): JQuery {
+    export function testDom(height: string, width: string): JQuery {
         let element = $('<div></div>')
             .attr('id', 'item')
             .css('width', width)
             .css('height', height)
-            .addClass(cssClass);
+            .addClass('visual');
         setFixtures(element[0].outerHTML);
 
         return $('#item');
@@ -127,6 +132,13 @@ module powerbitests.helpers {
         let type = eventType || ClickEventType.Default;
         this.each(function (i, e) {
             let evt = createMouseClickEvent(type, x, y);
+            e.dispatchEvent(evt);
+        });
+    };
+
+    jQuery.fn.d3TouchStart = function (): void {
+        this.each(function (i, e) {
+            let evt = createTouchStartEvent();
             e.dispatchEvent(evt);
         });
     };
@@ -260,6 +272,14 @@ module powerbitests.helpers {
             !!(type & ClickEventType.MetaKey),  // metaKey
             0,      // button
             null);  // relatedTarget
+
+        return evt;
+    }
+
+    export function createTouchStartEvent(): UIEvent {
+        let evt = document.createEvent("UIEvent");
+        evt.initUIEvent("touchstart", true, true, window, 1);
+         
         return evt;
     }
 
@@ -335,6 +355,7 @@ module powerbitests.helpers {
     }
 
     export function findElementText(element: JQuery): string {
+        debug.assert(element.length > 0, 'expected parent element');
         let nodes = element[0].childNodes;
 
         if (nodes) {
@@ -347,6 +368,7 @@ module powerbitests.helpers {
     }
 
     export function findElementTitle(element: JQuery): string {
+        debug.assert(element.length > 0, 'expected parent element');
         let nodes = element[0].childNodes;
 
         if (nodes) {
@@ -358,6 +380,22 @@ module powerbitests.helpers {
         }
 
         return null;
+    }
+
+    /**
+     * Get the ticks for a cartesian axis.
+     * @param axis Class name for the axis, should be either x or y.
+     */
+    export function getAxisTicks(axis: string): JQuery {
+        return $('.cartesianChart .' + axis + '.axis .tick');
+    }
+
+    /**
+     * Get the label for a cartesian axis.
+     * @param axis Class name for the axis, should be either x or y.
+     */
+    export function getAxisLabel(axis: string): JQuery {
+        return $('.cartesianChart .axisGraphicsContext .' + axis + 'AxisLabel');
     }
 
     export class DataViewBuilder {
@@ -715,6 +753,232 @@ module powerbitests.helpers {
             else {
                 expect(helpers.isCloseTo(labelY, parseFloat(y2), 30)).toBeTruthy();
             }
+        }
+    }
+
+    export module AxisPropertiesBuilder {
+        var dataStrings = ["Sun", "Mon", "Holiday"];
+
+        export var dataNumbers = [47.5, 98.22, 127.3];
+
+        var domainOrdinal3 = [0, 1, 2];
+
+        var domainBoolIndex = [0, 1];
+
+        export var domainNaN = [NaN, NaN];
+
+        var displayName: string = "Column";
+
+        var pixelSpan: number = 100;
+
+        export var dataTime = [
+            new Date("10/15/2014"),
+            new Date("10/15/2015"),
+            new Date("10/15/2016")
+        ];
+
+        var metaDataColumnText: powerbi.DataViewMetadataColumn = {
+            displayName: displayName,
+            type: ValueType.fromDescriptor({ text: true })
+        };
+
+        export var metaDataColumnNumeric: powerbi.DataViewMetadataColumn = {
+            displayName: displayName,
+            type: ValueType.fromDescriptor({ numeric: true })
+        };
+
+        export var metaDataColumnCurrency: powerbi.DataViewMetadataColumn = {
+            displayName: displayName,
+            type: ValueType.fromDescriptor({ numeric: true }),
+            objects: { general: { formatString: '$0' } },
+        };
+
+        var metaDataColumnBool: powerbi.DataViewMetadataColumn = {
+            displayName: displayName,
+            type: ValueType.fromDescriptor({ bool: true })
+        };
+
+        var metaDataColumnTime: powerbi.DataViewMetadataColumn = {
+            displayName: displayName,
+            type: ValueType.fromDescriptor({ dateTime: true }),
+            format: 'yyyy/MM/dd',
+            objects: { general: { formatString: 'yyyy/MM/dd' } },
+        };
+
+        var formatStringProp: powerbi.DataViewObjectPropertyIdentifier = {
+            objectName: "general",
+            propertyName: "formatString"
+        };
+
+        function getValueFnStrings(index): string {
+            return dataStrings[index];
+        }
+
+        function getValueFnNumbers(index): number {
+            return dataNumbers[index];
+        }
+
+        function getValueFnBool(d): boolean {
+            return d === 0;
+        }
+
+        function getValueFnTime(index): Date {
+            return new Date(index);
+        }
+
+        function getValueFnTimeIndex(index): Date {
+            return dataTime[index];
+        }
+
+        function createAxisOptions(
+            metaDataColumn: powerbi.DataViewMetadataColumn,
+            dataDomain: any[],
+            getValueFn?): powerbi.visuals.CreateAxisOptions {
+            var axisOptions: powerbi.visuals.CreateAxisOptions = {
+                pixelSpan: pixelSpan,
+                dataDomain: dataDomain,
+                metaDataColumn: metaDataColumn,
+                formatString: valueFormatter.getFormatString(metaDataColumn, formatStringProp),
+                outerPadding: 0.5,
+                isScalar: false,
+                isVertical: false,
+                getValueFn: getValueFn,
+            };
+
+            return axisOptions;
+        }
+
+        function getAxisOptions(
+            metaDataColumn: powerbi.DataViewMetadataColumn): powerbi.visuals.CreateAxisOptions {
+            var axisOptions = createAxisOptions(
+                metaDataColumn,
+                metaDataColumn ? domainOrdinal3 : [],
+                getValueFnStrings);
+
+            return axisOptions;
+        }
+
+        export function buildAxisProperties(dataDomain: any[], metadataColumn?: powerbi.DataViewMetadataColumn): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(metadataColumn ? metadataColumn : metaDataColumnNumeric, dataDomain);
+            axisOptions.isScalar = true;
+            axisOptions.useTickIntervalForDisplayUnits = true;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesString(): powerbi.visuals.IAxisProperties {
+            var axisOptions = getAxisOptions(metaDataColumnText);
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesText(
+            metaDataColumn: powerbi.DataViewMetadataColumn): powerbi.visuals.IAxisProperties {
+            var axisOptions = getAxisOptions(metaDataColumn);
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesNumber(): powerbi.visuals.IAxisProperties {
+            var os = AxisHelper.createAxis(
+                createAxisOptions(
+                    metaDataColumnNumeric,
+                    domainOrdinal3,
+                    getValueFnNumbers));
+
+            return os;
+        }
+
+        export function buildAxisPropertiesBool(): powerbi.visuals.IAxisProperties {
+            var os = AxisHelper.createAxis(
+                createAxisOptions(
+                    metaDataColumnBool,
+                    domainBoolIndex,
+                    getValueFnBool));
+
+            return os;
+        }
+
+        export function buildAxisPropertiesStringWithCategoryThickness(
+            categoryThickness: number = 5): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnText,
+                domainOrdinal3,
+                getValueFnStrings);
+
+            axisOptions.categoryThickness = categoryThickness;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesNumbers(): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnNumeric,
+                [
+                    dataNumbers[0],
+                    dataNumbers[2]
+                ]);
+
+            axisOptions.isScalar = true;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesNan(): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnNumeric,
+                domainNaN);
+
+            axisOptions.isVertical = true;
+            axisOptions.isScalar = true;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesNumeric(
+            dataDomain: any[],
+            categoryThickness?: number,
+            pixelSpan?: number,
+            isVertical: boolean = true,
+            isScalar: boolean = true): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnNumeric,
+                dataDomain);
+
+            if (categoryThickness) {
+                axisOptions.categoryThickness = categoryThickness;
+            }
+
+            if (pixelSpan) {
+                axisOptions.pixelSpan = pixelSpan;
+            }
+
+            axisOptions.isVertical = isVertical;
+            axisOptions.isScalar = isScalar;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesTime(
+            dataDomain: any[],
+            isScalar: boolean = true): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnTime,
+                dataDomain,
+                getValueFnTime);
+
+            axisOptions.isScalar = isScalar;
+
+            return AxisHelper.createAxis(axisOptions);
+        }
+
+        export function buildAxisPropertiesTimeIndex(): powerbi.visuals.IAxisProperties {
+            var axisOptions = createAxisOptions(
+                metaDataColumnTime,
+                domainOrdinal3,
+                getValueFnTimeIndex);
+
+            return AxisHelper.createAxis(axisOptions);
         }
     }
 }

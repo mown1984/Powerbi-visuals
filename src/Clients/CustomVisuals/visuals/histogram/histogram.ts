@@ -30,6 +30,7 @@ module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
 
     type D3Element =
         D3.UpdateSelection |
@@ -112,26 +113,26 @@ module powerbi.visuals.samples {
         [objectName: string]: HistogramProperty;
     }
 
-         export class HistogramChartWarning implements IVisualWarning {
-             public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
-     
-             private message: string;
-             constructor(message: string) {
-                 this.message = message;
-             }
-     
-             public get code(): string {
-                 return "BulletChartWarning";
-             }
-     
-             public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
-                 return {
-                     message: this.message,
-                     title: resourceProvider.get(""),
-                     detail: resourceProvider.get("")
-                 };
-             }
-         }
+      export class HistogramChartWarning implements IVisualWarning {
+          public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
+  
+          private message: string;
+          constructor(message: string) {
+              this.message = message;
+          }
+  
+          public get code(): string {
+              return "BulletChartWarning";
+          }
+  
+          public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
+              return {
+                  message: this.message,
+                  title: resourceProvider.get(""),
+                  detail: resourceProvider.get("")
+              };
+          }
+      }
 
     export class Histogram implements IVisual {
         private static ClassName: string = "histogram";
@@ -458,6 +459,7 @@ module powerbi.visuals.samples {
         private AxisSize: number = 30;
         private DataLabelMargin: number = 0;
         private widthOfColumn: number = 0;
+        private yTitleMargin: number = 0;
 
         private ExcludeBrackets: Brackets = {
             left: "(",
@@ -640,6 +642,7 @@ module powerbi.visuals.samples {
             });
 
             let maxYvalue = settings.yEnd !== null && settings.yEnd > settings.yStart ? settings.yEnd : d3.max(data, (item: D3.Layout.Bin) => item.y);
+            let minYValue = settings.yStart < maxYvalue ? settings.yStart : 0;
             settings.yEnd = maxYvalue;
 
             xScale = d3.scale.linear()
@@ -651,7 +654,7 @@ module powerbi.visuals.samples {
 
             yScale = d3.scale.linear()
                 .domain([
-                    settings.yStart,
+                    minYValue,
                     maxYvalue
                 ])
                 .range([this.viewport.height - this.LegendSize, 0]);
@@ -719,12 +722,13 @@ module powerbi.visuals.samples {
             valueFormatter: IValueFormatter): HistogramData[] {
             let minValue: number = d3.min(numericalValues),
                 maxValue: number = d3.max(numericalValues);
+            let fontSizeInPx = PixelConverter.fromPoint(settings.labelFontSize);
 
-            return data.map((bin: HistogramData, index: number): HistogramData => {
+            return data.map((bin: any, index: number): HistogramData => {
                 bin.range = this.getRange(minValue, maxValue, bin.dx, index);
                 bin.tooltipInfo = this.getTooltipData(bin.y, bin.range, settings, index === 0, valueFormatter);
                 bin.selectionIds = this.getSelectionIds(values, bin, index);
-
+                bin.labelFontSize = fontSizeInPx;
                 return bin;
             });
         }
@@ -1067,7 +1071,7 @@ module powerbi.visuals.samples {
 
         public validateData(data: HistogramDataView): boolean {
             if (data && data.data.some(x=> x.range.some(x => isNaN(x) || x === Infinity || x === -Infinity))) {
-                this.hostService.setWarnings([new HistogramChartWarning(HistogramChartWarning.ErrorInvalidDataValues)]);
+                 this.hostService.setWarnings([new HistogramChartWarning(HistogramChartWarning.ErrorInvalidDataValues)]);
                 return false;
             }
             return true;
@@ -1151,12 +1155,33 @@ module powerbi.visuals.samples {
 
             this.renderAxes();
             let columnsSelection: D3.UpdateSelection = this.renderColumns();
+
+            this.adjustTransformToAxisLabels();
+
             this.renderLegend();
             if (this.histogramDataView.settings.labelShow)
                 this.renderLabels();
             else
                 this.labels.selectAll('*').remove();
             this.bindSelectionHandler(columnsSelection);
+        }
+        private adjustTransformToAxisLabels() {
+            let maxWidthOfLabael = 0;
+            this.main.selectAll('g.axis').filter((d, index) => index === 1).selectAll('g.tick text')
+                .each(function (d, i) {
+                    let p = powerbi.TextMeasurementService.getSvgMeasurementProperties(this);
+                    let textProperties: powerbi.TextProperties = {
+                        text: p.text,
+                        fontFamily: p.fontFamily,
+                        fontSize: p.fontSize
+                    };
+                    let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
+                    if (widthOfLabel > maxWidthOfLabael)
+                        maxWidthOfLabael = widthOfLabel;
+                });
+            let constMargin = 70;
+            this.yTitleMargin = this.shouldShowYOnRight() ? this.viewport.width - this.AxisSize - constMargin + this.LegendSize + maxWidthOfLabael : 0;
+            this.columsAndAxesTransform(maxWidthOfLabael);
         }
 
         private renderColumns(): D3.UpdateSelection {
@@ -1232,7 +1257,7 @@ module powerbi.visuals.samples {
                 .ticks(this.NumberOfLabelsOnAxisY)
                 .tickFormat((item: number) => this.histogramDataView.yLabelFormatter.format(item));
 
-            d3.select(this.main.selectAll('g.axis')[0][1]).attr('transform', SVGUtil.translate(
+            this.main.selectAll('g.axis').filter((d, index) => index === 1).selectAll('g.tick text').attr('transform', SVGUtil.translate(
                 this.shouldShowYOnRight() ? this.viewport.width - this.AxisSize - this.LegendSize : 0, 0));
 
             let xShow = this.histogramDataView.settings.xShow;
@@ -1248,17 +1273,17 @@ module powerbi.visuals.samples {
             else
                 this.axisY.selectAll('*').remove();
 
-            d3.select(this.main.selectAll('g.axis')[0][0]).selectAll('g.tick text').style({
+            this.main.selectAll('g.axis').filter((d, index) => index === 0).selectAll('g.tick text').style({
                 'fill': this.histogramDataView.settings.xAxisColor,
             });
 
-            d3.select(this.main.selectAll('g.axis')[0][1]).selectAll('g.tick text').style({
+            this.main.selectAll('g.axis').filter((d, index) => index === 1).selectAll('g.tick text').style({
                 'fill': this.histogramDataView.settings.yAxisColor,
             });
         }
 
         private getLabaelLayout(): ILabelLayout {
-            let fontSize = this.histogramDataView.settings.labelFontSize;
+            let fontSizeInPx = PixelConverter.fromPoint(this.histogramDataView.settings.labelFontSize);
             let settings = this.histogramDataView.settings;
             let dataLabelFormatter = ValueFormatter.create({
                 value: settings.labelDisplayUnit,
@@ -1276,8 +1301,8 @@ module powerbi.visuals.samples {
                     return (b != null);
                 },
                 style: {
-                    'fill': (b: D3.Layout.Bin) => settings.labelColor,
-                    'font-size': (b: D3.Layout.Bin) => fontSize,
+                    'fill': settings.labelColor,
+                    'font-size': fontSizeInPx,
                 },
             };
         }
@@ -1342,27 +1367,13 @@ module powerbi.visuals.samples {
                 .exit()
                 .remove();
 
-            d3.select(this.main.selectAll('g.legends .legend')[0][0]).style({
+            this.main.selectAll('g.axis').filter((d, index) => index === 0).selectAll('g.tick text').style({
                 'display': this.histogramDataView.settings.xTitle === true ? 'block' : 'none',
             });
-            d3.select(this.main.selectAll('g.legends .legend')[0][1]).style({
+
+            this.main.selectAll('g.axis').filter((d, index) => index === 1).selectAll('g.tick text').style({
                 'display': this.histogramDataView.settings.yTitle === true ? 'block' : 'none',
             });
-
-            let maxWidthOfLabael = 0;
-            d3.select(this.main.selectAll('g.axis')[0][1]).selectAll('g.tick text')
-                .each(function (d, i) {
-                    let p = powerbi.TextMeasurementService.getSvgMeasurementProperties(this);
-                    let textProperties: powerbi.TextProperties = {
-                        text: p.text,
-                        fontFamily: p.fontFamily,
-                        fontSize: p.fontSize
-                    };
-                    let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
-                    if (widthOfLabel > maxWidthOfLabael)
-                        maxWidthOfLabael = widthOfLabel;
-                });
-            this.columsAndAxesTransform(maxWidthOfLabael);
         }
 
         private getDataLegends(settings: HistogramSettings): Legend[] {
@@ -1378,7 +1389,7 @@ module powerbi.visuals.samples {
                 dy: "-1em"
             }, {
                     transform: SVGUtil.translateAndRotate(
-                        this.shouldShowYOnRight() ? this.viewport.width - this.AxisSize : 0,
+                        this.shouldShowYOnRight() ? this.yTitleMargin : 0,
                         this.viewport.height / 2,
                         0,
                         0,

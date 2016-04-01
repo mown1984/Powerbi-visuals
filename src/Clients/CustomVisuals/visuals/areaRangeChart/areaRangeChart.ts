@@ -202,7 +202,7 @@ module powerbi.visuals.samples {
                             type: { bool: true }
                         },
                         titleText: {
-                            displayName: data.createDisplayNameGetter('Visual_LegendTitleText'),
+                            displayName: data.createDisplayNameGetter('Visual_LegendNameDescription'),
                             type: { text: true }
                         }
                     }
@@ -242,8 +242,8 @@ module powerbi.visuals.samples {
         private static Area: ClassAndSelector = createClassAndSelector('area');
         private static Axis: ClassAndSelector = createClassAndSelector('axis');
 
-        private static DimmedFillOpacity = 0.5;
-        private static FillOpacity = 0.9;
+        private static DimmedFillOpacity = 0.4;
+        private static FillOpacity = 1;
 
         private svg: D3.Selection;
 
@@ -909,17 +909,19 @@ module powerbi.visuals.samples {
                     return area(d.data);
                 })
                 .style('fill-opacity', AreaRangeChart.DimmedFillOpacity)
-                .on('click', function(d: AreaRangeChartSeries) {
-                    sm.select(d.identity).then(ids => {
-                        if (ids.length > 0) {
-                            selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
-                            d3.select(this).transition()
-                                .duration(duration)
-                                .style('fill-opacity', AreaRangeChart.FillOpacity);
-                        } else {
-                            selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
-                        }
-                    });
+                .on('click', function (d: AreaRangeChartSeries) {
+                    if (series.length > 1) {
+                        sm.select(d.identity).then(ids => {
+                            if (ids.length > 0) {
+                                selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
+                                d3.select(this).transition()
+                                    .duration(duration)
+                                    .style('fill-opacity', AreaRangeChart.FillOpacity);
+                            } else {
+                                selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
+                            }
+                        });
+                    }
                     d3.event.stopPropagation();
                 });
 

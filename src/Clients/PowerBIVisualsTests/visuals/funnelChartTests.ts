@@ -45,6 +45,7 @@ module powerbitests {
     import IVisualPluginService = powerbi.visuals.IVisualPluginService;
     import labelPosition = powerbi.visuals.labelPosition;
     import SelectionId = powerbi.visuals.SelectionId;
+    import SVGUtil = powerbi.visuals.SVGUtil;
     import WebFunnelAnimator = powerbi.visuals.WebFunnelAnimator;
     import visualPluginFactory = powerbi.visuals.visualPluginFactory;
     import visualStyles = powerbi.visuals.visualStyles;
@@ -2790,6 +2791,91 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+        
+        it("Axis labels should not take more than 25% of the viewport (regular viewport)", (done) => {
+            let categoryValues: any[] = [
+                "Goofy",
+                "Donald Duck",
+                "Mickey Mouse",
+            ];
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(dataViewMetadata.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setIdentityFields([categoryColumnRef])
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(dataViewMetadata.columns[1])
+                .setValues([100, 200, 700])
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                let yAxisLabelsWidth = FunnelChartHelpers.getYAxisWidth() - FunnelChart.YAxisPadding;
+                let viewportWidth = FunnelChartHelpers.getViewportWidth();
+                let axisPercent = yAxisLabelsWidth / viewportWidth;
+
+                // Round to 2 decimal places and make sure it doesn't exceed 25%
+                expect(Math.round(axisPercent * 100) / 100).not.toBeGreaterThan(.25);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Axis labels should not take more than 25% of the viewport (small viewport)", (done) => {
+            let categoryValues: any[] = [
+                "Goofy",
+                "Donald Duck",
+                "Mickey Mouse",
+            ];
+
+            let visualPluginService = visualPluginFactory.create();
+            let visualBuilder: VisualBuilder = new VisualBuilder(
+                visualPluginService,
+                "funnel",
+                80,
+                80
+            );
+            visualBuilder.build();
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(dataViewMetadata.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setIdentityFields([categoryColumnRef])
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(dataViewMetadata.columns[1])
+                .setValues([100, 200, 700])
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                let yAxisLabelsWidth = FunnelChartHelpers.getYAxisWidth() - FunnelChart.YAxisPadding;
+                let viewportWidth = FunnelChartHelpers.getViewportWidth();
+                let axisPercent = yAxisLabelsWidth / viewportWidth;
+
+                // Round to 2 decimal places and make sure it doesn't exceed 25%
+                expect(Math.round(axisPercent * 100) / 100).not.toBeGreaterThan(.25);
+                done();
+            }, DefaultWaitForRender);
+        });
     });
 
     describe("funnel chart web animation", () => {
@@ -3702,6 +3788,26 @@ module powerbitests {
             setTimeout(() => {
                 assertCallback();
             }, DefaultWaitForRender);
+        }
+
+        /**
+         * Gets the width of the Y axis (including labels).
+         */
+        export function getYAxisWidth(): number {
+
+            // The "percent bars" group is translated the distance of the width of the Y axis.
+            let percentBars = $('g.percentBars').first();
+            let percentBarsTransform = percentBars.attr('transform');
+            let translate = SVGUtil.parseTranslateTransform(percentBarsTransform);
+            let translateX = +translate.x;
+            return translateX;
+        }
+
+        /**
+         * Gets the width of the viewport.
+         */
+        export function getViewportWidth(): number {
+            return +$('.funnelChart').first().attr('width');
         }
     }
 }

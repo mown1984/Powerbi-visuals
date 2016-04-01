@@ -453,6 +453,9 @@ module powerbi.visuals.samples {
 
         private visualUpdateOptions: VisualUpdateOptions;
 
+        private isUpdating: boolean;
+        private incomingUpdateOptions: VisualUpdateOptions;
+
         constructor(options?: WordCloudConstructorOptions) {
             if (options) {
                 this.svg = options.svg || this.svg;
@@ -461,6 +464,8 @@ module powerbi.visuals.samples {
                 if (options.animator)
                     this.animator = options.animator;
             }
+
+            this.isUpdating = false;
         }
 
         public init(options: VisualInitOptions): void {
@@ -1146,6 +1151,7 @@ module powerbi.visuals.samples {
 
             minValue = sortedValues[sortedValues.length - 1].count;
             maxValue = sortedValues[0].count;
+
             let returnValues = values.map((value: WordCloudText) => {
                 return <WordCloudDataPoint>{
                     text: valueFormatter.format(value.text),
@@ -1260,32 +1266,33 @@ module powerbi.visuals.samples {
                 !(visualUpdateOptions.viewport.width >= 0))
                 return;
 
-            this.visualUpdateOptions = visualUpdateOptions;
-
-            this.layout.viewport = this.visualUpdateOptions.viewport;
-            let dataView: DataView = visualUpdateOptions.dataViews[0];
-
-            if (this.layout.viewportInIsZero)
-                return;
-
-            this.durationAnimations = getAnimationDuration(
-                this.animator,
-                visualUpdateOptions.suppressAnimations);
-            this.UpdateSize();
-
-            this.data = this.converter(dataView);
-            if (!this.data)
-                return;
-
-            this.settings = this.data.settings;
-            this.wordCloudTexts = this.data.texts;
-
-            this.computePositions(
-                this.getWords(this.getReducedText(this.data.texts)),
-                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
-
             if (visualUpdateOptions !== this.visualUpdateOptions)
-                this.update(this.visualUpdateOptions);
+                this.incomingUpdateOptions = visualUpdateOptions;
+
+            if (!this.isUpdating && (this.incomingUpdateOptions !== this.visualUpdateOptions)) {
+                this.visualUpdateOptions = this.incomingUpdateOptions;
+                this.layout.viewport = this.visualUpdateOptions.viewport;
+                let dataView: DataView = visualUpdateOptions.dataViews[0];
+
+                if (this.layout.viewportInIsZero)
+                    return;
+
+                this.durationAnimations = getAnimationDuration(
+                    this.animator,
+                    visualUpdateOptions.suppressAnimations);
+                this.UpdateSize();
+
+                this.data = this.converter(dataView);
+                if (!this.data)
+                    return;
+
+                this.settings = this.data.settings;
+                this.wordCloudTexts = this.data.texts;
+
+                this.computePositions(
+                    this.getWords(this.getReducedText(this.data.texts)),
+                    (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
+            }
         }
 
         private UpdateSize(): void {
@@ -1364,6 +1371,11 @@ module powerbi.visuals.samples {
             setTimeout(() => {
                 if (this.root)
                     this.scaleMainView(wordCloudDataView, wordElements[0].length && this.durationAnimations);
+
+                this.isUpdating = false;
+
+                if (this.incomingUpdateOptions !== this.visualUpdateOptions)
+                    this.update(this.incomingUpdateOptions);
 
             }, this.durationAnimations + WordCloud.RenderDelay);
         }

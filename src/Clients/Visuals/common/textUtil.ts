@@ -41,7 +41,17 @@ module powerbi.visuals {
          * Remove ellipses from a given string
          */
         export function removeEllipses(str: string): string {
-            return str.replace(/\.\.\./g, '');
+            return str.replace(/…/g, '');
+        }
+
+        /**
+        * Replace every whitespace (0x20) with Non-Breaking Space (0xA0)
+         * @param {string} txt String to replace White spaces
+         * @returns Text after replcing white spaces
+         */
+        export function replaceSpaceWithNBSP(txt: string): string {
+            if (txt != null)
+                return txt.replace(/ /g, "\xA0");
         }
     }
 }

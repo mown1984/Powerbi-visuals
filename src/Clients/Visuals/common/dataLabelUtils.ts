@@ -687,7 +687,7 @@ module powerbi.visuals {
             return {
                 labelText: (d: ScatterChartDataPoint) => {
                     return getLabelFormattedText({
-                        label: d.category,
+                        label: d.formattedCategory.getValue(),
                         maxWidth: maxLabelWidth * 2.0
                     });
                 },
@@ -699,7 +699,7 @@ module powerbi.visuals {
                     },
                 },
                 filter: (d: ScatterChartDataPoint) => {
-                    return (d != null && d.category != null);
+                    return (d != null && d.formattedCategory.getValue() != null);
                 },
                 style: {
                     'fill': (d: ScatterChartDataPoint) => d.labelFill,

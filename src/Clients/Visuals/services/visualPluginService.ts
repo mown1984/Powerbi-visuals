@@ -50,8 +50,8 @@ module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-        
-        sandboxVisualsEnabled?: boolean;
+
+        sandboxVisualsDisabled?: boolean;
         
         /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
         categoricalPivotEnabled?: boolean;
@@ -73,16 +73,24 @@ module powerbi.visuals {
 
         sunburstVisualEnabled?: boolean;
 
-        matrixFormattingEnabled?: boolean;
+        tablixFormattingEnabled?: boolean;
 
         filledMapDataLabelsEnabled?: boolean;
-                
+
         lineChartLabelDensityEnabled?: boolean;
         
         /**
          * Enables button to center map to the current location
          */
         mapCurrentLocationEnabled?: boolean;
+
+        // TODO: VSTS 7167767: Remove temporary code for product demo.
+        conditionalFormattingEnabled?: boolean;
+
+        /**
+         * Enables trend lines on reports.
+         */
+        trendLinesEnabled?: boolean;
     }
 
     export interface SmallViewPortProperties {
@@ -200,7 +208,8 @@ module powerbi.visuals {
         function createDashboardPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, options: CreateDashboardOptions, featureSwitches?: MinervaVisualFeatureSwitches) {
             let tooltipsOnDashboard: boolean = options.tooltipsEnabled;
             let lineChartLabelDensityEnabled: boolean = featureSwitches && featureSwitches.lineChartLabelDensityEnabled;
-            
+            let tablixFormattingEnabled = featureSwitches ? featureSwitches.tablixFormattingEnabled : false;
+
             // Bar Chart
             createPlugin(plugins, powerbi.visuals.plugins.barChart, () => new CartesianChart({
                 chartType: CartesianChartType.StackedBar,
@@ -314,6 +323,15 @@ module powerbi.visuals {
                 disableZooming: true,
                 disablePanning: true,
             }));
+            // Matrix
+            createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix({
+                isFormattingPropertiesEnabled: tablixFormattingEnabled
+            }));
+            // Table
+            createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table({
+                isFormattingPropertiesEnabled: tablixFormattingEnabled,
+                isConditionalFormattingEnabled: false,
+            }));
         }
 
         function createMinervaPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
@@ -321,7 +339,8 @@ module powerbi.visuals {
             let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
             let scriptVisualAuthoringEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualAuthoringEnabled : false;
             let isLabelInteractivityEnabled: boolean = featureSwitches ? featureSwitches.isLabelInteractivityEnabled : false;
-            let formattingPropertiesEnabled = featureSwitches ? featureSwitches.matrixFormattingEnabled : false;
+            let tablixFormattingEnabled = featureSwitches ? featureSwitches.tablixFormattingEnabled : false;
+            let conditionalFormattingEnabled = featureSwitches ? featureSwitches.conditionalFormattingEnabled : false;
             let fillMapDataLabelsEnabled: boolean = featureSwitches ? featureSwitches.filledMapDataLabelsEnabled : false;
             let lineChartLabelDensityEnabled: boolean = featureSwitches ? featureSwitches.lineChartLabelDensityEnabled : false;
 
@@ -332,6 +351,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Card
             createPlugin(plugins, powerbi.visuals.plugins.card, () => new Card({
@@ -346,6 +366,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Clustered Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.clusteredColumnChart, () => new CartesianChart({
@@ -355,6 +376,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.columnChart, () => new CartesianChart({
@@ -364,6 +386,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Data Dot Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotClusteredColumnComboChart, () => new CartesianChart({
@@ -373,6 +396,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Data Dot Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotStackedColumnComboChart, () => new CartesianChart({
@@ -382,6 +406,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new DataDotChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Donut Chart
             createPlugin(plugins, powerbi.visuals.plugins.donutChart, () => new DonutChart({
@@ -409,6 +434,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Hundred Percent Stacked Column Chart
             createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedColumnChart, () => new CartesianChart({
@@ -418,6 +444,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Line Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineChart, () => new CartesianChart({
@@ -428,6 +455,7 @@ module powerbi.visuals {
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Area Chart
             createPlugin(plugins, powerbi.visuals.plugins.areaChart, () => new CartesianChart({
@@ -438,6 +466,7 @@ module powerbi.visuals {
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Stacked Area Chart
             createPlugin(plugins, powerbi.visuals.plugins.stackedAreaChart, () => new CartesianChart({
@@ -447,6 +476,7 @@ module powerbi.visuals {
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Line Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({
@@ -456,6 +486,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Line Stacked Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({
@@ -465,6 +496,7 @@ module powerbi.visuals {
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Pie Chart
             createPlugin(plugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({
@@ -482,6 +514,7 @@ module powerbi.visuals {
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new ScatterChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Treemap
             createPlugin(plugins, powerbi.visuals.plugins.treemap, () => new Treemap({
@@ -497,6 +530,7 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
                 behavior: new CartesianChartBehavior([new WaterfallChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                trendLinesEnabled: featureSwitches.trendLinesEnabled,
             }));
             // Map
             createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
@@ -518,11 +552,12 @@ module powerbi.visuals {
             }));           
             // Matrix
             createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix({
-                isFormattingPropertiesEnabled: formattingPropertiesEnabled
+                isFormattingPropertiesEnabled: tablixFormattingEnabled
             }));
             // Table
             createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table({
-                isFormattingPropertiesEnabled: formattingPropertiesEnabled
+                isFormattingPropertiesEnabled: tablixFormattingEnabled,
+                isConditionalFormattingEnabled: conditionalFormattingEnabled,
             }));;
 
             if (scriptVisualEnabled && scriptVisualAuthoringEnabled) {
@@ -709,7 +744,7 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return this.featureSwitches.sandboxVisualsEnabled && (!plugin || (plugin && plugin.custom));
+                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
@@ -721,7 +756,7 @@ module powerbi.visuals {
 
                 this.visualPlugins = <any>powerbi.visuals.plugins;
 
-                createMinervaPlugins(this.visualPlugins, null);
+                createMinervaPlugins(this.visualPlugins, {});
             }
 
             public getVisuals(): IVisualPlugin[] {
@@ -778,7 +813,7 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return this.featureSwitches.sandboxVisualsEnabled && (!plugin || (plugin && plugin.custom));
+                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
@@ -865,15 +900,15 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return this.featureSwitches.sandboxVisualsEnabled && (!plugin || (plugin && plugin.custom));
+                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
         export class MobileVisualPluginService extends VisualPluginService {
             private visualPlugins: jsCommon.IStringDictionary<IVisualPlugin>;
             private smallViewPortProperties;
-            public static MinHeightLegendVisible = 80;
-            public static MinHeightAxesVisible = 80;
+            public static MinHeightLegendVisible = 125;
+            public static MinHeightAxesVisible = 125;
             public static MinHeightGaugeSideNumbersVisible = 80;
             public static GaugeMarginsOnSmallViewPort = 10;
             public static MinHeightFunnelCategoryLabelsVisible = 80;
@@ -1051,7 +1086,7 @@ module powerbi.visuals {
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
                 if (this.featureSwitches)
-                    return this.featureSwitches.sandboxVisualsEnabled && (!plugin || (plugin && plugin.custom));
+                    return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
                 else
                     return super.requireSandbox(plugin);
             }

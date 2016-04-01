@@ -153,7 +153,7 @@ module powerbitests {
                 });
                 layoutManager = tablixControl.layoutManager;
 
-                let actualFontSize = $(parentElement).find('.bi-tablix').css('font-size');
+                let actualFontSize = $(parentElement).find('.tablixCanvas').css('font-size');
                 expect(actualFontSize).toBe('24px');
             });
         });
@@ -321,7 +321,11 @@ module powerbitests {
             getCorner: (rowLevel: number, columnLevel: number): any=> { },
             headerItemEquals: (item1: any, item2: any): boolean=> true,
             bodyCellItemEquals: (item1: any, item2: any): boolean=> true,
-            cornerCellItemEquals: (item1: any, item2: any): boolean=> true
+            cornerCellItemEquals: (item1: any, item2: any): boolean=> true,
+            isFirstItem: (item: any, items: any): boolean => true,
+            areAllParentsFirst: (item: any): boolean => true,
+            areAllParentsLast: (item: any): boolean => true,
+            getChildrenLevelDifference: (item: any): number => 1,
         };
     }
 

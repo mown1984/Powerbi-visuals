@@ -107,6 +107,13 @@ module powerbi.data {
 
     // TODO: refactor & focus DataViewTransform into a service with well-defined dependencies.
     export module DataViewTransform {
+        const fillRulePropertyDescriptor: DataViewObjectPropertyDescriptor = { type: { fillRule: {} } };
+        
+        const enum ColumnIdentifierKind {
+            QueryName,
+            Role,
+        }
+
         export function apply(options: DataViewTransformApplyOptions): DataView[] {
             debug.assertValue(options, 'options');
 
@@ -749,7 +756,7 @@ module powerbi.data {
             for (let i = 0, ilen = newLevelSourceIndices.length; i < ilen; i++) {
                 let newLevelSourceIndex = newLevelSourceIndices[i];
                 let oldLevelSourceIndex = newToOldLevelSourceIndicesMapping[newLevelSourceIndex];
-                
+
                 debug.assert(oldLevelSourceIndex < originalLevelSources.length,
                     'pre-condition: The value in every mapping in the specified levelSourceIndicesReorderingMap must be a valid index to the specified hierarchyLevel.sources array property');
 
@@ -829,9 +836,9 @@ module powerbi.data {
             let newOrder = projectionOrdering[role];
 
             let originalOrder = _.chain(columnRewrites)
-                                .filter(rewrite => _.contains(valueSources, rewrite.to))
-                                .map(rewrite => rewrite.from.index)
-                                .value();
+                .filter(rewrite => _.contains(valueSources, rewrite.to))
+                .map(rewrite => rewrite.from.index)
+                .value();
 
             return createOrderMapping(originalOrder, newOrder);
         }
@@ -873,7 +880,7 @@ module powerbi.data {
             debug.assertValue(mapping, 'mapping');
 
             let reversed: NumberToNumberMapping = {};
-            
+
             for (let key in mapping) {
                 // Note: key is a string after we get it out from mapping, thus we need to parse it 
                 // back into a number before putting it as the value in the reversed mapping
@@ -952,19 +959,23 @@ module powerbi.data {
             if (metadataObjects) {
                 for (let i = 0, len = metadataObjects.length; i < len; i++) {
                     let metadataObject = metadataObjects[i];
-                    evaluateMetadataRepetition(dataView, selectTransforms, objectDescriptors, metadataObject.selector, metadataObject.objects);
+                    let objectDefns = metadataObject.objects;
+                    let colorAllocatorCache = populateColorAllocatorCache(dataView, selectTransforms, objectDefns, colorAllocatorFactory);
+                    evaluateMetadataRepetition(dataView, selectTransforms, objectDescriptors, metadataObject.selector, objectDefns, colorAllocatorCache);
                 }
             }
 
             for (let i = 0, len = dataObjects.length; i < len; i++) {
                 let dataObject = dataObjects[i];
-                evaluateDataRepetition(dataView, targetDataViewKinds, selectTransforms, objectDescriptors, dataObject.selector, dataObject.rules, dataObject.objects);
+                let objectDefns = dataObject.objects;
+                let colorAllocatorCache = populateColorAllocatorCache(dataView, selectTransforms, objectDefns, colorAllocatorFactory);
+                evaluateDataRepetition(dataView, targetDataViewKinds, selectTransforms, objectDescriptors, dataObject.selector, dataObject.rules, objectDefns, colorAllocatorCache);
             }
 
             let userDefined = objectsForAllSelectors.userDefined;
             if (userDefined) {
                 // TODO: We only handle user defined objects at the metadata level, but should be able to support them with arbitrary repetition.
-                evaluateUserDefinedObjects(dataView, selectTransforms, objectDescriptors, userDefined);
+                evaluateUserDefinedObjects(dataView, selectTransforms, objectDescriptors, userDefined, colorAllocatorFactory);
             }
         }
 
@@ -972,21 +983,24 @@ module powerbi.data {
             dataView: DataView,
             selectTransforms: DataViewSelectTransform[],
             objectDescriptors: DataViewObjectDescriptors,
-            objectDefns: DataViewObjectDefinitionsForSelector[]): void {
+            objectDefns: DataViewObjectDefinitionsForSelector[],
+            colorAllocatorFactory: IColorAllocatorFactory): void {
             debug.assertValue(dataView, 'dataView');
             debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
 
             let dataViewObjects: DataViewObjects = dataView.metadata.objects;
             if (!dataViewObjects) {
                 dataViewObjects = dataView.metadata.objects = {};
             }
-            let evalContext = createStaticEvalContext(dataView, selectTransforms);
 
             for (let objectDefn of objectDefns) {
                 let id = objectDefn.selector.id;
 
+                let colorAllocatorCache = populateColorAllocatorCache(dataView, selectTransforms, objectDefn.objects, colorAllocatorFactory);
+                let evalContext = createStaticEvalContext(colorAllocatorCache, dataView, selectTransforms);
                 let objects = DataViewObjectEvaluationUtils.evaluateDataViewObjects(evalContext, objectDescriptors, objectDefn.objects);
 
                 for (let objectName in objects) {
@@ -1018,7 +1032,8 @@ module powerbi.data {
             debug.assertValue(dataObjects, 'dataObjects');
             debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
 
-            let evalContext = createStaticEvalContext(dataView, selectTransforms);
+            let colorAllocatorCache = populateColorAllocatorCache(dataView, selectTransforms, objectDefns, colorAllocatorFactory);
+            let evalContext = createStaticEvalContext(colorAllocatorCache, dataView, selectTransforms);
             let objects = DataViewObjectEvaluationUtils.evaluateDataViewObjects(evalContext, objectDescriptors, objectDefns);
             if (objects) {
                 dataView.metadata.objects = objects;
@@ -1070,8 +1085,9 @@ module powerbi.data {
             if (!selectorToCreate)
                 return;
 
-            if (ruleType.fillRule)
+            if (ruleType.fillRule) {
                 return createRuleEvaluationInstanceFillRule(dataView, colorAllocatorFactory, ruleDesc, selectorToCreate, objectName, <FillRule>propertyValue);
+            }
         }
 
         function createRuleEvaluationInstanceFillRule(
@@ -1087,11 +1103,7 @@ module powerbi.data {
             debug.assertValue(selectorToCreate, 'selectorToCreate');
             debug.assertValue(propertyValue, 'propertyValue');
 
-            let colorAllocator: IColorAllocator;
-            if (propertyValue.linearGradient2)
-                colorAllocator = createColorAllocatorLinearGradient2(dataView, colorAllocatorFactory, ruleDesc, propertyValue, propertyValue.linearGradient2);
-            else if (propertyValue.linearGradient3)
-                colorAllocator = createColorAllocatorLinearGradient3(dataView, colorAllocatorFactory, ruleDesc, propertyValue, propertyValue.linearGradient3);
+            let colorAllocator = tryCreateColorAllocatorForFillRule(dataView, colorAllocatorFactory, ruleDesc.inputRole, ColumnIdentifierKind.Role, propertyValue);
 
             if (!colorAllocator)
                 return;
@@ -1112,21 +1124,42 @@ module powerbi.data {
             };
         }
 
+        function tryCreateColorAllocatorForFillRule(
+            dataView: DataView,
+            colorAllocatorFactory: IColorAllocatorFactory,
+            identifier: string,
+            identifierKind: ColumnIdentifierKind,
+            propertyValue: FillRule): IColorAllocator {
+            debug.assertValue(dataView, 'dataView');
+            debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
+            debug.assertValue(identifier, 'identifier');
+            debug.assertValue(identifierKind, 'identifierKind');
+            debug.assertValue(propertyValue, 'propertyValue');
+
+            if (propertyValue.linearGradient2)
+                return createColorAllocatorLinearGradient2(dataView, colorAllocatorFactory, identifier, identifierKind, propertyValue, propertyValue.linearGradient2);
+
+            if (propertyValue.linearGradient3)
+                return createColorAllocatorLinearGradient3(dataView, colorAllocatorFactory, identifier, identifierKind, propertyValue, propertyValue.linearGradient3);
+        }
+
         function createColorAllocatorLinearGradient2(
             dataView: DataView,
             colorAllocatorFactory: IColorAllocatorFactory,
-            ruleDesc: DataViewObjectPropertyRuleDescriptor,
+            identifier: string,
+            identifierKind: ColumnIdentifierKind,
             propertyValueFillRule: FillRule,
             linearGradient2: LinearGradient2): IColorAllocator {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
-            debug.assertValue(ruleDesc, 'ruleDesc');
+            debug.assertValue(identifier, 'identifier');
+            debug.assertValue(identifierKind, 'identifierKind');
             debug.assertValue(linearGradient2, 'linearGradient2');
 
             linearGradient2 = propertyValueFillRule.linearGradient2;
             if (linearGradient2.min.value === undefined ||
                 linearGradient2.max.value === undefined) {
-                let inputRange = findRuleInputColumnNumberRange(dataView, ruleDesc.inputRole);
+                let inputRange = findRuleInputColumnNumberRange(dataView, identifier, identifierKind);
                 if (!inputRange)
                     return;
 
@@ -1142,26 +1175,29 @@ module powerbi.data {
         function createColorAllocatorLinearGradient3(
             dataView: DataView,
             colorAllocatorFactory: IColorAllocatorFactory,
-            ruleDesc: DataViewObjectPropertyRuleDescriptor,
+            identifier: string,
+            identifierKind: ColumnIdentifierKind,
             propertyValueFillRule: FillRule,
             linearGradient3: LinearGradient3): IColorAllocator {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
-            debug.assertValue(ruleDesc, 'ruleDesc');
+            debug.assertValue(identifier, 'identifier');
+            debug.assertValue(identifierKind, 'identifierKind');
             debug.assertValue(linearGradient3, 'linearGradient3');
-            let splitScales: boolean = undefined;
+
+            let splitScales: boolean;
             linearGradient3 = propertyValueFillRule.linearGradient3;
             if (linearGradient3.min.value === undefined ||
                 linearGradient3.mid.value === undefined ||
                 linearGradient3.max.value === undefined) {
-                let inputRange = findRuleInputColumnNumberRange(dataView, ruleDesc.inputRole);
+                let inputRange = findRuleInputColumnNumberRange(dataView, identifier, identifierKind);
                 if (!inputRange)
                     return;
 
                 splitScales =
-                linearGradient3.min.value === undefined &&
-                linearGradient3.max.value === undefined &&
-                linearGradient3.mid.value !== undefined;
+                    linearGradient3.min.value === undefined &&
+                    linearGradient3.max.value === undefined &&
+                    linearGradient3.mid.value !== undefined;
 
                 if (linearGradient3.min.value === undefined) {
                     linearGradient3.min.value = inputRange.min;
@@ -1178,6 +1214,50 @@ module powerbi.data {
             return colorAllocatorFactory.linearGradient3(propertyValueFillRule.linearGradient3, splitScales);
         }
 
+        function populateColorAllocatorCache(
+            dataView: DataView,
+            selectTransforms: DataViewSelectTransform[],
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorFactory: IColorAllocatorFactory): IColorAllocatorCache {
+            debug.assertValue(dataView, 'dataView');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
+            debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorFactory, 'colorAllocatorFactory');
+
+            let cache = createColorAllocatorCache();
+            let staticEvalContext = createStaticEvalContext();
+
+            for (let i = 0, len = objectDefns.length; i < len; i++) {
+                let objectDefnProperties = objectDefns[i].properties;
+
+                for (let propertyName in objectDefnProperties) {
+                    let fillProperty = <FillDefinition>objectDefnProperties[propertyName];
+                    if (fillProperty &&
+                        fillProperty.solid &&
+                        fillProperty.solid.color &&
+                        fillProperty.solid.color.kind === SQExprKind.FillRule) {
+
+                        let fillRuleExpr = <SQFillRuleExpr>fillProperty.solid.color;
+
+                        let inputExprQueryName = findFirstQueryNameForExpr(selectTransforms, fillRuleExpr.input);
+                        if (!inputExprQueryName)
+                            continue;
+
+                        let fillRule = DataViewObjectEvaluator.evaluateProperty(
+                            staticEvalContext,
+                            fillRulePropertyDescriptor,
+                            fillRuleExpr.rule);
+
+                        let colorAllocator = tryCreateColorAllocatorForFillRule(dataView, colorAllocatorFactory, inputExprQueryName, ColumnIdentifierKind.QueryName, fillRule);
+                        if (colorAllocator)
+                            cache.register(fillRuleExpr, colorAllocator);
+                    }
+                }
+            }
+
+            return cache;
+        }
+
         function evaluateDataRepetition(
             dataView: DataView,
             targetDataViewKinds: StandardDataViewKinds,
@@ -1185,31 +1265,33 @@ module powerbi.data {
             objectDescriptors: DataViewObjectDescriptors,
             selector: Selector,
             rules: RuleEvaluation[],
-            objectDefns: DataViewNamedObjectDefinition[]): void {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): void {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(targetDataViewKinds, 'targetDataViewKinds');
-            debug.assertValue(selectTransforms, 'selectTransforms');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorFactory');
 
             let containsWildcard = Selector.containsWildcard(selector);
 
             let dataViewCategorical = dataView.categorical;
             if (dataViewCategorical && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Categorical)) {
                 // 1) Match against categories
-                evaluateDataRepetitionCategoricalCategory(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns);
+                evaluateDataRepetitionCategoricalCategory(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
 
                 // 2) Match against valueGrouping
-                evaluateDataRepetitionCategoricalValueGrouping(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns);
+                evaluateDataRepetitionCategoricalValueGrouping(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
 
                 // Consider capturing diagnostics for unmatched selectors to help debugging.
             }
 
             let dataViewMatrix = dataView.matrix;
             if (dataViewMatrix && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Matrix)) {
-                let rewrittenMatrix = evaluateDataRepetitionMatrix(dataViewMatrix, objectDescriptors, selector, rules, containsWildcard, objectDefns);
+                let rewrittenMatrix = evaluateDataRepetitionMatrix(dataViewMatrix, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
                 if (rewrittenMatrix) {
                     // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
                     // revisit this, likely when we do lazy evaluation of DataView.
@@ -1221,7 +1303,7 @@ module powerbi.data {
 
             let dataViewTable = dataView.table;
             if (dataViewTable && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Table)) {
-                let rewrittenTable = evaluateDataRepetitionTable(dataViewTable, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns);
+                let rewrittenTable = evaluateDataRepetitionTable(dataViewTable, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
                 if (rewrittenTable) {
                     // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
                     // revisit this, likely when we do lazy evaluation of DataView.
@@ -1238,13 +1320,15 @@ module powerbi.data {
             selector: Selector,
             rules: RuleEvaluation[],
             containsWildcard: boolean,
-            objectDefns: DataViewNamedObjectDefinition[]): boolean {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): boolean {
             debug.assertValue(dataViewCategorical, 'dataViewCategorical');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
             debug.assertValue(containsWildcard, 'containsWildcard');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorCache');
 
             if (!dataViewCategorical.categories || dataViewCategorical.categories.length === 0)
                 return;
@@ -1255,7 +1339,7 @@ module powerbi.data {
 
             let identities = targetColumn.identities,
                 foundMatch: boolean,
-                evalContext = createCategoricalEvalContext(dataViewCategorical);
+                evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical);
 
             if (!identities)
                 return;
@@ -1295,13 +1379,15 @@ module powerbi.data {
             selector: Selector,
             rules: RuleEvaluation[],
             containsWildcard: boolean,
-            objectDefns: DataViewNamedObjectDefinition[]): boolean {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): boolean {
             debug.assertValue(dataViewCategorical, 'dataViewCategorical');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
             debug.assertValue(containsWildcard, 'containsWildcard');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorCache');
 
             let dataViewCategoricalValues = dataViewCategorical.values;
             if (!dataViewCategoricalValues || !dataViewCategoricalValues.identityFields)
@@ -1316,7 +1402,7 @@ module powerbi.data {
 
             // NOTE: We do not set the evalContext row index below because iteration is over value groups (i.e., columns, no rows).
             // This should be enhanced in the future.
-            let evalContext = createCategoricalEvalContext(dataViewCategorical);
+            let evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical);
 
             let foundMatch: boolean;
             for (let i = 0, len = valuesGrouped.length; i < len; i++) {
@@ -1365,9 +1451,10 @@ module powerbi.data {
             selector: Selector,
             rules: RuleEvaluation[],
             containsWildcard: boolean,
-            objectDefns: DataViewNamedObjectDefinition[]): DataViewMatrix {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): DataViewMatrix {
 
-            let evalContext = createMatrixEvalContext(dataViewMatrix);
+            let evalContext = createMatrixEvalContext(colorAllocatorCache, dataViewMatrix);
             let rewrittenRows = evaluateDataRepetitionMatrixHierarchy(evalContext, dataViewMatrix.rows, objectDescriptors, selector, rules, containsWildcard, objectDefns);
             let rewrittenCols = evaluateDataRepetitionMatrixHierarchy(evalContext, dataViewMatrix.columns, objectDescriptors, selector, rules, containsWildcard, objectDefns);
 
@@ -1500,15 +1587,17 @@ module powerbi.data {
             selector: Selector,
             rules: RuleEvaluation[],
             containsWildcard: boolean,
-            objectDefns: DataViewNamedObjectDefinition[]): DataViewTable {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): DataViewTable {
             debug.assertValue(dataViewTable, 'dataViewTable');
-            debug.assertValue(selectTransforms, 'selectTransforms');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorCache');
 
-            let evalContext = createTableEvalContext(dataViewTable, selectTransforms);
+            let evalContext = createTableEvalContext(colorAllocatorCache, dataViewTable, selectTransforms);
             let rewrittenRows = evaluateDataRepetitionTableRows(
                 evalContext,
                 dataViewTable.columns,
@@ -1597,18 +1686,20 @@ module powerbi.data {
             selectTransforms: DataViewSelectTransform[],
             objectDescriptors: DataViewObjectDescriptors,
             selector: Selector,
-            objectDefns: DataViewNamedObjectDefinition[]): void {
+            objectDefns: DataViewNamedObjectDefinition[],
+            colorAllocatorCache: IColorAllocatorCache): void {
             debug.assertValue(dataView, 'dataView');
             debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertValue(objectDefns, 'objectDefns');
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorCache');
 
             // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
             // revisit this, likely when we do lazy evaluation of DataView.
             let columns = dataView.metadata.columns,
                 metadataId = selector.metadata,
-                evalContext = createStaticEvalContext(dataView, selectTransforms);
+                evalContext = createStaticEvalContext(colorAllocatorCache, dataView, selectTransforms);
             for (let i = 0, len = columns.length; i < len; i++) {
                 let column = columns[i];
                 if (column.queryName === metadataId) {
@@ -1676,10 +1767,29 @@ module powerbi.data {
             return { data: [DataViewScopeWildcard.fromExprs(<SQExpr[]>categoryIdentityFields)] };
         }
 
-        /** Attempts to find the value range for the single column with the given inputRole. */
-        function findRuleInputColumnNumberRange(dataView: DataView, inputRole: string): NumberRange {
+        function findFirstQueryNameForExpr(selectTransforms: DataViewSelectTransform[], expr: SQExpr): string {
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
+            debug.assertValue(expr, 'expr');
+
+            if (!selectTransforms)
+                return;
+
+            for (let i = 0, len = selectTransforms.length; i < len; i++) {
+                let select = selectTransforms[i],
+                    columnExpr = select.expr;
+
+                if (!columnExpr || !SQExpr.equals(expr, select.expr))
+                    continue;
+
+                return select.queryName;
+            }
+        }
+
+        /** Attempts to find the value range for the single column with the given identifier/identifierKind. */
+        function findRuleInputColumnNumberRange(dataView: DataView, identifier: string, identifierKind: ColumnIdentifierKind): NumberRange {
             debug.assertValue(dataView, 'dataView');
-            debug.assertValue(inputRole, 'inputRole');
+            debug.assertValue(identifier, 'identifier');
+            debug.assertValue(identifierKind, 'identifierKind');
 
             // NOTE: This implementation currently only supports categorical DataView, becuase that's the
             // only scenario that has custom colors, as of this writing.  This would be rewritten to be more generic
@@ -1693,11 +1803,20 @@ module powerbi.data {
                 return;
 
             for (let i = 0, len = values.length; i < len; i++) {
-                let valueCol = values[i],
-                    valueColRoles = valueCol.source.roles;
+                let valueCol = values[i];
 
-                if (!valueColRoles || !valueColRoles[inputRole])
-                    continue;
+                if (identifierKind === ColumnIdentifierKind.Role) {
+                    let valueColRoles = valueCol.source.roles;
+
+                    if (!valueColRoles || !valueColRoles[identifier])
+                        continue;
+                }
+                else {
+                    debug.assert(identifierKind === ColumnIdentifierKind.QueryName, 'identifierKind === ColumnIdentifierKind.QueryName');
+
+                    if (valueCol.source.queryName !== identifier)
+                        continue;
+                }
 
                 let min = valueCol.min;
                 if (min === undefined)

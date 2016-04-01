@@ -80,9 +80,11 @@ module powerbi.visuals.controls.internal {
         public item: any;
 
         public _presenter: TablixCellPresenter; // internal
-        public extension: any;
+        public extension: TablixCellPresenter;
 
-        constructor(presenter: TablixCellPresenter, extension: any, row: TablixRow) {
+        public position: internal.TablixUtils.CellPosition;
+
+        constructor(presenter: TablixCellPresenter, extension: TablixCellPresenter, row: TablixRow) {
             this._presenter = presenter;
             this.extension = extension;
             this._presenter.initialize(this);
@@ -95,6 +97,7 @@ module powerbi.visuals.controls.internal {
             this._rowSpan = 1;
             this._contentWidth = -1;
             this._contentHeight = -1;
+            this.position = new internal.TablixUtils.CellPosition();
         }
 
         public get colSpan(): number {
@@ -116,7 +119,14 @@ module powerbi.visuals.controls.internal {
             if (this._rowSpan !== value) {
                 this._presenter.onRowSpanChanged(value);
                 this._rowSpan = value;
+
+                if (value > 1)
+                    this.setContentHeight(this.getCellSpanningHeight());
             }
+        }
+
+        public getCellSpanningHeight(): number {
+            return this._row.getCellSpanningHeight(this);
         }
 
         public get textAlign(): string {
@@ -156,8 +166,10 @@ module powerbi.visuals.controls.internal {
             this._presenter.onInitializeScrolling();
             this._horizontalOffset = 0;
             this._verticalOffset = 0;
-            this.setContentWidth(-1);
-            this.setContentHeight(-1);
+            if (this.colSpan === 1)
+                this.setContentWidth(-1);
+            if (this.rowSpan === 1)
+                this.setContentHeight(-1);
         }
 
         public prepare(scrollable: boolean): void {
@@ -168,14 +180,18 @@ module powerbi.visuals.controls.internal {
         }
 
         public scrollVertically(height: number, offset: number): void {
-            if (!this.isScrollable()) {
-                return;
-            }
-
-            let offsetInPixels: number = -height * offset;
+            // Ceiling the offset because setting a fraction Width on the TD will ceil it
+            // We need to let the TD and the OuterDiv to align in order for Borders to touch
+            let offsetInPixels = Math.ceil(- height * offset);
             this._verticalOffset = offsetInPixels;
-            this._presenter.onVerticalScroll(height, offsetInPixels);
-            this.setContentHeight(height + offsetInPixels);
+
+            if (this.isScrollable()) {
+                this._presenter.onVerticalScroll(height, offsetInPixels);
+                this.setContentHeight(height + offsetInPixels);
+            }
+            else {
+                this.setContentHeight(this._row.getCellSpanningHeight(this) + offsetInPixels);
+            }
         }
 
         public scrollHorizontally(width: number, offset: number) {
@@ -183,7 +199,9 @@ module powerbi.visuals.controls.internal {
                 return;
             }
 
-            let offsetInPixels = -width * offset;
+            // Ceiling the offset because setting a fraction Width on the TD will ceil it
+            // We need to let the TD and the OuterDiv to align in order for Borders to touch
+            let offsetInPixels = Math.ceil(- width * offset);
             this._horizontalOffset = offsetInPixels;
             this._presenter.onHorizontalScroll(width, offsetInPixels);
             this.setContentWidth(width + offsetInPixels);
@@ -812,12 +830,12 @@ module powerbi.visuals.controls.internal {
             return this.presenter.getCellContentHeight(cell);
         }
 
-        public getCellSpanningHeight(cell: ITablixCell, tablixGrid: TablixGrid): number {
+        public getCellSpanningHeight(cell: ITablixCell): number {
             let height = this.getContextualWidth();
 
             if (cell.rowSpan > 1) {
-                let index = this.getIndex(tablixGrid);
-                let rows = tablixGrid.realizedRows;
+                let index = this.getIndex(this.owner);
+                let rows = this.owner.realizedRows;
                 for (let i = 1; i < cell.rowSpan; i++)
                     height += rows[i + index].getContextualWidth();
             }
@@ -886,8 +904,10 @@ module powerbi.visuals.controls.internal {
 
             for (let i = 0; i < count; i++) {
                 let cell: TablixCell = this._realizedRowHeaders[i];
-                if (cell.rowSpan)
+                if (cell.rowSpan === 1)
                     cell.setContentHeight(this._contentHeight);
+                else
+                    cell.setContentHeight(this.getCellSpanningHeight(cell));
             }
 
             count = this._realizedCornerCells.length;
@@ -902,6 +922,8 @@ module powerbi.visuals.controls.internal {
                 let cell: TablixCell = this._realizedColumnHeaders[i];
                 if (cell.rowSpan === 1)
                     cell.setContentHeight(this._contentHeight);
+                else
+                    cell.setContentHeight(this.getCellSpanningHeight(cell));
             }
 
             count = this._realizedBodyCells.length;

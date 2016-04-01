@@ -102,6 +102,7 @@
         "common/objectEnumerationBuilder.ts",
         "common/visualBorderUtil.ts",
         "common/transform.ts",
+        "common/trendLineHelper.ts",
         "common/visibilityUtil.ts",
         "converter/slicer.converter.ts",
         "formatting/dataLabelManager.ts",
