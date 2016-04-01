@@ -22,7 +22,13 @@ To build the library and run the sample application you will need:
  -  You can install [VSIX Package](https://github.com/Microsoft/PowerBI-visuals/blob/master/tools/VSIXExtensions/VisualTemplate.vsix?raw=true) and use Visual Studio Template from it to create new Visual.
 
 ### One-Time Setup
-In order to build the Power BI visuals, ensure that you have [Git](http://git-scm.com/book/en/v2/Getting-Started-Installing-Git#Installing-on-Windows), [Node.js](http://nodejs.org/download/) and gulp (`npm install -g gulp`) installed.
+In order to build the Power BI visuals, ensure that you have [Git](http://git-scm.com/book/en/v2/Getting-Started-Installing-Git#Installing-on-Windows) and [Node.js](http://nodejs.org/download/) installed.
+
+Install gulp if not present:
+
+```
+npm install -g gulp
+```
 
 Clone a copy of the repo:
 
