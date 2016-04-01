@@ -58,8 +58,9 @@ declare module powerbi {
          * Notifies the IVisual to resize.
          *
          * @param finalViewport This is the viewport that the visual will eventually be resized to.
+         * @param resized true on on final call when resizing is complete.
          */
-        onResizing?(finalViewport: IViewport): void;
+        onResizing?(finalViewport: IViewport, resizeMode?: ResizeMode): void;
 
         /** 
          * Notifies the IVisual of new data being provided.
@@ -221,6 +222,7 @@ declare module powerbi {
         dataViews: DataView[];
         suppressAnimations?: boolean;
         viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
     }
 
     export interface VisualDataChangedOptions {

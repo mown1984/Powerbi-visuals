@@ -216,7 +216,10 @@ module powerbi.visuals {
             debug.assertValue(original, 'original');
             debug.assert(!original.highlight, '!original.highlight');
 
-            return new SelectionId(original.getSelector(), /*highlight*/ true);
+            let newId = new SelectionId(original.getSelector(), /*highlight*/ true);
+            newId.selectorsByColumn = original.selectorsByColumn;
+
+            return newId;
         }
 
         private static idArray(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity): DataViewScopeIdentity[] {

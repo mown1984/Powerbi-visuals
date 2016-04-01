@@ -714,7 +714,8 @@ module powerbi.visuals.samples {
                 .call(this.forceLayout.drag)
                 .on("mouseover", this.fadeNode(.3, this.options.defaultLinkHighlightColor))
                 .on("mouseout", this.fadeNode(1, this.options.defaultLinkColor))
-                .on("mousedown", () => d3.event.stopPropagation());
+                .on("mousedown", () => d3.event.stopPropagation())
+                .attr("drag-resize-disabled", true);
 
             // add the nodes
             if (this.options.displayImage) {

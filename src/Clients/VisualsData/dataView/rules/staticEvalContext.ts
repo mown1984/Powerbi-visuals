@@ -27,10 +27,13 @@
 module powerbi.data {
     import SQExpr = powerbi.data.SQExpr;
 
-    export function createStaticEvalContext(): IEvalContext;
-    export function createStaticEvalContext(dataView: DataView, selectTransforms: DataViewSelectTransform[]): IEvalContext;
-    export function createStaticEvalContext(dataView?: DataView, selectTransforms?: DataViewSelectTransform[]): IEvalContext {
-        return new StaticEvalContext(dataView || { metadata: { columns: [] } }, selectTransforms);
+    export function createStaticEvalContext(colorAllocatorCache?: IColorAllocatorCache): IEvalContext;
+    export function createStaticEvalContext(colorAllocatorCache: IColorAllocatorCache, dataView: DataView, selectTransforms: DataViewSelectTransform[]): IEvalContext;
+    export function createStaticEvalContext(colorAllocatorCache: IColorAllocatorCache, dataView?: DataView, selectTransforms?: DataViewSelectTransform[]): IEvalContext {
+        return new StaticEvalContext(
+            colorAllocatorCache || createColorAllocatorCache(),
+            dataView || { metadata: { columns: [] } },
+            selectTransforms);
     }
 
     /**
@@ -38,15 +41,22 @@ module powerbi.data {
      * are supported.
      */
     class StaticEvalContext implements IEvalContext {
+        private colorAllocatorCache: IColorAllocatorCache;
         private dataView: DataView;
         private selectTransforms: DataViewSelectTransform[];
 
-        constructor(dataView: DataView, selectTransforms: DataViewSelectTransform[]) {
+        constructor(colorAllocatorCache: IColorAllocatorCache, dataView: DataView, selectTransforms: DataViewSelectTransform[]) {
+            debug.assertValue(colorAllocatorCache, 'colorAllocatorCache');
             debug.assertValue(dataView, 'dataView');
             debug.assertAnyValue(selectTransforms, 'selectTransforms');
 
+            this.colorAllocatorCache = colorAllocatorCache;
             this.dataView = dataView;
             this.selectTransforms = selectTransforms;
+        }
+
+        public getColorAllocator(expr: SQFillRuleExpr): IColorAllocator {
+            return this.colorAllocatorCache.get(expr);
         }
 
         public getExprValue(expr: SQExpr): PrimitiveValue {

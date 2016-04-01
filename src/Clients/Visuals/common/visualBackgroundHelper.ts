@@ -40,7 +40,7 @@ module powerbi.visuals {
         }
 
         export function getDefaultShow(): boolean {
-            return true;
+            return false;
         }
 
         export function getDefaultValues() {

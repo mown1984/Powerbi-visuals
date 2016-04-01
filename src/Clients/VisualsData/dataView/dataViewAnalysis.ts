@@ -387,44 +387,46 @@ module powerbi {
             objectDescriptors?: DataViewObjectDescriptors,
             objectDefinitions?: DataViewObjectDefinitions): DataViewMappingResult {
             debug.assertValue(projections, 'projections');
-            debug.assertValue(mappings, 'mappings');
+            debug.assertAnyValue(mappings, 'mappings');
 
             let supportedMappings: DataViewMapping[] = [];
             let errors: DataViewMappingMatchError[] = [];
 
-            for (let mappingIndex = 0, mappingCount = mappings.length; mappingIndex < mappingCount; mappingIndex++) {
-                let mapping = mappings[mappingIndex],
-                    mappingConditions = mapping.conditions,
-                    requiredProperties = mapping.requiredProperties;
-                let allPropertiesValid: boolean = areAllPropertiesValid(requiredProperties, objectDescriptors, objectDefinitions);
-                let conditionsMet: DataViewMappingCondition[] = [];
+            if (!_.isEmpty(mappings)) {
+                for (let mappingIndex = 0, mappingCount = mappings.length; mappingIndex < mappingCount; mappingIndex++) {
+                    let mapping = mappings[mappingIndex],
+                        mappingConditions = mapping.conditions,
+                        requiredProperties = mapping.requiredProperties;
+                    let allPropertiesValid: boolean = areAllPropertiesValid(requiredProperties, objectDescriptors, objectDefinitions);
+                    let conditionsMet: DataViewMappingCondition[] = [];
 
-                if (!_.isEmpty(mappingConditions)) {
-                    for (let conditionIndex = 0, conditionCount = mappingConditions.length; conditionIndex < conditionCount; conditionIndex++) {
-                        let condition = mappingConditions[conditionIndex];
-                        let currentConditionErrors = checkForConditionErrors(projections, condition, roleKindByQueryRef);
-                        if (!_.isEmpty(currentConditionErrors)) {
-                            for (let error of currentConditionErrors) {
-                                error.mappingIndex = mappingIndex;
-                                error.conditionIndex = conditionIndex;
-                                errors.push(error);
+                    if (!_.isEmpty(mappingConditions)) {
+                        for (let conditionIndex = 0, conditionCount = mappingConditions.length; conditionIndex < conditionCount; conditionIndex++) {
+                            let condition = mappingConditions[conditionIndex];
+                            let currentConditionErrors = checkForConditionErrors(projections, condition, roleKindByQueryRef);
+                            if (!_.isEmpty(currentConditionErrors)) {
+                                for (let error of currentConditionErrors) {
+                                    error.mappingIndex = mappingIndex;
+                                    error.conditionIndex = conditionIndex;
+                                    errors.push(error);
+                                }
                             }
+                            else
+                                conditionsMet.push(condition);
                         }
-                        else
-                            conditionsMet.push(condition);
                     }
-                }
-                else {
-                    conditionsMet.push({});
-                }
+                    else {
+                        conditionsMet.push({});
+                    }
 
-                if (!_.isEmpty(conditionsMet) && allPropertiesValid) {
-                    let supportedMapping = _.cloneDeep(mapping);
+                    if (!_.isEmpty(conditionsMet) && allPropertiesValid) {
+                        let supportedMapping = _.cloneDeep(mapping);
 
-                    let updatedConditions = _.filter(conditionsMet, (condition) => Object.keys(condition).length > 0);
-                    if (!_.isEmpty(updatedConditions))
-                        supportedMapping.conditions = updatedConditions;
-                    supportedMappings.push(supportedMapping);
+                        let updatedConditions = _.filter(conditionsMet, (condition) => Object.keys(condition).length > 0);
+                        if (!_.isEmpty(updatedConditions))
+                            supportedMapping.conditions = updatedConditions;
+                        supportedMappings.push(supportedMapping);
+                    }
                 }
             }
 

@@ -39,7 +39,8 @@ module powerbi.visuals.controls {
         colSpan: number;
         rowSpan: number;
         textAlign: string;
-        extension: any;
+        extension: internal.TablixCellPresenter;
+        position: internal.TablixUtils.CellPosition;
     }
         
     export interface IDimensionLayoutManager {

@@ -395,7 +395,7 @@ module powerbitests.slicerHelper {
         private originalRequestAnimationFrameCallback: (callback: Function) => number;
 
         constructor(orientation: SlicerOrientation, height: number = 200, width: number = 300) {
-            let element = helpers.testDom(height.toString(), width.toString(), 'visual');
+            let element = helpers.testDom(height.toString(), width.toString());
             this.hostServices = createHostServices();
             let dataView = this.dataView;
             dataView.metadata.objects = buildDefaultDataViewObjects(orientation);

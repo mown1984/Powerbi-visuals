@@ -52,10 +52,10 @@ module powerbitests.customVisuals {
                 visualBuilder.currentPeriod = GranularityType.day;
                 setTimeout(() => {
                     let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
-					let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children(".lowerTextArea").children().length;
-		
+					let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children("g").children(".label").children().length;
+
                     expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
-                    expect(countOfTextItems).toBe(dataViews[0].categorical.categories[0].values.length);
+                    expect(countOfTextItems).toBe(15);
 
                     done();
                 }, DefaultWaitForRender);

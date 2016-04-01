@@ -137,6 +137,7 @@ module powerbi.data {
         command: DataReaderCommand;
         allowCache?: boolean;
         cacheResponseOnServer?: boolean;
+        ignoreViewportForCache?: boolean;
     }
 
     export interface FederatedConceptualSchemaReaderOptions {

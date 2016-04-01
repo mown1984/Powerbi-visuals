@@ -372,5 +372,9 @@ module powerbi.data {
 
             return stop;
         }
+
+        public visitResourcePackageItem(orig: SQResourcePackageItemExpr): SQExpr {
+            return orig;
+        }
     }
 }

@@ -271,6 +271,16 @@ module powerbi.data {
             public visitAggr(expr: SQAggregationExpr, evalContext: IEvalContext): PrimitiveValue {
                 return evalContext.getExprValue(expr);
             }
+
+            public visitFillRule(expr: SQFillRuleExpr, evalContext: IEvalContext): PrimitiveValue {
+                let inputValue = expr.input.accept(this, evalContext);
+                if (inputValue !== undefined) {
+                    let colorAllocator = evalContext.getColorAllocator(expr);
+                    if (colorAllocator) {
+                        return colorAllocator.color(inputValue);
+                    }
+                }
+            }
         }
     }
 } 

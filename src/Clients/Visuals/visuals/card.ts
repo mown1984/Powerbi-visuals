@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -296,7 +296,7 @@ module powerbi.visuals {
                 if (statusGraphicInfo) {
                     // Display card KPI icon
                     this.graphicsContext.selectAll('text').remove();
-                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, valueStyles);
+                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, labelTextSizeInPx);
                 }
                 else {
                     // Display card text value
@@ -335,7 +335,7 @@ module powerbi.visuals {
                 if (statusGraphicInfo) {
                     // Display card KPI icon
                     this.graphicsContext.selectAll('text').remove();
-                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, valueStyles);
+                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, labelTextSizeInPx);
                 }
                 else {
                     this.kpiImage.selectAll('div').remove();
@@ -349,7 +349,7 @@ module powerbi.visuals {
                         formatter
                     );
 
-                    //in order to remove duplicated title values we first remove all and than add a new one 
+                    //in order to remove duplicated title values we first remove all and than add a new one
                     this.graphicsContext.call(tooltipUtils.tooltipUpdate, [target]);
                 }
             }
@@ -357,7 +357,7 @@ module powerbi.visuals {
             this.value = target;
         }
 
-        private displayStatusGraphic(statusGraphicInfo: KpiImageMetadata, translateX: number, translateY: number, valueStyles: CardStyleValue) {
+        private displayStatusGraphic(statusGraphicInfo: KpiImageMetadata, translateX: number, translateY: number, labelTextSizeInPx: number) {
             // Remove existing text
             this.graphicsContext.selectAll('text').remove();
 
@@ -369,14 +369,15 @@ module powerbi.visuals {
             // Style status graphic
             kpiImageDiv
                 .attr('class', statusGraphicInfo.class)
-                .style('position', 'absolute');
+                .style('position', 'absolute')
+                .style('font-size', labelTextSizeInPx + 'px');
 
             // Layout thrash to get image dimensions (could set as a const in future when icon font is fixed)
             let imageWidth = (<HTMLElement>kpiImageDiv.node()).offsetWidth;
             let imageHeight = (<HTMLElement>kpiImageDiv.node()).offsetHeight;
 
             // Position based on image height
-            kpiImageDiv.style('transform', SVGUtil.translateWithPixels((translateX - (imageWidth / 2)), this.getTranslateY(valueStyles.textSize + translateY) - imageHeight));
+            kpiImageDiv.style('transform', SVGUtil.translateWithPixels((translateX - (imageWidth / 2)), this.getTranslateY(labelTextSizeInPx + translateY) - imageHeight));
         }
 
         private getDefaultFormatSettings(): CardFormatSetting {

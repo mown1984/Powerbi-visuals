@@ -89,6 +89,7 @@ module powerbi.visuals {
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
         private currentViewport: IViewport;
+        private margin: IMargin;
         private data: WaterfallChartData;
         private element: JQuery;
         private isScrollable: boolean;
@@ -104,7 +105,6 @@ module powerbi.visuals {
         private hostServices: IVisualHostServices;
         private cartesianVisualHost: ICartesianVisualHost;
         private interactivity: InteractivityOptions;
-        private margin: IMargin;
         private options: CartesianVisualInitOptions;
         private interactivityService: IInteractivityService;
         private layout: WaterfallLayout;
@@ -119,6 +119,7 @@ module powerbi.visuals {
             debug.assertValue(options, 'options');
 
             this.svg = options.svg;
+            this.svg.classed(WaterfallChart.WaterfallClassName, true);
             this.style = options.style;
             this.currentViewport = options.viewport;
             this.hostServices = options.host;
@@ -127,7 +128,6 @@ module powerbi.visuals {
             this.options = options;
             this.element = options.element;
             this.colors = this.style.colorPalette.dataColors;
-            this.element.addClass(WaterfallChart.WaterfallClassName);
             this.mainGraphicsSVG = this.svg.append('svg');
             this.mainGraphicsContext = this.mainGraphicsSVG.append('g')
                 .classed(WaterfallChart.MainGraphicsContextClassName, true);
@@ -384,18 +384,11 @@ module powerbi.visuals {
             debug.assertValue(options, 'options');
 
             this.currentViewport = options.viewport;
-            let margin = this.margin = options.margin;
+            this.margin = options.margin;
             let data = this.clippedData = this.data;
             let categoryCount = data.categories.length;
-
-            /* preferredPlotArea would be same as currentViewport width when there is no scrollbar. 
-             In that case we want to calculate the available plot area for the shapes by subtracting the margin from available viewport */
             let preferredPlotArea = this.getPreferredPlotArea(false, categoryCount, CartesianChart.MinOrdinalRectThickness);
-            if (preferredPlotArea.width === this.currentViewport.width) {
-                preferredPlotArea.width -= (margin.left + margin.right);
-            }
-            preferredPlotArea.height -= (margin.top + margin.bottom);
-
+            
             let cartesianLayout = CartesianChart.getLayout(
                 null,
                 {
@@ -474,7 +467,7 @@ module powerbi.visuals {
 
             let categoryDataType: ValueType = AxisHelper.getCategoryValueType(data.categoryMetadata);
 
-            let domain = AxisHelper.createDomain(data.series, categoryDataType, /* isScalar */ false, options.forcedXDomain, options.xReferenceLineValue);
+            let domain = AxisHelper.createDomain(data.series, categoryDataType, /* isScalar */ false, options.forcedXDomain, options.ensureXDomain);
 
             let categoryThickness = layout.categoryThickness;
             let outerPadding = categoryThickness * layout.outerPaddingRatio;
@@ -499,7 +492,7 @@ module powerbi.visuals {
             debug.assertValue(data, 'data');
             debug.assertValue(options, 'options');
 
-            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [data.positionMin, data.positionMax], options.y1ReferenceLineValue);
+            let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, [data.positionMin, data.positionMax], options.ensureYDomain);
 
             return <CreateAxisOptions> {
                 pixelSpan: height,
@@ -523,7 +516,8 @@ module powerbi.visuals {
                 categoryThickness,
                 this.currentViewport,
                 this.isScrollable,
-                isScalar);
+                isScalar,
+                this.margin);
         }
 
         public getVisualCategoryAxisIsScalar(): boolean {

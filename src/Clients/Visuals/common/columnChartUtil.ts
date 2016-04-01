@@ -125,12 +125,12 @@ module powerbi.visuals {
             axisScaleType?: string,
             axisDisplayUnits?: number,
             axisPrecision?: number,
-            xReferenceLineValue?: number): IAxisProperties {
+            ensureXDomain?: NumberRange): IAxisProperties {
 
             let categoryThickness = layout.categoryThickness;
             let isScalar = layout.isScalar;
             let outerPaddingRatio = layout.outerPaddingRatio;
-            let domain = AxisHelper.createDomain(data.series, data.categoryMetadata ? data.categoryMetadata.type : ValueType.fromDescriptor({ text: true }), isScalar, [forcedXMin, forcedXMax], xReferenceLineValue);
+            let domain = AxisHelper.createDomain(data.series, data.categoryMetadata ? data.categoryMetadata.type : ValueType.fromDescriptor({ text: true }), isScalar, [forcedXMin, forcedXMax], ensureXDomain);
 
             let axisProperties = AxisHelper.createAxis({
                 pixelSpan: size,

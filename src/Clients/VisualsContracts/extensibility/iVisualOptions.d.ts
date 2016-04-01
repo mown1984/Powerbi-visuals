@@ -31,6 +31,7 @@ declare module powerbi.extensibility {
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
     }
     
     export interface VisualConstructorOptions {

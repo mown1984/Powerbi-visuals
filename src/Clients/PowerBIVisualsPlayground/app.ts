@@ -58,7 +58,8 @@ module powerbi.visuals {
             "mekkoChart",
             "gantt",
             "sunburstCustom",
-            "timeline"
+            "timeline",
+            "owlGauge"
         ];
 
         private static mobileInteractiveVisuals: string[] = [

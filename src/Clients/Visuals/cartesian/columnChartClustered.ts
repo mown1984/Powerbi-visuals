@@ -70,7 +70,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties {
             let width = this.width;
 
             let forcedXMin, forcedXMax;
@@ -90,7 +90,7 @@ module powerbi.visuals {
                 axisScaleType,
                 axisDisplayUnits,
                 axisPrecision,
-                xReferenceLineValue);
+                ensureXDomain);
 
             // create clustered offset scale
             let seriesLength = this.data.series.length;
@@ -102,12 +102,12 @@ module powerbi.visuals {
             return props;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
 
             let height = this.viewportHeight;
             let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
-            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomain, y1ReferenceLineValue);
+            let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomain, ensureYDomain);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
 
             this.yProps = AxisHelper.createAxis({
@@ -386,7 +386,7 @@ module powerbi.visuals {
             this.data = data;
         }
 
-        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties {
+        public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties {
             let height = this.height;
             let forcedYMin, forcedYMax;
 
@@ -405,7 +405,7 @@ module powerbi.visuals {
                 axisScaleType,
                 axisDisplayUnits,
                 axisPrecision,
-                y1ReferenceLineValue
+                ensureYDomain
             );
 
             // create clustered offset scale
@@ -418,13 +418,13 @@ module powerbi.visuals {
             return props;
         }
 
-        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, xReferenceLineValue?: number): IAxisProperties {
+        public setXScale(is100Pct: boolean, forcedTickCount?: number, forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
             debug.assert(forcedTickCount === undefined, 'Cannot have clustered bar chart as combo chart.');
 
             let width = this.width;
             let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
-            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomain, xReferenceLineValue);
+            let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomain, ensureXDomain);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
 
             this.xProps = AxisHelper.createAxis({

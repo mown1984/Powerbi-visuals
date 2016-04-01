@@ -281,6 +281,7 @@ module powerbi.visuals.samples {
                 }
 
                 let totalFields: any[] = this.union_arrays(catValues, seriesName);
+                totalFields.reverse();
 
                 if (ChordChart.getValidArrayLength(totalFields) ===
                     ChordChart.getValidArrayLength(catValues) + ChordChart.getValidArrayLength(seriesName)) {
@@ -928,7 +929,7 @@ module powerbi.visuals.samples {
                 style: {
                     'fill': (d: ChordArcDescriptor) => d.data.labelColor,
                     'text-anchor': (d: ChordArcDescriptor) => midAngle(d) < Math.PI ? 'start' : 'end',
-                    'font-size': (d: ChordArcDescriptor) => PixelConverter.fromPointToPixel(labelFontSize),
+                    'font-size': (d: ChordArcDescriptor) => PixelConverter.fromPoint(labelFontSize),
                 },
             };
         }

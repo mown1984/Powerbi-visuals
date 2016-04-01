@@ -66,7 +66,7 @@ module powerbi.visuals.samples {
         size: any;
         radius: RadiusData;
         fill: string;
-        category: string;
+        formattedCategory: jsCommon.Lazy<string>;
         colorFill?: string;
         svgurl?: string;
         shapeSymbolType?: (number) => string;
@@ -1273,7 +1273,7 @@ module powerbi.visuals.samples {
                         size: size,
                         radius: { sizeMeasure: measureSize, index: categoryIdx },
                         fill: color,
-                        category: categoryFormatter.format(categoryValue),
+                        formattedCategory: ScatterChart.createLazyFormattedCategory(categoryFormatter, categoryValue),
                         selected: false,
                         identity: identity,
                         tooltipInfo: tooltipInfo,
@@ -1711,25 +1711,25 @@ module powerbi.visuals.samples {
             let offset = labelSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
 
             return {
-                labelText: function (d) {
+                labelText: function (d: EnhancedScatterChartDataPoint) {
                     return dataLabelUtils.getLabelFormattedText({
-                        label: d.category,
+                        label: d.formattedCategory.getValue(),
                         fontSize: labelSettings.fontSize,
                         maxWidth: viewport.width,
                     });
                 },
                 labelLayout: {
-                    x: function (d) { return xScale(d.x) - offset; },
-                    y: function (d) {
+                    x: function (d: EnhancedScatterChartDataPoint) { return xScale(d.x) - offset; },
+                    y: function (d: EnhancedScatterChartDataPoint) {
                         let margin = visuals.ScatterChart.getBubbleRadius(d.radius, sizeRange, viewport) + dataLabelUtils.labelMargin;
                         return labelSettings.position === 0 /* Above */ ? yScale(d.y) - margin : yScale(d.y) + margin;
                     },
                 },
-                filter: function (d) {
-                    return (d != null && d.category != null);
+                filter: function (d: EnhancedScatterChartDataPoint) {
+                    return (d != null && d.formattedCategory.getValue() != null);
                 },
                 style: {
-                    'fill': function (d) { return d.labelFill; },
+                    'fill': function (d: EnhancedScatterChartDataPoint) { return d.labelFill; },
                     'font-size': fontSizeInPx,
                 },
             };
@@ -2358,7 +2358,7 @@ module powerbi.visuals.samples {
                     let seriesDataPoints = data.dataPoints[i];
                     enumeration.pushInstance({
                         objectName: 'dataPoint',
-                        displayName: seriesDataPoints.category,
+                        displayName: seriesDataPoints.formattedCategory.getValue(),
                         selector: ColorHelper.normalizeSelector(seriesDataPoints.identity.getSelector(), /*isSingleSeries*/ true),
                         properties: {
                             fill: { solid: { color: seriesDataPoints.fill } }

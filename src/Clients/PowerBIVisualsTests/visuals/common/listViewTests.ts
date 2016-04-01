@@ -133,7 +133,7 @@ module powerbitests {
         }
 
         private init() {
-            this.element = powerbitests.helpers.testDom(this.height.toString(), this.width.toString(), 'visual');
+            this.element = powerbitests.helpers.testDom(this.height.toString(), this.width.toString());
         }
 
         private buildHtmlListViewOptions() {

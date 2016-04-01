@@ -39,6 +39,7 @@ module powerbi.visuals {
     
     /** Represents a rich text box that supports view & edit mode. */
     export class Textbox implements IVisual {
+        private static ClassName = 'textbox';
         private editor: RichText.QuillWrapper;
         private element: JQuery;
         private host: IVisualHostServices;
@@ -50,11 +51,6 @@ module powerbi.visuals {
             this.element = options.element;
             this.host = options.host;
             this.viewport = options.viewport;
-            this.element.addClass('richtextbox');
-            this.element.css({
-                'font-family': RichText.defaultFont,
-                'font-size': RichText.defaultFontSize,
-            });
 
             this.readOnly = (this.host.getViewMode() === ViewMode.View);
             this.paragraphs = [];
@@ -116,7 +112,13 @@ module powerbi.visuals {
                 }
 
                 this.element.empty();
-                this.element.append(RichTextConversion.convertParagraphsToHtml(this.paragraphs));
+                let htmlContent = RichTextConversion.convertParagraphsToHtml(this.paragraphs);
+                htmlContent.addClass(Textbox.ClassName);
+                htmlContent.css({
+                    'font-family': RichText.defaultFont,
+                    'font-size': RichText.defaultFontSize,
+                });
+                this.element.append(htmlContent);
             }
             else {
                 // Showing the Quill editor.
@@ -126,7 +128,13 @@ module powerbi.visuals {
                     this.editor.textChanged = (delta, source) => this.saveContents();
 
                     this.element.empty();
-                    this.element.append(this.editor.getElement());
+                    let editorElement = this.editor.getElement();
+                    editorElement.addClass(Textbox.ClassName);
+                    editorElement.css({
+                        'font-family': RichText.defaultFont,
+                        'font-size': RichText.defaultFontSize,
+                    });
+                    this.element.append(editorElement);
                 }
 
                 this.editor.setContents(RichTextConversion.convertParagraphsToOps(this.paragraphs));
@@ -542,6 +550,7 @@ module powerbi.visuals {
             constructor(readOnly: boolean, host: IVisualHostServices) {
                 this.host = host;
                 this.$container = $('<div>');
+
                 this.readOnly = readOnly;
 
                 this.localizationProvider = {

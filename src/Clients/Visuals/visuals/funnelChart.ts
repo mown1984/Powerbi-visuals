@@ -181,6 +181,7 @@ module powerbi.visuals {
             },
         };
         public static FunnelBarHighlightClass = [FunnelChart.Selectors.funnel.bars.class, FunnelChart.Selectors.funnel.highlights.class].join(' ');
+        public static YAxisPadding = 10;
 
         private static VisualClassName = 'funnelChart';
         private static DefaultFontFamily = 'wf_standard-font';
@@ -190,6 +191,7 @@ module powerbi.visuals {
         private static LabelFunnelPadding = 6;
         private static InnerTextMinimumPadding = 10;
         private static OverflowingHighlightWidthRatio = 0.5;
+        private static MaxMarginFactor = 0.25;
 
         private svg: D3.Selection;
         private funnelGraphicsContext: D3.Selection;
@@ -684,13 +686,15 @@ module powerbi.visuals {
             });
         }
 
-        private getMaxLeftMargin(labels: string[], properties: TextProperties): number {
+        private getMaxLabelLength(labels: string[], properties: TextProperties): number {
             let max = 0;
             let textMeasurer: ITextAsSVGMeasurer = TextMeasurementService.measureSvgTextWidth;
+            
             for (let i = 0, len = labels.length; i < len; i++) {
                 properties.text = labels[i];
                 max = Math.max(max, textMeasurer(properties));
             }
+            
             return max + FunnelChart.LabelFunnelPadding;
         }
 
@@ -812,13 +816,18 @@ module powerbi.visuals {
             let isHidingPercentBars = this.isHidingPercentBars();
             let percentBarTextHeight = isHidingPercentBars ? 0 : this.getPercentBarTextHeight();
             let horizontalRange = viewport.height - (margin.top + margin.bottom) - (2 * percentBarTextHeight);
+            let maxMarginFactor = FunnelChart.MaxMarginFactor;
 
             if (categoryLabels.length > 0 && isSparklines) {
                 categoryLabels = [];
                 data.canShowDataLabels = false;
             } else if (this.showCategoryLabels()) {
                 let textProperties = FunnelChart.getTextProperties();
-                margin.left = this.getMaxLeftMargin(categoryLabels, textProperties);
+                // Get the amount of space needed for the labels, then add the minimum level of padding for the axis.
+                let longestLabelLength = this.getMaxLabelLength(categoryLabels, textProperties);
+                let maxLabelLength = viewport.width * maxMarginFactor;
+                let labelLength = Math.min(longestLabelLength, maxLabelLength);
+                margin.left = labelLength + FunnelChart.YAxisPadding;
             } else {
                 categoryLabels = [];
             }
@@ -1017,6 +1026,11 @@ module powerbi.visuals {
 
             graphicsContext.selectAll('.tick')
                 .call(tooltipUtils.tooltipUpdate, axisOptions.categoryLabels);
+                
+            // Subtract the padding from the margin since we can't have text there. Then shorten the labels if necessary.
+            let leftRightMarginLimit = axisOptions.margin.left - FunnelChart.LabelFunnelPadding;
+            graphicsContext.selectAll('.tick text')
+                .call(AxisHelper.LabelLayoutStrategy.clip, leftRightMarginLimit, TextMeasurementService.svgEllipsis);
         }
 
         public static drawDefaultShapes(data: FunnelData, slices: FunnelSlice[], graphicsContext: D3.Selection, layout: IFunnelLayout, hasSelection: boolean): D3.UpdateSelection {

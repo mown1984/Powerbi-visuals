@@ -446,17 +446,15 @@ module powerbitests {
 
         function scatterChartDomValidation(interactiveChart: boolean) {
             let v: powerbi.IVisual, element: JQuery;
-        let selectorXaxis: string = '.scatterChart .axisGraphicsContext .x.axis .tick';
-        let selectorYaxis: string = '.scatterChart .axisGraphicsContext .y.axis .tick';
 
-        let dataViewMetadataFourColumn: powerbi.DataViewMetadata = {
-            columns: [
-                { displayName: 'col1', queryName: 'testQuery', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                { displayName: 'col2', queryName: 'col2Query', isMeasure: true, roles: { "X": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                { displayName: 'col3', queryName: 'col3Query', isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                { displayName: 'col4', queryName: 'col4Query', isMeasure: true, roles: { "Size": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
-            ]
-        };
+            let dataViewMetadataFourColumn: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'testQuery', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'col2', queryName: 'col2Query', isMeasure: true, roles: { "X": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'col3', queryName: 'col3Query', isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'col4', queryName: 'col4Query', isMeasure: true, roles: { "Size": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                ]
+            };
 
             let hostServices: powerbi.IVisualHostServices;
 
@@ -595,11 +593,13 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                let selector: string = '.scatterChart .axisGraphicsContext .x.axis .tick';
-                expect($(selector).length).toBeGreaterThan(0);
-                expect(helpers.findElementText($(selector).find('text').first())).toBe('480K');
-                //check title
-                expect(helpers.findElementText($(selector).find('text').first())).toBe('480K');
+                    let ticks = helpers.getAxisTicks('x');
+                    expect(ticks.length).toBeGreaterThan(0);
+
+                    let tickText = ticks.find('text').first();
+                    expect(helpers.findElementText(tickText)).toBe('480K');
+                    //check title
+                    expect(helpers.findElementTitle(tickText)).toBe('480K');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -703,11 +703,11 @@ module powerbitests {
                     let markers = getMarkers();
                     let m0 = markers[0];
 
-                expect(helpers.findElementText($(selectorXaxis).find('text').first())).toBe('110');
-                expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('0.21');
-                //check titles
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').first())).toBe('110');
-                expect(helpers.findElementTitle($(selectorYaxis).find('text').first())).toBe('0.21');
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').first())).toBe('110');
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').first())).toBe('0.21');
+                    //check titles
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').first())).toBe('110');
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').first())).toBe('0.21');
 
                     expect(markers.length).toBe(5);
                     expect(markerStyle(m0, 'fill-opacity')).toBe("0");
@@ -754,10 +754,10 @@ module powerbitests {
                     let length = $(legendClassSelector + (interactiveChart ? ' .item' : 'Text')).length;
                     expect($(legendClassSelector).length).toBe(1);
                     expect(length).toBe(itemsNumber);
-                if (!interactiveChart) {
-                    expect(helpers.findElementText($('.legendTitle'))).toBe('col1');
-                    expect(helpers.findElementTitle($('.legendTitle'))).toBe('col1');
-                }
+                    if (!interactiveChart) {
+                        expect(helpers.findElementText($('.legendTitle'))).toBe('col1');
+                        expect(helpers.findElementTitle($('.legendTitle'))).toBe('col1');
+                    }
                     done();
                 }, DefaultWaitForRender);
             });
@@ -797,11 +797,11 @@ module powerbitests {
                 setTimeout(() => {
                     let markers = getMarkers();
 
-                expect(helpers.findElementText($(selectorXaxis).find('text').first())).toBe('110');
-                expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('210');
-                //check titles
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').first())).toBe('110');
-                expect(helpers.findElementTitle($(selectorYaxis).find('text').first())).toBe('210');
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').first())).toBe('110');
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').first())).toBe('210');
+                    //check titles
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').first())).toBe('110');
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').first())).toBe('210');
 
                     expect(markers.length).toBe(5);
                     let expectedR0 = parseFloat(markers[0].getAttribute('r'));
@@ -842,9 +842,10 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                    expect($('.scatterChart .axisGraphicsContext .x.axis.showLinesOnAxis').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .y.axis.showLinesOnAxis').length).toBe(2);
+                    let xTicks = helpers.getAxisTicks('x');
+                    expect(xTicks.length).toBeGreaterThan(0);
+                    expect($('.x.axis.showLinesOnAxis').length).toBe(1);
+                    expect($('.y.axis.showLinesOnAxis').length).toBe(2);
                     done();
                 }, DefaultWaitForRender);
             });
@@ -877,22 +878,22 @@ module powerbitests {
                 setTimeout(() => {
                     let markers = getMarkers();
 
-                expect($(selectorXaxis).length).toBe(4);
-                expect(helpers.findElementText($(selectorXaxis).find('text').first())).toBe('80');
-                expect(helpers.findElementText($(selectorXaxis).find('text').last())).toBe('140');
-                //check titles
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').first())).toBe('80');
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').last())).toBe('140');
+                    expect(helpers.getAxisTicks('x').length).toBe(4);
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').first())).toBe('80');
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('140');
+                    //check titles
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').first())).toBe('80');
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('140');
 
-                expect($(selectorYaxis).length).toBe(3);
-                expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('200');
-                expect(helpers.findElementText($(selectorYaxis).find('text').last())).toBe('400');
-                //check titles
-                expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('200');
-                expect(helpers.findElementText($(selectorYaxis).find('text').last())).toBe('400');
+                    expect(helpers.getAxisTicks('y').length).toBe(3);
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').first())).toBe('200');
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').last())).toBe('400');
+                    //check titles
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').first())).toBe('200');
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').last())).toBe('400');
 
                     expect(markers.length).toBe(1);
-                    let r = (interactiveChart ? 39.5 : 45.5).toString();
+                    let r = (interactiveChart ? 39 : 45.5).toString();
                     expect(markers[0].getAttribute('r')).toBe(r);
                     expect($('.legendItem').length).toBe(0);
                     done();
@@ -922,10 +923,10 @@ module powerbitests {
 
                 setTimeout(() => {
                     let markers = getMarkers();
-                    expect($('.scatterChart .axisGraphicsContext .x.axis .tick').length).toBe(4);
-                    expect($('.scatterChart .axisGraphicsContext .y.axis .tick').length).toBe(3);
+                    expect(helpers.getAxisTicks('x').length).toBe(4);
+                    expect(helpers.getAxisTicks('y').length).toBe(3);
                     expect(markers.length).toBe(1);
-                    let r = (interactiveChart ? 39.5 : 45.5).toString();// interactive legend is bigger
+                    let r = (interactiveChart ? 39 : 45.5).toString();// interactive legend is bigger
                     expect(markers[0].getAttribute('r')).toBe(r);
                     expect(markers.find('title').first().text()).toBe('');
                     expect($('.legendItem').length).toBe(0);
@@ -956,8 +957,8 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .x.axis .tick').length).toBeGreaterThan(0);
-                    expect($('.scatterChart .axisGraphicsContext .y.axis .tick').length).toBeGreaterThan(0);
+                    expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
+                    expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
                     done();
                 }, DefaultWaitForRender);
             });
@@ -1049,17 +1050,17 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                expect($(selectorXaxis).length).toBe(5);
-                expect($(selectorYaxis).length).toBe(5);
+                    expect(helpers.getAxisTicks('x').length).toBe(5);
+                    expect(helpers.getAxisTicks('y').length).toBe(5);
 
-                let xTicks = $(selectorXaxis).find('text');
-                let yTicks = $(selectorYaxis).find('text');
+                    let xTicks = helpers.getAxisTicks('x').find('text');
+                    let yTicks = helpers.getAxisTicks('y').find('text');
                     ['0.5', '1.0', '1.5', '2.0', '2.5', ].map(function (val, i) {
-                    expect(helpers.findElementText($(xTicks.eq(i)))).toBe(val);
-                    expect(helpers.findElementText($(yTicks.eq(i)))).toBe(val);
-                    //check titles
-                    expect(helpers.findElementTitle($(xTicks.eq(i)))).toBe(val);
-                    expect(helpers.findElementTitle($(yTicks.eq(i)))).toBe(val);
+                        expect(helpers.findElementText($(xTicks.eq(i)))).toBe(val);
+                        expect(helpers.findElementText($(yTicks.eq(i)))).toBe(val);
+                        //check titles
+                        expect(helpers.findElementTitle($(xTicks.eq(i)))).toBe(val);
+                        expect(helpers.findElementTitle($(yTicks.eq(i)))).toBe(val);
                     });
 
                     done();
@@ -1137,10 +1138,10 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                expect($(selectorYaxis).length).toBeGreaterThan(1);
-                expect(helpers.findElementText($(selectorYaxis).find('text').last())).toBe('30');
-                //check title
-                expect(helpers.findElementTitle($(selectorYaxis).find('text').last())).toBe('30');
+                    expect(helpers.getAxisTicks('y').length).toBeGreaterThan(1);
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').last())).toBe('30');
+                    //check title
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').last())).toBe('30');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -1181,17 +1182,16 @@ module powerbitests {
                 });
 
                 setTimeout(() => {
-                let selectorXaxisLabel: string = '.scatterChart .axisGraphicsContext .xAxisLabel';
-                let selectorYaxisLabel: string = '.scatterChart .axisGraphicsContext .yAxisLabel';
+                    let xAxisLabel = helpers.getAxisLabel('x');
+                    let yAxisLabel = helpers.getAxisLabel('y');
+                    expect(xAxisLabel.length).toBe(1);
+                    expect(yAxisLabel.length).toBe(1);
 
-                expect($(selectorXaxisLabel).length).toBe(1);
-                expect($(selectorYaxisLabel).length).toBe(1);
-
-                expect(helpers.findElementText($(selectorXaxisLabel).first())).toBe('X-Axis');
-                expect(helpers.findElementText($(selectorYaxisLabel).first())).toBe('Y-Axis');
-                //check titles
-                expect(helpers.findElementTitle($(selectorXaxisLabel).first())).toBe('X-Axis');
-                expect(helpers.findElementTitle($(selectorYaxisLabel).first())).toBe('Y-Axis');
+                    expect(helpers.findElementText(xAxisLabel.first())).toBe('X-Axis');
+                    expect(helpers.findElementText(yAxisLabel.first())).toBe('Y-Axis');
+                    //check titles
+                    expect(helpers.findElementTitle(xAxisLabel.first())).toBe('X-Axis');
+                    expect(helpers.findElementTitle(yAxisLabel.first())).toBe('Y-Axis');
 
                     done();
                 }, DefaultWaitForRender);
@@ -1199,8 +1199,8 @@ module powerbitests {
 
             it('scatter chart on small tile shows at least two tick lines dom validation', (done) => {
                 v.onResizing({
-                    height: 101,
-                    width: 226
+                    height: 120,
+                    width: 225
                 });
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
                     mocks.dataViewScopeIdentity('a'),
@@ -1234,19 +1234,19 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                expect($(selectorYaxis).length).toBeGreaterThan(1);
-                expect(helpers.findElementText($(selectorYaxis).find('text').first())).toBe('0.15');
-                expect(helpers.findElementText($(selectorYaxis).find('text').last())).toBe('0.16');
-                //check titles
-                expect(helpers.findElementTitle($(selectorYaxis).find('text').first())).toBe('0.15');
-                expect(helpers.findElementTitle($(selectorYaxis).find('text').last())).toBe('0.16');
+                    expect(helpers.getAxisTicks('y').length).toBeGreaterThan(1);
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').first())).toBe('0.15');
+                    expect(helpers.findElementText(helpers.getAxisTicks('y').find('text').last())).toBe('0.16');
+                    //check titles
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').first())).toBe('0.15');
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('y').find('text').last())).toBe('0.16');
 
-                expect($(selectorXaxis).length).toBeGreaterThan(1);
-                expect(helpers.findElementText($(selectorXaxis).find('text').first())).toBe('0.15');
-                expect(helpers.findElementText($(selectorXaxis).find('text').last())).toBe('0.16');
-                //check titles
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').first())).toBe('0.15');
-                expect(helpers.findElementTitle($(selectorXaxis).find('text').last())).toBe('0.16');
+                    expect(helpers.getAxisTicks('x').length).toBeGreaterThan(1);
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').first())).toBe('0.15');
+                    expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('0.16');
+                    //check titles
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').first())).toBe('0.15');
+                    expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('0.16');
 
                     done();
                 }, DefaultWaitForRender);
@@ -1449,6 +1449,94 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
+            it('scatter chart onResize observes no-render threshold', (done) => {
+                let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
+                    mocks.dataViewScopeIdentity('a'),
+                    mocks.dataViewScopeIdentity('b'),
+                    mocks.dataViewScopeIdentity('c'),
+                    mocks.dataViewScopeIdentity('d'),
+                    mocks.dataViewScopeIdentity('e'),
+                ];
+                v.onDataChanged({
+                    dataViews: [{
+                        metadata: dataViewMetadataFourColumn,
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadataFourColumn.columns[0],
+                                values: ['a', 'b', 'c'],
+                                identity: categoryIdentities,
+                            }],
+                            values: DataViewTransform.createValueColumns([
+                                {
+                                    source: dataViewMetadataFourColumn.columns[1],
+                                    values: [0.1495, 0.15, 0.1633]
+                                },
+                                {
+                                    source: dataViewMetadataFourColumn.columns[2],
+                                    values: [0.1495, 0.15, 0.1633]
+                                },
+                            ])
+                        }
+                    }]
+                });
+
+                v.onResizing({
+                    height: 200,
+                    width: 200
+                });
+
+                setTimeout(() => {
+                    // regular render, all three markers should be present
+                    let markersBefore = getMarkers();
+
+                    expect(markersBefore.length).toBe(3);
+
+                    // hack threshold to two and resize with flag indicating resize is in progress.
+                    let NoRenderResizeThreshold = ScatterChart.NoRenderResizeThreshold;
+                    try {
+                        ScatterChart.NoRenderResizeThreshold = markersBefore.length - 1;
+
+                        v.onResizing({
+                            height: 300,
+                            width: 300
+                        }, powerbi.ResizeMode.Resizing);
+                    }
+                    finally {
+                        ScatterChart.NoRenderResizeThreshold = NoRenderResizeThreshold;
+                    }
+
+                    setTimeout(() => {
+                        // markers should not be rendered while resize in progress
+                        let markersAfter = getMarkers();
+
+                        expect(markersAfter.length).toBe(0);
+
+                        // now signal that resize is complete
+                        let NoRenderResizeThreshold = ScatterChart.NoRenderResizeThreshold;
+                        try {
+                            ScatterChart.NoRenderResizeThreshold = markersBefore.length - 1;
+
+                            v.onResizing({
+                                height: 400,
+                                width: 400
+                            }, powerbi.ResizeMode.Resized);
+                        }
+                        finally {
+                            ScatterChart.NoRenderResizeThreshold = NoRenderResizeThreshold;
+                        }
+
+                        setTimeout(() => {
+                            // render if completed resize should show the markers again
+                            let markersShouldBeBack = getMarkers();
+
+                            expect(markersShouldBeBack.length).toBe(markersBefore.length);
+
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                }, DefaultWaitForRender);
+            });
+
             it('scatter chart zero axis line is darkened', (done) => {
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
                     mocks.dataViewScopeIdentity('a'),
@@ -1553,7 +1641,7 @@ module powerbitests {
                         expect(dots1.length).toBe(dots2.length);
 
                         for (let i = 0; i < dots1.length; i++) {
-                            expect(dots1[i].category).toEqual(dots2[i].category);
+                            expect(dots1[i].formattedCategory.getValue()).toEqual(dots2[i].formattedCategory.getValue());
                             if (i > 0)
                                 expect(dots1[i].size <= dots1[i - 1].size).toBeTruthy();
                         }
@@ -1871,38 +1959,38 @@ module powerbitests {
             it('scatter chart with regression line dom validation', (done) => {
                 let trendLineColor = '#FF0000';
                 let dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'col1',
-                        queryName: 'testQuery',
-                        roles: { "Category": true },
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                    },
-                    {
-                        displayName: 'col2',
-                        queryName: 'col2Query',
-                        isMeasure: true,
-                        roles: { "X": true },
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                    },
-                    {
-                        displayName: 'col3',
-                        queryName: 'col3Query',
-                        isMeasure: true,
-                        roles: { "Y": true },
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                        objects: {
-                            dataPoint: {
-                                fill: {
-                                    solid: {
-                                        color: trendLineColor
+                    columns: [
+                        {
+                            displayName: 'col1',
+                            queryName: 'testQuery',
+                            roles: { "Category": true },
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                        },
+                        {
+                            displayName: 'col2',
+                            queryName: 'col2Query',
+                            isMeasure: true,
+                            roles: { "X": true },
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        },
+                        {
+                            displayName: 'col3',
+                            queryName: 'col3Query',
+                            isMeasure: true,
+                            roles: { "Y": true },
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                            objects: {
+                                dataPoint: {
+                                    fill: {
+                                        solid: {
+                                            color: trendLineColor
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                ]
-            };
+                    ]
+                };
 
                 let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
                     mocks.dataViewScopeIdentity('a'),
@@ -1924,28 +2012,28 @@ module powerbitests {
                             source: dataViewMetadata.columns[1],
                             values: [1, 2, 3, 4, 5]
                         },
-                        {
-                            source: dataViewMetadata.columns[2],
-                            values: [10, 20, 30, 40, 50]
-                        }])
+                            {
+                                source: dataViewMetadata.columns[2],
+                                values: [10, 20, 30, 40, 50]
+                            }])
                     }
                 },
-                {
-                    metadata: dataViewMetadata,
-                    usage: {
-                        regression: {}
-                    },
-                    categorical: {
-                        categories: [{
-                            source: dataViewMetadata.columns[1],
-                            values: [1, 5],
-                        }],
-                        values: DataViewTransform.createValueColumns([{
-                            source: dataViewMetadata.columns[2],
-                            values: [10, 50],
-                        }])
-                    }
-                 }];
+                    {
+                        metadata: dataViewMetadata,
+                        usage: {
+                            regression: {}
+                        },
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata.columns[1],
+                                values: [1, 5],
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: dataViewMetadata.columns[2],
+                                values: [10, 50],
+                            }])
+                        }
+                    }];
 
                 dataViews[0].metadata.objects = {
                     trend: {
@@ -1992,7 +2080,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    let backgroundImage = $('.scatterChart .background-image');
+                    let backgroundImage = $('.background-image');
                     expect(backgroundImage.length).toBeGreaterThan(0);
                     expect(backgroundImage.css('height')).toBeDefined();
                     expect(backgroundImage.css('width')).toBeDefined();
@@ -2111,12 +2199,12 @@ module powerbitests {
                 let dataView = getDataViewMultiSeries();
 
                 dataView.metadata.objects = {
-                        legend: {
-                            titleText: 'my title text',
-                            show: true,
-                            showTitle: true,
-                            labelColor: { solid: { color: labelColor } },
-                        }
+                    legend: {
+                        titleText: 'my title text',
+                        show: true,
+                        showTitle: true,
+                        labelColor: { solid: { color: labelColor } },
+                    }
                 };
 
                 v.onDataChanged({ dataViews: [dataView] });
@@ -2137,12 +2225,12 @@ module powerbitests {
                 let dataView = getDataViewMultiSeries();
 
                 dataView.metadata.objects = {
-                        legend: {
-                            titleText: 'my title text',
-                            show: true,
-                            showTitle: true,
-                            fontSize: labelFontSize
-                        }
+                    legend: {
+                        titleText: 'my title text',
+                        show: true,
+                        showTitle: true,
+                        fontSize: labelFontSize
+                    }
                 };
 
                 v.onDataChanged({ dataViews: [dataView] });
@@ -3041,7 +3129,7 @@ module powerbitests {
             });
 
             function getSelectedBubblePosition(): { x: number; y: number } {
-                let selectedCircle = getMarkersD3().filter(function (d, i) { return d.category === 'd'; });
+                let selectedCircle = getMarkersD3().filter(function (d, i) { return d.formattedCategory.getValue() === 'd'; });
                 let x = parseFloat(selectedCircle.attr('cx'));
                 let y = parseFloat(selectedCircle.attr('cy'));
 
@@ -3051,7 +3139,7 @@ module powerbitests {
 
         function validateInteraction(x: number, y: number, cartesianChart: any): void {
             //test crosshair position
-            let mainGraphicsContext = $('.scatterChart .mainGraphicsContext > svg');
+            let mainGraphicsContext = $('.mainGraphicsContext > svg');
             let behavior = (<any>cartesianChart).behavior.behaviors[0];
             expect(behavior.crosshair.select(".horizontal").attr('y1')).toBe(y.toString());
             expect(behavior.crosshair.select(".horizontal").attr('y2')).toBe(y.toString());
@@ -3078,82 +3166,82 @@ module powerbitests {
 
         describe("scatterChart axis label existence validation", () => {
 
-            it('scatter chart axis labels existence dom validation with viewport height greater than axisLabelVisibleMinHeight non-interactive', (done) => {
+            it('viewport height greater than axisLabelVisibleMinHeight non-interactive', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleGreaterThanMinHeightString, axisLabelVisibleGreaterThanMinHeightString, false, false);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height greater than axisLabelVisibleMinHeight interactive', (done) => {
+            it('viewport height greater than axisLabelVisibleMinHeight interactive', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleGreaterThanMinHeightString, axisLabelVisibleGreaterThanMinHeightString, true, false);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height smaller than axisLabelVisibleMinHeight non-interactive', (done) => {
+            it('viewport height smaller than axisLabelVisibleMinHeight non-interactive', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleSmallerThanMinHeightString, axisLabelVisibleSmallerThanMinHeightString, false, false);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height smaller than axisLabelVisibleMinHeight interactive', (done) => {
+            it('viewport height smaller than axisLabelVisibleMinHeight interactive', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleSmallerThanMinHeightString, axisLabelVisibleSmallerThanMinHeightString, true, false);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height smaller than axisLabelVisibleMinHeight non-interactive mobile', (done) => {
+            it('viewport height smaller than axisLabelVisibleMinHeight non-interactive mobile', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleSmallerThanMinHeightString, axisLabelVisibleSmallerThanMinHeightString, false, true);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(0);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(0);
+                    expect(helpers.getAxisLabel('x').length).toBe(0);
+                    expect(helpers.getAxisLabel('y').length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height greater than axisLabelVisibleMinHeight non-interactive mobile', (done) => {
+            it('viewport height greater than axisLabelVisibleMinHeight non-interactive mobile', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleGreaterThanMinHeightString, axisLabelVisibleGreaterThanMinHeightString, false, true);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height smaller than axisLabelVisibleMinHeight interactive mobile', (done) => {
+            it('viewport height smaller than axisLabelVisibleMinHeight interactive mobile', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleSmallerThanMinHeightString, axisLabelVisibleSmallerThanMinHeightString, true, true);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart axis labels existence dom validation with viewport height greater than axisLabelVisibleMinHeight interactive mobile', (done) => {
+            it('viewport height greater than axisLabelVisibleMinHeight interactive mobile', (done) => {
                 testAxisAndLegendExistence(axisLabelVisibleGreaterThanMinHeightString, axisLabelVisibleGreaterThanMinHeightString, true, true);
 
                 setTimeout(() => {
-                    expect($('.scatterChart .axisGraphicsContext .xAxisLabel').length).toBe(1);
-                    expect($('.scatterChart .axisGraphicsContext .yAxisLabel').length).toBe(1);
+                    expect(helpers.getAxisLabel('x').length).toBe(1);
+                    expect(helpers.getAxisLabel('y').length).toBe(1);
                     done();
                 }, DefaultWaitForRender);
             });
@@ -3161,7 +3249,7 @@ module powerbitests {
 
         describe("scatterChart legends existence validation", () => {
 
-            it('scatter chart legends existence dom validation with viewport height greater than legendVisibleMinHeight non-interactive', (done) => {
+            it('viewport height greater than legendVisibleMinHeight non-interactive', (done) => {
                 testAxisAndLegendExistence(legendVisibleGreaterThanMinHeightString, "500", false, false);
 
                 setTimeout(() => {
@@ -3171,7 +3259,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart legends existence dom validation with viewport height smaller than legendVisibleMinHeight non-interactive', (done) => {
+            it('viewport height smaller than legendVisibleMinHeight non-interactive', (done) => {
                 testAxisAndLegendExistence(legendVisibleSmallerThanMinHeightString, "500", false, false);
 
                 setTimeout(() => {
@@ -3181,7 +3269,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart legends existence dom validation with viewport height smaller than legendVisibleMinHeight non-interactive mobile', (done) => {
+            it('viewport height smaller than legendVisibleMinHeight non-interactive mobile', (done) => {
                 testAxisAndLegendExistence(legendVisibleSmallerThanMinHeightString, legendVisibleSmallerThanMinHeightString, false, true);
 
                 setTimeout(() => {
@@ -3191,7 +3279,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart legends existence dom validation with viewport height greater than legendVisibleMinHeight non-interactive mobile', (done) => {
+            it('viewport height greater than legendVisibleMinHeight non-interactive mobile', (done) => {
                 testAxisAndLegendExistence(legendVisibleGreaterThanMinHeightString, "500", false, true);
 
                 setTimeout(() => {
@@ -3388,7 +3476,7 @@ module powerbitests {
                 expect('show' in enumeration.instances[0].properties).toBe(true);
                 expect(enumeration.instances[0].properties['show']).toBe(true);
             });
-        
+
             it('X-axis customization: Test forced domain (start and end)', () => {
                 dataViewMetadataFourColumn.objects = {
                     categoryAxis: {
@@ -3424,13 +3512,13 @@ module powerbitests {
                 };
                 v.onDataChanged(dataChangedOptions);
 
-            let labels = $('.x.axis').children('.tick').find("text");
+                let labels = $('.x.axis').children('.tick').find("text");
 
-            expect(helpers.findElementText($(labels).first())).toBe('0');
-            expect(helpers.findElementText($(labels).last())).toBe('25');
-            //check titles
-            expect(helpers.findElementTitle($(labels).first())).toBe('0');
-            expect(helpers.findElementTitle($(labels).last())).toBe('25');
+                expect(helpers.findElementText($(labels).first())).toBe('0');
+                expect(helpers.findElementText($(labels).last())).toBe('25');
+                //check titles
+                expect(helpers.findElementTitle($(labels).first())).toBe('0');
+                expect(helpers.findElementTitle($(labels).last())).toBe('25');
             });
 
             it('X-axis customization: Test axis display units and precision', () => {
@@ -3470,13 +3558,13 @@ module powerbitests {
                 };
                 v.onDataChanged(dataChangedOptions);
 
-            var labels = $('.x.axis').children('.tick').find("text");
+                var labels = $('.x.axis').children('.tick').find("text");
 
-            expect(helpers.findElementText($(labels).first())).toBe('0.00000M');
-            expect(helpers.findElementText($(labels).last())).toBe('0.00003M');
-            //check titles
-            expect(helpers.findElementTitle($(labels).first())).toBe('0.00000M');
-            expect(helpers.findElementTitle($(labels).last())).toBe('0.00003M');
+                expect(helpers.findElementText($(labels).first())).toBe('0.00000M');
+                expect(helpers.findElementText($(labels).last())).toBe('0.00003M');
+                //check titles
+                expect(helpers.findElementTitle($(labels).first())).toBe('0.00000M');
+                expect(helpers.findElementTitle($(labels).last())).toBe('0.00003M');
             });
 
             it('X-axis customization: Set axis color', () => {
@@ -3554,13 +3642,13 @@ module powerbitests {
                 };
                 v.onDataChanged(dataChangedOptions);
 
-            let labels = $('.y.axis').children('.tick').find("text");
+                let labels = $('.y.axis').children('.tick').find("text");
 
-            expect(helpers.findElementText($(labels).first())).toBe('0');
-            expect(helpers.findElementText($(labels).last())).toBe('500');
-            //check titles
-            expect(helpers.findElementTitle($(labels).first())).toBe('0');
-            expect(helpers.findElementTitle($(labels).last())).toBe('500');
+                expect(helpers.findElementText($(labels).first())).toBe('0');
+                expect(helpers.findElementText($(labels).last())).toBe('500');
+                //check titles
+                expect(helpers.findElementTitle($(labels).first())).toBe('0');
+                expect(helpers.findElementTitle($(labels).last())).toBe('500');
             });
 
             it('Y-axis customization: Test axis display units and precision', () => {
@@ -3600,13 +3688,13 @@ module powerbitests {
                 };
                 v.onDataChanged(dataChangedOptions);
 
-            var labels = $('.y.axis').children('.tick').find("text");
+                var labels = $('.y.axis').children('.tick').find("text");
 
-            expect(helpers.findElementText($(labels).first())).toBe('0.00000K');
-            expect(helpers.findElementText($(labels).last())).toBe('0.50000K');
-            //check titles
-            expect(helpers.findElementTitle($(labels).first())).toBe('0.00000K');
-            expect(helpers.findElementTitle($(labels).last())).toBe('0.50000K');
+                expect(helpers.findElementText($(labels).first())).toBe('0.00000K');
+                expect(helpers.findElementText($(labels).last())).toBe('0.50000K');
+                //check titles
+                expect(helpers.findElementTitle($(labels).first())).toBe('0.00000K');
+                expect(helpers.findElementTitle($(labels).last())).toBe('0.50000K');
             });
 
             it('Y-axis customization: Set axis color', () => {
@@ -4814,7 +4902,7 @@ module powerbitests {
         }
 
         function getMarkers(): JQuery {
-            return $('.scatterChart .mainGraphicsContext circle.dot');
+            return $('.mainGraphicsContext circle.dot');
         }
 
         function mapMarkersAndSeries<T>(callback: (markerElement: HTMLElement, markerDatum: powerbi.visuals.ScatterChartDataPoint, parentElement: HTMLElement, parentDatum: powerbi.visuals.ScatterChartDataPointSeries) => T): T[] {
@@ -4844,7 +4932,7 @@ module powerbitests {
         }
 
         function getMarkersD3(): D3.Selection {
-            return d3.selectAll('.scatterChart .mainGraphicsContext circle.dot');
+            return d3.selectAll('.mainGraphicsContext circle.dot');
         }
 
         function getLabelDataPointsFromRenderCall(renderSpy: jasmine.Spy): powerbi.LabelDataPoint[] {
@@ -4879,7 +4967,7 @@ module powerbitests {
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
 
             let dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].category).toBe("a");
+            expect(dataPoints[0].formattedCategory.getValue()).toBe("a");
             expect(dataPoints[0].x).toBe(0);
             expect(dataPoints[0].y).toBe(10);
             expect(dataPoints[0].fill).toBeDefined();
@@ -4914,7 +5002,7 @@ module powerbitests {
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors), undefined, false);
 
             let dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].category).toBe("a");
+            expect(dataPoints[0].formattedCategory.getValue()).toBe("a");
             expect(dataPoints[0].x).toBe(0);
             expect(dataPoints[0].y).toBe(10);
             expect(dataPoints[0].fill).toBeDefined();
@@ -5016,7 +5104,7 @@ module powerbitests {
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
-            expect(scatterChartData.dataPoints[0].category).toBe("(Blank)");
+            expect(scatterChartData.dataPoints[0].formattedCategory.getValue()).toBe("(Blank)");
             expect(scatterChartData.dataPoints[0].tooltipInfo).toEqual([{ displayName: 'category', value: '(Blank)' }, { displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }, { displayName: 'size', value: '310' }]);
         });
 
@@ -5027,10 +5115,10 @@ module powerbitests {
             };
 
             let seriesSourceMain: powerbi.DataViewMetadataColumn = { displayName: 'series', queryName: 'select0', roles: { "Series": true } };
-            let seriesSourcex1: powerbi.DataViewMetadataColumn = { displayName: 'x', queryName: 'select1', groupName: null, roles: { "X": true }  };
-            let seriesSourcex2: powerbi.DataViewMetadataColumn = { displayName: 'x', queryName: 'select1', groupName: 'series0', roles: { "X": true }  };
-            let seriesSourcey1: powerbi.DataViewMetadataColumn = { displayName: 'y', queryName: 'select2', groupName: null, roles: { "Y": true }  };
-            let seriesSourcey2: powerbi.DataViewMetadataColumn = { displayName: 'y', queryName: 'select2', groupName: 'series0', roles: { "Y": true }  };
+            let seriesSourcex1: powerbi.DataViewMetadataColumn = { displayName: 'x', queryName: 'select1', groupName: null, roles: { "X": true } };
+            let seriesSourcex2: powerbi.DataViewMetadataColumn = { displayName: 'x', queryName: 'select1', groupName: 'series0', roles: { "X": true } };
+            let seriesSourcey1: powerbi.DataViewMetadataColumn = { displayName: 'y', queryName: 'select2', groupName: null, roles: { "Y": true } };
+            let seriesSourcey2: powerbi.DataViewMetadataColumn = { displayName: 'y', queryName: 'select2', groupName: 'series0', roles: { "Y": true } };
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -5074,7 +5162,7 @@ module powerbitests {
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
-            expect(scatterChartData.dataPoints[0].category).toBe("(Blank)");
+            expect(scatterChartData.dataPoints[0].formattedCategory.getValue()).toBe("(Blank)");
             expect(scatterChartData.dataPoints[0].tooltipInfo).toEqual([{ displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }]);
         });
 
@@ -5118,7 +5206,7 @@ module powerbitests {
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
 
             let dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].category).toBe("a");
+            expect(dataPoints[0].formattedCategory.getValue()).toBe("a");
             expect(dataPoints[0].x).toBe(110);
             expect(dataPoints[0].y).toBe(210);
             expect(ScatterChart.getBubbleRadius(dataPoints[0].radius, scatterChartData.sizeRange, viewport)).toBe(46);
@@ -5163,12 +5251,12 @@ module powerbitests {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].category).toBe("a");
+            expect(dataPoints[0].formattedCategory.getValue()).toBe("a");
             expect(dataPoints[0].x).toBe(110);
             expect(dataPoints[0].y).toBe(210);
             expect(ScatterChart.getBubbleRadius(dataPoints[0].radius, scatterChartData.sizeRange, viewport)).toBe(46);
             expect(dataPoints[0].fill).toBeDefined();
-    });
+        });
 
         it('scatter chart dataView without min/minLocal/max/maxLocal', () => {
             let viewport: powerbi.IViewport = {
@@ -5206,7 +5294,7 @@ module powerbitests {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let dataPoints = scatterChartData.dataPoints;
-            expect(dataPoints[0].category).toBe("a");
+            expect(dataPoints[0].formattedCategory.getValue()).toBe("a");
             expect(dataPoints[0].x).toBe(110);
             expect(dataPoints[0].y).toBe(210);
             expect(ScatterChart.getBubbleRadius(dataPoints[0].radius, scatterChartData.sizeRange, viewport)).toBe(48.5);
@@ -5223,7 +5311,7 @@ module powerbitests {
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
-            expect(scatterChartData[0].category).toBe('1/1/2012');
+            expect(scatterChartData[0].formattedCategory.getValue()).toBe('1/1/2012');
             expect(scatterChartData[0].x).toBe(150);
             expect(scatterChartData[0].y).toBe(30);
             expect(scatterChartData[0].fill).toBeDefined();
@@ -5284,7 +5372,7 @@ module powerbitests {
             };
 
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors)).dataPoints;
-            expect(scatterChartData[0].category).toBe('1/1/2012');
+            expect(scatterChartData[0].formattedCategory.getValue()).toBe('1/1/2012');
             expect(scatterChartData[0].x).toBe(150);
             expect(scatterChartData[0].y).toBe(30);
             helpers.assertColorsMatch(scatterChartData[0].fill, hexDefaultColorRed);
@@ -5371,7 +5459,7 @@ module powerbitests {
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let dataPoints = scatterChartData.dataPoints;
 
-            let actualData = _.map(dataPoints, d => JSON.stringify({ category: d.category, fill: d.fill, x: d.x, y: d.y, size: d.size, radius: ScatterChart.getBubbleRadius(d.radius, scatterChartData.sizeRange, viewport) }));
+            let actualData = _.map(dataPoints, d => JSON.stringify({ category: d.formattedCategory.getValue(), fill: d.fill, x: d.x, y: d.y, size: d.size, radius: ScatterChart.getBubbleRadius(d.radius, scatterChartData.sizeRange, viewport) }));
             let expectData = _.map([
                 { category: "1\/1\/2012", fill: "#01B8AA", x: 150, y: 30, size: 100, radius: 26 },
                 { category: "1\/1\/2011", fill: "#01B8AA", x: 177, y: 25, size: 200, radius: 34 },
@@ -5445,7 +5533,7 @@ module powerbitests {
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(pivotedDataView, createConverterOptions(viewport, colors)).dataPoints;
-            expect(scatterChartData[0].category).toBe('a');
+            expect(scatterChartData[0].formattedCategory.getValue()).toBe('a');
             expect(scatterChartData[0].fill).not.toBe(scatterChartData[1].fill);
 
             //Tooltips
@@ -5699,7 +5787,7 @@ module powerbitests {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let scatterChartDataPoints = scatterChartData.dataPoints;
-            expect(scatterChartDataPoints[0].category).toBe('a');
+            expect(scatterChartDataPoints[0].formattedCategory.getValue()).toBe('a');
             helpers.assertColorsMatch(scatterChartDataPoints[1].fill, '#41BEE1');
             expect(scatterChartDataPoints[0].x).toBe(210);
             expect(scatterChartDataPoints[0].y).toBe(0);
@@ -5891,5 +5979,4 @@ module powerbitests {
 
         });
     });
-
 }

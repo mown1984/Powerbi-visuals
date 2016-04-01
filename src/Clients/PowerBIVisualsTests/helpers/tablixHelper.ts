@@ -28,7 +28,9 @@ module powerbitests.tablixHelper {
     import CssConstants = jsCommon.CssConstants;
     import DataView = powerbi.DataView;
     import ValueFormatter = powerbi.visuals.valueFormatter;
-    import TablixUtils = powerbi.visuals.controls.internal.TablixUtils;
+    //import TablixUtils = powerbi.visuals.controls.internal.TablixUtils;
+    import TablixObjects = powerbi.visuals.controls.internal.TablixObjects;
+    import TextUtil = powerbi.visuals.TextUtil;
 
     export interface TableCellCoordinate {
         row: number;
@@ -38,7 +40,7 @@ module powerbitests.tablixHelper {
 
     export interface TableCellInfo {
         cellCoordinate: TableCellCoordinate;
-        clickTarget: JQuery;
+        clickTarget: HTMLElement;
         text: string;
     };
 
@@ -56,7 +58,7 @@ module powerbitests.tablixHelper {
     export function getTableCell(tableBody: JQuery, coordinate: TableCellCoordinate): TableCellInfo {
         var clickTargetSelector: string = '> tr:nth-child(' + (coordinate.row + 1) + ') > td:nth-child(' + (coordinate.col + 1) + ') > div';
         var textDivSelector: string = '> div';
-        var clickTarget = $(clickTargetSelector, tableBody);
+        var clickTarget = $(clickTargetSelector, tableBody).get(0);
         expect(clickTarget).toBeInDOM();
         var textDiv = $(textDivSelector, clickTarget);
         expect(textDiv).toBeInDOM();
@@ -142,14 +144,14 @@ module powerbitests.tablixHelper {
 
         renderTablixPromise.then(
             () => {
-                var tableBody = $('.tablixContainer > div.bi-tablix > div:nth-child(1) > table.unselectable > tbody');
+                var tableBody = $('.tablixContainer > div.tablixCanvas > div:nth-child(1) > table.unselectable > tbody');
                 expect(tableBody).toBeInDOM();
 
                 // Validate column headers
                 if (expectedColumnHeaders) {
                     for (var i = 0, len = expectedColumnHeaders.length; i < len; i++) {
                         var coordinate = expectedColumnHeaders[i];
-                        coordinate.expectedText = TablixUtils.replaceSpaceWithNBSP(coordinate.expectedText);
+                        coordinate.expectedText = TextUtil.replaceSpaceWithNBSP(coordinate.expectedText);
                         var headerCell = getTableCell(tableBody, coordinate);
                         if (coordinate.expectedText)
                             expect(headerCell.text).toBe(coordinate.expectedText);
@@ -163,7 +165,20 @@ module powerbitests.tablixHelper {
                         var clickCell = getTableCell(tableBody, clickCoordinate);
                         if (clickCoordinate.expectedText)
                             expect(clickCell.text).toBe(clickCoordinate.expectedText);
-                        clickCell.clickTarget.click();
+
+                        // Instead of normal 'click', need to pass coordinates
+                        let ev = document.createEvent("MouseEvent");
+                        let x = clickCell.clickTarget.getBoundingClientRect().left;
+
+                        ev.initMouseEvent(
+                            "click",
+                            true /* bubble */, true /* cancelable */,
+                            window, null,
+                            x, 0, x, 0, /* coordinates */
+                            false, false, false, false, /* modifier keys */
+                            0 /*left*/, null
+                        );
+                        clickCell.clickTarget.dispatchEvent(ev);
                     }
                 }
 
@@ -211,7 +226,7 @@ module powerbitests.tablixHelper {
 
             for (var j = 0; j < jlen; j++) {
                 result[i][j] = cells.eq(j).text();
-                expectedValues[i][j] = TablixUtils.replaceSpaceWithNBSP(expectedValues[i][j]);
+                expectedValues[i][j] = TextUtil.replaceSpaceWithNBSP(expectedValues[i][j]);
                 if (result[i][j] !== expectedValues[i][j])
                     addError(errorString, "Actual value " + result[i][j] + " in row " + i + " and column " + j + " does not match expected value " + expectedValues[i][j] + ".");
             }
@@ -235,7 +250,7 @@ module powerbitests.tablixHelper {
         for (var i = 0; i < ilen; i++) {
             textResult[i] = [];
             titleResult[i] = [];
-            var cells = rows.eq(i).find('td');
+            var cells = rows.eq(i).find('.tablixCellContentHost');
 
             var jlen = cells.length;
             if (jlen !== expectedValues[i].length)
@@ -245,7 +260,7 @@ module powerbitests.tablixHelper {
                 textResult[i][j] = cells.eq(j).text();
                 titleResult[i][j] = getTitleOfTablixItem(cells.eq(j));
 
-                expectedValues[i][j] = TablixUtils.replaceSpaceWithNBSP(expectedValues[i][j]);
+                expectedValues[i][j] = TextUtil.replaceSpaceWithNBSP(expectedValues[i][j]);
 
                 //this check only empty header cells
                 if (titleResult[i][j] === '' && expectedValues[i][j] === "\xa0")
@@ -267,17 +282,17 @@ module powerbitests.tablixHelper {
     }
 
     function getTitleOfTablixItem(cells: JQuery): string {
-        let titleText = cells.find('div div').attr('title');
+        let titleText = cells.attr('title');
         if (titleText) 
             return titleText;
         
         //The item is url type
-        titleText = cells.find('div div a').attr('title');
+        titleText = cells.find('a').attr('title');
         if (titleText) 
             return titleText;
 
         //The item is table header
-        titleText = cells.find('div div:last').attr('title');
+        titleText = cells.attr('title');
         if (titleText) 
             return titleText;
  
@@ -305,7 +320,7 @@ module powerbitests.tablixHelper {
         expect(result).toEqual(expectedValues);
     }
 
-    export function validateClassNames(expectedValues: string[][], selector: string, noMarginClass: string): void {
+    export function validateClassNames(expectedValues: string[][], selector: string): void {
         var rows = $(selector);
 
         var result: string[][] = [];
@@ -317,7 +332,7 @@ module powerbitests.tablixHelper {
 
         for (var i = 0; i < ilen; i++) {
             result[i] = [];
-            var cells = rows.eq(i).find('td');
+            var cells = rows.eq(i).find('.tablixCellContentHost');
 
             var jlen = cells.length;
             if (jlen !== expectedValues[i].length)
@@ -325,7 +340,6 @@ module powerbitests.tablixHelper {
 
             for (var j = 0; j < jlen; j++) {
                 result[i][j] = cells.eq(j).attr('class');
-                expectedValues[i][j] = addNoMarginClass(expectedValues[i][j], noMarginClass);
                 if (result[i][j] !== expectedValues[i][j])
                     addError(errorString, "Actual class name " + result[i][j] + " in row " + i + " and column " + j + " does not match expected value " + expectedValues[i][j] + ".");
             }
@@ -400,15 +414,8 @@ module powerbitests.tablixHelper {
         return errorString + "\r\n" + message;
     }
 
-    function addNoMarginClass(classNames: string, noMarginClass: string): string {
-        if (!classNames || classNames.length === 0)
-            return noMarginClass;
-
-        return classNames + ' ' + noMarginClass;
-    }
-
     export function validateTableColumnHeaderTooltip(selector: string, dataView: powerbi.DataView): void {
-        let tableItems = $("tr").eq(0).find(`.${selector} div div:last-child`);
+        let tableItems = $("tr").eq(0).find(selector);
         let values = dataView.table.columns;
 
         for (let i = 0; i < values.length; i++) {
@@ -418,7 +425,7 @@ module powerbitests.tablixHelper {
     }
 
     export function validateTableRowFooterTooltip(selector: string, dataView: powerbi.DataView, index: number): void {
-        let tableItems = $("tr").eq(index + 1).find(`.${selector} div div`);
+        let tableItems = $("tr").eq(index + 1).find(selector);
         let values = dataView.table.totals;
         let numOfValue = values.length - 1;
 
@@ -428,7 +435,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i] ? values[i].toString() : '';
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixUtils.TablixFormatStringProp);
+                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixObjects.PropColumnFormatString);
                 }
 
                 expect(tableItems[i - 1].textContent).toBe(formattedValue);
@@ -438,7 +445,7 @@ module powerbitests.tablixHelper {
     }
 
     export function validateTableRowTooltip(selector: string, dataView: powerbi.DataView, index: number): void {
-        let tableItems = $("tr").eq(index + 1).find(`.${selector} div div`);
+        let tableItems = $("tr").eq(index + 1).find(selector);
         let values = dataView.table.rows[index];
 
         for (let i = 0; i < values.length; i++) {
@@ -447,7 +454,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i].toString();
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixUtils.TablixFormatStringProp);
+                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixObjects.PropColumnFormatString);
                 }
 
                 expect(tableItems[i].textContent).toBe(formattedValue);

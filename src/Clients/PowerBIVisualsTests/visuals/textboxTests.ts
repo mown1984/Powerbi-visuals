@@ -1143,11 +1143,10 @@ module powerbitests {
             }
 
             function verifyEditor($element: JQuery, present: boolean): void {
-                expect($element).toHaveClass("richtextbox");
-
                 if (present) {
                     let $container = $element.children("div").eq(0);
                     expect($container).toBeDefined();
+                    expect($container).toHaveClass("textbox");
 
                     expect(setToolbarSpy).toHaveBeenCalled();
                     expect($toolbar).toBeDefined();

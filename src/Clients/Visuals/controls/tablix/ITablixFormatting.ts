@@ -25,68 +25,191 @@
  */
 
 module powerbi.visuals.controls {
-
     export enum TablixType {
         Matrix,
         Table
     }
 
-    export interface TablixFormattingPropertiesTable {
-        general?: GeneralFormattingPropertiesTable;
-        columns?: ColumnHeaderFormattingProperties;
-        header?: BasicFormattingProperties;
-        rows?: RowHeaderBasicFormattingProperties;
-        values?: BasicFormattingProperties;
-        totals?: TotalsBasicFormattingProperties;
+    /**
+     * General section of Formatting Properties for Tablix
+    */
+    export interface TablixFormattingPropertiesGeneral {
+        /** Property that drives whether columns should use automatically calculated (based on content) sizes for width or use persisted sizes.
+        Default is true i.e. automatically calculate width based on column content */
+        autoSizeColumnWidth: boolean;
+        /**
+         * Font size for the whole tablix
+         * Default is 8
+        */
+        textSize: number;
     }
 
-    export interface TablixFormattingPropertiesMatrix {
-        general?: GeneralFormattingPropertiesMatrix;
-        columns?: ColumnHeaderFormattingProperties;
-        header?: BasicFormattingProperties;
-        rows?: RowHeaderBasicFormattingProperties;
-        values?: BasicFormattingProperties;
-        totals?: TotalsBasicFormattingProperties;
+    /**
+     * General section of Formatting Properties for Table
+    */
+    export interface TablixFormattingPropertiesGeneralTable extends TablixFormattingPropertiesGeneral {
+        /*
+        * Show/Hide Grand Total
+        * Default is True
+        */
+        totals?: boolean;
     }
 
-    export interface BasicFormattingProperties {
-        fontColor: string;
-        backgroundColor: string;
+    /**
+     * General section of Formatting Properties for Matrix
+    */
+    export interface TablixFormattingPropertiesGeneralMatrix extends TablixFormattingPropertiesGeneral {
+        /**
+        * Show/Hide Subtotal Rows
+        */
+        rowSubtotals?: boolean;
+        /**
+        * Show/Hide Subtotal Columns
+        */
+        columnSubtotals?: boolean;
+    }
+
+    /**
+    * Grid section of Formatting Properties for Tablix
+    */
+    export interface TablixFormattingPropertiesGrid {
+        /**
+        * Show/Hide vertical gridlines
+       */
+        gridVertical?: boolean;
+
+        /**
+         * vertical gridlines color
+        */
+        gridVerticalColor?: string;
+
+        /**
+         * vertical gridlines Weight
+        */
+        gridVerticalWeight?: number;
+
+        /**
+         * Show/Hide horizontal gridlines
+        */
+        gridHorizontal?: boolean;
+
+        /**
+         * horizontal gridlines color
+        */
+        gridHorizontalColor?: string;
+
+        /**
+         * horizontal gridlines Weight
+        */
+        gridHorizontalWeight?: number;
+
+        /**
+         * Color of the outline. Shared across all regions
+        */
+        outlineColor?: string;
+
+        /**
+         * Weight outline. Shared across all regions
+        */
+        outlineWeight?: number;
+
+        /**
+         * Weight outline. Shared across all regions
+        */
+        rowPadding?: number;
+    }
+
+    /**
+     * Common Formatting Properties for Tablix regions (Column Headers, Row Headers, Total, SubTotals)
+    */
+    export interface TablixFormattingPropertiesRegion {
+        /*
+        * Font color of all cells within the region
+        * Default is <Undefined>
+        */
+        fontColor?: string;
+        /*
+        * Background color of all cells within the region
+        * Default is <Undefined>
+        */
+        backColor?: string;
+        /*
+        * Outline style for the whole region. One of the values from powerbi.visuals.outline
+        * Default is outline.none
+        */
         outline: string;
     }
 
-    export interface RowHeaderBasicFormattingProperties extends BasicFormattingProperties {
-        showSeparators: boolean;
+    export interface TablixFormattingPropertiesValues {
+        /*
+        * Font color of all cells for Odd Index rows
+        * Default is <Undefined>
+        */
+        fontColorPrimary?: string;
+        /*
+        * Background color of all cells for Odd Index rows
+        * Default is <Undefined>
+        */
+        backColorPrimary?: string;
+        /*
+        * Font color of all cells for even Index rows
+        * Default is <Undefined>
+        */
+        fontColorSecondary?: string;
+        /*
+        * Background color of all cells for even Index rows
+        * Default is <Undefined>
+        */
+        backColorSecondary?: string;
+        /*
+        * Outline style for the whole region. One of the values from powerbi.visuals.outline
+        * Default is outline.none
+        */
+        outline: string;
     }
 
-    export interface TotalsBasicFormattingProperties extends BasicFormattingProperties {
-        leadingSpace: number;
+    /**
+     * Formatting Properties for Table Values region
+    */
+    export interface TablixFormattingPropertiesValuesTable extends TablixFormattingPropertiesValues {
+        /*
+        * Use an icon instead of URL text
+        * Default is False
+        */
+        urlIcon?: boolean;
+
+        // TODO: VSTS 7167767: Remove temporary code for product demo.
+        /*
+        * Color numeric cells as a gradient based on its value
+        * Default is False
+        */
+        conditionalFormatting?: boolean;
     }
 
-    export interface ColumnHeaderFormattingProperties {
-        showSeparators: boolean;
-        separatorColor: string;
-        separatorWeight: number;
+    /**
+     * Formatting Properties for Table Visual
+    */
+    export interface TablixFormattingPropertiesTable {
+        isFormattingEnabled: boolean;
+        // TODO: VSTS 7167767: Remove temporary code for product demo.
+        isConditionalFormattingEnabled: boolean;
+        general?: TablixFormattingPropertiesGeneralTable;
+        grid?: TablixFormattingPropertiesGrid;
+        columnHeaders?: TablixFormattingPropertiesRegion;
+        values?: TablixFormattingPropertiesValuesTable;
+        total?: TablixFormattingPropertiesRegion;
     }
 
-    export interface GeneralFormattingPropertiesTable {
-        /** Property that drives whether columns should use automatically calculated (based on content) sizes for width or use persisted sizes.
-        Default is true i.e. automatically calculate width based on column content */
-        autoSizeColumnWidth: boolean;
-        textSize: number;
-        totals?: boolean;
-        outlineColor?: string;
-        outlineWeight?: number;
-    }
-
-    export interface GeneralFormattingPropertiesMatrix {
-        /** Property that drives whether columns should use automatically calculated (based on content) sizes for width or use persisted sizes.
-        Default is true i.e. automatically calculate width based on column content */
-        autoSizeColumnWidth: boolean;
-        textSize: number;
-        rowSubtotals?: boolean;
-        columnSubtotals?: boolean;
-        outlineColor?: string;
-        outlineWeight?: number;
-    }
+    /**
+     * Formatting Properties for Matrix Visual
+    */
+    export interface TablixFormattingPropertiesMatrix {
+        isFormattingEnabled: boolean;
+        general?: TablixFormattingPropertiesGeneralMatrix;
+        grid?: TablixFormattingPropertiesGrid;
+        columnHeaders?: TablixFormattingPropertiesRegion;
+        rowHeaders?: TablixFormattingPropertiesRegion;
+        values?: TablixFormattingPropertiesValues;
+        subtotals?: TablixFormattingPropertiesRegion;
+    }    
 }

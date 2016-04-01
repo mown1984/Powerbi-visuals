@@ -198,6 +198,16 @@ module powerbi.data {
                 return kpiTrendProperty.kpiValue.measure.kpi.trendMetadata;
         }
 
+        export function getConceptualEntity(entityExpr: SQEntityExpr, schema: FederatedConceptualSchema): ConceptualEntity {
+            debug.assertValue(entityExpr, 'entityExpr');
+
+            let conceptualEntity = schema
+                .schema(entityExpr.schema)
+                .entities
+                .withName(entityExpr.entity);
+            return conceptualEntity;
+        }
+
         function getKpiStatusProperty(expr: SQExpr, schema: FederatedConceptualSchema): ConceptualProperty {
             let property = expr.getConceptualProperty(schema);
             if (!property)
