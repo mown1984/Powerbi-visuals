@@ -48,6 +48,9 @@ declare module powerbi {
 
         /** Indicates the cartesian role for the visual role */
         cartesianKind?: CartesianRoleKind;
+
+        /** Indicates the join predicate behavior of items in this role. */
+        joinPredicate?: JoinPredicateBehavior;
     }
 
     export interface RoleCondition extends NumberRange {

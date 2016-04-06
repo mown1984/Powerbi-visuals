@@ -5824,6 +5824,52 @@ module powerbitests {
             expect(scatterChartDataPoints.length).toBe(0);
         });
 
+        it('scatter chart infinity X measure', () => {
+            let viewport: powerbi.IViewport = {
+                height: 500,
+                width: 500
+            };
+
+            let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
+                mocks.dataViewScopeIdentity('a'),
+                mocks.dataViewScopeIdentity('b'),
+                mocks.dataViewScopeIdentity('c'),
+                mocks.dataViewScopeIdentity('d'),
+                mocks.dataViewScopeIdentity('e'),
+            ];
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadataFourColumn,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataFourColumn.columns[0],
+                        values: ['a', 'b', 'c', 'd', 'e'],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            // X Infinity value
+                            source: dataViewMetadataFourColumn.columns[1],
+                            values: [210, 3e+500, 230, -Infinity, 250]
+                        }, {
+                            // Y Infinity value
+                            source: dataViewMetadataFourColumn.columns[2],
+                            values: [-2e+400, 220, 230, 240, Infinity]
+                        }, {
+                            source: dataViewMetadataFourColumn.columns[3],
+                            values: [110, 120, 130, 140, 150]
+                        }])
+                }
+            };
+
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
+            let scatterChartDataPoints = scatterChartData.dataPoints;
+            expect(scatterChartDataPoints[1].x).toBe(Number.MAX_VALUE);
+            expect(scatterChartDataPoints[3].x).toBe(-Number.MAX_VALUE);
+            expect(scatterChartDataPoints[0].y).toBe(-Number.MAX_VALUE);
+            expect(scatterChartDataPoints[4].y).toBe(Number.MAX_VALUE);
+        });
+
         it('scatter chart converter data labels default values', () => {
             let viewport: powerbi.IViewport = {
                 height: 500,

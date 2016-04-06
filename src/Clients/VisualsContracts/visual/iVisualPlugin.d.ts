@@ -25,7 +25,7 @@
  */
 
 declare module powerbi {
-    
+
     export interface IVisualPlugin {
         /** The name of the plugin.  Must match the property name in powerbi.visuals. */
         name: string;
@@ -37,7 +37,7 @@ declare module powerbi {
         capabilities?: VisualCapabilities;
 
         /** Function to call to create the visual. */
-        create: IVisualFactoryMethod;
+        create: (options?: extensibility.VisualConstructorOptions) => IVisual;
 
         /** 
          * Function to allow the visual to influence query generation. Called each time a query is generated
@@ -57,7 +57,7 @@ declare module powerbi {
         /** Check if a visual is custom */
         custom?: boolean;
 
-        /* Function to get the list of sortable roles */
+        /** Function to get the list of sortable roles */
         getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
         
         /** The version of the api that this plugin should be run against */

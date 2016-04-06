@@ -106,7 +106,7 @@ module powerbi.visuals {
             debug.assert(!is100Pct, 'Cannot have 100% clustered chart.');
 
             let height = this.viewportHeight;
-            let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
+            let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || emptyDomain;
             let combinedDomain = AxisHelper.combineDomain(forcedYDomain, valueDomain, ensureYDomain);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
 
@@ -423,7 +423,7 @@ module powerbi.visuals {
             debug.assert(forcedTickCount === undefined, 'Cannot have clustered bar chart as combo chart.');
 
             let width = this.width;
-            let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || fallBackDomain;
+            let valueDomain = AxisHelper.createValueDomain(this.data.series, true) || emptyDomain;
             let combinedDomain = AxisHelper.combineDomain(forcedXDomain, valueDomain, ensureXDomain);
             let shouldClamp = AxisHelper.scaleShouldClamp(combinedDomain, valueDomain);
 

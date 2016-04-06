@@ -41,9 +41,9 @@ module powerbi.data {
             return SQExprEqualityVisitor.run(x, y, ignoreCase);
         }
       
-        public validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[] {
-            let validator = new SQExprValidationVisitor(schema, errors);
-            this.accept(validator);
+        public validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[] {
+            let validator = new SQExprValidationVisitor(schema, aggrUtils, errors);
+           this.accept(validator);
             return validator.errors;
         }
 
@@ -96,6 +96,12 @@ module powerbi.data {
             debug.assertValue(expr, 'expr');
 
             return expr.kind === SQExprKind.MeasureRef;
+        }
+
+        public static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.ResourcePackageItem;
         }
 
         public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
@@ -1093,29 +1099,7 @@ module powerbi.data {
         export function removeEntityVariables(expr: SQExpr): SQExpr {
             return SQExprRemoveEntityVariablesRewriter.rewrite(expr);
         }
-
-        export function createExprWithAggregate(
-            expr: SQExpr,
-            schema: FederatedConceptualSchema,
-            aggregateNonNumericFields: boolean,
-            preferredAggregate?: QueryAggregateFunction): SQExpr {
-
-            debug.assertValue(expr, 'expr');
-            debug.assertValue(expr, 'schema');
-
-            let aggregate: QueryAggregateFunction;
-            if (preferredAggregate != null && SQExprUtils.isSupportedAggregate(expr, schema, preferredAggregate)) {
-                aggregate = preferredAggregate;
-            }
-            else {
-                aggregate = expr.getDefaultAggregate(schema, aggregateNonNumericFields);
-            }
-            if (aggregate !== undefined)
-                expr = SQExprBuilder.aggregate(expr, aggregate);
-
-            return expr;
-        }
-
+        
         export function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr {
             debug.assertValue(expr, 'expr');
             debug.assertValue(rule, 'rule');
@@ -1423,12 +1407,15 @@ module powerbi.data {
     export class SQExprValidationVisitor extends SQExprRewriter {
         public errors: SQExprValidationError[];
         private schema: FederatedConceptualSchema;
+        private aggrUtils: ISQAggregationOperations;
 
-        constructor(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]) {
+        constructor(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]) {
             debug.assertValue(schema, 'schema');
+            debug.assertValue(aggrUtils, 'aggrUtils');
 
             super();
             this.schema = schema;
+            this.aggrUtils = aggrUtils;
             if (errors)
                 this.errors = errors;
         }
@@ -1490,7 +1477,7 @@ module powerbi.data {
 
             let columnRefExpr = SQExprColumnRefInfoVisitor.getColumnRefSQExpr(this.schema, aggregateExpr.arg);
             if (columnRefExpr) {
-                if (!SQExprUtils.isSupportedAggregate(expr, this.schema, expr.func))
+                if (!this.aggrUtils.isSupportedAggregate(expr, this.schema, expr.func, /*targetTypes*/null))
                     this.register(SQExprValidationError.invalidAggregateFunction);
             }
 

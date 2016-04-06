@@ -798,7 +798,7 @@ module powerbi.visuals.samples {
                 y: number = 0,
                 maxHeight: number = 0,
                 quantityOfWords: number = words.length,
-                pixels: number[],
+                pixels: Uint8ClampedArray,
                 sprite: number[] = [];
 
             for (let i: number = index; i < quantityOfWords; i++) {

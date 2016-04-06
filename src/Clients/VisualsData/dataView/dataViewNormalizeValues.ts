@@ -225,12 +225,12 @@ module powerbi.data {
             if (node.values) {
                 for (let columnIndex in node.values) {
                     // In dataView.tree, the keys in node.values correspond to columnIndex of the node value
-                    if (columnFilter(columnIndex)) {
+                    if (columnFilter(<any>columnIndex)) {
                         // According to nojorgen, it is possible to have primitive values as values in the node.values dictionary.
                         if (typeof (node.values[columnIndex]) === 'object' && ('value' in node.values[columnIndex]))
-                            node.values[columnIndex] = normalizeVariant(node.values[columnIndex], 'value', columnIndex, valueFilter);
+                            node.values[columnIndex] = normalizeVariant(node.values[columnIndex], 'value', <any>columnIndex, valueFilter);
                         else // if node.values[columnIndex] is a primitive value
-                            node.values = normalizeVariant(node.values, columnIndex, columnIndex, valueFilter);
+                            node.values = normalizeVariant(node.values, columnIndex, <any>columnIndex, valueFilter);
                     }
                 }
             }

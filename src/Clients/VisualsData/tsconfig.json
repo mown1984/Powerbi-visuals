@@ -67,6 +67,7 @@
         "semanticQuery/exprPatterns/filterScopeIdsCollector.ts",
         "semanticQuery/exprPatterns/scopeIdentityExtractor.ts",
         "semanticQuery/primitiveValueEncoding.ts",
+        "semanticQuery/sqAggregationOperations.ts",
         "semanticQuery/sqHierarchyExprUtils.ts",
         "semanticQuery/sqExprGroupUtils.ts",
         "semanticQuery/sqExpr.ts",
@@ -77,6 +78,7 @@
         "dataView/rules/staticEvalContext.ts",
         "dataView/rules/matrixEvalContext.ts",
         "services/formattingService.ts",
-        "services/serialization/sqExprShortSerializer.ts"
+        "services/serialization/sqExprShortSerializer.ts",
+        "selection/selectionId.ts"
     ]
 }

@@ -347,12 +347,12 @@ module powerbi.visuals.samples {
                         dataPoints.push({
                             x: scale(categories[k].value) + scale.rangeBand() / 2,
                             y: yScale(level),
-                            tooltipInfo: DotPlot.getTooltipData(value.values[k])
+                            tooltipInfo: DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision))
                         });
                     }
 
                     let categorySelectionId = SelectionIdBuilder.builder().withCategory(categoryColumn, k).createSelectionId();
-                    let tooltipInfo = DotPlot.getTooltipData(value.values[k]);
+                    let tooltipInfo = DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision));
 
                     dataPointsGroup.push({
                         selected: false,

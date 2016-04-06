@@ -539,6 +539,9 @@ module powerbi.visuals {
                 viewport: this.currentViewport,
                 baseContainer: d3.select(this.element.get(0)),
                 scrollEnabled: !this.isInteractivityOverflowHidden,
+                isReadMode: () => {
+                    return (this.options.host.getViewMode() !== ViewMode.Edit);
+                }
             };
 
             this.listView = ListViewFactory.createListView(listViewOptions);

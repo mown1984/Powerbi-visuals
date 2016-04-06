@@ -245,7 +245,7 @@ module powerbi.visuals {
                 description: data.createDisplayNameGetter('Visual_DataPointDescription'),
                 properties: {
                     defaultColor: {
-                        displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
+                        displayName: data.createDisplayNameGetter('Visual_DefaultColumnColor'),
                         type: { fill: { solid: { color: true } } }
                     },
                     showAllDataPoints: {
@@ -373,6 +373,9 @@ module powerbi.visuals {
         },
         legend: {
             labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
+        },
+        dataPoint: {
+            showAllDataPoints: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'showAllDataPoints' },
         },
     };
 }

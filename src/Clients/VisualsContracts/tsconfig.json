@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5"
+        "target": "ES5"
     },
     "filesGlob": [
         "**/*.ts"
@@ -14,6 +14,8 @@
         "common/rect.d.ts",
         "common/selectionId.d.ts",
         "common/point.d.ts",
+        "telemetry/iTelemetryService.d.ts",
+        "telemetry/events.d.ts",
         "data/compiledDataViewMapping.d.ts",
         "data/sortDirection.d.ts",
         "data/dataView.d.ts",
@@ -43,8 +45,11 @@
         "visual/VisualObjectInstance.d.ts",
         "visual/iVisualPlugin.d.ts",
         "extensibility/VisualCapabilities.d.ts",
-        "extensibility/iVisualHost.d.ts",
-        "extensibility/iVisualOptions.d.ts",
-        "extensibility/iVisual.d.ts"  
+        "extensibility/iVisual.d.ts",
+        "extensibility/Versioning.d.ts",
+        "extensibility/versions/v1.0.0.d.ts",
+        "extensibility/versions/v1.1.0.d.ts",    
+        "extensibility/components/iSelectionManager.d.ts",
+        "extensibility/components/iSelectionIdBuilder.d.ts"    
     ]
 }

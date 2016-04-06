@@ -219,18 +219,6 @@ module powerbi.visuals {
 
             this.renderer.init(svg, options.labelsContext, this.isMobileChart, this.tooltipsEnabled);
         }
-        
-        public static customizeQuery(options: CustomizeQueryOptions): void {
-            if (options.preferHigherDataVolume) {
-                let mappings = options.dataViewMappings;
-                if (!_.isEmpty(mappings) && mappings[0]) {
-                    let categorical = mappings[0].categorical;
-                    if (categorical) {
-                        categorical.dataVolume = 4;
-                    }
-                }
-            }
-        }
 
         public static getAdditionalTelemetry(dataView: DataView): any {
             let telemetry = {
@@ -446,9 +434,9 @@ module powerbi.visuals {
                 for (let categoryIdx = 0, ilen = categoryValues.length; categoryIdx < ilen; categoryIdx++) {
                     let categoryValue = categoryValues[categoryIdx];
 
-                    let xVal = measureX && measureX.values ? measureX.values[categoryIdx] : null;
-                    let yVal = measureY && measureY.values ? measureY.values[categoryIdx] : 0;
-                    let size = measureSize && measureSize.values ? measureSize.values[categoryIdx] : null;
+                    let xVal = AxisHelper.normalizeNonFiniteNumber(measureX && measureX.values ? measureX.values[categoryIdx] : null);
+                    let yVal = AxisHelper.normalizeNonFiniteNumber(measureY && measureY.values ? measureY.values[categoryIdx] : 0);
+                    let size = AxisHelper.normalizeNonFiniteNumber(measureSize && measureSize.values ? measureSize.values[categoryIdx] : null);
 
                     let hasNullValue = (xVal == null) || (yVal == null);
 

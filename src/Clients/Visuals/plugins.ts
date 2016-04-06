@@ -247,7 +247,6 @@ module powerbi.visuals.plugins {
         name: 'scatterChart',
         watermarkKey: 'scatterplot',
         capabilities: capabilities.scatterChart,
-        customizeQuery: ScatterChart.customizeQuery,
         create: () => new CartesianChart({ chartType: CartesianChartType.Scatter }),
         getAdditionalTelemetry: (dataView: DataView) => ScatterChart.getAdditionalTelemetry(dataView),
     };

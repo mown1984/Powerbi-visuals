@@ -498,8 +498,8 @@ module powerbi.data {
             return new SemanticFilter(from, where);
         }
 
-        public validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[] {
-            let validator = new SQExprValidationVisitor(schema, errors);
+        public validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[] {
+            let validator = new SQExprValidationVisitor(schema, aggrUtils, errors);
             this.rewrite(validator);
             return validator.errors;
         }

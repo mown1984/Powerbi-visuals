@@ -1129,6 +1129,7 @@
         overflow: hidden;
         touch-action: none;
         cursor: pointer;
+        position: absolute;
 
         .title {
             font-family: @lightFontFamily;
@@ -1615,6 +1616,7 @@ div.ql-toolbar {
 
 // NOTE: this lives outside the visual and must not be scoped by the .visual selector.
 .tooltip-container {
+    .unselectable;
     position: absolute;
     font-size: 11px;
     background-color: @neutralPrimaryColor;

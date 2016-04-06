@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,10 +24,6 @@
  *  THE SOFTWARE.
  */
 
-declare module powerbi.extensibility {
-
-    /** Defines behavior for IVisual interaction with the host environment. */
-    export interface IVisualHost {
- 
-    }
-}
+///<reference path="../../Typedefs/jquery/jquery.d.ts"/>
+///<reference path="../../Typedefs/globalize/globalize.d.ts"/>
+///<reference path="../../Typedefs/lodash/lodash.d.ts"/>

@@ -1039,14 +1039,14 @@ module powerbitests {
                     let labels = element.find(labelsElement);
                     
                     //The first label is most right, the second label is most left
-                    expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
-                    expect($(labels[0]).attr('x')).toBeGreaterThan($(labels[2]).attr('x'));
-                    expect($(labels[2]).attr('x')).toBeGreaterThan($(labels[1]).attr('x'));
+                    expect($(labels[0]).attr('x')).toBeGreaterThan(+$(labels[1]).attr('x'));
+                    expect($(labels[0]).attr('x')).toBeGreaterThan(+$(labels[2]).attr('x'));
+                    expect($(labels[2]).attr('x')).toBeGreaterThan(+$(labels[1]).attr('x'));
                     
                     //The last label is top, the second label is button.
-                    expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[0]).attr('y'));
-                    expect($(labels[1]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
-                    expect($(labels[0]).attr('y')).toBeGreaterThan($(labels[2]).attr('y'));
+                    expect($(labels[1]).attr('y')).toBeGreaterThan(+$(labels[0]).attr('y'));
+                    expect($(labels[1]).attr('y')).toBeGreaterThan(+$(labels[2]).attr('y'));
+                    expect($(labels[0]).attr('y')).toBeGreaterThan(+$(labels[2]).attr('y'));
                     done();
                 }, DefaultWaitForRender);
             });
@@ -3792,7 +3792,7 @@ module powerbitests {
 
                     //labels move up or down by 25% of the slice perimeter, that whole label will be fit.
                     expect(+labelsBeforeY1).toBeGreaterThan(+labelsAfterY1);
-                    expect(+labelsBeforeY2).toBeLessThan(labelsAfterY2);
+                    expect(+labelsBeforeY2).toBeLessThan(+labelsAfterY2);
                     expect(+labelsBeforeY3).toBeGreaterThan(+labelsAfterY3);
                 }
                 else

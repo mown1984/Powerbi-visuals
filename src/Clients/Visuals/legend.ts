@@ -126,8 +126,8 @@ module powerbi.visuals {
             let legendMargins = legend.getMargins();
             let legendOrientation = legend.getOrientation();
             chartArea.style({
-                'left': Legend.isLeft(legendOrientation) ? legendMargins.width + 'px' : null,
-                'top': Legend.isTop(legendOrientation) ? legendMargins.height + 'px' : null,
+                'margin-left': Legend.isLeft(legendOrientation) ? legendMargins.width + 'px' : null,
+                'margin-top': Legend.isTop(legendOrientation) ? legendMargins.height + 'px' : null,
             });
         }
     }
@@ -239,8 +239,8 @@ module powerbi.visuals {
             let isRight = orientation === LegendPosition.Right || orientation === LegendPosition.RightCenter;
             let isBottom = orientation === LegendPosition.Bottom || orientation === LegendPosition.BottomCenter;
             this.svg.style({
-                'left': isRight ? (this.parentViewport.width - legendViewport.width) + 'px' : null,
-                'top': isBottom ? (this.parentViewport.height - legendViewport.height) + 'px' : null,
+                'margin-left': isRight ? (this.parentViewport.width - legendViewport.width) + 'px' : null,
+                'margin-top': isBottom ? (this.parentViewport.height - legendViewport.height) + 'px' : null,
             });
         }
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,18 +24,16 @@
  *  THE SOFTWARE.
  */
 
-declare module powerbi.extensibility {
+module powerbi.extensibility.v110 {
+    let hostAdapter: VisualHostAdapter = (host: powerbi.IVisualHostServices): IVisualHost => {
+        return {
+            createSelectionIdBuilder: () => new visuals.SelectionIdBuilder(),
+            createSelectionManager: () => new SelectionManager({ hostServices: host })
+        };
+    };
 
-    export interface VisualUpdateOptions {
-        viewport: IViewport;
-        dataViews: DataView[];
-        type: VisualUpdateType;
-        viewMode?: ViewMode;
-        resizeMode?: ResizeMode;
-    }
-    
-    export interface VisualConstructorOptions {
-        element: HTMLElement;
-        host: IVisualHost;
-    }
+    visualApiVersions.push({
+        version: '1.1.0',
+        hostAdapter: hostAdapter
+    });
 }

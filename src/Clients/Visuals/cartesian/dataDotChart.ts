@@ -212,7 +212,7 @@ module powerbi.visuals {
                 this.clippedData = DataDotChart.createClippedDataIfOverflowed(data, layout.categoryCount);
             }
 
-            let yDomain = AxisHelper.createValueDomain(seriesArray, /*includeZero:*/ true) || fallBackDomain;
+            let yDomain = AxisHelper.createValueDomain(seriesArray, /*includeZero:*/ true) || emptyDomain;
 
             let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, yDomain, options.ensureYDomain);
 

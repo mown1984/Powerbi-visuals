@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "suppressExcessPropertyErrors": true
+    },
+    "filesGlob": [
+        "**/*.ts"
+    ],
+    "files": [
+        "typedefs/typedefs.ts",
+        "../VisualsContracts/obj/VisualsContracts.d.ts",
+        "../VisualsCommon/obj/VisualsCommon.d.ts",
+        "../VisualsData/obj/VisualsData.d.ts",
+        
+        "telemetry/generateGuid.ts",
+        "telemetry/events.ts",
+        
+        "components/selectionManager.ts",
+        "components/selectionIdBuilder.ts",
+                
+        "versioning/VisualAdapter.ts",
+        "versioning/VisualSafeExecutionWrapper.ts",
+        "versioning/versions/v1.0.0.ts",
+        "versioning/versions/v1.1.0.ts"
+    ]
+}

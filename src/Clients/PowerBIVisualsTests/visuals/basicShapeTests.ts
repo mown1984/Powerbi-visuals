@@ -125,7 +125,7 @@ module powerbitests {
                 helpers.assertColorsMatch(rect.css('fill'), "#e6e6e4"); // fillColor
                 expect(rect.css('stroke-opacity')).toBe("0.25"); // lineTransparency
                 expect(rect.css('stroke-width')).toBe("15px"); // weight
-                expect(rect.css('fill-opacity')).toBeCloseTo("0.35", 1); // shapeTransparency
+                expect(rect.css('fill-opacity')).toBeCloseTo(0.35, 1); // shapeTransparency
             });
 
             it('revert to default', () => {
@@ -142,7 +142,7 @@ module powerbitests {
                 helpers.assertColorsMatch(rect.css('fill'), "#e6e6e4"); // fillColor
                 expect(rect.css('stroke-opacity')).toBe("0.25"); // lineTransparency
                 expect(rect.css('stroke-width')).toBe("15px"); // weight
-                expect(rect.css('fill-opacity')).toBeCloseTo("0.35", 1); // shapeTransparency
+                expect(rect.css('fill-opacity')).toBeCloseTo(0.35, 1); // shapeTransparency
 
                 visualUpdateOptions = BasicShapeHelpers.buildUpdateOptions(viewport, {
                     general: { shapeType: 'rectangle' },

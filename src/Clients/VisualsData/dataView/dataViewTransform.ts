@@ -63,8 +63,17 @@ module powerbi.data {
         [roleName: string]: number[];
     }
 
+    export interface DataViewProjectionActiveItemInfo {
+        queryRef: string;
+
+        /** Describes if the active item should be ignored in concatenation. 
+            If the active item has a drill filter, it will not be used in concatenation.
+            If the value of suppressConcat is true, the activeItem will be ommitted from concatenation. */
+        suppressConcat?: boolean;
+    }
+
     export interface DataViewProjectionActiveItems {
-        [roleName: string]: string[];
+        [roleName: string]: DataViewProjectionActiveItemInfo[];
     }
 
     export interface DataViewRoleTransformMetadata {
@@ -108,7 +117,7 @@ module powerbi.data {
     // TODO: refactor & focus DataViewTransform into a service with well-defined dependencies.
     export module DataViewTransform {
         const fillRulePropertyDescriptor: DataViewObjectPropertyDescriptor = { type: { fillRule: {} } };
-        
+
         const enum ColumnIdentifierKind {
             QueryName,
             Role,
@@ -365,10 +374,12 @@ module powerbi.data {
             let categories = Prototype.overrideArray(prototype.categories, override);
             if (categories)
                 categorical.categories = categories;
-
-            let values = Prototype.overrideArray(prototype.values, override);
+            
+            let valuesOverride = Prototype.overrideArray(prototype.values, override);
+            let values = valuesOverride || prototype.values;
 
             if (values) {
+                let grouped = inherit(values.grouped());
                 if (selectsToInclude) {
                     for (let i = values.length - 1; i >= 0; i--) {
                         if (!selectsToInclude[values[i].source.index])
@@ -387,8 +398,21 @@ module powerbi.data {
                     }
                 }
 
+                let currentGroupIndex = 0;
+                let group: DataViewValueColumnGroup;
+                for (let i = 0, ilen = values.length; i < ilen; i++) {
+                    let currentValue = values[i];
+                    if (!group || (currentValue.identity !== group.identity)) {
+                        group = inherit(grouped[currentGroupIndex]);
+                        grouped[currentGroupIndex] = group;
+                        group.values = [];
+                        currentGroupIndex++;
+                    }
+                    group.values.push(currentValue);
+                }
+
                 categorical.values = values;
-                setGrouped(values);
+                setGrouped(values, grouped);
             }
 
             return categorical;
@@ -1195,9 +1219,9 @@ module powerbi.data {
                     return;
 
                 splitScales =
-                    linearGradient3.min.value === undefined &&
-                    linearGradient3.max.value === undefined &&
-                    linearGradient3.mid.value !== undefined;
+                linearGradient3.min.value === undefined &&
+                linearGradient3.max.value === undefined &&
+                linearGradient3.mid.value !== undefined;
 
                 if (linearGradient3.min.value === undefined) {
                     linearGradient3.min.value = inputRange.min;
@@ -1834,6 +1858,7 @@ module powerbi.data {
             }
         }
 
+        // TODO: refactor this, setGrouped, and groupValues to a test helper to stop using it in the product
         export function createValueColumns(
             values: DataViewValueColumn[] = [],
             valueIdentityFields?: SQExpr[],
@@ -1850,7 +1875,7 @@ module powerbi.data {
             return result;
         }
 
-        function setGrouped(values: DataViewValueColumns, groupedResult?: DataViewValueColumnGroup[]): void {
+        export function setGrouped(values: DataViewValueColumns, groupedResult?: DataViewValueColumnGroup[]): void {
             values.grouped = groupedResult
                 ? () => groupedResult
                 : () => groupValues(values);

@@ -263,7 +263,9 @@ module powerbi.visuals {
 
             if (dataView.metadata && dataView.metadata.objects) {
                 let objects = dataView.metadata.objects;
-                defaultSeriesColor = DataViewObjects.getFillColor(objects, lineChartProps.dataPoint.defaultColor);
+
+                // If the line layer is in a combo chart, the "Default Column Color" slice's value (lineChartProps.dataPoint.defaultColor) will not affect the line series as well
+                defaultSeriesColor = isComboChart ? undefined : DataViewObjects.getFillColor(objects, lineChartProps.dataPoint.defaultColor);
 
                 let labelsObj = <DataLabelObject>objects['labels'];
                 dataLabelUtils.updateLineChartLabelSettingsFromLabelsObject(labelsObj, defaultLabelSettings);
@@ -1432,13 +1434,13 @@ module powerbi.visuals {
 
             this.lastInteractiveSelectedColumnIndex = columnIndex;
             let x = this.getChartX(columnIndex);
-            this.setHoverLine(x);
+            this.setHoverLine(x, columnIndex);
             let legendItems = this.createLegendDataPoints(columnIndex);
             if (legendItems)
                 this.options.cartesianHost.updateLegend(legendItems);
         }
 
-        private setHoverLine(chartX: number) {
+        private setHoverLine(chartX: number, columnIndex: number) {
             this.hoverLine
                 .attr('x1', chartX)
                 .attr('x2', chartX)
@@ -1464,7 +1466,7 @@ module powerbi.visuals {
                             }
                         })
                         .style({
-                            'opacity': 1,
+                            'opacity': () => _.some(series.data, (value) => value.categoryIndex === columnIndex) ? 1 : 0,
                             'fill': color
                         });
 

@@ -346,6 +346,16 @@ declare module jsCommon {
         function findItemWithName<T>(array: T[], name: string): T;
         function indexWithName<T>(array: T[], name: string): number;
         /**
+         * Inserts a number in sorted order into a list of numbers already in sorted order.
+         * @returns True if the item was added, false if it already existed.
+         */
+        function insertSorted(list: number[], value: number): boolean;
+        /**
+         * Removes the first occurrence of a value from a list if it exists.
+         * @returns True if the value was removed, false if it did not exist in the list.
+         */
+        function removeFirst<T>(list: T[], value: T): boolean;
+        /**
          * Deletes all items from the array.
          */
         function clear(array: any[]): void;

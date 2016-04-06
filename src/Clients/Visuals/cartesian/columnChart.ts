@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -77,9 +77,9 @@ module powerbi.visuals {
         originalPosition: number;
         originalValueAbsolute: number;
 
-        /** 
+        /**
          * True if this data point is a highlighted portion and overflows (whether due to the highlight
-         * being greater than original or of a different sign), so it needs to be thinner to accomodate. 
+         * being greater than original or of a different sign), so it needs to be thinner to accomodate.
          */
         drawThinner?: boolean;
         key: string;
@@ -141,7 +141,6 @@ module powerbi.visuals {
         hostService: IVisualHostServices;
         margin: IMargin;
         mainGraphicsContext: D3.Selection;
-        labelGraphicsContext: D3.Selection;
         layout: CategoryLayout;
         animator: IColumnChartAnimator;
         onDragStart?: (datum: ColumnChartDataPoint) => void;
@@ -199,9 +198,7 @@ module powerbi.visuals {
         public static SeriesClasses: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('series');
 
         private svg: D3.Selection;
-        private mainGraphicsSVG: D3.Selection;
         private mainGraphicsContext: D3.Selection;
-        private labelGraphicsContext: D3.Selection;
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
         private currentViewport: IViewport;
@@ -244,7 +241,7 @@ module powerbi.visuals {
                 return;
 
             dataViewMapping.categorical.dataVolume = 4;
-            
+
             if (CartesianChart.detectScalarMapping(dataViewMapping)) {
                 let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
                 dataViewCategories.dataReductionAlgorithm = { sample: {} };
@@ -286,11 +283,7 @@ module powerbi.visuals {
             this.svg = options.svg;
             this.svg.classed(ColumnChart.ColumnChartClassName, true);
 
-            let graphicsContextParent = this.mainGraphicsSVG = this.svg.append('svg')
-                .classed('columnChartSVG', true);
-
-            this.mainGraphicsContext = graphicsContextParent.classed('columnChartMainGraphicsContext', true);
-            this.labelGraphicsContext = graphicsContextParent.classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
+            this.mainGraphicsContext = this.svg.append('svg').classed('columnChartMainGraphicsContext', true);
             this.style = options.style;
             this.currentViewport = options.viewport;
             this.hostService = options.host;
@@ -840,7 +833,7 @@ module powerbi.visuals {
         }
 
         public calculateLegend(): LegendData {
-            // if we're in interactive mode, return the interactive legend 
+            // if we're in interactive mode, return the interactive legend
             if (this.interactivity && this.interactivity.isInteractiveLegend) {
                 return this.createInteractiveLegendDataPoints(0);
             }
@@ -991,7 +984,7 @@ module powerbi.visuals {
             this.columnChart.setData(data);
 
             let preferredPlotArea = this.getPreferredPlotArea(chartLayout.isScalar, chartLayout.categoryCount, chartLayout.categoryThickness);
-            let is100Pct = EnumExtensions.hasFlag(this.chartType, flagStacked100); 
+            let is100Pct = EnumExtensions.hasFlag(this.chartType, flagStacked100);
 
             let chartContext: ColumnChartContext = {
                 height: preferredPlotArea.height,
@@ -999,7 +992,6 @@ module powerbi.visuals {
                 duration: 0,
                 hostService: this.hostService,
                 mainGraphicsContext: this.mainGraphicsContext,
-                labelGraphicsContext: this.labelGraphicsContext,
                 margin: this.margin,
                 layout: chartLayout,
                 animator: this.animator,
@@ -1027,7 +1019,7 @@ module powerbi.visuals {
             }
             else {
                 ensureYDomain = options.ensureYDomain;
-            }                
+            }
 
             this.xAxisProperties = this.columnChart.setXScale(
                 is100Pct,
@@ -1188,13 +1180,13 @@ module powerbi.visuals {
             let height = viewport.height - (margin.top + margin.bottom);
             let width = viewport.width - (margin.left + margin.right);
 
-            this.mainGraphicsSVG
+            this.mainGraphicsContext
                 .attr('height', height)
-                .attr('width', width);                
+                .attr('width', width);
 
             if (this.tooltipsEnabled)
                 TooltipManager.addTooltip(columnChartDrawInfo.eventGroup, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
-                
+
             let allDataPoints: ColumnChartDataPoint[] = [];
             let behaviorOptions: ColumnBehaviorOptions = undefined;
             if (this.interactivityService) {

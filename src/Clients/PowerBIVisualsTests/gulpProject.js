@@ -40,6 +40,8 @@ module.exports = projects.initProject(
     __dirname, // project folder
     {
         deps: [
+            require("../VisualsContracts/gulpProject"),
+            require("../VisualsExtensibility/gulpProject"),
             require("../VisualsCommon/gulpProject"),
             require("../VisualsData/gulpProject"),
             require("../Visuals/gulpProject"),
@@ -94,6 +96,8 @@ module.exports = projects.initProject(
                         "moment.min.js",
                         "jquery.scrollbar.min.js",
                         "mocks.js",
+                        "./extensibility/extensibilityMocks.js",
+                        "./extensibility/extensibilityHelpers.js",
                         "common.js",
                         "sqFieldDef.js",
                         "./helpers/helpers.js",

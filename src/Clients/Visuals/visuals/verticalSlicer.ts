@@ -117,6 +117,9 @@ module powerbi.visuals {
                 scrollEnabled: true,
                 viewport: domHelper.getSlicerBodyViewport(this.currentViewport, settings, this.textProperties),
                 baseContainer: this.body,
+                isReadMode: () => {
+                    return (this.hostServices.getViewMode() !== ViewMode.Edit);
+                }
             };
 
             this.listView = ListViewFactory.createListView(listViewOptions);

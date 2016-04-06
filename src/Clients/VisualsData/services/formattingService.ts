@@ -164,7 +164,6 @@ module powerbi {
                     let argFormat = parts[1];
                     return this.formatValue(args[argIndex], argFormat, culture);
                 }
-                return "";
             });
 
             return result;

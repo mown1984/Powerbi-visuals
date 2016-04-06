@@ -90,6 +90,12 @@ module powerbi.data {
     export interface AdditionalQueryProjection {
         queryName: string;
         selector: Selector;
+        aggregates?: ProjectionAggregates;
+    }
+
+    export interface ProjectionAggregates {
+        min?: boolean;
+        max?: boolean;
     }
 
     export interface QueryGeneratorResult {

@@ -29,11 +29,6 @@ module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
 
-    export interface TornadoChartSections {
-        left: number;
-        right?: number;
-    }
-
     export interface TornadoChartTextOptions {
         fontFamily?: string;
         fontSize?: number;
@@ -62,6 +57,7 @@ module powerbi.visuals.samples {
         showCategories?: boolean;
         legendFontSize?: number;
         legendColor?: string;
+        labelValueFormatter?: IValueFormatter;
     }
 
     export interface TornadoChartDataView {
@@ -186,8 +182,31 @@ module powerbi.visuals.samples {
             let scrollSpaceLength: number = this.viewport.height;
             let extentData: any = this.getExtentData(prefferedHeight, scrollSpaceLength);
 
-            let onRender = () => {
-                let scrollPosition = extentData.toScrollPosition(this.scrollYBrush.extent(), scrollSpaceLength);
+            let onRender = (wheelDelta: number = 0) => {
+                let position: number[] = this.scrollYBrush.extent();
+                if (wheelDelta !== 0) {
+
+                    // Handle mouse wheel manually by moving the scrollbar half of its size
+                    let halfScrollsize: number = (position[1] - position[0]) / 2;
+                    position[0] += (wheelDelta > 0) ? halfScrollsize : -halfScrollsize;
+                    position[1] += (wheelDelta > 0) ? halfScrollsize : -halfScrollsize;
+
+                    if (position[0] < 0) {
+                        let offset: number = 0 - position[0];
+                        position[0] += offset;
+                        position[1] += offset;
+                    }
+                    if (position[1] > scrollSpaceLength) {
+                        let offset: number = position[1] - scrollSpaceLength;
+                        position[0] -= offset;
+                        position[1] -= offset;
+                    }
+                    
+                    // Update the scroll bar accordingly and redraw
+                    this.scrollYBrush.extent(position);
+                    this.brushGraphicsContextY.select('.extent').attr('y', position[0]);
+                }
+                let scrollPosition = extentData.toScrollPosition(position, scrollSpaceLength);
                 onScroll.call(this, jQuery.extend(true, {}, data), scrollPosition[0], scrollPosition[1]);
                 this.setScrollBarSize(this.brushGraphicsContextY, extentData.value[1], true);
             };
@@ -223,8 +242,14 @@ module powerbi.visuals.samples {
         private renderScrollbar(brush: D3.Svg.Brush,
             brushGraphicsContext: D3.Selection,
             brushX: number,
-            onRender: () => void): void {
-            brush.on("brush", () => window.requestAnimationFrame(() => onRender()));
+            onRender: (number) => void): void {
+
+            brush.on("brush", () => window.requestAnimationFrame(() => onRender(0)));
+            this.root.on('wheel', () => {
+                if (!this.isYScrollBarVisible) return;
+                let wheelEvent: any = d3.event; // Casting to any to avoid compilation errors
+                onRender(wheelEvent.deltaY);
+            });
 
             brushGraphicsContext.attr({
                 "transform": visuals.SVGUtil.translate(brushX, 0),
@@ -233,7 +258,7 @@ module powerbi.visuals.samples {
 
             brushGraphicsContext.call(brush); /*call the brush function, causing it to create the rectangles   */
             /* Disabling the zooming feature */
-            brushGraphicsContext.selectAll(".resize rect").remove();
+            brushGraphicsContext.selectAll(".resize").remove();
             brushGraphicsContext.select(".background").remove();
             brushGraphicsContext.selectAll(".extent").style({
                 "fill-opacity": 0.125,
@@ -775,9 +800,10 @@ module powerbi.visuals.samples {
             let categoryValuesLength: number = categoryValues.length;
             let objects: DataViewObjects = this.getObjectsFromDataView(dataView);
 
-            let settings: TornadoChartSettings = this.parseSettings(objects);
             let formatStringProp: DataViewObjectPropertyIdentifier = TornadoChart.Properties.general.formatString;
             let categorySourceFormatString: string = valueFormatter.getFormatString(category.source, formatStringProp);
+            let maxValue: number = d3.max(values[0].values);
+            let settings: TornadoChartSettings = this.parseSettings(objects, categorySourceFormatString, maxValue);
             this.hasDynamicSeries = !!values.source;
             let hasHighlights: boolean = this.hasHighlights = !!(values.length > 0 && values[0].highlights);
             this.labelHeight = TextMeasurementService.estimateSvgTextHeight({
@@ -811,7 +837,6 @@ module powerbi.visuals.samples {
             this.updateElements();
 
             let minValue: number = Math.min(d3.min(values[0].values), 0);
-            let maxValue: number = d3.max(values[0].values);
             if (values.length === TornadoChart.MaxSeries) {
                 minValue = d3.min([minValue, d3.min(values[1].values)]);
                 maxValue = d3.max([maxValue, d3.max(values[1].values)]);
@@ -883,7 +908,7 @@ module powerbi.visuals.samples {
             };
         }
 
-        private parseSettings(objects: DataViewObjects): TornadoChartSettings {
+        private parseSettings(objects: DataViewObjects, formatString: string, value: number): TornadoChartSettings {
             let precision: number = this.getPrecision(objects);
 
             let displayUnits: number = DataViewObjects.getValue<number>(
@@ -892,6 +917,12 @@ module powerbi.visuals.samples {
                 this.DefaultTornadoChartSettings.labelSettings.displayUnits);
 
             let labelSettings = this.DefaultTornadoChartSettings.labelSettings;
+
+            let labelValueFormatter = valueFormatter.create({
+                format: formatString,
+                precision: precision,
+                value: (displayUnits === 0) && (value != null) ? value : displayUnits,
+            });
 
             return {
                 labelOutsideFillColor: this.getColor(TornadoChart.Properties.labels.outsideFill, this.DefaultTornadoChartSettings.labelOutsideFillColor, objects),
@@ -906,7 +937,8 @@ module powerbi.visuals.samples {
                 showLegend: DataViewObjects.getValue<boolean>(objects, TornadoChart.Properties.legend.show, this.DefaultTornadoChartSettings.showLegend),
                 legendFontSize: DataViewObjects.getValue<number>(objects, TornadoChart.Properties.legend.fontSize, this.DefaultTornadoChartSettings.legendFontSize),
                 legendColor: this.getColor(TornadoChart.Properties.legend.labelColor, this.DefaultTornadoChartSettings.legendColor, objects),
-                categoriesFillColor: this.getColor(TornadoChart.Properties.categories.fill, this.DefaultTornadoChartSettings.categoriesFillColor, objects)
+                categoriesFillColor: this.getColor(TornadoChart.Properties.categories.fill, this.DefaultTornadoChartSettings.categoriesFillColor, objects),
+                labelValueFormatter: labelValueFormatter
             };
         }
 
@@ -953,13 +985,17 @@ module powerbi.visuals.samples {
                     .createSelectionId();
 
             let displayName: string = source.groupName ? source.groupName : source.displayName;
-            let objects: DataViewObjects = source.objects;
+            let objects;
             let categoryAxisObject: DataViewObject | DataViewObjectWithId[];
 
-            if (isGrouped)
+            if (isGrouped) {
                 categoryAxisObject = seriesGroup.objects ? seriesGroup.objects['categoryAxis'] : null;
-            else
+                objects = seriesGroup.objects;
+            }
+            else {
+                objects = source.objects;
                 categoryAxisObject = objects ? objects['categoryAxis'] : null;
+            }
 
             let color: string = this.getColor(
                 TornadoChart.Properties.dataPoint.fill,
@@ -1167,8 +1203,6 @@ module powerbi.visuals.samples {
                 .style("fill-opacity", (p: TornadoChartPoint) => ColumnUtil.getFillOpacity(p.selected, p.highlight, hasSelection, hasHighlights))
                 .attr("transform", (p: TornadoChartPoint) => SVGUtil.translateAndRotate(p.dx, p.dy, p.px, p.py, p.angle))
                 .attr("height", (p: TornadoChartPoint) => p.height)
-                .transition()
-                .duration(this.durationAnimations)
                 .attr("width", (p: TornadoChartPoint) => p.width);
 
             columnsSelection
@@ -1225,10 +1259,11 @@ module powerbi.visuals.samples {
                 ? dxColumn - this.leftLabelMargin
                 : this.widthRightSection - (dxColumn + columnWidth + this.leftLabelMargin);
             let maxLabelWidth = Math.max(maxOutsideLabelWidth, columnWidth - this.leftLabelMargin);
+
             let textProperties: TextProperties = {
                 fontFamily: dataLabelUtils.StandardFontFamily,
                 fontSize: PixelConverter.fromPoint(fontSize),
-                text: valueFormatter.format(value, formatStringProp)
+                text: tornadoChartSettings.labelValueFormatter.format(value)
             };
             let valueAfterValueFormatter: string = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxLabelWidth);
             let textDataAfterValueFormatter: TextData = this.getTextData(valueAfterValueFormatter, true, false, fontSize);

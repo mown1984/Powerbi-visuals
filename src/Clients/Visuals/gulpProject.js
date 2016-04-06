@@ -45,6 +45,7 @@ module.exports = projects.initProject(
     {
         deps: [
             require("../VisualsContracts/gulpProject"),
+            require("../VisualsExtensibility/gulpProject"),
             require("../VisualsCommon/gulpProject"),
             require("../VisualsData/gulpProject")
         ], // dependencies
@@ -84,6 +85,7 @@ module.exports = projects.initProject(
             {
                 source: [
                     "../VisualsContracts/obj/VisualsContracts.d.ts",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.d.ts",
                     "../VisualsCommon/obj/VisualsCommon.d.ts",
                     "../VisualsData/obj/VisualsData.d.ts",
                     "../Visuals/obj/Visuals.d.ts"
@@ -95,6 +97,7 @@ module.exports = projects.initProject(
             {
                 source: [
                     "../VisualsContracts/obj/VisualsContracts.nonmin.js",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.nonmin.js",
                     "../VisualsCommon/obj/VisualsCommon.nonmin.js",
                     "../VisualsData/obj/VisualsData.nonmin.js",
                     "../Visuals/obj/Visuals.nonmin.js"
@@ -105,6 +108,7 @@ module.exports = projects.initProject(
             {
                 source: [
                     "../VisualsContracts/obj/VisualsContracts.js",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.js",
                     "../VisualsCommon/obj/VisualsCommon.js",
                     "../VisualsData/obj/VisualsData.js",
                     "../Visuals/obj/Visuals.js"
@@ -117,6 +121,7 @@ module.exports = projects.initProject(
             {
                 source: [
                     "../VisualsContracts/obj/VisualsContracts.min.js",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.min.js",
                     "../VisualsCommon/obj/VisualsCommon.min.js",
                     "../VisualsData/obj/VisualsData.min.js",
                     "../Visuals/obj/Visuals.min.js"
@@ -130,6 +135,7 @@ module.exports = projects.initProject(
                 source: [
                     "../../../lib/powerbi-visuals-externals.min.js",
                     "../VisualsContracts/obj/VisualsContracts.min.js",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.min.js",
                     "../VisualsCommon/obj/VisualsCommon.min.js",
                     "../VisualsData/obj/VisualsData.min.js",
                     "../Visuals/obj/Visuals.min.js"
@@ -142,6 +148,7 @@ module.exports = projects.initProject(
                 source: [
                     "../../../lib/powerbi-visuals-externals.min.js",
                     "../VisualsContracts/obj/VisualsContracts.js",
+                    "../VisualsExtensibility/obj/VisualsExtensibility.js",
                     "../VisualsCommon/obj/VisualsCommon.js",
                     "../VisualsData/obj/VisualsData.js",
                     "../Visuals/obj/Visuals.js"

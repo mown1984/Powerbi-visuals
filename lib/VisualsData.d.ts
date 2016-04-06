@@ -386,11 +386,13 @@ declare module powerbi.data {
         Version?: number;
         Primary: DataShapeBindingAxis;
         Secondary?: DataShapeBindingAxis;
+        Aggregates?: DataShapeBindingAggregate[];
         Projections?: number[];
         Limits?: DataShapeBindingLimit[];
         Highlights?: FilterDefinition[];
         DataReduction?: DataShapeBindingDataReduction;
         IncludeEmptyGroups?: boolean;
+        SuppressedJoinPredicates?: number[];
     }
     interface DataShapeBindingDataReduction {
         Primary?: DataShapeBindingDataReductionAlgorithm;
@@ -430,6 +432,15 @@ declare module powerbi.data {
         SuppressedProjections?: number[];
         Subtotal?: SubtotalType;
         ShowItemsWithNoData?: number[];
+    }
+    interface DataShapeBindingAggregate {
+        Select: number;
+        Kind: DataShapeBindingAggregateKind;
+    }
+    const enum DataShapeBindingAggregateKind {
+        None = 0,
+        Min = 1,
+        Max = 2,
     }
 }
 declare module powerbi.data {
@@ -817,13 +828,14 @@ declare module powerbi.data {
         hasCategories(): boolean;
         getCategoryCount(): number;
         getCategoryValues(roleName: string): any;
-        getCategoryValue(categoryIndex: number, roleName: string): any;
+        getCategoryValue(roleName: string, categoryIndex: number): any;
         getCategoryColumn(roleName: string): DataViewCategoryColumn;
         getCategoryMetadataColumn(roleName: string): DataViewMetadataColumn;
+        getCategoryColumnIdentityFields(roleName: string): powerbi.data.ISQExpr[];
         getCategoryDisplayName(roleName: string): string;
         hasCompositeCategories(): boolean;
         hasCategoryWithRole(roleName: string): boolean;
-        getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects;
+        getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
@@ -840,10 +852,10 @@ declare module powerbi.data {
         hasDynamicSeries(): boolean;
         getSeriesCount(): number;
         getSeriesObjects(seriesIndex: number): DataViewObjects;
-        getSeriesColumn(seriesIndex: number): DataViewValueColumn;
-        getSeriesColumns(): DataViewValueColumns;
+        getSeriesValueColumns(): DataViewValueColumns;
+        getSeriesValueColumnGroup(seriesIndex: number): DataViewValueColumnGroup;
         getSeriesMetadataColumn(): DataViewMetadataColumn;
-        getSeriesColumnIdentifier(): powerbi.data.ISQExpr[];
+        getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
     }
@@ -1074,8 +1086,15 @@ declare module powerbi.data {
     interface DataViewProjectionOrdering {
         [roleName: string]: number[];
     }
+    interface DataViewProjectionActiveItemInfo {
+        queryRef: string;
+        /** Describes if the active item should be ignored in concatenation.
+            If the active item has a drill filter, it will not be used in concatenation.
+            If the value of suppressConcat is true, the activeItem will be ommitted from concatenation. */
+        suppressConcat?: boolean;
+    }
     interface DataViewProjectionActiveItems {
-        [roleName: string]: string[];
+        [roleName: string]: DataViewProjectionActiveItemInfo[];
     }
     interface DataViewRoleTransformMetadata {
         /** Describes the order of selects (referenced by query index) in each role. */
@@ -1101,6 +1120,7 @@ declare module powerbi.data {
         function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void;
         function transformObjects(dataView: DataView, targetDataViewKinds: StandardDataViewKinds, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, selectTransforms: DataViewSelectTransform[], colorAllocatorFactory: IColorAllocatorFactory): void;
         function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+        function setGrouped(values: DataViewValueColumns, groupedResult?: DataViewValueColumnGroup[]): void;
     }
 }
 declare module powerbi.data {
@@ -1158,6 +1178,11 @@ declare module powerbi.data {
     interface AdditionalQueryProjection {
         queryName: string;
         selector: Selector;
+        aggregates?: ProjectionAggregates;
+    }
+    interface ProjectionAggregates {
+        min?: boolean;
+        max?: boolean;
     }
     interface QueryGeneratorResult {
         command: DataReaderQueryCommand;
@@ -1499,6 +1524,15 @@ declare module powerbi.data.utils {
          * inherited objects.
          */
         function inheritMatrixNodeHierarchy(node: DataViewMatrixNode, deepestLevelToInherit: number, useInheritSingle: boolean): DataViewMatrixNode;
+        /**
+         * Returns true if the specified matrixOrHierarchy contains any composite grouping, i.e. a grouping on multiple columns.
+         * An example of composite grouping is one on [Year, Quarter, Month], where a particular group instance can have
+         * Year === 2016, Quarter === 'Qtr 1', Month === 1.
+         *
+         * Returns false if the specified matrixOrHierarchy does not contain any composite group,
+         * or if matrixOrHierarchy is null or undefined.
+         */
+        function containsCompositeGroup(matrixOrHierarchy: DataViewMatrix | DataViewHierarchy): boolean;
     }
 }
 declare module powerbi.data.utils {
@@ -1808,6 +1842,15 @@ declare module powerbi.data {
     }
 }
 declare module powerbi.data {
+    interface ISQAggregationOperations {
+        /** Returns an array of supported aggregates for a given expr and role type. */
+        getSupportedAggregates(expr: SQExpr, schema: FederatedConceptualSchema, targetTypes: ValueTypeDescriptor[]): QueryAggregateFunction[];
+        isSupportedAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregate: QueryAggregateFunction, targetTypes: ValueTypeDescriptor[]): boolean;
+        createExprWithAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregateNonNumericFields: boolean, targetTypes: ValueTypeDescriptor[], preferredAggregate?: QueryAggregateFunction): SQExpr;
+    }
+    function createSQAggregationOperations(datetimeMinMaxSupported: boolean): ISQAggregationOperations;
+}
+declare module powerbi.data {
     module SQHierarchyExprUtils {
         function getConceptualHierarchyLevelFromExpr(conceptualSchema: FederatedConceptualSchema, fieldExpr: FieldExprPattern): ConceptualHierarchyLevel;
         function getConceptualHierarchyLevel(conceptualSchema: FederatedConceptualSchema, schemaName: string, entity: string, hierarchy: string, hierarchyLevel: string): ConceptualHierarchyLevel;
@@ -1849,7 +1892,7 @@ declare module powerbi.data {
         private _kind;
         constructor(kind: SQExprKind);
         static equals(x: SQExpr, y: SQExpr, ignoreCase?: boolean): boolean;
-        validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
+        validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[];
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
         kind: SQExprKind;
         static isColumn(expr: SQExpr): expr is SQColumnRefExpr;
@@ -1859,6 +1902,7 @@ declare module powerbi.data {
         static isHierarchyLevel(expr: SQExpr): expr is SQHierarchyLevelExpr;
         static isAggregation(expr: SQExpr): expr is SQAggregationExpr;
         static isMeasure(expr: SQExpr): expr is SQMeasureRefExpr;
+        static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
         /** Return the SQExpr[] of group on columns if it has group on keys otherwise return the SQExpr of the column.*/
@@ -2112,7 +2156,6 @@ declare module powerbi.data {
         function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr;
         function removeAggregate(expr: SQExpr): SQExpr;
         function removeEntityVariables(expr: SQExpr): SQExpr;
-        function createExprWithAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregateNonNumericFields: boolean, preferredAggregate?: QueryAggregateFunction): SQExpr;
         function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr;
         function resourcePackageItem(packageName: string, packageType: number, itemName: string): SQResourcePackageItemExpr;
     }
@@ -2135,7 +2178,8 @@ declare module powerbi.data {
     class SQExprValidationVisitor extends SQExprRewriter {
         errors: SQExprValidationError[];
         private schema;
-        constructor(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]);
+        private aggrUtils;
+        constructor(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]);
         visitIn(expr: SQInExpr): SQExpr;
         visitCompare(expr: SQCompareExpr): SQExpr;
         visitColumnRef(expr: SQColumnRefExpr): SQExpr;
@@ -2159,10 +2203,7 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module SQExprUtils {
-        /** Returns an array of supported aggregates for a given expr and role. */
-        function getSupportedAggregates(expr: SQExpr, schema: FederatedConceptualSchema): QueryAggregateFunction[];
         function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
-        function isSupportedAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregate: QueryAggregateFunction): boolean;
         function indexOfExpr(items: SQExpr[], searchElement: SQExpr): number;
         function sequenceEqual(x: SQExpr[], y: SQExpr[]): boolean;
         function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr, exprDefaultName?: string): string;
@@ -2292,7 +2333,7 @@ declare module powerbi.data {
         conditions(): SQExpr[];
         where(): SQFilter[];
         rewrite(exprRewriter: ISQExprVisitor<SQExpr>): SemanticFilter;
-        validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
+        validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[];
         /** Merges a list of SemanticFilters into one. */
         static merge(filters: SemanticFilter[]): SemanticFilter;
         static isDefaultFilter(filter: SemanticFilter): boolean;
@@ -2447,5 +2488,58 @@ declare module powerbi.data {
     module SQExprShortSerializer {
         function serialize(expr: SQExpr): string;
         function serializeArray(exprs: SQExpr[]): string;
+    }
+}
+declare module powerbi.visuals {
+    import Selector = powerbi.data.Selector;
+    import SelectorForColumn = powerbi.SelectorForColumn;
+    /**
+     * A combination of identifiers used to uniquely identify
+     * data points and their bound geometry.
+     */
+    class SelectionId implements ISelectionId {
+        private selector;
+        private selectorsByColumn;
+        private key;
+        private keyWithoutHighlight;
+        highlight: boolean;
+        constructor(selector: Selector, highlight: boolean);
+        equals(other: SelectionId): boolean;
+        /**
+         * Checks equality against other for all identifiers existing in this.
+         */
+        includes(other: SelectionId, ignoreHighlight?: boolean): boolean;
+        getKey(): string;
+        getKeyWithoutHighlight(): string;
+        /**
+         * Temporary workaround since a few things currently rely on this, but won't need to.
+         */
+        hasIdentity(): boolean;
+        getSelector(): Selector;
+        getSelectorsByColumn(): Selector;
+        static createNull(highlight?: boolean): SelectionId;
+        static createWithId(id: DataViewScopeIdentity, highlight?: boolean): SelectionId;
+        static createWithMeasure(measureId: string, highlight?: boolean): SelectionId;
+        static createWithIdAndMeasure(id: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
+        static createWithIdAndMeasureAndCategory(id: DataViewScopeIdentity, measureId: string, queryName: string, highlight?: boolean): SelectionId;
+        static createWithIds(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, highlight?: boolean): SelectionId;
+        static createWithIdsAndMeasure(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
+        static createWithSelectorForColumnAndMeasure(dataMap: SelectorForColumn, measureId: string, highlight?: boolean): SelectionId;
+        static createWithHighlight(original: SelectionId): SelectionId;
+        private static idArray(id1, id2);
+    }
+    /**
+     * This class is designed to simplify the creation of SelectionId objects
+     * It allows chaining to build up an object before calling 'create' to build a SelectionId
+     */
+    class SelectionIdBuilder implements ISelectionIdBuilder {
+        private dataMap;
+        private measure;
+        static builder(): SelectionIdBuilder;
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): SelectionId;
+        private ensureDataMap();
     }
 }

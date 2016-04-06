@@ -317,11 +317,11 @@ module powerbi.visuals {
                 let verticalDistance = circleY - y;
                 let distanceSqrd = (horizontalDistance * horizontalDistance) + (verticalDistance * verticalDistance);
                 if (minDistance === Number.MAX_VALUE) {
-                    selectedIndex = i;
+                    selectedIndex = <any>i;
                     minDistance = distanceSqrd;
                 }
                 else if (minDistance && minDistance > distanceSqrd) {
-                    selectedIndex = i;
+                    selectedIndex = <any>i;
                     minDistance = distanceSqrd;
                 }
             }

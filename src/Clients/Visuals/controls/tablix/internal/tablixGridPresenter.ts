@@ -181,6 +181,8 @@ module powerbi.visuals.controls.internal {
 
             let delta = TablixResizer.getMouseCoordinateDelta(this._startMousePosition, TablixResizer.getMouseCoordinates(event));
             this._handler.onResize(this.cell, delta.x, delta.y);
+            // Need to prevent default to prevent mouse move from triggering other effects (VSTS 6720639)
+            event.preventDefault();
         }
 
         private onDocumentMouseUp(event: MouseEvent): void {
@@ -209,8 +211,8 @@ module powerbi.visuals.controls.internal {
     export class TablixDomResizer extends TablixResizer {
         private _cell: TablixCell;
         constructor(cell: TablixCell, element: HTMLElement, handler: ITablixResizeHandler) {
-            this._cell = cell;
             super(element, handler);
+            this._cell = cell;
         }
 
         public get cell(): TablixCell {

@@ -32,6 +32,20 @@ module powerbitests.mocks {
     import SelectableDataPoint = powerbi.visuals.SelectableDataPoint;
     import ISelectionHandler = powerbi.visuals.ISelectionHandler;
     import DefaultVisualHostServices = powerbi.visuals.DefaultVisualHostServices;
+    import ITelemetryService = powerbi.visuals.telemetry.ITelemetryService;
+    import ITelemetryEvent = powerbi.visuals.telemetry.ITelemetryEvent;
+    import ITelemetryEventFactory = powerbi.visuals.telemetry.ITelemetryEventFactory;
+    import ITelemetryEventFactory1 = powerbi.visuals.telemetry.ITelemetryEventFactory1;
+    import ITelemetryEventFactory2 = powerbi.visuals.telemetry.ITelemetryEventFactory2;
+    import ITelemetryEventFactory3 = powerbi.visuals.telemetry.ITelemetryEventFactory3;
+    import ITelemetryEventFactory4 = powerbi.visuals.telemetry.ITelemetryEventFactory4;
+    import ITelemetryEventFactory5 = powerbi.visuals.telemetry.ITelemetryEventFactory5;
+    import ITelemetryEventFactory6 = powerbi.visuals.telemetry.ITelemetryEventFactory6;
+    import ITelemetryEventFactory7 = powerbi.visuals.telemetry.ITelemetryEventFactory7;
+    import ITelemetryEventFactory8 = powerbi.visuals.telemetry.ITelemetryEventFactory8;
+    import ITelemetryEventFactory9 = powerbi.visuals.telemetry.ITelemetryEventFactory9;
+    import ITelemetryEventFactory10 = powerbi.visuals.telemetry.ITelemetryEventFactory10;
+    import ITelemetryEventFactory11 = powerbi.visuals.telemetry.ITelemetryEventFactory11;
 
     export class TelemetryCallbackMock {
         public static callbackCalls: number = 0;
@@ -460,4 +474,37 @@ module powerbitests.mocks {
             this.defaultValue = defaultValue;
         }
     }
+
+    export function createMockTelemetryService(): ITelemetryService {
+        return new MockTelemetryService();
+    }
+
+    class MockTelemetryService implements ITelemetryService {
+
+        constructor() { }
+
+        public suspend(): void { }
+
+        public resume(): void { }
+
+        public flush(): void { }
+
+        /** Log telemetry event **/
+        logEvent(eventFactory: ITelemetryEventFactory): ITelemetryEvent;
+        logEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): ITelemetryEvent;
+        logEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2: T2): ITelemetryEvent;
+        logEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;
+        public logEvent(eventFactory: Function, ...args: any[]): ITelemetryEvent {
+            return;
+        }
+    }
+
 }

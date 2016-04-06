@@ -145,19 +145,14 @@ module powerbi {
 
             // Calculate range and sequence
             let yearsRange = NumericSequenceRange.calculateDataRange(dataMin.getFullYear(), dataMax.getFullYear(), false);
-            let yearsSequence = NumericSequence.calculate(yearsRange, expectedCount, 0);
-            let years = yearsSequence.sequence;
+
+            // Calculate year sequence
+            let sequence = NumericSequence.calculate(NumericSequenceRange.calculate(0, yearsRange.max - yearsRange.min), expectedCount, 0, null, null, [1, 2, 5]);
+            let newMinYear = Math.floor(yearsRange.min / sequence.interval) * sequence.interval; 
+            let date = new Date(newMinYear, 0, 1);
 
             // Convert to date sequence
-            let result = new DateTimeSequence(DateTimeUnit.Year);
-            for (let i = 0; i < years.length; i++) { 
-                let year = years[i];
-                if (year) {
-                    result.add(new Date(year, 0, 1));
-                }
-            }
-            result.interval = yearsSequence.interval;
-            result.intervalOffset = yearsSequence.intervalOffset;
+            let result = DateTimeSequence.fromNumericSequence(date, sequence, DateTimeUnit.Year);
             return result;
         }
 
@@ -173,7 +168,7 @@ module powerbi {
             let maxMonth = (maxYear - minYear) * 12 + dataMax.getMonth();
             let date = new Date(minYear, 0, 1);
             
-            // Calculate month sequence 
+            // Calculate month sequence
             let sequence = NumericSequence.calculateUnits(minMonth, maxMonth, expectedCount, [1, 2, 3, 6, 12]);
 
             // Convert to date sequence

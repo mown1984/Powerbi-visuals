@@ -68,17 +68,11 @@ declare module powerbi {
          */
         onDataChanged?(options: VisualDataChangedOptions): void;
 
-        /** Notifies the IVisual of changes to the color, font, theme, and style related values that the visual should use. */
-        onStyleChanged?(newStyle: IVisualStyle): void;
-
         /** Notifies the IVisual to change view mode if applicable. */
         onViewModeChanged?(viewMode: ViewMode): void;
 
         /** Notifies the IVisual to clear any selection. */
         onClearSelection?(): void;
-
-        /** Notifies the IVisual to select the specified object. */
-        onSelectObject?(object: VisualObjectInstance): void;
 
         /** Gets a value indicating whether the IVisual can be resized to the given viewport. */
         canResizeTo?(viewport: IViewport): boolean;
@@ -223,6 +217,10 @@ declare module powerbi {
         suppressAnimations?: boolean;
         viewMode?: ViewMode;
         resizeMode?: ResizeMode;
+        type?: VisualUpdateType;
+        /** Indicates what type of update has been performed on the data.
+        The default operation kind is Create.*/
+        operationKind?: VisualDataChangeOperationKind;
     }
 
     export interface VisualDataChangedOptions {

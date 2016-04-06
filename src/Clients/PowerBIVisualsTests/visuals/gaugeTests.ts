@@ -452,42 +452,6 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("Check Gauge DOM on Style Changed", (done) => {
-            gaugeDataBuilder.singleValue = 10;
-            gaugeDataBuilder.values = [[10], [0], [500], [200]];
-
-            gaugeDataBuilder.onDataChanged();
-
-            let dataColors: powerbi.IDataColorPalette = new powerbi.visuals.DataColorPalette();
-
-            gaugeDataBuilder.visual.onStyleChanged({
-                titleText: {
-                    color: { value: "rgba(51,51,51,1)" }
-                },
-                subTitleText: {
-                    color: { value: "rgba(145,145,145,1)" }
-                },
-                labelText: {
-                    color: {
-                        value: "#008000",
-                    },
-                    fontSize: "11px"
-                },
-                colorPalette: {
-                    dataColors: dataColors,
-                },
-                isHighContrast: false,
-            });
-
-            setTimeout(() => {
-                let labels = $(".labelText");
-                let color = $(labels[0]).css("fill");
-                helpers.assertColorsMatch(color, "#008000");
-                done();
-
-            }, DefaultWaitForRender);
-        });
-
         it("Formatting: dataLabels=off, calloutValue=off", (done) => {
             gaugeDataBuilder.singleValue = 10;
             gaugeDataBuilder.values = [[10], [0], [300], [0]];

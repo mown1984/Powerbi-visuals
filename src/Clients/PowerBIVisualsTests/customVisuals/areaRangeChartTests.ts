@@ -57,7 +57,7 @@ module powerbitests.customVisuals {
     });
 
     class AreaRangeChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number = 200, width: number = 2000, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
