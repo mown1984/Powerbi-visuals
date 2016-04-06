@@ -174,6 +174,10 @@ module powerbi.visuals.controls.internal {
             return this._owner;
         }
 
+        public set owner(owner: TablixLayoutManager) {
+             this._owner = owner;
+        }
+
         public get realizationManager(): TablixDimensionRealizationManager {
             return this._realizationManager;
         }
@@ -1563,11 +1567,15 @@ module powerbi.visuals.controls.internal {
             grid: TablixGrid,
             rowRealizationManager: RowRealizationManager,
             columnRealizationManager: ColumnRealizationManager) {
-            super(
-                binder,
-                grid,
-                new DashboardColumnLayoutManager(this, grid, columnRealizationManager),
-                new DashboardRowLayoutManager(this, grid, rowRealizationManager));
+                
+            let dashboardColumnLayoutManager = new DashboardColumnLayoutManager(null, grid, columnRealizationManager);
+            let dashboardRowLayoutManager = new DashboardRowLayoutManager(null, grid, rowRealizationManager);
+                 
+            super(binder, grid, dashboardColumnLayoutManager, dashboardRowLayoutManager);
+            
+            dashboardColumnLayoutManager.owner = this;
+            dashboardRowLayoutManager.owner = this;
+            
             this._sizeComputationManager = sizeComputationManager;
         }
 
@@ -1663,11 +1671,14 @@ module powerbi.visuals.controls.internal {
             grid: TablixGrid,
             rowRealizationManager: RowRealizationManager,
             columnRealizationManager: ColumnRealizationManager) {
-            super(
-                binder,
-                grid,
-                new CanvasColumnLayoutManager(this, grid, columnRealizationManager),
-                new CanvasRowLayoutManager(this, grid, rowRealizationManager));
+                
+            let canvasColumnLayoutManager = new CanvasColumnLayoutManager(null, grid, columnRealizationManager);
+            let canvasRowLayoutManager =  new CanvasRowLayoutManager(null, grid, rowRealizationManager);
+            
+            super(binder, grid, canvasColumnLayoutManager, canvasRowLayoutManager);
+            
+            canvasColumnLayoutManager.owner = this;
+            canvasRowLayoutManager.owner =  this;
         }
 
         public static createLayoutManager(binder: ITablixBinder, columnWidthManager: TablixColumnWidthManager): CanvasTablixLayoutManager {

@@ -468,14 +468,6 @@ module powerbi.visuals {
             });
         }
 
-        public onStyleChanged(newStyle: IVisualStyle) {
-            this.style = newStyle;
-            this.color = d3.scale.ordinal().range(
-                newStyle.colorPalette.dataColors.getSentimentColors().map(
-                    color => color.value));
-            this.updateInternal(true /* suppressAnimations */);
-        }
-
         private static getValidSettings(targetData: GaugeTargetData): GaugeTargetSettings {
             let maxVal = (targetData.max === Gauge.MAX_VALUE) ? Gauge.DEFAULT_MAX : targetData.max;
             let minVal = (targetData.min === Gauge.MIN_VALUE) ? Gauge.DEFAULT_MIN : targetData.min;

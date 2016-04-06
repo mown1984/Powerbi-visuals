@@ -102,13 +102,25 @@ module powerbitests {
             expect(germanGeoTaggingAnalyzerService.isGeoshapable("latitude")).toBe(false);
         });
 
-        it("can detect non latitude fields that partially match the string latitude", () => {
+        it("can detect non latitude fields that partially match the short versions of lat and long", () => {
             let nonLatitudeString = "population";
             expect(geoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
             nonLatitudeString = "Latency";
             expect(geoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
             nonLatitudeString = "xyzlat";
             expect(geoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
+        });
+
+        it("can detect non latitude fields that partially match the short versions of lat and long (English backup)", () => {
+            let germanGeoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService((stringId: string) => getLocalizedString(stringId));
+            germanGeoTaggingAnalyzerService["GeotaggingString_Latitude"] = "breitengrad";
+            expect(germanGeoTaggingAnalyzerService.getFieldType("breitengrad")).toBe("Latitude");
+            let nonLatitudeString = "population";
+            expect(germanGeoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
+            nonLatitudeString = "Latency";
+            expect(germanGeoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
+            nonLatitudeString = "xyzlat";
+            expect(germanGeoTaggingAnalyzerService.isLongitudeOrLatitude(nonLatitudeString)).toBe(false);
         });
 
         it("can detect state field in the middle of a word", () => {

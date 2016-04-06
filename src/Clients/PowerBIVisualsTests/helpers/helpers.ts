@@ -733,18 +733,18 @@ module powerbitests.helpers {
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {
-                expect(labelY).toBeLessThan(y1);
+                expect(labelY).toBeLessThan(parseFloat(y1));
             }
             else {
-                expect(labelY).toBeGreaterThan(y1);
+                expect(labelY).toBeGreaterThan(parseFloat(y1));
             }
         }
         else {
             if (properties.label.horizontalPosition === powerbi.visuals.referenceLineDataLabelHorizontalPosition.left) {
-                expect(labelX).toBeLessThan(x1);
+                expect(labelX).toBeLessThan(parseFloat(x1));
             }
             else {
-                expect(labelX).toBeGreaterThan(x1);
+                expect(labelX).toBeGreaterThan(parseFloat(x1));
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {

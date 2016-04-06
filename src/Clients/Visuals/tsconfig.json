@@ -90,7 +90,6 @@
         "common/invalidDataValuesChecker.ts",
         "common/listView.ts",
         "common/mapUtil.ts",
-        "common/selectionId.ts",
         "common/selectionManager.ts",
         "common/shapes.ts",
         "common/slicerUtil.ts",

@@ -175,6 +175,7 @@ GulpProject.prototype.createTypeScriptTask = function () {
     gulp.task(taskName, function (cb) {
 
         var tsProject = ts.createProject(path.join(me.projFolder, TS_CONFIG_FILE_NAME), {
+            typescript: require("typescript"),
             module: "amd",
             sortOutput: false,
             target: "ES5",

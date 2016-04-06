@@ -205,6 +205,34 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("Ensure both charts and axis created with two data views - y axis will merge", (done) => {
+            visualBuilder.onDataChanged({
+                dataViews: [
+                    dataViewFactory.buildDataViewCustomWithIdentities([[100, 200, 700]]),
+                    dataViewFactory.buildDataViewCustomWithIdentities([[90, 220, 670]])
+                ]
+            });
+
+            setTimeout(() => {
+                let lineCharts = $(".lineChart").length;
+                let columnCharts = $(".columnChart").length;
+                let yAxis = $(".y.axis").length;
+                let axisChildren1 = $(".y.axis").eq(0).find('g.tick').length;
+                let axisChildren2 = $(".y.axis").eq(1).find('g.tick').length;
+                let legend = $(".legend").length;
+
+                expect(lineCharts).toBe(1);
+                expect(columnCharts).toBe(1);
+                expect(yAxis).toBe(2);
+                expect(axisChildren1).toBeGreaterThan(0);
+                expect(axisChildren2).toBe(0);
+                expect(legend).toBe(1);
+                expect($(".legend").children.length).toBe(2);
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it("Ensure empty 1st dataview and populated 2nd has correct axes and lines", (done) => {
             visualBuilder.onDataChanged({
                 dataViews: [
@@ -795,6 +823,24 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it('validate dataPoint enumerateObjectInstances for combochart with column and line', (done) => {
+            let dataView1 = dataViewFactory.buildDataForLabelsFirstType();
+            let dataView2 = dataViewFactory.buildDataForLabelsFirstType();
+
+            visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
+
+            let dataPoints = <VisualObjectInstanceEnumerationObject>visualBuilder.visual.enumerateObjectInstances({ objectName: 'dataPoint' });
+
+            setTimeout(() => {
+                expect(dataPoints.instances.length).toBe(3);
+                expect(dataPoints.instances[0].properties["fill"]).toBeDefined();
+                expect(dataPoints.instances[1].properties["defaultColor"]).toBeDefined();
+                expect(dataPoints.instances[1].properties["showAllDataPoints"]).toBeDefined();
+                expect(dataPoints.instances[2].properties["fill"]).toBeDefined();
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it('xAxis customization- begin and end check', (done) => {
             let objects: ComboChartDataViewObjects = {
                 general: dataViewFactory.general,
@@ -946,28 +992,6 @@ module powerbitests {
                 //check titles
                 expect(helpers.findElementTitle($(axisLabels).first())).toBe("5");
                 expect(helpers.findElementTitle($(axisLabels).last())).toBe("25");
-
-                done();
-            }, DefaultWaitForRender);
-        });
-
-        it("Verify force to zero works for a positive domain range", (done) => {
-            visualBuilder.onDataChanged({
-                dataViews: [
-                    dataViewFactory.buildDataViewInAnotherDomain(),
-                    dataViewFactory.buildDataViewCustom(undefined, [[4000, 6000, 7000]])]
-            });
-
-            setTimeout(() => {
-                let axisLabels = $(".axisGraphicsContext .y.axis").last().find(".tick").find("text");
-                
-                //Verify begin&end labels
-                expect(helpers.findElementText($(axisLabels).first())).toBe("0K");
-                expect(helpers.findElementText($(axisLabels).last())).toBe("7K");
-
-                //Verify begin&end titles
-                expect(helpers.findElementTitle($(axisLabels).first())).toBe("0K");
-                expect(helpers.findElementTitle($(axisLabels).last())).toBe("7K");
 
                 done();
             }, DefaultWaitForRender);

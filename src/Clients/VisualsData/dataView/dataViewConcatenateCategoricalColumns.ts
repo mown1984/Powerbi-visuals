@@ -42,7 +42,12 @@ module powerbi.data {
             categories: DataViewCategoryColumn[];
         }
 
-        export function detectAndApply(dataView: DataView, roleMappings: DataViewMapping[], projectionOrdering: DataViewProjectionOrdering, selects: DataViewSelectTransform[], projectionActiveItems: DataViewProjectionActiveItems): DataView {
+        export function detectAndApply(
+            dataView: DataView,
+            roleMappings: DataViewMapping[],
+            projectionOrdering: DataViewProjectionOrdering,
+            selects: DataViewSelectTransform[],
+            projectionActiveItems: DataViewProjectionActiveItems): DataView {
             debug.assertValue(dataView, 'dataView');
             debug.assertAnyValue(roleMappings, 'roleMappings');
             debug.assertAnyValue(projectionOrdering, 'projectionOrdering');
@@ -54,9 +59,16 @@ module powerbi.data {
                 let concatenationSource: CategoryColumnsByRole = detectCategoricalRoleForHierarchicalGroup(dataViewCategorical, dataView.metadata, roleMappings, selects, projectionActiveItems);
 
                 if (concatenationSource) {
+                    // Consider: Perhaps the re-ordering of categorical columns should happen in the function transformSelects(...) of dataViewTransform?
                     let columnsSortedByProjectionOrdering = sortColumnsByProjectionOrdering(projectionOrdering, concatenationSource.roleName, concatenationSource.categories);
                     if (columnsSortedByProjectionOrdering.length >= 2) {
-                        result = applyConcatenation(dataView, concatenationSource.roleName, columnsSortedByProjectionOrdering);
+                        let activeItemsToIgnoreInConcatenation =
+                            _.chain(projectionActiveItems[concatenationSource.roleName])
+                                .filter((activeItemInfo: DataViewProjectionActiveItemInfo) => activeItemInfo.suppressConcat)
+                                .map((activeItemInfo: DataViewProjectionActiveItemInfo) => activeItemInfo.queryRef)
+                                .value();
+
+                        result = applyConcatenation(dataView, concatenationSource.roleName, columnsSortedByProjectionOrdering, activeItemsToIgnoreInConcatenation);
                     }
                 }
             }
@@ -143,14 +155,14 @@ module powerbi.data {
             return roleNames;
         }
 
-        function applyConcatenation(dataView: DataView, roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[]): DataView {
+        function applyConcatenation(dataView: DataView, roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): DataView {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(roleName, 'roleName');
             debug.assert(columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2, 'columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2');
 
-            let concatenatedValues: string[] = concatenateValues(columnsSortedByProjectionOrdering);
+            let concatenatedValues: string[] = concatenateValues(columnsSortedByProjectionOrdering, queryRefsToIgnore);
 
-            let concatenatedColumnMetadata: DataViewMetadataColumn = createConcatenatedColumnMetadata(roleName, columnsSortedByProjectionOrdering);
+            let concatenatedColumnMetadata: DataViewMetadataColumn = createConcatenatedColumnMetadata(roleName, columnsSortedByProjectionOrdering, queryRefsToIgnore);
             let transformedDataView = inheritSingle(dataView);
             addToMetadata(transformedDataView, concatenatedColumnMetadata);
 
@@ -171,7 +183,7 @@ module powerbi.data {
             return transformedDataView;
         }
 
-        function concatenateValues(columnsSortedByProjectionOrdering: DataViewCategoryColumn[]): string[] {
+        function concatenateValues(columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): string[] {
             debug.assertValue(columnsSortedByProjectionOrdering, 'columnsSortedByProjectionOrdering');
 
             let concatenatedValues: string[] = [];
@@ -182,8 +194,10 @@ module powerbi.data {
                     // TODO VSTS 6842107: need to clean up this value concatenation logic
                     // This code does not have access to valueFormatter module.  So first, move valueFormatter.getFormatString(...)
                     // and/or valueFormatter.formatValueColumn(...) to somewhere near DataViewObjects.ts, and then use it from here.
-                    let valueToAppend = categoryColumn.values && categoryColumn.values[i];
-                    concatenatedValues[i] = (concatenatedValues[i] === undefined) ? (valueToAppend + '') : (valueToAppend + ' ' + concatenatedValues[i]);
+                    if (!_.contains(queryRefsToIgnore, categoryColumn.source.queryName)) {
+                        let valueToAppend = categoryColumn.values && categoryColumn.values[i];
+                        concatenatedValues[i] = (concatenatedValues[i] === undefined) ? (valueToAppend + '') : (valueToAppend + ' ' + concatenatedValues[i]);
+                    }
                 }
             }
 
@@ -228,7 +242,7 @@ module powerbi.data {
         /**
          * Creates the column metadata that will back the column with the concatenated values. 
          */
-        function createConcatenatedColumnMetadata(roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[]): DataViewMetadataColumn {
+        function createConcatenatedColumnMetadata(roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): DataViewMetadataColumn {
             debug.assertValue(roleName, 'roleName');
             debug.assertNonEmpty(columnsSortedByProjectionOrdering, 'columnsSortedByProjectionOrdering');
 
@@ -245,10 +259,12 @@ module powerbi.data {
             for (let categoryColumn of columnsSortedByProjectionOrdering) {
                 let columnSource: DataViewMetadataColumn = categoryColumn.source;
 
-                concatenatedDisplayName = (concatenatedDisplayName == null) ? columnSource.displayName : (columnSource.displayName + ' ' + concatenatedDisplayName);
+                if (!_.contains(queryRefsToIgnore, categoryColumn.source.queryName)) {
+                    concatenatedDisplayName = (concatenatedDisplayName == null) ? columnSource.displayName : (columnSource.displayName + ' ' + concatenatedDisplayName);
 
-                if (consistentIsMeasure !== columnSource.isMeasure) {
-                    consistentIsMeasure = undefined;
+                    if (consistentIsMeasure !== columnSource.isMeasure) {
+                        consistentIsMeasure = undefined;
+                    }
                 }
             }
 
@@ -309,8 +325,10 @@ module powerbi.data {
                 newCategoryColumn.identityFields = firstColumn.identityFields;
             }
 
-            // I doubt that any firstColumn.objects property would still make sense in the new column,
-            // so I won't copy that over for now.
+            // It is safe to look at the first column as it is the one that is being set by findSelectedCategoricalColumn
+            if (firstColumn.objects) {
+                newCategoryColumn.objects = firstColumn.objects;
+            }
 
             return newCategoryColumn;
         }

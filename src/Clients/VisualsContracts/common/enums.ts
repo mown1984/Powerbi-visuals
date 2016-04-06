@@ -38,24 +38,23 @@ module powerbi {
         Create = 0,
         Append = 1,
     }
-    
+
     export enum VisualUpdateType {
-        Data = 0,
-        Resize = 1 << 1,
-        ViewMode = 1 << 2,
-        //This is to replace onStyleChange (we can discuss if we want to support this)
-        //Style = 1 << 3,
+        Data = 1 << 1,
+        Resize = 1 << 2,
+        ViewMode = 1 << 3,
+        Style = 1 << 4,
     }
-    
+
     export enum VisualPermissions {
-        
+
     }
 
     export const enum CartesianRoleKind {
         X,
         Y,
     }
-    
+
     export const enum ViewMode {
         View = 0,
         Edit = 1,
@@ -64,5 +63,25 @@ module powerbi {
     export const enum ResizeMode {
         Resizing = 1,
         Resized = 2,
-    }    
+    }
+
+    export module visuals.telemetry {
+        export const enum TelemetryCategory {
+            Verbose,
+            CustomerAction,
+            CriticalError,
+            Trace,
+        }
+
+        export enum ErrorSource {
+            PowerBI = 0,
+            External = 1,
+            User = 2,
+        }
+    }
+
+    export const enum JoinPredicateBehavior {
+        /** Prevent items in this role from acting as join predicates. */
+        None,
+    }
 }

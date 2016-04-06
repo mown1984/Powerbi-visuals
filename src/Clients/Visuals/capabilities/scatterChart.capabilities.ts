@@ -470,7 +470,6 @@ module powerbi.visuals {
             categorical: {
                 categories: {
                     for: { in: 'Category' },
-                    dataReductionAlgorithm: { sample: {} }
                 },
                 values: {
                     group: {
@@ -481,10 +480,11 @@ module powerbi.visuals {
                             { bind: { to: 'Size' } },
                             { bind: { to: 'Gradient' } },
                         ],
-                        dataReductionAlgorithm: { top: {} }
                     }
                 },
-                rowCount: { preferred: { min: 2 } }
+                rowCount: { preferred: { min: 2 } },
+                dataReductionAlgorithm: { sample: {} },
+                dataVolume: 4,
             }
         }, {
             conditions: [
@@ -529,7 +529,9 @@ module powerbi.visuals {
                 },
                 values: {
                     for: { in: 'regression.Y' }
-                }
+                },
+                dataReductionAlgorithm: { sample: {} },
+                dataVolume: 4,
             }
         }],
         sorting: {

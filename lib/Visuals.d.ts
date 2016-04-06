@@ -494,6 +494,9 @@ declare module powerbi.visuals {
         legend: {
             labelColor: DataViewObjectPropertyIdentifier;
         };
+        dataPoint: {
+            showAllDataPoints: DataViewObjectPropertyIdentifier;
+        };
     };
 }
 declare module powerbi.visuals {
@@ -1135,8 +1138,7 @@ declare module powerbi.visuals {
      * Default ranges are for when we have a field chosen for the axis,
      * but no values are returned by the query.
      */
-    const fallBackDomain: number[];
-    const fallbackDateDomain: number[];
+    const emptyDomain: number[];
     interface IAxisProperties {
         /**
          * The D3 Scale object.
@@ -1297,7 +1299,6 @@ declare module powerbi.visuals {
         function getRecommendedTickValues(maxTicks: number, scale: D3.Scale.GenericScale<any>, axisType: ValueType, isScalar: boolean, minTickInterval?: number): any[];
         function getRecommendedTickValuesForAnOrdinalRange(maxTicks: number, labels: string[]): string[];
         function getRecommendedTickValuesForAQuantitativeRange(maxTicks: number, scale: D3.Scale.GenericScale<any>, minInterval?: number): number[];
-        function normalizeLinearDomain(domain: NumberRange): NumberRange;
         function getMargin(availableWidth: number, availableHeight: number, xMargin: number, yMargin: number): IMargin;
         function getTickLabelMargins(viewport: IViewport, yMarginLimit: number, textWidthMeasurer: ITextAsSVGMeasurer, textHeightMeasurer: ITextAsSVGMeasurer, axes: CartesianAxisProperties, bottomMarginLimit: number, properties: TextProperties, scrollbarVisible?: boolean, showOnRight?: boolean, renderXAxis?: boolean, renderY1Axis?: boolean, renderY2Axis?: boolean): TickLabelMargins;
         function columnDataTypeHasValue(dataType: ValueTypeDescriptor): boolean;
@@ -1750,6 +1751,7 @@ declare module powerbi.visuals {
         rowHeight: number;
         viewport: IViewport;
         scrollEnabled: boolean;
+        isReadMode: () => boolean;
     }
 }
 declare module powerbi.visuals {
@@ -1823,59 +1825,6 @@ declare module powerbi.visuals {
         setViewBox(svg: SVGSVGElement): void;
         innerTransform: Transform;
         transformToString(transform: Transform): string;
-    }
-}
-declare module powerbi.visuals {
-    import Selector = powerbi.data.Selector;
-    import SelectorForColumn = powerbi.SelectorForColumn;
-    /**
-     * A combination of identifiers used to uniquely identify
-     * data points and their bound geometry.
-     */
-    class SelectionId implements ISelectionId {
-        private selector;
-        private selectorsByColumn;
-        private key;
-        private keyWithoutHighlight;
-        highlight: boolean;
-        constructor(selector: Selector, highlight: boolean);
-        equals(other: SelectionId): boolean;
-        /**
-         * Checks equality against other for all identifiers existing in this.
-         */
-        includes(other: SelectionId, ignoreHighlight?: boolean): boolean;
-        getKey(): string;
-        getKeyWithoutHighlight(): string;
-        /**
-         * Temporary workaround since a few things currently rely on this, but won't need to.
-         */
-        hasIdentity(): boolean;
-        getSelector(): Selector;
-        getSelectorsByColumn(): Selector;
-        static createNull(highlight?: boolean): SelectionId;
-        static createWithId(id: DataViewScopeIdentity, highlight?: boolean): SelectionId;
-        static createWithMeasure(measureId: string, highlight?: boolean): SelectionId;
-        static createWithIdAndMeasure(id: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
-        static createWithIdAndMeasureAndCategory(id: DataViewScopeIdentity, measureId: string, queryName: string, highlight?: boolean): SelectionId;
-        static createWithIds(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, highlight?: boolean): SelectionId;
-        static createWithIdsAndMeasure(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
-        static createWithSelectorForColumnAndMeasure(dataMap: SelectorForColumn, measureId: string, highlight?: boolean): SelectionId;
-        static createWithHighlight(original: SelectionId): SelectionId;
-        private static idArray(id1, id2);
-    }
-    /**
-     * This class is designed to simplify the creation of SelectionId objects
-     * It allows chaining to build up an object before calling 'create' to build a SelectionId
-     */
-    class SelectionIdBuilder implements ISelectionIdBuilder {
-        private dataMap;
-        private measure;
-        static builder(): SelectionIdBuilder;
-        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
-        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
-        withMeasure(measureId: string): this;
-        createSelectionId(): SelectionId;
-        private ensureDataMap();
     }
 }
 declare module powerbi.visuals.utility {
@@ -3597,9 +3546,7 @@ declare module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-        sandboxVisualsDisabled?: boolean;
-        /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
-        categoricalPivotEnabled?: boolean;
+        sandboxVisualsEnabled?: boolean;
         /**
         * R visual is enabled for consumption.
         * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
@@ -5958,7 +5905,7 @@ declare module powerbi.visuals {
         constructor(name: string);
         getMetaDataColumn(dataView: DataView): void;
         getAdjustedFontHeight(availableWidth: number, textToMeasure: string, seedFontHeight: number): number;
-        private getAdjustedFontHeightCore(nodeToMeasure, availableWidth, seedFontHeight, iteration);
+        private getAdjustedFontHeightCore(textProperties, availableWidth, seedFontHeight, iteration);
         clear(): void;
         doValueTransition(startValue: any, endValue: any, displayUnitSystemType: DisplayUnitSystemType, animationOptions: AnimationOptions, duration: number, forceUpdate: boolean, formatter?: IValueFormatter): void;
         setTextColor(color: string): void;
@@ -6112,7 +6059,6 @@ declare module powerbi.visuals {
         domain: number[];
         merged: boolean;
         tickCount: number;
-        forceStartToZero: boolean;
     }
     interface CartesianSmallViewPortProperties {
         hideLegendOnSmallViewPort: boolean;
@@ -6589,7 +6535,6 @@ declare module powerbi.visuals {
         hostService: IVisualHostServices;
         margin: IMargin;
         mainGraphicsContext: D3.Selection;
-        labelGraphicsContext: D3.Selection;
         layout: CategoryLayout;
         animator: IColumnChartAnimator;
         onDragStart?: (datum: ColumnChartDataPoint) => void;
@@ -6636,9 +6581,7 @@ declare module powerbi.visuals {
         static stackedValidLabelPositions: RectLabelPosition[];
         static SeriesClasses: jsCommon.CssConstants.ClassAndSelector;
         private svg;
-        private mainGraphicsSVG;
         private mainGraphicsContext;
-        private labelGraphicsContext;
         private xAxisProperties;
         private yAxisProperties;
         private currentViewport;
@@ -6848,6 +6791,10 @@ declare module powerbi.visuals {
      */
     module ComboChart {
         const capabilities: VisualCapabilities;
+        /**
+         * Handles the case of a column layer in a combo chart. In this case, the column layer is enumearated last.
+         */
+        function enumerateDataPoints(enumeration: ObjectEnumerationBuilder, options: EnumerateVisualObjectInstancesOptions, layers: ICartesianVisual[]): void;
         function customizeQuery(options: CustomizeQueryOptions): void;
         function getSortableRoles(options: VisualSortableOptions): string[];
         function isComboChart(chartType: CartesianChartType): boolean;
@@ -7281,7 +7228,6 @@ declare module powerbi.visuals {
         private updateCalloutValue(suppressAnimations);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
-        onStyleChanged(newStyle: IVisualStyle): void;
         private static getValidSettings(targetData);
         private static getGaugeData(dataView);
         private static overrideGaugeSettings(settings, gaugeObjectsSettings);
@@ -7605,7 +7551,7 @@ declare module powerbi.visuals {
          * This is for the Mobile renderer with InteractiveLegend
          */
         selectColumn(columnIndex: number, force?: boolean): void;
-        private setHoverLine(chartX);
+        private setHoverLine(chartX, columnIndex);
         private getChartX(columnIndex);
         /**
          * Finds the index of the category of the given x coordinate given.
@@ -7661,6 +7607,7 @@ declare module powerbi.visuals {
         dataPoints: MapDataPoint[];
         geocodingCategory: string;
         hasDynamicSeries: boolean;
+        hasSize: boolean;
     }
     /**
      * The main map data point, which exists for each category
@@ -8243,7 +8190,6 @@ declare module powerbi.visuals {
         private playAxis;
         constructor(options: ScatterChartConstructorOptions);
         init(options: CartesianVisualInitOptions): void;
-        static customizeQuery(options: CustomizeQueryOptions): void;
         static getAdditionalTelemetry(dataView: DataView): any;
         private static getObjectProperties(dataView, dataLabelsSettings?);
         static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
@@ -9105,6 +9051,7 @@ declare module powerbi.visuals {
     interface CardStyleText {
         textSize: number;
         color: string;
+        paddingTop?: number;
     }
     interface CardStyleValue extends CardStyleText {
         fontFamily: string;

@@ -4118,14 +4118,10 @@ module powerbitests {
                 }]
             });
 
-            let ticksText: JQuery = helpers.getAxisTicks('y').find('text');
-
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect(helpers.getAxisTicks('x').length).toBe(0);
-                expect(helpers.getAxisTicks('y').length).toBeGreaterThan(0);
-                expect(helpers.findElementText(ticksText.last())).toBe('10');
-                expect(helpers.findElementTitle(ticksText.last())).toBe('10');
+                expect(helpers.getAxisTicks('y').length).toBe(0);
                 done();
             }, DefaultWaitForRender);
         });
@@ -7659,9 +7655,7 @@ module powerbitests {
             setTimeout(() => {
                 expect($('.columnChart')).toBeInDOM();
                 expect(helpers.getAxisTicks('y').length).toBe(0);
-                expect(helpers.getAxisTicks('x').length).toBeGreaterThan(0);
-                expect(helpers.findElementText(helpers.getAxisTicks('x').find('text').last())).toBe('10');
-                expect(helpers.findElementTitle(helpers.getAxisTicks('x').find('text').last())).toBe('10');
+                expect(helpers.getAxisTicks('x').length).toBe(0);
                 done();
             }, DefaultWaitForRender);
         });

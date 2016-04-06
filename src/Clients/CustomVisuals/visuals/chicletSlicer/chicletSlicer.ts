@@ -405,7 +405,7 @@ module powerbi.visuals.samples {
             show: boolean;
             outline: string;
             fontColor: string;
-            background: string;
+            background?: string;
             textSize: number;
             outlineColor: string;
             outlineWeight: number;
@@ -426,7 +426,7 @@ module powerbi.visuals.samples {
             disabledColor: string;
             marginLeft: number;
             outline: string;
-            background: string;
+            background?: string;
             transparency: number;
             outlineColor: string;
             outlineWeight: number;
@@ -443,7 +443,7 @@ module powerbi.visuals.samples {
         };
     }
 
-    export class ChicletSlicer implements IVisual {      
+    export class ChicletSlicer implements IVisual {
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
@@ -657,6 +657,7 @@ module powerbi.visuals.samples {
         public static DefaultFontSizeInPt: number = 11;       
         private static cellTotalInnerPaddings = 8;
         private static cellTotalInnerBorders = 2;
+        private static chicletTotalInnerRightLeftPaddings = 14;
 
         private static ItemContainer: ClassAndSelector = createClassAndSelector('slicerItemContainer');
         private static HeaderText: ClassAndSelector = createClassAndSelector('headerText');
@@ -687,7 +688,7 @@ module powerbi.visuals.samples {
                     show: true,
                     outline: 'BottomOnly',
                     fontColor: '#a6a6a6',
-                    background: '#ffffff',
+                    background: null,
                     textSize: 10,
                     outlineColor: '#a6a6a6',
                     outlineWeight: 1,
@@ -708,7 +709,7 @@ module powerbi.visuals.samples {
                     disabledColor: 'grey',
                     marginLeft: 8,
                     outline: 'Frame',
-                    background: '#ffffff',
+                    background: null,
                     transparency: 0,
                     outlineColor: '#000000',
                     outlineWeight: 1,
@@ -943,7 +944,13 @@ module powerbi.visuals.samples {
                 this.tableView.empty();
                 return;
             }
+
+            if (this.interactivityService) {
+                this.interactivityService.applySelectionStateToData(data.slicerDataPoints);
+            }
+
             data.slicerSettings.header.outlineWeight = data.slicerSettings.header.outlineWeight < 0 ? 0 : data.slicerSettings.header.outlineWeight;
+            data.slicerSettings.slicerText.outlineWeight = data.slicerSettings.slicerText.outlineWeight < 0 ? 0 : data.slicerSettings.slicerText.outlineWeight;
             this.slicerData = data;
             this.settings = this.slicerData.slicerSettings;
             if (this.settings.general.showDisabled === ChicletSlicerShowDisabled.BOTTOM) {
@@ -1067,7 +1074,10 @@ module powerbi.visuals.samples {
                     slicerText.text((d: ChicletSlicerDataPoint) => {
                         let text = valueFormatter.format(d.category, formatString);
                         textProperties.text = text;
-                        return TextMeasurementService.getTailoredTextOrDefault(textProperties, this.currentViewport.width / this.settings.general.columns);
+                        if (this.settings.slicerText.width === 0)
+                            return powerbi.TextMeasurementService.getTailoredTextOrDefault(textProperties, (this.currentViewport.width / this.settings.general.columns) - ChicletSlicer.chicletTotalInnerRightLeftPaddings - ChicletSlicer.cellTotalInnerBorders - settings.slicerText.outlineWeight); 
+                        else
+                            return TextMeasurementService.getTailoredTextOrDefault(textProperties, this.settings.slicerText.width - ChicletSlicer.chicletTotalInnerRightLeftPaddings - ChicletSlicer.cellTotalInnerBorders - settings.slicerText.outlineWeight);
                     });
 
                     var slicerImg = rowSelection.selectAll('.slicer-img-wrapper');
@@ -1107,7 +1117,11 @@ module powerbi.visuals.samples {
                         'border-radius': this.getBorderRadius(settings.slicerText.borderStyle),
                     });
 
-                    this.slicerBody.style('background-color', explore.util.hexToRGBString(settings.slicerText.background, (100 - settings.slicerText.transparency) / 100));
+                    if (settings.slicerText.background)
+                        this.slicerBody.style('background-color', explore.util.hexToRGBString(settings.slicerText.background, (100 - settings.slicerText.transparency) / 100));
+                    else
+                        this.slicerBody.style('background-color',null);
+                        
                     if (this.interactivityService && this.slicerBody) {
                         var slicerBody = this.slicerBody.attr('width', this.currentViewport.width);
                         var slicerItemContainers = slicerBody.selectAll(ChicletSlicer.ItemContainer.selector);

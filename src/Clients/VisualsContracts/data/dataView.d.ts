@@ -285,6 +285,8 @@ declare module powerbi {
 
     /** Represents a value at the matrix intersection, used in the values property on DataViewMatrixNode (inherited from DataViewTreeNode). */
     export interface DataViewMatrixNodeValue extends DataViewTreeNodeValue {
+        highlight?: any;
+
         /** Indicates the index of the corresponding measure (held by DataViewMatrix.valueSources). Its value is 0 if omitted. */
         valueSourceIndex?: number;
     }

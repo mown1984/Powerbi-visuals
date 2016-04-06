@@ -498,15 +498,15 @@ module powerbi.visuals.samples {
 
             this.mainGraphicsContext
                 .append('g')
-                .classed('slices', true);
-
-            this.mainGraphicsContext
-                .append('g')
                 .classed('ticks', true);
 
             this.mainGraphicsContext
                 .append('g')
                 .classed('chords', true);
+
+            this.mainGraphicsContext
+                .append('g')
+                .classed('slices', true);
 
             this.colors = options.style.colorPalette.dataColors;
         }
@@ -903,8 +903,8 @@ module powerbi.visuals.samples {
                 return d.startAngle + (d.endAngle - d.startAngle) / 2;
             };
 
-            let spaceAvaliableForLabels: number = viewport.width / 2 - radius;
-            let minAvailableSpace: number = Math.min(spaceAvaliableForLabels, dataLabelUtils.maxLabelWidth);
+            // Width of the container - the max available width + the labelfont size(sometimes come back as string) * 2.2 (should be 2) - radius * 2 (2 rad in a circle)
+            let minAvailableSpace: number = viewport.width - ((dataLabelUtils.maxLabelWidth + +labelFontSize) * 2.2) - radius * 2;
             var PixelConverter = jsCommon.PixelConverter;
 
             return {

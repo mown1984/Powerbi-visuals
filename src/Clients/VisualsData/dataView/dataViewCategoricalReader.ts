@@ -36,13 +36,14 @@ module powerbi.data {
         hasCategories(): boolean;
         getCategoryCount(): number;
         getCategoryValues(roleName: string): any;
-        getCategoryValue(categoryIndex: number, roleName: string): any;
+        getCategoryValue(roleName: string, categoryIndex: number): any;
         getCategoryColumn(roleName: string): DataViewCategoryColumn;
         getCategoryMetadataColumn(roleName: string): DataViewMetadataColumn;
+        getCategoryColumnIdentityFields(roleName: string): powerbi.data.ISQExpr[];
         getCategoryDisplayName(roleName: string): string;
         hasCompositeCategories(): boolean;
         hasCategoryWithRole(roleName: string): boolean;
-        getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects;
+        getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         // Value functions
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
@@ -61,10 +62,10 @@ module powerbi.data {
         hasDynamicSeries(): boolean;
         getSeriesCount(): number;
         getSeriesObjects(seriesIndex: number): DataViewObjects;
-        getSeriesColumn(seriesIndex: number): DataViewValueColumn;
-        getSeriesColumns(): DataViewValueColumns;
+        getSeriesValueColumns(): DataViewValueColumns;
+        getSeriesValueColumnGroup(seriesIndex: number): DataViewValueColumnGroup;
         getSeriesMetadataColumn(): DataViewMetadataColumn;
-        getSeriesColumnIdentifier(): powerbi.data.ISQExpr[];
+        getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
     }
@@ -99,7 +100,9 @@ module powerbi.data {
             let values: DataViewValueColumns;
             if (categorical)
                 values = categorical.values;
-            let hasAnyValidValues = this.hasAnyValidValues = !_.isEmpty(values);
+            // We need to access grouped as long as values is non-null; if it's an empty array (meaning there is a category + series), we'll use grouped for non-value stuff
+            // TODO: think a bit more about how to represent this internally; Maybe split this up between hasGroup and hasValidValues or something
+            let hasAnyValidValues = this.hasAnyValidValues = values != null;
             if (hasAnyValidValues)
                 this.grouped = dataView.categorical.values.grouped();
 
@@ -127,7 +130,7 @@ module powerbi.data {
             }
         }
 
-        public getCategoryValue(categoryIndex: number, roleName: string): any {
+        public getCategoryValue(roleName: string, categoryIndex: number): any {
             if (this.hasValidCategories) {
                 let categories = this.getCategoryFromRole(roleName);
                 return categories ? categories.values[categoryIndex] : undefined;
@@ -143,6 +146,13 @@ module powerbi.data {
             if (this.hasValidCategories) {
                 let categories = this.getCategoryFromRole(roleName);
                 return categories ? categories.source : undefined;
+            }
+        }
+
+        public getCategoryColumnIdentityFields(roleName: string): powerbi.data.ISQExpr[] {
+            if (this.hasValidCategories) {
+                let categories = this.getCategoryFromRole(roleName);
+                return categories ? categories.identityFields : undefined;
             }
         }
 
@@ -164,7 +174,7 @@ module powerbi.data {
             return DataRoleHelper.getCategoryIndexOfRole(this.categories, roleName) !== -1;
         }
 
-        public getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects {
+        public getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects {
             if (this.hasValidCategories && this.hasCategoryObjects)
                 return this.getCategoryFromRole(roleName).objects[categoryIndex];
         }
@@ -256,14 +266,14 @@ module powerbi.data {
                 return this.grouped[seriesIndex].objects;
         }
 
-        public getSeriesColumn(seriesIndex: number): DataViewValueColumn {
-            if (this.hasAnyValidValues)
-                return this.dataView.categorical.values[seriesIndex];
-        }
-
-        public getSeriesColumns(): DataViewValueColumns {
+        public getSeriesValueColumns(): DataViewValueColumns {
             if (this.hasAnyValidValues)
                 return this.dataView.categorical.values;
+        }
+
+        public getSeriesValueColumnGroup(seriesIndex: number): DataViewValueColumnGroup {
+            if (this.hasAnyValidValues)
+                return this.grouped[seriesIndex];
         }
 
         public getSeriesMetadataColumn(): DataViewMetadataColumn {
@@ -271,7 +281,7 @@ module powerbi.data {
                 return this.dataView.categorical.values.source;
         }
 
-        public getSeriesColumnIdentifier(): powerbi.data.ISQExpr[] {
+        public getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[] {
             if (this.hasAnyValidValues)
                 return this.dataView.categorical.values.identityFields;
         }

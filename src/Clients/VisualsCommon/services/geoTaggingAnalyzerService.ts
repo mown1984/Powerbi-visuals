@@ -451,17 +451,13 @@ module powerbi {
         }
 
         private isEnglishLongitude(fieldRefName: string): boolean {
-            return GeoTaggingAnalyzerService.hasMatches(fieldRefName, [
-                EnglishBackup.GeotaggingString_Longitude,
-                EnglishBackup.GeotaggingString_Longitude_Short
-            ]);
+            return GeoTaggingAnalyzerService.hasMatches(fieldRefName, [EnglishBackup.GeotaggingString_Longitude])
+                || GeoTaggingAnalyzerService.hasMatches(fieldRefName, [EnglishBackup.GeotaggingString_Longitude_Short], true /* useStrict */);
         }
 
         private isEnglishLatitude(fieldRefName: string): boolean {
-            return GeoTaggingAnalyzerService.hasMatches(fieldRefName, [
-                EnglishBackup.GeotaggingString_Latitude,
-                EnglishBackup.GeotaggingString_Latitude_Short
-            ]);
+            return GeoTaggingAnalyzerService.hasMatches(fieldRefName, [EnglishBackup.GeotaggingString_Latitude])
+                || GeoTaggingAnalyzerService.hasMatches(fieldRefName, [EnglishBackup.GeotaggingString_Latitude_Short], true /* useStrict */);
         }
 
         protected isEnglishTerritory(fieldRefName: string): boolean {

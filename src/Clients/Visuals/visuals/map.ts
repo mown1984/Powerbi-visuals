@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -53,6 +53,7 @@ module powerbi.visuals {
         dataPoints: MapDataPoint[];
         geocodingCategory: string;
         hasDynamicSeries: boolean;
+        hasSize: boolean;
     }
 
     /**
@@ -120,7 +121,7 @@ module powerbi.visuals {
         labelFormatString: string;
     }
 
-    /** 
+    /**
      * Used because data points used in D3 pie layouts are placed within a container with pie information.
      */
     interface MapSliceContainer {
@@ -193,7 +194,7 @@ module powerbi.visuals {
                             <!-- our geometry -->
                         </g>
                     </svg>
-                </div>                    
+                </div>
 
             */
 
@@ -242,6 +243,7 @@ module powerbi.visuals {
                 dataPoints: [],
                 geocodingCategory: null,
                 hasDynamicSeries: false,
+                hasSize: false,
             };
         }
 
@@ -296,6 +298,7 @@ module powerbi.visuals {
             }
 
             let dataPoints = this.mapData ? this.mapData.dataPoints : [];
+            let hasSize = this.mapData.hasSize;
             for (let categoryIndex = 0, categoryCount = dataPoints.length; categoryIndex < categoryCount; categoryIndex++) {
                 let dataPoint = dataPoints[categoryIndex];
                 let categoryValue = dataPoint.categoryValue;
@@ -333,6 +336,7 @@ module powerbi.visuals {
 
                         for (var seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                             let subDataPoint: MapSubDataPoint = subDataPoints[seriesIndex];
+                            let value = hasSize ? subDataPoint.value : 1; // Normalize values if there is no size in the data
 
                             slices.push({
                                 x: x,
@@ -342,7 +346,7 @@ module powerbi.visuals {
                                 fill: subDataPoint.fill,
                                 stroke: subDataPoint.stroke,
                                 strokeWidth: strokeWidth,
-                                value: subDataPoint.value,
+                                value: value,
                                 tooltipInfo: subDataPoint.tooltipInfo,
                                 identity: subDataPoint.identity,
                                 selected: false,
@@ -609,7 +613,7 @@ module powerbi.visuals {
                             <!-- our geometry -->
                         </g>
                     </svg>
-                </div>                    
+                </div>
 
             */
 
@@ -652,6 +656,7 @@ module powerbi.visuals {
                 dataPoints: [],
                 geocodingCategory: null,
                 hasDynamicSeries: false,
+                hasSize: false,
             };
         }
 
@@ -801,7 +806,7 @@ module powerbi.visuals {
 
             for (let pathIndex = 0, pathCount = paths.length; pathIndex < pathCount; pathIndex++) {
                 let path = paths[pathIndex];
-                        
+
                 // Using the area of the polygon (and taking the largest)
                 let polygon = new Polygon(path.absolute);
                 let currentShapeArea = Math.abs(Polygon.calculateAbsolutePolygonArea(polygon.polygonPoints));
@@ -911,7 +916,7 @@ module powerbi.visuals {
                             height: textHeight,
                         },
                         insideFill: labelSettings.labelColor,
-                        outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultInsideLabelColor, // Use inside for outside colors because we draw backgrounds for map labels                   
+                        outsideFill: labelSettings.labelColor ? labelSettings.labelColor : NewDataLabelUtils.defaultInsideLabelColor, // Use inside for outside colors because we draw backgrounds for map labels
                         isPreferred: false,
                         identity: undefined,
                         hasBackground: true,
@@ -934,7 +939,7 @@ module powerbi.visuals {
         min: number;
         max: number;
     }
-    
+
     const DefaultLocationZoomLevel = 11;
 
     export class Map implements IVisual {
@@ -1043,7 +1048,7 @@ module powerbi.visuals {
             let pushpin: Microsoft.Maps.Pushpin;
 
             myLocBtn.on('click',() => {
-                
+
                 if (this.isCurrentLocation) {
                     // Restore previous map view and remove pushpin
                     if (pushpin) {
@@ -1451,6 +1456,8 @@ module powerbi.visuals {
         public onDataChanged(options: VisualDataChangedOptions): void {
             debug.assertValue(options, 'options');
 
+            this.resetBounds();
+
             this.receivedExternalViewChange = false;
 
             this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
@@ -1463,6 +1470,7 @@ module powerbi.visuals {
                 dataPoints: [],
                 geocodingCategory: null,
                 hasDynamicSeries: false,
+                hasSize: false,
             };
 
             if (dataView) {
@@ -1562,7 +1570,7 @@ module powerbi.visuals {
             let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let dataPoints: MapDataPoint[] = [];
             let hasDynamicSeries = reader.hasDynamicSeries();
-            let seriesColumnIdentifier = reader.getSeriesColumnIdentifier();
+            let seriesColumnIdentifier = reader.getSeriesColumnIdentityFields();
             let sizeQueryName = reader.getMeasureQueryName('Size');
             if (sizeQueryName == null)
                 sizeQueryName = '';
@@ -1604,7 +1612,7 @@ module powerbi.visuals {
                     for (let categoryIndex = 0, categoryCount = reader.getCategoryCount(); categoryIndex < categoryCount; categoryIndex++) {
                         // Get category information
                         let categoryValue = undefined;
-                        let categoryObjects = reader.getCategoryObjects(categoryIndex, 'Category');
+                        let categoryObjects = reader.getCategoryObjects('Category', categoryIndex);
                         let location: IGeocodeCoordinate;
                         let categoryTooltipItem: TooltipDataItem;
                         let latitudeTooltipItem: TooltipDataItem;
@@ -1614,7 +1622,7 @@ module powerbi.visuals {
                         let gradientTooltipItem: TooltipDataItem;
                         if (hasCategoryGroup) {
                             // Set category value
-                            categoryValue = reader.getCategoryValue(categoryIndex, 'Category');
+                            categoryValue = reader.getCategoryValue('Category', categoryIndex);
                             categoryTooltipItem = {
                                 displayName: reader.getCategoryDisplayName('Category'),
                                 value: converterHelper.formatFromMetadataColumn(categoryValue, reader.getCategoryMetadataColumn('Category'), formatStringProp),
@@ -1638,8 +1646,8 @@ module powerbi.visuals {
                             }
                         }
                         else {
-                            let latitude = reader.getCategoryValue(categoryIndex, 'Y');
-                            let longitude = reader.getCategoryValue(categoryIndex, 'X');
+                            let latitude = reader.getCategoryValue('Y', categoryIndex);
+                            let longitude = reader.getCategoryValue('X', categoryIndex);
 
                             if (latitude != null && longitude != null) {
                                 // Combine latitude and longitude to create the category value
@@ -1657,17 +1665,25 @@ module powerbi.visuals {
                             }
                         }
                         let value: number = hasSize ? categoryTotals[categoryIndex] : undefined;
-                    
+
                         // Calculate sub data points by series
                         let subDataPoints: MapSubDataPoint[] = [];
                         let seriesCount = reader.getSeriesCount();
-                        if (!hasSize) {
+                        if (!hasSize && !hasDynamicSeries) {
                             seriesCount = 1;
                         }
                         for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
-                            let color = hasDynamicSeries
-                                ? colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>(reader.getSeriesName(seriesIndex)))
-                                : colorHelper.getColorForMeasure(categoryObjects, sizeQueryName);
+                            let color: string;
+
+                            if (hasDynamicSeries) {
+                                color = colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>(reader.getSeriesName(seriesIndex)));
+                            }
+                            else if (reader.hasCategoryWithRole('Series')) {
+                                color = colorHelper.getColorForSeriesValue(reader.getCategoryObjects('Series', categoryIndex), reader.getCategoryColumnIdentityFields('Series'), categoryValue);
+                            }
+                            else {
+                                color = colorHelper.getColorForMeasure(categoryObjects, sizeQueryName);
+                            }
 
                             let colorRgb = Color.parseColorString(color);
                             let stroke = Color.hexString(Color.darken(colorRgb, Map.StrokeDarkenColorValue));
@@ -1677,8 +1693,8 @@ module powerbi.visuals {
                             let identityBuilder = new SelectionIdBuilder()
                                 .withCategory(reader.getCategoryColumn(hasCategoryGroup ? 'Category' : 'Y'), categoryIndex)
                                 .withMeasure(sizeQueryName);
-                            if (hasDynamicSeries && hasSize) {
-                                identityBuilder = identityBuilder.withSeries(reader.getSeriesColumns(), reader.getValueColumn('Size', seriesIndex));
+                            if (hasDynamicSeries) {
+                                identityBuilder = identityBuilder.withSeries(reader.getSeriesValueColumns(), reader.getSeriesValueColumnGroup(seriesIndex));
                             }
 
                             if (hasDynamicSeries) {
@@ -1687,7 +1703,7 @@ module powerbi.visuals {
                                     value: converterHelper.formatFromMetadataColumn(reader.getSeriesName(seriesIndex), reader.getSeriesMetadataColumn(), formatStringProp),
                                 };
                             }
-                            
+
                             let subsliceValue: number;
                             if (hasSize) {
                                 subsliceValue = reader.getValue('Size', categoryIndex, seriesIndex);
@@ -1718,7 +1734,7 @@ module powerbi.visuals {
                             if (gradientTooltipItem)
                                 tooltipInfo.push(gradientTooltipItem);
 
-                            // Do not create subslices for data points with 0 or null 
+                            // Do not create subslices for data points with 0 or null
                             if (subsliceValue || !hasSize) {
                                 subDataPoints.push({
                                     value: subsliceValue,
@@ -1749,6 +1765,7 @@ module powerbi.visuals {
                 dataPoints: dataPoints,
                 geocodingCategory: geocodingCategory,
                 hasDynamicSeries: hasDynamicSeries,
+                hasSize: hasSize,
             };
 
             return mapData;
@@ -1758,12 +1775,12 @@ module powerbi.visuals {
             let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let legendDataPoints: LegendDataPoint[] = [];
             let legendTitle: string;
-            if (reader.hasDynamicSeries() && reader.hasValues('Size')) {
+            if (reader.hasDynamicSeries()) {
                 legendTitle = reader.getSeriesDisplayName();
-                let seriesColumnIdentifier = reader.getSeriesColumnIdentifier();
+                let seriesColumnIdentifier = reader.getSeriesColumnIdentityFields();
                 for (let seriesIndex = 0, seriesCount = reader.getSeriesCount(); seriesIndex < seriesCount; seriesIndex++) {
                     let color = colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), seriesColumnIdentifier, <string>reader.getSeriesName(seriesIndex));
-                    let identity = new SelectionIdBuilder().withSeries(reader.getSeriesColumns(), reader.getValueColumn('Size', seriesIndex)).createSelectionId();
+                    let identity = new SelectionIdBuilder().withSeries(reader.getSeriesValueColumns(), reader.getSeriesValueColumnGroup(seriesIndex)).createSelectionId();
                     legendDataPoints.push({
                         color: color,
                         label: valueFormatter.format(reader.getSeriesName(seriesIndex)),

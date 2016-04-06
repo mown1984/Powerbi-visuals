@@ -62,7 +62,7 @@ module powerbi.data {
                         qp.all().push({ queryRef: select.queryName });
 
                         if (projectionActiveItems && projectionActiveItems[roleName])
-                            qp.activeProjectionRefs = projectionActiveItems[roleName];
+                            qp.activeProjectionRefs = _.map(projectionActiveItems[roleName], (activeItem: DataViewProjectionActiveItemInfo) => activeItem.queryRef);
                     }
                 }
             }

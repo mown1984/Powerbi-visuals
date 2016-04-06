@@ -39,9 +39,10 @@ declare module powerbi {
         Append = 1,
     }
     enum VisualUpdateType {
-        Data = 0,
-        Resize = 2,
-        ViewMode = 4,
+        Data = 2,
+        Resize = 4,
+        ViewMode = 8,
+        Style = 16,
     }
     enum VisualPermissions {
     }
@@ -56,6 +57,23 @@ declare module powerbi {
     const enum ResizeMode {
         Resizing = 1,
         Resized = 2,
+    }
+    module visuals.telemetry {
+        const enum TelemetryCategory {
+            Verbose = 0,
+            CustomerAction = 1,
+            CriticalError = 2,
+            Trace = 3,
+        }
+        enum ErrorSource {
+            PowerBI = 0,
+            External = 1,
+            User = 2,
+        }
+    }
+    const enum JoinPredicateBehavior {
+        /** Prevent items in this role from acting as join predicates. */
+        None = 0,
     }
 }
 
@@ -239,6 +257,7 @@ declare module powerbi.visuals {
         getKey(): string;
         getSelector(): Selector;
         getSelectorsByColumn(): Selector;
+        hasIdentity(): boolean;
     }
 }
 ﻿
@@ -357,6 +376,7 @@ declare module powerbi.data {
         queryName: string;
         //changed to descriptor to not need to depend on ValueType class
         type?: ValueTypeDescriptor;
+        joinPredicate?: JoinPredicateBehavior;
     }
 }
 ﻿
@@ -622,6 +642,8 @@ declare module powerbi {
 
     /** Represents a value at the matrix intersection, used in the values property on DataViewMatrixNode (inherited from DataViewTreeNode). */
     export interface DataViewMatrixNodeValue extends DataViewTreeNodeValue {
+        highlight?: any;
+
         /** Indicates the index of the corresponding measure (held by DataViewMatrix.valueSources). Its value is 0 if omitted. */
         valueSourceIndex?: number;
     }
@@ -1015,56 +1037,167 @@ declare module powerbi {
 
         /** Indicates the cartesian role for the visual role */
         cartesianKind?: CartesianRoleKind;
+
+        /** Indicates the join predicate behavior of items in this role. */
+        joinPredicate?: JoinPredicateBehavior;
     }
 
     export interface RoleCondition extends NumberRange {
         kind?: VisualDataRoleKind;
     }
 }
+
+
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+
+    export interface ISelectionIdBuilder {
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): ISelectionId;
+    }
+}
+
+
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+
+    interface ISelectionManager {
+        select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
+        hasSelection(): boolean;
+        clear(): IPromise<{}>;
+        getSelectionIds(): ISelectionId[];
+    }
+}
 ﻿
 
 declare module powerbi.extensibility {
+
+    // These are the base interfaces. These should remain empty
+    // All visual versions should extend these for type compatability
+
+    export interface IVisual { }
+
+    export interface IVisualHost { }
+
+    export interface VisualUpdateOptions { }
+
+    export interface VisualConstructorOptions { }
+}
+
+
+
+declare module powerbi.extensibility {
+
+    export interface VisualVersionOverloads {
+        [name: string]: Function;
+    }
+
+    export interface VisualVersionOverloadFactory {
+        (visual: powerbi.extensibility.IVisual): VisualVersionOverloads;
+    }
+
+    export interface VisualHostAdapter {
+        (host: powerbi.IVisualHostServices): IVisualHost;
+    }
+
+    export interface VisualVersion {
+        version: string;
+        overloads?: VisualVersionOverloadFactory;
+        hostAdapter: VisualHostAdapter;
+    }
+
+    /**
+     * Extends the interface of a visual wrapper (IVisual) to include
+     * the unwrap method which returns a direct reference to the wrapped visual. 
+     * Used in SafeExecutionWrapper and VisualAdapter
+     */
+    export interface WrappedVisual {
+        /** Returns this visual inside of this wrapper */
+        unwrap: () => powerbi.IVisual;
+    }
+}
+
+
+/**
+ * Change Log Version 1.0.0
+ * - Add type to update options (data, resize, viewmode)
+ * - Remove deprecated methods (onDataChange, onResizing, onViewModeChange) 
+ * - Add hostAdapter for host services versioning
+ */
+declare module powerbi.extensibility.v100 {
     /**
      * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
      * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
      */
-    export interface IVisual {
+    export interface IVisual extends extensibility.IVisual {
         /** Notifies the IVisual of an update (data, viewmode, size change). */
         update(options: VisualUpdateOptions): void;
-        
+
         /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
         destroy?(): void;
 
         /** Gets the set of objects that the visual is currently displaying. */
         enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
     }
-}
 
+    export interface IVisualHost extends extensibility.IVisualHost { }
 
-
-declare module powerbi.extensibility {
-
-    /** Defines behavior for IVisual interaction with the host environment. */
-    export interface IVisualHost {
- 
-    }
-}
-﻿
-
-declare module powerbi.extensibility {
-
-    export interface VisualUpdateOptions {
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
         viewport: IViewport;
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
         resizeMode?: ResizeMode;
     }
-    
-    export interface VisualConstructorOptions {
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
         element: HTMLElement;
         host: IVisualHost;
     }
+
+}
+
+
+
+/**
+ * Change Log Version 1.1.0
+ */
+declare module powerbi.extensibility.v110 {
+    /**
+     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
+     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
+     */
+    export interface IVisual extends extensibility.IVisual {
+        /** Notifies the IVisual of an update (data, viewmode, size change). */
+        update(options: VisualUpdateOptions): void;
+
+        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
+        destroy?(): void;
+
+        /** Gets the set of objects that the visual is currently displaying. */
+        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+    }
+
+    export interface IVisualHost extends extensibility.IVisualHost {
+        createSelectionIdBuilder: () => visuals.ISelectionIdBuilder;
+        createSelectionManager: () => ISelectionManager;
+    }
+
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
+        viewport: IViewport;
+        dataViews: DataView[];
+        type: VisualUpdateType;
+        viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
+    }
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
+        element: HTMLElement;
+        host: IVisualHost;
+    }
+
 }
 
 
@@ -1082,24 +1215,11 @@ declare module powerbi.extensibility {
 
         /** Defines how roles that the visual understands map to the DataView.  This is useful for query generation. */
         dataViewMappings?: DataViewMapping[];
-        
+
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
+    }
 
-        /** List of additional libraries this visual requires. */
-        requiredLibraries?: VisualRequiredLibrary[];
-    }
-    
-    /** Defines a library to be loaded by a visual */
-    export interface VisualRequiredLibrary {
-        /** Name of a supported library or URL to an external library. External libraries should use the format //www.domain.com/file.js */
-        library: string;
-        
-        /** Version of the library to load
-         * this is not needed until when we have support for PBI hosted libraries
-         */
-        //version?: string;
-    }
 }
 
 ﻿
@@ -1143,6 +1263,132 @@ declare module powerbi {
         (error: PositionError): void;
     }
 }
+
+
+declare module powerbi.visuals.telemetry {
+    
+    export interface ITelemetryEventI<T> extends ITelemetryEvent {
+        info: T;
+    }
+    
+    interface IErrorWithStackTraceAndSourceDetails extends IErrorWithStackTrace {
+        source: string;
+        lineNumber: number;
+        columnNumber: number;
+    }
+        
+    export interface IErrorWithStackTrace extends IError {
+    	stack: string;
+    }
+    
+    export interface IError {
+    	message: string;
+    }    
+    
+    export interface IPBIVisualException extends IErrorWithStackTraceAndSourceDetails {
+    	visualType: string;
+    	isCustom: boolean;
+    	apiVersion: string;
+    }
+
+    export interface IPBIExtensibilityVisualApiUsage extends ICustomerAction {
+    	name: string;
+    	apiVersion: string;
+    	custom: boolean;
+    }
+    
+    export interface VisualTelemetryInfo {
+        name: string;
+        apiVersion: string;
+        custom: boolean;
+    }
+    
+}
+
+
+declare module powerbi.visuals.telemetry {
+    
+    interface ITelemetryService {
+        /** Log Telemetry event */
+        logEvent(eventFactory: ITelemetryEventFactory): ITelemetryEvent;
+        logEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): ITelemetryEvent;
+        logEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2: T2): ITelemetryEvent;
+        logEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;        
+    }
+    
+    interface ITelemetryEvent {
+        name: string;
+        category?: TelemetryCategory;
+        id: string;
+        loggers?: number;
+        time: number;
+        getFormattedInfoObject(): any;
+        info: any;
+        privateFields: string[];
+        orgInfoFields: string[];
+    }
+
+    interface ITelemetryEventFactory {
+        (parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory1<T> {
+        (arg: T, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory2<T1, T2> {
+        (arg1: T1, arg2: T2, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory3<T1, T2, T3> {
+        (arg1: T1, arg2: T2, arg3: T3, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory4<T1, T2, T3, T4> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory5<T1, T2, T3, T4, T5> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11, parentId: string): ITelemetryEvent;
+    }
+    
+    interface IBaseEvent {
+        parentId: string;
+        isError: boolean;
+        errorSource: ErrorSource;
+        errorCode: string;
+    }
+    
+    interface ICustomerAction extends IBaseEvent {
+    }
+}
+
+declare module powerbi {
+    interface ITelemetryService { }
+}
+
+
 ﻿
 
 declare module powerbi {
@@ -1429,17 +1675,11 @@ declare module powerbi {
          */
         onDataChanged?(options: VisualDataChangedOptions): void;
 
-        /** Notifies the IVisual of changes to the color, font, theme, and style related values that the visual should use. */
-        onStyleChanged?(newStyle: IVisualStyle): void;
-
         /** Notifies the IVisual to change view mode if applicable. */
         onViewModeChanged?(viewMode: ViewMode): void;
 
         /** Notifies the IVisual to clear any selection. */
         onClearSelection?(): void;
-
-        /** Notifies the IVisual to select the specified object. */
-        onSelectObject?(object: VisualObjectInstance): void;
 
         /** Gets a value indicating whether the IVisual can be resized to the given viewport. */
         canResizeTo?(viewport: IViewport): boolean;
@@ -1584,6 +1824,10 @@ declare module powerbi {
         suppressAnimations?: boolean;
         viewMode?: ViewMode;
         resizeMode?: ResizeMode;
+        type?: VisualUpdateType;
+        /** Indicates what type of update has been performed on the data.
+        The default operation kind is Create.*/
+        operationKind?: VisualDataChangeOperationKind;
     }
 
     export interface VisualDataChangedOptions {
@@ -1834,7 +2078,7 @@ declare module powerbi {
 ﻿
 
 declare module powerbi {
-    
+
     export interface IVisualPlugin {
         /** The name of the plugin.  Must match the property name in powerbi.visuals. */
         name: string;
@@ -1846,7 +2090,7 @@ declare module powerbi {
         capabilities?: VisualCapabilities;
 
         /** Function to call to create the visual. */
-        create: IVisualFactoryMethod;
+        create: (options?: extensibility.VisualConstructorOptions) => IVisual;
 
         /** 
          * Function to allow the visual to influence query generation. Called each time a query is generated
@@ -1866,7 +2110,7 @@ declare module powerbi {
         /** Check if a visual is custom */
         custom?: boolean;
 
-        /* Function to get the list of sortable roles */
+        /** Function to get the list of sortable roles */
         getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
         
         /** The version of the api that this plugin should be run against */
@@ -2020,6 +2264,134 @@ declare module powerbi {
     export interface EnumerateVisualObjectInstancesOptions {
         objectName: string;
     }
+}
+;declare module powerbi.visuals.telemetry {
+    /**
+     * Creates a client-side Guid string.
+     * @returns A string representation of a Guid.
+     */
+    function generateGuid(): string;
+}
+declare module powerbi.visuals.telemetry {
+    /**
+    * Event fired when a visual is loaded through the visual adapter
+    * @param name Name (guid) of the visual.
+    * @param apiVersion Api version used by the visual.
+    * @param custom Is the visual custom?
+    * @param parentId Id of the parent event
+    * @param isError True - action failed.
+    * @param errorSource Source of the error. PowerBI = PowerBI has a problem, External = External Service (e.g. on-prem AS server is down), User = User error (e.g. uploading too much and hitting resource limitations.
+    * @param errorCode PowerBI Error Code
+    *
+    * Generated by: Extensibility/events.bond
+    */
+    var ExtensibilityVisualApiUsageLoggers: number;
+    var ExtensibilityVisualApiUsage: (name: string, apiVersion: string, custom: boolean, parentId: string, isError?: boolean, errorSource?: ErrorSource, errorCode?: string) => ITelemetryEventI<IPBIExtensibilityVisualApiUsage>;
+    /**
+    * Event fired for uncaught exception in IVisual.
+    * @param visualType Type of the visual.
+    * @param isCustom Is the visual custom?
+    * @param apiVersion Api version used by the visual
+    * @param source Source URL
+    * @param lineNumber Line number
+    * @param columnNumber Column number
+    * @param stack Stack trace
+    * @param message Error exception message.
+    *
+    * Generated by JsCommon/commonTelemetryEvents.bond
+    */
+    var VisualExceptionLoggers: number;
+    var VisualException: (visualType: string, isCustom: boolean, apiVersion: string, source: string, lineNumber: number, columnNumber: number, stack: string, message: string) => ITelemetryEventI<IPBIVisualException>;
+}
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+    interface SelectionManagerOptions {
+        hostServices: IVisualHostServices;
+    }
+    class SelectionManager implements ISelectionManager {
+        private selectedIds;
+        private hostServices;
+        private promiseFactory;
+        constructor(options: SelectionManagerOptions);
+        select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
+        hasSelection(): boolean;
+        clear(): IPromise<{}>;
+        getSelectionIds(): ISelectionId[];
+        private sendSelectionToHost(ids);
+        private selectInternal(selectionId, multiSelect);
+        static containsSelection(list: ISelectionId[], id: ISelectionId): boolean;
+    }
+}
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+    /**
+     * This class is designed to simplify the creation of SelectionId objects
+     * It allows chaining to build up an object before calling 'create' to build a SelectionId
+     */
+    class SelectionIdBuilder implements ISelectionIdBuilder {
+        private dataMap;
+        private measure;
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): ISelectionId;
+        private ensureDataMap();
+    }
+}
+declare module powerbi.extensibility {
+    import ITelemetryService = visuals.telemetry.ITelemetryService;
+    let visualApiVersions: VisualVersion[];
+    function createVisualAdapter(visualPlugin: IVisualPlugin, telemetryService?: powerbi.ITelemetryService | ITelemetryService): powerbi.IVisual;
+    class VisualAdapter implements powerbi.IVisual, WrappedVisual {
+        private visual;
+        private apiVersionIndex;
+        private plugin;
+        private telemetryService;
+        private legacy;
+        constructor(visualPlugin: IVisualPlugin, telemetryService?: ITelemetryService);
+        init(options: powerbi.VisualInitOptions): void;
+        update(options: powerbi.VisualUpdateOptions): void;
+        destroy(): void;
+        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+        onResizing(finalViewport: IViewport): void;
+        onDataChanged(options: VisualDataChangedOptions): void;
+        onViewModeChanged(viewMode: ViewMode): void;
+        onClearSelection(): void;
+        canResizeTo(viewport: IViewport): boolean;
+        unwrap(): powerbi.IVisual;
+        private visualNew;
+        private visualLegacy;
+        private visualHasMethod(methodName);
+        private getVersionIndex(version);
+        private overloadMethods();
+        private getCompiledOverloads();
+    }
+}
+declare module powerbi.extensibility {
+    import ITelemetryService = visuals.telemetry.ITelemetryService;
+    import VisualTelemetryInfo = visuals.telemetry.VisualTelemetryInfo;
+    class VisualSafeExecutionWrapper implements powerbi.IVisual, WrappedVisual {
+        private wrappedVisual;
+        private visualInfo;
+        private telemetryService;
+        private silent;
+        constructor(wrappedVisual: powerbi.IVisual, visualInfo: VisualTelemetryInfo, telemetryService: ITelemetryService, silent?: boolean);
+        init(options: VisualInitOptions): void;
+        destroy(): void;
+        update(options: powerbi.VisualUpdateOptions): void;
+        onResizing(finalViewport: IViewport): void;
+        onDataChanged(options: VisualDataChangedOptions): void;
+        onViewModeChanged(viewMode: ViewMode): void;
+        onClearSelection(): void;
+        canResizeTo(viewport: IViewport): boolean;
+        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+        unwrap(): powerbi.IVisual;
+        private executeSafely(callback);
+    }
+}
+declare module powerbi.extensibility.v100 {
+}
+declare module powerbi.extensibility.v110 {
 }
 ;declare module jsCommon {
     /**
@@ -2368,6 +2740,16 @@ declare module jsCommon {
         }[]): ArrayNamedItems<T>;
         function findItemWithName<T>(array: T[], name: string): T;
         function indexWithName<T>(array: T[], name: string): number;
+        /**
+         * Inserts a number in sorted order into a list of numbers already in sorted order.
+         * @returns True if the item was added, false if it already existed.
+         */
+        function insertSorted(list: number[], value: number): boolean;
+        /**
+         * Removes the first occurrence of a value from a list if it exists.
+         * @returns True if the value was removed, false if it did not exist in the list.
+         */
+        function removeFirst<T>(list: T[], value: T): boolean;
         /**
          * Deletes all items from the array.
          */
@@ -3990,11 +4372,13 @@ declare module powerbi.data {
         Version?: number;
         Primary: DataShapeBindingAxis;
         Secondary?: DataShapeBindingAxis;
+        Aggregates?: DataShapeBindingAggregate[];
         Projections?: number[];
         Limits?: DataShapeBindingLimit[];
         Highlights?: FilterDefinition[];
         DataReduction?: DataShapeBindingDataReduction;
         IncludeEmptyGroups?: boolean;
+        SuppressedJoinPredicates?: number[];
     }
     interface DataShapeBindingDataReduction {
         Primary?: DataShapeBindingDataReductionAlgorithm;
@@ -4034,6 +4418,15 @@ declare module powerbi.data {
         SuppressedProjections?: number[];
         Subtotal?: SubtotalType;
         ShowItemsWithNoData?: number[];
+    }
+    interface DataShapeBindingAggregate {
+        Select: number;
+        Kind: DataShapeBindingAggregateKind;
+    }
+    const enum DataShapeBindingAggregateKind {
+        None = 0,
+        Min = 1,
+        Max = 2,
     }
 }
 declare module powerbi.data {
@@ -4421,13 +4814,14 @@ declare module powerbi.data {
         hasCategories(): boolean;
         getCategoryCount(): number;
         getCategoryValues(roleName: string): any;
-        getCategoryValue(categoryIndex: number, roleName: string): any;
+        getCategoryValue(roleName: string, categoryIndex: number): any;
         getCategoryColumn(roleName: string): DataViewCategoryColumn;
         getCategoryMetadataColumn(roleName: string): DataViewMetadataColumn;
+        getCategoryColumnIdentityFields(roleName: string): powerbi.data.ISQExpr[];
         getCategoryDisplayName(roleName: string): string;
         hasCompositeCategories(): boolean;
         hasCategoryWithRole(roleName: string): boolean;
-        getCategoryObjects(categoryIndex: number, roleName: string): DataViewObjects;
+        getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         hasValues(roleName: string): boolean;
         getValues(roleName: string, seriesIndex?: number): any[];
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
@@ -4444,10 +4838,10 @@ declare module powerbi.data {
         hasDynamicSeries(): boolean;
         getSeriesCount(): number;
         getSeriesObjects(seriesIndex: number): DataViewObjects;
-        getSeriesColumn(seriesIndex: number): DataViewValueColumn;
-        getSeriesColumns(): DataViewValueColumns;
+        getSeriesValueColumns(): DataViewValueColumns;
+        getSeriesValueColumnGroup(seriesIndex: number): DataViewValueColumnGroup;
         getSeriesMetadataColumn(): DataViewMetadataColumn;
-        getSeriesColumnIdentifier(): powerbi.data.ISQExpr[];
+        getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
     }
@@ -4678,8 +5072,15 @@ declare module powerbi.data {
     interface DataViewProjectionOrdering {
         [roleName: string]: number[];
     }
+    interface DataViewProjectionActiveItemInfo {
+        queryRef: string;
+        /** Describes if the active item should be ignored in concatenation.
+            If the active item has a drill filter, it will not be used in concatenation.
+            If the value of suppressConcat is true, the activeItem will be ommitted from concatenation. */
+        suppressConcat?: boolean;
+    }
     interface DataViewProjectionActiveItems {
-        [roleName: string]: string[];
+        [roleName: string]: DataViewProjectionActiveItemInfo[];
     }
     interface DataViewRoleTransformMetadata {
         /** Describes the order of selects (referenced by query index) in each role. */
@@ -4705,6 +5106,7 @@ declare module powerbi.data {
         function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void;
         function transformObjects(dataView: DataView, targetDataViewKinds: StandardDataViewKinds, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, selectTransforms: DataViewSelectTransform[], colorAllocatorFactory: IColorAllocatorFactory): void;
         function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
+        function setGrouped(values: DataViewValueColumns, groupedResult?: DataViewValueColumnGroup[]): void;
     }
 }
 declare module powerbi.data {
@@ -4762,6 +5164,11 @@ declare module powerbi.data {
     interface AdditionalQueryProjection {
         queryName: string;
         selector: Selector;
+        aggregates?: ProjectionAggregates;
+    }
+    interface ProjectionAggregates {
+        min?: boolean;
+        max?: boolean;
     }
     interface QueryGeneratorResult {
         command: DataReaderQueryCommand;
@@ -5103,6 +5510,15 @@ declare module powerbi.data.utils {
          * inherited objects.
          */
         function inheritMatrixNodeHierarchy(node: DataViewMatrixNode, deepestLevelToInherit: number, useInheritSingle: boolean): DataViewMatrixNode;
+        /**
+         * Returns true if the specified matrixOrHierarchy contains any composite grouping, i.e. a grouping on multiple columns.
+         * An example of composite grouping is one on [Year, Quarter, Month], where a particular group instance can have
+         * Year === 2016, Quarter === 'Qtr 1', Month === 1.
+         *
+         * Returns false if the specified matrixOrHierarchy does not contain any composite group,
+         * or if matrixOrHierarchy is null or undefined.
+         */
+        function containsCompositeGroup(matrixOrHierarchy: DataViewMatrix | DataViewHierarchy): boolean;
     }
 }
 declare module powerbi.data.utils {
@@ -5412,6 +5828,15 @@ declare module powerbi.data {
     }
 }
 declare module powerbi.data {
+    interface ISQAggregationOperations {
+        /** Returns an array of supported aggregates for a given expr and role type. */
+        getSupportedAggregates(expr: SQExpr, schema: FederatedConceptualSchema, targetTypes: ValueTypeDescriptor[]): QueryAggregateFunction[];
+        isSupportedAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregate: QueryAggregateFunction, targetTypes: ValueTypeDescriptor[]): boolean;
+        createExprWithAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregateNonNumericFields: boolean, targetTypes: ValueTypeDescriptor[], preferredAggregate?: QueryAggregateFunction): SQExpr;
+    }
+    function createSQAggregationOperations(datetimeMinMaxSupported: boolean): ISQAggregationOperations;
+}
+declare module powerbi.data {
     module SQHierarchyExprUtils {
         function getConceptualHierarchyLevelFromExpr(conceptualSchema: FederatedConceptualSchema, fieldExpr: FieldExprPattern): ConceptualHierarchyLevel;
         function getConceptualHierarchyLevel(conceptualSchema: FederatedConceptualSchema, schemaName: string, entity: string, hierarchy: string, hierarchyLevel: string): ConceptualHierarchyLevel;
@@ -5453,7 +5878,7 @@ declare module powerbi.data {
         private _kind;
         constructor(kind: SQExprKind);
         static equals(x: SQExpr, y: SQExpr, ignoreCase?: boolean): boolean;
-        validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
+        validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[];
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
         kind: SQExprKind;
         static isColumn(expr: SQExpr): expr is SQColumnRefExpr;
@@ -5463,6 +5888,7 @@ declare module powerbi.data {
         static isHierarchyLevel(expr: SQExpr): expr is SQHierarchyLevelExpr;
         static isAggregation(expr: SQExpr): expr is SQAggregationExpr;
         static isMeasure(expr: SQExpr): expr is SQMeasureRefExpr;
+        static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
         /** Return the SQExpr[] of group on columns if it has group on keys otherwise return the SQExpr of the column.*/
@@ -5716,7 +6142,6 @@ declare module powerbi.data {
         function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr;
         function removeAggregate(expr: SQExpr): SQExpr;
         function removeEntityVariables(expr: SQExpr): SQExpr;
-        function createExprWithAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregateNonNumericFields: boolean, preferredAggregate?: QueryAggregateFunction): SQExpr;
         function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr;
         function resourcePackageItem(packageName: string, packageType: number, itemName: string): SQResourcePackageItemExpr;
     }
@@ -5739,7 +6164,8 @@ declare module powerbi.data {
     class SQExprValidationVisitor extends SQExprRewriter {
         errors: SQExprValidationError[];
         private schema;
-        constructor(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]);
+        private aggrUtils;
+        constructor(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]);
         visitIn(expr: SQInExpr): SQExpr;
         visitCompare(expr: SQCompareExpr): SQExpr;
         visitColumnRef(expr: SQColumnRefExpr): SQExpr;
@@ -5763,10 +6189,7 @@ declare module powerbi.data {
 }
 declare module powerbi.data {
     module SQExprUtils {
-        /** Returns an array of supported aggregates for a given expr and role. */
-        function getSupportedAggregates(expr: SQExpr, schema: FederatedConceptualSchema): QueryAggregateFunction[];
         function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
-        function isSupportedAggregate(expr: SQExpr, schema: FederatedConceptualSchema, aggregate: QueryAggregateFunction): boolean;
         function indexOfExpr(items: SQExpr[], searchElement: SQExpr): number;
         function sequenceEqual(x: SQExpr[], y: SQExpr[]): boolean;
         function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr, exprDefaultName?: string): string;
@@ -5896,7 +6319,7 @@ declare module powerbi.data {
         conditions(): SQExpr[];
         where(): SQFilter[];
         rewrite(exprRewriter: ISQExprVisitor<SQExpr>): SemanticFilter;
-        validate(schema: FederatedConceptualSchema, errors?: SQExprValidationError[]): SQExprValidationError[];
+        validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[];
         /** Merges a list of SemanticFilters into one. */
         static merge(filters: SemanticFilter[]): SemanticFilter;
         static isDefaultFilter(filter: SemanticFilter): boolean;
@@ -6051,6 +6474,59 @@ declare module powerbi.data {
     module SQExprShortSerializer {
         function serialize(expr: SQExpr): string;
         function serializeArray(exprs: SQExpr[]): string;
+    }
+}
+declare module powerbi.visuals {
+    import Selector = powerbi.data.Selector;
+    import SelectorForColumn = powerbi.SelectorForColumn;
+    /**
+     * A combination of identifiers used to uniquely identify
+     * data points and their bound geometry.
+     */
+    class SelectionId implements ISelectionId {
+        private selector;
+        private selectorsByColumn;
+        private key;
+        private keyWithoutHighlight;
+        highlight: boolean;
+        constructor(selector: Selector, highlight: boolean);
+        equals(other: SelectionId): boolean;
+        /**
+         * Checks equality against other for all identifiers existing in this.
+         */
+        includes(other: SelectionId, ignoreHighlight?: boolean): boolean;
+        getKey(): string;
+        getKeyWithoutHighlight(): string;
+        /**
+         * Temporary workaround since a few things currently rely on this, but won't need to.
+         */
+        hasIdentity(): boolean;
+        getSelector(): Selector;
+        getSelectorsByColumn(): Selector;
+        static createNull(highlight?: boolean): SelectionId;
+        static createWithId(id: DataViewScopeIdentity, highlight?: boolean): SelectionId;
+        static createWithMeasure(measureId: string, highlight?: boolean): SelectionId;
+        static createWithIdAndMeasure(id: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
+        static createWithIdAndMeasureAndCategory(id: DataViewScopeIdentity, measureId: string, queryName: string, highlight?: boolean): SelectionId;
+        static createWithIds(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, highlight?: boolean): SelectionId;
+        static createWithIdsAndMeasure(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
+        static createWithSelectorForColumnAndMeasure(dataMap: SelectorForColumn, measureId: string, highlight?: boolean): SelectionId;
+        static createWithHighlight(original: SelectionId): SelectionId;
+        private static idArray(id1, id2);
+    }
+    /**
+     * This class is designed to simplify the creation of SelectionId objects
+     * It allows chaining to build up an object before calling 'create' to build a SelectionId
+     */
+    class SelectionIdBuilder implements ISelectionIdBuilder {
+        private dataMap;
+        private measure;
+        static builder(): SelectionIdBuilder;
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): SelectionId;
+        private ensureDataMap();
     }
 }
 ;declare module powerbi.visuals {
@@ -6548,6 +7024,9 @@ declare module powerbi.visuals {
         };
         legend: {
             labelColor: DataViewObjectPropertyIdentifier;
+        };
+        dataPoint: {
+            showAllDataPoints: DataViewObjectPropertyIdentifier;
         };
     };
 }
@@ -7190,8 +7669,7 @@ declare module powerbi.visuals {
      * Default ranges are for when we have a field chosen for the axis,
      * but no values are returned by the query.
      */
-    const fallBackDomain: number[];
-    const fallbackDateDomain: number[];
+    const emptyDomain: number[];
     interface IAxisProperties {
         /**
          * The D3 Scale object.
@@ -7352,7 +7830,6 @@ declare module powerbi.visuals {
         function getRecommendedTickValues(maxTicks: number, scale: D3.Scale.GenericScale<any>, axisType: ValueType, isScalar: boolean, minTickInterval?: number): any[];
         function getRecommendedTickValuesForAnOrdinalRange(maxTicks: number, labels: string[]): string[];
         function getRecommendedTickValuesForAQuantitativeRange(maxTicks: number, scale: D3.Scale.GenericScale<any>, minInterval?: number): number[];
-        function normalizeLinearDomain(domain: NumberRange): NumberRange;
         function getMargin(availableWidth: number, availableHeight: number, xMargin: number, yMargin: number): IMargin;
         function getTickLabelMargins(viewport: IViewport, yMarginLimit: number, textWidthMeasurer: ITextAsSVGMeasurer, textHeightMeasurer: ITextAsSVGMeasurer, axes: CartesianAxisProperties, bottomMarginLimit: number, properties: TextProperties, scrollbarVisible?: boolean, showOnRight?: boolean, renderXAxis?: boolean, renderY1Axis?: boolean, renderY2Axis?: boolean): TickLabelMargins;
         function columnDataTypeHasValue(dataType: ValueTypeDescriptor): boolean;
@@ -7805,6 +8282,7 @@ declare module powerbi.visuals {
         rowHeight: number;
         viewport: IViewport;
         scrollEnabled: boolean;
+        isReadMode: () => boolean;
     }
 }
 declare module powerbi.visuals {
@@ -7878,59 +8356,6 @@ declare module powerbi.visuals {
         setViewBox(svg: SVGSVGElement): void;
         innerTransform: Transform;
         transformToString(transform: Transform): string;
-    }
-}
-declare module powerbi.visuals {
-    import Selector = powerbi.data.Selector;
-    import SelectorForColumn = powerbi.SelectorForColumn;
-    /**
-     * A combination of identifiers used to uniquely identify
-     * data points and their bound geometry.
-     */
-    class SelectionId implements ISelectionId {
-        private selector;
-        private selectorsByColumn;
-        private key;
-        private keyWithoutHighlight;
-        highlight: boolean;
-        constructor(selector: Selector, highlight: boolean);
-        equals(other: SelectionId): boolean;
-        /**
-         * Checks equality against other for all identifiers existing in this.
-         */
-        includes(other: SelectionId, ignoreHighlight?: boolean): boolean;
-        getKey(): string;
-        getKeyWithoutHighlight(): string;
-        /**
-         * Temporary workaround since a few things currently rely on this, but won't need to.
-         */
-        hasIdentity(): boolean;
-        getSelector(): Selector;
-        getSelectorsByColumn(): Selector;
-        static createNull(highlight?: boolean): SelectionId;
-        static createWithId(id: DataViewScopeIdentity, highlight?: boolean): SelectionId;
-        static createWithMeasure(measureId: string, highlight?: boolean): SelectionId;
-        static createWithIdAndMeasure(id: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
-        static createWithIdAndMeasureAndCategory(id: DataViewScopeIdentity, measureId: string, queryName: string, highlight?: boolean): SelectionId;
-        static createWithIds(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, highlight?: boolean): SelectionId;
-        static createWithIdsAndMeasure(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, measureId: string, highlight?: boolean): SelectionId;
-        static createWithSelectorForColumnAndMeasure(dataMap: SelectorForColumn, measureId: string, highlight?: boolean): SelectionId;
-        static createWithHighlight(original: SelectionId): SelectionId;
-        private static idArray(id1, id2);
-    }
-    /**
-     * This class is designed to simplify the creation of SelectionId objects
-     * It allows chaining to build up an object before calling 'create' to build a SelectionId
-     */
-    class SelectionIdBuilder implements ISelectionIdBuilder {
-        private dataMap;
-        private measure;
-        static builder(): SelectionIdBuilder;
-        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
-        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
-        withMeasure(measureId: string): this;
-        createSelectionId(): SelectionId;
-        private ensureDataMap();
     }
 }
 declare module powerbi.visuals.utility {
@@ -9652,9 +10077,7 @@ declare module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-        sandboxVisualsDisabled?: boolean;
-        /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
-        categoricalPivotEnabled?: boolean;
+        sandboxVisualsEnabled?: boolean;
         /**
         * R visual is enabled for consumption.
         * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
@@ -12013,7 +12436,7 @@ declare module powerbi.visuals {
         constructor(name: string);
         getMetaDataColumn(dataView: DataView): void;
         getAdjustedFontHeight(availableWidth: number, textToMeasure: string, seedFontHeight: number): number;
-        private getAdjustedFontHeightCore(nodeToMeasure, availableWidth, seedFontHeight, iteration);
+        private getAdjustedFontHeightCore(textProperties, availableWidth, seedFontHeight, iteration);
         clear(): void;
         doValueTransition(startValue: any, endValue: any, displayUnitSystemType: DisplayUnitSystemType, animationOptions: AnimationOptions, duration: number, forceUpdate: boolean, formatter?: IValueFormatter): void;
         setTextColor(color: string): void;
@@ -12167,7 +12590,6 @@ declare module powerbi.visuals {
         domain: number[];
         merged: boolean;
         tickCount: number;
-        forceStartToZero: boolean;
     }
     interface CartesianSmallViewPortProperties {
         hideLegendOnSmallViewPort: boolean;
@@ -12644,7 +13066,6 @@ declare module powerbi.visuals {
         hostService: IVisualHostServices;
         margin: IMargin;
         mainGraphicsContext: D3.Selection;
-        labelGraphicsContext: D3.Selection;
         layout: CategoryLayout;
         animator: IColumnChartAnimator;
         onDragStart?: (datum: ColumnChartDataPoint) => void;
@@ -12691,9 +13112,7 @@ declare module powerbi.visuals {
         static stackedValidLabelPositions: RectLabelPosition[];
         static SeriesClasses: jsCommon.CssConstants.ClassAndSelector;
         private svg;
-        private mainGraphicsSVG;
         private mainGraphicsContext;
-        private labelGraphicsContext;
         private xAxisProperties;
         private yAxisProperties;
         private currentViewport;
@@ -12903,6 +13322,10 @@ declare module powerbi.visuals {
      */
     module ComboChart {
         const capabilities: VisualCapabilities;
+        /**
+         * Handles the case of a column layer in a combo chart. In this case, the column layer is enumearated last.
+         */
+        function enumerateDataPoints(enumeration: ObjectEnumerationBuilder, options: EnumerateVisualObjectInstancesOptions, layers: ICartesianVisual[]): void;
         function customizeQuery(options: CustomizeQueryOptions): void;
         function getSortableRoles(options: VisualSortableOptions): string[];
         function isComboChart(chartType: CartesianChartType): boolean;
@@ -13336,7 +13759,6 @@ declare module powerbi.visuals {
         private updateCalloutValue(suppressAnimations);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
-        onStyleChanged(newStyle: IVisualStyle): void;
         private static getValidSettings(targetData);
         private static getGaugeData(dataView);
         private static overrideGaugeSettings(settings, gaugeObjectsSettings);
@@ -13660,7 +14082,7 @@ declare module powerbi.visuals {
          * This is for the Mobile renderer with InteractiveLegend
          */
         selectColumn(columnIndex: number, force?: boolean): void;
-        private setHoverLine(chartX);
+        private setHoverLine(chartX, columnIndex);
         private getChartX(columnIndex);
         /**
          * Finds the index of the category of the given x coordinate given.
@@ -13716,6 +14138,7 @@ declare module powerbi.visuals {
         dataPoints: MapDataPoint[];
         geocodingCategory: string;
         hasDynamicSeries: boolean;
+        hasSize: boolean;
     }
     /**
      * The main map data point, which exists for each category
@@ -14298,7 +14721,6 @@ declare module powerbi.visuals {
         private playAxis;
         constructor(options: ScatterChartConstructorOptions);
         init(options: CartesianVisualInitOptions): void;
-        static customizeQuery(options: CustomizeQueryOptions): void;
         static getAdditionalTelemetry(dataView: DataView): any;
         private static getObjectProperties(dataView, dataLabelsSettings?);
         static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
@@ -15160,6 +15582,7 @@ declare module powerbi.visuals {
     interface CardStyleText {
         textSize: number;
         color: string;
+        paddingTop?: number;
     }
     interface CardStyleValue extends CardStyleText {
         fontFamily: string;

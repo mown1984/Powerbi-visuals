@@ -28,52 +28,6 @@ module powerbi.data {
     import StringExtensions = jsCommon.StringExtensions;
 
     export module SQExprUtils {
-        /** Returns an array of supported aggregates for a given expr and role. */
-        export function getSupportedAggregates(
-            expr: SQExpr,
-            schema: FederatedConceptualSchema): QueryAggregateFunction[] {
-            let emptyList: QueryAggregateFunction[] = [];
-
-            let metadata = getMetadataForUnderlyingType(expr, schema);
-
-            // don't use expr.validate as validate will be using this function and we end up in a recursive loop
-            if (!metadata)
-                return emptyList;
-
-            let valueType = metadata.type,
-                fieldKind = metadata.kind,
-                isPropertyIdentity = metadata.idOnEntityKey,
-                Agg = QueryAggregateFunction; // alias
-
-            if (!valueType)
-                return emptyList;
-
-            // Cannot aggregate on model measures
-            if (fieldKind === FieldKind.Measure)
-                return emptyList;
-
-            if (valueType.numeric || valueType.integer) {
-                let aggregates = [Agg.Sum, Agg.Avg, Agg.Min, Agg.Max, Agg.Count, Agg.CountNonNull, Agg.StandardDeviation, Agg.Variance];
-                let fieldExpr = SQExprConverter.asFieldPattern(expr);
-                let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
-
-                let currentSchema = schema.schema(fieldExprItem.schema);
-                if (currentSchema.capabilities.supportsMedian)
-                    aggregates.push(Agg.Median);
-                return aggregates;
-            } else if (valueType.text || valueType.bool || valueType.dateTime) {
-                // The supported aggregation types for an identity field are restricted to 'Count Non-Null' (e.g. for the field well aggregation options)
-                // but a valid semantic query can return a less-restricted aggregation option which we should honor. (e.g. this results from Q&A)
-                let distinctCountAggExists = SQExprInfo.getAggregate(expr) === Agg.Count;
-                if (isPropertyIdentity && !distinctCountAggExists)
-                    return [Agg.CountNonNull];
-                return [Agg.Count, Agg.CountNonNull];
-            }
-
-            debug.assertFail("Unexpected expr or role.");
-            return emptyList;
-        }
-
         export function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean {
             let metadata = expr.getMetadata(schema),
                 type = metadata && metadata.type;
@@ -83,14 +37,6 @@ module powerbi.data {
             }
             
             return type.numeric || type.dateTime || type.duration;
-        }
-
-        export function isSupportedAggregate(
-            expr: SQExpr,
-            schema: FederatedConceptualSchema,
-            aggregate: QueryAggregateFunction): boolean {
-            let supportedAggregates = getSupportedAggregates(expr, schema);
-            return _.contains(supportedAggregates, aggregate);
         }
 
         export function indexOfExpr(items: SQExpr[], searchElement: SQExpr): number {
@@ -226,16 +172,6 @@ module powerbi.data {
             let kpiValue = property.kpiValue;
             if (kpiValue && kpiValue.measure.kpi.trend === property)
                 return property;
-        }
-
-        function getMetadataForUnderlyingType(expr: SQExpr, schema: FederatedConceptualSchema): SQExprMetadata {
-            // Unwrap the aggregate (if the expr has one), and look at the underlying type.
-            let metadata = SQExprBuilder.removeAggregate(expr).getMetadata(schema);
-
-            if (!metadata)
-                metadata = expr.getMetadata(schema);
-
-            return metadata;
         }
 
         export function getDefaultValue(fieldSQExpr: SQExpr, schema: FederatedConceptualSchema): SQConstantExpr {

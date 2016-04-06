@@ -137,7 +137,7 @@ function runTestVisuals(callback) {
         }));
     }
 
-    src = [
+    var src = [
         "visuals.css",
         "jquery.scrollbar.css",
         "powerbi-visuals.all.js",
@@ -148,6 +148,8 @@ function runTestVisuals(callback) {
         "moment.min.js",
         "jquery.scrollbar.min.js",
         "mocks.js",
+        "extensibility/extensibilityMocks.js",
+        "extensibility/extensibilityHelpers.js",
         "common.js",
         "sqFieldDef.js",
         "./helpers/helpers.js",
@@ -166,21 +168,21 @@ function runTestVisuals(callback) {
         "./customVisuals/sampleDataViews/SalesByCountryData.js",
         "./customVisuals/sampleDataViews/ValuesByCountriesData.js",
         "./customVisuals/sampleDataViews/MekkoChartData.js",
-		"./customVisuals/sampleDataViews/BulletChartData.js",
-		"./customVisuals/sampleDataViews/CarLogosData.js",
-		"./customVisuals/sampleDataViews/CountriesData.js",
-		"./customVisuals/sampleDataViews/chordChartData.js",
+        "./customVisuals/sampleDataViews/BulletChartData.js",
+        "./customVisuals/sampleDataViews/CarLogosData.js",
+        "./customVisuals/sampleDataViews/CountriesData.js",
+        "./customVisuals/sampleDataViews/chordChartData.js",
         "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
-		"./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
-		"./customVisuals/sampleDataViews/valueByAgeData.js",
-		"./customVisuals/sampleDataViews/ProductSalesByDateData.js",
-		
-		"./customVisuals/sampleDataViews/AreaRangeChartData.js",
-		"./customVisuals/sampleDataViews/DotPlotData.js",
-		"./customVisuals/sampleDataViews/forceGraphData.js",
-		"./customVisuals/sampleDataViews/GanttData.js",
-		"./customVisuals/sampleDataViews/TimelineData.js",
-		
+        "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
+        "./customVisuals/sampleDataViews/valueByAgeData.js",
+        "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
+
+        "./customVisuals/sampleDataViews/AreaRangeChartData.js",
+        "./customVisuals/sampleDataViews/DotPlotData.js",
+        "./customVisuals/sampleDataViews/forceGraphData.js",
+        "./customVisuals/sampleDataViews/GanttData.js",
+        "./customVisuals/sampleDataViews/TimelineData.js",
+
         "./customVisuals/VisualBuilderBase.js"
 
     ].concat(tests),
@@ -203,9 +205,7 @@ function runTestVisuals(callback) {
             index: specRunnerFileName
         }, callback);
     } else {
-        return gulp.src(src, {
-            cwd: testsPath
-        })
+        return gulp.src(src, { cwd: testsPath })
             .pipe(jasmineBrowser.specRunner({
                 console: true
             }))

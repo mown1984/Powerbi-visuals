@@ -40,5 +40,6 @@ declare module powerbi.visuals {
         getKey(): string;
         getSelector(): Selector;
         getSelectorsByColumn(): Selector;
+        hasIdentity(): boolean;
     }
 }

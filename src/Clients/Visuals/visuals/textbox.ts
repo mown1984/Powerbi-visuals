@@ -466,8 +466,12 @@ module powerbi.visuals {
             'Trebuchet MS',
             'Verdana',
             'Wingdings',
-            'Wingdings 2',
-            'Wingdings 3',
+
+            // Fonts with numbers in the name do not work properly on Chrome. We'd need to quote the font names which causes problems with QuillJS.
+            // TFS6832899
+            //'Wingdings 2',
+            //'Wingdings 3',
+
         ].map((font) => <ListValueOption>{ label: font, value: getCssFontFamily(font) });
         export let defaultFont = getCssFontFamily('Segoe UI Light');
 
@@ -489,11 +493,6 @@ module powerbi.visuals {
             let family: string = fontMap[font];
             if (family == null)
                 family = font;
-
-            // Quote the font in case it has spaces (which will confuse the JQuery css() call).
-            if (!StringExtensions.startsWith(family, "'")) {
-                family = "'" + family + "'";
-            }
 
             return family;
         }

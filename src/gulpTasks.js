@@ -12,6 +12,7 @@ var powerBIVisualslayground = require("./Clients/PowerBIVisualsPlayground/gulpPr
 require("../gulp/visualsPlayground.js");
 require("../gulp/visualsTest.js");
 require("./Clients/VisualsContracts/gulpProject");
+require("./Clients/VisualsExtensibility/gulpProject");
 require("./Clients/VisualsCommon/gulpProject");
 require("./Clients/VisualsData/gulpProject");
 

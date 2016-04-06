@@ -70,6 +70,7 @@ module powerbi.visuals.samples {
         labelDisplayUnit?: number;
         labelPrecision?: number;
         labelFontSize?: number;
+        maxX?: number;
     }
 
     export interface HistogramData extends D3.Layout.Bin, TooltipEnabledDataPoint {
@@ -113,26 +114,26 @@ module powerbi.visuals.samples {
         [objectName: string]: HistogramProperty;
     }
 
-      export class HistogramChartWarning implements IVisualWarning {
-          public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
-  
-          private message: string;
-          constructor(message: string) {
-              this.message = message;
-          }
-  
-          public get code(): string {
-              return "BulletChartWarning";
-          }
-  
-          public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
-              return {
-                  message: this.message,
-                  title: resourceProvider.get(""),
-                  detail: resourceProvider.get("")
-              };
-          }
-      }
+         export class HistogramChartWarning implements IVisualWarning {
+             public static ErrorInvalidDataValues: string = "Some data values are invalid or too big";
+     
+             private message: string;
+             constructor(message: string) {
+                 this.message = message;
+             }
+     
+             public get code(): string {
+                 return "BulletChartWarning";
+             }
+     
+             public getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage {
+                 return {
+                     message: this.message,
+                     title: resourceProvider.get(""),
+                     detail: resourceProvider.get("")
+                 };
+             }
+         }
 
     export class Histogram implements IVisual {
         private static ClassName: string = "histogram";
@@ -448,7 +449,6 @@ module powerbi.visuals.samples {
         private MinColumnHeight: number = 1;
         private MinOpacity: number = 0.3;
         private MaxOpacity: number = 1;
-        private NumberOfLabelsOnAxisY: number = 5;
         private MinNumberOfBins: number = 0;
         private MaxNumberOfBins: number = 100;
         private MinPrecision: number = 0;
@@ -460,6 +460,9 @@ module powerbi.visuals.samples {
         private DataLabelMargin: number = 0;
         private widthOfColumn: number = 0;
         private yTitleMargin: number = 0;
+        private outerPadding: number = 5;
+        private xAxisProperties: IAxisProperties;
+        private yAxisProperties: IAxisProperties;
 
         private ExcludeBrackets: Brackets = {
             left: "(",
@@ -503,7 +506,15 @@ module powerbi.visuals.samples {
                 .selectAll(Histogram.Column.selector);
         }
 
+        private textProperties: TextProperties = {
+            fontFamily: 'wf_segoe-ui_normal',
+            fontSize: jsCommon.PixelConverter.toString(9),
+        };
+
         constructor(histogramConstructorOptions?: HistogramConstructorOptions) {
+            //TODO: Quick fix for GitHub public repo.
+            // CartesianChart.InnerPaddingRatio = 1;
+
             if (histogramConstructorOptions) {
                 if (histogramConstructorOptions.svg) {
                     this.svg = histogramConstructorOptions.svg;
@@ -644,6 +655,8 @@ module powerbi.visuals.samples {
             let maxYvalue = settings.yEnd !== null && settings.yEnd > settings.yStart ? settings.yEnd : d3.max(data, (item: D3.Layout.Bin) => item.y);
             let minYValue = settings.yStart < maxYvalue ? settings.yStart : 0;
             settings.yEnd = maxYvalue;
+            settings.yStart = minYValue;
+            settings.maxX = d3.max(data, (item: D3.Layout.Bin) => d3.max(item));
 
             xScale = d3.scale.linear()
                 .domain([
@@ -657,7 +670,7 @@ module powerbi.visuals.samples {
                     minYValue,
                     maxYvalue
                 ])
-                .range([this.viewport.height - this.LegendSize, 0]);
+                .range([this.viewport.height - this.LegendSize, this.outerPadding]);
 
             valueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(
@@ -668,7 +681,7 @@ module powerbi.visuals.samples {
             });
 
             xLabelFormatter = ValueFormatter.create({
-                value: settings.xDisplayUnits === 0 ? values[0].value : settings.xDisplayUnits,
+                value: settings.xDisplayUnits === 0 ? values[values.length - 1].value : settings.xDisplayUnits,
                 precision: settings.xPrecision
             });
 
@@ -1071,7 +1084,7 @@ module powerbi.visuals.samples {
 
         public validateData(data: HistogramDataView): boolean {
             if (data && data.data.some(x=> x.range.some(x => isNaN(x) || x === Infinity || x === -Infinity))) {
-                 this.hostService.setWarnings([new HistogramChartWarning(HistogramChartWarning.ErrorInvalidDataValues)]);
+                this.hostService.setWarnings([new HistogramChartWarning(HistogramChartWarning.ErrorInvalidDataValues)]);
                 return false;
             }
             return true;
@@ -1096,7 +1109,43 @@ module powerbi.visuals.samples {
             if (!this.validateData(this.histogramDataView)) {
                 this.histogramDataView.data = [];
             }
+
+            if (!this.histogramDataView)
+                return;
+
+            this.fixXTicSize();
+
+            this.xAxisProperties = this.calculateXAxes(dataView.categorical.categories[0].source, this.textProperties, false);
+
+            let ySource = dataView.categorical.values &&
+                dataView.categorical.values[0] &&
+                dataView.categorical.values[0].values ? dataView.categorical.values[0].source : dataView.categorical.categories[0].source;
+
+            this.yAxisProperties = this.calculateYAxes(ySource, this.textProperties, false);
+
             this.render();
+        }
+
+        private fixXTicSize(): void {
+
+            if (!this.histogramDataView || !this.histogramDataView.settings) {
+                return;
+            }
+
+            let ticLabel = this.histogramDataView.xLabelFormatter.format(this.histogramDataView.settings.maxX);
+
+            let textProperties: powerbi.TextProperties = {
+                text: ticLabel,
+                fontFamily: this.textProperties.fontFamily,
+                fontSize: this.textProperties.fontSize
+            };
+
+            /* tslint:disable */
+            let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
+            /* tslint:enable */
+
+            //TODO: Quick fix for GitHub public repo.
+            //CartesianChart.MinOrdinalRectThickness = widthOfLabel + 3;
         }
 
         private setSize(viewport: IViewport): void {
@@ -1184,7 +1233,7 @@ module powerbi.visuals.samples {
             this.columsAndAxesTransform(maxWidthOfLabael);
         }
 
-        private renderColumns(): D3.UpdateSelection {
+       private renderColumns(): D3.UpdateSelection {
             let data: HistogramData[] = this.histogramDataView.data,
                 yScale: D3.Scale.LinearScale = this.histogramDataView.yScale,
                 countOfValues: number = data.length,
@@ -1239,22 +1288,15 @@ module powerbi.visuals.samples {
         }
 
         private renderAxes(): void {
-
-            let xScale: D3.Scale.LinearScale = this.histogramDataView.xScale,
-                yScale: D3.Scale.LinearScale = this.histogramDataView.yScale,
-                xAxis: D3.Svg.Axis,
+            let xAxis: D3.Svg.Axis,
                 yAxis: D3.Svg.Axis;
 
-            xAxis = d3.svg.axis()
-                .scale(xScale)
-                .orient("bottom")
-                .tickValues(this.rangesToArray(this.histogramDataView.data))
-                .tickFormat((item: number) => this.histogramDataView.xLabelFormatter.format(item));
+            xAxis = this.xAxisProperties.axis
+                .tickFormat((item: number) => this.histogramDataView.xLabelFormatter.format(item))
+                .orient('bottom');
 
-            yAxis = d3.svg.axis()
-                .scale(yScale)
+            yAxis = this.yAxisProperties.axis
                 .orient(this.histogramDataView.settings.yPosition.toLowerCase())
-                .ticks(this.NumberOfLabelsOnAxisY)
                 .tickFormat((item: number) => this.histogramDataView.yLabelFormatter.format(item));
 
             this.main.selectAll('g.axis').filter((d, index) => index === 1).selectAll('g.tick text').attr('transform', SVGUtil.translate(
@@ -1264,7 +1306,7 @@ module powerbi.visuals.samples {
             let yShow = this.histogramDataView.settings.yShow;
 
             if (xShow)
-                this.axisX.call(xAxis);
+                this.axisX.transition().duration(1).call(xAxis);
             else
                 this.axisX.selectAll('*').remove();
 
@@ -1558,5 +1600,96 @@ module powerbi.visuals.samples {
         public destroy(): void {
             this.root = null;
         }
+        private calculateXAxes(
+            source: DataViewMetadataColumn,
+            textProperties: TextProperties,
+            scrollbarVisible: boolean): IAxisProperties {
+
+            let visualOptions: CalculateScaleAndDomainOptions = {
+                viewport: this.viewport,
+                margin: this.margin,
+                forcedXDomain: this.rangesToArray(this.histogramDataView.data),
+                forceMerge: true,
+                showCategoryAxisLabel: false,
+                showValueAxisLabel: false,
+                categoryAxisScaleType: axisScale.linear,
+                valueAxisScaleType: null,
+                trimOrdinalDataOnOverflow: false
+            };
+
+            let width = this.viewport.width;
+            let axes = this.calculateXAxesProperties(visualOptions, source);
+
+            axes.willLabelsFit = AxisHelper.LabelLayoutStrategy.willLabelsFit(
+                axes,
+                width,
+                TextMeasurementService.measureSvgTextWidth,
+                textProperties);
+
+            // If labels do not fit and we are not scrolling, try word breaking
+            axes.willLabelsWordBreak = (!axes.willLabelsFit && !scrollbarVisible) && AxisHelper.LabelLayoutStrategy.willLabelsWordBreak(
+                axes, this.margin, width, TextMeasurementService.measureSvgTextWidth,
+                TextMeasurementService.estimateSvgTextHeight, TextMeasurementService.getTailoredTextOrDefault,
+                textProperties);
+
+            return axes;
+        }
+        private calculateXAxesProperties(options: CalculateScaleAndDomainOptions, metaDataColumn: DataViewMetadataColumn): IAxisProperties {
+            let xAxisProperties = AxisHelper.createAxis({
+                pixelSpan: this.viewport.width - this.LegendSize - this.AxisSize,
+                dataDomain: options.forcedXDomain,
+                metaDataColumn: metaDataColumn,
+                formatString: valueFormatter.getFormatString(metaDataColumn, Histogram.Properties["general"]["formatString"]),
+                outerPadding: 0,
+                isScalar: false,
+                isVertical: false,
+                useTickIntervalForDisplayUnits: true,
+                isCategoryAxis: true,
+                getValueFn: (index, type) => index,
+                scaleType: options.categoryAxisScaleType
+            });
+
+            xAxisProperties.axisLabel = this.histogramDataView.settings.displayName;
+            return xAxisProperties;
+        }
+        private calculateYAxes(
+            source: DataViewMetadataColumn,
+            textProperties: TextProperties,
+            scrollbarVisible: boolean): IAxisProperties {
+
+            let visualOptions: CalculateScaleAndDomainOptions = {
+                viewport: this.viewport,
+                margin: this.margin,
+                forceMerge: true,
+                showCategoryAxisLabel: true,
+                showValueAxisLabel: false,
+                categoryAxisScaleType: axisScale.linear,
+                valueAxisScaleType: null,
+                trimOrdinalDataOnOverflow: false
+            };
+            visualOptions.forcedYDomain = AxisHelper.applyCustomizedDomain([this.histogramDataView.settings.yStart, this.histogramDataView.settings.yEnd], visualOptions.forcedYDomain);
+
+            let axes = this.calculateYAxesProperties(visualOptions, source);
+
+            return axes;
+        }
+        private calculateYAxesProperties(options: CalculateScaleAndDomainOptions, metaDataColumn: DataViewMetadataColumn): IAxisProperties {
+            let yAxisProperties = AxisHelper.createAxis({
+                pixelSpan: this.viewport.height - this.LegendSize,
+                dataDomain: AxisHelper.combineDomain(options.forcedYDomain, [this.histogramDataView.settings.yStart, this.histogramDataView.settings.yEnd]),
+                metaDataColumn: metaDataColumn,
+                formatString: valueFormatter.getFormatString(metaDataColumn, Histogram.Properties["general"]["formatString"]),
+                outerPadding: this.outerPadding,
+                isScalar: true,
+                isVertical: true,
+                useTickIntervalForDisplayUnits: true,
+                isCategoryAxis: false,
+                getValueFn: (index, type) => index,
+                scaleType: options.categoryAxisScaleType
+            });
+
+            return yAxisProperties;
+        }
+
     }
 }

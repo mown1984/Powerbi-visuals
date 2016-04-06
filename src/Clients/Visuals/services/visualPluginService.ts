@@ -50,11 +50,8 @@ module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-
-        sandboxVisualsDisabled?: boolean;
         
-        /** Pivot operator when categorical mapping wants data reduction across both hierarchies */
-        categoricalPivotEnabled?: boolean;
+        sandboxVisualsEnabled?: boolean;
 
         /**
         * R visual is enabled for consumption. 
@@ -296,7 +293,7 @@ module powerbi.visuals {
                 tooltipsEnabled: tooltipsOnDashboard,
             }));
             // Scatter Chart
-            createPlugin(plugins, enablePivot(powerbi.visuals.plugins.scatterChart), () => new CartesianChart({
+            createPlugin(plugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({
                 chartType: CartesianChartType.Scatter,
                 tooltipsEnabled: tooltipsOnDashboard,
             }));
@@ -335,7 +332,6 @@ module powerbi.visuals {
         }
 
         function createMinervaPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
-            let categoricalPivotEnabled: boolean = featureSwitches ? featureSwitches.categoricalPivotEnabled : false;
             let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
             let scriptVisualAuthoringEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualAuthoringEnabled : false;
             let isLabelInteractivityEnabled: boolean = featureSwitches ? featureSwitches.isLabelInteractivityEnabled : false;
@@ -507,7 +503,7 @@ module powerbi.visuals {
                 behavior: new DonutChartWebBehavior(),
             }));
             // Scatter Chart
-            createPlugin(plugins, enablePivot(powerbi.visuals.plugins.scatterChart, categoricalPivotEnabled), () => new CartesianChart({
+            createPlugin(plugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({
                 chartType: CartesianChartType.Scatter,
                 isScrollable: true,
                 tooltipsEnabled: true,
@@ -567,49 +563,6 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.scriptVisual,
                     () => new ScriptVisual({ canRefresh: true }));
             }
-        }
-
-        /** enable cross axis data reduction pivot in categorical mappings */
-        function enablePivot(pluginOld: IVisualPlugin, categoricalPivotEnabled?: boolean): IVisualPlugin {
-            if (!categoricalPivotEnabled)
-                return pluginOld;
-
-            let caps: VisualCapabilities = pluginOld.capabilities;
-            if (!caps.dataViewMappings)
-                return pluginOld;
-
-            let pluginNew: IVisualPlugin = pluginOld;
-            for (let i = 0; i < caps.dataViewMappings.length; ++i) {
-                let mapping: DataViewCategoricalMapping = caps.dataViewMappings[i].categorical;
-                if (!mapping)
-                    continue;
-
-                // copy only once
-                if (pluginNew === pluginOld) {
-                    pluginNew = _.clone(pluginOld); //  shallow
-                    pluginNew.capabilities = _.clone(pluginNew.capabilities);
-
-                    caps = pluginNew.capabilities;
-                    mapping = caps.dataViewMappings[i].categorical;
-                }
-
-                let categories = mapping.categories;
-                if (categories && categories.dataReductionAlgorithm)
-                    categories.dataReductionAlgorithm = undefined;
-
-                let values = mapping.values;
-                if (values) {
-                    let group = (<DataViewGroupedRoleMapping>values).group;
-                    if (group)
-                        group.dataReductionAlgorithm = undefined;
-                }
-
-                mapping.dataReductionAlgorithm = {
-                    sample: {}
-                };
-            }
-
-            return pluginNew;
         }
 
         export class MinervaVisualPluginService extends VisualPluginService {
@@ -744,7 +697,7 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
+                return (this.featureSwitches.sandboxVisualsEnabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
@@ -813,7 +766,7 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
+                return (this.featureSwitches.sandboxVisualsEnabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
@@ -900,7 +853,7 @@ module powerbi.visuals {
             }
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
-                return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
+                return (this.featureSwitches.sandboxVisualsEnabled) && (!plugin || (plugin && plugin.custom));
             }
         }
 
@@ -1059,11 +1012,13 @@ module powerbi.visuals {
                     }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.matrix,
                     () => new Matrix({
-                        isTouchEnabled: true
+                        isTouchEnabled: true,
+                        isFormattingPropertiesEnabled: featureSwitches ? featureSwitches.tablixFormattingEnabled : false
                     }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.table,
                     () => new Table({
-                        isTouchEnabled: true
+                        isTouchEnabled: true,
+                        isFormattingPropertiesEnabled: featureSwitches ? featureSwitches.tablixFormattingEnabled : false
                     }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.map,
                     () => new Map({
@@ -1086,7 +1041,7 @@ module powerbi.visuals {
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
                 if (this.featureSwitches)
-                    return (!this.featureSwitches.sandboxVisualsDisabled) && (!plugin || (plugin && plugin.custom));
+                    return (this.featureSwitches.sandboxVisualsEnabled) && (!plugin || (plugin && plugin.custom));
                 else
                     return super.requireSandbox(plugin);
             }

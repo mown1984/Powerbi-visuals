@@ -842,7 +842,7 @@ module powerbitests {
                         let fontFace = "Symbol";
 
                         beforeEach(() => {
-                            setSelectValue(fontSelect(getToolbar()), "'" + fontFace + "'" );
+                            setSelectValue(fontSelect(getToolbar()), fontFace);
                         });
 
                         it("should change font in editor", () => {
@@ -874,7 +874,7 @@ module powerbitests {
                         let fontFace = "wf_segoe-ui_normal";
 
                         beforeEach(() => {
-                            setSelectValue(fontSelect(getToolbar()), "'" + fontFace + "'");
+                            setSelectValue(fontSelect(getToolbar()), fontFace);
                         });
 
                         it("should change font in editor", () => {
@@ -1121,14 +1121,9 @@ module powerbitests {
 
             describe('RichText module', () => {
                 describe('getFontFamily', () => {
-                    it('quotes font name', () => {
-                        expect(RichText.getCssFontFamily('foo bar')).toEqual("'foo bar'");
-                        expect(RichText.getCssFontFamily("'foo bar'")).toEqual("'foo bar'");
-                    });
-
                     it('uses font map if possible', () => {
-                        expect(RichText.getCssFontFamily('Body')).toEqual("'wf_segoe-ui_normal'");
-                        expect(RichText.getCssFontFamily('Arial')).toEqual("'Arial'");  // Not in font map
+                        expect(RichText.getCssFontFamily('Body')).toEqual("wf_segoe-ui_normal");
+                        expect(RichText.getCssFontFamily('Arial')).toEqual("Arial");  // Not in font map
                     });
                 });
             });

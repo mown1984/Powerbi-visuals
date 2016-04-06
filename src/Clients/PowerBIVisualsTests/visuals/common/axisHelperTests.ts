@@ -321,11 +321,9 @@ module powerbitests {
             // Proves scale is linear
             expect(scale.invert).toBeDefined();
 
-            // check for default value fallbackDomain
+            // check that we fall back to the empty domain
             var values = <any>axisProperties.values;
-            expect(values).toBeDefined();
-            expect(values.length).toEqual(3);
-            expect(values[2]).toBe("10.00");
+            expect(values).toEqual([]);
         });
 
         it("create value scale - near zero min check", () => {
@@ -430,7 +428,7 @@ module powerbitests {
             expect(values[0]).toBe("Oct 15");
         });
 
-        it("create scalar time scale with invaid domains", () => {
+        it("create scalar time scale with invalid domains", () => {
             var axisProperties: powerbi.visuals.IAxisProperties[] = [];
 
             axisProperties[0] = AxisPropertiesBuilder.buildAxisPropertiesTime([]);
@@ -445,10 +443,9 @@ module powerbitests {
                 // Proves scale is linear
                 expect(scale.invert).toBeDefined();
 
+                // check that we fall back to the empty domain
                 var values = <any>props.values;
-                expect(values).toBeDefined();
-                expect(values.length).toEqual(2);
-                expect(values[0]).toBe("Jul 2014");
+                expect(values).toEqual([]);
                 expect(props.usingDefaultDomain).toBe(true);
             }
         });
@@ -561,11 +558,9 @@ module powerbitests {
             // Proves scale is log
             expect(scale.invert).toBeDefined();
 
-            // check for default value fallbackDomain
+            // check that we fall back to the empty domain
             var values = <any>os.values;
-            expect(values).toBeDefined();
-            expect(values.length).toEqual(3);
-            expect(values[2]).toEqual('10.00');
+            expect(values).toEqual([]);
         });
 
         it('create log scale with zero domain',() => {

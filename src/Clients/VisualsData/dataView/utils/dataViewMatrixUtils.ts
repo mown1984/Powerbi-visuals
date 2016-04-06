@@ -119,5 +119,54 @@ module powerbi.data.utils {
 
             return returnNode;
         }
+
+        /**
+         * Returns true if the specified matrixOrHierarchy contains any composite grouping, i.e. a grouping on multiple columns.
+         * An example of composite grouping is one on [Year, Quarter, Month], where a particular group instance can have
+         * Year === 2016, Quarter === 'Qtr 1', Month === 1.
+         *
+         * Returns false if the specified matrixOrHierarchy does not contain any composite group, 
+         * or if matrixOrHierarchy is null or undefined.
+         */
+        export function containsCompositeGroup(matrixOrHierarchy: DataViewMatrix | DataViewHierarchy): boolean {
+            debug.assertAnyValue(matrixOrHierarchy, 'matrixOrHierarchy');
+
+            let hasCompositeGroup = false;
+
+            if (matrixOrHierarchy) {
+                if (isMatrix(matrixOrHierarchy)) {
+                    hasCompositeGroup = containsCompositeGroup(matrixOrHierarchy.rows) ||
+                        containsCompositeGroup(matrixOrHierarchy.columns);
+                }
+                else {
+                    let hierarchyLevels = matrixOrHierarchy.levels;
+                    if (!_.isEmpty(hierarchyLevels)) {
+                        for (var level of hierarchyLevels) {
+                            // it takes at least 2 columns at the same hierarchy level to form a composite group...
+                            if (level.sources && (level.sources.length >= 2)) {
+
+                                debug.assert(_.all(level.sources, sourceColumn => sourceColumn.isMeasure === level.sources[0].isMeasure),
+                                    'pre-condition: in a valid DataViewMatrix, the source columns in each of its hierarchy levels must either be all non-measure columns (i.e. a grouping level) or all measure columns (i.e. a measure headers level)');
+
+                                // Measure headers are not group
+                                let isMeasureHeadersLevel = level.sources[0].isMeasure;
+                                if (!isMeasureHeadersLevel) {
+                                    hasCompositeGroup = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return hasCompositeGroup;
+        }
+
+        function isMatrix(matrixOrHierarchy: DataViewMatrix | DataViewHierarchy): matrixOrHierarchy is DataViewMatrix {
+            return 'rows' in matrixOrHierarchy &&
+                'columns' in matrixOrHierarchy &&
+                'valueSources' in matrixOrHierarchy;
+        }
     }
 } 

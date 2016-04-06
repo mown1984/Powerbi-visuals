@@ -291,6 +291,7 @@ module powerbi.visuals.samples {
 
         private svg: D3.Selection;
         private mainGroupElement: D3.Selection;
+        private mainLabelsElement: D3.Selection;
         private centerText: D3.Selection;
         private clearCatcher: D3.Selection;
         private colors: IDataColorPalette;
@@ -362,10 +363,10 @@ module powerbi.visuals.samples {
             let formatStringProp = AsterPlot.Properties.general.formatString;
             let maxValue: number = Math.max(d3.min(values[0].values));
             let minValue: number = Math.min(0, d3.min(values[0].values));
-
+            let maxPrecisionValue = 17;
             let labelFormatter: IValueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(catSource, AsterPlot.Properties.general.formatString),
-                precision: labelSettings.precision,
+                precision: Math.min(maxPrecisionValue, labelSettings.precision),
                 value: (labelSettings.displayUnits === 0) && (maxValue != null) ? maxValue : labelSettings.displayUnits,
             });
             let categorySourceFormatString = valueFormatter.getFormatString(catSource, formatStringProp);
@@ -515,6 +516,7 @@ module powerbi.visuals.samples {
 
             this.colors = options.style.colorPalette.dataColors;
             this.mainGroupElement = svg.append('g');
+            this.mainLabelsElement = svg.append('g');
             this.behavior = new AsterPlotWebBehavior();
             this.clearCatcher = appendClearCatcher(this.mainGroupElement);
             let interactivity = options.interactivity;
@@ -558,6 +560,7 @@ module powerbi.visuals.samples {
             let transformX: number = (this.currentViewport.width - margin.left) / 2;
             let transformY: number = (this.currentViewport.height - margin.top) / 2;
             this.mainGroupElement.attr('transform', SVGUtil.translate(transformX, transformY));
+            this.mainLabelsElement.attr('transform', SVGUtil.translate(transformX, transformY));
             
             // Move back the clearCatcher
             this.clearCatcher.attr('transform', SVGUtil.translate(-transformX, -transformY));
@@ -565,6 +568,9 @@ module powerbi.visuals.samples {
             // Clear previous data
             this.mainGroupElement.selectAll(AsterPlot.AsterSlice.selector).remove();
             this.mainGroupElement.selectAll(AsterPlot.AsterHighlightedSlice.selector).remove();
+
+            this.mainLabelsElement.selectAll(AsterPlot.labelGraphicsContextClass.selector).remove();
+            this.mainLabelsElement.selectAll(AsterPlot.linesGraphicsContextClass.selector).remove();
 
             let dataPoints = this.validateData(dataView, convertedData.dataPoints);
             if (!dataPoints || dataPoints.length === 0)
@@ -655,10 +661,10 @@ module powerbi.visuals.samples {
                     .outerRadius(d => (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius);
 
                 let layout = this.getLabelLayout(labelSettings, labelArc, this.currentViewport);
-                this.drawLabels(arcDescriptorDataPoints, this.mainGroupElement, layout, this.currentViewport, outlineArc, labelArc);
+                this.drawLabels(arcDescriptorDataPoints, this.mainLabelsElement, layout, this.currentViewport, outlineArc, labelArc);
             }
             else
-                dataLabelUtils.cleanDataLabels(this.mainGroupElement, true);
+                dataLabelUtils.cleanDataLabels(this.mainLabelsElement, true);
             
             // Draw center text and outline once for original data points
             if (!isHighlight) {

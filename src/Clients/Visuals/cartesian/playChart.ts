@@ -540,10 +540,13 @@ module powerbi.visuals {
             if ((_.isEmpty(matrix.columns.levels)) || (matrix.rows.levels.length < 2 && matrix.columns.levels.length < 2))
                 return categorical;
 
+            // Ignore the play field (first row), we use either the second row group (play->category) or we don't use this variable (category)
+            // Note related to VSTS 6986788: use the leaf node for category as there can be multiple levels for category during drilldown.
+            let categorySource = matrix.rows.levels.length > 1 && !_.isEmpty(_.last(matrix.rows.levels).sources)
+                ? _.last(matrix.rows.levels).sources[0]
+                : null;
             let category: DataViewCategoryColumn = {
-                // ignore the play field, we use either the second row group (play->category) or we don't use this variable (category)
-                // Note related to VSTS 6986788: use the leaf node for category as there can be multiple levels for category during drilldown.
-                source: matrix.rows.levels.length > 1 ? _.last(matrix.rows.levels).sources[0] : null,
+                source: categorySource,
                 values: [],
                 objects: undefined,
                 identity: []
@@ -704,7 +707,7 @@ module powerbi.visuals {
             let matrixRows = dataView.matrix.rows;
             let rowChildrenLength = matrixRows.root.children ? matrixRows.root.children.length : 0;
             let keySourceColumn: DataViewMetadataColumn;
-            if (dataView.matrix && rowChildrenLength > 0) {
+            if (dataView.matrix && rowChildrenLength > 0 && !_.isEmpty(matrixRows.levels) && !_.isEmpty(matrixRows.levels[0].sources) ) {
                 keySourceColumn = matrixRows.levels[0].sources[0];
 
                 // TODO: this should probably defer to the visual which knows how to format the categories.
@@ -845,14 +848,15 @@ module powerbi.visuals {
         export function isDataViewPlayable(dataView: DataView, playRole: string = 'Play'): boolean {
             debug.assertValue(dataView, 'dataView');
 
-            let categoryRoleIsPlay = dataView.categorical
-                && dataView.categorical.categories
-                && dataView.categorical.categories[0]
-                && dataView.categorical.categories[0].source
-                && dataView.categorical.categories[0].source.roles
-                && dataView.categorical.categories[0].source.roles[playRole];
+            let firstRowSourceRoles = dataView.matrix &&
+                dataView.matrix.rows &&
+                dataView.matrix.rows.levels &&
+                dataView.matrix.rows.levels[0] &&
+                dataView.matrix.rows.levels[0].sources &&
+                dataView.matrix.rows.levels[0].sources[0] &&
+                dataView.matrix.rows.levels[0].sources[0].roles;
 
-            return (dataView.matrix && (!dataView.categorical || categoryRoleIsPlay));
+            return firstRowSourceRoles && firstRowSourceRoles[playRole];
         }
 
         /** Render trace-lines for selected data points. */

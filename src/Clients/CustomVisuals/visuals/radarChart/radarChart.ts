@@ -477,7 +477,7 @@ module powerbi.visuals.samples {
 
             let mainGroup = this.mainGroupElement;
             mainGroup.attr('transform', SVGUtil.translate(this.viewport.width / 2, this.viewport.height / 2));
-
+           
             let width: number = this.viewport.width - this.margin.left - this.margin.right;
             let height: number = this.viewport.height - this.margin.top - this.margin.bottom;
 
@@ -587,7 +587,8 @@ module powerbi.visuals.samples {
                 let viewport = this.viewport;
                 let labels = dataLabelUtils.drawDefaultLabelsForDataPointChart(allDataPoints, this.mainGroupElement, layout, viewport);
 
-                labels.attr('transform', SVGUtil.translate(-(viewport.width / 2), -(viewport.height / 2)));
+                if (labels)
+                    labels.attr('transform', SVGUtil.translate(-(viewport.width / 2), -(viewport.height / 2)));
             }
             else
                 dataLabelUtils.cleanDataLabels(this.mainGroupElement);

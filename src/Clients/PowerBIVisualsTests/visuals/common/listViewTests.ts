@@ -172,7 +172,8 @@ module powerbitests {
                 baseContainer: d3.select(this.element.get(0)),
                 rowHeight: 10,
                 scrollEnabled: true,
-                viewport: { height: this.height, width: this.width }
+                viewport: { height: this.height, width: this.width },
+                isReadMode: null
             };
         }
 

@@ -80,7 +80,6 @@ module powerbi.visuals {
         domain: number[];
         merged: boolean;
         tickCount: number;
-        forceStartToZero: boolean;
     }
 
     export interface CartesianSmallViewPortProperties {
@@ -606,10 +605,16 @@ module powerbi.visuals {
                 visualBackgroundHelper.enumeratePlot(enumeration, this.background);
             }
 
-            for (let i = 0, len = layersLength; i < len; i++) {
-                let layer = this.layers[i];
-                if (layer.enumerateObjectInstances) {
-                    layer.enumerateObjectInstances(enumeration, options);
+            if (options.objectName === 'dataPoint' &&
+                ComboChart.isComboChart(this.type)) {
+                ComboChart.enumerateDataPoints(enumeration, options, this.layers);
+            }
+            else {
+                for (let i = 0, len = layersLength; i < len; i++) {
+                    let layer = this.layers[i];
+                    if (layer.enumerateObjectInstances) {
+                        layer.enumerateObjectInstances(enumeration, options);
+                    }
                 }
             }
 
@@ -1465,8 +1470,7 @@ module powerbi.visuals {
         let noMerge: MergedValueAxisResult = {
             domain: undefined,
             merged: false,
-            tickCount: undefined,
-            forceStartToZero: false
+            tickCount: undefined
         };
 
         if (layers.length < 2)
@@ -1484,10 +1488,6 @@ module powerbi.visuals {
         let firstYDomain = y1props.scale.domain();
         let secondYDomain = y2props.scale.domain();
 
-        if (firstYDomain[0] >= 0 && secondYDomain[0] >= 0) {
-            noMerge.forceStartToZero = true;
-        }
-
         if (y1props.values && y1props.values.length > 0 && y2props.values && y2props.values.length > 0) {
             noMerge.tickCount = Math.max(y1props.values.length, y2props.values.length);
         }
@@ -1499,8 +1499,7 @@ module powerbi.visuals {
             return {
                 domain: [min, max],
                 merged: true,
-                tickCount: noMerge.tickCount,
-                forceStartToZero: false
+                tickCount: noMerge.tickCount
             };
         }
 
@@ -1526,8 +1525,7 @@ module powerbi.visuals {
             return {
                 domain: [min, max],
                 merged: true,
-                tickCount: noMerge.tickCount,
-                forceStartToZero: false
+                tickCount: noMerge.tickCount
             };
     }
 
@@ -1597,14 +1595,6 @@ module powerbi.visuals {
                 visualOptions.valueAxisScaleType = valueAxisProperties && valueAxisProperties['secAxisScale'] != null ? <string>valueAxisProperties['secAxisScale'] : DEFAULT_AXIS_SCALE_TYPE;
                 visualOptions.valueAxisDisplayUnits = valueAxisProperties && valueAxisProperties['secLabelDisplayUnits'] != null ? <number>valueAxisProperties['secLabelDisplayUnits'] : 0;
                 visualOptions.valueAxisPrecision = valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['secLabelPrecision']) : null;
-                if (mergeResult && mergeResult.forceStartToZero) {
-                    if (!visualOptions.forcedYDomain) {
-                        visualOptions.forcedYDomain = [0, undefined];
-                    }
-                    else if (visualOptions.forcedYDomain[0] == null) {
-                        visualOptions.forcedYDomain[0] = 0;//only set when user didn't choose a value
-                    }
-                }
             }
             visualOptions.showCategoryAxisLabel = (!!categoryAxisProperties && !!categoryAxisProperties['showAxisTitle']);//here
 
@@ -1619,7 +1609,7 @@ module powerbi.visuals {
                 };
             }
             else if (axes && !result.y2) {
-                if (axes[0].axis.scale().domain().length > result.x.axis.scale().domain().length) {
+                if (result.x.usingDefaultDomain || _.isEmpty(result.x.dataDomain)) {
                     visualOptions.showValueAxisLabel = (!!valueAxisProperties && !!valueAxisProperties['showAxisTitle']);
 
                     let axes = currentlayer.calculateAxesProperties(visualOptions);
@@ -1941,10 +1931,10 @@ module powerbi.visuals {
         private onBrushed(scrollbarLength: number, render: (extent: number[], suppressAnimations: boolean) => void): void {
             let brush = this.brush;
 
-                ScrollableAxes.clampBrushExtent(this.brush, scrollbarLength, this.brushMinExtent);
-                let extent = brush.getExtent();
+            ScrollableAxes.clampBrushExtent(this.brush, scrollbarLength, this.brushMinExtent);
+            let extent = brush.getExtent();
             render(extent, /*suppressAnimations*/ true);
-            }
+        }
 
         private static clampBrushExtent(brush: SvgBrush, scrollbarLength: number, minExtent: number): void {
             let extent = brush.getExtent();
@@ -2573,9 +2563,9 @@ module powerbi.visuals {
             // 1> MinMargins -> some initial axis properties / text
             // 2> Get axis margins for the initial text, no rotateXTickLabels90. margins grown? -> axis properties / text again (possibly more tick labels now)
             // ?> do we have more labels? do we need rotate? are we done?
-                // 3> margins again (rotate? margins grow?) -> text again (less tick labls now?)
-                    // FREEZE PROPERTIES THAT CAN CHANGE
-                    // 4> margins (final), axes (final)
+            // 3> margins again (rotate? margins grow?) -> text again (less tick labls now?)
+            // FREEZE PROPERTIES THAT CAN CHANGE
+            // 4> margins (final), axes (final)
             
             // 1.a) initialize margins
             let margin: IMargin = Prototype.inherit(CartesianAxes.MinimumMargin);
@@ -2718,27 +2708,27 @@ module powerbi.visuals {
                         this.isXScrollBarVisible = true;
                         plotArea.height -= this.scrollbarWidth;
                         viewport.height -= this.scrollbarWidth;
-                }
+                    }
                     if (this.showLinesOnX) {
                         this.isYScrollBarVisible = true;
                         plotArea.width -= this.scrollbarWidth;
                         viewport.width -= this.scrollbarWidth;
-                }
+                    }
 
                     // 3.c) Re-calculate the axes with the final margins (and the updated viewport - scrollbarWidth)
-                axes = calculateAxes(
-                    layers,
-                    viewport,
-                    margin,
-                    playAxisControlLayout,
-                    this.categoryAxisProperties,
-                    this.valueAxisProperties,
-                    textProperties,
+                    axes = calculateAxes(
+                        layers,
+                        viewport,
+                        margin,
+                        playAxisControlLayout,
+                        this.categoryAxisProperties,
+                        this.valueAxisProperties,
+                        textProperties,
                     /*scrollbarVisible*/ true,
-                    axes,
-                    this.trimOrdinalDataOnOverflow,
-                    ensureXDomain,
-                    ensureYDomain);
+                        axes,
+                        this.trimOrdinalDataOnOverflow,
+                        ensureXDomain,
+                        ensureYDomain);
                 }
             }
 
@@ -2788,7 +2778,7 @@ module powerbi.visuals {
             tickLabelMargins: TickLabelMargins,
             padding: IMargin,
             showY1OnRight: boolean,
-            renderY1Axis: boolean, 
+            renderY1Axis: boolean,
             renderY2Axis: boolean,
             hideAxisTitles: boolean,
             interactivityRightMargin: number): IMargin {

@@ -25,18 +25,15 @@
  */
 
 declare module powerbi.extensibility {
-    /**
-     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
-     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
-     */
-    export interface IVisual {
-        /** Notifies the IVisual of an update (data, viewmode, size change). */
-        update(options: VisualUpdateOptions): void;
-        
-        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
-        destroy?(): void;
 
-        /** Gets the set of objects that the visual is currently displaying. */
-        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-    }
+    // These are the base interfaces. These should remain empty
+    // All visual versions should extend these for type compatability
+
+    export interface IVisual { }
+
+    export interface IVisualHost { }
+
+    export interface VisualUpdateOptions { }
+
+    export interface VisualConstructorOptions { }
 }

@@ -1146,6 +1146,10 @@ module powerbi.visuals.samples {
             return -1;
         }
 
+        public static createLazyFormattedCategory(formatter: IValueFormatter, value: string): jsCommon.Lazy<string> {
+            return new jsCommon.Lazy(() => formatter.format(value));
+        }
+
         private static createDataPoints(
             dataValues: DataViewValueColumns,
             metadata: ScatterChartMeasureMetadata,
@@ -1273,7 +1277,7 @@ module powerbi.visuals.samples {
                         size: size,
                         radius: { sizeMeasure: measureSize, index: categoryIdx },
                         fill: color,
-                        formattedCategory: ScatterChart.createLazyFormattedCategory(categoryFormatter, categoryValue),
+                        formattedCategory: this.createLazyFormattedCategory(categoryFormatter, categoryValue),
                         selected: false,
                         identity: identity,
                         tooltipInfo: tooltipInfo,
@@ -1768,17 +1772,15 @@ module powerbi.visuals.samples {
                     .attr("y1", 0)
                     .attr("x2", 0)
                     .attr("y2", 0)
-                    .style("stroke", "grey")
+                    .style("stroke", "gray")
                     .style("stroke-width", "1px")
                     .style("stroke-dasharray", "5,5")
                     .style("display", "none");
 
                 let text = crossHair.append("text").attr("id", "crosshair_text") // text label for cross hair
                     .style("font-size", "10px")
-                    .style("stroke", "black")
+                    .style("stroke", "gray")
                     .style("stroke-width", "0.5px");
-
-                let textRect = crossHair.append("rect").attr("id", "crosshair_rect"); // text label for cross hair
                 
                 let addCrossHair = (xCoord, yCoord) => {
                     
@@ -1799,12 +1801,6 @@ module powerbi.visuals.samples {
                     // Update text label
                     text.attr("transform", "translate(" + (xCoord + 5) + "," + (yCoord - 5) + ")")
                         .text("(" + Math.round(xScale.invert(xCoord) * 100) / 100 + " , " + Math.round(yScale.invert(yCoord) * 100) / 100 + ")");
-                    let bbox = (<SVGTextElement>text.node()).getBBox();
-                    textRect.attr("x", (xCoord + 5) + bbox.x)
-                        .attr("y", (yCoord - 5) + bbox.y)
-                        .attr("width", bbox.width)
-                        .attr("height", bbox.height)
-                        .style({ 'fill': 'white', 'fill-opacity': 0.5 });
                 };
 
                 this.axisGraphicsContextScrollable.on("mousemove", function () {
@@ -2069,20 +2065,24 @@ module powerbi.visuals.samples {
                 'x': 0
             });
 
-            this.axisGraphicsContext.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top));
-            this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top));
+            let left: number = this.margin.left;
+            let top: number = this.margin.top;
+
+            this.axisGraphicsContext.attr('transform', SVGUtil.translate(left, top));
+            this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(left, top));
+            this.clearCatcher.attr('transform', SVGUtil.translate(-left, -top));
 
             if (this.isXScrollBarVisible) {
                 this.svgScrollable.attr({
-                    'x': this.margin.left
+                    'x': left
                 });
-                this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, this.margin.top));
+                this.axisGraphicsContextScrollable.attr('transform', SVGUtil.translate(0, top));
                 this.svgScrollable.attr('width', this.viewportIn.width);
                 this.svg.attr('width', this.viewport.width)
                     .attr('height', this.viewport.height + this.ScrollBarWidth);
             }
             else if (this.isYScrollBarVisible) {
-                this.svgScrollable.attr('height', this.viewportIn.height + this.margin.top);
+                this.svgScrollable.attr('height', this.viewportIn.height + top);
                 this.svg.attr('width', this.viewport.width + this.ScrollBarWidth)
                     .attr('height', this.viewport.height);
             }

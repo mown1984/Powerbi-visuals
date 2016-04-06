@@ -37,22 +37,9 @@ declare module powerbi.extensibility {
 
         /** Defines how roles that the visual understands map to the DataView.  This is useful for query generation. */
         dataViewMappings?: DataViewMapping[];
-        
+
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
+    }
 
-        /** List of additional libraries this visual requires. */
-        requiredLibraries?: VisualRequiredLibrary[];
-    }
-    
-    /** Defines a library to be loaded by a visual */
-    export interface VisualRequiredLibrary {
-        /** Name of a supported library or URL to an external library. External libraries should use the format //www.domain.com/file.js */
-        library: string;
-        
-        /** Version of the library to load
-         * this is not needed until when we have support for PBI hosted libraries
-         */
-        //version?: string;
-    }
 }

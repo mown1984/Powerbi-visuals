@@ -34,6 +34,7 @@ module powerbi.visuals {
     export interface CardStyleText {
         textSize: number;
         color: string;
+        paddingTop?: number;
     }
 
     export interface CardStyleValue extends CardStyleText {
@@ -79,6 +80,7 @@ module powerbi.visuals {
             label: {
                 textSize: 12,
                 color: '#a6a6a6',
+                paddingTop: 8
             },
             value: {
                 textSize: 27,
@@ -235,15 +237,16 @@ module powerbi.visuals {
             });
 
             let formatSettings = this.cardFormatSetting;
-            let labelTextSizeInPx = jsCommon.PixelConverter.fromPointToPixel(labelSettings.fontSize);
+            let valueTextHeightInPx = jsCommon.PixelConverter.fromPointToPixel(labelSettings.fontSize);
             let valueStyles = Card.DefaultStyle.value;
             this.setTextProperties(target, this.getCardFormatTextSize());
-            let calculatedHeight = TextMeasurementService.estimateSvgTextHeight(Card.cardTextProperties);
+            let labelTextHeightInPx = TextMeasurementService.estimateSvgTextHeight(Card.cardTextProperties);
+            let labelHeightWithPadding = labelTextHeightInPx + Card.DefaultStyle.label.paddingTop;
 
             let width = this.currentViewport.width;
             let height = this.currentViewport.height;
             let translateX = this.getTranslateX(width);
-            let translateY = (height - calculatedHeight - labelTextSizeInPx) / 2;
+            let translateY = (height - labelHeightWithPadding - valueTextHeightInPx) / 2;
             let statusGraphicInfo: KpiImageMetadata = getKpiImageMetadata(metaDataColumn, target, KpiImageSize.Big);
 
             if (this.isScrollable) {
@@ -258,7 +261,7 @@ module powerbi.visuals {
                     ? [label]
                     : [];
 
-                let translatedLabelY = this.getTranslateY(labelTextSizeInPx + calculatedHeight + translateY);
+                let translatedLabelY = this.getTranslateY(valueTextHeightInPx + labelHeightWithPadding + translateY);
                 let labelElement = this.labelContext
                     .attr('transform', SVGUtil.translate(translateX, translatedLabelY))
                     .selectAll('text')
@@ -296,13 +299,13 @@ module powerbi.visuals {
                 if (statusGraphicInfo) {
                     // Display card KPI icon
                     this.graphicsContext.selectAll('text').remove();
-                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, labelTextSizeInPx);
+                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, valueTextHeightInPx);
                 }
                 else {
                     // Display card text value
                     this.kpiImage.selectAll('div').remove();
                     let valueElement = this.graphicsContext
-                        .attr('transform', SVGUtil.translate(translateX, this.getTranslateY(labelTextSizeInPx + translateY)))
+                        .attr('transform', SVGUtil.translate(translateX, this.getTranslateY(valueTextHeightInPx + translateY)))
                         .selectAll('text')
                         .data([target]);
 
@@ -335,7 +338,7 @@ module powerbi.visuals {
                 if (statusGraphicInfo) {
                     // Display card KPI icon
                     this.graphicsContext.selectAll('text').remove();
-                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, labelTextSizeInPx);
+                    this.displayStatusGraphic(statusGraphicInfo, translateX, translateY, valueTextHeightInPx);
                 }
                 else {
                     this.kpiImage.selectAll('div').remove();

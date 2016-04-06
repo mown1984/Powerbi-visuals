@@ -3285,19 +3285,20 @@ module powerbitests {
             });
             */
 
-            if ("returns empty intersections for no values", (done) => {
-                let matrix = matrixOneRowGroupOneColumnGroupOneGroupInstance;
-                let rowHierarchy = matrix.rows.root.children;
-                let rowLeaves = rowHierarchy[0].children[0].children;
-                let columnHierarchy = matrix.columns.root.children;
-                let columnLeaves = columnHierarchy[0].children[0].children.concat(columnHierarchy[0].children[1]);
+            // TODO: uncomment and fix this case    
+            // it("returns empty intersections for no values", (done) => {
+            //     let matrix = matrixOneRowGroupOneColumnGroupOneGroupInstance;
+            //     let rowHierarchy = matrix.rows.root.children;
+            //     let rowLeaves = rowHierarchy[0].children[0].children;
+            //     let columnHierarchy = matrix.columns.root.children;
+            //     let columnLeaves = columnHierarchy[0].children[0].children.concat(columnHierarchy[0].children[1]);
 
-                let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
-                let intersection = navigator.getIntersection(rowLeaves[0], columnLeaves[0]);
-                expect(intersection).toBeDefined();
-                expect(intersection.dataPoint).toBeUndefined();
-                expect(intersection.columnMetadata).toBeUndefined();
-            });
+            //     let navigator = powerbi.visuals.createMatrixHierarchyNavigator(matrix, valueFormatter.formatValueColumn);
+            //     let intersection = navigator.getIntersection(rowLeaves[0], columnLeaves[0]);
+            //     expect(intersection).toBeDefined();
+            //     expect(intersection.dataPoint).toBeUndefined();
+            //     expect(intersection.columnMetadata).toBeUndefined();
+            // });
 
             function validateIntersections(navigator: MatrixHierarchyNavigator, rowLeaves: MatrixVisualNode[], columnLeaves: MatrixVisualNode[], expectedValues: string[][]): void {
                 let result: string[][] = [];

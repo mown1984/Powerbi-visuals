@@ -31,8 +31,7 @@ module powerbi.visuals {
      * Default ranges are for when we have a field chosen for the axis,
      * but no values are returned by the query.
      */
-    export const fallBackDomain = [0, 10];
-    export const fallbackDateDomain = [new Date(2014, 1, 1).getTime(), new Date(2015, 1, 1).getTime()];
+    export const emptyDomain = [0, 0];
 
     export interface IAxisProperties {
         /** 
@@ -348,19 +347,19 @@ module powerbi.visuals {
         function getRecommendedTickValuesForADateTimeRange(maxTicks: number, dataDomain: number[]): number[] {
             let tickLabels: number[] = [];
 
+            if (dataDomain[0] === 0 && dataDomain[1] === 0)
+                return [];
+
             let dateTimeTickLabels = DateTimeSequence.calculate(new Date(dataDomain[0]), new Date(dataDomain[1]), maxTicks).sequence;
             tickLabels = dateTimeTickLabels.map(d => d.getTime());
             tickLabels = ensureValuesInRange(tickLabels, dataDomain[0], dataDomain[1]);
             return tickLabels;
         }
 
-        export function normalizeLinearDomain(domain: NumberRange): NumberRange {
+        function normalizeLinearDomain(domain: NumberRange): NumberRange {
             if (isNaN(domain.min) || isNaN(domain.max)) {
-                domain.min = fallBackDomain[0];
-                domain.max = fallBackDomain[1];
-            }
-            else if (domain.min === 0 && domain.max === 0) {
-                domain.max = fallBackDomain[1]; // default
+                domain.min = emptyDomain[0];
+                domain.max = emptyDomain[1];
             }
             else if (domain.min === domain.max) {
                 // d3 linear scale will give zero tickValues if max === min, so extend a little
@@ -825,10 +824,8 @@ module powerbi.visuals {
             if (dataDomain == null || (dataDomain.length === 2 && dataDomain[0] == null && dataDomain[1] == null) || (dataDomain.length !== 2 && isScalar)) {
                 usingDefaultDomain = true;
 
-                if (dataType.dateTime)
-                    dataDomain = fallbackDateDomain;
-                else if (!isOrdinal(dataType))
-                    dataDomain = fallBackDomain;
+                if (dataType.dateTime || !isOrdinal(dataType))
+                    dataDomain = emptyDomain;
                 else //ordinal
                     dataDomain = [];
 
@@ -844,7 +841,8 @@ module powerbi.visuals {
                     bestTickCount = forcedTickCount !== undefined
                         ? (maxTicks !== 0 ? forcedTickCount : 0)
                         : AxisHelper.getBestNumberOfTicks(dataDomain[0], dataDomain[dataDomain.length - 1], [metaDataColumn], maxTicks, dataType.dateTime);
-                    let normalizedRange = AxisHelper.normalizeLinearDomain({ min: dataDomain[0], max: dataDomain[dataDomain.length - 1] });
+
+                    let normalizedRange = normalizeLinearDomain({ min: dataDomain[0], max: dataDomain[dataDomain.length - 1] });
                     scalarDomain = [normalizedRange.min, normalizedRange.max];
                 }
 

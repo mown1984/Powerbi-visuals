@@ -39,9 +39,10 @@ declare module powerbi {
         Append = 1,
     }
     enum VisualUpdateType {
-        Data = 0,
-        Resize = 2,
-        ViewMode = 4,
+        Data = 2,
+        Resize = 4,
+        ViewMode = 8,
+        Style = 16,
     }
     enum VisualPermissions {
     }
@@ -56,6 +57,23 @@ declare module powerbi {
     const enum ResizeMode {
         Resizing = 1,
         Resized = 2,
+    }
+    module visuals.telemetry {
+        const enum TelemetryCategory {
+            Verbose = 0,
+            CustomerAction = 1,
+            CriticalError = 2,
+            Trace = 3,
+        }
+        enum ErrorSource {
+            PowerBI = 0,
+            External = 1,
+            User = 2,
+        }
+    }
+    const enum JoinPredicateBehavior {
+        /** Prevent items in this role from acting as join predicates. */
+        None = 0,
     }
 }
 
@@ -239,6 +257,7 @@ declare module powerbi.visuals {
         getKey(): string;
         getSelector(): Selector;
         getSelectorsByColumn(): Selector;
+        hasIdentity(): boolean;
     }
 }
 ﻿
@@ -357,6 +376,7 @@ declare module powerbi.data {
         queryName: string;
         //changed to descriptor to not need to depend on ValueType class
         type?: ValueTypeDescriptor;
+        joinPredicate?: JoinPredicateBehavior;
     }
 }
 ﻿
@@ -622,6 +642,8 @@ declare module powerbi {
 
     /** Represents a value at the matrix intersection, used in the values property on DataViewMatrixNode (inherited from DataViewTreeNode). */
     export interface DataViewMatrixNodeValue extends DataViewTreeNodeValue {
+        highlight?: any;
+
         /** Indicates the index of the corresponding measure (held by DataViewMatrix.valueSources). Its value is 0 if omitted. */
         valueSourceIndex?: number;
     }
@@ -1015,56 +1037,167 @@ declare module powerbi {
 
         /** Indicates the cartesian role for the visual role */
         cartesianKind?: CartesianRoleKind;
+
+        /** Indicates the join predicate behavior of items in this role. */
+        joinPredicate?: JoinPredicateBehavior;
     }
 
     export interface RoleCondition extends NumberRange {
         kind?: VisualDataRoleKind;
     }
 }
+
+
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+
+    export interface ISelectionIdBuilder {
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): ISelectionId;
+    }
+}
+
+
+declare module powerbi.extensibility {
+    import ISelectionId = visuals.ISelectionId;
+
+    interface ISelectionManager {
+        select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
+        hasSelection(): boolean;
+        clear(): IPromise<{}>;
+        getSelectionIds(): ISelectionId[];
+    }
+}
 ﻿
 
 declare module powerbi.extensibility {
+
+    // These are the base interfaces. These should remain empty
+    // All visual versions should extend these for type compatability
+
+    export interface IVisual { }
+
+    export interface IVisualHost { }
+
+    export interface VisualUpdateOptions { }
+
+    export interface VisualConstructorOptions { }
+}
+
+
+
+declare module powerbi.extensibility {
+
+    export interface VisualVersionOverloads {
+        [name: string]: Function;
+    }
+
+    export interface VisualVersionOverloadFactory {
+        (visual: powerbi.extensibility.IVisual): VisualVersionOverloads;
+    }
+
+    export interface VisualHostAdapter {
+        (host: powerbi.IVisualHostServices): IVisualHost;
+    }
+
+    export interface VisualVersion {
+        version: string;
+        overloads?: VisualVersionOverloadFactory;
+        hostAdapter: VisualHostAdapter;
+    }
+
+    /**
+     * Extends the interface of a visual wrapper (IVisual) to include
+     * the unwrap method which returns a direct reference to the wrapped visual. 
+     * Used in SafeExecutionWrapper and VisualAdapter
+     */
+    export interface WrappedVisual {
+        /** Returns this visual inside of this wrapper */
+        unwrap: () => powerbi.IVisual;
+    }
+}
+
+
+/**
+ * Change Log Version 1.0.0
+ * - Add type to update options (data, resize, viewmode)
+ * - Remove deprecated methods (onDataChange, onResizing, onViewModeChange) 
+ * - Add hostAdapter for host services versioning
+ */
+declare module powerbi.extensibility.v100 {
     /**
      * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
      * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
      */
-    export interface IVisual {
+    export interface IVisual extends extensibility.IVisual {
         /** Notifies the IVisual of an update (data, viewmode, size change). */
         update(options: VisualUpdateOptions): void;
-        
+
         /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
         destroy?(): void;
 
         /** Gets the set of objects that the visual is currently displaying. */
         enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
     }
-}
 
+    export interface IVisualHost extends extensibility.IVisualHost { }
 
-
-declare module powerbi.extensibility {
-
-    /** Defines behavior for IVisual interaction with the host environment. */
-    export interface IVisualHost {
- 
-    }
-}
-﻿
-
-declare module powerbi.extensibility {
-
-    export interface VisualUpdateOptions {
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
         viewport: IViewport;
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
         resizeMode?: ResizeMode;
     }
-    
-    export interface VisualConstructorOptions {
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
         element: HTMLElement;
         host: IVisualHost;
     }
+
+}
+
+
+
+/**
+ * Change Log Version 1.1.0
+ */
+declare module powerbi.extensibility.v110 {
+    /**
+     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
+     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
+     */
+    export interface IVisual extends extensibility.IVisual {
+        /** Notifies the IVisual of an update (data, viewmode, size change). */
+        update(options: VisualUpdateOptions): void;
+
+        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
+        destroy?(): void;
+
+        /** Gets the set of objects that the visual is currently displaying. */
+        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+    }
+
+    export interface IVisualHost extends extensibility.IVisualHost {
+        createSelectionIdBuilder: () => visuals.ISelectionIdBuilder;
+        createSelectionManager: () => ISelectionManager;
+    }
+
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
+        viewport: IViewport;
+        dataViews: DataView[];
+        type: VisualUpdateType;
+        viewMode?: ViewMode;
+        resizeMode?: ResizeMode;
+    }
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
+        element: HTMLElement;
+        host: IVisualHost;
+    }
+
 }
 
 
@@ -1082,24 +1215,11 @@ declare module powerbi.extensibility {
 
         /** Defines how roles that the visual understands map to the DataView.  This is useful for query generation. */
         dataViewMappings?: DataViewMapping[];
-        
+
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
+    }
 
-        /** List of additional libraries this visual requires. */
-        requiredLibraries?: VisualRequiredLibrary[];
-    }
-    
-    /** Defines a library to be loaded by a visual */
-    export interface VisualRequiredLibrary {
-        /** Name of a supported library or URL to an external library. External libraries should use the format //www.domain.com/file.js */
-        library: string;
-        
-        /** Version of the library to load
-         * this is not needed until when we have support for PBI hosted libraries
-         */
-        //version?: string;
-    }
 }
 
 ﻿
@@ -1143,6 +1263,132 @@ declare module powerbi {
         (error: PositionError): void;
     }
 }
+
+
+declare module powerbi.visuals.telemetry {
+    
+    export interface ITelemetryEventI<T> extends ITelemetryEvent {
+        info: T;
+    }
+    
+    interface IErrorWithStackTraceAndSourceDetails extends IErrorWithStackTrace {
+        source: string;
+        lineNumber: number;
+        columnNumber: number;
+    }
+        
+    export interface IErrorWithStackTrace extends IError {
+    	stack: string;
+    }
+    
+    export interface IError {
+    	message: string;
+    }    
+    
+    export interface IPBIVisualException extends IErrorWithStackTraceAndSourceDetails {
+    	visualType: string;
+    	isCustom: boolean;
+    	apiVersion: string;
+    }
+
+    export interface IPBIExtensibilityVisualApiUsage extends ICustomerAction {
+    	name: string;
+    	apiVersion: string;
+    	custom: boolean;
+    }
+    
+    export interface VisualTelemetryInfo {
+        name: string;
+        apiVersion: string;
+        custom: boolean;
+    }
+    
+}
+
+
+declare module powerbi.visuals.telemetry {
+    
+    interface ITelemetryService {
+        /** Log Telemetry event */
+        logEvent(eventFactory: ITelemetryEventFactory): ITelemetryEvent;
+        logEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): ITelemetryEvent;
+        logEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2: T2): ITelemetryEvent;
+        logEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;        
+    }
+    
+    interface ITelemetryEvent {
+        name: string;
+        category?: TelemetryCategory;
+        id: string;
+        loggers?: number;
+        time: number;
+        getFormattedInfoObject(): any;
+        info: any;
+        privateFields: string[];
+        orgInfoFields: string[];
+    }
+
+    interface ITelemetryEventFactory {
+        (parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory1<T> {
+        (arg: T, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory2<T1, T2> {
+        (arg1: T1, arg2: T2, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory3<T1, T2, T3> {
+        (arg1: T1, arg2: T2, arg3: T3, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory4<T1, T2, T3, T4> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory5<T1, T2, T3, T4, T5> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11, parentId: string): ITelemetryEvent;
+    }
+    
+    interface IBaseEvent {
+        parentId: string;
+        isError: boolean;
+        errorSource: ErrorSource;
+        errorCode: string;
+    }
+    
+    interface ICustomerAction extends IBaseEvent {
+    }
+}
+
+declare module powerbi {
+    interface ITelemetryService { }
+}
+
+
 ﻿
 
 declare module powerbi {
@@ -1429,17 +1675,11 @@ declare module powerbi {
          */
         onDataChanged?(options: VisualDataChangedOptions): void;
 
-        /** Notifies the IVisual of changes to the color, font, theme, and style related values that the visual should use. */
-        onStyleChanged?(newStyle: IVisualStyle): void;
-
         /** Notifies the IVisual to change view mode if applicable. */
         onViewModeChanged?(viewMode: ViewMode): void;
 
         /** Notifies the IVisual to clear any selection. */
         onClearSelection?(): void;
-
-        /** Notifies the IVisual to select the specified object. */
-        onSelectObject?(object: VisualObjectInstance): void;
 
         /** Gets a value indicating whether the IVisual can be resized to the given viewport. */
         canResizeTo?(viewport: IViewport): boolean;
@@ -1584,6 +1824,10 @@ declare module powerbi {
         suppressAnimations?: boolean;
         viewMode?: ViewMode;
         resizeMode?: ResizeMode;
+        type?: VisualUpdateType;
+        /** Indicates what type of update has been performed on the data.
+        The default operation kind is Create.*/
+        operationKind?: VisualDataChangeOperationKind;
     }
 
     export interface VisualDataChangedOptions {
@@ -1834,7 +2078,7 @@ declare module powerbi {
 ﻿
 
 declare module powerbi {
-    
+
     export interface IVisualPlugin {
         /** The name of the plugin.  Must match the property name in powerbi.visuals. */
         name: string;
@@ -1846,7 +2090,7 @@ declare module powerbi {
         capabilities?: VisualCapabilities;
 
         /** Function to call to create the visual. */
-        create: IVisualFactoryMethod;
+        create: (options?: extensibility.VisualConstructorOptions) => IVisual;
 
         /** 
          * Function to allow the visual to influence query generation. Called each time a query is generated
@@ -1866,7 +2110,7 @@ declare module powerbi {
         /** Check if a visual is custom */
         custom?: boolean;
 
-        /* Function to get the list of sortable roles */
+        /** Function to get the list of sortable roles */
         getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
         
         /** The version of the api that this plugin should be run against */

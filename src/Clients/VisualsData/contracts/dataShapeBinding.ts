@@ -59,11 +59,13 @@ module powerbi.data {
         Version?: number;
         Primary: DataShapeBindingAxis;
         Secondary?: DataShapeBindingAxis;
+        Aggregates?: DataShapeBindingAggregate[];
         Projections?: number[];
         Limits?: DataShapeBindingLimit[];
         Highlights?: FilterDefinition[];
         DataReduction?: DataShapeBindingDataReduction;
         IncludeEmptyGroups?: boolean;
+        SuppressedJoinPredicates?: number[];
     }
 
     export interface DataShapeBindingDataReduction {
@@ -112,5 +114,16 @@ module powerbi.data {
         SuppressedProjections?: number[];
         Subtotal?: SubtotalType;
         ShowItemsWithNoData?: number[];
-    }    
+    }
+
+    export interface DataShapeBindingAggregate {
+        Select: number;
+        Kind: DataShapeBindingAggregateKind;
+    }
+
+    export const enum DataShapeBindingAggregateKind {
+        None = 0,
+        Min = 1,
+        Max = 1 << 1,
+    }
 } 
