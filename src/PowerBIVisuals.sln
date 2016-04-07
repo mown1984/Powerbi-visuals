@@ -199,6 +199,27 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "CustomVisuals", "Clients\Cu
 		SlnRelativePath = "Clients\CustomVisuals\"
 	EndProjectSection
 EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "VisualsExtensibility", "Clients\VisualsExtensibility\", "{3BF33251-F72B-4E28-A1FA-46E82523EDAA}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_55339"
+		Debug.AspNetCompiler.PhysicalPath = "Clients\VisualsExtensibility\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_55339\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_55339"
+		Release.AspNetCompiler.PhysicalPath = "Clients\VisualsExtensibility\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_55339\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "55339"
+		SlnRelativePath = "Clients\VisualsExtensibility\"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -234,6 +255,10 @@ Global
 		{DB3C86D8-CE15-44A3-9665-5C057F843C96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB3C86D8-CE15-44A3-9665-5C057F843C96}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{DB3C86D8-CE15-44A3-9665-5C057F843C96}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{3BF33251-F72B-4E28-A1FA-46E82523EDAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BF33251-F72B-4E28-A1FA-46E82523EDAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BF33251-F72B-4E28-A1FA-46E82523EDAA}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BF33251-F72B-4E28-A1FA-46E82523EDAA}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
