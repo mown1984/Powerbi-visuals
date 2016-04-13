@@ -56,9 +56,9 @@ To run sample app:
 
 1. Open `src\PowerBIVisuals.sln` in Visual Studio then under `src\Clients\PowerBIVisualsPlayground`, right click on `index.html` file and select 'Set As Start Page'.
 
-2. Right click on the project root folder then select 'Property Pages'. In the window opened select 'Build' and then in 'Before running startup page' select 'No Build'.
+2. Right click on the project root folder(PowerBIVisualsPlayground) then select 'Property Pages'. In the window opened select 'Build' and then in 'Before running startup page' select 'No Build'.
 
-3. Task runner should have kicked off an incremental build task, which will build each time you make changes. **NOTE:** Sometimes the task runner might kick off two of these tasks at the same time, just close one of them.
+3. Run "build" task from "Task Runner Explorer" window.
 
 4. Ctrl + F5 to launch the Playground.
  
