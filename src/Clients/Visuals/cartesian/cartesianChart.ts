@@ -28,6 +28,7 @@ module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+
     const DEFAULT_AXIS_SCALE_TYPE: string = axisScale.linear;
     const COMBOCHART_DOMAIN_OVERLAP_TRESHOLD_PERCENTAGE = 0.1;
     // the interactive right margin is set to be the circle selection radius of the hover line
@@ -253,7 +254,8 @@ module powerbi.visuals {
         private static PlayAxisBottomMargin = 80; //do not change unless we add dynamic label measurements for play slider
         private static FontSize = 11;
         private static FontSizeString = jsCommon.PixelConverter.toString(CartesianChart.FontSize);
-        private static TextProperties: TextProperties = {
+
+        public static AxisTextProperties: TextProperties = {
             fontFamily: 'wf_segoe-ui_normal',
             fontSize: CartesianChart.FontSizeString,
         };
@@ -285,7 +287,7 @@ module powerbi.visuals {
         private isMobileChart: boolean;
 
         private trendLinesEnabled: boolean;
-        private trendLine: TrendLine;
+        private trendLines: TrendLine[];
 
         private xRefLine: ClassAndSelector = createClassAndSelector('x-ref-line');
         private y1RefLine: ClassAndSelector = createClassAndSelector('y1-ref-line');
@@ -473,7 +475,8 @@ module powerbi.visuals {
 
             if (this.layers.length === 0) {
                 // Lazily instantiate the chart layers on the first data load.
-                this.layers = this.createAndInitLayers(dataViews);
+                let objects: DataViewObjects = this.extractMetadataObjects(dataViews);
+                this.layers = this.createAndInitLayers(objects);
 
                 debug.assert(this.layers.length > 0, 'createAndInitLayers should update the layers.');
             }
@@ -495,15 +498,14 @@ module powerbi.visuals {
                 }
 
                 this.sharedColorPalette.clearPreferredScale();
-                for (let i = 0, len = layers.length; i < len; i++) {
-                    layers[i].setData(getLayerData(dataViews, i, len));
+                for (let i = 0, layerCount = layers.length; i < layerCount; i++) {
+                    layers[i].setData(getLayerData(dataViews, i));
 
-                    if (len > 1)
+                    if (layerCount > 1)
                         this.sharedColorPalette.rotateScale();
                 }
 
-                let shouldAddTrendLayer: boolean = this.isTrendPropertySet(dataViews) && dataViews.length > 1;
-                this.trendLine = shouldAddTrendLayer ? TrendLineHelper.readDataView(dataViews[1]) : undefined;
+                this.trendLines = TrendLineHelper.readDataViews(dataViews);
             }
 
             this.render(!this.hasSetData || options.suppressAnimations, options.resizeMode);
@@ -522,11 +524,6 @@ module powerbi.visuals {
                 if (warnings && warnings.length > 0)
                     this.hostServices.setWarnings(warnings);
             }
-        }
-
-        private isTrendPropertySet(dataViews: DataView[]): boolean {
-            let objects: DataViewObjects = this.extractMetadataObjects(dataViews);
-            return CartesianLayerFactory.shouldAddTrendLayer(objects);
         }
 
         // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
@@ -596,8 +593,8 @@ module powerbi.visuals {
             else if (options.objectName === 'trend') {
                 // TODO: make sure we have a trend line, we should..
                 if (this.trendLinesEnabled) {
-                    if (!_.isEmpty(this.layers) && _.all(this.layers, (layer) => layer.supportsTrendLine())) {
-                        TrendLineHelper.enumerateObjectInstances(enumeration, this.trendLine);
+                    if (!_.isEmpty(this.layers) && _.all(this.layers, (layer) => layer.supportsTrendLine && layer.supportsTrendLine())) {
+                        TrendLineHelper.enumerateObjectInstances(enumeration, this.trendLines);
                     }
                 }
             }
@@ -820,9 +817,7 @@ module powerbi.visuals {
             return objects;
         }
 
-        private createAndInitLayers(dataViews: DataView[]): ICartesianVisual[] {
-            let objects: DataViewObjects = this.extractMetadataObjects(dataViews);
-
+        private createAndInitLayers(objects: DataViewObjects): ICartesianVisual[] {
             // Create the layers
             let layers = CartesianLayerFactory.createLayers(
                 this.type,
@@ -941,7 +936,7 @@ module powerbi.visuals {
                 padding,
                 playAxisControlLayout,
                 hideAxisLabels,
-                CartesianChart.TextProperties,
+                CartesianChart.AxisTextProperties,
                 interactivityRightMargin,
                 ensureXDomain,
                 ensureYDomain);
@@ -959,6 +954,15 @@ module powerbi.visuals {
                 this.layers,
                 suppressAnimations,
                 (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins, resizeMode));
+
+            // attach scroll event
+            this.chartAreaSvg.on('wheel', () => {
+                if (!(this.axes.isXScrollBarVisible || this.axes.isYScrollBarVisible)) return;
+                TooltipManager.ToolTipInstance.hide();
+                let wheelEvent: any = d3.event;
+                let dy = wheelEvent.deltaY;
+                this.scrollableAxes.scrollDelta(dy);
+            });
 
             this.renderedPlotArea = axesLayout.plotArea;
         }
@@ -981,11 +985,6 @@ module powerbi.visuals {
                 let y1AxisReferenceLineProperties: DataViewObject = this.y1AxisReferenceLines[0].object;
                 let value = ReferenceLineHelper.extractReferenceLineValue(y1AxisReferenceLineProperties);
                 ys.push(value);
-            }
-
-            if (this.trendLine && !_.isEmpty(this.trendLine.points)) {
-                xs = xs.concat(_.map(this.trendLine.points, p => p.x));
-                ys = ys.concat(_.map(this.trendLine.points, p => p.y));
             }
 
             let ensureXDomain: NumberRange = {
@@ -1075,7 +1074,7 @@ module powerbi.visuals {
 
         private renderTrendLine(axesLayout: CartesianAxesLayout): void {
             let scrollableRegion = this.svgAxes.getScrollableRegion();
-            TrendLineHelper.render(this.trendLine, scrollableRegion, axesLayout.axes, axesLayout.plotArea);
+            TrendLineHelper.render(this.trendLines, scrollableRegion, axesLayout.axes, axesLayout.plotArea);
         }
 
         private renderReferenceLines(axesLayout: CartesianAxesLayout): void {
@@ -1438,14 +1437,13 @@ module powerbi.visuals {
         }
     }
 
-    function getLayerData(dataViews: DataView[], currentIdx: number, totalLayers: number): DataView[] {
-        if (totalLayers > 1) {
-            if (dataViews && dataViews.length > currentIdx)
-                return [dataViews[currentIdx]];
+    function getLayerData(dataViews: DataView[], currentIdx: number): DataView[] {
+        if (_.isEmpty(dataViews))
             return [];
-        }
 
-        return dataViews;
+        // TODO: figure out a more general way to correlate between layers and input data views.
+        let layerDataViews = _.filter(dataViews, (dataView) => !TrendLineHelper.isDataViewForRegression(dataView));
+        return [layerDataViews[currentIdx]];
     }
 
     function hasMultipleYAxes(layers: ICartesianVisual[]): boolean {
@@ -1567,7 +1565,6 @@ module powerbi.visuals {
         };
 
         let skipMerge = valueAxisProperties && valueAxisProperties['secShow'] === true;
-        // TODO: should show trendline?
 
         let yAxisWillMerge = false;
         let mergeResult: MergedValueAxisResult;
@@ -1674,14 +1671,13 @@ module powerbi.visuals {
     class SvgBrush {
         private element: D3.Selection;
         private brushGraphicsContext: D3.Selection;
-        private brushContext: D3.Selection;
         private brush: D3.Svg.Brush;
         private brushWidth: number;
         private scrollCallback: () => void;
         private isHorizontal: boolean;
+        private brushStartExtent: number[];
 
         private static Brush = createClassAndSelector('brush');
-        private static FillOpacity = 0.125;
 
         constructor(brushWidth: number) {
             this.brush = d3.svg.brush();
@@ -1721,6 +1717,8 @@ module powerbi.visuals {
             brushX: number,
             brushY: number,
             scrollCallback: () => void): void {
+
+            // create graphics context if it doesn't exist
             if (!this.brushGraphicsContext) {
                 this.brushGraphicsContext = this.element.append("g")
                     .classed(SvgBrush.Brush.class, true);
@@ -1728,29 +1726,29 @@ module powerbi.visuals {
 
             this.scrollCallback = scrollCallback;
 
+            // events
             this.brush
-                .on("brush", () => window.requestAnimationFrame(scrollCallback))
-                .on("brushend", () => this.resizeExtent(extentLength, this.isHorizontal));
+                .on("brushstart", () => this.brushStartExtent = this.brush.extent())
+                .on("brush", () => {
+                    window.requestAnimationFrame(scrollCallback);
+                })
+                .on("brushend", () => {
+                    this.resizeExtent(extentLength);
+                    this.updateExtentPosition(extentLength);
+                    this.brushStartExtent = null;
+                });
 
-            let brushContext = this.brushContext = this.brushGraphicsContext
+            // position the graphics context
+            let brushContext = this.brushGraphicsContext
                 .attr({
                     "transform": SVGUtil.translate(brushX, brushY),
                     "drag-resize-disabled": "true" /* Disables resizing of the visual when dragging the scrollbar in edit mode */
                 })
                 .call(this.brush);
               
-            /* Disabling the zooming feature */
-            brushContext.selectAll(".resize rect")
+            // Disable the zooming feature by removing the resize elements
+            brushContext.selectAll(".resize")
                 .remove();
-
-            brushContext.select(".background")
-                .style('cursor', 'default');
-
-            brushContext.selectAll(".extent")
-                .style({
-                    "fill-opacity": SvgBrush.FillOpacity,
-                    "cursor": "default",
-                });
 
             if (this.isHorizontal)
                 brushContext.selectAll("rect").attr("height", this.brushWidth);
@@ -1758,17 +1756,44 @@ module powerbi.visuals {
                 brushContext.selectAll("rect").attr("width", this.brushWidth);
         }
 
-        public scroll(): void {
+        public scroll(scrollBarLength: number): void {
+            this.updateExtentPosition(scrollBarLength);
             this.scrollCallback();
         }
 
-        private resizeExtent(extentLength: number, isHorizontal: boolean): void {
-            let brushContext = this.brushContext;
-            if (isHorizontal)
-                brushContext.select(".extent").attr("width", extentLength);
+        private updateExtentPosition(scrollBarLength: number): void {
+            let extent = this.brush.extent();
+            debug.assertNonEmpty(extent, 'updateExtentPosition, extent');
+            let newStartPos = extent[0];
+            let halfScrollBarLen = scrollBarLength / 2;
+            
+            if (extent[0] === extent[1]) {
+                // user clicked on the brush background, width will be zero, offset x by half width
+                newStartPos = newStartPos - halfScrollBarLen;
+            }
+            
+            if (extent[1] - extent[0] > scrollBarLength) {
+                // user is dragging one edge after mousedown in the background, figure out which side is moving
+                // also, center up on the new extent center
+                let halfDragLength = (extent[1] - extent[0]) / 2;
+                if (extent[0] < this.brushStartExtent[0])
+                    newStartPos = extent[0] + halfDragLength - halfScrollBarLen;
+                else
+                    newStartPos = extent[1] - halfDragLength - halfScrollBarLen;
+            }
+            
+            if (this.isHorizontal)
+                this.brushGraphicsContext.select(".extent").attr('x', newStartPos);
             else
-                brushContext.select(".extent").attr("height", extentLength);
+                this.brushGraphicsContext.select(".extent").attr('y', newStartPos);
         }
+
+        private resizeExtent(extentLength: number): void {
+            if (this.isHorizontal)
+                this.brushGraphicsContext.select(".extent").attr("width", extentLength);
+            else
+                this.brushGraphicsContext.select(".extent").attr("height", extentLength);
+    }
     }
 
     class ScrollableAxes {
@@ -1777,6 +1802,7 @@ module powerbi.visuals {
         private brush: SvgBrush;
         private brushMinExtent: number;
         private scrollScale: D3.Scale.OrdinalScale;
+        private axisScale: D3.Scale.OrdinalScale;
 
         private axes: CartesianAxes;
 
@@ -1837,13 +1863,18 @@ module powerbi.visuals {
             }
         }
 
-        public render(axesLayout: CartesianAxesLayout, layers: ICartesianVisual[], suppressAnimations: boolean, renderDelegate: RenderPlotAreaDelegate): void {
+        public render(
+            axesLayout: CartesianAxesLayout,
+            layers: ICartesianVisual[],
+            suppressAnimations: boolean,
+            renderDelegate: RenderPlotAreaDelegate): void {
+
             let plotArea = axesLayout.plotArea;
 
             if (plotArea.width < 1 || plotArea.height < 1)
                 return; //do nothing - too small
 
-            let axisScale: D3.Scale.OrdinalScale;
+            this.axisScale = null;
             let brushX: number;
             let brushY: number;
             let scrollbarLength: number;
@@ -1851,7 +1882,7 @@ module powerbi.visuals {
             let categoryThickness: number;
             let newAxisLength: number;
             if (this.axes.isXScrollBarVisible) {
-                axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.x.scale;
+                this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.x.scale;
                 brushX = axesLayout.margin.left;
                 brushY = axesLayout.viewport.height;
                 categoryThickness = axesLayout.axes.x.categoryThickness;
@@ -1861,7 +1892,7 @@ module powerbi.visuals {
                 newAxisLength = plotArea.width;
             }
             else if (this.axes.isYScrollBarVisible) {
-                axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.y1.scale;
+                this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.y1.scale;
                 brushX = axesLayout.viewport.width;
                 brushY = axesLayout.margin.top;
                 categoryThickness = axesLayout.axes.y1.categoryThickness;
@@ -1881,7 +1912,7 @@ module powerbi.visuals {
             if (numVisibleCategories < 1)
                 return; // don't do anything
 
-            this.scrollScale = axisScale.copy();
+            this.scrollScale = this.axisScale.copy();
             this.scrollScale.rangeBands([0, scrollbarLength]); //no inner/outer padding, keep the math simple
             this.brushMinExtent = this.scrollScale(numVisibleCategories - 1);
 
@@ -1893,7 +1924,7 @@ module powerbi.visuals {
             //      when we need to drop a rect we just remove it - but this leaves the right side with lots of empty room (bad for dashboard tiles)
             // we are using option 1 to squeeze pop and show balanced layout at all sizes, but this is the less ideal experience during resize.
             // we should consider using option 2 during resize, then switch to option 1 when resize ends.
-            axisScale.rangeBands([0, newAxisLength], CartesianChart.InnerPaddingRatio, CartesianChart.OuterPaddingRatio);
+            this.axisScale.rangeBands([0, newAxisLength], CartesianChart.InnerPaddingRatio, CartesianChart.OuterPaddingRatio);
 
             this.brush.setOrientation(this.axes.isXScrollBarVisible);
             this.brush.setScale(this.scrollScale);
@@ -1901,7 +1932,7 @@ module powerbi.visuals {
 
             // This function will be called whenever we scroll.
             let renderOnScroll = (extent: number[], suppressAnimations: boolean) => {
-                this.filterDataToViewport(axisScale, layers, axesLayout.axes, this.scrollScale, extent, numVisibleCategories);
+                this.filterDataToViewport(this.axisScale, layers, axesLayout.axes, this.scrollScale, extent, numVisibleCategories);
                 renderDelegate(layers, axesLayout, suppressAnimations);
             };
 
@@ -1911,21 +1942,32 @@ module powerbi.visuals {
             renderOnScroll(this.brush.getExtent(), suppressAnimations);
         }
 
-        // FOR UNIT TESTING ONLY
-        public scrollTo(position: number): void {
+        public scrollDelta(delta): void {
+            if (this.axisScale && !_.isEmpty(this.axisScale.domain())) {
+                let currentStartIndex = this.axisScale.domain()[0];
+                let newStartIndex = currentStartIndex + Math.round(delta / CartesianChart.MinOrdinalRectThickness);
+                this.scrollTo(newStartIndex);
+            }
+        }
+
+        // PUBLIC FOR UNIT TESTING ONLY
+        public scrollTo(startIndex: number): void {
             debug.assert(this.axes.isXScrollBarVisible || this.axes.isYScrollBarVisible, 'scrolling is not available');
             debug.assertValue(this.scrollScale, 'scrollScale');
+
+            let lastIndex = _.last(this.scrollScale.domain());
+            startIndex = Math.max(0, Math.min(startIndex, lastIndex));
 
             let extent = this.brush.getExtent();
             let extentLength = extent[1] - extent[0];
             let halfCategoryThickness = (this.scrollScale(1) - this.scrollScale(0)) / 2;
-            extent[0] = this.scrollScale(position) + halfCategoryThickness;
+            extent[0] = this.scrollScale(startIndex) + halfCategoryThickness;
             extent[1] = extent[0] + extentLength + halfCategoryThickness;
             this.brush.setExtent(extent);
 
             let scrollbarLength = this.scrollScale.rangeExtent()[1];
             ScrollableAxes.clampBrushExtent(this.brush, scrollbarLength, this.brushMinExtent);
-            this.brush.scroll();
+            this.brush.scroll(scrollbarLength);
         }
 
         private onBrushed(scrollbarLength: number, render: (extent: number[], suppressAnimations: boolean) => void): void {
@@ -2156,7 +2198,8 @@ module powerbi.visuals {
                     xAxisTextNodes
                         .call(AxisHelper.LabelLayoutStrategy.rotate,
                         bottomMarginLimit,
-                        TextMeasurementService.svgEllipsis,
+                        TextMeasurementService.getTailoredTextOrDefault,
+                        CartesianChart.AxisTextProperties,
                         !axes.x.willLabelsFit && AxisHelper.isOrdinalScale(axes.x.scale),
                         bottomMarginLimit === tickLabelMargins.xMax,
                         axes.x,
@@ -3021,17 +3064,7 @@ module powerbi.visuals {
                     break;
             }
 
-            // Linear regression line layer
-            //if (shouldAddTrendLayer(objects))
-            //    layers.push(createLineChartLayer(LineChartType.default, /* inComboChart */ false, cartesianOptions, true));
-
             return layers;
-        }
-
-        export function shouldAddTrendLayer(objects: DataViewObjects): boolean {
-            let trendObject: DataViewObject = DataViewObjects.getObject(objects, 'trend', null);
-            if (trendObject)
-                return DataViewObject.getValue<boolean>(trendObject, 'show', false);
         }
 
         function createLineChartLayer(type: LineChartType, inComboChart: boolean, defaultOptions: CartesianVisualConstructorOptions, isTrendLayer?: boolean): LineChart {

@@ -144,22 +144,22 @@ module powerbi.data {
 
             // Transform Query DataView
             prototype = DataViewPivotCategoricalToPrimaryGroups.unpivotResult(prototype, transforms.selects, dataViewMappings, projectionActiveItems);
-            let transformedDataViews: DataView[] = transformQueryToVisualDataView(prototype, transforms, objectDescriptors, dataViewMappings, colorAllocatorFactory, dataRoles);
+            let visualDataViews: DataView[] = transformQueryToVisualDataView(prototype, transforms, objectDescriptors, dataViewMappings, colorAllocatorFactory, dataRoles);
 
             // Transform and generate derived visual DataViews
-            transformedDataViews = DataViewRegression.run({
+            visualDataViews = DataViewRegression.run({
                 dataViewMappings: dataViewMappings,
-                transformedDataViews: transformedDataViews,
+                visualDataViews: visualDataViews,
                 dataRoles: dataRoles,
                 objectDescriptors: objectDescriptors,
                 objectDefinitions: transforms.objects,
                 colorAllocatorFactory: colorAllocatorFactory,
                 transformSelects: transforms.selects,
-                dataView: prototype,
+                metadata: prototype.metadata,
                 projectionActiveItems: projectionActiveItems,
             });
 
-            return transformedDataViews;
+            return visualDataViews;
         }
 
         function transformQueryToVisualDataView(
@@ -224,7 +224,7 @@ module powerbi.data {
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
 
             // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
-            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, roleMappings, projectionOrdering, transforms.selects, projectionActiveItems);
+            transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, objectDescriptors, roleMappings, projectionOrdering, transforms.selects, projectionActiveItems);
 
             DataViewNormalizeValues.apply({
                 dataview: transformed,

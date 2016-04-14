@@ -78,9 +78,13 @@ module powerbi.visuals {
          * (optional) Whether we are using a default domain.
          */
         usingDefaultDomain?: boolean;
-        /** (optional) do default d3 axis labels fit? */
+        /** 
+         * (optional) do default d3 axis labels fit?
+         */
         willLabelsFit?: boolean;
-        /** (optional) word break axis labels */
+        /**
+         * (optional) word break axis labels
+         */
         willLabelsWordBreak?: boolean;
         /** 
          * (optional) Whether log scale is possible on the current domain.
@@ -90,9 +94,13 @@ module powerbi.visuals {
          * (optional) Whether domain contains zero value and log scale is enabled.
          */
         hasDisallowedZeroInDomain?: boolean;
-        /** (optional) The original data domain. Linear scales use .nice() to round to cleaner edge values. Keep the original data domain for later. */
+        /** 
+         *(optional) The original data domain. Linear scales use .nice() to round to cleaner edge values. Keep the original data domain for later.
+         */
         dataDomain?: number[];
-        /** (optional) The D3 graphics context for this axis */
+        /** 
+         * (optional) The D3 graphics context for this axis
+         */
         graphicsContext?: D3.Selection;
     }
 
@@ -1129,9 +1137,10 @@ module powerbi.visuals {
             };
 
             export function rotate(
-                text: D3.Selection,
+                labelSelection: D3.Selection,
                 maxBottomMargin: number,
-                svgEllipsis: (textElement: SVGTextElement, maxWidth: number) => void,
+                textTruncator: (properties: TextProperties, maxWidth: number) => string,
+                textProperties: TextProperties,
                 needRotate: boolean,
                 needEllipsis: boolean,
                 axisProperties: IAxisProperties,
@@ -1150,8 +1159,10 @@ module powerbi.visuals {
                     rotatedLength = maxBottomMargin / defaultRotation.sine;
                 }
 
-                text.each(function () {
-                    let text = d3.select(this);
+                labelSelection.each(function () {
+                    let axisLabel = d3.select(this);
+                    let labelText = axisLabel.text();
+                    textProperties.text = labelText;
                     if (needRotate) {
                         let textContentIndex = axisProperties.values.indexOf(this.textContent);
                         let allowedLengthProjectedOnXAxis =
@@ -1169,18 +1180,21 @@ module powerbi.visuals {
                         // Truncate if scrollbar is visible or rotatedLength exceeds allowedLength
                         let allowedLength = allowedLengthProjectedOnXAxis / defaultRotation.cosine;
                         if (scrollbarVisible || needEllipsis || (allowedLength < rotatedLength)) {
-                            svgEllipsis(text[0][0], Math.min(allowedLength, rotatedLength));
+                            labelText = textTruncator(textProperties, Math.min(allowedLength, rotatedLength));
+                            axisLabel.text(labelText);
                         }
 
-                        text.style('text-anchor', 'end')
+                        axisLabel.style('text-anchor', 'end')
                             .attr({
                                 'dx': '-0.5em',
                                 'dy': defaultRotation.dy,
                                 'transform': defaultRotation.transform
                             });
                     } else {
-                        svgEllipsis(text[0][0], axisProperties.xLabelMaxWidth);
-                        text.style('text-anchor', 'middle')
+                        let newLabelText = textTruncator(textProperties, axisProperties.xLabelMaxWidth);
+                        if (newLabelText !== labelText)
+                            axisLabel.text(newLabelText);
+                        axisLabel.style('text-anchor', 'middle')
                             .attr(
                             {
                                 'dx': '0em',

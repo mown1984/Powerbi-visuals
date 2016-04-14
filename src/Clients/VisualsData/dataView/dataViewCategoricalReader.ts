@@ -27,7 +27,7 @@
 module powerbi.data {
     import DataRoleHelper = powerbi.data.DataRoleHelper;
 
-    export function createIDataViewCategoricalReader(dataView): IDataViewCategoricalReader {
+    export function createIDataViewCategoricalReader(dataView: DataView): IDataViewCategoricalReader {
         return new DataViewCategoricalReader(dataView);
     }
 
@@ -79,7 +79,6 @@ module powerbi.data {
         // Validation variables
         private hasValidCategories: boolean;
         private hasAnyValidValues: boolean;
-        private hasCategoryObjects: boolean;
 
         constructor(dataView: DataView) {
             debug.assertValue(dataView, 'dataView');
@@ -92,9 +91,6 @@ module powerbi.data {
             if (categorical)
                 categories = this.categories = categorical.categories;
             this.hasValidCategories = !_.isEmpty(categories);
-            if (this.hasValidCategories) {
-                this.hasCategoryObjects = !!(categories[0].objects);
-            }
 
             // Validate values
             let values: DataViewValueColumns;
@@ -102,9 +98,14 @@ module powerbi.data {
                 values = categorical.values;
             // We need to access grouped as long as values is non-null; if it's an empty array (meaning there is a category + series), we'll use grouped for non-value stuff
             // TODO: think a bit more about how to represent this internally; Maybe split this up between hasGroup and hasValidValues or something
-            let hasAnyValidValues = this.hasAnyValidValues = values != null;
-            if (hasAnyValidValues)
-                this.grouped = dataView.categorical.values.grouped();
+            this.hasAnyValidValues = false;
+            if (values != null) {
+                let grouped = dataView.categorical.values.grouped();
+                if (grouped.length > 0) {
+                    this.hasAnyValidValues = true;
+                    this.grouped = grouped;
+                }
+            }
 
             if (this.hasAnyValidValues)
                 this.dataHasDynamicSeries = !!this.dataView.categorical.values.source;
@@ -175,8 +176,12 @@ module powerbi.data {
         }
 
         public getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects {
-            if (this.hasValidCategories && this.hasCategoryObjects)
-                return this.getCategoryFromRole(roleName).objects[categoryIndex];
+            if (this.hasValidCategories) {
+                let category = this.getCategoryFromRole(roleName);
+                if (category && category.objects) {
+                    return category.objects[categoryIndex];
+                }
+            }
         }
 
         private getCategoryFromRole(roleName: string): DataViewCategoryColumn {
@@ -192,8 +197,18 @@ module powerbi.data {
 
         public getValues(roleName: string, seriesIndex: number = 0): any[] {
             let measureIndex = this.getMeasureIndex(roleName);
-            if (this.hasAnyValidValues && measureIndex !== -1)
-                return this.grouped[seriesIndex].values[measureIndex].values;
+            let grouped = this.grouped;
+            if (this.hasAnyValidValues && measureIndex !== -1) {
+                if (this.dataHasDynamicSeries || seriesIndex === 0) {
+                    // The case where seriesIndex === 0 covers the single series case, which uses the same group accessor as dynamic series.
+                    // Static series should fall through to the else, but at the moment, this works fine for static series when seriesIndex === 0.
+                    // There will be a follow up change to more correctly handle values by grouping them by group index and roleName
+                    return grouped[seriesIndex].values[measureIndex].values;
+                }
+                else {
+                    return grouped[0].values[seriesIndex].values;
+                }
+            }
         }
 
         public getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any {

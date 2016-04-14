@@ -32,6 +32,7 @@ module powerbitests {
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import LineChart = powerbi.visuals.LineChart;
+    import lineStyle = powerbi.visuals.lineStyle;
     import SVGUtil = powerbi.visuals.SVGUtil;
     import SelectionId = powerbi.visuals.SelectionId;
     import ValueType = powerbi.ValueType;
@@ -2892,7 +2893,7 @@ module powerbitests {
                                 value: 450,
                                 lineColor: { solid: { color: refLineColor1 } },
                                 transparency: 60,
-                                style: powerbi.visuals.lineStyle.dashed,
+                                style: lineStyle.dashed,
                                 position: powerbi.visuals.referenceLinePosition.back,
                                 dataLabelShow: true,
                                 dataLabelColor: { solid: { color: refLineColor1 } },
@@ -2935,7 +2936,7 @@ module powerbitests {
                                 value: maxValue + 500,
                                 lineColor: { solid: { color: refLineColor1 } },
                                 transparency: 0,
-                                style: powerbi.visuals.lineStyle.dotted,
+                                style: lineStyle.dotted,
                                 position: powerbi.visuals.referenceLinePosition.front,
                                 dataLabelShow: true,
                                 dataLabelColor: { solid: { color: refLineColor1 } },
@@ -2991,7 +2992,7 @@ module powerbitests {
                     value: 450,
                     lineColor: { solid: { color: refLineColor1 } },
                     transparency: 60,
-                    style: powerbi.visuals.lineStyle.dashed,
+                    style: lineStyle.dashed,
                     position: powerbi.visuals.referenceLinePosition.back,
                     dataLabelShow: true,
                     dataLabelColor: { solid: { color: refLineColor1 } },
@@ -3027,7 +3028,7 @@ module powerbitests {
                             inFront: false,
                             isHorizontal: true,
                             color: refLineColor1,
-                            style: powerbi.visuals.lineStyle.dashed,
+                            style: lineStyle.dashed,
                             opacity: 0.4,
                             label: {
                                 color: refLineColor1,
@@ -3040,7 +3041,7 @@ module powerbitests {
 
                     yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['style'] = lineStyle.dotted;
                     yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
@@ -3060,7 +3061,7 @@ module powerbitests {
                                 inFront: true,
                                 isHorizontal: true,
                                 color: refLineColor2,
-                                style: powerbi.visuals.lineStyle.dotted,
+                                style: lineStyle.dotted,
                                 opacity: 1.0,
                                 label: {
                                     color: refLineColor2,
@@ -3120,7 +3121,7 @@ module powerbitests {
                     value: 450,
                     lineColor: { solid: { color: refLineColor1 } },
                     transparency: 60,
-                    style: powerbi.visuals.lineStyle.dashed,
+                    style: lineStyle.dashed,
                     position: powerbi.visuals.referenceLinePosition.back,
                     dataLabelShow: true,
                     dataLabelColor: { solid: { color: refLineColor1 } },
@@ -3156,7 +3157,7 @@ module powerbitests {
                             inFront: false,
                             isHorizontal: true,
                             color: refLineColor1,
-                            style: powerbi.visuals.lineStyle.dashed,
+                            style: lineStyle.dashed,
                             opacity: 0.4,
                             label: {
                                 color: refLineColor1,
@@ -3169,7 +3170,7 @@ module powerbitests {
 
                     yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['style'] = lineStyle.dotted;
                     yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
@@ -3189,7 +3190,7 @@ module powerbitests {
                                 inFront: true,
                                 isHorizontal: true,
                                 color: refLineColor2,
-                                style: powerbi.visuals.lineStyle.dotted,
+                                style: lineStyle.dotted,
                                 opacity: 1.0,
                                 label: {
                                     color: refLineColor2,
@@ -3249,7 +3250,7 @@ module powerbitests {
                     value: 16000,
                     lineColor: { solid: { color: refLineColor1 } },
                     transparency: 60,
-                    style: powerbi.visuals.lineStyle.dashed,
+                    style: lineStyle.dashed,
                     position: powerbi.visuals.referenceLinePosition.back,
                     dataLabelShow: true,
                     dataLabelColor: { solid: { color: refLineColor1 } },
@@ -3285,7 +3286,7 @@ module powerbitests {
                             inFront: false,
                             isHorizontal: true,
                             color: refLineColor1,
-                            style: powerbi.visuals.lineStyle.dashed,
+                            style: lineStyle.dashed,
                             opacity: 0.4,
                             label: {
                                 color: refLineColor1,
@@ -3298,7 +3299,7 @@ module powerbitests {
 
                     yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['style'] = lineStyle.dotted;
                     yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['dataLabelDisplayUnits'] = 1000;
@@ -3318,7 +3319,7 @@ module powerbitests {
                                 inFront: true,
                                 isHorizontal: true,
                                 color: refLineColor2,
-                                style: powerbi.visuals.lineStyle.dotted,
+                                style: lineStyle.dotted,
                                 opacity: 1.0,
                                 label: {
                                     color: refLineColor2,
@@ -3346,78 +3347,80 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('line chart with linear regression dom validation', (done) => {
-                let trendLineColor = '#FF0000';
-                let regressionDataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'col1',
-                        queryName: 'col1',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                    },
-                    {
-                        displayName: 'col2',
-                        queryName: 'col2',
-                        isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                        objects: {
-                            dataPoint: {
-                                fill: {
-                                    solid: {
-                                        color: trendLineColor
-                                    }
+            describe('trend lines', () => {
+                it('combined series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
                                 }
-                            }
-                        },
-                    }],
-                };
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: true,
+                        }
+                    };
 
-                let dataViews = [{
-                    metadata: regressionDataViewMetadata,
-                    categorical: {
-                        categories: [{
-                            source: regressionDataViewMetadata.columns[0],
-                            values: [1, 2, 3, 4, 5, 6]
-                        }],
-                        values: DataViewTransform.createValueColumns([{
-                            source: regressionDataViewMetadata.columns[1],
-                            values: [10, 20, 30, 40, 50, 60]
-                        }])
-                    }
-                },
-                {
-                    metadata: regressionDataViewMetadata,
-                    usage: {
-                        regression: {}
-                    },
-                    categorical: {
-                        categories: [{
-                            source: regressionDataViewMetadata.columns[0],
-                            values: [1, 6]
-                        }],
-                        values: DataViewTransform.createValueColumns([{
-                            source: regressionDataViewMetadata.columns[1],
-                            values: [10, 60]
-                        }])
-                    }
-                 }];
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
 
-                dataViews[0].metadata.objects = {
-                    trend: {
-                        show: true,
-                    },
-                };
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
 
-                v.onDataChanged({
-                    dataViews: dataViews
+                        helpers.verifyTrendLines(trendLines, [{
+                            color: trendLineColor,
+                            opacity: 0.8,
+                            style: lineStyle.dotted,
+                        }]);
+
+                        done();
+                    }, DefaultWaitForRender);
                 });
-                setTimeout(() => {
-                    let trendLines = $('.trend-line');
-                    expect(trendLines.length).toBe(1);
-                    helpers.assertColorsMatch(trendLines.css('stroke'), trendLineColor);
 
-                    done();
-                }, DefaultWaitForRender);
+                it('separate series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: false,
+                        }
+                    };
+
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [
+                            {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }
+                        ]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
             });
 
             it('background image', (done) => {
@@ -3914,7 +3917,7 @@ module powerbitests {
                     value: 450,
                     lineColor: { solid: { color: refLineColor1 } },
                     transparency: 60,
-                    style: powerbi.visuals.lineStyle.dashed,
+                    style: lineStyle.dashed,
                     position: powerbi.visuals.referenceLinePosition.back,
                     dataLabelShow: true,
                     dataLabelColor: { solid: { color: refLineColor1 } },
@@ -3950,7 +3953,7 @@ module powerbitests {
                             inFront: false,
                             isHorizontal: true,
                             color: refLineColor1,
-                            style: powerbi.visuals.lineStyle.dashed,
+                            style: lineStyle.dashed,
                             opacity: 0.4,
                             label: {
                                 color: refLineColor1,
@@ -3963,7 +3966,7 @@ module powerbitests {
 
                     yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = powerbi.visuals.lineStyle.dotted;
+                    yAxisReferenceLine['style'] = lineStyle.dotted;
                     yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
                     yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
                     yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
@@ -3983,7 +3986,7 @@ module powerbitests {
                                 inFront: true,
                                 isHorizontal: true,
                                 color: refLineColor2,
-                                style: powerbi.visuals.lineStyle.dotted,
+                                style: lineStyle.dotted,
                                 opacity: 1.0,
                                 label: {
                                     color: refLineColor2,

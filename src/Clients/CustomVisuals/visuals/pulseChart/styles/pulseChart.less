@@ -24,34 +24,68 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.visuals.samples {
-    export var consoleWriterCapabilities: VisualCapabilities = {
-        dataRoles: [
-            {
-                name: 'Category',
-                kind: VisualDataRoleKind.Grouping,
-            },
-            {
-                name: 'Y',
-                kind: VisualDataRoleKind.Measure,
-            },
-        ],
-        dataViewMappings: [{
-            categorical: {
-                categories: {
-                    for: { in: 'Category' },
-                },
-            },
-        }],
-        dataPoint: {
-            displayName: data.createDisplayNameGetter('Visual_DataPoint'),
-            description: data.createDisplayNameGetter('Visual_DataPointDescription'),
-            properties: {
-                fill: {
-                    displayName: data.createDisplayNameGetter('Visual_Fill'),
-                    type: { fill: { solid: { color: true } } }
-                },
+@import (reference) "../../../styles/styles.less";
+
+.pulseChart {
+    @fontSize: 11px;
+
+    font-family: @regularFontFamily;
+
+    .axisGraphicsContext {
+        font-family: @regularFontFamily;
+        font-size: @fontSize;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #777777;
+        shape-rendering: crispEdges;
+    }
+
+    .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 2px;
+    }
+
+    .xAxisNode {
+        font-size: @fontSize;
+
+        line {
+            display: none;
+        }
+
+        text {
+            fill: white;
+        }
+
+        .axisBox {
+            fill: #E1F2F7;
+        }
+    }
+
+    .y {
+        font-size: @fontSize;
+        g.tick {
+            line {
+                opacity: 0.2;
             }
-        },
-    };
+        }
+    }
+
+    .gaps .gap {
+        .gapNode {
+            fill: dimgrey;
+        }
+    }
+
+    .animationPlay,
+    .animationPause,
+    .animationReset,
+    .animationPrev,
+    .animationNext,
+    .animationToEnd {
+        cursor: pointer;
+    }
 }

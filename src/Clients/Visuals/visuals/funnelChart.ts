@@ -834,7 +834,13 @@ module powerbi.visuals {
 
             let verticalRange = viewport.width - (margin.left + margin.right);
             let barToSpaceRatio = FunnelChart.BarToSpaceRatio;
-            let maxScore = d3.max(slices.map(d=> d.value));
+            let maxScore = d3.max(slices.map(d => d.value));
+
+            if (data.hasHighlights) {
+                let maxHighlight = d3.max(slices.map(d => d.highlightValue));
+                maxScore = d3.max([maxScore, maxHighlight]);
+            }
+
             let minScore = 0;
             let rangeStart = 0;
             let rangeEnd = horizontalRange;

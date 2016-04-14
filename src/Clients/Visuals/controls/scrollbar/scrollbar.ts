@@ -592,12 +592,16 @@ module powerbi.visuals.controls {
             if (e.wheelDelta) {
                 this.mouseWheel(e.wheelDelta);
             }
+
+            e.preventDefault();
         }
 
         public onFireFoxMouseWheel(e: MouseWheelEvent): void {
             if (e.detail) {
                 this.mouseWheel(-e.detail);
             }
+
+            e.preventDefault();
         }
 
         private mouseWheel(delta: number): void {

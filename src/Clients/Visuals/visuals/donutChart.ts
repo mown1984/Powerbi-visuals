@@ -1417,7 +1417,6 @@ module powerbi.visuals {
         }
 
         public updateLegend(sliceIndex): void {
-            if (this.currentNumberOfLegendItems <= 1) return; // If the number of labels is one no updates are needed
             let legendContainerWidth = this.legendContainerWidth;
 
             this.currentIndex = sliceIndex;

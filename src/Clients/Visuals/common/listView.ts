@@ -87,8 +87,8 @@ module powerbi.visuals {
             this.scrollContainer = this.scrollbarInner
                 .append('div')
                 .classed('scrollRegion', true)
-                .on('touchstart', () => this.stopTouchProp())
-                .on('touchmove', () => this.stopTouchProp());
+                .on('touchstart', () => this.stopTouchPropagation())
+                .on('touchmove', () => this.stopTouchPropagation());
 
             this.visibleGroupContainer = this.scrollContainer
                 .append('div')
@@ -157,11 +157,11 @@ module powerbi.visuals {
          *  In that case the Interact doesn't process a touchcancel event and thinks a touch point still exists.
          *  since the Interact listens on the visualContainer, by stoping the propagation we prevent the bug from taking place.
          */
-        private stopTouchProp(): void {
+        private stopTouchPropagation(): void {
             //Stop the propagation only in read mode so the drag won't be affected.
             if (this.options.isReadMode()) {
                 if (d3.event.type === "touchstart") {
-                    var event: TouchEvent = <any>d3.event;
+                    let event: TouchEvent = <any>d3.event;
                     //If there is another touch point outside this visual than the event should be propagated.
                     //This way the pinch to zoom will not be affected.
                     if (event.touches && event.touches.length === 1) {
@@ -252,7 +252,7 @@ module powerbi.visuals {
             let requestAnimationFrameId = window.requestAnimationFrame(() => {
                 //measure row height
                 let rows = listView.visibleGroupContainer.select(".row");
-                if (rows.length > 0) {
+                if (!rows.empty()) {
                     let firstRow = rows.node().firstChild;
                     let rowHeight: number = $(firstRow).outerHeight(true);
                     listView.rowHeight(rowHeight);

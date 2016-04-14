@@ -105,7 +105,6 @@ module powerbi.visuals {
                 // Showing just HTML, no editor.
                 // If we are in view-mode and we have an editor, we can remove it (after saving).
                 if (this.editor) {
-                    this.editor.formatUrls();
                     this.saveContents();
                     this.editor.destroy();
                     this.editor = null;
@@ -514,7 +513,6 @@ module powerbi.visuals {
             private localizationProvider: jsCommon.IStringResourceProvider;
             private host: IVisualHostServices;
             private static textChangeThrottle = 200; // ms
-            private static formatUrlThrottle = 1000; // ms
 
             public static preventDefaultKeys: number[] = [
                 jsCommon.DOMConstants.aKeyCode,  // A
@@ -601,7 +599,6 @@ module powerbi.visuals {
                 this.editor.setHTML('', 'api');  // Clear contents
                 if (contents)
                     this.editor.setContents(contents, 'api');
-                this.formatUrls();
             }
 
             public resize(viewport: IViewport): void {
@@ -616,25 +613,6 @@ module powerbi.visuals {
                 if (this.initialized && readOnlyChanged) {
                     this.rebuildQuillEditor();
                 }
-            }
-
-            public formatUrls(): void {
-                if (this.editor == null)
-                    return;
-
-                let text = this.editor.getText();
-
-                let urlMatches = UrlUtils.findAllValidUrls(text);
-                for (let match of urlMatches) {
-                    // Remove existing link
-                    this.editor.formatText(match.start, match.end, 'link', false, 'api');
-
-                    // Format as link
-                    this.editor.formatText(match.start, match.end, 'link', match.text, 'api');
-                }
-
-                // Force link tooltip to update on URL change
-                this.editor.emit(Quill.events.SELECTION_CHANGE, this.getSelection(), 'api');
             }
 
             public setSelection(start: number, end: number): void {
@@ -756,13 +734,6 @@ module powerbi.visuals {
                 this.editor.on('text-change', (delta, source) => {
                     if (source !== 'api')
                         textChangeThrottler.run(() => this.onTextChanged(delta, source));
-                });
-
-                // TODO: Actually, probably want something that continually defers until you stop typing, this is probably fine for now though.
-                let formatUrlThrottler = new jsCommon.ThrottleUtility(QuillWrapper.formatUrlThrottle);
-                this.editor.on('text-change', (delta, source) => {
-                    if (source !== 'api')
-                        formatUrlThrottler.run(() => this.formatUrls());
                 });
 
                 /*

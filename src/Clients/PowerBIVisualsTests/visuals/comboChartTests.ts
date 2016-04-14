@@ -25,16 +25,17 @@
  */
 
 module powerbitests {
-    import DataViewObjects = powerbi.DataViewObjects;
-    import DataViewTransform = powerbi.data.DataViewTransform;
-    import ValueType = powerbi.ValueType;
-    import PrimitiveType = powerbi.PrimitiveType;
+    import AxisType = powerbi.visuals.axisType;
     import ComboChart = powerbi.visuals.ComboChart;
     import ComboChartDataViewObjects = powerbi.visuals.ComboChartDataViewObjects;
-    import AxisType = powerbi.visuals.axisType;
-    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-    import PixelConverter = jsCommon.PixelConverter;
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
+    import DataViewObjects = powerbi.DataViewObjects;
+    import DataViewTransform = powerbi.data.DataViewTransform;
+    import lineStyle = powerbi.visuals.lineStyle;
+    import PixelConverter = jsCommon.PixelConverter;
+    import PrimitiveType = powerbi.PrimitiveType;
+    import ValueType = powerbi.ValueType;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     powerbitests.mocks.setLocale();
 
@@ -289,22 +290,26 @@ module powerbitests {
                     {
                         displayName: 'col1',
                         queryName: 'col1',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                        roles: { Category: true },
                     }, {
                         displayName: 'col2',
                         queryName: 'col2',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true },
                     }, {
                         displayName: 'col3',
                         queryName: 'col3',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true },
                     }, {
                         displayName: 'col4',
                         queryName: 'col4',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true },
                     }]
             };
 
@@ -1249,6 +1254,180 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+
+        describe('trend lines', () => {
+            describe('one layer', () => {
+                it('combined series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: true,
+                        }
+                    };
+
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+
+                    visualBuilder.onDataChanged({
+                        dataViews: dataViews,
+                    });
+
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [{
+                            color: trendLineColor,
+                            opacity: 0.8,
+                            style: lineStyle.dotted,
+                        }]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it('separate series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: false,
+                        }
+                    };
+
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+
+                    visualBuilder.onDataChanged({
+                        dataViews: dataViews,
+                    });
+
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [
+                            {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }
+                        ]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+
+            describe('two layers', () => {
+                it('combined series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: true,
+                        }
+                    };
+
+                    let [layer1, regression1] = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+                    let [layer2, regression2] = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+                    
+                    visualBuilder.onDataChanged({
+                        dataViews: [layer1, layer2, regression1, regression2],
+                    });
+
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [
+                            {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }
+                        ]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it('separate series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: false,
+                        }
+                    };
+
+                    let [layer1, regression1] = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+                    let [layer2, regression2] = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+
+                    visualBuilder.onDataChanged({
+                        dataViews: [layer1, layer2, regression1, regression2],
+                    });
+
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [
+                            {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }
+                        ]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+        });
     });
 
     describe("SharedColorPalette", () => {
@@ -1266,7 +1445,8 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
@@ -1274,6 +1454,7 @@ module powerbitests {
                     isMeasure: true,
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                     groupName: 'group',
+                    roles: { Y: true },
                 },
             ],
         };
@@ -1630,6 +1811,7 @@ module powerbitests {
 
             this.buildCategoryIdentities();
             this.buildValuesIdentities();
+            this.buildValueIdentityFields();
 
             this.buildCategoricalValues();
             this.buildMetadata();
@@ -1660,6 +1842,12 @@ module powerbitests {
 
         public sourceValueColumn: any = undefined;
 
+        private valueIdentityFields: any[] = null;
+
+        private buildValueIdentityFields() {
+            this.valueIdentityFields = [powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col5' })];
+        }
+
         private buildValueColumns() {
             if (this.columnIdentityRef !== undefined &&
                 this.sourceValueColumn !== undefined) {
@@ -1669,7 +1857,11 @@ module powerbitests {
                     this.sourceValueColumn);
             }
 
-            return DataViewTransform.createValueColumns(this.categoricalValues);
+            let valueColumns = DataViewTransform.createValueColumns(this.categoricalValues, this.valueIdentityFields);
+            if (valueColumns.grouped().length > 1)
+                valueColumns.source = this.columns[4];
+
+            return valueColumns;
         }
 
         public build(): powerbi.DataView {
@@ -1690,17 +1882,18 @@ module powerbitests {
         };
 
         let columns = [
-            { displayName: "col1", queryName: "col1", index: 0, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-            { displayName: "col2", queryName: "col2", isMeasure: true, index: 1, groupName: "a", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: "col3", queryName: "col3", isMeasure: true, index: 2, groupName: "b", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: "col4", queryName: "col4", isMeasure: true, index: 3, groupName: "c", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+            { displayName: "col1", queryName: "col1", index: 0, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), roles: { Category: true } },
+            { displayName: "col2", queryName: "col2", isMeasure: true, index: 1, groupName: "a", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col3", queryName: "col3", isMeasure: true, index: 2, groupName: "b", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col4", queryName: "col4", isMeasure: true, index: 3, groupName: "c", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col5", queryName: "col5", index: 4, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), roles: { Series: true } },
         ];
 
         let columnsNumber = [
             { displayName: "col1", queryName: "col1", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: "col2", queryName: "col2", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: "col3", queryName: "col3", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: "col4", queryName: "col4", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+            { displayName: "col2", queryName: "col2", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col3", queryName: "col3", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col4", queryName: "col4", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } }
         ];
 
         let categoriesValues = ["John Domo", "Delta Force", "Jean Tablau"];
@@ -1988,7 +2181,8 @@ module powerbitests {
                 queryName: 'selectSales',
                 isMeasure: true,
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
-                objects: { general: { formatString: '$0' } }
+                objects: { general: { formatString: '$0' } },
+                role: { Y: true },
             };
 
             dataViewBuilder.update();

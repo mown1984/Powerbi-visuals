@@ -51,17 +51,17 @@ module powerbitests {
     powerbitests.mocks.setLocale();
 
     describe("ColumnChart", () => {
-        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
-        let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date) };
-        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
-        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-        let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-        let nullMeasureColumn: powerbi.DataViewMetadataColumn = { displayName: null, queryName: 'selectNull', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-        let measureWithFormatString: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), format: '$0' };
+        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), roles: { Category: true } };
+        let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), roles: { Category: true } };
+        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } }, roles: { Y: true } };
+        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
+        let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
+        let nullMeasureColumn: powerbi.DataViewMetadataColumn = { displayName: null, queryName: 'selectNull', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
+        let measureWithFormatString: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), format: '$0', roles: { Y: true } };
 
-        let measureColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'A' };
-        let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'B' };
-        let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
+        let measureColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'A', roles: { Y: true }  };
+        let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'B', roles: { Y: true }  };
+        let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales', roles: { Series: true } });
 
         it('ColumnChart registered capabilities', () => {
             expect(JSON.stringify(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').capabilities)).toBe(JSON.stringify(powerbi.visuals.getColumnChartCapabilities()));
@@ -218,16 +218,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200]
+                    }])
+                }
             };
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], measureColumn.queryName, categoryColumn.queryName),
@@ -260,16 +263,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -344,16 +350,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -424,20 +433,23 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200],
-                },
-                    {
-                        source: measure2Column,
-                        values: [60, 50],
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200],
+                    },
+                        {
+                            source: measure2Column,
+                            values: [60, 50],
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -556,16 +568,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, -200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, -200]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -635,24 +650,27 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [2, -2],
-                },
-                    {
-                        source: measure2Column,
-                        values: [-3, 4],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [2, -2],
                     },
-                    {
-                        source: measure3Column,
-                        values: [4, -3],
-                    }])
+                        {
+                            source: measure2Column,
+                            values: [-3, 4],
+                        },
+                        {
+                            source: measure3Column,
+                            values: [4, -3],
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -671,16 +689,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, -200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, -200]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -749,16 +770,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, null]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, null]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -828,16 +852,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity(null),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, null],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 175]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, null],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 175]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -908,20 +935,23 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumn,
-                        values: [100, 200]
-                    }, {
-                        source: measure2Column,
-                        values: [62, 55]
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumn,
+                            values: [100, 200]
+                        }, {
+                            source: measure2Column,
+                            values: [62, 55]
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let series1Color = colors.getColorByIndex(0).value;
@@ -1055,24 +1085,27 @@ module powerbitests {
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "A"),
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "B"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumnDynamic1,
-                        values: [100, 200],
-                        identity: seriesIdentities[0],
-                    }, {
-                        source: measureColumnDynamic2,
-                        values: [62, 55],
-                        identity: seriesIdentities[1],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
                     }],
-                    [measureColumnDynamic1RefExpr],
-                    measureColumn)
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumnDynamic1,
+                            values: [100, 200],
+                            identity: seriesIdentities[0],
+                        }, {
+                            source: measureColumnDynamic2,
+                            values: [62, 55],
+                            identity: seriesIdentities[1],
+                        }],
+                        [measureColumnDynamic1RefExpr],
+                        measureColumn)
+                }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
@@ -1208,24 +1241,27 @@ module powerbitests {
                 Prototype.inherit(measureColumnDynamic1, c => c.groupName = null),
                 Prototype.inherit(measureColumnDynamic2, c => c.groupName = <any>false),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumnSources[0],
-                        values: [100, 200],
-                        identity: seriesIdentities[0],
-                    }, {
-                        source: measureColumnSources[1],
-                        values: [62, 55],
-                        identity: seriesIdentities[1],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
                     }],
-                    [measureColumnDynamic1RefExpr],
-                    measureColumn)
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumnSources[0],
+                            values: [100, 200],
+                            identity: seriesIdentities[0],
+                        }, {
+                            source: measureColumnSources[1],
+                            values: [62, 55],
+                            identity: seriesIdentities[1],
+                        }],
+                        [measureColumnDynamic1RefExpr],
+                        measureColumn)
+                }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
@@ -1247,29 +1283,32 @@ module powerbitests {
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "A"),
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "B"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumnDynamic1,
-                        values: [100, 200],
-                        identity: seriesIdentities[0],
-                    }, {
-                        source: measureColumnDynamic2,
-                        values: [62, 55],
-                        identity: seriesIdentities[1],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
                     }],
-                    [measureColumnDynamic1RefExpr],
-                    measureColumn)
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumnDynamic1,
+                            values: [100, 200],
+                            identity: seriesIdentities[0],
+                        }, {
+                            source: measureColumnDynamic2,
+                            values: [62, 55],
+                            identity: seriesIdentities[1],
+                        }],
+                        [measureColumnDynamic1RefExpr],
+                        measureColumn)
+                }
             };
 
-            let groupedValues = dataView.values.grouped();
+            let groupedValues = dataView.categorical.values.grouped();
             groupedValues[1].objects = { dataPoint: { fill: { solid: { color: 'red' } } } };
-            dataView.values.grouped = () => groupedValues;
+            dataView.categorical.values.grouped = () => groupedValues;
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let data = ColumnChart.converter(dataView, colors);
@@ -1401,28 +1440,31 @@ module powerbitests {
                 columns: null,
                 objects: { dataPoint: { defaultColor: { solid: { color: hexDefaultColorRed } } } }
             };
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumnDynamic1,
-                        values: [100, 200],
-                        identity: seriesIdentities[0],
-                    }, {
-                        source: measureColumnDynamic2,
-                        values: [62, 55],
-                        identity: seriesIdentities[1],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
                     }],
-                    [measureColumnDynamic1RefExpr],
-                    measureColumn)
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumnDynamic1,
+                            values: [100, 200],
+                            identity: seriesIdentities[0],
+                        }, {
+                            source: measureColumnDynamic2,
+                            values: [62, 55],
+                            identity: seriesIdentities[1],
+                        }],
+                        [measureColumnDynamic1RefExpr],
+                        measureColumn)
+                }
             };
 
-            let groupedValues = dataView.values.grouped();
-            dataView.values.grouped = () => groupedValues;
+            let groupedValues = dataView.categorical.values.grouped();
+            dataView.categorical.values.grouped = () => groupedValues;
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -1549,30 +1591,33 @@ module powerbitests {
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "A"),
                 mocks.dataViewScopeIdentityWithEquality(measureColumnDynamic1RefExpr, "B"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumnDynamic1,
-                        values: [100, 200],
-                        identity: seriesIdentities[0],
-                    }, {
-                        source: measureColumnDynamic2,
-                        values: [62, 55],
-                        identity: seriesIdentities[1],
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
                     }],
-                    [measureColumnDynamic1RefExpr],
-                    measureColumn)
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumnDynamic1,
+                            values: [100, 200],
+                            identity: seriesIdentities[0],
+                        }, {
+                            source: measureColumnDynamic2,
+                            values: [62, 55],
+                            identity: seriesIdentities[1],
+                        }],
+                        [measureColumnDynamic1RefExpr],
+                        measureColumn)
+                }
             };
 
-            let groupedValues = dataView.values.grouped();
+            let groupedValues = dataView.categorical.values.grouped();
             let hexGreen = "#00FF00";
             groupedValues[1].objects = { dataPoint: { fill: { solid: { color: hexGreen } } } };
-            dataView.values.grouped = () => groupedValues;
+            dataView.categorical.values.grouped = () => groupedValues;
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let hexDefaultColorRed = "#FF0000";
@@ -1700,17 +1745,20 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2012"),
                 mocks.dataViewScopeIdentity("2013"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012, 2013],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200, 300],
-                    highlights: [null, 50, 0],
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012, 2013],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200, 300],
+                        highlights: [null, 50, 0],
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -1737,17 +1785,20 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2012"),
                 mocks.dataViewScopeIdentity("2013"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012, 2013],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, 200, 300],
-                    highlights: [null, 50, 0],
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012, 2013],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, 200, 300],
+                        highlights: [null, 50, 0],
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -1769,19 +1820,22 @@ module powerbitests {
         });
 
         it('null measures legend', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012]
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: nullMeasureColumn,
-                        values: [100, 200]
-                    }, {
-                        source: measure2Column,
-                        values: [62, 55]
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012]
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: nullMeasureColumn,
+                            values: [100, 200]
+                        }, {
+                            source: measure2Column,
+                            values: [62, 55]
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -1789,22 +1843,25 @@ module powerbitests {
             let legendItems = data.legendData.dataPoints;
             expect(legendItems).toEqual([
                 { icon: LegendIcon.Box, color: legendItems[0].color, label: powerbi.visuals.valueFormatter.format(null), identity: SelectionId.createWithMeasure(nullMeasureColumn.queryName), selected: false },
-                { icon: LegendIcon.Box, color: legendItems[1].color, label: dataView.values[1].source.displayName, identity: SelectionId.createWithMeasure(measure2Column.queryName), selected: false },
+                { icon: LegendIcon.Box, color: legendItems[1].color, label: dataView.categorical.values[1].source.displayName, identity: SelectionId.createWithMeasure(measure2Column.queryName), selected: false },
             ]);
         });
 
         it('variant measure - datetime column with a text category', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumnDate,
-                    values: [new Date(2011), new Date(2012), new Date(2013), 'TheFuture']
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: nullMeasureColumn,
-                        values: [100, 200, 300, 1000]
-                    }
-                ])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumnDate,
+                        values: [new Date(2011), new Date(2012), new Date(2013), 'TheFuture']
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: nullMeasureColumn,
+                            values: [100, 200, 300, 1000]
+                        }
+                    ])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -1820,20 +1877,23 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2012"),
                 mocks.dataViewScopeIdentity("2013"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2010, 2011, 2012, 2013],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumn,
-                        values: [30, -20, 100, -300]
-                    }, {
-                        source: measure2Column,
-                        values: [90, 50, -100, -100]
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2010, 2011, 2012, 2013],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumn,
+                            values: [30, -20, 100, -300]
+                        }, {
+                            source: measure2Column,
+                            values: [90, 50, -100, -100]
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2037,11 +2097,14 @@ module powerbitests {
         });
 
         it('no category single measure', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2088,15 +2151,18 @@ module powerbitests {
         });
 
         it('no category multiple measure', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColumn,
-                        values: [100]
-                    }, {
-                        source: measure2Column,
-                        values: [200]
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColumn,
+                            values: [100]
+                        }, {
+                            source: measure2Column,
+                            values: [200]
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2180,15 +2246,18 @@ module powerbitests {
             measureColum1WithFormat.format = '$0';
             measureColum2WithFormat.format = '#,0';
 
-            let dataView: powerbi.DataViewCategorical = {
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: measureColum1WithFormat,
-                        values: [100]
-                    }, {
-                        source: measureColum2WithFormat,
-                        values: [200]
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: measureColum1WithFormat,
+                            values: [100]
+                        }, {
+                            source: measureColum2WithFormat,
+                            values: [200]
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2264,21 +2333,25 @@ module powerbitests {
         });
 
         it('no category multiple measure + fill color', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: {
-                            displayName: 'sales',
-                            queryName: 'selectSales',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
-                            objects: {
-                                general: { formatString: '$0' },
-                                dataPoint: { fill: { solid: { color: 'red' } } }
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: {
+                                displayName: 'sales',
+                                queryName: 'selectSales',
+                                isMeasure: true,
+                                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                                objects: {
+                                    general: { formatString: '$0' },
+                                    dataPoint: { fill: { solid: { color: 'red' } } }
+                                },
+                                roles: { Y: true },
                             },
-                        },
-                        values: [100],
-                    }])
+                            values: [100],
+                        }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2327,26 +2400,31 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("a"),
                 mocks.dataViewScopeIdentity("b"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: {
-                        displayName: 'prod',
-                        queryName: 'selectProd',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
-                    },
-                    values: ['a', 'b'],
-                    objects: [undefined, { dataPoint: { fill: { solid: { color: 'red' } } } }],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: {
-                        displayName: 'sales',
-                        queryName: 'selectSales',
-                        isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
-                    },
-                    values: [100, 150],
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: {
+                            displayName: 'prod',
+                            queryName: 'selectProd',
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                            roles: { Category: true },
+                        },
+                        values: ['a', 'b'],
+                        objects: [undefined, { dataPoint: { fill: { solid: { color: 'red' } } } }],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: {
+                            displayName: 'sales',
+                            queryName: 'selectSales',
+                            isMeasure: true,
+                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                            roles: { Y: true },
+                        },
+                        values: [100, 150],
+                    }])
+                }
             };
 
             let data = ColumnChart.converter(dataView, powerbi.visuals.visualStyles.create().colorPalette.dataColors);
@@ -2412,23 +2490,26 @@ module powerbitests {
         });
 
         it('Gradient measure: should not become a series', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: [
-                        mocks.dataViewScopeIdentity("2011"),
-                        mocks.dataViewScopeIdentity("2012"),
-                    ],
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true }),
-                        values: [100, 200],
-                    }, {
-                        source: Prototype.inherit(measure2Column, c => c.roles = { 'Gradient': true }),
-                        values: [75, 50],
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: [
+                            mocks.dataViewScopeIdentity("2011"),
+                            mocks.dataViewScopeIdentity("2012"),
+                        ],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true }),
+                            values: [100, 200],
+                        }, {
+                            source: Prototype.inherit(measure2Column, c => c.roles = { 'Gradient': true }),
+                            values: [75, 50],
+                        }])
+                }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
@@ -2449,23 +2530,26 @@ module powerbitests {
         });
 
         it('Gradient color - validate tool tip', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: [
-                        mocks.dataViewScopeIdentity("2011"),
-                        mocks.dataViewScopeIdentity("2012"),
-                    ],
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true }),
-                        values: [100, 200],
-                    }, {
-                        source: Prototype.inherit(measure2Column, c => c.roles = { 'Gradient': true }),
-                        values: [75, 50],
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: [
+                            mocks.dataViewScopeIdentity("2011"),
+                            mocks.dataViewScopeIdentity("2012"),
+                        ],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true }),
+                            values: [100, 200],
+                        }, {
+                            source: Prototype.inherit(measure2Column, c => c.roles = { 'Gradient': true }),
+                            values: [75, 50],
+                        }])
+                }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
@@ -2476,20 +2560,23 @@ module powerbitests {
         });
 
         it('Gradient and Y have the index - validate tool tip', () => {
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: [
-                        mocks.dataViewScopeIdentity("2011"),
-                        mocks.dataViewScopeIdentity("2012"),
-                    ],
-                }],
-                values: DataViewTransform.createValueColumns([
-                    {
-                        source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true, 'Gradient': true }),
-                        values: [100, 200],
-                    }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: [
+                            mocks.dataViewScopeIdentity("2011"),
+                            mocks.dataViewScopeIdentity("2012"),
+                        ],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true, 'Gradient': true }),
+                            values: [100, 200],
+                        }])
+                }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
@@ -2504,16 +2591,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, Number.POSITIVE_INFINITY]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, Number.POSITIVE_INFINITY]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2589,16 +2679,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, Number.NEGATIVE_INFINITY]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, Number.NEGATIVE_INFINITY]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2675,16 +2768,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureColumn,
-                    values: [100, Number.NaN]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureColumn,
+                        values: [100, Number.NaN]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2760,16 +2856,19 @@ module powerbitests {
                 mocks.dataViewScopeIdentity("2011"),
                 mocks.dataViewScopeIdentity("2012"),
             ];
-            let dataView: powerbi.DataViewCategorical = {
-                categories: [{
-                    source: categoryColumn,
-                    values: [2011, 2012],
-                    identity: categoryIdentities,
-                }],
-                values: DataViewTransform.createValueColumns([{
-                    source: measureWithFormatString,
-                    values: [100, 200]
-                }])
+            let dataView: powerbi.DataView = {
+                metadata: null,
+                categorical: {
+                    categories: [{
+                        source: categoryColumn,
+                        values: [2011, 2012],
+                        identity: categoryIdentities,
+                    }],
+                    values: DataViewTransform.createValueColumns([{
+                        source: measureWithFormatString,
+                        values: [100, 200]
+                    }])
+                }
             };
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -2824,7 +2923,7 @@ module powerbitests {
             })[0];
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            let data = ColumnChart.converter(dataView.categorical, colors);
+            let data = ColumnChart.converter(dataView, colors);
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector('select1', seriesIdentities[0]), 'select2'),
                 SelectionId.createWithSelectorForColumnAndMeasure(buildSelector('select1', seriesIdentities[1]), 'select2'),
@@ -2895,7 +2994,7 @@ module powerbitests {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1', queryName: 'selectCol1', roles: { "Series": true, "Category": true } },
-                    { displayName: 'col2', queryName: 'selectCol2', properties: { "Y": true } },
+                    { displayName: 'col2', queryName: 'selectCol2', roles: { "Y": true } },
                 ]
             };
 
@@ -2925,7 +3024,7 @@ module powerbitests {
             let series1Color = colors.getColorScaleByKey(SQExprShortSerializer.serialize(categoryColRefExpr)).getColor('a').value;
             let series2Color = colors.getColorScaleByKey(SQExprShortSerializer.serialize(categoryColRefExpr)).getColor('b').value;
 
-            let data = ColumnChart.converter(dataView.categorical, colors, undefined, undefined, metadata);
+            let data = ColumnChart.converter(dataView, colors, undefined, undefined, metadata);
             let selectionIds: SelectionId[] = [
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[0], 'selectCol2', 'selectCol1'),
                 SelectionId.createWithIdAndMeasureAndCategory(categoryIdentities[1], 'selectCol2', 'selectCol1'),
@@ -3561,50 +3660,58 @@ module powerbitests {
             {
                 displayName: 'col1',
                 queryName: 'col1',
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                roles: { Category: true },
             }, {
                 displayName: 'col2',
                 queryName: 'col2',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true },
             }
         ];
         let dataViewMetadataThreeColumn: powerbi.DataViewMetadataColumn[] = [
             {
                 displayName: 'col1',
                 queryName: 'col1',
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                roles: { Category: true },
             },
             {
                 displayName: 'col2',
                 queryName: 'col2',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true },
             },
             {
                 displayName: 'col3',
                 queryName: 'col3',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true },
             }
         ];
         let dataViewMetadataScalarDateTime: powerbi.DataViewMetadataColumn[] = [
             {
                 displayName: 'col1',
                 queryName: 'col1',
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime),
+                roles: { Category: true },
             },
             {
                 displayName: 'col2',
                 queryName: 'col2',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true },
             },
             {
                 displayName: 'col3',
                 queryName: 'col3',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true },
             }
         ];
 
@@ -4670,12 +4777,14 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 }, {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }
             ],
         };
@@ -4684,27 +4793,32 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 }, {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col5',
                     queryName: 'col5',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }],
             objects: {}
         };
@@ -5669,13 +5783,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }
             ],
         };
@@ -5684,19 +5800,22 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }],
         };
         let hostServices = powerbitests.mocks.createVisualHostServices();
@@ -6027,13 +6146,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }]
         };
         let dataViewMetadataFiveColumn: powerbi.DataViewMetadata = {
@@ -6041,27 +6162,32 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 }, {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }, {
                     displayName: 'col5',
                     queryName: 'col5',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }]
         };
         let hostServices = powerbitests.mocks.createVisualHostServices();
@@ -6911,13 +7037,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }
             ],
         };
@@ -6926,19 +7054,22 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }]
         };
         let hostServices = powerbitests.mocks.createVisualHostServices();
@@ -7262,13 +7393,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }
             ],
         };
@@ -7277,25 +7410,29 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 },
                 {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true },
                 }],
         };
         let hostServices = powerbitests.mocks.createVisualHostServices();
@@ -7979,9 +8116,9 @@ module powerbitests {
 
     describe("Enumerate Objects", () => {
         let v: powerbi.IVisual, element: JQuery;
-        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
-        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } } };
-        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), roles: { Category: true } };
+        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: '$0' } }, roles: { Y: true } };
+        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
         let hostServices = powerbitests.mocks.createVisualHostServices();
 
         beforeEach(() => {
@@ -8523,13 +8660,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -8591,13 +8730,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -9366,9 +9507,9 @@ module powerbitests {
         thirdColumnXCoordinateToClick: number,
         thirdColumnYCoordinateToClick: number) {
 
-        let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date) };
-        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
-        let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+        let categoryColumnDate: powerbi.DataViewMetadataColumn = { displayName: 'date', queryName: 'selectDate', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), roles: { Category: true } };
+        let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
+        let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'profit', queryName: 'selectProfit', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
 
         let hostServices = powerbitests.mocks.createVisualHostServices();
         let v: powerbi.IVisual, element: JQuery;
@@ -9378,13 +9519,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
+                    roles: { Y: true }
                 }],
 
             objects: { dataPoint: { defaultColor: { solid: { color: hexDefaultColorRed } } } }
@@ -9576,19 +9719,22 @@ module powerbitests {
             {
                 displayName: 'col1',
                 queryName: 'col1',
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                roles: { Category: true }
             },
             {
                 displayName: 'col2',
                 queryName: 'col2',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true }
             },
             {
                 displayName: 'col3',
                 queryName: 'col3',
                 isMeasure: true,
-                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                roles: { Y: true }
             }
         ];
         function metadata(columns): powerbi.DataViewMetadata {
@@ -9988,24 +10134,27 @@ module powerbitests {
     describe("Hundred Percent Stacked Column Chart Web Animations", () => columnChartWebAnimations('hundredPercentStackedColumnChart'));
 
     it('tooltip has category formatted date values', () => {
-        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), objects: { general: { formatString: "d" } } };
-        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) };
+        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), objects: { general: { formatString: "d" } }, roles: { Category: true } };
+        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), roles: { Y: true } };
 
         let categoryIdentities = [
             mocks.dataViewScopeIdentity("2011"),
             mocks.dataViewScopeIdentity("2012"),
         ];
 
-        let dataView: powerbi.DataViewCategorical = {
-            categories: [{
-                source: categoryColumn,
-                values: [new Date(2011, 4, 31), new Date(2012, 6, 30)],
-                identity: categoryIdentities,
-            }],
-            values: DataViewTransform.createValueColumns([{
-                source: measureColumn,
-                values: [100, -200]
-            }])
+        let dataView: powerbi.DataView = {
+            metadata: null,
+            categorical: {
+                categories: [{
+                    source: categoryColumn,
+                    values: [new Date(2011, 4, 31), new Date(2012, 6, 30)],
+                    identity: categoryIdentities,
+                }],
+                values: DataViewTransform.createValueColumns([{
+                    source: measureColumn,
+                    values: [100, -200]
+                }])
+            }
         };
         let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -10072,24 +10221,27 @@ module powerbitests {
     });
 
     it('tooltip has legend formatted date values', () => {
-        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), objects: { general: { formatString: "d" } }, groupName: 'group', };
-        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: "\$#,0.###############;(\$#,0.###############);\$#,0.###############" } } };
+        let categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'year', queryName: 'selectYear', type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Date), objects: { general: { formatString: "d" } }, groupName: 'group', roles: { Category: true } };
+        let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: "\$#,0.###############;(\$#,0.###############);\$#,0.###############" } }, roles: { Y: true } };
 
         let categoryIdentities = [
             mocks.dataViewScopeIdentity("2011"),
             mocks.dataViewScopeIdentity("2012"),
         ];
 
-        let dataView: powerbi.DataViewCategorical = {
-            categories: [{
-                source: categoryColumn,
-                values: [new Date(2011, 4, 31), new Date(2012, 6, 30)],
-                identity: categoryIdentities,
-            }],
-            values: DataViewTransform.createValueColumns([{
-                source: measureColumn,
-                values: [100, -200]
-            }])
+        let dataView: powerbi.DataView = {
+            metadata: null,
+            categorical: {
+                categories: [{
+                    source: categoryColumn,
+                    values: [new Date(2011, 4, 31), new Date(2012, 6, 30)],
+                    identity: categoryIdentities,
+                }],
+                values: DataViewTransform.createValueColumns([{
+                    source: measureColumn,
+                    values: [100, -200]
+                }])
+            }
         };
         let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -10107,12 +10259,14 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 }, {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -10297,13 +10451,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -10388,25 +10544,29 @@ module powerbitests {
                     {
                         displayName: 'col1',
                         queryName: 'col1',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Category: true }
                     },
                     {
                         displayName: 'col2',
                         queryName: 'col2',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true }
                     },
                     {
                         displayName: 'col3',
                         queryName: 'col3',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true }
                     },
                     {
                         displayName: 'col4',
                         queryName: 'col4',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true }
                     }],
             };
         });
@@ -10768,13 +10928,15 @@ module powerbitests {
                     {
                         displayName: 'col1',
                         queryName: 'col1',
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime),
+                        roles: { Category: true }
                     },
                     {
                         displayName: 'col2',
                         queryName: 'col2',
                         isMeasure: true,
-                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        roles: { Y: true }
                     }],
             };
 
@@ -10913,25 +11075,29 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }],
             objects: {
                 valueAxis: {
@@ -11134,25 +11300,29 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }],
             objects: {
                 valueAxis: {
@@ -11343,25 +11513,29 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col4',
                     queryName: 'col4',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }],
             objects: {
                 categoryAxis: {
@@ -11445,13 +11619,15 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -11460,14 +11636,16 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                    groupName: 'group',
+                    groupName: 'group', 
+                    roles: { Y: true }
                 },
             ],
         };
@@ -11689,7 +11867,8 @@ module powerbitests {
                 {
                     displayName: 'AxesTitleTest',
                     queryName: 'AxesTitleTest',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }],
             objects: {
                 categoryAxis: {
@@ -11763,7 +11942,8 @@ module powerbitests {
                 {
                     displayName: 'AxesTitleTest',
                     queryName: 'AxesTitleTest',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }],
             objects: {
                 categoryAxis: {
@@ -11835,18 +12015,21 @@ module powerbitests {
                 displayName: 'col1',
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
                 queryName: 'col1',
+                roles: { Category: true }
             },
             {
                 displayName: 'col2',
                 isMeasure: true,
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                 queryName: 'col2',
+                roles: { Y: true }
             },
             {
                 displayName: 'col3',
                 isMeasure: true,
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                 queryName: 'col3',
+                roles: { Y: true }
             }
         ];
 
@@ -12099,19 +12282,22 @@ module powerbitests {
                     isMeasure: true,
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                     queryName: 'col1',
-                    format: "#,0"
+                    format: "#,0",
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col2',
                     isMeasure: true,
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                     queryName: 'col2',
-                    format: "$#,0"
+                    format: "$#,0",
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col3',
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
                     queryName: 'col3',
+                    roles: { Category: true }
                 },
             ];
 
@@ -12163,18 +12349,21 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 },
                 {
                     displayName: 'col3',
                     queryName: 'col3',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 }],
             objects: {
                 valueAxis: {
@@ -12375,12 +12564,14 @@ module powerbitests {
                 {
                     displayName: 'col1',
                     queryName: 'col1',
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true }
                 }, {
                     displayName: 'col2',
                     queryName: 'col2',
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true }
                 }
             ],
         };
@@ -12419,9 +12610,9 @@ module powerbitests {
         it('labels should support precision per series', (done) => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } } },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 2 } } }]
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } }, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 2 } }, roles: { Y: true } }]
             };
 
             let categoryIdentities = [
@@ -12464,9 +12655,9 @@ module powerbitests {
         it('labels should support precision per series only when defined', (done) => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } } },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }]
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, objects: { labels: { labelPrecision: 1 } }, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }]
             };
 
             let categoryIdentities = [
@@ -12540,9 +12731,9 @@ module powerbitests {
         it("Label data points have correct text", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12596,9 +12787,9 @@ module powerbitests {
         it("Label data points have correct default fill", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12658,9 +12849,9 @@ module powerbitests {
         it("Label data points have correct default fill for combo", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12722,9 +12913,9 @@ module powerbitests {
             let labelColor = "#007700";
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true }}],
                 objects: {
                     labels: {
                         show: true,
@@ -12785,9 +12976,9 @@ module powerbitests {
             let labelColor = "#007700";
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12848,9 +13039,9 @@ module powerbitests {
         it("Label data points have correct display units", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12904,9 +13095,9 @@ module powerbitests {
         it("Label data points have correct precision", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -12960,9 +13151,9 @@ module powerbitests {
         it("Label data points have correct position", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -13016,8 +13207,8 @@ module powerbitests {
         it("Label data points have correct position for single series", () => {
             let dataViewMetadata1CategoryDynamicMeasure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0.0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,
@@ -13064,9 +13255,9 @@ module powerbitests {
         it("Label data points for null values are not returned", () => {
             let dataViewMetadata1Category2Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1' },
-                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true },
-                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true }],
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true, roles: { Y: true } }],
                 objects: {
                     labels: {
                         show: true,

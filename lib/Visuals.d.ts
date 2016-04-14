@@ -582,6 +582,17 @@ declare module powerbi.visuals {
 declare module powerbi.visuals {
     var scriptVisualCapabilities: VisualCapabilities;
 }
+declare module powerbi.visuals.samples {
+    var consoleWriterCapabilities: VisualCapabilities;
+}
+declare module powerbi.visuals.samples {
+    class ConsoleWriter implements IVisual {
+        static converter(dataView: DataView): any;
+        init(options: VisualInitOptions): void;
+        onResizing(viewport: IViewport): void;
+        update(options: VisualUpdateOptions): void;
+    }
+}
 declare module powerbi.visuals {
     const lineChartCapabilities: VisualCapabilities;
     const lineChartProps: {
@@ -1184,9 +1195,13 @@ declare module powerbi.visuals {
          * (optional) Whether we are using a default domain.
          */
         usingDefaultDomain?: boolean;
-        /** (optional) do default d3 axis labels fit? */
+        /**
+         * (optional) do default d3 axis labels fit?
+         */
         willLabelsFit?: boolean;
-        /** (optional) word break axis labels */
+        /**
+         * (optional) word break axis labels
+         */
         willLabelsWordBreak?: boolean;
         /**
          * (optional) Whether log scale is possible on the current domain.
@@ -1196,9 +1211,13 @@ declare module powerbi.visuals {
          * (optional) Whether domain contains zero value and log scale is enabled.
          */
         hasDisallowedZeroInDomain?: boolean;
-        /** (optional) The original data domain. Linear scales use .nice() to round to cleaner edge values. Keep the original data domain for later. */
+        /**
+         *(optional) The original data domain. Linear scales use .nice() to round to cleaner edge values. Keep the original data domain for later.
+         */
         dataDomain?: number[];
-        /** (optional) The D3 graphics context for this axis */
+        /**
+         * (optional) The D3 graphics context for this axis
+         */
         graphicsContext?: D3.Selection;
     }
     interface IMargin {
@@ -1351,7 +1370,7 @@ declare module powerbi.visuals {
                 transform: string;
                 dy: string;
             };
-            function rotate(text: D3.Selection, maxBottomMargin: number, svgEllipsis: (textElement: SVGTextElement, maxWidth: number) => void, needRotate: boolean, needEllipsis: boolean, axisProperties: IAxisProperties, margin: IMargin, scrollbarVisible: boolean): void;
+            function rotate(labelSelection: D3.Selection, maxBottomMargin: number, textTruncator: (properties: TextProperties, maxWidth: number) => string, textProperties: TextProperties, needRotate: boolean, needEllipsis: boolean, axisProperties: IAxisProperties, margin: IMargin, scrollbarVisible: boolean): void;
             function wordBreak(text: D3.Selection, axisProperties: IAxisProperties, maxHeight: number): void;
             function clip(text: D3.Selection, availableWidth: number, svgEllipsis: (textElement: SVGTextElement, maxWidth: number) => void): void;
         }
@@ -1756,6 +1775,10 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     module MapUtil {
+        interface IPixelArrayResult {
+            array: Float64Array;
+            arrayString: string;
+        }
         const Settings: {
             MaxBingRequest: number;
             MaxCacheSize: number;
@@ -1792,11 +1815,10 @@ declare module powerbi.visuals {
         function getMapSize(levelOfDetail: number): number;
         /**
          * @param latLongArray - is a Float64Array as [lt0, lon0, lat1, long1, lat2, long2,....]
-         * @returns Float64Array as [x0, y0, x1, y1, x2, y2,....]
+         * @param buildString - optional, if true returns also a string as "x0 y0 x1 y1 x2 y2 ...."
+         * @returns IPixelArrayResult with Float64Array as [x0, y0, x1, y1, x2, y2,....]
          */
-        function latLongToPixelXYArray(latLongArray: Float64Array, levelOfDetail: number): Float64Array;
-        function pointArrayToString(array: Float64Array): any;
-        function pointArrayToArray(array: Float64Array): number[];
+        function latLongToPixelXYArray(latLongArray: Float64Array, levelOfDetail: number, buildString?: boolean): IPixelArrayResult;
         function getLocationBoundaries(latLongArray: Float64Array): Microsoft.Maps.LocationRect;
         /**
          * Note: this code is taken from Bing.
@@ -2296,16 +2318,21 @@ declare module powerbi.visuals {
         lineColor: Fill;
         transparency: number;
         style: string;
+        combineSeries: boolean;
+        y2Axis: boolean;
     }
     module TrendLineHelper {
         const defaults: {
             color: Fill;
             lineStyle: string;
             transparency: number;
+            combineSeries: boolean;
         };
-        function enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, trendLine: TrendLine): void;
-        function readDataView(dataView: DataView): TrendLine;
-        function render(trendLine: TrendLine, graphicsContext: D3.Selection, axes: CartesianAxisProperties, viewport: IViewport): void;
+        function enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, trendLines: TrendLine[]): void;
+        function isDataViewForRegression(dataView: DataView): boolean;
+        function readDataViews(dataViews: DataView[]): TrendLine[];
+        function readDataView(dataView: DataView, y2: boolean): TrendLine[];
+        function render(trendLines: TrendLine[], graphicsContext: D3.Selection, axes: CartesianAxisProperties, viewport: IViewport): void;
     }
 }
 declare module powerbi.visuals {
@@ -2835,311 +2862,6 @@ declare module powerbi {
         function aboveRight(labelSize: ISize, parentPoint: IPoint, offset: number): IRect;
         function center(labelSize: ISize, parentPoint: IPoint): IRect;
         function getLabelLeaderLineEndingPoint(boundingBox: IRect, position: NewPointLabelPosition, parentShape: LabelParentPoint): number[][];
-    }
-}
-declare module powerbi {
-    /** Repreasents the sequence of the dates/times */
-    class DateTimeSequence {
-        private static MIN_COUNT;
-        private static MAX_COUNT;
-        min: Date;
-        max: Date;
-        unit: DateTimeUnit;
-        sequence: Date[];
-        interval: number;
-        intervalOffset: number;
-        /** Creates new instance of the DateTimeSequence */
-        constructor(unit: DateTimeUnit);
-        /**
-         * Add a new Date to a sequence.
-         * @param date - date to add
-         */
-        add(date: Date): void;
-        /**
-         * Extends the sequence to cover new date range
-         * @param min - new min to be covered by sequence
-         * @param max - new max to be covered by sequence
-         */
-        extendToCover(min: Date, max: Date): void;
-        /**
-         * Move the sequence to cover new date range
-         * @param min - new min to be covered by sequence
-         * @param max - new max to be covered by sequence
-         */
-        moveToCover(min: Date, max: Date): void;
-        /**
-         * Calculate a new DateTimeSequence
-         * @param dataMin - Date representing min of the data range
-         * @param dataMax - Date representing max of the data range
-         * @param expectedCount - expected number of intervals in the sequence
-         * @param unit - of the intervals in the sequence
-         */
-        static calculate(dataMin: Date, dataMax: Date, expectedCount: number, unit?: DateTimeUnit): DateTimeSequence;
-        static calculateYears(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateMonths(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateWeeks(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateDays(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateHours(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateMinutes(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateSeconds(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        static calculateMilliseconds(dataMin: Date, dataMax: Date, expectedCount: number): DateTimeSequence;
-        private static fromNumericSequence(date, sequence, unit);
-        private static addInterval(value, interval, unit);
-        private static getDelta(min, max, unit);
-        static getIntervalUnit(min: Date, max: Date, maxCount: number): DateTimeUnit;
-    }
-    /** DateUtils module provides DateTimeSequence with set of additional date manipulation routines */
-    module DateUtils {
-        /**
-         * Adds a specified number of years to the provided date.
-         * @param date - date value
-         * @param yearDelta - number of years to add
-         */
-        function addYears(date: Date, yearDelta: number): Date;
-        /**
-         * Adds a specified number of months to the provided date.
-         * @param date - date value
-         * @param monthDelta - number of months to add
-         */
-        function addMonths(date: Date, monthDelta: number): Date;
-        /**
-         * Adds a specified number of weeks to the provided date.
-         * @param date - date value
-         * @param weeks - number of weeks to add
-         */
-        function addWeeks(date: Date, weeks: number): Date;
-        /**
-         * Adds a specified number of days to the provided date.
-         * @param date - date value
-         * @param days - number of days to add
-         */
-        function addDays(date: Date, days: number): Date;
-        /**
-         * Adds a specified number of hours to the provided date.
-         * @param date - date value
-         * @param hours - number of hours to add
-         */
-        function addHours(date: Date, hours: number): Date;
-        /**
-         * Adds a specified number of minutes to the provided date.
-         * @param date - date value
-         * @param minutes - number of minutes to add
-         */
-        function addMinutes(date: Date, minutes: number): Date;
-        /**
-         * Adds a specified number of seconds to the provided date.
-         * @param date - date value
-         * @param seconds - number of seconds to add
-         */
-        function addSeconds(date: Date, seconds: number): Date;
-        /**
-         * Adds a specified number of milliseconds to the provided date.
-         * @param date - date value
-         * @param milliseconds - number of milliseconds to add
-         */
-        function addMilliseconds(date: Date, milliseconds: number): Date;
-    }
-}
-declare module powerbi {
-    class DisplayUnit {
-        value: number;
-        title: string;
-        labelFormat: string;
-        applicableRangeMin: number;
-        applicableRangeMax: number;
-        project(value: number): number;
-        reverseProject(value: number): number;
-        isApplicableTo(value: number): boolean;
-        isScaling(): boolean;
-    }
-    class DisplayUnitSystem {
-        units: DisplayUnit[];
-        displayUnit: DisplayUnit;
-        private unitBaseValue;
-        protected static UNSUPPORTED_FORMATS: RegExp;
-        constructor(units?: DisplayUnit[]);
-        title: string;
-        update(value: number): void;
-        private findApplicableDisplayUnit(value);
-        format(value: number, format: string, decimals?: number, trailingZeros?: boolean): string;
-        isFormatSupported(format: string): boolean;
-        isPercentageFormat(format: string): boolean;
-        shouldRespectScalingUnit(format: string): boolean;
-        getNumberOfDecimalsForFormatting(format: string, decimals?: number): number;
-        isScalingUnit(): boolean;
-        private formatHelper(value, nonScientificFormat, format, decimals?, trailingZeros?);
-        /** Formats a single value by choosing an appropriate base for the DisplayUnitSystem before formatting. */
-        formatSingleValue(value: number, format: string, decimals?: number, trailingZeros?: boolean): string;
-        private shouldUseValuePrecision(value);
-        protected isScientific(value: number): boolean;
-        protected hasScientitifcFormat(format: string): boolean;
-        protected supportsScientificFormat(format: string): boolean;
-        protected shouldFallbackToScientific(value: number, format: string): boolean;
-        protected getScientificFormat(data: number, format: string, decimals: number, trailingZeros: boolean): string;
-    }
-    /** Provides a unit system that is defined by formatting in the model, and is suitable for visualizations shown in single number visuals in explore mode. */
-    class NoDisplayUnitSystem extends DisplayUnitSystem {
-        constructor();
-    }
-    /** Provides a unit system that creates a more concise format for displaying values. This is suitable for most of the cases where
-        we are showing values (chart axes) and as such it is the default unit system. */
-    class DefaultDisplayUnitSystem extends DisplayUnitSystem {
-        private static units;
-        constructor(unitLookup: (exponent: number) => DisplayUnitSystemNames);
-        format(data: number, format: string, decimals?: number, trailingZeros?: boolean): string;
-        static reset(): void;
-        private static getUnits(unitLookup);
-    }
-    /** Provides a unit system that creates a more concise format for displaying values, but only allows showing a unit if we have at least
-        one of those units (e.g. 0.9M is not allowed since it's less than 1 million). This is suitable for cases such as dashboard tiles
-        where we have restricted space but do not want to show partial units. */
-    class WholeUnitsDisplayUnitSystem extends DisplayUnitSystem {
-        private static units;
-        constructor(unitLookup: (exponent: number) => DisplayUnitSystemNames);
-        static reset(): void;
-        private static getUnits(unitLookup);
-        format(data: number, format: string, decimals?: number, trailingZeros?: boolean): string;
-    }
-    class DataLabelsDisplayUnitSystem extends DisplayUnitSystem {
-        private static AUTO_DISPLAYUNIT_VALUE;
-        private static NONE_DISPLAYUNIT_VALUE;
-        protected static UNSUPPORTED_FORMATS: RegExp;
-        private static units;
-        constructor(unitLookup: (exponent: number) => DisplayUnitSystemNames);
-        isFormatSupported(format: string): boolean;
-        private static getUnits(unitLookup);
-        format(data: number, format: string, decimals?: number, trailingZeros?: boolean): string;
-    }
-    interface DisplayUnitSystemNames {
-        title: string;
-        format: string;
-    }
-}
-declare module powerbi {
-    class NumericSequence {
-        private static MIN_COUNT;
-        private static MAX_COUNT;
-        private maxAllowedMargin;
-        private canExtendMin;
-        private canExtendMax;
-        interval: number;
-        intervalOffset: number;
-        min: number;
-        max: number;
-        precision: number;
-        sequence: number[];
-        static calculate(range: NumericSequenceRange, expectedCount: number, maxAllowedMargin?: number, minPower?: number, useZeroRefPoint?: boolean, steps?: number[]): NumericSequence;
-        /**
-         * Calculates the sequence of int numbers which are mapped to the multiples of the units grid.
-         * @min - The minimum of the range.
-         * @max - The maximum of the range.
-         * @maxCount - The max count of intervals.
-         * @steps - array of intervals.
-         */
-        static calculateUnits(min: number, max: number, maxCount: number, steps: number[]): NumericSequence;
-        trimMinMax(min: number, max: number): void;
-    }
-}
-declare module powerbi {
-    class NumericSequenceRange {
-        private static DEFAULT_MAX;
-        private static MIN_SUPPORTED_DOUBLE;
-        private static MAX_SUPPORTED_DOUBLE;
-        min: number;
-        max: number;
-        includeZero: boolean;
-        forcedSingleStop: number;
-        hasDataRange: boolean;
-        hasFixedMin: boolean;
-        hasFixedMax: boolean;
-        private _ensureIncludeZero();
-        private _ensureNotEmpty();
-        private _ensureDirection();
-        getSize(): number;
-        shrinkByStep(range: NumericSequenceRange, step: number): void;
-        static calculate(dataMin: number, dataMax: number, fixedMin?: number, fixedMax?: number, includeZero?: boolean): NumericSequenceRange;
-        static calculateDataRange(dataMin: number, dataMax: number, includeZero?: boolean): NumericSequenceRange;
-        static calculateFixedRange(fixedMin: number, fixedMax: number, includeZero?: boolean): NumericSequenceRange;
-    }
-    /** Note: Exported for testability */
-    module ValueUtil {
-        function hasValue(value: any): boolean;
-    }
-}
-declare module powerbi.visuals {
-    /**
-     * Formats the value using provided format expression
-     * @param value - value to be formatted and converted to string.
-     * @param format - format to be applied if the number shouldn't be abbreviated.
-     * If the number should be abbreviated this string is checked for special characters like $ or % if any
-     */
-    interface ICustomValueFormatter {
-        (value: any, format?: string): string;
-    }
-    interface ICustomValueColumnFormatter {
-        (value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
-    }
-    interface ValueFormatterOptions {
-        /** The format string to use. */
-        format?: string;
-        /** The data value. */
-        value?: any;
-        /** The data value. */
-        value2?: any;
-        /** The number of ticks. */
-        tickCount?: any;
-        /** The display unit system to use */
-        displayUnitSystemType?: DisplayUnitSystemType;
-        /** True if we are formatting single values in isolation (e.g. card), as opposed to multiple values with a common base (e.g. chart axes) */
-        formatSingleValues?: boolean;
-        /** True if we want to trim off unnecessary zeroes after the decimal and remove a space before the % symbol */
-        allowFormatBeautification?: boolean;
-        /** Specifies the maximum number of decimal places to show*/
-        precision?: number;
-        /** Detect axis precision based on value */
-        detectAxisPrecision?: boolean;
-        /** Specifies the column type of the data value */
-        columnType?: ValueTypeDescriptor;
-    }
-    interface IValueFormatter {
-        format(value: any): string;
-        displayUnit?: DisplayUnit;
-        options?: ValueFormatterOptions;
-    }
-    /** Captures all locale-specific options used by the valueFormatter. */
-    interface ValueFormatterLocalizationOptions {
-        null: string;
-        true: string;
-        false: string;
-        NaN: string;
-        infinity: string;
-        negativeInfinity: string;
-        /** Returns a beautified form the given format string. */
-        beautify(format: string): string;
-        /** Returns an object describing the given exponent in the current language. */
-        describe(exponent: number): DisplayUnitSystemNames;
-        restatementComma: string;
-        restatementCompoundAnd: string;
-        restatementCompoundOr: string;
-    }
-    module valueFormatter {
-        const DefaultIntegerFormat: string;
-        const DefaultNumericFormat: string;
-        const DefaultDateFormat: string;
-        function getLocalizedString(stringId: string): string;
-        function getFormatMetadata(format: string): powerbi.NumberFormat.NumericFormatMetadata;
-        function setLocaleOptions(options: ValueFormatterLocalizationOptions): void;
-        function createDefaultFormatter(formatString: string, allowFormatBeautification?: boolean): IValueFormatter;
-        /** Creates an IValueFormatter to be used for a range of values. */
-        function create(options: ValueFormatterOptions): IValueFormatter;
-        function format(value: any, format?: string, allowFormatBeautification?: boolean): string;
-        function formatValueColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
-        function getFormatString(column: DataViewMetadataColumn, formatStringProperty: DataViewObjectPropertyIdentifier, suppressTypeFallback?: boolean): string;
-        /** The returned string will look like 'A, B, ..., and C'  */
-        function formatListAnd(strings: string[]): string;
-        /** The returned string will look like 'A, B, ..., or C' */
-        function formatListOr(strings: string[]): string;
-        function getDisplayUnits(displayUnitSystemType: DisplayUnitSystemType): DisplayUnit[];
     }
 }
 declare module powerbi {
@@ -6207,7 +5929,7 @@ declare module powerbi.visuals {
         private static PlayAxisBottomMargin;
         private static FontSize;
         private static FontSizeString;
-        private static TextProperties;
+        static AxisTextProperties: TextProperties;
         private element;
         private chartAreaSvg;
         private clearCatcher;
@@ -6234,7 +5956,7 @@ declare module powerbi.visuals {
         private trimOrdinalDataOnOverflow;
         private isMobileChart;
         private trendLinesEnabled;
-        private trendLine;
+        private trendLines;
         private xRefLine;
         private y1RefLine;
         animator: IGenericAnimator;
@@ -6255,7 +5977,6 @@ declare module powerbi.visuals {
         static detectScalarMapping(dataViewMapping: data.CompiledDataViewMapping): boolean;
         private populateObjectProperties(dataViews);
         private updateInternal(options, dataChanged);
-        private isTrendPropertySet(dataViews);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport, resizeMode?: ResizeMode): void;
         scrollTo(position: number): void;
@@ -6266,7 +5987,7 @@ declare module powerbi.visuals {
         private getValueAxisValues(enumeration);
         onClearSelection(): void;
         private extractMetadataObjects(dataViews);
-        private createAndInitLayers(dataViews);
+        private createAndInitLayers(objects);
         private renderLegend();
         private hideLegends();
         private render(suppressAnimations, resizeMode?);
@@ -6597,7 +6318,7 @@ declare module powerbi.visuals {
         private options;
         private lastInteractiveSelectedColumnIndex;
         private interactivityService;
-        private dataViewCat;
+        private dataView;
         private categoryAxisType;
         private animator;
         private isScrollable;
@@ -6610,9 +6331,9 @@ declare module powerbi.visuals {
         updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin: any): void;
         init(options: CartesianVisualInitOptions): void;
         private getCategoryLayout(numCategoryValues, options);
-        static converter(dataView: DataViewCategorical, colors: IDataColorPalette, is100PercentStacked?: boolean, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: ColumnChartType, interactivityService?: IInteractivityService, tooltipsEnabled?: boolean): ColumnChartData;
+        static converter(dataView: DataView, colors: IDataColorPalette, is100PercentStacked?: boolean, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: ColumnChartType, interactivityService?: IInteractivityService, tooltipsEnabled?: boolean): ColumnChartData;
         private static canSupportOverflow(chartType, seriesCount);
-        private static createDataPoints(dataViewCat, categories, categoryIdentities, legend, seriesObjectsList, converterStrategy, defaultLabelSettings, is100PercentStacked?, isScalar?, isCategoryAlsoSeries?, categoryObjectsList?, defaultDataPointColor?, chartType?, categoryMetadata?, tooltipsEnabled?);
+        private static createDataPoints(dataView, categories, categoryIdentities, legend, seriesObjectsList, converterStrategy, defaultLabelSettings, is100PercentStacked?, isScalar?, isCategoryAlsoSeries?, categoryObjectsList?, defaultDataPointColor?, chartType?, categoryMetadata?, tooltipsEnabled?);
         private static getDataPointColor(legendItem, categoryIndex, dataPointObjects?);
         private static getStackedLabelColor(isNegative, seriesIndex, seriesCount, categoryIndex, rawValues);
         static sliceSeries(series: ColumnChartSeries[], endIndex: number, startIndex?: number): ColumnChartSeries[];
@@ -6637,6 +6358,7 @@ declare module powerbi.visuals {
         getSupportedCategoryAxisType(): string;
         setFilteredData(startIndex: number, endIndex: number): CartesianData;
         static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string;
+        supportsTrendLine(): boolean;
     }
 }
 declare module powerbi.visuals {
@@ -6775,6 +6497,30 @@ declare module powerbi.visuals {
         private moveHandle(selectedColumnIndex);
         static getLayout(data: ColumnChartData, axisOptions: ColumnAxisOptions): IColumnLayout;
         private createLabelDataPoints();
+    }
+}
+declare module powerbi.visuals.samples {
+    interface HelloViewModel {
+        text: string;
+        color: string;
+        size: number;
+        selector: SelectionId;
+        toolTipInfo: TooltipDataItem[];
+    }
+    class HelloIVisual implements IVisual {
+        static capabilities: VisualCapabilities;
+        private static DefaultText;
+        private root;
+        private svgText;
+        private dataView;
+        private selectiionManager;
+        static converter(dataView: DataView): HelloViewModel;
+        init(options: VisualInitOptions): void;
+        update(options: VisualUpdateOptions): void;
+        private static getFill(dataView);
+        private static getSize(dataView);
+        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
+        destroy(): void;
     }
 }
 declare module powerbi.visuals {
@@ -7793,7 +7539,7 @@ declare module powerbi.visuals {
         private dataPointsToEnumerate;
         private hasDynamicSeries;
         private geoTaggingAnalyzerService;
-        private enableGeoShaping;
+        private isFilledMap;
         private host;
         private receivedExternalViewChange;
         private executingInternalViewChange;
@@ -7837,12 +7583,12 @@ declare module powerbi.visuals {
         /** Note: public for UnitTest */
         static hasSizeField(values: DataViewValueColumns, defaultIndexIfNoRole?: number): boolean;
         static shouldEnumerateDataPoints(dataView: DataView, usesSizeForGradient: boolean): boolean;
-        static shouldEnumerateCategoryLabels(enableGeoShaping: boolean, filledMapDataLabelsEnabled: boolean): boolean;
+        static shouldEnumerateCategoryLabels(isFilledMap: boolean, filledMapDataLabelsEnabled: boolean): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         static enumerateDataPoints(enumeration: ObjectEnumerationBuilder, dataPoints: LegendDataPoint[], colors: IDataColorPalette, hasDynamicSeries: boolean, defaultDataPointColor: string, showAllDataPoints: boolean, bubbleData: MapBubble[]): void;
         static enumerateLegend(enumeration: ObjectEnumerationBuilder, dataView: DataView, legend: ILegend, legendTitle: string): void;
         onDataChanged(options: VisualDataChangedOptions): void;
-        static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): MapData;
+        static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService, isFilledMap: boolean): MapData;
         static createLegendData(dataView: DataView, colorHelper: ColorHelper): LegendData;
         private swapLogoContainerChildElement();
         onResizing(viewport: IViewport): void;
@@ -7990,7 +7736,6 @@ declare module powerbi.visuals {
             private localizationProvider;
             private host;
             private static textChangeThrottle;
-            private static formatUrlThrottle;
             static preventDefaultKeys: number[];
             static loadQuillResources: boolean;
             private static quillJsFiles;
@@ -8014,7 +7759,6 @@ declare module powerbi.visuals {
             setContents(contents: quill.Delta | quill.Op[]): void;
             resize(viewport: IViewport): void;
             setReadOnly(readOnly: boolean): void;
-            formatUrls(): void;
             setSelection(start: number, end: number): void;
             getSelection(): quill.Range;
             focus(): void;
@@ -8141,7 +7885,6 @@ declare module powerbi.visuals {
     /** Styles to apply to scatter chart data point marker */
     interface ScatterMarkerStyle {
         'stroke-opacity': number;
-        'stroke-width': string;
         stroke: string;
         fill: string;
         'fill-opacity': number;
@@ -8313,7 +8056,7 @@ declare module powerbi.visuals {
         const FrameStepDuration: number;
         const FrameAnimationDuration: number;
         const ClassName: string;
-        function convertMatrixToCategorical(matrix: DataViewMatrix, frame: number): DataViewCategorical;
+        function convertMatrixToCategorical(sourceDataView: DataView, frame: number): DataView;
         function converter<T extends PlayableChartData>(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T>;
         function getDefaultPlayData<T extends PlayableChartData>(): PlayChartData<T>;
         function getMinMaxForAllFrames<T extends PlayableChartData>(playData: PlayChartData<T>, getExtents: (T) => CartesianExtents): CartesianExtents;
@@ -9579,6 +9322,8 @@ declare module powerbi.visuals.plugins {
     let textbox: IVisualPlugin;
     let waterfallChart: IVisualPlugin;
     let cheerMeter: IVisualPlugin;
+    let consoleWriter: IVisualPlugin;
+    let helloIVisual: IVisualPlugin;
     let owlGauge: IVisualPlugin;
     let scriptVisual: IVisualPlugin;
     let kpi: IVisualPlugin;

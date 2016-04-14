@@ -125,6 +125,11 @@ module powerbi.visuals {
                         description: data.createDisplayNameGetter('Visual_Trend_Line_Style_Description'),
                         type: { enumeration: lineStyle.type }
                     },
+                    combineSeries: {
+                        displayName: data.createDisplayNameGetter('Visual_Trend_Line_Combine_Series'),
+                        description: data.createDisplayNameGetter('Visual_Trend_Line_Combine_Series_Description'),
+                        type: { bool: true }
+                    },
                 }
             },
             categoryAxis: {
@@ -374,19 +379,25 @@ module powerbi.visuals {
             },
         }, {
             conditions: [
-                { 'Category': { max: 1 }, 'Series': { max: 0 }, 'Y': { max: 1 } },
+                { 'Category': { max: 1 }, 'Series': { max: 0 } },
+                { 'Category': { max: 1 }, 'Series': { min: 1, max: 1 }, 'Y': { max: 1 } }
             ],
             requiredProperties: [{ objectName: 'trend', propertyName: 'show' }],
             usage: {
-                regression: {},
+                regression: {
+                    combineSeries: { objectName: 'trend', propertyName: 'combineSeries' }
+                },
             },
             categorical: {
                 categories: {
                     for: { in: 'regression.X' },
                 },
                 values: {
-                    for: { in: 'regression.Y' },
-               }
+                    group: {
+                        by: 'regression.Series',
+                        select: [{ for: {in: 'regression.Y' } }],
+                    },
+                }
             }
         }],
         sorting: {

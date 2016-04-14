@@ -562,12 +562,12 @@ module powerbi.visuals {
                 case MapUtil.CategoryTypes.Continent:
                 case MapUtil.CategoryTypes.CountryRegion:
                     if (dataCount < 10) {
-                        return { level: 2, maxPolygons: 50, strokeWidth: 0 };
+                        return { level: 1, maxPolygons: 50, strokeWidth: 0 };
                     }
                     else if (dataCount < 30) {
-                        return { level: 2, maxPolygons: 20, strokeWidth: 0 };
+                        return { level: 1, maxPolygons: 20, strokeWidth: 0 };
                     }
-                    return { level: 1, maxPolygons: 3, strokeWidth: 0 };
+                    return { level: 1, maxPolygons: 5, strokeWidth: 0 };
                 default:
                     if (dataCount < 100) {
                         return { level: 1, maxPolygons: 5, strokeWidth: 6 };
@@ -973,7 +973,7 @@ module powerbi.visuals {
         private dataPointsToEnumerate: LegendDataPoint[];
         private hasDynamicSeries: boolean;
         private geoTaggingAnalyzerService: powerbi.IGeoTaggingAnalyzerService;
-        private enableGeoShaping: boolean;
+        private isFilledMap: boolean;
         private host: IVisualHostServices;
         private receivedExternalViewChange = false;
         private executingInternalViewChange = false;
@@ -994,11 +994,11 @@ module powerbi.visuals {
             if (options.filledMap) {
                 this.dataPointRenderer = new MapShapeDataPointRenderer(options.filledMapDataLabelsEnabled, options.tooltipsEnabled);
                 this.filledMapDataLabelsEnabled = options.filledMapDataLabelsEnabled;
-                this.enableGeoShaping = true;
+                this.isFilledMap = true;
             }
             else {
                 this.dataPointRenderer = new MapBubbleDataPointRenderer(options.tooltipsEnabled);
-                this.enableGeoShaping = false;
+                this.isFilledMap = false;
             }
             this.mapControlFactory = options.mapControlFactory ? options.mapControlFactory : this.getDefaultMapControlFactory();
             this.behavior = options.behavior;
@@ -1344,15 +1344,15 @@ module powerbi.visuals {
             return hasSeries || !hasGradientRole;
         }
 
-        public static shouldEnumerateCategoryLabels(enableGeoShaping: boolean, filledMapDataLabelsEnabled: boolean): boolean {
-            return (!enableGeoShaping || filledMapDataLabelsEnabled);
+        public static shouldEnumerateCategoryLabels(isFilledMap: boolean, filledMapDataLabelsEnabled: boolean): boolean {
+            return (!isFilledMap || filledMapDataLabelsEnabled);
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             let enumeration = new ObjectEnumerationBuilder();
             switch (options.objectName) {
                 case 'dataPoint':
-                    if (Map.shouldEnumerateDataPoints(this.dataView, this.enableGeoShaping)) {
+                    if (Map.shouldEnumerateDataPoints(this.dataView, this.isFilledMap)) {
                         let bubbleData: MapBubble[] = [];
                         //TODO: better way of getting this data
                         let hasDynamicSeries = this.hasDynamicSeries;
@@ -1364,7 +1364,7 @@ module powerbi.visuals {
                     }
                     break;
                 case 'categoryLabels':
-                    if (Map.shouldEnumerateCategoryLabels(this.enableGeoShaping, this.filledMapDataLabelsEnabled)) {
+                    if (Map.shouldEnumerateCategoryLabels(this.isFilledMap, this.filledMapDataLabelsEnabled)) {
                         dataLabelUtils.enumerateCategoryLabels(enumeration, this.dataLabelsSettings, true, true);
                     }
                     break;
@@ -1464,7 +1464,7 @@ module powerbi.visuals {
             this.defaultDataPointColor = null;
             this.showAllDataPoints = null;
             let dataView = this.dataView = options.dataViews[0];
-            let enableGeoShaping = this.enableGeoShaping;
+            let isFilledMap = this.isFilledMap;
             let warnings = [];
             let data: MapData = {
                 dataPoints: [],
@@ -1483,7 +1483,7 @@ module powerbi.visuals {
 
                     this.dataLabelsSettings.showCategory = DataViewObjects.getValue<boolean>(objects, filledMapProps.categoryLabels.show, this.dataLabelsSettings.showCategory);
 
-                    if (enableGeoShaping) {
+                    if (isFilledMap) {
                         this.dataLabelsSettings.precision = DataViewObjects.getValue(objects, filledMapProps.labels.labelPrecision, this.dataLabelsSettings.precision);
                         this.dataLabelsSettings.precision = (this.dataLabelsSettings.precision !== dataLabelUtils.defaultLabelPrecision && this.dataLabelsSettings.precision < 0) ? 0 : this.dataLabelsSettings.precision;
                         this.dataLabelsSettings.displayUnits = DataViewObjects.getValue<number>(objects, filledMapProps.labels.labelDisplayUnits, this.dataLabelsSettings.displayUnits);
@@ -1504,7 +1504,7 @@ module powerbi.visuals {
 
                 // Convert data
                 let colorHelper = new ColorHelper(this.colors, mapProps.dataPoint.fill, this.defaultDataPointColor);
-                data = Map.converter(dataView, colorHelper, this.geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, this.geoTaggingAnalyzerService, isFilledMap);
                 this.hasDynamicSeries = data.hasDynamicSeries;
 
                 // Create legend
@@ -1517,19 +1517,19 @@ module powerbi.visuals {
                     this.geocodingCategory = data.geocodingCategory;
                     this.mapControlFactory.ensureMap(this.locale, () => {
                         let params;
-                        if (enableGeoShaping) {
+                        if (isFilledMap) {
                             params = MapShapeDataPointRenderer.getFilledMapParams(this.geocodingCategory, data.dataPoints.length);
                         }
                         for (let dataPoint of data.dataPoints) {
                             if (!dataPoint.location) {
                                 if (!_.isEmpty(dataPoint.categoryValue)) { // If we don't have a location, but the category string is empty, skip geocoding so we don't geocode null/empty string
-                                    if (enableGeoShaping)
+                                    if (isFilledMap)
                                         this.enqueueGeoCodeAndGeoShape(dataPoint, params);
                                     else
                                         this.enqueueGeoCode(dataPoint);
                                 }
                             }
-                            else if (enableGeoShaping && !dataPoint.paths) {
+                            else if (isFilledMap && !dataPoint.paths) {
                                 this.enqueueGeoShape(dataPoint, params);
                             }
                             else {
@@ -1543,7 +1543,7 @@ module powerbi.visuals {
                     this.clearDataPoints();
                 }
 
-                if (enableGeoShaping) {
+                if (isFilledMap) {
                     if (!this.geocodingCategory || !this.geoTaggingAnalyzerService.isGeoshapable(this.geocodingCategory)) {
                         warnings.push(new FilledMapWithoutValidGeotagCategoryWarning());
                     }
@@ -1566,7 +1566,7 @@ module powerbi.visuals {
             this.updateInternal(true /* dataChanged */, true /* redrawDataLabels */);
         }
 
-        public static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService): MapData {
+        public static converter(dataView: DataView, colorHelper: ColorHelper, geoTaggingAnalyzerService: IGeoTaggingAnalyzerService, isFilledMap: boolean): MapData {
             let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let dataPoints: MapDataPoint[] = [];
             let hasDynamicSeries = reader.hasDynamicSeries();
@@ -1581,20 +1581,27 @@ module powerbi.visuals {
             if (reader.hasCategories()) {
                 // Calculate category totals and range for radius calculation
                 let categoryTotals: number[] = [];
-                let categoryTotalRange;
+                let categoryTotalRange: SimpleRange;
                 if (hasSize) {
                     let categoryMin: number = undefined;
                     let categoryMax: number = undefined;
                     for (let categoryIndex = 0, categoryCount = reader.getCategoryCount(); categoryIndex < categoryCount; categoryIndex++) {
-                        let categoryTotal = 0;
+                        let categoryTotal: number;
                         for (let seriesIndex = 0, seriesCount = reader.getSeriesCount(); seriesIndex < seriesCount; seriesIndex++) {
-                            categoryTotal += reader.getValue('Size', categoryIndex, seriesIndex);
+                            let currentValue = reader.getValue('Size', categoryIndex, seriesIndex);
+                            // Dont initialze categoryTotal to zero until you find a null value so that it remains undefined for categories that have no non-null values (0 is rendered by filled map while null is not)
+                            if (categoryTotal == null && currentValue != null)
+                                categoryTotal = 0;
+                            if (categoryTotal != null)
+                                categoryTotal += currentValue;
                         }
                         categoryTotals.push(categoryTotal);
-                        if (categoryMin === undefined || categoryTotal < categoryMin)
-                            categoryMin = categoryTotal;
-                        if (categoryMax === undefined || categoryTotal > categoryMax)
-                            categoryMax = categoryTotal;
+                        if (categoryTotal != null) {
+                            if (categoryMin === undefined || categoryTotal < categoryMin)
+                                categoryMin = categoryTotal;
+                            if (categoryMax === undefined || categoryTotal > categoryMax)
+                                categoryMax = categoryTotal;
+                        }
                     }
                     categoryTotalRange = (categoryMin !== undefined && categoryMax !== undefined) ? {
                         max: categoryMax,
@@ -1612,7 +1619,9 @@ module powerbi.visuals {
                     for (let categoryIndex = 0, categoryCount = reader.getCategoryCount(); categoryIndex < categoryCount; categoryIndex++) {
                         // Get category information
                         let categoryValue = undefined;
-                        let categoryObjects = reader.getCategoryObjects('Category', categoryIndex);
+                        // The category objects should come from whichever category exists; in the case of a composite category, the objects should be the same for
+                        //   both categories, so we only need to obtain them from one role.
+                        let categoryObjects = hasCategoryGroup ? reader.getCategoryObjects('Category', categoryIndex) : reader.getCategoryObjects('Y', categoryIndex);
                         let location: IGeocodeCoordinate;
                         let categoryTooltipItem: TooltipDataItem;
                         let latitudeTooltipItem: TooltipDataItem;
@@ -1734,8 +1743,8 @@ module powerbi.visuals {
                             if (gradientTooltipItem)
                                 tooltipInfo.push(gradientTooltipItem);
 
-                            // Do not create subslices for data points with 0 or null
-                            if (subsliceValue || !hasSize) {
+                            // Do not create subslices for data points with null or zero if not filled map
+                            if (subsliceValue || !hasSize || (subsliceValue === 0 && isFilledMap)) {
                                 subDataPoints.push({
                                     value: subsliceValue,
                                     fill: fill,
@@ -1746,8 +1755,8 @@ module powerbi.visuals {
                             }
                         }
 
-                        // Skip data points that have a total value of 0 or null
-                        if (value || !hasSize) {
+                        // Skip data points that have a null or zero if not filled map
+                        if (value || !hasSize || (value === 0 && isFilledMap)) {
                             dataPoints.push({
                                 geocodingQuery: categoryValue,
                                 value: value,

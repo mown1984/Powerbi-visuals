@@ -327,5 +327,20 @@ module jsCommon {
         export function isInArray<T>(array: T[], lookupItem: T, compareCallback: (item1: T, item2: T) => boolean): boolean {
             return _.any(array, item => compareCallback(item, lookupItem));
         }
+
+        /** Checks if the given object is an Array, and looking all the way up the prototype chain. */
+        export function isArrayOrInheritedArray(obj: {}): obj is Array<any> {
+            debug.assertValue(obj, 'obj');
+
+            let nextPrototype = obj;
+            while (nextPrototype != null) {
+                if (_.isArray(nextPrototype))
+                    return true;
+
+                nextPrototype = Object.getPrototypeOf(nextPrototype);
+            }
+
+            return false;
+        }
     }
 } 

@@ -102,10 +102,12 @@ module.exports = projects.initProject(
                         "sqFieldDef.js",
                         "./helpers/helpers.js",
                         "./helpers/kpiHelper.js",
+                        "./helpers/performanceTestsHelpers.js",
+                        "./helpers/referenceLineHelper.js",
                         "./helpers/slicerHelper.js",
                         "./helpers/tableDataViewHelper.js",
                         "./helpers/tablixHelper.js",
-                        "./helpers/performanceTestsHelpers.js",
+                        "./helpers/trendLineHelper.js",
                         "./utils/bingSocial/NewsDataFactory.js",
                         "./utils/bingSocial/TweetFactory.js",
                         "CustomVisuals.css",
@@ -127,6 +129,7 @@ module.exports = projects.initProject(
                         "./customVisuals/sampleDataViews/valueByAgeData.js",
                         "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
                         "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
+                        "./customVisuals/sampleDataViews/PulseChartData.js",
                         "./customVisuals/VisualBuilderBase.js"
                     ].concat(tests),
                     jasminePaths = [

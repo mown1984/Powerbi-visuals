@@ -27,38 +27,91 @@
 module powerbi.data.utils {
     import inherit = Prototype.inherit;
     import inheritSingle = Prototype.inheritSingle;
+    import ArrayExtensions = jsCommon.ArrayExtensions;
 
     export module DataViewMatrixUtils {
 
         /**
-         * Invokes the specified callback once per descendent leaf node of the specified matrixNode, with an optional 
-         * index parameter in the callback that is the 0-based index of the particular leaf node in the context of this 
-         * forEachLeafNode(...) invocation.
+         * Invokes the specified callback once per leaf nodes (including root-level leaves and descendent leaves) of the 
+         * specified rootNodes, with an optional index parameter in the callback that is the 0-based index of the 
+         * particular leaf node in the context of this forEachLeafNode(...) invocation.
+         *
+         * If rootNodes is null or undefined or empty, the specified callback will not get invoked.
+         *
+         * The treePath parameter in the callback is an ordered set of nodes that form the path from the specified 
+         * rootNodes down to the leafNode argument itself.  If callback leafNode is one of the specified rootNodes,
+         * then treePath will be an array of length 1 containing that very node.
+         *
+         * IMPORTANT: The treePath array passed to the callback will be modified after the callback function returns!
+         * If your callback needs to retain a copy of the treePath, please clone the array before returning.
          */
-        export function forEachLeafNode(matrixNode: DataViewMatrixNode, callback: (leafNode: DataViewMatrixNode, index?: number) => void): void {
-            debug.assertValue(matrixNode, 'matrixNode');
+        export function forEachLeafNode(
+            rootNodes: DataViewMatrixNode | DataViewMatrixNode[],
+            callback: (leafNode: DataViewMatrixNode, index?: number, treePath?: DataViewMatrixNode[]) => void): void {
+            debug.assertAnyValue(rootNodes, 'rootNodes');
             debug.assertValue(callback, 'callback');
 
-            forEachLeafNodeRecursive(matrixNode, 0, callback);
+            // Note: Don't do "if (!_.isEmpty(rootNodes))" for checking whether rootNodes is an empty array DataViewMatrixNode[],
+            // because rootNodes can also be an non-array DataViewMatrixNode, and an empty object can be a valid root node DataViewMatrixNode, 
+            // for the fact that all the properties on DataViewMatrixNode are optional...
+            if (rootNodes) {
+                if (isNodeArray(rootNodes)) {
+                    let index = 0;
+                    for (let rootNode of rootNodes) {
+                        if (rootNode) {
+                            index = forEachLeafNodeRecursive(rootNode, index, [], callback);
+                        }
+                    }
+                }
+                else {
+                    forEachLeafNodeRecursive(rootNodes, 0, [], callback);
+                }
+            }
         }
 
-        function forEachLeafNodeRecursive(matrixNode: DataViewMatrixNode, nextIndex: number, callback: (leafNode: DataViewMatrixNode, index?: number) => void): number {
+        function isNodeArray(nodeOrNodeArray: DataViewMatrixNode | DataViewMatrixNode[]): nodeOrNodeArray is DataViewMatrixNode[] {
+            return ArrayExtensions.isArrayOrInheritedArray(nodeOrNodeArray);
+        }
+
+        /**
+         * Recursively traverses to each leaf node of the specified matrixNode and invokes callback with each of them.
+         * Returns the index for the next node after the last node that this function invokes callback with.
+         *
+         * @treePath an array that contains the path from the specified rootNodes in forEachLeafNode() down to the parent of the argument matrixNode (i.e. treePath does not contain the matrixNode argument yet).
+         */
+        function forEachLeafNodeRecursive(
+            matrixNode: DataViewMatrixNode,
+            nextIndex: number,
+            treePath: DataViewMatrixNode[],
+            callback: (leafNode: DataViewMatrixNode, index?: number, treePath?: DataViewMatrixNode[]) => void): number {
             debug.assertValue(matrixNode, 'matrixNode');
+            debug.assertValue(treePath, 'treePath');
             debug.assertValue(callback, 'callback');
 
-            if (_.isEmpty(matrixNode.children)) {
-                callback(matrixNode, nextIndex);
+            // If treePath already contains matrixNode, then either one of the following errors has happened:
+            // 1. the caller code mistakenly added matrixNode to treePath, or
+            // 2. the callback modified treePath by adding a node to it, or
+            // 3. the matrix hierarchy contains a cyclical node reference.');
+            debug.assert(!_.contains(treePath, matrixNode),
+                'pre-condition: treePath must not already contain matrixNode');
+
+            treePath.push(matrixNode);
+
+            if (_.isEmpty(matrixNode.children)) { // if it is a leaf node
+                callback(matrixNode, nextIndex, treePath);
                 nextIndex++;
             }
             else {
                 let children = matrixNode.children;
-                for (var i = 0, len = children.length; i < len; i++) {
-                    var nextChild = children[i];
+                for (let nextChild of children) {
                     if (nextChild) {
-                        nextIndex = forEachLeafNodeRecursive(nextChild, nextIndex, callback);
+                        nextIndex = forEachLeafNodeRecursive(nextChild, nextIndex, treePath, callback);
                     }
                 }
             }
+
+            debug.assert(_.last(treePath) === matrixNode, 'pre-condition: the callback given to forEachLeafNode() is not supposed to modify the treePath argument array.');
+            treePath.pop();
 
             return nextIndex;
         }

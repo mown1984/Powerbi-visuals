@@ -41,10 +41,10 @@ module powerbitests.customVisuals.sampleDataViews {
 
         private sampleData: number[][];
         private dates: Date[];
-        
+
         constructor() {
             this.sampleData = this.generateData(ProductSalesByDateData.seriesCount, ProductSalesByDateData.valuesCount);
-            this.dates = this.generateDates(ProductSalesByDateData.valuesCount);
+            this.dates = helpers.generateDates(ProductSalesByDateData.valuesCount, new Date(2014,0,1), new Date(2015,5,10));
         }
 
         public getDataView(): DataView {
@@ -89,7 +89,7 @@ module powerbitests.customVisuals.sampleDataViews {
                     values: this.sampleData[i],
                 });
             }
-            
+
             return columns;
         }
 
@@ -99,7 +99,7 @@ module powerbitests.customVisuals.sampleDataViews {
                         queryName: 'Date',
                         type: ValueType.fromDescriptor({ dateTime: true })
                     }];
-                    
+
             for(let i = 0;i < n; i++) {
                 columns.push({
                         displayName: 'Product '+(i+1),
@@ -110,49 +110,17 @@ module powerbitests.customVisuals.sampleDataViews {
                         type: ValueType.fromDescriptor({ numeric: true }),
                     });
             }
-            
+
             return columns;
         }
 
         private generateData(seriesCount: number, valuesCount: number): number[][] {
             let data: number[][] = [];
             for(let i=0; i<seriesCount; i++) {
-                data.push(this.generateSeries(valuesCount));
+                data.push(helpers.generateNumbers(valuesCount));
             }
 
             return data;
-        }
-
-        private generateSeries(count: number): number[] {
-            let values = Array.apply(null, Array(count)).map(x => 0);
-            for (let i = 0; i < 5; ++i) {
-                let x = 1 / (.1 + Math.random()),
-                    y = 2 * Math.random() - .5,
-                    z = 10 / (.1 + Math.random());
-                for (let i = 0; i < count; i++) {
-                    let w = (i / count - y) * z;
-                    values[i] += x * Math.exp(-w * w);
-                }
-            }
-            return values.map(x => Math.max(0, x) * 10000);
-        }
-
-        private generateDates(count: number): Date[] {
-            let dates: Date[] = [];
-            for(let i=0; i<count; i++) {
-                let randDate = this.randomDate(new Date(2014,0,1), new Date(2015,5,10));
-                if(_.contains(dates,randDate)) {
-                    i--;
-                } else {
-                    dates.push(randDate);
-                }
-            }
-            
-            return dates.sort((a,b) => a.getTime() > b.getTime() ? 1 : -1);
-        }
-
-        private randomDate(start, end): Date {
-            return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
         }
     }
 }

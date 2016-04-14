@@ -306,6 +306,18 @@ module powerbi.visuals.plugins {
         create: () => new CheerMeter()
     };
 
+    export let consoleWriter: IVisualPlugin = {
+        name: 'consoleWriter',
+        capabilities: samples.consoleWriterCapabilities,
+        create: () => new samples.ConsoleWriter()
+    };
+
+    export let helloIVisual: IVisualPlugin = {
+        name: 'helloIVisual',
+        capabilities: samples.HelloIVisual.capabilities,
+        create: () => new samples.HelloIVisual()
+    };
+
     export let owlGauge: IVisualPlugin = {
         name: 'owlGauge',
         watermarkKey: 'gauge',

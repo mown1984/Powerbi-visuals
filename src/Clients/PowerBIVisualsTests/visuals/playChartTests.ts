@@ -32,6 +32,8 @@ module powerbitests {
     import DataViewMatrix = powerbi.DataViewMatrix;
     import PlayChart = powerbi.visuals.PlayChart;
     import ScatterChart = powerbi.visuals.ScatterChart;
+    import SQExpr = powerbi.data.SQExpr;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
 
     powerbitests.mocks.setLocale();
 
@@ -45,12 +47,36 @@ module powerbitests {
 
     // DataViewMetadataColumns
     let playSource: DataViewMetadataColumn = { displayName: "Month", queryName: "Month1", type: dataTypeString, index: 0, roles: { 'Play': true } };
-    let categorySource: DataViewMetadataColumn = { displayName: "RowGroup2", queryName: "RowGroup2", type: dataTypeString, index: 1, roles: { 'Category': true } };
+    let categorySource1: DataViewMetadataColumn = { displayName: "RowGroup2", queryName: "RowGroup2", type: dataTypeString, index: 1, roles: { 'Category': true } };
     let seriesSource: DataViewMetadataColumn = { displayName: "ColGroup1", queryName: "ColGroup1", type: dataTypeString, index: 2, roles: { 'Series': true } };
     let measureSource1: DataViewMetadataColumn = { displayName: "Measure1", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 3, roles: { 'X': true } };
     let measureSource2: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 4, roles: { 'Y': true } };
     let measureSource3: DataViewMetadataColumn = { displayName: "Measure3", queryName: "Measure3", type: dataTypeNumber, isMeasure: true, index: 5, roles: { 'Size': true } };
     let categorySource2: DataViewMetadataColumn = { displayName: "RowGroup3", queryName: "RowGroup3", type: dataTypeString, index: 6, roles: { 'Category': true } };
+
+    let metadataIdentityFields = {
+        play: SQExprBuilder.fieldDef({ schema: 's', entity: "Details", column: "DateMonth" }),
+
+        category1: SQExprBuilder.fieldDef({ schema: 's', entity: "Categories", column: "categorySource1" }),
+        category2: SQExprBuilder.fieldDef({ schema: 's', entity: "Categories", column: "categorySource2" }),
+    };
+
+    let metadataIdentities = {
+        play: {
+            Jan: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.play, 'Jan'),
+            Feb: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.play, 'Feb'),
+        },
+        category1: {
+            USA: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category1, 'USA'),
+            Canada: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category1, 'Canada'),
+        },
+        category2: {
+            OR: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category2, 'OR'),
+            WA: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category2, 'WA'),
+            AB: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category2, 'AB'),
+            BC: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category2, 'BC'),
+        },
+    };
 
     //          | MeasureX | MeasureY | MeasureZ + MeasureX | MeasureY | MeasureZ |
     // |+++++++ +--------------------------------+--------------------------------+
@@ -109,10 +135,10 @@ module powerbitests {
         },
         valueSources: [measureSource1, measureSource2, measureSource3]
     };
-    //let matrixPlayDataView: powerbi.DataView = {
-    //    metadata: { columns: [playSource, measureSource1, measureSource2, measureSource3] },
-    //    matrix: matrixPlay
-    //};
+    let matrixPlayDataView: powerbi.DataView = {
+        metadata: { columns: [playSource, measureSource1, measureSource2, measureSource3] },
+        matrix: matrixPlay
+    };
 
     //          | -----------------------------------------------------------------
     //          |             Series1            |             Series2            |
@@ -182,10 +208,10 @@ module powerbitests {
         },
         valueSources: [measureSource1, measureSource2, measureSource3]
     };
-    //let matrixSeriesAndPlayDataView: powerbi.DataView = {
-    //    metadata: { columns: [seriesSource, playSource, measureSource1, measureSource2, measureSource3] },
-    //    matrix: matrixSeriesAndPlay
-    //};
+    let matrixSeriesAndPlayDataView: powerbi.DataView = {
+        metadata: { columns: [seriesSource, playSource, measureSource1, measureSource2, measureSource3] },
+        matrix: matrixSeriesAndPlay
+    };
 
     //                   | MeasureX | MeasureY | MeasureZ |
     // |+++++++|++++++++++---------------------------------
@@ -261,7 +287,7 @@ module powerbitests {
                             }]
                     }]
             },
-            levels: [{ sources: [playSource] }, { sources: [categorySource] }]
+            levels: [{ sources: [playSource] }, { sources: [categorySource1] }]
         },
         columns: {
             root: {
@@ -279,10 +305,10 @@ module powerbitests {
         },
         valueSources: [measureSource1, measureSource2, measureSource3]
     };
-    //let matrixCategoryAndPlayDataView: powerbi.DataView = {
-    //    metadata: { columns: [categorySource, playSource, measureSource1, measureSource2, measureSource3] },
-    //    matrix: matrixCategoryAndPlay
-    //};
+    let matrixCategoryAndPlayDataView: powerbi.DataView = {
+        metadata: { columns: [categorySource1, playSource, measureSource1, measureSource2, measureSource3] },
+        matrix: matrixCategoryAndPlay
+    };
 
     //                   | -----------------------------------------------------------------
     //                   |             Series1            |             Series2            |
@@ -379,7 +405,7 @@ module powerbitests {
                             }]
                     }]
             },
-            levels: [{ sources: [playSource] }, { sources: [categorySource] }]
+            levels: [{ sources: [playSource] }, { sources: [categorySource1] }]
         },
         columns: {
             root: {
@@ -411,16 +437,15 @@ module powerbitests {
         },
         valueSources: [measureSource1, measureSource2, measureSource3]
     };
-    //let matrixSeriesAndCategoryAndPlayDataView: powerbi.DataView = {
-    //    metadata: { columns: [categorySource, seriesSource, playSource, measureSource1, measureSource2, measureSource3] },
-    //    matrix: matrixSeriesAndCategoryAndPlay
-    //};
+    let matrixSeriesAndCategoryAndPlayDataView: powerbi.DataView = {
+        metadata: { columns: [categorySource1, seriesSource, playSource, measureSource1, measureSource2, measureSource3] },
+        matrix: matrixSeriesAndCategoryAndPlay
+    };
 
     // Related to VSTS 6986788: This matrix is what we get when we have feature switch "allowDrillGrouping" 
     // turned on and a PlayChart with hierarchy on Details, and the user drills down (e.g. from Country to Region).
     // 
-    // However, after VSTS 6885783 gets fixed by adding support for composite group in dataView matrix, then the PlayChart matrix 
-    // will probably have one row group level for Country + Region, and this test case will become obsolete and can be removed.
+    // Related to VSTS 6885783: All Category columns in the row hierarchy should get concatenated into one column in the resulting Categorical.
     //
     //         | Country | Region   | MeasureX | MeasureY | MeasureZ |
     // |+++++++|+++++++++++++++++++++---------------------------------
@@ -437,18 +462,24 @@ module powerbitests {
     let matrixGroupDrilldownCategoryAndPlay: DataViewMatrix = {
         rows: {
             root: {
+                childIdentityFields: [metadataIdentityFields.play],
                 children: [
                 {
                     level: 0,
                     value: 'Jan',
+                    identity: metadataIdentities.play.Jan,
+                    childIdentityFields: [metadataIdentityFields.category1],
                     children: [
                         {
                             level: 1,
                             value: 'USA',
+                            identity: metadataIdentities.category1.USA,
+                            childIdentityFields: [metadataIdentityFields.category2],
                             children: [
                                 {
                                     level: 2,
                                     value: 'OR',
+                                    identity: metadataIdentities.category2.OR,
                                     values: {
                                         0: { value: 100 },
                                         1: { value: 200, valueSourceIndex: 1 },
@@ -457,6 +488,7 @@ module powerbitests {
                                 }, {
                                     level: 2,
                                     value: 'WA',
+                                    identity: metadataIdentities.category2.WA,
                                     values: {
                                         0: { value: 550 },
                                         1: { value: 155, valueSourceIndex: 1 },
@@ -466,10 +498,13 @@ module powerbitests {
                         }, {
                             level: 1,
                             value: 'Canada',
+                            identity: metadataIdentities.category1.Canada,
+                            childIdentityFields: [metadataIdentityFields.category2],
                             children: [
                                 {
                                     level: 2,
                                     value: 'AB',
+                                    identity: metadataIdentities.category2.AB,
                                     values: {
                                         0: { value: 330 },
                                         1: { value: 133, valueSourceIndex: 1 },
@@ -478,6 +513,7 @@ module powerbitests {
                                 }, {
                                     level: 2,
                                     value: 'BC',
+                                    identity: metadataIdentities.category2.BC,
                                     values: {
                                         0: { value: 335 },
                                         1: { value: 135, valueSourceIndex: 1 },
@@ -489,14 +525,19 @@ module powerbitests {
                 {
                     level: 0,
                     value: 'Feb',
+                    identity: metadataIdentities.play.Feb,
+                    childIdentityFields: [metadataIdentityFields.category1],
                     children: [
                         {
                             level: 1,
                             value: 'USA',
+                            identity: metadataIdentities.category1.USA,
+                            childIdentityFields: [metadataIdentityFields.category2],
                             children: [
                                 {
                                     level: 2,
                                     value: 'OR',
+                                    identity: metadataIdentities.category2.OR,
                                     values: {
                                         0: { value: 40 },
                                         1: { value: 50, valueSourceIndex: 1 },
@@ -505,6 +546,7 @@ module powerbitests {
                                 }, {
                                     level: 2,
                                     value: 'WA',
+                                    identity: metadataIdentities.category2.WA,
                                     values: {
                                         0: { value: 770 },
                                         1: { value: 177, valueSourceIndex: 1 },
@@ -514,10 +556,13 @@ module powerbitests {
                         }, {
                             level: 1,
                             value: 'Canada',
+                            identity: metadataIdentities.category1.Canada,
+                            childIdentityFields: [metadataIdentityFields.category2],
                             children: [
                                 {
                                     level: 2,
                                     value: 'AB',
+                                    identity: metadataIdentities.category2.AB,
                                     values: {
                                         0: { value: 440 },
                                         1: { value: 144, valueSourceIndex: 1 },
@@ -526,6 +571,7 @@ module powerbitests {
                                 }, {
                                     level: 2,
                                     value: 'BC',
+                                    identity: metadataIdentities.category2.BC,
                                     values: {
                                         0: { value: 445 },
                                         1: { value: 145, valueSourceIndex: 1 },
@@ -535,7 +581,7 @@ module powerbitests {
                         }]
                 }]
             },
-            levels: [{ sources: [playSource] }, { sources: [categorySource] }, { sources: [categorySource2] }]
+            levels: [{ sources: [playSource] }, { sources: [categorySource1] }, { sources: [categorySource2] }]
         },
         columns: {
             root: {
@@ -553,94 +599,115 @@ module powerbitests {
         },
         valueSources: [measureSource1, measureSource2, measureSource3]
     };
+    let matrixGroupDrilldownCategoryAndPlayDataView: powerbi.DataView = {
+        metadata: { columns: [playSource, categorySource1, categorySource2, measureSource1, measureSource2, measureSource3] },
+        matrix: matrixGroupDrilldownCategoryAndPlay
+    };
 
     describe("PlayChart", () => {
         it("convertMatrixToCategorical - Play", () => {
-            let categoricalA = PlayChart.convertMatrixToCategorical(matrixPlay, 0);
-            let categoricalB = PlayChart.convertMatrixToCategorical(matrixPlay, 1);
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixPlayDataView, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixPlayDataView, 1);
 
-            expect(categoricalA.categories.length).toBe(0);
-            expect(categoricalB.categories.length).toBe(0);
-            expect(categoricalA.values.length).toBe(0);
-            expect(categoricalB.values.length).toBe(0);
+            expect(categoricalA.categorical.categories.length).toBe(0);
+            expect(categoricalB.categorical.categories.length).toBe(0);
+            expect(categoricalA.categorical.values.length).toBe(0);
+            expect(categoricalB.categorical.values.length).toBe(0);
         });
 
         it("convertMatrixToCategorical - Series and Play", () => {
-            let categoricalA = PlayChart.convertMatrixToCategorical(matrixSeriesAndPlay, 0);
-            let categoricalB = PlayChart.convertMatrixToCategorical(matrixSeriesAndPlay, 1);
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixSeriesAndPlayDataView, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixSeriesAndPlayDataView, 1);
 
-            expect(categoricalA.categories).toBeUndefined();
-            expect(categoricalB.categories).toBeUndefined();
-            expect(categoricalA.values.length).toBe(6);
-            expect(categoricalB.values.length).toBe(6);
-            for (let values of categoricalA.values) {
+            expect(categoricalA.categorical.categories).toBeUndefined();
+            expect(categoricalB.categorical.categories).toBeUndefined();
+            expect(categoricalA.categorical.values.length).toBe(6);
+            expect(categoricalB.categorical.values.length).toBe(6);
+            for (let values of categoricalA.categorical.values) {
                 expect(values.values.length).toBe(1);
             }
-            for (let values of categoricalB.values) {
+            for (let values of categoricalB.categorical.values) {
                 expect(values.values.length).toBe(1);
             }
         });
 
         it("convertMatrixToCategorical - Category and Play", () => {
-            let categoricalA = PlayChart.convertMatrixToCategorical(matrixCategoryAndPlay, 0);
-            let categoricalB = PlayChart.convertMatrixToCategorical(matrixCategoryAndPlay, 1);
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixCategoryAndPlayDataView, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixCategoryAndPlayDataView, 1);
 
-            expect(categoricalA.categories.length).toBe(1);
-            expect(categoricalB.categories.length).toBe(1);
-            expect(categoricalA.categories[0].values.length).toBe(3);
-            expect(categoricalB.categories[0].values.length).toBe(3);
-            expect(categoricalA.values.length).toBe(3);
-            expect(categoricalB.values.length).toBe(3);
-            for (let values of categoricalA.values) {
+            expect(categoricalA.categorical.categories.length).toBe(1);
+            expect(categoricalB.categorical.categories.length).toBe(1);
+            expect(categoricalA.categorical.categories[0].values.length).toBe(3);
+            expect(categoricalB.categorical.categories[0].values.length).toBe(3);
+            expect(categoricalA.categorical.values.length).toBe(3);
+            expect(categoricalB.categorical.values.length).toBe(3);
+            for (let values of categoricalA.categorical.values) {
                 expect(values.values.length).toBe(3);
             }
-            for (let values of categoricalB.values) {
+            for (let values of categoricalB.categorical.values) {
                 expect(values.values.length).toBe(3);
             }
         });
 
         it("convertMatrixToCategorical - Series and Category and Play", () => {
-            let categoricalA = PlayChart.convertMatrixToCategorical(matrixSeriesAndCategoryAndPlay, 0);
-            let categoricalB = PlayChart.convertMatrixToCategorical(matrixSeriesAndCategoryAndPlay, 1);
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixSeriesAndCategoryAndPlayDataView, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixSeriesAndCategoryAndPlayDataView, 1);
 
-            expect(categoricalA.categories.length).toBe(1);
-            expect(categoricalB.categories.length).toBe(1);
-            expect(categoricalA.categories[0].values.length).toBe(3);
-            expect(categoricalB.categories[0].values.length).toBe(3);
-            expect(categoricalA.values.length).toBe(6);
-            expect(categoricalB.values.length).toBe(6);
-            for (let values of categoricalA.values) {
+            expect(categoricalA.categorical.categories.length).toBe(1);
+            expect(categoricalB.categorical.categories.length).toBe(1);
+            expect(categoricalA.categorical.categories[0].values.length).toBe(3);
+            expect(categoricalB.categorical.categories[0].values.length).toBe(3);
+            expect(categoricalA.categorical.values.length).toBe(6);
+            expect(categoricalB.categorical.values.length).toBe(6);
+            for (let values of categoricalA.categorical.values) {
                 expect(values.values.length).toBe(3);
             }
-            for (let values of categoricalB.values) {
+            for (let values of categoricalB.categorical.values) {
                 expect(values.values.length).toBe(3);
             }
         });
 
-        it("convertMatrixToCategorical- group drilldown on Category, and Play", () => {
-            let categoricalA = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlay, 0);
-            let categoricalB = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlay, 1);
+        it("convertMatrixToCategorical - group drilldown on Category, and Play", () => {
+            let categoricalA = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlayDataView, 0);
+            let categoricalB = PlayChart.convertMatrixToCategorical(matrixGroupDrilldownCategoryAndPlayDataView, 1);
 
-            expect(categoricalA.categories.length).toBe(1);
-            expect(categoricalA.categories[0].source.queryName).toBe('RowGroup3');
-            expect(categoricalA.categories[0].values).toEqual(['OR', 'WA', 'AB', 'BC']);
-            expect(categoricalB.categories.length).toBe(1);
-            expect(categoricalB.categories[0].source.queryName).toBe('RowGroup3');
-            expect(categoricalB.categories[0].values).toEqual(['OR', 'WA', 'AB', 'BC']);
-            expect(categoricalA.values.length).toBe(3);
-            expect(categoricalA.values[0].source.queryName).toBe('Measure1');
-            expect(categoricalA.values[1].source.queryName).toBe('Measure2');
-            expect(categoricalA.values[2].source.queryName).toBe('Measure3');
-            expect(categoricalA.values[0].values).toEqual([100, 550, 330, 335]);
-            expect(categoricalA.values[1].values).toEqual([200, 155, 133, 135]);
-            expect(categoricalA.values[2].values).toEqual([300, 51, 31, 35]);
-            expect(categoricalB.values.length).toBe(3);
-            expect(categoricalB.values[0].source.queryName).toBe('Measure1');
-            expect(categoricalB.values[1].source.queryName).toBe('Measure2');
-            expect(categoricalB.values[2].source.queryName).toBe('Measure3');
-            expect(categoricalB.values[0].values).toEqual([40, 770, 440, 445]);
-            expect(categoricalB.values[1].values).toEqual([50, 177, 144, 145]);
-            expect(categoricalB.values[2].values).toEqual([60, 71, 41, 45]);
+            // assert categoricalA.categorical.categories...
+            expect(categoricalA.categorical.categories.length).toBe(1);
+            expect(categoricalA.categorical.categories[0].source.queryName).toBe('RowGroup3');
+            expect(categoricalA.categorical.categories[0].values).toEqual(['OR USA', 'WA USA', 'AB Canada', 'BC Canada']);
+            
+            let expectedCategoryIdentitiesSQExpr: SQExpr[] = [
+                SQExprBuilder.and(<SQExpr>metadataIdentities.category1.USA.expr, <SQExpr>metadataIdentities.category2.OR.expr),
+                SQExprBuilder.and(<SQExpr>metadataIdentities.category1.USA.expr, <SQExpr>metadataIdentities.category2.WA.expr),
+                SQExprBuilder.and(<SQExpr>metadataIdentities.category1.Canada.expr, <SQExpr>metadataIdentities.category2.AB.expr),
+                SQExprBuilder.and(<SQExpr>metadataIdentities.category1.Canada.expr, <SQExpr>metadataIdentities.category2.BC.expr),
+            ];
+            expect(categoricalA.categorical.categories[0].identity.length).toEqual(expectedCategoryIdentitiesSQExpr.length);
+            
+            for (let i = 0, ilen = expectedCategoryIdentitiesSQExpr.length; i < ilen; i++) {
+                // Note: this test code is in the Visuals project, thus it cannot use the jasmine matcher toEqualSQExpr() until we move or copy it over
+                expect(SQExpr.equals(<SQExpr>categoricalA.categorical.categories[0].identity[i].expr, expectedCategoryIdentitiesSQExpr[i])).toBe(true);
+            }
+
+            // If the product code gets updated to populate DataViewCategoryColumn.identityFields,
+            // please update the following line with the expected value.
+            expect(categoricalA.categorical.categories[0].identityFields).toBeUndefined();
+
+            // assert categoricalA.categorical.values...
+            expect(categoricalA.categorical.values.length).toBe(3);
+            expect(categoricalA.categorical.values[0].source.queryName).toBe('Measure1');
+            expect(categoricalA.categorical.values[1].source.queryName).toBe('Measure2');
+            expect(categoricalA.categorical.values[2].source.queryName).toBe('Measure3');
+            expect(categoricalA.categorical.values[0].values).toEqual([100, 550, 330, 335]);
+            expect(categoricalA.categorical.values[1].values).toEqual([200, 155, 133, 135]);
+            expect(categoricalA.categorical.values[2].values).toEqual([300, 51, 31, 35]);
+            expect(categoricalB.categorical.values.length).toBe(3);
+            expect(categoricalB.categorical.values[0].source.queryName).toBe('Measure1');
+            expect(categoricalB.categorical.values[1].source.queryName).toBe('Measure2');
+            expect(categoricalB.categorical.values[2].source.queryName).toBe('Measure3');
+            expect(categoricalB.categorical.values[0].values).toEqual([40, 770, 440, 445]);
+            expect(categoricalB.categorical.values[1].values).toEqual([50, 177, 144, 145]);
+            expect(categoricalB.categorical.values[2].values).toEqual([60, 71, 41, 45]);
         });
 
         // TODO: Two measures (X/Y no size, others... encouncentered while building the visual)
@@ -653,7 +720,7 @@ module powerbitests {
             matrix: matrixCategoryAndPlay,
             metadata: {
                 columns: [
-                    categorySource,
+                    categorySource1,
                     playSource,
                     measureSource1,
                     measureSource2,

@@ -30,9 +30,7 @@
         "visuals/gantt/gantt.ts",
         "visuals/timeline/timeline.ts",
         "visuals/streamGraph/streamGraph.ts",
-        "capabilities/consoleWriter.capabilities.ts",
-        "visuals/consoleWriter/consoleWriter.ts",
-        "visuals/helloIVisual/helloIVisual.ts",
+        "visuals/pulseChart/pulseChart.ts",
         "visuals/sunburst/sunburst.ts",
         "plugins.ts",
         "services/customVisualPluginService.ts"

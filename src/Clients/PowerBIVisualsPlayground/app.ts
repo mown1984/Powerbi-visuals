@@ -59,7 +59,8 @@ module powerbi.visuals {
             "gantt",
             "sunburstCustom",
             "timeline",
-            "owlGauge"
+            "owlGauge",
+            "pulseChart"
         ];
 
         private static mobileInteractiveVisuals: string[] = [
@@ -170,7 +171,7 @@ module powerbi.visuals {
                 this.append(element);
 
                 // Step 2: Instantiate Power BI visual
-                host.visual = plugin.create();
+                host.visual = powerbi.extensibility.createVisualAdapter(plugin);
                 return this;
             };
 

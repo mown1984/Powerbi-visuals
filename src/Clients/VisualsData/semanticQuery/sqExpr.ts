@@ -1737,6 +1737,10 @@ module powerbi.data {
             return SQEntityExprInfoVisitor.getEntity(columnRef);
         }
 
+        public visitMeasureRef(expr: SQMeasureRefExpr): SQEntityExpr {
+            return expr.source.accept(this);
+        }
+
         public static getColumnRefSQExpr(schema: FederatedConceptualSchema, expr: SQExpr): SQColumnRefExpr {
             let visitor = new SQExprColumnRefInfoVisitor(schema);
             return expr.accept(visitor);

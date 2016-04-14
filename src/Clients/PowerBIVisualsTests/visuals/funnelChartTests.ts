@@ -1310,11 +1310,18 @@ module powerbitests {
                 FunnelChartHelpers.validateDataLabels(dataView);
                 expect($(".funnelChart g").length).toBe(7);
                 expect($(".funnelBar").length).toBe(6);
-                expect($(".highlight").length).toBe(3); expect(+$(".highlight")[0].attributes.getNamedItem("height").value)
-                    .toBeLessThan(+$(".funnelBar")[0].attributes.getNamedItem("height").value);
-                expect(+$(".highlight")[0].attributes.getNamedItem("y").value)
-                    .toBeGreaterThan(+$(".funnelBar")[0].attributes.getNamedItem("y").value);
-                expect($(".funnelChart .axis").find("text").length).toBe(3); done();
+                expect($(".highlight").length).toBe(3);
+
+                expect(+$(".highlight").eq(0).attr("height"))
+                    .toBeLessThan(+$(".funnelBar").eq(0).attr("height"));
+                expect(+$(".highlight").eq(0).attr("y"))
+                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("y"));
+
+                expect($(".funnelChart .axis").find("text").length).toBe(3);
+
+                expect(+$(".funnelBar:not(.highlight)").eq(2).attr("y")).toBe(0);
+
+                done();
             }, DefaultWaitForRender);
         });
 
@@ -1337,7 +1344,7 @@ module powerbitests {
                 .newValueBuilder()
                     .setSource(dataViewMetadata.columns[1])
                     .setValues([100, 200, 700])
-                    .setHighlights([150, 340, 720])
+                    .setHighlights([150, 340, 1020])
                     .setSubtotal(1000)
                     .buildNewValue()
                 .buildValueColumns();
@@ -1352,11 +1359,18 @@ module powerbitests {
                 expect($(".funnelChart g").length).toBe(7);
                 expect($(".funnelBar").length).toBe(6);
                 expect($(".highlight").length).toBe(3);
-                expect(+$(".highlight")[0].attributes.getNamedItem("height").value)
-                    .toBeGreaterThan(+$(".funnelBar")[0].attributes.getNamedItem("height").value);
-                expect(+$(".highlight")[0].attributes.getNamedItem("y").value)
-                    .toBeLessThan(+$(".funnelBar")[0].attributes.getNamedItem("y").value);
-                expect($(".funnelChart .axis").find("text").length).toBe(3); done();
+
+                expect(+$(".highlight").eq(0).attr("height"))
+                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("height"));
+                expect(+$(".highlight").eq(0).attr("y"))
+                    .toBeLessThan(+$(".funnelBar").eq(0).attr("y"));
+
+                expect($(".funnelChart .axis").find("text").length).toBe(3);
+
+                // The largest highlight should start at the farthest left point
+                expect(+$(".highlight").eq(2).attr("y")).toBe(0);
+
+                done();
             }, DefaultWaitForRender);
         });
 
@@ -1387,7 +1401,7 @@ module powerbitests {
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
                 let rect: JQuery = $(".funnelChart").find(".funnelBar").first();
-                expect(rect.attr("width")).toBeLessThan(40);
+                expect(+rect.attr("width")).toBeLessThan(40);
                 done();
             }, DefaultWaitForRender);
         });

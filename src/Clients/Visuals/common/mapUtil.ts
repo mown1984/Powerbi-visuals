@@ -28,6 +28,11 @@ module powerbi.visuals {
     const defaultLevelOfDetail = 11;
 
     export module MapUtil {
+        export interface IPixelArrayResult {
+            array: Float64Array;
+            arrayString: string;
+        }
+
         export const Settings = {
             /** Maximum Bing requests at once. The Bing have limit how many request at once you can do per socket. */
             MaxBingRequest: 6,
@@ -90,11 +95,25 @@ module powerbi.visuals {
         }
 
         /**
-         * @param latLongArray - is a Float64Array as [lt0, lon0, lat1, long1, lat2, long2,....]
-         * @returns Float64Array as [x0, y0, x1, y1, x2, y2,....]
+         * pointArrayChunkLength Motivation: 
+         * When the number is too small (e.g. less than 1000) the tile is rendering but VERY SLOW, 
+         * when it's too high there is a risk to get "stack overflow" error on mobile (while joining).
+         * this is the lowest number I managed to get without any noticeable slowness.
          */
-        export function latLongToPixelXYArray(latLongArray: Float64Array, levelOfDetail: number): Float64Array {
-            let result = new Float64Array(latLongArray.length);
+        const pointArrayChunkLength = 15000;
+
+        /**
+         * @param latLongArray - is a Float64Array as [lt0, lon0, lat1, long1, lat2, long2,....]
+         * @param buildString - optional, if true returns also a string as "x0 y0 x1 y1 x2 y2 ...."
+         * @returns IPixelArrayResult with Float64Array as [x0, y0, x1, y1, x2, y2,....]
+         */
+        export function latLongToPixelXYArray(latLongArray: Float64Array, levelOfDetail: number, buildString: boolean = false): IPixelArrayResult {
+            let helperArray: number[] = [];
+            let result: IPixelArrayResult = {
+                array: new Float64Array(latLongArray.length),
+                arrayString: ""
+            };
+
             for (let i = 0; i < latLongArray.length; i += 2) {
                 let latitude = clip(latLongArray[i], MinAllowedLatitude, MaxAllowedLatitude);
                 let longitude = clip(latLongArray[i + 1], MinAllowedLongitude, MaxAllowedLongitude);
@@ -104,36 +123,22 @@ module powerbi.visuals {
                 let y: number = 0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI);
 
                 let mapSize: number = getMapSize(levelOfDetail);
-                result[i] = clip(x * mapSize + 0.5, 0.0, mapSize - 1);
-                result[i + 1] = clip(y * mapSize + 0.5, 0.0, mapSize - 1);
+                result.array[i] = clip(x * mapSize + 0.5, 0.0, mapSize - 1);
+                result.array[i + 1] = clip(y * mapSize + 0.5, 0.0, mapSize - 1);
+
+                if (buildString) {
+                    helperArray.push(result.array[i], result.array[i + 1]);
+                    if (helperArray.length >= pointArrayChunkLength) {
+                        result.arrayString += helperArray.join(" ") + " ";
+                        helperArray = [];
+                    }
+                }
+            }
+
+            if (buildString) {
+                result.arrayString += helperArray.join(" ") + " ";
             }
             return result;
-        }
-
-        export function pointArrayToString(array: Float64Array) {
-            let maxLength = 80000;
-            if (array.length > maxLength) {
-                let result: string = "";
-                for (let i = 0; i < array.length; i += maxLength) {
-                    let array1 = Array.apply([], array.subarray(i, i + maxLength));
-                    result += array1.join(" ") + " ";
-                }
-                return result;
-            }
-            return Array.apply([], array).join(" ");
-        }
-
-        export function pointArrayToArray(array: Float64Array): number[] {
-            let maxLength = 80000;
-            let result: number[] = [];
-            if (array.length > maxLength) {
-                for (let i = 0; i < array.length; i += maxLength) {
-                    let array1 = Array.apply([], array.subarray(i, i + maxLength));
-                    result.concat(array1);
-                }
-                return result;
-            }
-            return Array.apply([], array);
         }
 
         export function getLocationBoundaries(latLongArray: Float64Array): Microsoft.Maps.LocationRect {
@@ -228,8 +233,9 @@ module powerbi.visuals {
                 let polygon = location.geographic;
                 if (polygon) {
                     if (!location.absolute) {
-                        location.absolute = MapUtil.latLongToPixelXYArray(polygon, MapUtil.DefaultLevelOfDetail);
-                        location.absoluteString = MapUtil.pointArrayToString(location.absolute);
+                        let result = MapUtil.latLongToPixelXYArray(polygon, MapUtil.DefaultLevelOfDetail, true);
+                        location.absolute = result.array;
+                        location.absoluteString = result.arrayString;
 
                         let geographicBounds = MapUtil.getLocationBoundaries(polygon);
                         location.absoluteBounds = MapUtil.locationRectToRectXY(geographicBounds, MapUtil.DefaultLevelOfDetail);
@@ -249,7 +255,7 @@ module powerbi.visuals {
         }
 
         export function latLongToPixelXY(latitude: number, longitude: number, levelOfDetail: number): powerbi.visuals.Point {
-            let array = latLongToPixelXYArray(new Float64Array([latitude, longitude]), levelOfDetail);
+            let array: Float64Array = latLongToPixelXYArray(new Float64Array([latitude, longitude]), levelOfDetail).array;
             return new powerbi.visuals.Point(array[0], array[1]);
         }
 

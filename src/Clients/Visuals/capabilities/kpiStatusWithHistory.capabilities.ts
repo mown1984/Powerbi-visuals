@@ -118,8 +118,7 @@ module powerbi.visuals {
                 description: data.createDisplayNameGetter('Role_DisplayName_KPI_Status'),
                 properties: {
                     direction: {
-                        displayName: data.createDisplayNameGetter('Role_DisplayName_KPI_Direction'),
-                        description: data.createDisplayNameGetter('Role_DisplayName_KPI_Direction'),
+                        displayName: data.createDisplayNameGetter('Visual_KPI_Direction'),
                         type: { enumeration: kpiDirection.type }
                     }
                 }

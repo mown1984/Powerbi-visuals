@@ -2043,6 +2043,16 @@ body {
 .visual .cartesianChart .axisGraphicsContext .trend-line {
   stroke-width: 2px;
 }
+.visual .cartesianChart .brush .background {
+  fill-opacity: 0.5;
+  fill: #EAEAEA;
+  visibility: visible !important;
+  cursor: default !important;
+}
+.visual .cartesianChart .brush .extent {
+  fill-opacity: 0.2;
+  cursor: default !important;
+}
 .visual .animatedNumber .mainText,
 .visual .card .mainText {
   fill: #333333;
