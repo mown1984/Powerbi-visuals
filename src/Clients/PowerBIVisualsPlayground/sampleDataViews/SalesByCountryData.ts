@@ -70,13 +70,15 @@ module powerbi.visuals.sampleDataViews {
                         queryName: 'sales1',
                         type: powerbi.ValueType.fromDescriptor({ numeric: true }),
                         objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
+                        roles: { Y: true }
                     },
                     {
                         displayName: 'Sales Amount (2015)',
                         isMeasure: true,
                         format: "$0,000.00",
                         queryName: 'sales2',
-                        type: powerbi.ValueType.fromDescriptor({ numeric: true })
+                        type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                        roles: { Y: true }
                     }
                 ]
             };

@@ -26,7 +26,11 @@
 
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
-    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils ;
+    import createDataViewScopeIdentity = powerbi.data.createDataViewScopeIdentity;
+    import DataViewConcatenateCategoricalColumns = powerbi.data.DataViewConcatenateCategoricalColumns;
+    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils;
+    import SQExpr = powerbi.data.SQExpr;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
 
     export interface PlayConstructorOptions extends CartesianVisualConstructorOptions {
     }
@@ -526,7 +530,10 @@ module powerbi.visuals {
 
         export const ClassName = 'playChart';
 
-        export function convertMatrixToCategorical(matrix: DataViewMatrix, frame: number): DataViewCategorical {
+        export function convertMatrixToCategorical(sourceDataView: DataView, frame: number): DataView {
+            debug.assert(sourceDataView && sourceDataView.metadata && !!sourceDataView.matrix, 'sourceDataView && sourceDataView.metadata && !!sourceDataView.matrix');
+
+            let matrix: DataViewMatrix = sourceDataView.matrix;
 
             let categorical: DataViewCategorical = {
                 categories: [],
@@ -537,20 +544,27 @@ module powerbi.visuals {
             // 2 rows and 1 column:  (play->category, measures)
             // or:
             // 1 row and 2 columns:  (play, series->measures)
-            if ((_.isEmpty(matrix.columns.levels)) || (matrix.rows.levels.length < 2 && matrix.columns.levels.length < 2))
-                return categorical;
+            if ((_.isEmpty(matrix.columns.levels)) || (matrix.rows.levels.length < 2 && matrix.columns.levels.length < 2)) {
+                return { metadata: sourceDataView.metadata, categorical: categorical };
+            }
 
-            // Ignore the play field (first row), we use either the second row group (play->category) or we don't use this variable (category)
-            // Note related to VSTS 6986788: use the leaf node for category as there can be multiple levels for category during drilldown.
-            let categorySource = matrix.rows.levels.length > 1 && !_.isEmpty(_.last(matrix.rows.levels).sources)
-                ? _.last(matrix.rows.levels).sources[0]
-                : null;
-            let category: DataViewCategoryColumn = {
-                source: categorySource,
-                values: [],
-                objects: undefined,
-                identity: []
-            };
+            const CategoryRowLevelsStartingIndex = 1;
+
+            let categories: DataViewCategoryColumn[] = [];
+            // Ignore the play field (first row level); the Category field(s) starts from the second row group (play->category) or we don't use this variable (categories)
+            // Note related to VSTS 6986788 and 6885783: there are multiple levels for category during drilldown and expand.
+            for (let i = CategoryRowLevelsStartingIndex, ilen = matrix.rows.levels.length; i < ilen; i++) {
+                // Consider: Change the following debug.assert() to retail.assert() when the infrastructure is ready.
+                debug.assert(matrix.rows.levels[i].sources.length > 0, 'The sources is always expected to contain at least one metadata column.');
+
+                let sourceColumn: DataViewMetadataColumn = matrix.rows.levels[i].sources[0];
+                categories.push({
+                    source: sourceColumn,
+                    values: [],
+                    identity: [],
+                    objects: undefined,
+                });
+            }
 
             // Matrix shape for Play:
             //
@@ -562,6 +576,18 @@ module powerbi.visuals {
             // Play2 | Category1 | values  | values
             //       | Category2 | values  | values
             // ...
+            // Or, with drilldown / expand on Category (e.g. expand Country -> Region):
+            //                             Series1 | Series2 | ...
+            //                           --------- --------  
+            // Play1 | Country1 | Region1 | values  | values
+            //       |          | Region2 | values  | values
+            //       | Country2 | Region3 | values  | values
+            //       |          | Region4 | values  | values
+            //       | ...
+            // Play2 | Country1 | Region1 | values  | values
+            //       |          | Region2 | values  | values
+            //       | Country2 | Region3 | values  | values
+            //       |          | Region4 | values  | values
 
             // we are guaranteed at least one row (it will be the Play field)
             let hasRowChildren = !_.isEmpty(matrix.rows.root.children);
@@ -591,26 +617,25 @@ module powerbi.visuals {
                     }
                 }
 
-                let categoryFrameRootNode = matrix.rows.root.children[frame];
-                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, (leafNode, leafNodeIndex) => {
-                    debug.assert(leafNodeIndex === 0, 'expecting only one leafNode under categoryFrameRootNode in this case');
-                    for (var i = 0, len = node.children.length; i < len; i++) {
-                        for (let j = 0; j < columnLength; j++) {
-                            categorical.values[i * columnLength + j].values.push(leafNode.values[i * columnLength + j].value);
-                        }
+                // Copying the values from matrix intersection to the categorical values columns...
+                // Given that this is the case without category levels, the matrix intersection values are stored in playFrameNode.values
+                let playFrameNode = matrix.rows.root.children[frame];
+                let matrixIntersectionValues = playFrameNode.values;
+                for (var i = 0, len = node.children.length; i < len; i++) {
+                    for (let j = 0; j < columnLength; j++) {
+                        categorical.values[i * columnLength + j].values.push(matrixIntersectionValues[i * columnLength + j].value);
                     }
-                });
+                }
             }
             else if (hasSeries && hasRowChildren) {
                 // series and categories
-                let categoryFrameRootNode = matrix.rows.root.children[frame];
+                let playFrameNode = matrix.rows.root.children[frame];
                 
                 // create the categories first
-                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
-                    category.identity.push(leafNode.identity);
-                    category.values.push(leafNode.value);
+                DataViewMatrixUtils.forEachLeafNode(playFrameNode.children, (categoryGroupLeafNode, index, categoryHierarchicalGroupNodes) => {
+                    addMatrixHierarchicalGroupToCategories(categoryHierarchicalGroupNodes, categories);
                 });
-                categorical.categories.push(category);
+                categorical.categories = categories;
 
                 // now add the series info
                 categorical.values.source = matrix.columns.levels[0].sources[0];
@@ -623,7 +648,7 @@ module powerbi.visuals {
                             // each of these is a "series"
                             nodeQueue.push(columnNode.children[j]);
                         }
-                    } else if (columnNode.children && categoryFrameRootNode.children) {
+                    } else if (columnNode.children && playFrameNode.children) {
                         // Processing a single series under here, push all the value sources for every series.
                         var columnLength = columnNode.children.length;
                         for (let j = 0; j < columnLength; j++) {
@@ -635,7 +660,9 @@ module powerbi.visuals {
                             };
                             categorical.values.push(dataViewColumn);
                         }
-                        DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
+
+                        // Copying the values from matrix intersection to the categorical values columns...
+                        DataViewMatrixUtils.forEachLeafNode(playFrameNode.children, leafNode => {
                             for (let j = 0; j < columnLength; j++) {
                                 categorical.values[seriesIndex * columnLength + j].values.push(leafNode.values[seriesIndex * columnLength + j].value);
                             }
@@ -652,7 +679,7 @@ module powerbi.visuals {
             }
             else if (hasPlayAndCategory) {
                 // no series, just play and category
-                let categoryFrameRootNode = matrix.rows.root.children[frame];
+                let playFrameNode = matrix.rows.root.children[frame];
                 let measureLength = matrix.valueSources.length;
                 for (let j = 0; j < measureLength; j++) {
                     let dataViewColumn: DataViewValueColumn = {
@@ -663,19 +690,52 @@ module powerbi.visuals {
                     categorical.values.push(dataViewColumn);
                 }
 
-                DataViewMatrixUtils.forEachLeafNode(categoryFrameRootNode, leafNode => {
-                    category.identity.push(leafNode.identity);
-                    category.values.push(leafNode.value);
+                DataViewMatrixUtils.forEachLeafNode(playFrameNode.children, (categoryGroupLeafNode, index, categoryHierarchicalGroupNodes) => {
+                    addMatrixHierarchicalGroupToCategories(categoryHierarchicalGroupNodes, categories);
 
+                    // Copying the values from matrix intersection to the categorical values columns...
                     for (let j = 0; j < measureLength; j++) {
-                        categorical.values[j].values.push(leafNode.values[j].value);
+                        categorical.values[j].values.push(categoryGroupLeafNode.values[j].value);
                     }
                 });
 
-                categorical.categories.push(category);
+                categorical.categories = categories;
             }
 
-            return categorical;
+            // the visual code today expects only 1 category column, hence apply DataViewConcatenateCategoricalColumns
+            return DataViewConcatenateCategoricalColumns.applyToPlayChartCategorical(sourceDataView.metadata, scatterChartCapabilities.objects, 'Category', categorical);
+        }
+
+        function addMatrixHierarchicalGroupToCategories(sourceCategoryHierarchicalGroupNodes: DataViewMatrixNode[], destinationCategories: DataViewCategoryColumn[]): void {
+            debug.assertNonEmpty(sourceCategoryHierarchicalGroupNodes, 'sourceCategoryHierarchicalGroupNodes');
+            debug.assertNonEmpty(destinationCategories, 'destinationCategories');
+            debug.assert(sourceCategoryHierarchicalGroupNodes.length === destinationCategories.length, 'pre-condition: there should be one category column per matrix row level for Category.');
+
+            // Note: Before the Categorical concatenation logic got added to this playChart logic, the code did NOT populate
+            // the ***DataViewCategoryColumn.identityFields*** property, and the playChart visual code does not seem to need it.
+            // If we do want to populate that property, we might want to do reuse data.ISQExpr[] across nodes as much as possible 
+            // because all the child nodes under a given parent will have the exact same identityFields value, and a lot of 
+            // DataViewCategory objects can get created for a given playChart.
+
+            let identity: DataViewScopeIdentity = sourceCategoryHierarchicalGroupNodes[0].identity;
+
+            if (sourceCategoryHierarchicalGroupNodes.length > 1) {
+                // if the hierarchical group has more than 1 level, create a composite identity from the nodes
+                let identityExpr = <SQExpr>identity.expr;
+                for (let i = 1, ilen = sourceCategoryHierarchicalGroupNodes.length; i < ilen; i++) {
+                    let identityExprToAdd = <SQExpr>sourceCategoryHierarchicalGroupNodes[i].identity.expr;
+                    identityExpr = SQExprBuilder.and(identityExpr, identityExprToAdd);
+                }
+                identity = createDataViewScopeIdentity(identityExpr);
+            }
+
+            // add the Category value of each matrix node into its respective category column
+            for (let j = 0, jlen = destinationCategories.length; j < jlen; j++) {
+                destinationCategories[j].identity.push(identity);
+
+                let node = sourceCategoryHierarchicalGroupNodes[j];
+                destinationCategories[j].values.push(node.value);
+            }
         }
 
         function getObjectProperties(dataViewMetadata: DataViewMetadata, dataLabelsSettings?: PointDataLabelsSettings): PlayObjectProperties {
@@ -687,13 +747,6 @@ module powerbi.visuals {
                 objectProperties.currentFrameIndex = DataViewObjects.getValue(objects, scatterChartProps.currentFrameIndex.index, null);
             }
             return objectProperties;
-        }
-
-        function buildDataViewForFrame(metadata: DataViewMetadata, categorical: DataViewCategorical): DataView {
-            return {
-                metadata: metadata,
-                categorical: categorical,
-            };
         }
 
         export function converter<T extends PlayableChartData>(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T> {
@@ -729,16 +782,16 @@ module powerbi.visuals {
                     let key = matrixRows.root.children[i];
                     let frameLabel = keyFormatter.format(key.value);
                     frameKeys.push(frameLabel);
-
-                    let dataViewCategorical = convertMatrixToCategorical(dataView.matrix, i);
+                    
+                    let dataViewCategorical = convertMatrixToCategorical(dataView, i);
                     let frameInfo = { label: frameLabel, column: keySourceColumn };
-                    convertedData = visualConverter(buildDataViewForFrame(dataView.metadata, dataViewCategorical), frameInfo);
+                    convertedData = visualConverter(dataViewCategorical, frameInfo);
                     allViewModels.push(convertedData);
                 }
             }
             else {
-                let dataViewCategorical = convertMatrixToCategorical(dataView.matrix, 0);
-                convertedData = visualConverter(buildDataViewForFrame(dataView.metadata, dataViewCategorical));
+                let dataViewCategorical = convertMatrixToCategorical(dataView, 0);
+                convertedData = visualConverter(dataViewCategorical);
                 allViewModels.push(convertedData);
             }
             

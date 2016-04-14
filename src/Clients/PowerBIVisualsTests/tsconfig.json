@@ -12,11 +12,13 @@
         "common.ts",
         "mocks.ts",
         "helpers/helpers.ts",
+        "helpers/kpiHelper.ts",
         "helpers/performanceTestsHelpers.ts",
+        "helpers/referenceLineHelper.ts",
         "helpers/slicerHelper.ts",
         "helpers/tableDataViewHelper.ts",
         "helpers/tablixHelper.ts",
-        "helpers/kpiHelper.ts",
+        "helpers/trendLineHelper.ts",
         "sqFieldDef.ts",
         "common/urlUtilsTests.ts",
         "common/colorTests.ts",
@@ -116,6 +118,7 @@
         "customVisuals/sampleDataViews/TimelineData.ts",
         "customVisuals/sampleDataViews/valueByAgeData.ts",
         "customVisuals/sampleDataViews/ProductSalesByDateData.ts",
+        "customVisuals/sampleDataViews/PulseChartData.ts",
 
         "customVisuals/VisualBuilderBase.ts",
         "customVisuals/asterPlotTests.ts",
@@ -134,6 +137,7 @@
         "customVisuals/timelineTests.ts",
         "customVisuals/ganttTests.ts",
         "customVisuals/chicletSlicerTests.ts",
-        "customVisuals/streamGraphTests.ts"
+        "customVisuals/streamGraphTests.ts",
+        "customVisuals/pulseChartTests.ts"
     ]
 }

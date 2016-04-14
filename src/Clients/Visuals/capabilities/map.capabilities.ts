@@ -187,7 +187,8 @@ module powerbi.visuals {
                         dataReductionAlgorithm: { top: {} }
                     }
                 },
-                rowCount: { preferred: { min: 2 } }
+                rowCount: { preferred: { min: 2 } },
+                dataVolume: 4,
             }
         }, {
                 conditions: [
@@ -212,7 +213,8 @@ module powerbi.visuals {
                             dataReductionAlgorithm: { top: {} }
                         }
                     },
-                    rowCount: { preferred: { min: 2 } }
+                    rowCount: { preferred: { min: 2 } },
+                    dataVolume: 4,
                 },
             }],
         sorting: {

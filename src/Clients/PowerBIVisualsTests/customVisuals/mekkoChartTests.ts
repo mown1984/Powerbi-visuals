@@ -26,24 +26,31 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.MekkoChart;
+    import MekkoChartData = sampleDataViews.MekkoChartData;
+    import MekkoColumnChart = powerbi.visuals.samples.MekkoColumnChart;
+    import MekkoColumnChartData = powerbi.visuals.samples.MekkoColumnChartData;
+    import DataColorPalette = powerbi.visuals.DataColorPalette;
+    import ColumnChartType = powerbi.visuals.ColumnChartType;
+    import ColumnChartSeries = powerbi.visuals.ColumnChartSeries;
 
     powerbitests.mocks.setLocale();
 
     describe("MekkoChart", () => {
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: MekkoChartBuilder;
-            let dataViews: powerbi.DataView[];
+            let visualBuilder: MekkoChartBuilder,
+                dataViews: powerbi.DataView[];
 
             beforeEach(() => {
                 visualBuilder = new MekkoChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.MekkoChartData().getDataView()];
+                dataViews = [new MekkoChartData().getDataView()];
             });
 
             it("main element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
@@ -62,6 +69,68 @@ module powerbitests.customVisuals {
                     }
                     done();
                 }, DefaultWaitForRender);
+            });
+        });
+
+        describe("MekkoColumnChartData", () => {
+            describe("converter", () => {
+                let dataView: powerbi.DataView,
+                    mekkoColumnChartData: MekkoColumnChartData,
+                    dataColorPalette: DataColorPalette;
+
+                beforeEach(() => {
+                    dataView = new MekkoChartData().getDataView();
+                    dataColorPalette = new DataColorPalette();
+
+                    mekkoColumnChartData = MekkoColumnChart.converter(
+                        dataView.categorical,
+                        dataColorPalette,
+                        true,
+                        false,
+                        false,
+                        dataView.metadata,
+                        ColumnChartType.hundredPercentStackedBar);
+                });
+
+                it("mekkoColumnChartData is defined", () => {
+                    expect(mekkoColumnChartData).toBeDefined();
+                    expect(mekkoColumnChartData).not.toBeNull();
+                });
+
+                describe("series", () => {
+                    let series: ColumnChartSeries[];
+
+                    beforeEach(() => {
+                        series = mekkoColumnChartData.series;
+                    });
+
+                    it("series are defined", () => {
+                        expect(series).toBeDefined();
+                        expect(series).not.toBeNull();
+                    });
+
+                    it("each element of series is defined", () => {
+                        series.map((columnChartSeries: ColumnChartSeries) => {
+                            expect(columnChartSeries).toBeDefined();
+                            expect(columnChartSeries).not.toBeNull();
+                        });
+                    });
+
+                    describe("identity", () => {
+                        it("identity is defined", () => {
+                            series.map((columnChartSeries: ColumnChartSeries) => {
+                                expect(columnChartSeries.identity).toBeDefined();
+                                expect(columnChartSeries.identity).not.toBeNull();
+                            });
+                        });
+
+                        it("identity has key", () => {
+                            series.map((columnChartSeries: ColumnChartSeries) => {
+                                expect(columnChartSeries.identity.getKey()).toBeDefined();
+                            });
+                        });
+                    });
+                });
             });
         });
     });

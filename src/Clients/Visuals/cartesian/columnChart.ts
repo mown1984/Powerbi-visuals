@@ -214,7 +214,7 @@ module powerbi.visuals {
         private options: CartesianVisualInitOptions;
         private lastInteractiveSelectedColumnIndex: number;
         private interactivityService: IInteractivityService;
-        private dataViewCat: DataViewCategorical;
+        private dataView: DataView;
         private categoryAxisType: string;
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
@@ -321,7 +321,7 @@ module powerbi.visuals {
         }
 
         public static converter(
-            dataView: DataViewCategorical,
+            dataView: DataView,
             colors: IDataColorPalette,
             is100PercentStacked: boolean = false,
             isScalar: boolean = false,
@@ -335,15 +335,15 @@ module powerbi.visuals {
             let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataViewMetadata);
             let valueAxisProperties = CartesianHelper.getValueAxisProperties(dataViewMetadata);
             isScalar = CartesianHelper.isScalar(isScalar, xAxisCardProperties);
-            dataView = ColumnUtil.applyUserMinMax(isScalar, dataView, xAxisCardProperties);
+            let dataViewCat = ColumnUtil.applyUserMinMax(isScalar, dataView.categorical, xAxisCardProperties);
 
             let converterStrategy = new ColumnChartConverterHelper(dataView);
 
-            let categoryInfo = converterHelper.getPivotedCategories(dataView, columnChartProps.general.formatString);
+            let categoryInfo = converterHelper.getPivotedCategories(dataViewCat, columnChartProps.general.formatString);
             let categories = categoryInfo.categories,
                 categoryFormatter: IValueFormatter = categoryInfo.categoryFormatter,
                 categoryIdentities: DataViewScopeIdentity[] = categoryInfo.categoryIdentities,
-                categoryMetadata: DataViewMetadataColumn = dataView.categories && dataView.categories.length > 0 ? dataView.categories[0].source : undefined;
+                categoryMetadata: DataViewMetadataColumn = dataViewCat && dataViewCat.categories && dataViewCat.categories.length > 0 ? dataViewCat.categories[0].source : undefined;
 
             let labelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultColumnLabelSettings(is100PercentStacked || EnumExtensions.hasFlag(chartType, flagStacked));
             let defaultLegendLabelColor = LegendData.DefaultLegendLabelFillColor;
@@ -429,7 +429,7 @@ module powerbi.visuals {
         }
 
         private static createDataPoints(
-            dataViewCat: DataViewCategorical,
+            dataView: DataView,
             categories: any[],
             categoryIdentities: DataViewScopeIdentity[],
             legend: LegendDataPoint[],
@@ -444,6 +444,7 @@ module powerbi.visuals {
             chartType?: ColumnChartType,
             categoryMetadata?: DataViewMetadataColumn,
             tooltipsEnabled?: boolean): { series: ColumnChartSeries[]; hasHighlights: boolean; hasDynamicSeries: boolean; isMultiMeasure: boolean } {
+            let dataViewCat = dataView.categorical;
 
             let grouped = dataViewCat && dataViewCat.values ? dataViewCat.values.grouped() : undefined;
             let categoryCount = categories.length;
@@ -528,6 +529,7 @@ module powerbi.visuals {
                 let metadata = dataViewCat.values[seriesIndex].source;
                 let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(dataViewCat);
                 let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(dataViewCat);
+                let valueMeasureIndex: number = DataRoleHelper.getMeasureIndexOfRole(grouped, "Y");
 
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     if (seriesIndex === 0) {
@@ -584,7 +586,7 @@ module powerbi.visuals {
                         position = baseValuesPos[categoryIndex];
                     }
 
-                    let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[0] : null;
+                    let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[valueMeasureIndex] : null;
                     let category = dataViewCat.categories && dataViewCat.categories.length > 0 ? dataViewCat.categories[0] : null;
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, categoryIndex)
@@ -775,18 +777,17 @@ module powerbi.visuals {
             };
 
             if (dataViews.length > 0) {
-                let dataView = dataViews[0];
+                let dataView = this.dataView = dataViews[0];
 
                 if (dataView && dataView.categorical) {
-                    let dataViewCat = this.dataViewCat = dataView.categorical;
-                    let dvCategories = dataViewCat.categories;
+                    let dvCategories = dataView.categorical.categories;
                     let categoryMetadata = (dvCategories && dvCategories.length > 0)
                         ? dvCategories[0].source
                         : null;
                     let categoryType = AxisHelper.getCategoryValueType(categoryMetadata);
 
                     this.data = ColumnChart.converter(
-                        dataViewCat,
+                        dataView,
                         this.cartesianVisualHost.getSharedColors(),
                         is100PctStacked,
                         CartesianChart.getIsScalar(dataView.metadata ? dataView.metadata.objects : null, columnChartProps.categoryAxis.axisType, categoryType),
@@ -853,7 +854,7 @@ module powerbi.visuals {
         public enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, options: EnumerateVisualObjectInstancesOptions): void {
             switch (options.objectName) {
                 case 'dataPoint':
-                    if (!GradientUtils.hasGradientRole(this.dataViewCat))
+                    if (!GradientUtils.hasGradientRole(this.dataView.categorical))
                         this.enumerateDataPoints(enumeration);
                     break;
                 case 'labels':
@@ -1139,12 +1140,12 @@ module powerbi.visuals {
             let category = data.categories && data.categories[columnIndex];
             let allSeries = data.series;
             let dataPoints = data.legendData && data.legendData.dataPoints;
-            let converterStrategy = new ColumnChartConverterHelper(this.dataViewCat);
+            let converterStrategy = new ColumnChartConverterHelper(this.dataView);
 
             for (let i = 0, len = allSeries.length; i < len; i++) {
                 let measure = converterStrategy.getValueBySeriesAndCategory(i, columnIndex);
                 let valueMetadata = data.valuesMetadata[i];
-                let formattedLabel = converterHelper.getFormattedLegendLabel(valueMetadata, this.dataViewCat.values, formatStringProp);
+                let formattedLabel = converterHelper.getFormattedLegendLabel(valueMetadata, this.dataView.categorical.values, formatStringProp);
                 let dataPointColor: string;
                 if (allSeries.length === 1) {
                     let series = allSeries[0];
@@ -1248,13 +1249,22 @@ module powerbi.visuals {
             }
             return NewDataLabelUtils.defaultLabelColor;
         }
+
+        public supportsTrendLine(): boolean {
+            if (!this.xAxisProperties)
+                return false;
+
+            return !EnumExtensions.hasFlag(this.chartType, flagBar) && !AxisHelper.isOrdinalScale(this.xAxisProperties.scale);
+        }
     }
 
     class ColumnChartConverterHelper implements IColumnChartConverterStrategy {
         private dataView: DataViewCategorical;
+        private reader: powerbi.data.IDataViewCategoricalReader;
 
-        constructor(dataView: DataViewCategorical) {
-            this.dataView = dataView;
+        constructor(dataView: DataView) {
+            this.dataView = dataView && dataView.categorical;
+            this.reader = powerbi.data.createIDataViewCategoricalReader(dataView);
         }
 
         public getLegend(colors: IDataColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo {
@@ -1330,7 +1340,13 @@ module powerbi.visuals {
         }
 
         public getValueBySeriesAndCategory(series: number, category: number): number {
-            return this.dataView.values[series].values[category];
+            if (this.reader.hasDynamicSeries()) {
+                // Combo chart dynamic series is broken when line and column have the same measure, so for now,
+                //   work around this by using the grouped directly instead of relying on the reader and roles
+                let grouped = this.dataView.values.grouped();
+                return grouped[series].values[0].values[category];
+            }
+            return this.reader.getValue('Y', category, series);
         }
 
         public getMeasureNameByIndex(index: number): string {

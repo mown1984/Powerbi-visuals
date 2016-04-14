@@ -77,12 +77,13 @@ module powerbitests {
                 adapter.update({
                     dataViews: [],
                     viewport: viewport,
-                    type: powerbi.VisualUpdateType.Resize
+                    type: powerbi.VisualUpdateType.Resize,
+                    resizeMode: powerbi.ResizeMode.Resizing,
                 });
                 expect(spyViewmode.calls.count()).toBe(0);
                 expect(spyData.calls.count()).toBe(0);
                 expect(spyResize.calls.count()).toBe(1);
-                expect(adapter.onResizing).toHaveBeenCalledWith(viewport);
+                expect(adapter.onResizing).toHaveBeenCalledWith(viewport, powerbi.ResizeMode.Resizing);
             });
 
             it("ViewMode Update should trigger onViewModeChanged", () => {
@@ -107,13 +108,14 @@ module powerbitests {
                 adapter.update({
                     dataViews: [],
                     viewport: viewport,
-                    type: powerbi.VisualUpdateType.Resize
+                    type: powerbi.VisualUpdateType.Resize,
+                    resizeMode: powerbi.ResizeMode.Resized,
                 });
                 expect(spyViewmode.calls.count()).toBe(0);
                 expect(spyData.calls.count()).toBe(0);
                 expect(spyUpdate.calls.count()).toBe(0);
                 expect(spyResize.calls.count()).toBe(1);
-                expect(adapter.onResizing).toHaveBeenCalledWith(viewport);
+                expect(adapter.onResizing).toHaveBeenCalledWith(viewport, powerbi.ResizeMode.Resized);
             });
         });
 

@@ -84,7 +84,7 @@ module powerbi.data {
         additionalProjections?: AdditionalQueryProjection[];
         highlightFilter?: SemanticFilter;
         restartToken?: RestartToken;
-        viewport?: IViewport;
+        dataWindow?: QueryGeneratorDataWindow;
     }
 
     export interface AdditionalQueryProjection {
@@ -108,6 +108,10 @@ module powerbi.data {
         restartToken?: RestartToken;
         error?: IClientError;
         warning?: IClientWarning;
+    }
+
+    export interface QueryGeneratorDataWindow {
+        // This interface is intentionally empty, as plugins define their own data structure.
     }
 
     export interface RestartToken {

@@ -178,4 +178,17 @@ module powerbitests {
         });
     });
 
+    describe("UrlUtils.getBase64ContentFromDataUri tests", () => {
+        it("Valid URI", () => {
+            expect(UrlUtils.getBase64ContentFromDataUri('data:image/jpeg;base64,12345=')).toEqual('12345=');
+        });
+
+        it("Non data URI", () => {
+            expect(() => UrlUtils.getBase64ContentFromDataUri('not a data uri')).toThrowError();
+        });
+
+        it("No base 64 content", () => {
+            expect(() => UrlUtils.getBase64ContentFromDataUri('data:image/png')).toThrowError();
+        });
+    });
 }

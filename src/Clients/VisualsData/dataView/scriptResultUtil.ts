@@ -28,17 +28,17 @@ module powerbi {
     import ArrayNamedItems = jsCommon.ArrayNamedItems;
     import StringExtensions = jsCommon.StringExtensions;
     import FederatedConceptualSchema = powerbi.data.FederatedConceptualSchema;
-    import DefaultSQExprVisitor = powerbi.data.DefaultSQExprVisitor;
-    import SQArithmeticExpr = powerbi.data.SQArithmeticExpr;
-    import SQEntityExpr = powerbi.data.SQEntityExpr;
-    import SQExprConverter = powerbi.data.SQExprConverter;
-    import SQAggregationExpr = powerbi.data.SQAggregationExpr;
-    import SQColumnRefExpr = powerbi.data.SQColumnRefExpr;
-    import SQMeasureRefExpr = powerbi.data.SQMeasureRefExpr;
-    import SQPropRefExpr = powerbi.data.SQPropRefExpr;
-    import SQHierarchyLevelExpr = powerbi.data.SQHierarchyLevelExpr;
-    import SQHierarchyExpr = powerbi.data.SQHierarchyExpr;
+    import FieldExprColumnPattern = powerbi.data.FieldExprColumnPattern;
+    import FieldExprColumnAggrPattern = powerbi.data.FieldExprColumnAggrPattern;
+    import FieldExprColumnHierarchyLevelVariationPattern = powerbi.data.FieldExprColumnHierarchyLevelVariationPattern;
+    import FieldExprEntityPattern = powerbi.data.FieldExprEntityPattern;
+    import FieldExprEntityAggrPattern = powerbi.data.FieldExprEntityAggrPattern;
+    import FieldExprHierarchyPattern = powerbi.data.FieldExprHierarchyPattern;
+    import FieldExprHierarchyLevelPattern = powerbi.data.FieldExprHierarchyLevelPattern;
+    import FieldExprHierarchyLevelAggrPattern = powerbi.data.FieldExprHierarchyLevelAggrPattern;
+    import FieldExprMeasurePattern = powerbi.data.FieldExprMeasurePattern;
     import FieldExprPattern = powerbi.data.FieldExprPattern;
+    import IFieldExprPatternVisitor = powerbi.data.IFieldExprPatternVisitor;
     import QueryProjectionsByRole = data.QueryProjectionsByRole;
 
     export interface ScriptResult {
@@ -102,7 +102,7 @@ module powerbi {
                         if (select) {
                             let scriptInputColumn = <data.ScriptInputColumn>{
                                 QueryName: select.name,
-                                Name: select.expr.accept(new ScriptInputColumnNameVisitor(schema))
+                                Name: FieldExprPattern.visit(select.expr, new ScriptInputColumnNameVisitor(schema))
                             };
 
                             scriptInputColumns.push(scriptInputColumn);
@@ -126,116 +126,85 @@ module powerbi {
             return scriptInput;
         }
 
-        class ScriptInputColumnNameVisitor extends DefaultSQExprVisitor<string>
+        class ScriptInputColumnNameVisitor implements IFieldExprPatternVisitor<string>
         {
             private federatedSchema: FederatedConceptualSchema;
 
             constructor(federatedSchema: FederatedConceptualSchema) {
-                super();
                 this.federatedSchema = federatedSchema;
             }
 
-            public visitEntity(expr: SQEntityExpr): string {
-                return expr.entity;
+            public visitColumn(column: FieldExprColumnPattern): string {
+                return ScriptInputColumnNameVisitor.getNameForProperty(column, this.federatedSchema);
             }
 
-            public visitColumnRef(expr: SQColumnRefExpr): string {
-                return ScriptInputColumnNameVisitor.getNameForProperty(expr, this.federatedSchema);
+            public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): string {
+                return ScriptInputColumnNameVisitor.getNameForProperty(columnAggr, this.federatedSchema);
             }
 
-            public visitMeasureRef(expr: SQMeasureRefExpr): string {
-                return ScriptInputColumnNameVisitor.getNameForProperty(expr, this.federatedSchema);
+            public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): string {
+                return ScriptInputColumnNameVisitor.getVariationLevelName(columnHierarchyLevelVariation, this.federatedSchema);
             }
 
-            public visitAggr(expr: SQAggregationExpr): string {
-                return ScriptInputColumnNameVisitor.getNameForAggregate(expr, this.federatedSchema);
+            public visitEntity(entity: FieldExprEntityPattern): string {
+                return entity.entity;
             }
 
-            public visitHierarchy(expr: SQHierarchyExpr): string {
-                return ScriptInputColumnNameVisitor.getNameForHierarchy(expr, this.federatedSchema);
+            public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): string {
+                return entityAggr.entity;
             }
 
-            public visitHierarchyLevel(expr: SQHierarchyLevelExpr): string {
-                return ScriptInputColumnNameVisitor.getNameForHierarchyLevel(expr, this.federatedSchema);
+            public visitHierarchy(hierarchy: FieldExprHierarchyPattern): string {
+                return ScriptInputColumnNameVisitor.getNameForHierarchy(hierarchy, this.federatedSchema);
             }
 
-            public visitArithmetic(expr: SQArithmeticExpr): string {
-                return powerbi.data.getArithmeticOperatorName(expr.operator) + '__' + expr.left.accept(this) + '_' +  expr.right.accept(this) + '__';
+            public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): string {
+                /*Hierarchy levels are not supported yet*/
+                return;
             }
 
-            public static getNameForProperty(expr: SQPropRefExpr, federatedSchema: FederatedConceptualSchema): string {
-                debug.assertValue(expr, 'expr');
+            public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): string {
+                return ScriptInputColumnNameVisitor.getNameForProperty(hierarchyLevelAggr, this.federatedSchema);
+            }
 
-                let fieldExpr = SQExprConverter.asFieldPattern(expr);
-                let fieldExprItem = fieldExpr.column || fieldExpr.measure;
+            public visitMeasure(measure: FieldExprMeasurePattern): string {
+                return ScriptInputColumnNameVisitor.getNameForProperty(measure, this.federatedSchema);
+            }
 
-                let schema = federatedSchema.schema(fieldExprItem.schema),
-                    property = schema.findProperty(fieldExprItem.entity, fieldExprItem.name);
+            private static getNameForHierarchy(pattern: FieldExprHierarchyPattern, federatedScheam: FederatedConceptualSchema): string {
+                debug.assertValue(pattern, 'pattern');
+
+                let schema = federatedScheam.schema(pattern.schema),
+                    hierarchy = schema.findHierarchy(pattern.entity, pattern.name);
+
+                if (hierarchy)
+                    return hierarchy.name;
+            }
+
+            private static getNameForProperty(pattern: data.FieldExprPropertyPattern, federatedSchema: FederatedConceptualSchema): string {
+                debug.assertValue(pattern, 'pattern');
+
+                let schema = federatedSchema.schema(pattern.schema),
+                    property = schema.findProperty(pattern.entity, pattern.name);
 
                 if (property)
                     return property.name;
             }
 
-            public static getNameForAggregate(expr: SQAggregationExpr, federatedSchema: FederatedConceptualSchema): string {
-                debug.assertValue(expr, 'expr');
+            private static getVariationLevelName(pattern: FieldExprColumnHierarchyLevelVariationPattern, federatedSchema: FederatedConceptualSchema): string {
+                debug.assertValue(pattern, 'pattern');
 
-                let field = SQExprConverter.asFieldPattern(expr);
-                let fieldAggregate = field.columnAggr || field.entityAggr;
-                let entity = federatedSchema
-                    .schema(fieldAggregate.schema)
-                    .entities
-                    .withName(fieldAggregate.entity);
-
-                if (!entity)
+                let source = pattern.source;
+                let prop = federatedSchema.schema(source.schema).findProperty(source.entity, source.name);
+                if (!prop)
                     return;
 
-                let backingProperty = entity.properties.withName(FieldExprPattern.getFieldExprName(field));
-
-                return backingProperty.name;
-            }
-
-            public static getNameForHierarchy(expr: SQHierarchyExpr, federatedScheam: FederatedConceptualSchema): string {
-                let fieldExpr = SQExprConverter.asFieldPattern(expr);
-                let fieldExprItem = fieldExpr.hierarchy;
-
-                if (fieldExprItem) {
-                    let schema = federatedScheam.schema(fieldExprItem.schema),
-                        hierarchy = schema.findHierarchy(fieldExprItem.entity, fieldExprItem.name);
-
-                    if (hierarchy)
-                        return hierarchy.name;
-                }
-            }
-
-            public static getNameForHierarchyLevel(expr: SQHierarchyLevelExpr, federatedScheam: FederatedConceptualSchema): string {
-                debug.assertValue(expr, 'expr');
-
-                let field = SQExprConverter.asFieldPattern(expr);
-                if (field.columnHierarchyLevelVariation) {
-                    return ScriptInputColumnNameVisitor.getVariationLevelName(expr, federatedScheam);
-                }
-
-                /*Hierarchies are not supported yet*/
-            }
-
-            private static getVariationLevelName(expr: SQHierarchyLevelExpr, federatedSchema: FederatedConceptualSchema): string {
-                debug.assertValue(expr, 'expr');
-
-                let field = SQExprConverter.asFieldPattern(expr);
-                let fieldEntity = FieldExprPattern.toFieldExprEntityItemPattern(field);
-
-                if (field.columnHierarchyLevelVariation) {
-                    let prop = federatedSchema.schema(fieldEntity.schema).findProperty(fieldEntity.entity, field.columnHierarchyLevelVariation.source.name);
-                    if (!prop)
-                        return;
-
-                    let variations = prop.column.variations;
-                    for (let variation of variations)
-                        if (variation.name === field.columnHierarchyLevelVariation.variationName)
-                            for (let level of variation.defaultHierarchy.levels)
-                                if (level.name === field.columnHierarchyLevelVariation.level.level)
-                                    return level.column.name;
-                }
+                let variations = prop.column.variations;
+                for (let variation of variations)
+                    if (variation.name === pattern.variationName)
+                        for (let level of variation.defaultHierarchy.levels)
+                            if (level.name === pattern.level.level)
+                                return level.column.name;
             }
         }
     }

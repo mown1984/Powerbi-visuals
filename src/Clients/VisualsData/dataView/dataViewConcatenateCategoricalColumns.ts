@@ -25,8 +25,10 @@
  */
 
 module powerbi.data {
+    import inherit = Prototype.inherit;
     import inheritSingle = Prototype.inheritSingle;
     import RoleKindByQueryRef = DataViewAnalysis.RoleKindByQueryRef;
+    import valueFormatter = powerbi.visuals.valueFormatter;
 
     export module DataViewConcatenateCategoricalColumns {
 
@@ -44,6 +46,7 @@ module powerbi.data {
 
         export function detectAndApply(
             dataView: DataView,
+            objectDescriptors: DataViewObjectDescriptors,
             roleMappings: DataViewMapping[],
             projectionOrdering: DataViewProjectionOrdering,
             selects: DataViewSelectTransform[],
@@ -68,9 +71,38 @@ module powerbi.data {
                                 .map((activeItemInfo: DataViewProjectionActiveItemInfo) => activeItemInfo.queryRef)
                                 .value();
 
-                        result = applyConcatenation(dataView, concatenationSource.roleName, columnsSortedByProjectionOrdering, activeItemsToIgnoreInConcatenation);
+                        result = applyConcatenation(dataView, objectDescriptors, concatenationSource.roleName, columnsSortedByProjectionOrdering, activeItemsToIgnoreInConcatenation);
                     }
                 }
+            }
+
+            return result;
+        }
+
+        /** For applying concatenation to the DataViewCategorical that is the data for one of the frames in a play chart. */
+        export function applyToPlayChartCategorical(
+            metadata: DataViewMetadata,
+            objectDescriptors: DataViewObjectDescriptors,
+            categoryRoleName: string,
+            categorical: DataViewCategorical): DataView {
+            debug.assertValue(metadata, 'metadata');
+            debug.assertAnyValue(objectDescriptors, 'objectDescriptors');
+            debug.assertValue(categorical, 'categorical');
+
+            let result: DataView;
+            if (!_.isEmpty(categorical.categories) && categorical.categories.length >= 2) {
+                // In PlayChart, the code converts the Visual DataView with a matrix into multiple Visual DataViews, each with a categorical.
+                // metadata and metadata.columns could already be inherited objects as they come from the Visual DataView with a matrix.
+                // To guarantee that this method does not have any side effect on prototypeMetadata (which might already be an inherited obj),
+                // use inherit() rather than inheritSingle() here.
+                let transformingColumns = inherit(metadata.columns);
+                let transformingMetadata = inherit(metadata, m => { m.columns = transformingColumns; });
+
+                let transformingDataView = { metadata: transformingMetadata, categorical: categorical };
+                result = applyConcatenation(transformingDataView, objectDescriptors, categoryRoleName, categorical.categories, []);
+            }
+            else {
+                result = { metadata: metadata, categorical: categorical };
             }
 
             return result;
@@ -155,14 +187,17 @@ module powerbi.data {
             return roleNames;
         }
 
-        function applyConcatenation(dataView: DataView, roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): DataView {
+        function applyConcatenation(dataView: DataView, objectDescriptors: DataViewObjectDescriptors, roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): DataView {
             debug.assertValue(dataView, 'dataView');
+            debug.assertAnyValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(roleName, 'roleName');
             debug.assert(columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2, 'columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2');
 
-            let concatenatedValues: string[] = concatenateValues(columnsSortedByProjectionOrdering, queryRefsToIgnore);
+            let formatStringPropId: DataViewObjectPropertyIdentifier = DataViewObjectDescriptors.findFormatString(objectDescriptors);
+            let concatenatedValues: string[] = concatenateValues(columnsSortedByProjectionOrdering, queryRefsToIgnore, formatStringPropId);
 
-            let concatenatedColumnMetadata: DataViewMetadataColumn = createConcatenatedColumnMetadata(roleName, columnsSortedByProjectionOrdering, queryRefsToIgnore);
+            let columnsSourceSortedByProjectionOrdering = _.map(columnsSortedByProjectionOrdering, categoryColumn => categoryColumn.source);
+            let concatenatedColumnMetadata: DataViewMetadataColumn = createConcatenatedColumnMetadata(roleName, columnsSourceSortedByProjectionOrdering, queryRefsToIgnore);
             let transformedDataView = inheritSingle(dataView);
             addToMetadata(transformedDataView, concatenatedColumnMetadata);
 
@@ -183,20 +218,22 @@ module powerbi.data {
             return transformedDataView;
         }
 
-        function concatenateValues(columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): string[] {
+        function concatenateValues(columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[], formatStringPropId: DataViewObjectPropertyIdentifier): string[] {
             debug.assertValue(columnsSortedByProjectionOrdering, 'columnsSortedByProjectionOrdering');
+            debug.assertAnyValue(queryRefsToIgnore, 'queryRefsToIgnore');
+            debug.assertAnyValue(formatStringPropId, 'formatStringPropId');
 
             let concatenatedValues: string[] = [];
 
             // concatenate the values in dataViewCategorical.categories[0..length-1].values[j], and store it in combinedValues[j]
             for (let categoryColumn of columnsSortedByProjectionOrdering) {
+                let formatString = valueFormatter.getFormatString(categoryColumn.source, formatStringPropId);
+
                 for (let i = 0, len = categoryColumn.values.length; i < len; i++) {
-                    // TODO VSTS 6842107: need to clean up this value concatenation logic
-                    // This code does not have access to valueFormatter module.  So first, move valueFormatter.getFormatString(...)
-                    // and/or valueFormatter.formatValueColumn(...) to somewhere near DataViewObjects.ts, and then use it from here.
                     if (!_.contains(queryRefsToIgnore, categoryColumn.source.queryName)) {
-                        let valueToAppend = categoryColumn.values && categoryColumn.values[i];
-                        concatenatedValues[i] = (concatenatedValues[i] === undefined) ? (valueToAppend + '') : (valueToAppend + ' ' + concatenatedValues[i]);
+                        let value = categoryColumn.values && categoryColumn.values[i];
+                        let formattedValue = valueFormatter.format(value, formatString);
+                        concatenatedValues[i] = (concatenatedValues[i] === undefined) ? formattedValue : (formattedValue + ' ' + concatenatedValues[i]);
                     }
                 }
             }
@@ -242,29 +279,16 @@ module powerbi.data {
         /**
          * Creates the column metadata that will back the column with the concatenated values. 
          */
-        function createConcatenatedColumnMetadata(roleName: string, columnsSortedByProjectionOrdering: DataViewCategoryColumn[], queryRefsToIgnore: string[]): DataViewMetadataColumn {
+        function createConcatenatedColumnMetadata(roleName: string, sourceColumnsSortedByProjectionOrdering: DataViewMetadataColumn[], queryRefsToIgnore?: string[]): DataViewMetadataColumn {
             debug.assertValue(roleName, 'roleName');
-            debug.assertNonEmpty(columnsSortedByProjectionOrdering, 'columnsSortedByProjectionOrdering');
+            debug.assertNonEmpty(sourceColumnsSortedByProjectionOrdering, 'sourceColumnsSortedByProjectionOrdering');
+            debug.assert(_.chain(sourceColumnsSortedByProjectionOrdering).map(c => c.isMeasure).uniq().value().length === 1, 'pre-condition: caller code should not attempt to combine a mix of measure columns and non-measure columns');
 
             let concatenatedDisplayName: string;
 
-            let columnForCurrentDrillLevel = _.last(columnsSortedByProjectionOrdering);
-
-            // By the end of the for-loop, consistentIsMeasure will be:
-            // - true if _.every(categoryColumn, c => c.source.isMeasure === true), or else
-            // - false if _.every(categoryColumn, c => c.source.isMeasure === false), or else
-            // - undefined.
-            let consistentIsMeasure: boolean = columnForCurrentDrillLevel.source.isMeasure;
-
-            for (let categoryColumn of columnsSortedByProjectionOrdering) {
-                let columnSource: DataViewMetadataColumn = categoryColumn.source;
-
-                if (!_.contains(queryRefsToIgnore, categoryColumn.source.queryName)) {
+            for (let columnSource of sourceColumnsSortedByProjectionOrdering) {
+                if (!_.contains(queryRefsToIgnore, columnSource.queryName)) {
                     concatenatedDisplayName = (concatenatedDisplayName == null) ? columnSource.displayName : (columnSource.displayName + ' ' + concatenatedDisplayName);
-
-                    if (consistentIsMeasure !== columnSource.isMeasure) {
-                        consistentIsMeasure = undefined;
-                    }
                 }
             }
 
@@ -277,14 +301,15 @@ module powerbi.data {
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
             };
 
-            if (consistentIsMeasure !== undefined) {
-                newColumnMetadata.isMeasure = consistentIsMeasure;
+            let columnSourceForCurrentDrillLevel = _.last(sourceColumnsSortedByProjectionOrdering);
+            if (columnSourceForCurrentDrillLevel.isMeasure !== undefined) {
+                newColumnMetadata.isMeasure = columnSourceForCurrentDrillLevel.isMeasure;
             }
 
             // TODO VSTS 6842046: Investigate whether we should change that property to mandatory or change the Chart visual code.
             // If queryName is not set at all, the column chart visual will only render column for the first group instance.
             // If queryName is set to any string other than columnForCurrentDrillLevel.source.queryName, then drilldown by group instance is broken (VSTS 6847879).
-            newColumnMetadata.queryName = columnForCurrentDrillLevel.source.queryName;
+            newColumnMetadata.queryName = columnSourceForCurrentDrillLevel.queryName;
 
             return newColumnMetadata;
         }

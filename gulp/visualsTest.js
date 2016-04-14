@@ -154,10 +154,12 @@ function runTestVisuals(callback) {
         "sqFieldDef.js",
         "./helpers/helpers.js",
         "./helpers/kpiHelper.js",
+        "./helpers/performanceTestsHelpers.js",
+        "./helpers/referenceLineHelper.js",
         "./helpers/slicerHelper.js",
         "./helpers/tableDataViewHelper.js",
         "./helpers/tablixHelper.js",
-        "./helpers/performanceTestsHelpers.js",
+        "./helpers/trendLineHelper.js",
         "./utils/bingSocial/NewsDataFactory.js",
         "./utils/bingSocial/TweetFactory.js",
 
@@ -182,6 +184,7 @@ function runTestVisuals(callback) {
         "./customVisuals/sampleDataViews/forceGraphData.js",
         "./customVisuals/sampleDataViews/GanttData.js",
         "./customVisuals/sampleDataViews/TimelineData.js",
+        "./customVisuals/sampleDataViews/PulseChartData.js",
 
         "./customVisuals/VisualBuilderBase.js"
 

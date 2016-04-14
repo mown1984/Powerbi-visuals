@@ -47,15 +47,15 @@ module powerbi.extensibility {
             if (this.wrappedVisual.destroy)
                 this.executeSafely(() => this.wrappedVisual.destroy());
         }
-
+        
         public update(options: powerbi.VisualUpdateOptions): void {
             if (this.wrappedVisual.update)
                 this.executeSafely(() => this.wrappedVisual.update(options));
         }
 
-        public onResizing(finalViewport: IViewport): void {
+        public onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void {
             if (this.wrappedVisual.onResizing)
-                this.executeSafely(() => this.wrappedVisual.onResizing(finalViewport));
+                this.executeSafely(() => this.wrappedVisual.onResizing(finalViewport, resizeMode));
         }
 
         public onDataChanged(options: VisualDataChangedOptions): void {

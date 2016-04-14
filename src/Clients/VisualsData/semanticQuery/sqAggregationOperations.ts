@@ -97,7 +97,9 @@ module powerbi.data {
             let aggregates: QueryAggregateFunction[] = [];
 
             // Min/Max of DateTime
-            if (this.datetimeMinMaxSupported && valueType.dateTime && dateTimeSupported(targetTypes)) {
+            if (this.datetimeMinMaxSupported &&
+                valueType.dateTime &&
+                (_.isEmpty(targetTypes) || ValueType.isCompatibleTo(valueType, targetTypes))) {
                 aggregates.push(Agg.Min);
                 aggregates.push(Agg.Max);
             }
@@ -158,17 +160,5 @@ module powerbi.data {
             metadata = expr.getMetadata(schema);
 
         return metadata;
-    }
-
-    function dateTimeSupported(targetTypes: ValueTypeDescriptor[]): boolean {
-        debug.assertAnyValue(targetTypes, 'targetTypes');
-
-        if (!targetTypes)
-            return true;
-
-        for (let targetType of targetTypes) {
-            if (targetType.dateTime)
-                return true;
-        }
     }
 }

@@ -362,6 +362,8 @@ declare module jsCommon {
         function isUndefinedOrEmpty(array: any[]): boolean;
         function swap<T>(array: T[], firstIndex: number, secondIndex: number): void;
         function isInArray<T>(array: T[], lookupItem: T, compareCallback: (item1: T, item2: T) => boolean): boolean;
+        /** Checks if the given object is an Array, and looking all the way up the prototype chain. */
+        function isArrayOrInheritedArray(obj: {}): obj is Array<any>;
     }
 }
 declare module InJs {
@@ -1400,6 +1402,7 @@ declare module jsCommon {
         function isValidUrl(value: string): boolean;
         function isValidImageUrl(url: string): boolean;
         function findAllValidUrls(text: string): TextMatch[];
+        function getBase64ContentFromDataUri(uri: string): string;
     }
 }
 declare module jsCommon {

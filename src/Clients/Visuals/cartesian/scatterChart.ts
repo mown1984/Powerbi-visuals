@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -133,7 +133,6 @@ module powerbi.visuals {
     /** Styles to apply to scatter chart data point marker */
     export interface ScatterMarkerStyle {
         'stroke-opacity': number;
-        'stroke-width': string;
         stroke: string;
         fill: string;
         'fill-opacity': number;
@@ -483,7 +482,7 @@ module powerbi.visuals {
                         seriesData.push({ value: playFrameInfo.label, metadata: { source: playFrameInfo.column, values: [] } });
                     }
 
-                    // check for gradient tooltip data 
+                    // check for gradient tooltip data
                     let gradientToolTipData = TooltipBuilder.createGradientToolTipData(gradientValueColumn, categoryIdx);
                     if (gradientToolTipData != null)
                         seriesData.push(gradientToolTipData);
@@ -858,8 +857,7 @@ module powerbi.visuals {
             if (!data)
                 return false;
 
-            // TODO: should support regression on bubble as well
-            return !this.hasSizeMeasure() && data.dataPointSeries.length === 1;
+            return !this.hasSizeMeasure() && data.dataPointSeries.length > 0;
         }
 
         private static getExtents(data: ScatterChartData): CartesianExtents {
@@ -1136,7 +1134,6 @@ module powerbi.visuals {
         public static getMarkerStyle(d: ScatterChartDataPoint, colorBorder: boolean, hasSelection: boolean, fillMarkers: boolean): ScatterMarkerStyle {
             return {
                 'stroke-opacity': ScatterChart.getMarkerStrokeOpacity(d.size != null, colorBorder, hasSelection, d.selected),
-                'stroke-width': '1',
                 stroke: ScatterChart.getMarkerStrokeFill(d.size != null, colorBorder, d.fill),
                 fill: d.fill,
                 'fill-opacity': ScatterChart.getMarkerFillOpacity(d.size != null, fillMarkers, hasSelection, d.selected),
@@ -1146,7 +1143,6 @@ module powerbi.visuals {
         public static getSeriesStyle(hasSize: boolean, colorBorder: boolean, hasSelection: boolean, fillMarkers: boolean, fill: string): ScatterMarkerStyle {
             return {
                 'stroke-opacity': ScatterChart.getMarkerStrokeOpacity(hasSize, colorBorder, hasSelection, false),
-                'stroke-width': '1',
                 stroke: ScatterChart.getMarkerStrokeFill(hasSize, colorBorder, fill),
                 fill: fill,
                 'fill-opacity': ScatterChart.getMarkerFillOpacity(hasSize, fillMarkers, hasSelection, false),
@@ -1207,6 +1203,9 @@ module powerbi.visuals {
             this.mainGraphicsContext = this.mainGraphicsG.append('svg');
             this.labelGraphicsContext = labelsContext;
             this.tooltipsEnabled = tooltipsEnabled;
+
+            // common rendering attributes
+            this.mainGraphicsContext.attr('stroke-width', "1");
         }
 
         public render(viewModel: ScatterChartViewModel, interactivityService: IInteractivityService): ScatterBehaviorOptions {
@@ -1228,7 +1227,7 @@ module powerbi.visuals {
             else {
                 scatterMarkers = this.drawScatterMarkersNoAnimation(viewModel, viewModel.drawBubbles);
             }
-             
+
             if (viewModel.drawBubbles)
                 scatterMarkers.order();
 
@@ -1292,7 +1291,6 @@ module powerbi.visuals {
             markers
                 .style({
                     'stroke-opacity': (d: ScatterChartDataPoint) => ScatterChart.getMarkerStrokeOpacity(d.size != null, data.colorBorder, viewModel.hasSelection, d.selected),
-                    'stroke-width': '1px',
                     'stroke': (d: ScatterChartDataPoint) => ScatterChart.getStrokeFill(d, data.colorBorder),
                     'fill': (d: ScatterChartDataPoint) => d.fill,
                     'fill-opacity': (d: ScatterChartDataPoint) => ScatterChart.getMarkerFillOpacity(d.size != null, viewModel.fillMarkers, viewModel.hasSelection, d.selected),
@@ -1733,7 +1731,6 @@ module powerbi.visuals {
                     .attr('r', (d: ScatterChartDataPoint) => ScatterChart.getBubbleRadius(d.radius, (<ScatterChartData>viewModel.data.currentViewModel).sizeRange, viewModel.viewport))
                     .style({
                         'stroke-opacity': (d: ScatterChartDataPoint) => ScatterChart.getBubbleOpacity(d, true),
-                        'stroke-width': '1px',
                         'stroke': (d: ScatterChartDataPoint) => ScatterChart.getStrokeFill(d, viewModel.data.currentViewModel.colorBorder),
                         'fill': (d: ScatterChartDataPoint) => d.fill,
                         // vary the opacity along the traceline from 0.20 to 0.80, with 0.85 left for the circle already drawn by scatterChart

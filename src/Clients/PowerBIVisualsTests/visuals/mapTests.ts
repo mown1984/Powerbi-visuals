@@ -463,7 +463,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette(colors);
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
             });
 
@@ -538,7 +538,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette();
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
             });
             
@@ -602,7 +602,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette();
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
             });
 
@@ -676,6 +676,93 @@ module powerbitests {
             });
         });
 
+        describe("Simple category with 0 values (bubble)", () => {
+            let colorHelper: ColorHelper;
+            let dataBuilder: MapDataBuilder;
+            let dataView: DataView;
+            let geoTaggingAnalyzerService: IGeoTaggingAnalyzerService;
+            let data: MapData;
+            let categoryCount: number;
+
+            beforeEach(() => {
+                dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.withZeroValue().build(true, false);
+                let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
+                let palette = new powerbi.visuals.DataColorPalette();
+                colorHelper = new ColorHelper(palette, fillProp);
+                geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
+                categoryCount = data.dataPoints.length;
+            });
+
+            it("Size value", () => {
+                expect(data.dataPoints[0].value).toBe(dataBuilder.getSizeValue(0));
+                // The category index === 1 is skipped due to being a bubble map value with a size of 0
+                expect(data.dataPoints[1].value).toBe(dataBuilder.getSizeValue(2));
+            });
+
+            it("SubDataPoint tooltipInfo", () => {
+                expect(data.dataPoints[0].subDataPoints[0].tooltipInfo).toEqual([
+                    {
+                        displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[0],
+                    },
+                    {
+                        displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(0), ',0.00'),
+                    },
+                ]);
+                // The category index === 1 is skipped due to being a bubble map value with a size of 0
+                expect(data.dataPoints[1].subDataPoints[0].tooltipInfo).toEqual([
+                    {
+                        displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[2],
+                    },
+                    {
+                        displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(2), ',0.00'),
+                    },
+                ]);
+            });
+        });
+
+        describe("Simple category with 0 values (filled)", () => {
+            let colorHelper: ColorHelper;
+            let dataBuilder: MapDataBuilder;
+            let dataView: DataView;
+            let geoTaggingAnalyzerService: IGeoTaggingAnalyzerService;
+            let data: MapData;
+            let categoryCount: number;
+
+            beforeEach(() => {
+                dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.withZeroValue().build(true, false);
+                let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
+                let palette = new powerbi.visuals.DataColorPalette();
+                colorHelper = new ColorHelper(palette, fillProp);
+                geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, true);
+                categoryCount = data.dataPoints.length;
+            });
+
+            it("Size value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.value).toBe(dataBuilder.getSizeValue(categoryIndex));
+                }
+            });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                        {
+                            displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.categoryValues[categoryIndex],
+                        },
+                        {
+                            displayName: dataBuilder.sizeColumn.displayName, value: powerbi.visuals.valueFormatter.format(dataBuilder.getSizeValue(categoryIndex), ',0.00'),
+                        },
+                    ]);
+                }
+            });
+        });
+
         describe("Category and series with measures", () => {
             let colorHelper: ColorHelper;
             let dataBuilder: MapDataBuilder;
@@ -704,7 +791,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette(colors);
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
                 seriesCount = data.dataPoints[0].subDataPoints.length;
             });
@@ -754,7 +841,7 @@ module powerbitests {
 
             it("Null series name doesn't throw exception", () => {
                 dataView = dataBuilder.withNullSeriesName().buildWithSeries(true, true);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 let legendData = Map.createLegendData(dataView, colorHelper);
                 expect(data).toBeTruthy(); // Simple checks to expect this not to fail
                 expect(legendData).toBeTruthy();
@@ -789,7 +876,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette(colors);
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
                 seriesCount = data.dataPoints[0].subDataPoints.length;
             });
@@ -880,7 +967,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette(colors);
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
                 seriesCount = data.dataPoints[0].subDataPoints.length;
             });
@@ -921,7 +1008,7 @@ module powerbitests {
 
             it("Null series name doesn't throw exception", () => {
                 dataView = dataBuilder.withNullSeriesName().buildWithSeries(true, true);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 let legendData = Map.createLegendData(dataView, colorHelper);
                 expect(data).toBeTruthy(); // Simple checks to expect this not to fail
                 expect(legendData).toBeTruthy();
@@ -955,7 +1042,7 @@ module powerbitests {
                 let palette = new powerbi.visuals.DataColorPalette(colors);
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
                 categoryCount = data.dataPoints.length;
             });
 
@@ -1451,22 +1538,27 @@ module powerbitests {
             var categories: powerbi.DataViewCategoryColumn[] = this.buildCategories(dataViewMetadata);
 
             dataViewMetadata.columns.push(this.seriesColumn);
+            let grouped: powerbi.DataViewValueColumnGroup[] = [];
 
             for (let seriesIdx = 0; seriesIdx < this.seriesValues.length; seriesIdx++) {
                 let seriesValue = this.seriesValues[seriesIdx];
                 let seriesIdentity = mocks.dataViewScopeIdentityWithEquality(this.seriesColumnExpr, seriesValue);
+                let valuesForGrouped = [];
 
                 if (size) {
                     let sizeColumn: powerbi.DataViewMetadataColumn = $.extend({}, this.sizeColumn);
                     sizeColumn.groupName = seriesValue;
 
                     dataViewMetadata.columns.push(sizeColumn);
-                    valueDataArray.push({
+                    let sizeArray = {
                         source: sizeColumn,
                         values: this.sizeValues[seriesIdx].values,
                         subtotal: this.sizeValues[seriesIdx].subtotal,
                         identity: seriesIdentity,
-                    });
+                    };
+                    valueDataArray.push(sizeArray);
+                    valuesForGrouped.push(sizeArray);
+                    
                 }
                 if (longLat) {
                     let longitudeColumn: powerbi.DataViewMetadataColumn = $.extend({}, this.longitudeColumn);
@@ -1476,26 +1568,38 @@ module powerbitests {
 
                     dataViewMetadata.columns.push(longitudeColumn);
                     dataViewMetadata.columns.push(latitudeColumn);
-                    valueDataArray.push({
+                    let longArray = {
                         source: longitudeColumn,
                         values: this.longitudeValues[seriesIdx].values,
                         subtotal: this.longitudeValues[seriesIdx].subtotal,
                         identity: seriesIdentity,
-                    });
-                    valueDataArray.push({
+                    };
+                    valueDataArray.push(longArray);
+                    valuesForGrouped.push(longArray);
+                    let latArray = {
                         source: latitudeColumn,
                         values: this.latitudeValues[seriesIdx].values,
                         subtotal: this.latitudeValues[seriesIdx].subtotal,
                         identity: seriesIdentity,
-                    });
+                    };
+                    valueDataArray.push(latArray);
+                    valuesForGrouped.push(latArray);
                 }
+                grouped.push({
+                    values: valuesForGrouped,
+                    identity: mocks.dataViewScopeIdentityWithEquality(this.seriesColumnExpr, seriesValue),
+                    name: seriesValue,
+                });
             }
+
+            let values = DataViewTransform.createValueColumns(valueDataArray, [this.seriesColumnExpr], this.seriesColumn);
+            values.grouped = () => grouped;
 
             return <powerbi.DataView> {
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: categories,
-                    values: DataViewTransform.createValueColumns(valueDataArray, [this.seriesColumnExpr], this.seriesColumn),
+                    values: values,
                 }
             };
         }
@@ -1576,6 +1680,13 @@ module powerbitests {
 
         public withNullValue(): MapDataBuilder {
             this.sizeValues[0].values[1] = null;
+            this.sizeValues[0].subtotal = 400;
+            return this;
+        }
+
+        public withZeroValue(): MapDataBuilder {
+            this.sizeValues[0].values[1] = 0;
+            this.sizeValues[0].subtotal = 400;
             return this;
         }
 

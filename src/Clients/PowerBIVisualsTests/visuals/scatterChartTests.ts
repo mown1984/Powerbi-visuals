@@ -25,17 +25,19 @@
  */
 
 module powerbitests {
-    import ScatterChart = powerbi.visuals.ScatterChart;
-    import LabelsBehavior = powerbi.visuals.LabelsBehavior;
     import ArrayExtensions = jsCommon.ArrayExtensions;
     import AxisType = powerbi.visuals.axisType;
+    import DataViewObjects = powerbi.DataViewObjects;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
     import DataViewTransform = powerbi.data.DataViewTransform;
-    import ValueType = powerbi.ValueType;
-    import PrimitiveType = powerbi.PrimitiveType;
-    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-    import SelectionId = powerbi.visuals.SelectionId;
+    import LabelsBehavior = powerbi.visuals.LabelsBehavior;
+    import lineStyle = powerbi.visuals.lineStyle;
     import PixelConverter = jsCommon.PixelConverter;
+    import PrimitiveType = powerbi.PrimitiveType;
+    import ScatterChart = powerbi.visuals.ScatterChart;
+    import SelectionId = powerbi.visuals.SelectionId;
+    import ValueType = powerbi.ValueType;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     powerbitests.mocks.setLocale();
 
@@ -1956,102 +1958,80 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart with regression line dom validation', (done) => {
-                let trendLineColor = '#FF0000';
-                let dataViewMetadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        {
-                            displayName: 'col1',
-                            queryName: 'testQuery',
-                            roles: { "Category": true },
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                        },
-                        {
-                            displayName: 'col2',
-                            queryName: 'col2Query',
-                            isMeasure: true,
-                            roles: { "X": true },
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        },
-                        {
-                            displayName: 'col3',
-                            queryName: 'col3Query',
-                            isMeasure: true,
-                            roles: { "Y": true },
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
-                            objects: {
-                                dataPoint: {
-                                    fill: {
-                                        solid: {
-                                            color: trendLineColor
-                                        }
-                                    }
+            describe('trend lines', () => {
+                it('combined series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
                                 }
-                            }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: true,
                         }
-                    ]
-                };
+                    };
 
-                let categoryIdentities: powerbi.DataViewScopeIdentity[] = [
-                    mocks.dataViewScopeIdentity('a'),
-                    mocks.dataViewScopeIdentity('b'),
-                    mocks.dataViewScopeIdentity('c'),
-                    mocks.dataViewScopeIdentity('d'),
-                    mocks.dataViewScopeIdentity('e'),
-                ];
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ true);
 
-                let dataViews = [{
-                    metadata: dataViewMetadata,
-                    categorical: {
-                        categories: [{
-                            source: dataViewMetadata.columns[0],
-                            values: ['a', 'b', 'c', 'd', 'e'],
-                            identity: categoryIdentities,
-                        }],
-                        values: DataViewTransform.createValueColumns([{
-                            source: dataViewMetadata.columns[1],
-                            values: [1, 2, 3, 4, 5]
-                        },
-                            {
-                                source: dataViewMetadata.columns[2],
-                                values: [10, 20, 30, 40, 50]
-                            }])
-                    }
-                },
-                    {
-                        metadata: dataViewMetadata,
-                        usage: {
-                            regression: {}
-                        },
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[1],
-                                values: [1, 5],
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[2],
-                                values: [10, 50],
-                            }])
-                        }
-                    }];
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
 
-                dataViews[0].metadata.objects = {
-                    trend: {
-                        show: true,
-                    }
-                };
+                        helpers.verifyTrendLines(trendLines, [{
+                            color: trendLineColor,
+                            opacity: 0.8,
+                            style: lineStyle.dotted,
+                        }]);
 
-                v.onDataChanged({
-                    dataViews: dataViews
+                        done();
+                    }, DefaultWaitForRender);
                 });
 
-                setTimeout(() => {
-                    let trendLines = $('.trend-line');
-                    expect(trendLines.length).toBe(1);
-                    helpers.assertColorsMatch(trendLines.css('stroke'), trendLineColor);
+                it('separate series', (done) => {
+                    let trendLineColor = '#FF0000';
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            lineColor: {
+                                solid: {
+                                    color: trendLineColor,
+                                }
+                            },
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: false,
+                        }
+                    };
 
-                    done();
-                }, DefaultWaitForRender);
+                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ true);
+
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+
+                        helpers.verifyTrendLines(trendLines, [
+                            {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }, {
+                                color: trendLineColor,
+                                opacity: 0.8,
+                                style: lineStyle.dotted,
+                            }
+                        ]);
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
             });
 
             it('background image', (done) => {

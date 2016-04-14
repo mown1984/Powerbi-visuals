@@ -25,8 +25,12 @@
  */
 
 module powerbi.data {
+    import ArrayNamedItems = jsCommon.ArrayNamedItems;
+    import ConceptualEntity = powerbi.data.ConceptualEntity;
+    import ConceptualMultiplicity = powerbi.data.ConceptualMultiplicity;
+    import SQEntityExpr = powerbi.data.SQEntityExpr;
     import StringExtensions = jsCommon.StringExtensions;
-
+    
     export module SQExprUtils {
         export function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean {
             let metadata = expr.getMetadata(schema),
@@ -262,6 +266,105 @@ module powerbi.data {
                 }
             }
             return tables;
+        }
+
+        export function isRelatedToMany(
+            schema: FederatedConceptualSchema,
+            sourceExpr: SQEntityExpr,
+            targetExpr: SQEntityExpr): boolean {
+
+            return isRelated(schema, sourceExpr, targetExpr, ConceptualMultiplicity.ZeroOrOne, ConceptualMultiplicity.Many) ||
+                isRelated(schema, targetExpr, sourceExpr, ConceptualMultiplicity.Many, ConceptualMultiplicity.ZeroOrOne);
+        }
+
+        export function isRelatedToOne(
+            schema: FederatedConceptualSchema,
+            sourceExpr: SQEntityExpr,
+            targetExpr: SQEntityExpr): boolean {
+
+            return isRelated(schema, sourceExpr, targetExpr, ConceptualMultiplicity.Many, ConceptualMultiplicity.ZeroOrOne) ||
+                isRelated(schema, targetExpr, sourceExpr, ConceptualMultiplicity.ZeroOrOne, ConceptualMultiplicity.Many);
+        }
+
+        function isRelated(
+            schema: FederatedConceptualSchema,
+            sourceExpr: SQEntityExpr,
+            targetExpr: SQEntityExpr,
+            sourceMultiplicity: ConceptualMultiplicity,
+            targetMultiplicity: ConceptualMultiplicity): boolean {
+
+            let source = SQExprUtils.getConceptualEntity(sourceExpr, schema);
+            debug.assertValue(source, "could not resolve conceptual entity form sourceExpr.");
+
+            if (_.isEmpty(source.navigationProperties))
+                return false;
+
+            let target = SQExprUtils.getConceptualEntity(targetExpr, schema);
+            debug.assertValue(target, "could not resolve conceptual entity form targetExpr.");
+
+            let queue: ConceptualEntity[] = [];
+            queue.push(source);
+
+            // walk the relationship path from source.
+            while (!_.isEmpty(queue)) {
+                let current = queue.shift();
+
+                let navProperties = current.navigationProperties;
+                if (_.isEmpty(navProperties))
+                    continue;
+
+                for (let navProperty of navProperties) {
+                    if (!navProperty.isActive)
+                        continue;
+
+                    if (navProperty.targetMultiplicity === targetMultiplicity && navProperty.sourceMultiplicity === sourceMultiplicity) {
+                        if (navProperty.targetEntity === target)
+                            return true;
+                        queue.push(navProperty.targetEntity);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        export function isRelatedOneToOne(
+            schema: FederatedConceptualSchema,
+            sourceExpr: SQEntityExpr,
+            targetExpr: SQEntityExpr): boolean {
+
+            let source = SQExprUtils.getConceptualEntity(sourceExpr, schema);
+            debug.assertValue(source, "could not resolve conceptual entity form sourceExpr.");
+            let target = SQExprUtils.getConceptualEntity(targetExpr, schema);
+            debug.assertValue(target, "could not resolve conceptual entity form targetExpr.");
+
+            let sourceNavigations = source.navigationProperties;
+            let targetNavigations = target.navigationProperties;
+
+            if (_.isEmpty(sourceNavigations) && _.isEmpty(targetNavigations))
+                return false;
+
+            return hasOneToOneNavigation(sourceNavigations, target) || hasOneToOneNavigation(targetNavigations, source);
+        }
+
+        function hasOneToOneNavigation(navigationProperties: ArrayNamedItems<ConceptualNavigationProperty>, targetEntity: ConceptualEntity): boolean {
+            if (_.isEmpty(navigationProperties))
+                return false;
+
+            for (let navigationProperty of navigationProperties) {
+                if (!navigationProperty.isActive)
+                    continue;
+
+                if (navigationProperty.targetEntity !== targetEntity)
+                    continue;
+
+                if (navigationProperty.sourceMultiplicity === ConceptualMultiplicity.ZeroOrOne &&
+                    navigationProperty.targetMultiplicity === ConceptualMultiplicity.ZeroOrOne) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         class SQExprDefaultNameGenerator extends DefaultSQExprVisitorWithArg<string, string> {

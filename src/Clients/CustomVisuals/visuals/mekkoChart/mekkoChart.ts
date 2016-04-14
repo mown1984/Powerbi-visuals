@@ -3028,11 +3028,10 @@ module powerbi.visuals.samples {
                     }
 
                     var columnGroup: DataViewValueColumnGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex] : null;
-                    var seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[0] : null;
                     var category: DataViewCategoryColumn = dataViewCat.categories && dataViewCat.categories.length > 0 ? dataViewCat.categories[0] : null;
                     var identity = SelectionIdBuilder.builder()
                         .withCategory(category, categoryIndex)
-                        .withSeries(dataViewCat.values, seriesGroup)
+                        .withSeries(dataViewCat.values, columnGroup)
                         .withMeasure(converterStrategy.getMeasureNameByIndex(seriesIndex))
                         .createSelectionId();
 

@@ -504,6 +504,7 @@ module powerbi.visuals {
             this.xAxisProperties = {
                 axis: null,
                 scale: null,
+                isScalar: null,
                 axisType: null,
                 formatter: null,
                 graphicsContext: null,
@@ -528,7 +529,7 @@ module powerbi.visuals {
                  .call(drag)
                  .on('click', dragMove);
             }
-            
+
             // Internet Explorer and Edge use the stroke edge, not the path edge for the mouse coordinate's origin.
             //   We need to adjust mouse events on the interactivity lines to account for this.
             this.shouldAdjustMouseCoordsOnPathsForStroke = !jsCommon.BrowserUtils.isChrome();
@@ -617,7 +618,7 @@ module powerbi.visuals {
                 xMetaDataColumn = data.series[0].xCol;
                 yMetaDataColumn = data.series[0].yCol;
             }
-            
+
             let valueDomain = EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) ? LineChart.createStackedValueDomain(data.series) : AxisHelper.createValueDomain(data.series, false);
             let hasZeroValueInYDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(valueDomain);
             let combinedDomain = AxisHelper.combineDomain(options.forcedYDomain, valueDomain, options.ensureYDomain);
@@ -638,7 +639,9 @@ module powerbi.visuals {
                 shouldClamp: false, // clamping causes incorrect lines when you have axis extents specified, do not enable this.
             });
 
-            let xDomain = AxisHelper.createDomain(data.series, this.xAxisProperties.axisType, this.data.isScalar, options.forcedXDomain, options.ensureXDomain);
+            let metaDataColumn = this.data ? this.data.categoryMetadata : undefined;
+            let categoryDataType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(metaDataColumn);
+            let xDomain = AxisHelper.createDomain(data.series, categoryDataType, this.data.isScalar, options.forcedXDomain, options.ensureXDomain);
             let hasZeroValueInXDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(xDomain);
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.width,
@@ -728,11 +731,10 @@ module powerbi.visuals {
         }
 
         public supportsTrendLine(): boolean {
-            let data = this.data;
-            if (!data)
+            if (!this.xAxisProperties)
                 return false;
 
-            return data.isScalar && data.series.length === 1;
+            return !AxisHelper.isOrdinalScale(this.xAxisProperties.scale);
         }
 
         private getLabelSettingsOptions(enumeration: ObjectEnumerationBuilder, labelSettings: LineChartDataLabelsSettings, series?: LineChartSeries, showAll?: boolean): VisualDataLabelsSettingsOptions {
@@ -1205,14 +1207,14 @@ module powerbi.visuals {
             let labelDataPointsGroups: LabelDataPointsGroup[];
             if (data.dataLabelsSettings.show)
                 labelDataPointsGroups = this.createLabelDataPoints();
-            
+
             return dataPoints == null ? null : {
                 dataPoints: dataPoints,
                 behaviorOptions: null,
                 labelDataPoints: null,
                 labelsAreNumeric: null,
                 labelDataPointGroups: labelDataPointsGroups
-            }; 
+            };
         }
 
         /**
@@ -1269,7 +1271,7 @@ module powerbi.visuals {
                 // Tooltip originated with a dot; simply return the categoryIndex from the dot's bound data
                 return tooltipEvent.data.categoryIndex;
             }
-            
+
             let seriesData = <LineChartSeries>tooltipEvent.data;
             let offsetX = 0; // Offset based on the firstCategoryOffset (since lines don't start at x = 0) as well as the offset due to lines that may not start at the first category
             if (seriesData && !_.isEmpty(seriesData.data) && this.xAxisProperties) {
@@ -1670,10 +1672,10 @@ module powerbi.visuals {
         private createLabelDataPoints(): LabelDataPointsGroup[] {
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
-            let lineshift = this.getXOfFirstCategory();            
+            let lineshift = this.getXOfFirstCategory();
             let bandRange = lineshift * 2;
             let innerPaddingRatio = CartesianChart.InnerPaddingRatio;
-            let horizontalInnerPadding = innerPaddingRatio * bandRange / (1 - innerPaddingRatio);//get inner padding from bandRange value 
+            let horizontalInnerPadding = innerPaddingRatio * bandRange / (1 - innerPaddingRatio);//get inner padding from bandRange value
             let data = this.data;
             let series = data.series;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
@@ -1720,7 +1722,7 @@ module powerbi.visuals {
 
                     if (isStackedArea) {
                         let bottomPos = Math.max(dataPoint.stackedValue - dataPoint.value, yScale.domain()[0]);//this is to make sure the bottom position doesn't go below the domain
-                        
+
                         parentShape = {
                             rect: {
                                 left: xScale(this.getXValue(dataPoint)) - horizontalInnerPadding,
@@ -1789,7 +1791,7 @@ module powerbi.visuals {
         /**
          * Adjust a mouse coordinate originating from a path; used to fix
          * an inconsistency between Internet Explorer and other browsers.
-         * 
+         *
          * Internet explorer places the origin for the coordinate system of
          * mouse events based on the stroke, so that the very edge of the stroke
          * is zoro.  Chrome places the 0 on the edge of the path so that the
@@ -1798,7 +1800,7 @@ module powerbi.visuals {
          *
          * TODO: Firefox is similar to IE, but does a very poor job at it, so
          * the edge is inacurate.
-         * 
+         *
          * @param value The x coordinate to be adjusted
          */
         private adjustPathXCoordinate(x: number): number {

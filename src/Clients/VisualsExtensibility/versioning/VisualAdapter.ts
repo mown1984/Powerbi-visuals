@@ -102,7 +102,7 @@ module powerbi.extensibility {
 
         public update(options: powerbi.VisualUpdateOptions): void {
             if (options.type & VisualUpdateType.Resize && this.visualHasMethod('onResizing')) {
-                this.onResizing(options.viewport);
+                this.onResizing(options.viewport, options.resizeMode);
             } else if (this.visualHasMethod('update')) {
                 this.visualLegacy.update(options);
             } else {
@@ -128,9 +128,9 @@ module powerbi.extensibility {
             return this.visualLegacy.enumerateObjectInstances(options);
         }
 
-        public onResizing(finalViewport: IViewport): void {
+        public onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void {
             if (this.visualHasMethod('onResizing')) {
-                this.visualLegacy.onResizing(finalViewport);
+                this.visualLegacy.onResizing(finalViewport, resizeMode);
             }
         }
 

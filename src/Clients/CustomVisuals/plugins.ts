@@ -32,18 +32,6 @@ module powerbi.visuals.plugins {
         create: () => new samples.Sunburst()
     };
 
-    export let consoleWriter: IVisualPlugin = {
-        name: 'consoleWriter',
-        capabilities: samples.consoleWriterCapabilities,
-        create: () => new samples.ConsoleWriter()
-    };
-
-    export let helloIVisual: IVisualPlugin = {
-        name: 'helloIVisual',
-        capabilities: samples.HelloIVisual.capabilities,
-        create: () => new samples.HelloIVisual()
-    };
-
     export let asterPlot: IVisualPlugin = {
         name: 'asterPlot',
         capabilities: samples.AsterPlot.capabilities,
@@ -147,5 +135,11 @@ module powerbi.visuals.plugins {
         name: "streamGraph",
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
+    };
+
+    export let pulseChart: IVisualPlugin = {
+        name: "pulseChart",
+        capabilities: samples.PulseChart.capabilities,
+        create: () => new samples.PulseChart()
     };
 }

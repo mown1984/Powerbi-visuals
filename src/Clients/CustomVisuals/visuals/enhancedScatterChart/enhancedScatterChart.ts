@@ -1893,7 +1893,8 @@ module powerbi.visuals.samples {
                     xAxisTextNodes
                         .call(AxisHelper.LabelLayoutStrategy.rotate,
                         bottomMarginLimit,
-                        TextMeasurementService.svgEllipsis,
+                        TextMeasurementService.getTailoredTextOrDefault,
+                        CartesianChart.AxisTextProperties,
                         !xAxis.willLabelsFit,
                         bottomMarginLimit === tickLabelMargins.xMax,
                         xAxis,

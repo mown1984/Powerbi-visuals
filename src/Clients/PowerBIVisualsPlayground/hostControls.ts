@@ -108,14 +108,16 @@ module powerbi.visuals {
             };
 
             if (host.visual) {
+                if (host.visual.onResizing) {
+                    host.visual.onResizing(host.renderingViewport);
+                }
+
                 if (host.visual.update) {
                     host.visual.update({
                         dataViews: this.sampleDataViews.getDataViews(),
                         suppressAnimations: true,
                         viewport: host.renderingViewport
                     });
-                } else if (host.visual.onResizing) {
-                    host.visual.onResizing(host.renderingViewport);
                 }
             }
         }
@@ -165,7 +167,9 @@ module powerbi.visuals {
                         suppressAnimations: this.suppressAnimations,
                         viewport: host.renderingViewport
                     });
-                } else {
+                }
+
+                if (host.visual.onDataChanged && host.visual.onResizing) {
                     host.visual.onDataChanged({
                         dataViews: this.sampleDataViews.getDataViews(),
                         suppressAnimations: this.suppressAnimations

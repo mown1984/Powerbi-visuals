@@ -73,5 +73,20 @@ module jsCommon {
 
             return urlRanges;
         }
+
+        export function getBase64ContentFromDataUri(uri: string): string {
+            if (uri.indexOf('data:') !== 0)
+                throw new Error("Expected data uri");
+
+            // Locate the base 64 content from the URL (e.g. "data:image/png;base64,xxxxx=")
+            const base64Token = ";base64,";
+            let indexBase64TokenStart = uri.indexOf(base64Token);
+            if (indexBase64TokenStart < 0)
+                throw new Error("Expected base 64 content in data url");
+
+            let indexBase64Start = indexBase64TokenStart + base64Token.length;
+            return uri.substr(indexBase64Start, uri.length - indexBase64Start);
+        }
+
     }
 }

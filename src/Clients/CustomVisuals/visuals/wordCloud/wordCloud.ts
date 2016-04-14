@@ -454,6 +454,7 @@ module powerbi.visuals.samples {
         private visualUpdateOptions: VisualUpdateOptions;
 
         private isUpdating: boolean;
+        private isSingleSentence: boolean;
         private incomingUpdateOptions: VisualUpdateOptions;
 
         constructor(options?: WordCloudConstructorOptions) {
@@ -1070,6 +1071,9 @@ module powerbi.visuals.samples {
 
         private getReducedText(texts: WordCloudText[]): WordCloudText[] {
             let brokenStrings: WordCloudText[] = [];
+
+            texts.length === 1 ? this.isSingleSentence = true: this.isSingleSentence = false;
+
             brokenStrings = this.getBrokenWords(texts);
 
             return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
@@ -1190,6 +1194,12 @@ module powerbi.visuals.samples {
             minFontSize = Math.abs(this.parseNumber(this.settings.minFontSize, WordCloud.DefaultSettings.minFontSize));
             maxFontSize = Math.abs(this.parseNumber(this.settings.maxFontSize, WordCloud.DefaultSettings.maxFontSize));
 
+            if (maxFontSize > this.layout.viewportIn.width / 2)
+                maxFontSize = this.layout.viewportIn.width / 2;
+
+            if (this.isSingleSentence)
+                return maxFontSize;
+
             if (minFontSize > maxFontSize) {
                 let buffer: number = minFontSize;
 
@@ -1208,10 +1218,13 @@ module powerbi.visuals.samples {
                     weight = value;
                 }
             }
-
-            fontSize = weight > minValue
-                ? (maxFontSize * (weight - minValue)) / (maxValue - minValue)
-                : 0;
+            if (weight > minValue) {
+                fontSize = (maxValue - minValue) !== 0
+                    ? (maxFontSize * (weight - minValue)) / (maxValue - minValue)
+                    : 0;
+            }
+            else
+                fontSize = 0;
 
             fontSize = (fontSize * 100) / maxFontSize;
 

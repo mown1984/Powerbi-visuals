@@ -45,6 +45,7 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: WordCloudBuilder;
+            let secondVisualBuilder: WordCloudBuilder;
             let dataViews: powerbi.DataView[];
             let timeOutTime: number = DefaultWaitForRender;
 
@@ -159,6 +160,26 @@ module powerbitests.customVisuals {
                 }, timeOutTime * 2);
             });
 
+            it("click on first visual, then click on the second visual dosen't remove items", (done) => {
+                let defaultView = _.cloneDeep(dataViews);
+                visualBuilder.update(defaultView);
+                secondVisualBuilder = new WordCloudBuilder();
+                secondVisualBuilder.update(defaultView);
+
+                setTimeout(() => {
+                    let firstWord = visualBuilder.mainElement.children("g").children("g.words").children("text.word").first();
+                    firstWord.d3Click(parseInt(firstWord.attr("x"), 10), parseInt(firstWord.attr("y"), 10));
+                    setTimeout(() => {
+                        let secondWord = secondVisualBuilder.mainElement.children("g").children("g.words").children("text.word").first();
+                        secondWord.d3Click(parseInt(secondWord.attr("x"), 10), parseInt(secondWord.attr("y"), 10));
+                        setTimeout(() => {
+                            expect(secondVisualBuilder.mainElement.children("g").children("g.words").children("text.word").length).toBe(
+                                visualBuilder.mainElement.children("g").children("g.words").children("text.word").length);
+                            done();
+                        }, timeOutTime);
+                    }, timeOutTime);
+                }, timeOutTime * 2);
+            });
         });
     });
 

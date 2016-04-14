@@ -161,6 +161,22 @@ module powerbi {
             return new ValueType(ExtendedType.Enumeration, null, enumType);
         }
 
+        /** Determines if the specified type is compatible from at least one of the otherTypes. */
+        public static isCompatibleTo(type: ValueTypeDescriptor, otherTypes: ValueTypeDescriptor[]): boolean {
+            debug.assertValue(type, 'type');
+            debug.assertValue(otherTypes, 'otherTypes');
+
+            let valueType = ValueType.fromDescriptor(type);
+            for (let otherType of otherTypes) {
+                let otherValueType = ValueType.fromDescriptor(otherType);
+
+                if (otherValueType.isCompatibleFrom(valueType))
+                    return true;
+            }
+
+            return false;
+        }
+
         /** Determines if the instance ValueType is convertable from the 'other' ValueType. */
         public isCompatibleFrom(other: ValueType): boolean {
             debug.assertValue(other, 'other');

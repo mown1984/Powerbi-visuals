@@ -86,7 +86,7 @@ declare module powerbi.extensibility {
         update(options: powerbi.VisualUpdateOptions): void;
         destroy(): void;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-        onResizing(finalViewport: IViewport): void;
+        onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void;
         onDataChanged(options: VisualDataChangedOptions): void;
         onViewModeChanged(viewMode: ViewMode): void;
         onClearSelection(): void;
@@ -112,7 +112,7 @@ declare module powerbi.extensibility {
         init(options: VisualInitOptions): void;
         destroy(): void;
         update(options: powerbi.VisualUpdateOptions): void;
-        onResizing(finalViewport: IViewport): void;
+        onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void;
         onDataChanged(options: VisualDataChangedOptions): void;
         onViewModeChanged(viewMode: ViewMode): void;
         onClearSelection(): void;
