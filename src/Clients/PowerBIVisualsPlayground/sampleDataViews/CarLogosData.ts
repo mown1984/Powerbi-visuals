@@ -26,6 +26,8 @@
 
 module powerbi.visuals.sampleDataViews {
     import DataViewTransform = powerbi.data.DataViewTransform;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import createDataViewScopeIdentity = powerbi.data.createDataViewScopeIdentity;
 
     export class CarLogosData extends SampleDataViews implements ISampleDataViewsMethods {
 
@@ -44,19 +46,24 @@ module powerbi.visuals.sampleDataViews {
             "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/chicletSlicer/ferrari.png"
         ];
 
-        public getDataViews(): DataView[] {
+        private getDataViewMetadataColumn(groupName: any): DataViewMetadataColumn {
+            return {
+                displayName: 'Sales Count',
+                format: "g",
+                isMeasure: true,
+                queryName: 'sales',
+                roles: {
+                    Values: true
+                },
+                type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
+                groupName: groupName
+            };
+        }
 
-            let fieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
-
-            let categoryIdentities = this.categoryValues.map(function (value) {
-                let expr = powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(value));
-                return powerbi.data.createDataViewScopeIdentity(expr);
-            });
-        
-            // Metadata, describes the data columns, and provides the visual with hints
-            // so it can decide how to best represent the data
-            let dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [
+        private getDataViewMetadata(columns: DataViewMetadataColumn[] = []): DataViewMetadata {
+            return {
+                columns: (<DataViewMetadataColumn[]>[
                     {
                         displayName: 'Car',
                         queryName: 'Country',
@@ -64,17 +71,6 @@ module powerbi.visuals.sampleDataViews {
                             Category: true
                         },
                         type: powerbi.ValueType.fromDescriptor({ text: true })
-                    },
-                    {
-                        displayName: 'Sales Count',
-                        format: "g",
-                        isMeasure: true,
-                        queryName: 'sales',
-                        roles: { 
-                            Values : true 
-                        },
-                        type: powerbi.ValueType.fromDescriptor({ numeric: true }),
-                        objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
                     },
                     {
                         displayName: 'Image',
@@ -85,35 +81,55 @@ module powerbi.visuals.sampleDataViews {
                         },
                         type: powerbi.ValueType.fromDescriptor({ text: true })
                     }
-                ],
+                ]).concat(columns),
                 objects: {
                     general: {
                         columns: 1
                     }
                 }
             };
+        }
 
-            
-            let imageFieldExpr = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "Image" } });
-            
-            let imageIdentities = this.carImages.map(function (value) {
-                let expr = powerbi.data.SQExprBuilder.equal(imageFieldExpr, powerbi.data.SQExprBuilder.text(value));
-                return powerbi.data.createDataViewScopeIdentity(expr);
+        private getValuesByIndex(index: number): number[] {
+            return this.sampleData.map((data: number, id: number) => {
+                return index === id ? data : null;
+            });
+        }
+
+        public getDataViews(): DataView[] {
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "country" } });
+
+            let categoryIdentities = this.categoryValues.map(function (value) {
+                let expr = SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value));
+                return createDataViewScopeIdentity(expr);
             });
 
-            let columns: DataViewValueColumn[] = this.categoryValues.map((car, i): DataViewValueColumn => {
+            let imageFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "Image" } });
 
-                let source = dataViewMetadata.columns[1];
-                source.groupName = this.carImages[i];
+            let imageIdentities = this.carImages.map(function (value) {
+                let expr = SQExprBuilder.equal(imageFieldExpr, SQExprBuilder.text(value));
+                return createDataViewScopeIdentity(expr);
+            });
+
+            let dataViewMetadataColumns: DataViewMetadataColumn[] = [];
+
+            let columns: DataViewValueColumn[] = this.categoryValues.map((car, i): DataViewValueColumn => {
+                let dataViewMetadataColumn: DataViewMetadataColumn = this.getDataViewMetadataColumn(this.carImages[i]);
+
+                dataViewMetadataColumns.push(dataViewMetadataColumn);
+
                 return {
-                    source: source,
+                    source: dataViewMetadataColumn,
                     identity: imageIdentities[i],
-                    values: this.sampleData
+                    values: this.getValuesByIndex(i)
                 };
             });
 
-            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns, [fieldExpr, imageFieldExpr], dataViewMetadata.columns[2]);
-            
+            // Metadata, describes the data columns, and provides the visual with hints
+            // so it can decide how to best represent the data
+            let dataViewMetadata: DataViewMetadata = this.getDataViewMetadata(dataViewMetadataColumns),
+                dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns, [fieldExpr, imageFieldExpr], dataViewMetadata.columns[1]);
+
             return [{
                 metadata: dataViewMetadata,
                 categorical: {
@@ -127,7 +143,6 @@ module powerbi.visuals.sampleDataViews {
             }];
         }
 
-        public randomize(): void {
-        }        
+        public randomize(): void {}
     }
 }
