@@ -33,6 +33,7 @@
         "sampleDataViews/SimpleHistogramData.ts",
         "sampleDataViews/SimpleDataByCountries.ts",
         "sampleDataViews/SimpleCountriesData.ts",
+        "sampleDataViews/BulletChartData.ts",
 
         "sampleData.ts",
         "hostControls.ts",
