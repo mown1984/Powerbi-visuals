@@ -119,13 +119,10 @@ module powerbi.visuals.sampleDataViews {
                 { source: dataViewMetadata.columns[9], values: this.sampleData[8] }
             ];
 
-            let seriesIdentityField = powerbi.data.SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'series' } });
-
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
             var tableDataValues = categoryValues.map(function (metricName, idx) {
                 return [metricName, columns[0].values[idx], columns[1].values[idx], columns[2].values[idx], columns[3].values[idx], columns[4].values[idx], columns[5].values[idx], columns[6].values[idx], columns[7].values[idx], columns[8].values[idx]];
             });
-
 
             return [{
                 metadata: dataViewMetadata,
@@ -143,7 +140,6 @@ module powerbi.visuals.sampleDataViews {
                 }
             }];
         }
-
 
         public randomize(): void {
 
