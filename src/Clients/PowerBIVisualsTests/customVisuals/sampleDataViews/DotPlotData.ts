@@ -37,24 +37,32 @@ module powerbitests.customVisuals.sampleDataViews {
 
         public getDataView(): DataView {
             let dataViewMetadata: DataViewMetadata = {
-                    columns: [{
-                        displayName: 'Name',
-                        queryName: 'Name',
-                        type: ValueType.fromDescriptor({ text: true }),
-                        roles: { Category: true }
-                    },
+				columns: [{
+					displayName: 'Name',
+					queryName: 'Name',
+					type: ValueType.fromDescriptor({ text: true }),
+					roles: { Category: true }
+				},
                     {
                         displayName: 'Count',
                         queryName: 'Count',
                         type: ValueType.fromDescriptor({ integer: true }),
                         roles: { Series: true }
-                    }]
-                };
+                    }],
+				objects:
+				{
+					labels: {
+						show: true,
+						color: { solid: { color: '#123456' } } ,
+						fontSize: '12px'
+					}
+				}
+			};
 
             let columns: DataViewValueColumn[] = [{
-                    source: dataViewMetadata.columns[1],
-                    values: [4, 4, 2, 3, 5, 2, 2]
-                }];
+				source: dataViewMetadata.columns[1],
+				values: [4, 4, 2, 3, 5, 2, 2]
+			}];
             let categoryValues = ['Betty', 'Mey', 'Nancy', 'Anna', 'Ben', 'David', 'Tim'];
 
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
@@ -63,16 +71,16 @@ module powerbitests.customVisuals.sampleDataViews {
                 powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(value))));
 
             return {
-                   metadata: dataViewMetadata,
-                   categorical: {
-                       categories: [{
-                            source: dataViewMetadata.columns[0],
-                            values: categoryValues,
-                            identity: categoryIdentities
-                        }],
-                        values: dataValues
-                    }
-               };
+				metadata: dataViewMetadata,
+				categorical: {
+					categories: [{
+						source: dataViewMetadata.columns[0],
+						values: categoryValues,
+						identity: categoryIdentities
+					}],
+					values: dataValues
+				}
+			};
         }
     }
 }

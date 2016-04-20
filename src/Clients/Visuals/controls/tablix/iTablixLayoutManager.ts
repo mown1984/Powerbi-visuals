@@ -41,6 +41,14 @@ module powerbi.visuals.controls {
         textAlign: string;
         extension: internal.TablixCellPresenter;
         position: internal.TablixUtils.CellPosition;
+        contentHeight: number;
+        contentWidth: number;
+        containerHeight: number;
+        containerWidth: number;
+
+        unfixRowHeight();
+
+        applyStyle(style: internal.TablixUtils.CellStyle): void;
     }
         
     export interface IDimensionLayoutManager {

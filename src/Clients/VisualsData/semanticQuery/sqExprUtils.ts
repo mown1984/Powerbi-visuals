@@ -25,12 +25,13 @@
  */
 
 module powerbi.data {
+    import ArrayExtensions = jsCommon.ArrayExtensions;
     import ArrayNamedItems = jsCommon.ArrayNamedItems;
     import ConceptualEntity = powerbi.data.ConceptualEntity;
     import ConceptualMultiplicity = powerbi.data.ConceptualMultiplicity;
     import SQEntityExpr = powerbi.data.SQEntityExpr;
     import StringExtensions = jsCommon.StringExtensions;
-    
+
     export module SQExprUtils {
         export function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean {
             let metadata = expr.getMetadata(schema),
@@ -365,6 +366,22 @@ module powerbi.data {
             }
 
             return false;
+        }
+
+        /** Performs a union of the 2 arrays with SQExpr.equals as comparator to skip duplicate items,
+            and returns a new array. When available, we should use _.unionWith from lodash. */
+        export function concatUnique(leftExprs: SQExpr[], rightExprs: SQExpr[]): SQExpr[] {
+            debug.assertValue(leftExprs, 'leftExprs');
+            debug.assertValue(rightExprs, 'rightExprs');
+
+            let concatExprs = ArrayExtensions.copy(leftExprs);
+            for (let expr of rightExprs) {
+                if (indexOfExpr(concatExprs, expr) === -1) {
+                    concatExprs.push(expr);
+                }
+            }
+
+            return concatExprs;
         }
 
         class SQExprDefaultNameGenerator extends DefaultSQExprVisitorWithArg<string, string> {

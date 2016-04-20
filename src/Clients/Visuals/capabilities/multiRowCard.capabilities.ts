@@ -90,6 +90,48 @@ module powerbi.visuals {
                         type: { formatting: { fontSize: true } }
                     },
                 }
+            },
+            card: {
+                displayName: data.createDisplayNameGetter('Card_ToolTip'),
+                properties: {
+                    outline: {
+                        displayName: data.createDisplayNameGetter('Visual_Outline'),
+                        type: { enumeration: outline.type }
+                    },
+                    outlineColor: {
+                        displayName: data.createDisplayNameGetter('Visual_OutlineColor'),
+                        description: data.createDisplayNameGetter('Visual_OutlineColor_Desc'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    outlineWeight: {
+                        displayName: data.createDisplayNameGetter('Visual_OutlineWeight'),
+                        description: data.createDisplayNameGetter('Visual_OutlineWeight_Desc'),
+                        type: { numeric: true }
+                    },
+                    barShow: {
+                        displayName: data.createDisplayNameGetter('Visual_MultiRowCard_BarShow'),
+                        description: data.createDisplayNameGetter('Visual_MultiRowCard_BarShow_Desc'),
+                        type: { bool: true }
+                    },
+                    barColor: {
+                        displayName: data.createDisplayNameGetter('Visual_MultiRowCard_BarColor'),
+                        type: { fill: { solid: { color: true } } }
+                    },
+                    barWeight: {
+                        displayName: data.createDisplayNameGetter('Visual_MultiRowCard_BarWeight'),
+                        description: data.createDisplayNameGetter('Visual_MultiRowCard_BarWeight_Desc'),
+                        type: { numeric: true }
+                    },
+                    cardPadding: {
+                        displayName: data.createDisplayNameGetter('Visual_MultiRowCard_CardPadding'),
+                        description: data.createDisplayNameGetter('Visual_MultiRowCard_CardBackground'),
+                        type: { numeric: true }
+                    },
+                    cardBackground: {
+                        displayName: data.createDisplayNameGetter('Visual_Background'),
+                        type: { fill: { solid: { color: true } } }
+                    }
+                }
             }
         },
         dataViewMappings: [{
@@ -104,5 +146,19 @@ module powerbi.visuals {
         suppressDefaultTitle: true,
         supportsSelection: false,
         disableVisualDetails: true,
+    };
+    
+    export const multiRowCardProps = {
+        card: {
+            outline: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'outline' },
+            outlineColor: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'outlineColor' },
+            outlineWeight: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'outlineWeight' },
+            barShow: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'barShow' },
+            barColor: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'barColor' },
+            barWeight: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'barWeight' },
+            cardPadding: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'cardPadding' },
+            cardBackground: <DataViewObjectPropertyIdentifier>{ objectName: 'card', propertyName: 'cardBackground' },
+
+        }
     };
 }

@@ -940,6 +940,15 @@ module powerbi.visuals {
         max: number;
     }
 
+    /**
+     * Interface used to track geocoding requests, a new context being created on each data change.
+     * For now, it's empty and is used just used to track whether the context has changed so that
+     * we don't add data points for old geocode requests.  If we add additional tracking information
+     * for geocoding, this is where it can live.
+     */
+    interface GeocodingContext {
+    }
+
     const DefaultLocationZoomLevel = 11;
 
     export class Map implements IVisual {
@@ -975,8 +984,6 @@ module powerbi.visuals {
         private geoTaggingAnalyzerService: powerbi.IGeoTaggingAnalyzerService;
         private isFilledMap: boolean;
         private host: IVisualHostServices;
-        private receivedExternalViewChange = false;
-        private executingInternalViewChange = false;
         private geocoder: IGeocoder;
         private mapControlFactory: IMapControlFactory;
         private tooltipsEnabled: boolean;
@@ -989,6 +996,8 @@ module powerbi.visuals {
         private root: JQuery;
         private enableCurrentLocation: boolean;
         private isCurrentLocation: boolean;
+        private boundsHaveBeenUpdated: boolean;
+        private geocodingContext: GeocodingContext;
 
         constructor(options: MapConstructionOptions) {
             if (options.filledMap) {
@@ -1008,6 +1017,7 @@ module powerbi.visuals {
             this.isLegendScrollable = !!options.behavior;
             this.viewChangeThrottleInterval = options.viewChangeThrottleInterval;
             this.enableCurrentLocation = options.enableCurrentLocation;
+            this.boundsHaveBeenUpdated = false;
         }
 
         public init(options: VisualInitOptions) {
@@ -1091,8 +1101,9 @@ module powerbi.visuals {
         }
 
         private enqueueGeoCode(dataPoint: MapDataPoint): void {
+            let geocodingContext = this.geocodingContext;
             this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
-                if (location) {
+                if (location && geocodingContext === this.geocodingContext) {
                     dataPoint.location = location;
                     this.addDataPoint(dataPoint);
                 }
@@ -1100,8 +1111,9 @@ module powerbi.visuals {
         }
 
         private enqueueGeoCodeAndGeoShape(dataPoint: MapDataPoint, params: FilledMapParams): void {
+            let geocodingContext = this.geocodingContext;
             this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
-                if (location) {
+                if (location && geocodingContext === this.geocodingContext) {
                     dataPoint.location = location;
                     this.enqueueGeoShape(dataPoint, params);
                 }
@@ -1110,18 +1122,21 @@ module powerbi.visuals {
 
         private enqueueGeoShape(dataPoint: MapDataPoint, params: FilledMapParams): void {
             debug.assertValue(dataPoint.location, "cachedLocation");
+            let geocodingContext = this.geocodingContext;
             this.geocoder.geocodeBoundary(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons)
                 .then((result: IGeocodeBoundaryCoordinate) => {
-                    let paths;
-                    if (result.locations.length === 0 || result.locations[0].geographic) {
-                        paths = MapShapeDataPointRenderer.buildPaths(result.locations);
+                    if (geocodingContext === this.geocodingContext) {
+                        let paths;
+                        if (result.locations.length === 0 || result.locations[0].geographic) {
+                            paths = MapShapeDataPointRenderer.buildPaths(result.locations);
+                        }
+                        else {
+                            MapUtil.calcGeoData(result);
+                            paths = MapShapeDataPointRenderer.buildPaths(result.locations);
+                        }
+                        dataPoint.paths = paths;
+                        this.addDataPoint(dataPoint);
                     }
-                    else {
-                        MapUtil.calcGeoData(result);
-                        paths = MapShapeDataPointRenderer.buildPaths(result.locations);
-                    }
-                    dataPoint.paths = paths;
-                    this.addDataPoint(dataPoint);
                 });
         }
 
@@ -1155,6 +1170,7 @@ module powerbi.visuals {
         }
 
         private resetBounds(): void {
+            this.boundsHaveBeenUpdated = false;
             this.minLongitude = MapUtil.MaxAllowedLongitude;
             this.maxLongitude = MapUtil.MinAllowedLongitude;
             this.minLatitude = MapUtil.MaxAllowedLatitude;
@@ -1162,6 +1178,7 @@ module powerbi.visuals {
         }
 
         private updateBounds(latitude: number, longitude: number): void {
+            this.boundsHaveBeenUpdated = true;
             if (longitude < this.minLongitude) {
                 this.minLongitude = longitude;
             }
@@ -1457,8 +1474,10 @@ module powerbi.visuals {
             debug.assertValue(options, 'options');
 
             this.resetBounds();
+            this.geocodingContext = {};
 
-            this.receivedExternalViewChange = false;
+            if (this.behavior)
+                this.behavior.resetZoomPan();
 
             this.dataLabelsSettings = dataLabelUtils.getDefaultMapLabelSettings();
             this.defaultDataPointColor = null;
@@ -1867,10 +1886,6 @@ module powerbi.visuals {
         }
 
         private onViewChanged() {
-            if (!this.executingInternalViewChange)
-                this.receivedExternalViewChange = true;
-            else
-                this.executingInternalViewChange = false;
             this.updateOffsets(false, false /* dataChanged */);
             if (this.behavior)
                 this.behavior.viewChanged();
@@ -1920,18 +1935,17 @@ module powerbi.visuals {
                 this.updateOffsets(dataChanged, redrawDataLabels);
 
                 // Set zoom level after we rendered that map as we need the max size of the bubbles/ pie slices to calculate it
-                let levelOfDetail = this.getOptimumLevelOfDetail(mapViewport.width, mapViewport.height);
-                let center = this.getViewCenter(levelOfDetail);
+                if (this.boundsHaveBeenUpdated && !(this.behavior && this.behavior.hasReceivedZoomOrPanEvent())) {
+                    let levelOfDetail = this.getOptimumLevelOfDetail(mapViewport.width, mapViewport.height);
+                    let center = this.getViewCenter(levelOfDetail);
 
-                this.updateMapView(center, levelOfDetail);
+                    this.updateMapView(center, levelOfDetail);
+                }
             }
         }
 
         private updateMapView(center: Microsoft.Maps.Location, levelOfDetail: number): void {
-            if (!this.receivedExternalViewChange || !this.interactivityService) {
-                this.executingInternalViewChange = true;
-                this.mapControl.setView({ center: center, zoom: levelOfDetail, animate: true });
-            }
+            this.mapControl.setView({ center: center, zoom: levelOfDetail, animate: true });
         }
 
         private updateOffsets(dataChanged: boolean, redrawDataLabels: boolean) {

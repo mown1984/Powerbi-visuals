@@ -26,9 +26,10 @@
 
 module powerbitests.helpers {
     import DataView = powerbi.DataView;
+    import DataViewBuilderColumnOptions = powerbi.data.DataViewBuilderColumnOptions;
     import DataViewBuilderSeriesData = powerbi.data.DataViewBuilderSeriesData;
+    import DataViewBuilderValuesColumnOptions = powerbi.data.DataViewBuilderValuesColumnOptions;
     import DataViewObjects = powerbi.DataViewObjects;
-    import SQExpr = powerbi.data.SQExpr;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
     import ValueType = powerbi.ValueType;
 
@@ -63,54 +64,127 @@ module powerbitests.helpers {
         expect(parseFloat(line.css('stroke-opacity'))).toBeCloseTo(properties.opacity, 3);
     }
 
-    export function buildTrendLineDataViews(objects: DataViewObjects, combined: boolean, xIsMeasure: boolean): DataView[] {
-        let categoryField = SQExprBuilder.entity('schema', 'table', 'category_column');
-        let seriesField = SQExprBuilder.entity('schema', 'table', 'series_column');
-
-        let dataView = xIsMeasure
-            ? buildSourceDataViewWithXMeasure(categoryField, seriesField)
-            : buildSourceDataViewWithXCategory(categoryField, seriesField);
-        dataView.metadata.objects = objects;
-
-        let regressionDataView = buildRegressionDataView(categoryField, seriesField, combined);
-        regressionDataView.metadata.objects = objects;
-
-        return [dataView, regressionDataView];
+    export interface TrendLineBuilderOptions {
+        combineSeries?: boolean;
+        xIsMeasure?: boolean;
+        dynamicSeries?: boolean;
+        highlights?: boolean;
+        multipleSeries?: boolean;
     }
 
-    function buildSourceDataViewWithXCategory(categoryField: SQExpr, seriesField: SQExpr): DataView {
-        return powerbi.data.createCategoricalDataViewBuilder().withCategory({
-            identityFrom: {
-                fields: [categoryField],
-            },
-            source: {
-                displayName: 'col1',
-                queryName: 'col1',
-                index: 0,
-                type: ValueType.fromDescriptor({ numeric: true }),
-                roles: {
-                    'Category': true
-                },
-            },
-            values: [1, 2, 3, 4, 5, 6],
-        }).withGroupedValues({
-            groupColumn: {
-                source: {
-                    displayName: 'col2',
-                    queryName: 'col2',
-                    index: 1,
-                    isMeasure: false,
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: {
-                        'Series': true
-                    },
-                },
-                values: ['a', 'b'],
-                identityFrom: {
-                    fields: [seriesField]
+    let defaultOptions: TrendLineBuilderOptions = {
+        combineSeries: true,
+        dynamicSeries: true,
+        highlights: false,
+        multipleSeries: true,
+        xIsMeasure: false,
+    };
+
+    export class TrendLineBuilder {
+        private options: TrendLineBuilderOptions;
+        private objects: DataViewObjects;
+
+        private sourceDataView: DataView;
+        private trendLineDataView: DataView;
+
+        private sourceCategoryField = SQExprBuilder.entity('schema', 'table', 'category_column');
+        private sourceSeriesField = SQExprBuilder.entity('schema', 'table', 'series_column');
+
+        constructor(options: TrendLineBuilderOptions) {
+            this.options = $.extend(_.clone(defaultOptions), options);
+        }
+
+        public withObjects(objects: DataViewObjects): this {
+            this.objects = objects;
+            return this;
+        }
+
+        public buildDataViews(): DataView[] {
+            this.sourceDataView = this.buildSourceDataView();
+            this.sourceDataView.metadata.objects = this.objects || this.getDefaultObjects();
+
+            this.trendLineDataView = this.buildRegressionDataView();
+            this.trendLineDataView.metadata.objects = this.objects || this.getDefaultObjects();
+
+            return [this.sourceDataView, this.trendLineDataView];
+        }
+
+        public getTrendLineDataView(): DataView {
+            return this.trendLineDataView;
+        }
+
+        public getSourceDataView(): DataView {
+            return this.sourceDataView;
+        }
+
+        private getDefaultObjects(): DataViewObjects {
+            return {
+                trend: {
+                    combineSeries: this.options.combineSeries,
+                    show: true,
                 }
-            },
-            valueColumns: [{
+            };
+        }
+
+        private buildSourceDataView(): DataView {
+            let options = this.options;
+            let builder = powerbi.data.createCategoricalDataViewBuilder();
+
+            let valueColumns: DataViewBuilderColumnOptions[] = [];
+            let valueSource: DataViewBuilderSeriesData[][];
+            if (options.xIsMeasure) {
+                builder.withCategory({
+                    identityFrom: {
+                        fields: [this.sourceCategoryField],
+                    },
+                    source: {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        index: 0,
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: {
+                            'Category': true
+                        },
+                    },
+                    values: ['a', 'b', 'c', 'd', 'e', 'f'],
+                });
+
+                valueColumns.push({
+                    source: {
+                        displayName: 'x',
+                        queryName: 'x',
+                        index: 1,
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        roles: {
+                            'X': true
+                        },
+                    }
+                });
+
+                valueSource = this.sourceDataWithXMeasure;
+            }
+            else {
+                builder.withCategory({
+                    identityFrom: {
+                        fields: [this.sourceCategoryField],
+                    },
+                    source: {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        index: 0,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        roles: {
+                            'Category': true
+                        },
+                    },
+                    values: [1, 2, 3, 4, 5, 6],
+                });
+
+                valueSource = this.sourceData;
+            }
+
+            valueColumns.push({
                 source: {
                     displayName: 'col3',
                     queryName: 'col3',
@@ -121,136 +195,189 @@ module powerbitests.helpers {
                         'Y': true
                     },
                 }
-            }],
-            data: [
-                [{ values: [10, 20, 30, 40, 50, 60] }],
-                [{ values: [15, 25, 35, 45, 55, 65] }]
-            ],
-        }).build();
-    }
+            });
 
-    function buildSourceDataViewWithXMeasure(categoryField: SQExpr, seriesField: SQExpr): DataView {
-        return powerbi.data.createCategoricalDataViewBuilder().withCategory({
-            identityFrom: {
-                fields: [categoryField],
-            },
-            source: {
-                displayName: 'col1',
-                queryName: 'col1',
-                index: 0,
-                type: ValueType.fromDescriptor({ text: true }),
-                roles: {
-                    'Category': true
-                },
-            },
-            values: ['a', 'b', 'c', 'd', 'e', 'f'],
-        }).withGroupedValues({
-            groupColumn: {
-                source: {
-                    displayName: 'col2',
-                    queryName: 'col2',
-                    index: 1,
-                    isMeasure: false,
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: {
-                        'Series': true
+            if (!options.highlights) {
+                valueSource = this.withoutHighlights(valueSource);
+            }
+
+            if (options.dynamicSeries) {
+                let seriesValues: any[];
+                if (options.multipleSeries) {
+                    seriesValues = ['a', 'b'];
+                }
+                else {
+                    seriesValues = ['a'];
+                }
+
+                builder.withGroupedValues({
+                    groupColumn: {
+                        source: {
+                            displayName: 'col2',
+                            queryName: 'col2',
+                            index: 1,
+                            isMeasure: false,
+                            type: ValueType.fromDescriptor({ text: true }),
+                            roles: {
+                                'Series': true
+                            },
+                        },
+                        values: seriesValues,
+                        identityFrom: {
+                            fields: [this.sourceSeriesField]
+                        }
                     },
-                },
-                values: ['a', 'b'],
-                identityFrom: {
-                    fields: [seriesField]
+                    valueColumns: valueColumns,
+                    data: valueSource,
+                });
+            }
+            else {
+                if (options.multipleSeries) {
+                    valueColumns.push({
+                        source: {
+                            displayName: 'col4',
+                            queryName: 'col4',
+                            index: 3,
+                            isMeasure: true,
+                            type: ValueType.fromDescriptor({ numeric: true }),
+                            roles: {
+                                'Y': true
+                            },
+                        }
+                    });
                 }
-            },
-            valueColumns: [
-                {
-                    source: {
-                        displayName: 'x',
-                        queryName: 'x',
-                        index: 2,
-                        isMeasure: true,
-                        type: ValueType.fromDescriptor({ numeric: true }),
-                        roles: {
-                            'X': true
-                        },
-                    }
-                }, {
-                    source: {
-                        displayName: 'y',
-                        queryName: 'y',
-                        index: 3,
-                        isMeasure: true,
-                        type: ValueType.fromDescriptor({ numeric: true }),
-                        roles: {
-                            'Y': true
-                        },
-                    }
-                }
-            ],
-            data: [
-                [{ values: [1, 2, 3, 4, 5, 6] }, { values: [10, 20, 30, 40, 50, 60] }],
-                [{ values: [1, 2, 3, 4, 5, 6] }, { values: [15, 25, 35, 45, 55, 65] }]
-            ],
-        }).build();
-    }
 
-    function buildRegressionDataView(categoryField: SQExpr, seriesField: SQExpr, combined: boolean): DataView {
-        let series: string[];
-        let data: DataViewBuilderSeriesData[][];
-        if (combined) {
-            series = ['a'];
-            data = [[{ values: [10, 65] }]];
-        }
-        else {
-            series = ['a', 'b'];
-            data = [
-                [{ values: [10, 60] }],
-                [{ values: [15, 65] }]
-            ];
+                let columns: DataViewBuilderValuesColumnOptions[] = [];
+                for (let measureIndex = 0; measureIndex < valueColumns.length; measureIndex++) {
+                    columns.push({
+                        source: valueColumns[measureIndex].source,
+                        values: valueSource[measureIndex][0].values,
+                        highlights: valueSource[measureIndex][0].highlights,
+                    });
+                }
+
+                builder.withValues({
+                    columns: columns
+                });
+            }
+
+            return builder.build();
         }
 
-        let regressionDataView = powerbi.data.createCategoricalDataViewBuilder().withCategory({
-            identityFrom: {
-                fields: [categoryField],
-            },
-            source: {
-                displayName: 'col1Regression',
-                queryName: 'RegressionX',
-                type: ValueType.fromDescriptor({ numeric: true }),
-                roles: {
-                    'regression.X': true
-                },
-            },
-            values: [1, 6],
-        }).withGroupedValues({
-            groupColumn: {
-                source: {
-                    displayName: 'col3Regression',
-                    queryName: "RegressionSeries",
-                    type: ValueType.fromDescriptor({ text: true }),
-                    isMeasure: false,
-                    roles: {
-                        'regression.Series': true
-                    },
-                },
-                values: series,
+        private buildRegressionDataView(): DataView {
+            let options = this.options;
+            let builder = powerbi.data.createCategoricalDataViewBuilder();
+
+            builder.withCategory({
                 identityFrom: {
-                    fields: [seriesField]
-                }
-            },
-            valueColumns: [{
+                    fields: [SQExprBuilder.columnRef(SQExprBuilder.entity('s', 'RegressionEntity'), 'RegressionCategories')],
+                },
                 source: {
-                    displayName: 'col3',
-                    queryName: 'RegressionY',
-                    isMeasure: true,
+                    displayName: 'col1Regression',
+                    queryName: 'RegressionX',
                     type: ValueType.fromDescriptor({ numeric: true }),
                     roles: {
-                        'regression.Y': true
+                        'regression.X': true
                     },
-                }
-            }],
-            data: data,
-        }).build();
+                },
+                values: [1, 6],
+            });
 
-        return regressionDataView;
+            let seriesValues: string[];
+            if (options.combineSeries || !options.multipleSeries) {
+                seriesValues = ['a'];
+            }
+            else {
+                if (options.dynamicSeries) {
+                    seriesValues = ['a', 'b'];
+                }
+                else {
+                    seriesValues = ['col3', 'col4'];
+                }
+            }
+
+            let valueSource = this.regressionData;
+            if (!options.highlights)
+                valueSource = this.withoutHighlights(valueSource);
+
+            let data: DataViewBuilderSeriesData[][] = [];
+            for (let seriesIndex = 0; seriesIndex < seriesValues.length; seriesIndex++) {
+                data.push(valueSource[seriesIndex]);
+            }
+
+            builder.withGroupedValues({
+                groupColumn: {
+                    source: {
+                        displayName: 'col3Regression',
+                        queryName: "RegressionSeries",
+                        type: ValueType.fromDescriptor({ text: true }),
+                        isMeasure: false,
+                        roles: {
+                            'regression.Series': true
+                        },
+                    },
+                    values: seriesValues,
+                    identityFrom: {
+                        fields: [SQExprBuilder.columnRef(SQExprBuilder.entity('s', 'RegressionEntity'), 'RegressionSeries')],
+                    }
+                },
+                valueColumns: [{
+                    source: {
+                        displayName: 'col3',
+                        queryName: 'RegressionY',
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        roles: {
+                            'regression.Y': true
+                        },
+                    }
+                }],
+                data: data,
+            });
+            
+            return builder.build();
+        }
+
+        private withoutHighlights(data: DataViewBuilderSeriesData[][]): DataViewBuilderSeriesData[][] {
+            let newData: DataViewBuilderSeriesData[][] = _.clone(data);
+            for (let i = 0; i < data.length; i++) {
+                let series = newData[i];
+                for (let j = 0; j < series.length; j++) {
+                    let column = series[j];
+                    column.highlights = undefined;
+                }
+            }
+
+            return newData;
+        }
+
+        private sourceDataWithXMeasure: DataViewBuilderSeriesData[][] = [
+            [
+                { values: [10, 30, 50, 40, 20, 60], highlights: [1, 3, 5, 4, 2, 6] },  // X
+                { values: [60, 20, 50, 10, 30, 40], highlights: [6, 2, 5, 1, 3, 4] },  // Y
+            ],
+            [
+                { values: [35, 55, 45, 25, 65, 15], highlights: [3, 5, 4, 2, 6, 1] },  // X
+                { values: [45, 65, 25, 55, 15, 35], highlights: [4, 6, 2, 5, 1, 3] },  // Y
+            ]
+        ];
+
+        private sourceData: DataViewBuilderSeriesData[][] = [
+            [
+                { values: [60, 20, 50, 10, 30, 40], highlights: [6, 2, 5, 1, 3, 4] },  // Y
+            ],
+            [
+                { values: [45, 65, 25, 55, 15, 35], highlights: [4, 6, 2, 5, 1, 3] },  // Y
+            ]
+        ];
+
+        private regressionData: DataViewBuilderSeriesData[][] = [
+            [
+                { values: [10, 60], highlights: [3, 6] },
+            ],
+            [
+                { values: [15, 65], highlights: [4, 3] },
+            ]
+        ];
     }
 }

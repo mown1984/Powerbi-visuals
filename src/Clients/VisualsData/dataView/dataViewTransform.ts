@@ -66,7 +66,7 @@ module powerbi.data {
     export interface DataViewProjectionActiveItemInfo {
         queryRef: string;
 
-        /** Describes if the active item should be ignored in concatenation. 
+        /** Describes if the active item should be ignored in concatenation.
             If the active item has a drill filter, it will not be used in concatenation.
             If the value of suppressConcat is true, the activeItem will be ommitted from concatenation. */
         suppressConcat?: boolean;
@@ -374,16 +374,42 @@ module powerbi.data {
             let categories = Prototype.overrideArray(prototype.categories, override);
             if (categories)
                 categorical.categories = categories;
-            
+
             let valuesOverride = Prototype.overrideArray(prototype.values, override);
             let values = valuesOverride || prototype.values;
 
             if (values) {
                 let grouped = inherit(values.grouped());
+                for (let i = 0, ilen = grouped.length; i < ilen; i++) {
+                    grouped[i] = inherit(grouped[i]);
+                }
                 if (selectsToInclude) {
+                    // Apply selectsToInclude to values by removing value columns not included
                     for (let i = values.length - 1; i >= 0; i--) {
-                        if (!selectsToInclude[values[i].source.index])
+                        if (!selectsToInclude[values[i].source.index]) {
                             values.splice(i, 1);
+                        }
+                    }
+
+                    // Apply selectsToInclude to grouped()
+                    if (values.length > 0 && values[0].identity) {
+                        // We have a dynamic series, so we should remove any value columns not included in the split from each
+                        //    valueColumnGroup
+                        for (let i = 0, ilen = grouped.length ; i < ilen; i++) {
+                            let currentGroupValues = grouped[i].values;
+                            for (let j = currentGroupValues.length - 1; j >= 0; j--) {
+                                if (!selectsToInclude[currentGroupValues[j].source.index])
+                                    currentGroupValues.splice(i, 1);
+                            }
+                        }
+                    }
+                    else {
+                        // We are in a static series, so we should throw away the grouped and recreate it using the static values
+                        //   which have already been filtered
+                        grouped = [];
+                        grouped[0] = {
+                            values: values,
+                        };
                     }
                 }
 
@@ -641,7 +667,7 @@ module powerbi.data {
                             projection);
                     }
                 });
-                
+
                 // reorder levelValues in any composite groups in columns hierarchy
                 let transformedColumnsHierarchy: DataViewHierarchy;
                 DataViewMapping.visitMatrixItems(supportedDataViewMapping.columns, {
@@ -664,7 +690,7 @@ module powerbi.data {
         }
 
         /**
-         * Returns a inheritSingle() version of the specified matrixHierarchy with any composite group levels and  
+         * Returns a inheritSingle() version of the specified matrixHierarchy with any composite group levels and
          * values re-ordered by projection ordering.
          * Returns undefined if no re-ordering under the specified matrixHierarchy is necessary.
          */
@@ -697,7 +723,7 @@ module powerbi.data {
                             transformedHierarchy.levels = inheritSingle(matrixHierarchy.levels);
 
                             // Because the current hierarchyLevel is the inner-most level that needs re-ordering of composite group values,
-                            // inheriting all nodes from root down to this level will also prepare the nodes for any transform that needs to 
+                            // inheriting all nodes from root down to this level will also prepare the nodes for any transform that needs to
                             // happen in other hierarchy levels in the later iterations of this for-loop.
                             transformedHierarchy.root = utils.DataViewMatrixUtils.inheritMatrixNodeHierarchy(matrixHierarchy.root, i, true);
                         }
@@ -775,7 +801,7 @@ module powerbi.data {
             let originalLevelSources = transformingHierarchyLevel.sources;
 
             transformingHierarchyLevel.sources = originalLevelSources.slice(0); // make a clone of the array before modifying it, because the for-loop depends on the origin array.
-            
+
             let newLevelSourceIndices = Object.keys(newToOldLevelSourceIndicesMapping);
             for (let i = 0, ilen = newLevelSourceIndices.length; i < ilen; i++) {
                 let newLevelSourceIndex = newLevelSourceIndices[i];
@@ -906,7 +932,7 @@ module powerbi.data {
             let reversed: NumberToNumberMapping = {};
 
             for (let key in mapping) {
-                // Note: key is a string after we get it out from mapping, thus we need to parse it 
+                // Note: key is a string after we get it out from mapping, thus we need to parse it
                 // back into a number before putting it as the value in the reversed mapping
                 let value = mapping[key];
                 let keyAsNumber = parseInt(key, 10);
@@ -1666,7 +1692,7 @@ module powerbi.data {
             if (_.isEmpty(identities) || _.isEmpty(identityFields))
                 return;
 
-            if (!selector.metadata &&
+            if (!selector.metadata ||
                 !Selector.matchesKeys(selector, <SQExpr[][]>[identityFields]))
                 return;
 

@@ -187,7 +187,7 @@ module powerbi.visuals {
             let categoryValues: any[] = [];
             let categoryMetadata: DataViewMetadataColumn;
             let values = dataView.categorical.values;
-            let valuesMetadata = undefined;
+            let valuesMetadata: DataViewMetadataColumn = undefined;
             if (!_.isEmpty(values)) {
                 let column = values[0];
                 valuesMetadata = column.source;
@@ -208,6 +208,7 @@ module powerbi.visuals {
                         let value = column.values[categoryIndex] || 0;
                         let identity = SelectionIdBuilder.builder()
                             .withCategory(categoryColumn, categoryIndex)
+                            .withMeasure(valuesMetadata.queryName)
                             .createSelectionId();
 
                         let tooltipInfo: TooltipDataItem[];

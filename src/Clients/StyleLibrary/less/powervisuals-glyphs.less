@@ -79,7 +79,7 @@
     font-weight: normal;
     font-style: normal;
     display: inline-block;
-
+    
     /** Necessary to allow absolute positioning of just ::after elements (i.e. stacks) */
     position: relative;
 
@@ -137,6 +137,14 @@
 
     &.caret-down::before {
         content: '\E116';
+    }
+
+    &.chevron-up::before {
+        content: '\E119';
+    }
+
+    &.chevron-down::before {
+        content: '\E118';
     }
 
     &.circle::before {
@@ -282,49 +290,47 @@
     &.alignright::before {
         content: '\E8E2';
     }
-
     //stacked boxes
-    &.boxes-stacked{
-        &::before{
+    &.boxes-stacked {
+        &::before {
             content: '\E730';
             color: @neutralTertiaryAltColor;
         }
 
-        &::after{
+        &::after {
             position: absolute;
             left: 0;
             color: @blackColor;
         }
 
-        &.boxes-zero::after{
+        &.boxes-zero::after {
             content: '';
         }
 
-        &.boxes-one::after{
+        &.boxes-one::after {
             content: '\E732';
         }
 
-        &.boxes-two::after{
+        &.boxes-two::after {
             content: '\E733';
         }
 
-        &.boxes-three::after{
+        &.boxes-three::after {
             content: '\E731';
         }
 
-        &.boxes-four::before{
+        &.boxes-four::before {
             color: @blackColor;
         }
     }
-
     //stacked bars
-    &.bars-stacked{
-        &::before{
+    &.bars-stacked {
+        &::before {
             content: '\E728';
             color: @neutralTertiaryAltColor;
         }
 
-        &::after{
+        &::after {
             position: absolute;
             left: 0;
             color: @blackColor;
@@ -350,15 +356,14 @@
             color: @blackColor;
         }
     }
-
     //stacked stars
-    &.star-stacked{
-        &::before{
+    &.star-stacked {
+        &::before {
             content: '\E724';
             color: @neutralTertiaryAltColor;
         }
 
-        &::after{
+        &::after {
             position: absolute;
             left: 0;
             color: @blackColor;
@@ -376,19 +381,17 @@
             color: @blackColor;
         }
     }
-
     //traffic light
-    &.traffic-light{
-        &::before{
+    &.traffic-light {
+        &::before {
             content: '\E713';
             color: @blackColor;
         }
 
-        &::after{
+        &::after {
             position: absolute;
             left: 0;
             content: '\E712';
         }
     }
-
 }

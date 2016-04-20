@@ -38,6 +38,7 @@ declare module powerbi.visuals.telemetry {
 }
 declare module powerbi.extensibility {
     import ISelectionId = visuals.ISelectionId;
+    import IPoint = visuals.IPoint;
     interface SelectionManagerOptions {
         hostServices: IVisualHostServices;
     }
@@ -47,10 +48,13 @@ declare module powerbi.extensibility {
         private promiseFactory;
         constructor(options: SelectionManagerOptions);
         select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
+        showContextMenu(selectionId: ISelectionId, position: IPoint): IPromise<{}>;
         hasSelection(): boolean;
         clear(): IPromise<{}>;
         getSelectionIds(): ISelectionId[];
         private sendSelectionToHost(ids);
+        private sendContextMenuToHost(selectionId, position);
+        private getSelectorsByColumn(selectionIds);
         private selectInternal(selectionId, multiSelect);
         static containsSelection(list: ISelectionId[], id: ISelectionId): boolean;
     }

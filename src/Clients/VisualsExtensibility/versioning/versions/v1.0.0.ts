@@ -29,10 +29,14 @@ module powerbi.extensibility.v100 {
         return {
             update: (options: powerbi.VisualUpdateOptions) => {
                 if (visual.update) {
+                    let type = options.type || VisualUpdateType.Data;
+                    if(type & VisualUpdateType.Resize && options.resizeMode === ResizeMode.Resized) {
+                        type |= VisualUpdateType.ResizeEnd;
+                    } 
                     visual.update({
                         viewport: options.viewport,
                         dataViews: options.dataViews,
-                        type: options.type || VisualUpdateType.Data
+                        type: type
                     });
                 }
             },

@@ -773,6 +773,8 @@ module powerbi.visuals {
         }
 
         private addInteractiveLegendArrow(): void {
+            if (!this.data || !this.data.dataPoints || this.data.dataPoints.length === 0) return;
+
             const arrowHeightOffset = 11;
             const arrowWidthOffset = 33 / 2;
             if (!this.interactiveLegendArrow) {
@@ -1746,6 +1748,7 @@ module powerbi.visuals {
                 this.dataPoints = [];
                 let formatStringProp = donutChartProps.general.formatString;
                 let prevPointColor: string;
+                let pctFormatString = valueFormatter.getLocalizedString('Percentage');
 
                 for (let i = 0, dataPointCount = convertedData.length; i < dataPointCount; i++) {
                     let point = convertedData[i];
@@ -1756,7 +1759,8 @@ module powerbi.visuals {
 
                     let measure = normalizedNonHighlight.measure;
                     let percentage = (this.total > 0) ? normalizedNonHighlight.value / this.total : 0.0;
-                    let highlightRatio = undefined;
+                    let highlightRatio: number;
+                    let highlightPercentage: number;
                     if (normalizedNonHighlight.value > this.maxValue)
                         this.maxValue = normalizedNonHighlight.value;
                     if (normalizedHighlight.value > this.maxValue)
@@ -1778,18 +1782,39 @@ module powerbi.visuals {
                         if (!highlightRatio) {
                             highlightRatio = DonutChart.EffectiveZeroValue;
                         }
+                        highlightPercentage = percentage * highlightRatio;
                     }
 
                     let categoryValue = point.categoryLabel;
                     let categorical = this.dataViewCategorical;
-                    let valueIndex: number = categorical.categories ? null : i;
-                    valueIndex = point.seriesIndex !== undefined ? point.seriesIndex : valueIndex;
+                    let valueIndex: number;
+                    if (point.seriesIndex != null) {
+                        valueIndex = point.seriesIndex;
+                    }
+                    else if (_.isEmpty(categorical.categories)) {
+                        // Static series with no categories
+                        valueIndex = i;
+                    }
+
                     let valuesMetadata = categorical.values[valueIndex].source;
                     let value: number = this.hasHighlights && highlightsOverflow ? point.highlightMeasureValue.measure : point.measureValue.measure;
                     let highlightValue: number = this.hasHighlights && !highlightsOverflow ? point.highlightMeasureValue.measure : undefined;
+                    let formatString = valueFormatter.getFormatString(valuesMetadata, formatStringProp);
+                    let valueAndPct: string;
+                    if (value != null) {
+                        let pct: string = valueFormatter.format(percentage, pctFormatString);
+                        valueAndPct = valueFormatter.format(value, formatString) + ' (' + pct + ')';
+                    }
+
+                    let highlightValueAndPct: string;
+                    if (this.hasHighlights && highlightValue != null && highlightPercentage != null) {
+                        let highlightedPct: string = valueFormatter.format(highlightPercentage, pctFormatString); 
+                        highlightValueAndPct = valueFormatter.format(highlightValue, formatString) + ' (' + highlightedPct + ')';
+                    }
+
                     let tooltipInfo: TooltipDataItem[];
                     if (this.tooltipsEnabled) {
-                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, valueIndex, i, highlightValue);
+                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, valueAndPct, null, null, valueIndex, i, highlightValueAndPct);
                     }
                     let strokeWidth = prevPointColor === point.color && value && value > 0 ? 1 : 0;
                     prevPointColor = value && value > 0 ? point.color : prevPointColor;
@@ -1855,20 +1880,15 @@ module powerbi.visuals {
                             : converterHelper.getFormattedLegendLabel(seriesData.source, dataViewCategorical.values, formatStringProp);
 
                         let nonHighlight = seriesData.values[categoryIndex] || 0;
-                        let highlight = this.hasHighlights ? seriesData.highlights[categoryIndex] || 0 : 0;
-
-                        let measure: string;
-                        let seriesGroup: any;
-
-                        if (this.isMultiMeasure) {
-                            measure = seriesData.source.queryName;
+                        let highlight: number;
+                        if (this.hasHighlights) {
+                            highlight = seriesData.highlights[categoryIndex] != null ? seriesData.highlights[categoryIndex] : null;
                         }
-                        else if (seriesData.identity)
-                            seriesGroup = seriesData;
 
+                        let measure: string = seriesData.source.queryName;
                         let identity: SelectionId = SelectionIdBuilder.builder()
                             .withCategory(dataViewCategorical.categories[0], categoryIndex)
-                            .withSeries(seriesGroup, seriesGroup)
+                            .withSeries(dataViewCategorical.values, this.isDynamicSeries ? seriesData :  undefined)
                             .withMeasure(measure)
                             .createSelectionId();
 
@@ -1881,7 +1901,7 @@ module powerbi.visuals {
                             },
                             highlightMeasureValue: <MeasureAndValue> {
                                 measure: highlight,
-                                value: Math.abs(highlight),
+                                value: highlight != null ? Math.abs(highlight) : null,
                             },
                             index: categoryIndex * this.seriesCount + seriesIndex,
                             label: label,
@@ -1961,7 +1981,10 @@ module powerbi.visuals {
                     let seriesData = dataViewCategorical.values[seriesIndex];
                     let seriesFormat = valueFormatter.getFormatString(seriesData.source, formatStringProp, true);
                     let label = converterHelper.getFormattedLegendLabel(seriesData.source, dataViewCategorical.values, formatStringProp);
-                    let identity = SelectionId.createWithId(seriesData.identity);
+                    let identity = new SelectionIdBuilder()
+                        .withSeries(dataViewCategorical.values, seriesData)
+                        .withMeasure(seriesData.source.queryName)
+                        .createSelectionId();
                     let seriesName = converterHelper.getSeriesName(seriesData.source);
                     let objects = this.grouped && this.grouped[seriesIndex] && this.grouped[seriesIndex].objects;
 

@@ -639,7 +639,7 @@ module powerbitests {
             };
 
             cardBuilder.metadata = metadata;
-            cardBuilder.singleValue = "7";
+            cardBuilder.singleValue = 7;
 
             cardBuilder.onDataChanged();
 
@@ -710,7 +710,7 @@ module powerbitests {
             };
 
             cardBuilder.metadata = metadataWithDisplayUnits;
-            cardBuilder.singleValue = "9999";
+            cardBuilder.singleValue = 9999;
 
             cardBuilder.onDataChanged();
 
@@ -815,6 +815,43 @@ module powerbitests {
             cardBuilder.onDataChanged();
 
             expect(spy.calls.count()).toBe(0);
+        });
+
+        it("does not change string values", (done) => {
+            cardBuilder = new CardBuilder(null, true);
+
+            let metadataWithDisplayUnits: powerbi.DataViewMetadata = {
+                columns: [{ displayName: "col1", isMeasure: true }],
+                groups: [],
+                measures: [0],
+                objects: {
+                    labels: {
+                        labelDisplayUnits: 1000
+                    },
+                    categoryLabels: {
+                        show: true
+                    }
+                }
+            };
+
+            cardBuilder.metadata = metadataWithDisplayUnits;
+            cardBuilder.singleValue = "$9,999";
+
+            cardBuilder.onDataChanged();
+
+            setTimeout(() => {
+                expect(helpers.findElementText($(".card .value").first())).toBe("$9,999");
+                expect(helpers.findElementTitle($(".card .value").first())).toBe("$9,999");
+
+                //display unit auto
+                cardBuilder.metadata = dataViewMetadata;
+
+                cardBuilder.onDataChanged();
+
+                expect(helpers.findElementText($(".card .value").first())).toBe("$9,999");
+                expect(helpers.findElementTitle($(".card .value").first())).toBe("$9,999");
+                done();
+            }, DefaultWaitForRender);
         });
     });
 

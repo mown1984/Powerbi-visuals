@@ -227,6 +227,23 @@ module powerbitests {
                     helpers.assertColorsMatch(text.css('color'), "#F2C811");
                     expect(text.text()).toBe("12.00");
                 });
+
+                it("Show indicator percentage with selected precision (decimal places)", () => {
+                    let visualUpdateOptions = buildUpdateOptions(viewport, kpiHelper.buildDataViewForGreenTrendWithPercentages());
+                    kpi.update(visualUpdateOptions);
+
+                    let indicatorText = $element.find('#indicatorText').text();
+                    expect(indicatorText).toBe("78.12346%");
+                });
+
+                it("Show goal percentage not influenced by selected precision (decimal places) for indicator", () => {
+                    let visualUpdateOptions = buildUpdateOptions(viewport, kpiHelper.buildDataViewForGreenTrendWithPercentages());
+                    kpi.update(visualUpdateOptions);
+
+                    let goalText = $element.find('.goalText').text();
+                    let decimalPlacesFound = goalText.indexOf('%') - goalText.indexOf('.') - 1;
+                    expect(decimalPlacesFound).toBe(2);
+                });
             });
         });
     });

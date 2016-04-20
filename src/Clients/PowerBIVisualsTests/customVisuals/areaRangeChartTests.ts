@@ -25,18 +25,21 @@
  */
 
 module powerbitests.customVisuals {
+    import AreaRangeChart = powerbi.visuals.samples.AreaRangeChart;
+    import SelectionId = powerbi.visuals.SelectionId;
     import VisualClass = powerbi.visuals.samples.AreaRangeChart;
     powerbitests.mocks.setLocale();
 
     describe("AreaRangeChart", () => {
+
+        let visualBuilder: AreaRangeChartBuilder;
+        let dataViews: powerbi.DataView[];
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: AreaRangeChartBuilder;
-            let dataViews: powerbi.DataView[];
-
             beforeEach(() => {
                 visualBuilder = new AreaRangeChartBuilder();
                 dataViews = [new powerbitests.customVisuals.sampleDataViews.AreaRangeChartData().getDataView()];
@@ -52,6 +55,41 @@ module powerbitests.customVisuals {
                         .toBe(dataViews[0].categorical.categories[0].values.length);
                     done();
                 }, DefaultWaitForRender);
+            });
+        });
+
+        describe("AreaRangeChart Dataview Validation", () => {
+            let blankCategoryValue: string = '(Blank)';
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let hostServices = powerbitests.mocks.createVisualHostServices();
+
+            beforeEach(() => {
+                visualBuilder = new AreaRangeChartBuilder();
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.AreaRangeChartData().getDataView()];
+            });
+
+            it('selection state set on converter result including clear', () => {
+                
+                // Create mock interactivity service
+                let interactivityService = <powerbi.visuals.InteractivityService>powerbi.visuals.createInteractivityService(hostServices);
+                let seriesSelectionId = SelectionId.createWithMeasure(dataViews[0].metadata.columns[2].queryName);
+                interactivityService['selectedIds'] = [seriesSelectionId];
+
+                // We should see the selection state applied to resulting data
+                let actualData = AreaRangeChart.converter(dataViews[0], blankCategoryValue, colors, false, interactivityService);
+
+                // Verify the selection has been made
+                expect(actualData.series[0].selected).toBe(true);
+                for (let datapoint of actualData.series[0].data)
+                    expect(datapoint.selected).toBe(true);
+
+                interactivityService.clearSelection();
+                actualData = AreaRangeChart.converter(dataViews[0], blankCategoryValue, colors, false, interactivityService);
+
+                // Verify the selection has been cleared
+                expect(actualData.series[0].selected).toBe(false);
+                for (let datapoint of actualData.series[0].data)
+                    expect(datapoint.selected).toBe(false);
             });
         });
     });

@@ -648,7 +648,7 @@ module powerbi.visuals.controls.internal {
             if (this.fixedSizeEnabled) {
                 let items: ITablixGridItem[] = this._getRealizedItems();
                 let count = items.length;
-                for (let i = 0; i < count; i++) {
+                for (let i = count - 1; i >= 0; i--) {
                     items[i].fixSize();
                 }
             }
@@ -828,7 +828,7 @@ module powerbi.visuals.controls.internal {
 
         public onResize(cell: TablixCell, deltaX: number, deltaY: number): void {
             if (this.isResizing()) {
-                this._resizeState.resizingDelta = Math.max(deltaX / this._resizeState.scale, ColumnLayoutManager.minColumnWidth - this._resizeState.startColumnWidth);
+                this._resizeState.resizingDelta = Math.round(Math.max(deltaX / this._resizeState.scale, ColumnLayoutManager.minColumnWidth - this._resizeState.startColumnWidth));
                 if (this._resizeState.animationFrame === null)
                     this._resizeState.animationFrame = requestAnimationFrame(() => this.performResizing());
             }
@@ -1138,9 +1138,7 @@ module powerbi.visuals.controls.internal {
         }
 
         protected _calculateSize(item: ITablixGridItem): number {
-            let computedSize = this.owner.getEstimatedRowHeight();
-            item.onResize(computedSize);
-            return computedSize;
+            return item.calculateSize();
         }
 
         private getHeaderWidth(headerIndex: number): number {
@@ -1517,7 +1515,7 @@ module powerbi.visuals.controls.internal {
             let leaf = hierarchyNavigator.isLeaf(item);
             let tablixCell = (<TablixCell>cell);
             if (tablixCell.colSpan > 1)
-                tablixCell.setContentWidth(-1);
+                tablixCell.setContainerWidth(-1);
             this._rowLayoutManager.onHeaderRealized(item, cell, leaf);
         }
 

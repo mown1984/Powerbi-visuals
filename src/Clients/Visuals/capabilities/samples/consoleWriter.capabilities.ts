@@ -31,10 +31,14 @@ module powerbi.visuals.samples {
             {
                 name: 'Category',
                 kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Axis'),
+                description: data.createDisplayNameGetter('Role_DisplayName_AxisDescription')
             },
             {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Y'),
+                description: data.createDisplayNameGetter('Role_DisplayName_YDescription')
             },
         ],
         dataViewMappings: [{

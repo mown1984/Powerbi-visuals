@@ -67,8 +67,8 @@ module powerbi.visuals {
             }, {
                 name: 'Size',
                 kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
-                description: data.createDisplayNameGetter('Role_DisplayName_ValuesDescription'),
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Size'),
+                description: data.createDisplayNameGetter('Role_DisplayName_SizeDescription'),
                 requiredTypes: [{ numeric: true }, { integer: true }],
             }, {
                 name: 'Gradient',

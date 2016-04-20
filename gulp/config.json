@@ -3,7 +3,7 @@
     "nonminJs": true,
     "minifyCss": true,
     "generateMaps": true,
-    "tslintOnBuild": false,
+    "tslintOnBuild": true,
     "tslintOnChange": true,
     "emitTsLintError": true,
     "includeContentToMap": true,

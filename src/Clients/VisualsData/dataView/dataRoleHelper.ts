@@ -63,5 +63,9 @@ module powerbi.data {
                 && dataView.metadata.columns
                 && _.any(dataView.metadata.columns, c => c.roles && c.roles[name] !== undefined);
         }
+        
+        export function hasRoleInValueColumn(valueColumn: DataViewValueColumn, name: string): boolean {
+            return valueColumn && valueColumn.source && valueColumn.source.roles && (valueColumn.source.roles[name] === true);
+        }
     }
 }

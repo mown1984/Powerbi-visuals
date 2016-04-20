@@ -391,6 +391,32 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it("Ensure min & max dont overlap", (done) => {
+            gaugeDataBuilder.singleValue = 10;
+            gaugeDataBuilder.dataViewMetadata.objects = {
+                labels: {
+                    show: true,
+                    labelPrecision: 50,
+                    labelDisplayUnits: 1000
+                }
+            };
+            gaugeDataBuilder.values = [[10], [0], [300], [0]];
+            gaugeDataBuilder.onDataChanged();
+
+            setTimeout(() => {
+                let minLabel = $(".labelText")[0];
+                let maxLabel = $(".labelText")[1];
+
+                let positionMinlabel = minLabel.getBoundingClientRect();
+                let positionMaxlabel = maxLabel.getBoundingClientRect();
+
+                expect(positionMinlabel.right < positionMaxlabel.left).toBeTruthy();
+                expect(positionMinlabel.bottom).toEqual(positionMaxlabel.bottom);
+                done();
+
+            }, DefaultWaitForRender);
+        });
+
         it("Check Gauge DOM", (done) => {
             gaugeDataBuilder.singleValue = 10;
             gaugeDataBuilder.values = [[10], [0], [300], [200]];

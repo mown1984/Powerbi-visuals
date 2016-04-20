@@ -929,6 +929,13 @@ module powerbi.visuals {
             let padding = this.settings.labels.padding;
 
             for (let count = 0; count < total; count++) {
+                let textProperties: TextProperties = {
+                    text: ticks[count],
+                    fontFamily: dataLabelUtils.LabelTextProperties.fontFamily,
+                    fontSize: dataLabelUtils.LabelTextProperties.fontSize,
+                    fontWeight: dataLabelUtils.LabelTextProperties.fontWeight,
+                };
+
                 if (Math.floor(total / 2) === count)
                     continue; // Skip Middle label, by design
 
@@ -948,6 +955,7 @@ module powerbi.visuals {
 
                         // Align the labels with the outer edge of the arc
                         anchor = onRight ? 'end' : 'start';
+                        textProperties.text = TextMeasurementService.getTailoredTextOrDefault(textProperties, radius);
                     }
                     else {
                         // For all other labels, display around the arc
@@ -967,8 +975,8 @@ module powerbi.visuals {
                             'text-anchor': anchor,
                             'font-size': fontSize
                         })
-                        .text(ticks[count])
-                        .append('title').text(ticks[count]);
+                        .text(textProperties.text)
+                        .append('title').text(textProperties.text);
 
                     if (!onBottom)
                         this.truncateTextIfNeeded(text, x, onRight);

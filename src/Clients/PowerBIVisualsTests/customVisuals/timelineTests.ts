@@ -56,7 +56,18 @@ module powerbitests.customVisuals {
 
                     expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
                     expect(countOfTextItems).toBe(15);
-
+					let cellRects = visualBuilder.mainElement.find(".cellRect");
+					cellRects.last().d3Click(0, 0);
+					let fill = window.getComputedStyle(cellRects[0]).fill;
+					let hexFill = fill;
+					if (_.startsWith(fill, '#')) {
+						var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fill);
+						hexFill = "rgb(" + parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16) + ")";
+					}
+					expect(hexFill).toBe("rgb(255, 255, 255)");
+					let cellHeight = parseInt(cellRects[0].attributes.getNamedItem("height").value.replace("px", ""), 10);
+					expect(cellHeight).toBeLessThan(60.1);
+					expect(cellHeight).toBeGreaterThan(29.9);
                     done();
                 }, DefaultWaitForRender);
             });

@@ -28,7 +28,9 @@ module powerbi.visuals.samples {
 	import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
 	import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
 	import SelectionManager = utility.SelectionManager;
-	import PixelConverter = jsCommon.PixelConverter;
+	import px = jsCommon.PixelConverter.toString;
+	import pt = jsCommon.PixelConverter.fromPoint;
+	import fromPointToPixel = jsCommon.PixelConverter.fromPointToPixel;
 
 	export const Months: IEnumType = createEnumType([
 		{ value: 1, displayName: 'January' },
@@ -79,7 +81,7 @@ module powerbi.visuals.samples {
 		StartYpoint: number;
 		ElementWidth: number;
 		MinCellWidth: number;
-		MinCellHeight: number;
+		MaxCellHeight: number;
 		PeriodSlicerRectWidth: number;
 		PeriodSlicerRectHeight: number;
 	}
@@ -956,7 +958,7 @@ module powerbi.visuals.samples {
 			StartYpoint: 20,
 			ElementWidth: 30,
 			MinCellWidth: 30,
-			MinCellHeight: 30,
+			MaxCellHeight: 60,
 			PeriodSlicerRectWidth: 15,
 			PeriodSlicerRectHeight: 23
 		};
@@ -966,7 +968,7 @@ module powerbi.visuals.samples {
 			DefaultLabelsShow: true,
 			TimelineDefaultTextSize: 9,
 			TimelineDefaultCellColor: "#ADD8E6",
-			TimelineDefaultCellColorOut: "#A4C7F2",
+			TimelineDefaultCellColorOut: "#FFFFFF",
 			TimelineDefaultTimeRangeShow: true,
 			DefaultTimeRangeColor: "#777777",
 			DefaultLabelColor: "#777777",
@@ -1022,7 +1024,7 @@ module powerbi.visuals.samples {
 			this.timelineProperties = {
 				element: element,
 				textYPosition: 50,
-				cellsYPosition: this.timelineMargins.TopMargin * 3 + PixelConverter.fromPointToPixel(50),
+				cellsYPosition: this.timelineMargins.TopMargin * 3 + 65,
 				topMargin: this.timelineMargins.TopMargin,
 				bottomMargin: this.timelineMargins.BottomMargin,
 				leftMargin: this.timelineMargins.LeftMargin,
@@ -1036,7 +1038,7 @@ module powerbi.visuals.samples {
 
 			this.body = d3.select(element.get(0));
 			this.timelineDiv = this.body.append('div');
-			this.svg = this.timelineDiv.append('svg').attr('width', PixelConverter.toString(options.viewport.width)).classed(this.timelineSelectors.TimelineVisual.class, true);
+			this.svg = this.timelineDiv.append('svg').attr('width', px(options.viewport.width)).classed(this.timelineSelectors.TimelineVisual.class, true);
 			this.clearCatcher = appendClearCatcher(this.svg);
 			this.clearCatcher.data([this]).on("click", (timeline: Timeline) => timeline.clear());
 
@@ -1080,10 +1082,10 @@ module powerbi.visuals.samples {
 			let fillRect = this.selectorContainer.append('rect');
 			let selectorPeriods = this.selector;
 			fillRect.attr({
-				height: PixelConverter.toString(1),
-				x: PixelConverter.toString(startXpoint),
-				y: PixelConverter.toString(startYpoint + 2),
-				width: PixelConverter.toString((selectorPeriods.length - 1) * elementWidth)
+				height: px(1),
+				x: px(startXpoint),
+				y: px(startYpoint + 2),
+				width: px((selectorPeriods.length - 1) * elementWidth)
 			});
 
 			let fillVertLine = this.selectorContainer.selectAll("vertLines")
@@ -1091,10 +1093,10 @@ module powerbi.visuals.samples {
 			fillVertLine
 				.classed(this.timelineSelectors.VertLine.class, true)
 				.attr({
-					x: (d, index) => PixelConverter.toString(startXpoint + index * elementWidth),
-					y: PixelConverter.toString(startYpoint),
-					width: PixelConverter.toString(2),
-					height: PixelConverter.toString(3)
+					x: (d, index) => px(startXpoint + index * elementWidth),
+					y: px(startYpoint),
+					width: px(2),
+					height: px(3)
 				})
 				.style({ 'cursor': 'pointer' });
 
@@ -1107,22 +1109,22 @@ module powerbi.visuals.samples {
 			let textLabels: any;
 			textLabels = text.text((d) => d)
 				.attr({
-					x: (d, index) => PixelConverter.toString(startXpoint - 3 + index * elementWidth),
-					y: PixelConverter.toString(startYpoint - 3)
+					x: (d, index) => px(startXpoint - 3 + index * elementWidth),
+					y: px(startYpoint - 3)
 				});
 			this.selectedText = this.selectorContainer.append("text").classed(this.timelineSelectors.PeriodSlicerSelection.class, true);
 			this.selectedText.text(Utils.getGranularityName(this.defaultTimelineProperties.DefaultGranularity))
 				.attr({
-					x: PixelConverter.toString(startXpoint + 2 * elementWidth),
-					y: PixelConverter.toString(startYpoint + 17),
+					x: px(startXpoint + 2 * elementWidth),
+					y: px(startYpoint + 17),
 				});
 			let selRects = this.selectorContainer.selectAll(this.timelineSelectors.PeriodSlicerSelectionRect.selector)
 				.data(selectorPeriods).enter().append('rect').classed(this.timelineSelectors.PeriodSlicerSelectionRect.class, true);
 			selRects.attr({
-				x: (d, index) => PixelConverter.toString(startXpoint - elementWidth / 2 + index * elementWidth),
-				y: PixelConverter.toString(3),
-				width: PixelConverter.toString(elementWidth),
-				height: PixelConverter.toString(23)
+				x: (d, index) => px(startXpoint - elementWidth / 2 + index * elementWidth),
+				y: px(3),
+				width: px(elementWidth),
+				height: px(23)
 			})
 				.style({ 'cursor': 'pointer' })
 				.on('mousedown', (d, index) => {
@@ -1147,11 +1149,11 @@ module powerbi.visuals.samples {
 			this.periodSlicerRect = this.selectorContainer
 				.append('rect').classed(this.timelineSelectors.PeriodSlicerRect.class, true)
 				.attr({
-					x: PixelConverter.toString(startXpoint - 6 + this.defaultTimelineProperties.DefaultGranularity * elementWidth),
-					y: PixelConverter.toString(startYpoint - 16),
-					rx: PixelConverter.toString(4),
-					width: PixelConverter.toString(15),
-					height: PixelConverter.toString(23)
+					x: px(startXpoint - 6 + this.defaultTimelineProperties.DefaultGranularity * elementWidth),
+					y: px(startYpoint - 16),
+					rx: px(4),
+					width: px(15),
+					height: px(23)
 				})
 				.on('mouseup', d => dragPeriodRectState = false);
 			this.periodSlicerRect.call(dragPeriodRect);
@@ -1159,7 +1161,7 @@ module powerbi.visuals.samples {
 
 		public redrawPeriod(granularity: GranularityType): void {
 			let dx = this.timelineMargins.StartXpoint + granularity * this.timelineMargins.ElementWidth;
-			this.periodSlicerRect.transition().attr("x", PixelConverter.toString(dx - 7));
+			this.periodSlicerRect.transition().attr("x", px(dx - 7));
 			this.selectedText.text(Utils.getGranularityName(granularity));
 			let startDate: Date = Utils.getStartSelectionDate(this.timelineData);
 			let endDate: Date = Utils.getEndSelectionDate(this.timelineData);
@@ -1168,12 +1170,12 @@ module powerbi.visuals.samples {
 
 		private static setMeasures(labelFormat: LabelFormat, granularityType: GranularityType, datePeriodsCount: number, viewport: IViewport, timelineProperties: TimelineProperties, timelineMargins: TimelineMargins) {
 			timelineProperties.cellsYPosition = timelineProperties.textYPosition;
-			let labelSize = PixelConverter.fromPointToPixel(labelFormat.sizeProperty);
+			let labelSize = fromPointToPixel(labelFormat.sizeProperty);
 			if (labelFormat.showProperty)
 				timelineProperties.cellsYPosition += labelSize * 1.5 * (granularityType + 1);
 			let svgHeight = Math.max(0, viewport.height - timelineMargins.TopMargin);
 			let maxHeight = viewport.width - timelineMargins.RightMargin - timelineMargins.MinCellWidth * datePeriodsCount;
-			let height = Math.max(timelineMargins.MinCellWidth, Math.min(maxHeight, svgHeight - timelineProperties.cellsYPosition - 20));
+			let height = Math.max(timelineMargins.MinCellWidth, Math.min(timelineMargins.MaxCellHeight, maxHeight, svgHeight - timelineProperties.cellsYPosition - 20));
 			let width = Math.max(timelineMargins.MinCellWidth, (viewport.width - height - timelineMargins.RightMargin) / datePeriodsCount);
 			timelineProperties.cellHeight = height;
 			timelineProperties.cellWidth = width;
@@ -1347,18 +1349,17 @@ module powerbi.visuals.samples {
 			this.svgWidth = 1 + this.timelineProperties.cellHeight + timelineProperties.cellWidth * timelineDatapointsCount;
 			this.renderTimeRangeText(timelineData, timelineFormat.rangeTextFormat);
 			this.timelineDiv.attr({
-				height: PixelConverter.toString(options.viewport.height),
-				width: PixelConverter.toString(options.viewport.width),
+				height: px(options.viewport.height),
+				width: px(options.viewport.width),
 				'drag-resize-disabled': true
 			}).style({
 				'overflow-x': 'auto',
 				'overflow-y': 'auto'
 			});
 			this.svg.attr({
-				height: PixelConverter.toString(Math.max(0, options.viewport.height - this.timelineMargins.TopMargin)),
-				width: PixelConverter.toString(Math.max(0, this.svgWidth))
+				height: px(Math.max(0, options.viewport.height - this.timelineMargins.TopMargin)),
+				width: px(Math.max(0, this.svgWidth))
 			});
-
 			let fixedTranslateString: string = SVGUtil.translate(timelineProperties.leftMargin, timelineProperties.topMargin);
 			let translateString: string = SVGUtil.translate(timelineProperties.cellHeight / 2, timelineProperties.topMargin);
 			this.mainGroupElement.attr('transform', translateString);
@@ -1392,7 +1393,7 @@ module powerbi.visuals.samples {
 
 			labelsGroupSelection.text((x: TimelineLabel, id: number) => {
 				if (!isLast && id === 0 && labels.length > 1) {
-					let fontSize = PixelConverter.fromPoint(this.timelineFormat.labelFormat.sizeProperty);
+					let fontSize = pt(this.timelineFormat.labelFormat.sizeProperty);
 					let textProperties: powerbi.TextProperties = {
 						text: labels[0].text,
 						fontFamily: 'arial',
@@ -1416,10 +1417,10 @@ module powerbi.visuals.samples {
 				};
 				return dataLabelUtils.getLabelFormattedText(labelFormattedTextOptions);
 			})
-				.style('font-size', PixelConverter.fromPoint(this.timelineFormat.labelFormat.sizeProperty))
+				.style('font-size', pt(this.timelineFormat.labelFormat.sizeProperty))
 				.attr({
 					x: (x: TimelineLabel) => (x.id + 0.5) * this.timelineProperties.cellWidth,
-					y: this.timelineProperties.textYPosition + (1 + index) * PixelConverter.fromPointToPixel(this.timelineFormat.labelFormat.sizeProperty),
+					y: this.timelineProperties.textYPosition + (1 + index) * fromPointToPixel(this.timelineFormat.labelFormat.sizeProperty),
 					fill: this.timelineFormat.labelFormat.colorProperty
 				}).append('title').text((x: TimelineLabel) => x.title);
 			labelsGroupSelection.exit().remove();
@@ -1493,14 +1494,14 @@ module powerbi.visuals.samples {
 			cellsSelection.enter().append('rect').classed(this.timelineSelectors.CellRect.class, true);
 			cellsSelection
 				.attr({
-					height: PixelConverter.toString(timelineProperties.cellHeight),
-					width: (d: TimelineDatapoint) => PixelConverter.toString(d.datePeriod.fraction * timelineProperties.cellWidth),
+					height: px(timelineProperties.cellHeight),
+					width: (d: TimelineDatapoint) => px(d.datePeriod.fraction * timelineProperties.cellWidth),
 					x: (d: TimelineDatapoint) => {
 						let value = totalX;
 						totalX += d.datePeriod.fraction * timelineProperties.cellWidth;
-						return PixelConverter.toString(value);
+						return px(value);
 					},
-					y: PixelConverter.toString(timelineProperties.cellsYPosition),
+					y: px(timelineProperties.cellsYPosition),
 					id: (d: TimelineDatapoint) => d.index
 				});
 
@@ -1611,12 +1612,12 @@ module powerbi.visuals.samples {
 				let actualText = dataLabelUtils.getLabelFormattedText(labelFormattedTextOptions);
 				this.rangeText.classed(this.timelineSelectors.SelectionRangeContainer.class, true);
 				this.rangeText.attr({
-					x: (GranularityNames.length + 1) * this.timelineProperties.elementWidth,
+					x: (GranularityNames.length + 2) * this.timelineProperties.elementWidth,
 					y: 40,
 					fill: timeRangeFormat.colorProperty
 				})
 					.style({
-						'font-size': PixelConverter.fromPoint(timeRangeFormat.sizeProperty)
+						'font-size': pt(timeRangeFormat.sizeProperty)
 					}).text(actualText)
 					.append('title').text(timeRangeText);;
 			}

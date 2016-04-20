@@ -100,8 +100,8 @@ module powerbitests.helpers {
         return delta <= tolerance;
     }
 
-    export function buildSelectorForColumn(queryName: string, data, selector?) {
-        let newSelector = selector ? selector : {};
+    export function buildSelectorForColumn(queryName: string, data: powerbi.data.DataRepetitionSelector, selector?: powerbi.SelectorForColumn): powerbi.SelectorForColumn {
+        let newSelector: powerbi.SelectorForColumn = selector ? selector : {};
         newSelector[queryName] = data;
 
         return newSelector;
@@ -396,6 +396,30 @@ module powerbitests.helpers {
      */
     export function getAxisLabel(axis: string): JQuery {
         return $('.cartesianChart .axisGraphicsContext .' + axis + 'AxisLabel');
+    }
+
+    export function createTouchesList(touches: Touch[]): TouchList {
+
+        var touchesList: TouchList = <any>touches;
+        (<any>touches).item = (index: number): any => {
+            return this.arr[index];
+        };
+
+        return touchesList;
+    }
+
+    export function touchStartSimulator(d3Element: any) {
+        let evt: any = document.createEvent("TouchEvent");
+        evt.initEvent("touchstart", true, true);
+        evt.eventName = "touchstart";
+        d3Element.node().dispatchEvent(evt);
+    }
+
+    export function touchMoveSimulator(d3Element: any) {
+        let evt1: any = document.createEvent("TouchEvent");
+        evt1.initEvent("touchmove", true, true);
+        evt1.eventName = "touchmove";
+        d3Element.node().dispatchEvent(evt1);
     }
 
     export class DataViewBuilder {

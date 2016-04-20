@@ -76,6 +76,38 @@ module powerbitests {
                 let callArgs = <any>spy.calls.mostRecent().args[0];
                 expect(callArgs.type).toBe(powerbi.VisualUpdateType.Data);
             });
+            
+            it("Translates resizeMode=resizing to correct updateType (Resize)", () => {
+                let spy = spyOn((<any>adapter).visual, 'update');
+                let dataViews = [];
+                let viewport = { width: 11, height: 22 };
+                adapter.update({
+                    viewport: viewport,
+                    dataViews: dataViews,
+                    type: powerbi.VisualUpdateType.Resize,
+                    resizeMode: powerbi.ResizeMode.Resizing
+                });
+                expect(spy.calls.count()).toBe(1);
+                let callArgs = <any>spy.calls.mostRecent().args[0];
+
+                expect(callArgs.type).toBe(powerbi.VisualUpdateType.Resize);                
+            });            
+
+            it("Translates resizeMode=resized to correct updateType (Resize | ResizeEnd)", () => {
+                let spy = spyOn((<any>adapter).visual, 'update');
+                let dataViews = [];
+                let viewport = { width: 11, height: 22 };
+                adapter.update({
+                    viewport: viewport,
+                    dataViews: dataViews,
+                    type: powerbi.VisualUpdateType.Resize,
+                    resizeMode: powerbi.ResizeMode.Resized
+                });
+                expect(spy.calls.count()).toBe(1);
+                let callArgs = <any>spy.calls.mostRecent().args[0];
+
+                expect(callArgs.type).toBe(powerbi.VisualUpdateType.Resize | powerbi.VisualUpdateType.ResizeEnd);                
+            });  
 
             it("Properly overrides the destroy method", () => {
                 let spy = spyOn((<any>adapter).visual, 'destroy');

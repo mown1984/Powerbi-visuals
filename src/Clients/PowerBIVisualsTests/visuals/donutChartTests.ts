@@ -1160,7 +1160,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -1174,7 +1174,7 @@ module powerbitests {
                         value: Math.abs(-300/Number.MAX_VALUE),
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (0%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
@@ -1183,7 +1183,7 @@ module powerbitests {
                         value: 0.0,
                         index: 1,
                         label: 'b',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: sliceColors[1],
                         strokeWidth: 0,
                     }, {
@@ -1192,7 +1192,7 @@ module powerbitests {
                         value: 1,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "+Infinity" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "+Infinity (100%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1222,7 +1222,7 @@ module powerbitests {
                 };
                 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -1236,7 +1236,7 @@ module powerbitests {
                             value: 0.3,
                             index: 0,
                             label: 'a',
-                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (30%)" }],
                             color: sliceColors[0],
                             strokeWidth: 0,
                         }, {
@@ -1245,7 +1245,7 @@ module powerbitests {
                             value: 0.0,
                             index: 1,
                             label: 'b',
-                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                             color: sliceColors[1],
                             strokeWidth: 0,
                         }, {
@@ -1254,7 +1254,7 @@ module powerbitests {
                             value: 0.7,
                             index: 2,
                             label: 'c',
-                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
+                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700 (70%)" }],
                             color: sliceColors[2],
                             strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1284,7 +1284,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -1298,7 +1298,7 @@ module powerbitests {
                             value: 0.3,
                             index: 0,
                             label: 'a',
-                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (30%)" }],
                             color: sliceColors[0],
                             strokeWidth: 0,
                         }, {
@@ -1307,7 +1307,7 @@ module powerbitests {
                             value: 0.0,
                             index: 1,
                             label: 'b',
-                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                             color: sliceColors[1],
                             strokeWidth: 0,
                         }, {
@@ -1316,7 +1316,7 @@ module powerbitests {
                             value: 0.7,
                             index: 2,
                             label: 'c',
-                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
+                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700 (70%)" }],
                             color: sliceColors[2],
                             strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1357,61 +1357,60 @@ module powerbitests {
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('c').value,
                 ];
-                let v = dataView.categorical.values;
                 let categoryQueryName = dataView.categorical.categories[0].source.queryName;
                 let expectSlices: DonutDataPoint[] = [
                     {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[0].source.queryName, v[0].identity, buildSelector(categoryQueryName, categoryIdentities[0])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), dataViewMetadata1Category2Measure.columns[1].queryName),
                         measure: -200,
                         value: 0.2,
                         index: 0,
                         label: 'col2',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200 (20%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[0])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[0]), dataViewMetadata1Category2Measure.columns[2].queryName),
                         measure: -300,
                         value: 0.3,
                         index: 1,
                         label: 'col3',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300 (30%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[0].source.queryName, v[0].identity, buildSelector(categoryQueryName, categoryIdentities[1])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), dataViewMetadata1Category2Measure.columns[1].queryName),
                         measure: 0,
                         value: 0.0,
                         index: 2,
                         label: 'col2',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: sliceColors[1],
                         strokeWidth: 0,
                     }, {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[1])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), dataViewMetadata1Category2Measure.columns[2].queryName),
                         measure: 300,
                         value: 0.3,
                         index: 3,
                         label: 'col3',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300 (30%)" }],
                         color: sliceColors[1],
                         strokeWidth: 0,
                     }, {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[0].source.queryName, v[0].identity, buildSelector(categoryQueryName, categoryIdentities[2])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), dataViewMetadata1Category2Measure.columns[1].queryName),
                         measure: 150,
                         value: 0.15,
                         index: 4,
                         label: 'col2',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150 (15%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }, {
-                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(v[1].source.queryName, v[1].identity, buildSelector(categoryQueryName, categoryIdentities[2])), null),
+                        identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[2]), dataViewMetadata1Category2Measure.columns[2].queryName),
                         measure: -50,
                         value: 0.05,
                         index: 5,
                         label: 'col3',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50 (5%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1451,7 +1450,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -1465,7 +1464,7 @@ module powerbitests {
                         value: 0.3,
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (30%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
@@ -1474,7 +1473,7 @@ module powerbitests {
                         value: 0.0,
                         index: 1,
                         label: 'b',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: sliceColors[1],
                         strokeWidth: 0,
                     }, {
@@ -1483,7 +1482,7 @@ module powerbitests {
                         value: 0.7,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700 (70%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1514,7 +1513,7 @@ module powerbitests {
                 let redHexColor = "FF0000";
 
                 let actualData = DonutChart.converter(dataView, donutColors, redHexColor, null, true);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let expectSlices: DonutDataPoint[] = [
                     {
                         identity: selectionIds[0],
@@ -1522,7 +1521,7 @@ module powerbitests {
                         value: 0.3,
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (30%)" }],
                         color: redHexColor,
                         strokeWidth: 0,
                     }, {
@@ -1531,7 +1530,7 @@ module powerbitests {
                         value: 0.0,
                         index: 1,
                         label: 'b',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: redHexColor,
                         strokeWidth: 0,
                     }, {
@@ -1540,7 +1539,7 @@ module powerbitests {
                         value: 0.7,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700 (70%)" }],
                         color: redHexColor,
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1579,7 +1578,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors, hexDefaultColorRed);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let expectSlices: DonutDataPoint[] = [
                     {
                         identity: selectionIds[0],
@@ -1587,7 +1586,7 @@ module powerbitests {
                         value: 0.3,
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-300 (30%)" }],
                         color: hexDefaultColorRed,
                         strokeWidth: 0,
                     }, {
@@ -1596,7 +1595,7 @@ module powerbitests {
                         value: 0.0,
                         index: 1,
                         label: 'b',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: hexGreen,
                         strokeWidth: 0,
                     }, {
@@ -1605,7 +1604,7 @@ module powerbitests {
                         value: 0.7,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700 (70%)" }],
                         color: hexDefaultColorRed,
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1655,7 +1654,7 @@ module powerbitests {
                             label: 'col2',
                             value: 0.2,
                             index: 0,
-                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200" }],
+                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "-200 (20%)" }],
                             color: sliceColors[0],
                             strokeWidth: 0,
                         }, {
@@ -1664,7 +1663,7 @@ module powerbitests {
                             label: 'col3',
                             value: 0.3,
                             index: 1,
-                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }],
+                            tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300 (30%)" }],
                             color: sliceColors[0],
                             strokeWidth: 0,
                         }, {
@@ -1673,7 +1672,7 @@ module powerbitests {
                             label: 'col2',
                             value: 0,
                             index: 2,
-                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                             color: sliceColors[1],
                             strokeWidth: 0,
                         }, {
@@ -1682,7 +1681,7 @@ module powerbitests {
                             label: 'col3',
                             value: 0.3,
                             index: 3,
-                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }],
+                            tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300 (30%)" }],
                             color: sliceColors[1],
                             strokeWidth: 0,
                         }, {
@@ -1691,7 +1690,7 @@ module powerbitests {
                             measure: 150,
                             value: 0.15,
                             index: 4,
-                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }],
+                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150 (15%)" }],
                             color: sliceColors[2],
                             strokeWidth: 0,
                         }, {
@@ -1700,7 +1699,7 @@ module powerbitests {
                             measure: -50,
                             value: 0.05,
                             index: 5,
-                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }],
+                            tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50 (5%)" }],
                             color: sliceColors[2],
                             strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1780,7 +1779,7 @@ module powerbitests {
                         measure: Number.MAX_VALUE,
                         value: 1.0,
                         index: 0,
-                        tooltipInfo: [{ displayName: "col1", value: "+Infinity" }],
+                        tooltipInfo: [{ displayName: "col1", value: "+Infinity (100%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1832,7 +1831,7 @@ module powerbitests {
                             measure: 200,
                             value: 0.2,
                             index: 0,
-                            tooltipInfo: [{ displayName: "col1", value: "200" }],
+                            tooltipInfo: [{ displayName: "col1", value: "200 (20%)" }],
                             color: sliceColors[0],
                             strokeWidth: 0,
                         }, {
@@ -1841,7 +1840,7 @@ module powerbitests {
                             measure: -300,
                             value: 0.3,
                             index: 1,
-                            tooltipInfo: [{ displayName: "col2", value: "-300" }],
+                            tooltipInfo: [{ displayName: "col2", value: "-300 (30%)" }],
                             color: sliceColors[1],
                             strokeWidth: 0,
                         }, {
@@ -1850,7 +1849,7 @@ module powerbitests {
                             measure: 500,
                             value: 0.5,
                             index: 2,
-                            tooltipInfo: [{ displayName: "col3", value: "500" }],
+                            tooltipInfo: [{ displayName: "col3", value: "500 (50%)" }],
                             color: sliceColors[2],
                             strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1885,7 +1884,7 @@ module powerbitests {
                         measure: 200,
                         value: 1.0,
                         index: 0,
-                        tooltipInfo: [{ displayName: "col1", value: "200" }],
+                        tooltipInfo: [{ displayName: "col1", value: "200 (100%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -1917,7 +1916,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));
+                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(seriesMetaData.queryName, c.identity), c.source.queryName));
                 let columnRefId = powerbi.data.SQExprShortSerializer.serializeArray([categoryColumnRef]);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(columnRefId).getColor('A').value,
@@ -1931,7 +1930,7 @@ module powerbitests {
                         measure: Number.MAX_VALUE,
                         value: 1.0,
                         index: 0,
-                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "+Infinity" }],
+                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "+Infinity (100%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -1941,7 +1940,7 @@ module powerbitests {
                         measure: 300,
                         value: Math.abs(300 / Number.MAX_VALUE),
                         index: 1,
-                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
+                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300.00 (0%)" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -1975,7 +1974,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));
+                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(seriesMetaData.queryName, c.identity), c.source.queryName));
                 let columnRefId = powerbi.data.SQExprShortSerializer.serializeArray([categoryColumnRef]);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(columnRefId).getColor('A').value,
@@ -1989,7 +1988,7 @@ module powerbitests {
                         measure: 200,
                         value: 0.4,
                         index: 0,
-                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
+                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200.00 (40%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -1999,7 +1998,7 @@ module powerbitests {
                         measure: 300,
                         value: 0.6,
                         index: 1,
-                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
+                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300.00 (60%)" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2029,7 +2028,7 @@ module powerbitests {
                 };
 
                 var actualData = DonutChart.converter(dataView, donutColors);
-                var selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));
+                var selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(seriesMetaData.queryName, c.identity), c.source.queryName));
                 var columnRefId = powerbi.data.SQExprShortSerializer.serializeArray([categoryColumnRef]);
                 var sliceColors = [
                     donutColors.getColorScaleByKey(columnRefId).getColor('A').value,
@@ -2042,7 +2041,7 @@ module powerbitests {
                         measure: 200,
                         value: 1,
                         index: 0,
-                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
+                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200.00 (100%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2080,8 +2079,7 @@ module powerbitests {
                 dataView.categorical.values.grouped = () => groupedValues;
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));                        
-
+                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(seriesMetaData.queryName, c.identity), c.source.queryName));
                 let expectSlices: DonutDataPoint[] = [
                     {
                         identity: selectionIds[0],
@@ -2089,7 +2087,7 @@ module powerbitests {
                         measure: 200,
                         value: 0.4,
                         index: 0,
-                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200" }],
+                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "200.00 (40%)" }],
                         color: 'green',
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2099,7 +2097,7 @@ module powerbitests {
                         measure: 300,
                         value: 0.6,
                         index: 1,
-                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
+                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300.00 (60%)" }],
                         color: 'red',
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2129,7 +2127,7 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithId(c.identity));
+                let selectionIds = dataView.categorical.values.map((c) => SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(seriesMetaData.queryName, c.identity), c.source.queryName));
                 let columnRefId = powerbi.data.SQExprShortSerializer.serializeArray([categoryColumnRef]);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(columnRefId).getColor('A').value,
@@ -2144,7 +2142,7 @@ module powerbitests {
                         measureFormat: '$0',
                         value: 0.4,
                         index: 0,
-                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "$200" }],
+                        tooltipInfo: [{ displayName: "series", value: "A" }, { displayName: "sales", value: "$200 (40%)" }],
                         color: sliceColors[0],
                         categoryLabel: 'A',
                         strokeWidth: 0,
@@ -2155,7 +2153,7 @@ module powerbitests {
                         measureFormat: '#,0',
                         value: 0.6,
                         index: 1,
-                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300" }],
+                        tooltipInfo: [{ displayName: "series", value: "B" }, { displayName: "sales", value: "300 (60%)" }],
                         color: sliceColors[1],
                         categoryLabel: 'B',
                         strokeWidth: 0,
@@ -2208,7 +2206,7 @@ module powerbitests {
                         highlightValue: 100,
                         value: 0.2,
                         index: 0,
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "200" }, { displayName: highlightDisplayName, value: "100" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "200 (20%)" }, { displayName: highlightDisplayName, value: "100 (10%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
@@ -2219,7 +2217,7 @@ module powerbitests {
                         highlightValue: 150,
                         value: 0.3,
                         index: 1,
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "300" }, { displayName: highlightDisplayName, value: "150" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "300 (30%)" }, { displayName: highlightDisplayName, value: "150 (15%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 1,
@@ -2228,10 +2226,10 @@ module powerbitests {
                         measure: 0,
                         label: 'col2',
                         highlightRatio: 1e-9,
-                        highlightValue: 0,
+                        highlightValue: null,
                         value: 0,
                         index: 2,
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }, { displayName: highlightDisplayName, value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2243,7 +2241,7 @@ module powerbitests {
                         highlightValue: 75,
                         value: 0.3,
                         index: 3,
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightDisplayName, value: "75" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300 (30%)" }, { displayName: highlightDisplayName, value: "75 (7.5%)" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2255,7 +2253,7 @@ module powerbitests {
                         measure: 150,
                         value: 0.15,
                         index: 4,
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150" }, { displayName: highlightDisplayName, value: "15" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "150 (15%)" }, { displayName: highlightDisplayName, value: "15 (1.5%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }, {
@@ -2266,7 +2264,7 @@ module powerbitests {
                         measure: 50,
                         value: 0.05,
                         index: 5,
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "50" }, { displayName: highlightDisplayName, value: "50" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "50 (5%)" }, { displayName: highlightDisplayName, value: "50 (5%)" }],
                         color: sliceColors[2],
                         labelFormatString: undefined,
                         strokeWidth: 1,
@@ -2307,15 +2305,14 @@ module powerbitests {
                 };
 
                 let actualData = DonutChart.converter(dataView, donutColors);
-               
                 let highlightName = powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName;
                 
-                expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200)" }, { displayName: highlightName, value: "$0" }]);
-                expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }, { displayName: highlightName, value: "0" }]);
-                expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0" }, { displayName: highlightName, value: "$0" }]);
-                expect(actualData.dataPoints[3].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }, { displayName: highlightName, value: "75" }]);
-                expect(actualData.dataPoints[4].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150" }, { displayName: highlightName, value: "$10" }]);
-                expect(actualData.dataPoints[5].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }, { displayName: highlightName, value: "50" }]);
+                expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200) (20%)" }, { displayName: highlightName, value: "$0 (0%)" }]);
+                expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300 (30%)" }, { displayName: highlightName, value: "0 (0%)" }]);
+                expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0 (0%)" }]);
+                expect(actualData.dataPoints[3].data.tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300 (30%)" }, { displayName: highlightName, value: "75 (7.5%)" }]);
+                expect(actualData.dataPoints[4].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150 (15%)" }, { displayName: highlightName, value: "$10 (1%)" }]);
+                expect(actualData.dataPoints[5].data.tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50 (5%)" }, { displayName: highlightName, value: "50 (5%)" }]);
             });
 
             //validate tooltip that tooltip info doesn't change if data and category labels are on and off 
@@ -2341,12 +2338,12 @@ module powerbitests {
                     metadata: null,
                 };
 
-                let tooltipInfo1 = [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200)" }];
-                let tooltipInfo2 = [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300" }];
-                let tooltipInfo3 = [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$100" }];
-                let tooltipInfo4 = [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300" }];
-                let tooltipInfo5 = [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150" }];
-                let tooltipInfo6 = [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50" }];
+                let tooltipInfo1 = [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($200) (18.18%)" }];
+                let tooltipInfo2 = [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-300 (27.27%)" }];
+                let tooltipInfo3 = [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$100 (9.09%)" }];
+                let tooltipInfo4 = [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "300 (27.27%)" }];
+                let tooltipInfo5 = [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$150 (13.64%)" }];
+                let tooltipInfo6 = [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "-50 (4.55%)" }];
                 let actualData = DonutChart.converter(dataView, donutColors);
                 expect(actualData.dataPoints[0].data.tooltipInfo).toEqual(tooltipInfo1);
                 expect(actualData.dataPoints[1].data.tooltipInfo).toEqual(tooltipInfo2);
@@ -2424,7 +2421,7 @@ module powerbitests {
                         value: 0.16,
                         highlightRatio: 1.0,
                         index: 0,
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($100)" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "($100) (16%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2436,19 +2433,19 @@ module powerbitests {
                         value: 0.24,
                         highlightRatio: 1.0,
                         index: 1,
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-150" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col3", value: "-150 (24%)" }],
                         color: sliceColors[0],
                         labelFormatString: undefined,
                         strokeWidth: 0,
                     }, {
                         identity: SelectionId.createWithSelectorForColumnAndMeasure(buildSelector(categoryQueryName, categoryIdentities[1]), 'col2'),
                         label: 'col2',
-                        measure: 0,
+                        measure: null,
                         measureFormat: "\$#,0;(\$#,0);\$#,0",
                         value: 0.0,
                         highlightRatio: 1.0,
                         index: 2,
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "$0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2460,7 +2457,7 @@ module powerbitests {
                         value: 0.12,
                         highlightRatio: 1.0,
                         index: 3,
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "75" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col3", value: "75 (12%)" }],
                         color: sliceColors[1],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2472,7 +2469,7 @@ module powerbitests {
                         value: 0.4,
                         highlightRatio: 1.0,
                         index: 4,
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$250" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "$250 (40%)" }],
                         color: sliceColors[2],
                         labelFormatString: undefined,
                         strokeWidth: 0,
@@ -2484,7 +2481,7 @@ module powerbitests {
                         value: 0.08,
                         highlightRatio: 1.0,
                         index: 5,
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "50" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col3", value: "50 (8%)" }],
                         color: sliceColors[2],
                         labelFormatString: undefined,
                         strokeWidth: 1,
@@ -2511,7 +2508,7 @@ module powerbitests {
 
                 let viewPort = { height: 10, width: 10 };
                 let actualData = DonutChart.converter(dataView, donutColors, null, viewPort, false);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -2525,7 +2522,7 @@ module powerbitests {
                         value: 0.25,
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100 (25%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
@@ -2534,7 +2531,7 @@ module powerbitests {
                         value: 0.75,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300 (75%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -2564,7 +2561,7 @@ module powerbitests {
 
                 let viewPort = { height: 10, width: 10 };
                 let actualData = DonutChart.converter(dataView, donutColors, null, viewPort, true);
-                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, null, dataViewMetadata.columns[0].queryName));
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
                 let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
                 let sliceColors = [
                     donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
@@ -2578,7 +2575,7 @@ module powerbitests {
                         value: 0.25,
                         index: 0,
                         label: 'a',
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100 (25%)" }],
                         color: sliceColors[0],
                         strokeWidth: 0,
                     }, {
@@ -2587,7 +2584,7 @@ module powerbitests {
                         value: 0.0,
                         index: 1,
                         label: 'b',
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "0 (0%)" }],
                         color: sliceColors[1],
                         strokeWidth: 0,
                     }, {
@@ -2596,7 +2593,7 @@ module powerbitests {
                         value: 0.75,
                         index: 2,
                         label: 'c',
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300 (75%)" }],
                         color: sliceColors[2],
                         strokeWidth: 0,
                     }].map(buildDataPoint);
@@ -2639,9 +2636,9 @@ module powerbitests {
 
             let actualData = DonutChart.converter(dataView, donutColors);
             
-            expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: 'a', value: '1' }]);
-            expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: 'b', value: '2' }]);
-            expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: 'c', value: '3' }]);
+            expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: 'a', value: '1 (16.67%)' }]);
+            expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: 'b', value: '2 (33.33%)' }]);
+            expect(actualData.dataPoints[2].data.tooltipInfo).toEqual([{ displayName: 'c', value: '3 (50%)' }]);
         });
 
         it('validate tooltip info not being created when tooltips are disabled', () => {
@@ -3301,7 +3298,10 @@ module powerbitests {
             slices.eq(sliceToClick).d3Click(0, 0);
 
             expect(onSelectSpy).toHaveBeenCalled();
-            expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({ data: [identities[sliceToClick]] });
+            expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({
+                data: [identities[sliceToClick]],
+                metadata: dataViewMetadataTwoColumn.columns[1].queryName
+            });
         });
 
         it('pie chart: context menu for slice', () => {
@@ -3337,7 +3337,12 @@ module powerbitests {
             slices.eq(sliceToClick).d3ContextMenu(5, 15);
 
             expect(onContextMenuSpy).toHaveBeenCalled();
-            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({ dataMap: { col1: identities[sliceToClick] } });
+            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({
+                dataMap: {
+                    col1: identities[sliceToClick]
+                },
+                metadata: dataViewMetadataTwoColumn.columns[1].queryName
+            });
             expect(onContextMenuSpy.calls.argsFor(0)[0].position).toEqual({ x: 5, y: 15 });
         });
 
@@ -3421,7 +3426,10 @@ module powerbitests {
             slices.eq(sliceToClick).d3Click(0, 0);
 
             expect(onSelectSpy).toHaveBeenCalled();
-            expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({ data: [identities[sliceToClick]] });
+            expect(onSelectSpy.calls.argsFor(0)[0].data[0]).toEqual({
+                data: [identities[sliceToClick]],
+                metadata: dataViewMetadataTwoColumn.columns[1].queryName
+            });
         });
 
         it('pie chart: context menu for highlighted slice', () => {
@@ -3458,7 +3466,10 @@ module powerbitests {
             slices.eq(sliceToClick).d3ContextMenu(5, 15);
 
             expect(onContextMenuSpy).toHaveBeenCalled();
-            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({ dataMap: { col1: identities[sliceToClick] } });
+            expect(onContextMenuSpy.calls.argsFor(0)[0].data[0]).toEqual({
+                dataMap: { col1: identities[sliceToClick] },
+                metadata: dataViewMetadataTwoColumn.columns[1].queryName
+            });
             expect(onContextMenuSpy.calls.argsFor(0)[0].position).toEqual({ x: 5, y: 15 });
         });
 

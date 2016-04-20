@@ -36,14 +36,17 @@ module powerbi.visuals {
             {
                 name: matrixRoleNames.rows,
                 kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Rows'),
                 description: data.createDisplayNameGetter('Role_DisplayName_RowsDescription')
             }, {
                 name: matrixRoleNames.columns,
                 kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Columns'),
                 description: data.createDisplayNameGetter('Role_DisplayName_ColumnsDescription')
             }, {
                 name: matrixRoleNames.values,
-                kind: VisualDataRoleKind.Measure
+                kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Values')
             }
         ],
         objects: {
@@ -121,6 +124,11 @@ module powerbi.visuals {
                     rowPadding: {
                         displayName: data.createDisplayNameGetter('Visual_RowPadding'),
                         description: data.createDisplayNameGetter('Visual_RowPadding_Desc'),
+                        type: { numeric: true }
+                    },
+                    imageHeight: {
+                        displayName: data.createDisplayNameGetter('Visual_Tablix_ImageHeight'),
+                        description: data.createDisplayNameGetter('Visual_Tablix_ImageHeight_Desc'),
                         type: { numeric: true }
                     },
                 },

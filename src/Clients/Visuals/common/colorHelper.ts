@@ -33,7 +33,7 @@ module powerbi.visuals {
         private colors: IDataColorPalette;
         private defaultColorScale: IColorScale;
 
-        constructor(colors: IDataColorPalette, fillProp: DataViewObjectPropertyIdentifier, defaultDataPointColor?: string) {
+        constructor(colors: IDataColorPalette, fillProp?: DataViewObjectPropertyIdentifier, defaultDataPointColor?: string) {
             this.colors = colors;
             this.fillProp = fillProp;
             this.defaultDataPointColor = defaultDataPointColor;

@@ -26,6 +26,7 @@
 
 module powerbitests {
     import ArrayExtensions = jsCommon.ArrayExtensions;
+    import buildSelectorForColumn = helpers.buildSelectorForColumn;
     import CssConstants = jsCommon.CssConstants;
     import data = powerbi.data;
     import DataViewAnalysis = powerbi.DataViewAnalysis;
@@ -48,11 +49,11 @@ module powerbitests {
 
     const dataViewMetadataCategorySeriesColumns: powerbi.DataViewMetadata = {
         columns: [
-            { displayName: 'Squad', queryName: 'select0', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-            { displayName: 'Period', queryName: 'select1', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: null, queryName: 'select2', groupName: '201501', isMeasure: true, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: null, queryName: 'select2', groupName: '201502', isMeasure: true, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: null, queryName: 'select2', groupName: '201503', isMeasure: true, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+            { displayName: 'Squad', queryName: 'select0', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+            { displayName: 'Period', queryName: 'select1', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+            { displayName: null, queryName: 'select2', groupName: '201501', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+            { displayName: null, queryName: 'select2', groupName: '201502', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+            { displayName: null, queryName: 'select2', groupName: '201503', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
         ]
     };
     const categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'Squad' });
@@ -60,24 +61,24 @@ module powerbitests {
 
     let dataViewMetadataCategoryColumn: powerbi.DataViewMetadata = {
         columns: [
-            { displayName: 'Genre', queryName: 'select0', properties: { "Category": true }, type: dataTypeString },
-            { displayName: 'TotalSales', queryName: 'select1', isMeasure: true, properties: { "Values": true }, type: dataTypeNumber }
+            { displayName: 'Genre', queryName: 'select0', roles: { "Category": true }, type: dataTypeString },
+            { displayName: 'TotalSales', queryName: 'select1', isMeasure: true, roles: { "Values": true }, type: dataTypeNumber }
         ]
     };
 
     let dataViewMetadataCategoryColumnAndLongText: powerbi.DataViewMetadata = {
         columns: [
-            { displayName: 'Category group', queryName: 'select0', properties: { "Category": true }, type: dataTypeString },
-            { displayName: 'Measure with long name', queryName: 'select1', isMeasure: true, properties: { "Values": true }, type: dataTypeNumber },
-            { displayName: 'Measure', queryName: 'select2', isMeasure: true, properties: { "Values": true }, type: dataTypeNumber }
+            { displayName: 'Category group', queryName: 'select0', roles: { "Category": true }, type: dataTypeString },
+            { displayName: 'Measure with long name', queryName: 'select1', isMeasure: true, roles: { "Values": true }, type: dataTypeNumber },
+            { displayName: 'Measure', queryName: 'select2', isMeasure: true, roles: { "Values": true }, type: dataTypeNumber }
         ]
     };
 
     let dataViewMetadataCategoryAndMeasures: powerbi.DataViewMetadata = {
         columns: [
-            { displayName: 'Area', queryName: 'select0', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-            { displayName: 'BugsFiled', queryName: 'select1', isMeasure: true, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-            { displayName: 'BugsFixed', queryName: 'select2', isMeasure: true, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+            { displayName: 'Area', queryName: 'select0', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+            { displayName: 'BugsFiled', queryName: 'select1', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+            { displayName: 'BugsFixed', queryName: 'select2', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
         ]
     };
 
@@ -1445,10 +1446,10 @@ module powerbitests {
             }];
             let updatedMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Squad', queryName: 'select0', properties: { "Category": true }, type: dataTypeString },
-                    { displayName: 'Period', queryName: 'select0', properties: { "Series": true }, type: dataTypeNumber },
-                    { displayName: null, groupName: '201503', isMeasure: true, properties: { "Y": true }, type: dataTypeNumber },
-                    { displayName: null, groupName: '201504', isMeasure: true, properties: { "Y": true }, type: dataTypeNumber }
+                    { displayName: 'Squad', queryName: 'select0', roles: { "Category": true }, type: dataTypeString },
+                    { displayName: 'Period', queryName: 'select0', roles: { "Series": true }, type: dataTypeNumber },
+                    { displayName: null, groupName: '201503', isMeasure: true, roles: { 'Values': true }, type: dataTypeNumber },
+                    { displayName: null, groupName: '201504', isMeasure: true, roles: { 'Values': true }, type: dataTypeNumber }
                 ]
             };
 
@@ -2485,12 +2486,12 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [categoryIdentities[0]]
+                                data: [categoryIdentities[0]],
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': categoryIdentities[0] }
+                                dataMap: { 'select0': categoryIdentities[0] },
                             }
                         ]
                     });
@@ -2511,12 +2512,14 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [categoryIdentities[0], seriesIdentities[0]]
+                                data: [categoryIdentities[0], seriesIdentities[0]],
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': categoryIdentities[0], 'select1': seriesIdentities[0] }
+                                dataMap: { 'select0': categoryIdentities[0], 'select1': seriesIdentities[0] },
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ]
                     });
@@ -2536,12 +2539,14 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [categoryIdentities[1], seriesIdentities[2]]
+                                data: [categoryIdentities[1], seriesIdentities[2]],
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': categoryIdentities[1], 'select1': seriesIdentities[2] }
+                                dataMap: { 'select0': categoryIdentities[1], 'select1': seriesIdentities[2] },
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ]
                     });
@@ -2616,12 +2621,12 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [identities[1]]
+                                data: [identities[1]],
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': identities[1] }
+                                dataMap: { 'select0': identities[1] },
                             }
                         ]
                     });
@@ -2660,13 +2665,14 @@ module powerbitests {
             setTimeout(() => {
                 spyOn(hostServices, 'onContextMenu').and.callThrough();
 
-                // Select the shape for the second category instance
-                $('.parentGroup').last().d3ContextMenu(5, 15);
+                // Select the shape for the last data point
+                $('.nodeGroup').last().d3ContextMenu(5, 15);
                 expect(hostServices.onContextMenu).toHaveBeenCalledWith(
                     {
                         data: [
                             {
-                                dataMap: { 'select0': identities[1] }
+                                dataMap: { 'select0': identities[1] },
+                                metadata: dataViewMetadataCategoryAndMeasures.columns[2].queryName
                             }
                         ], position: {
                             x: 5,
@@ -2713,10 +2719,10 @@ module powerbitests {
             }];
             let updatedMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Squad', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'Period', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: '201503', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: '201504', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Squad', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Period', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: '201503', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: '201504', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let updatedDataViewsSeriesIdentities: powerbi.DataViewScopeIdentity[] = [
@@ -2863,12 +2869,12 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [categoryIdentities[0]]
+                                data: [categoryIdentities[0]],
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': categoryIdentities[0] }
+                                dataMap: { 'select0': categoryIdentities[0] },
                             }
                         ]
                     });
@@ -2957,12 +2963,14 @@ module powerbitests {
                     {
                         data: [
                             {
-                                data: [categoryIdentities[0], seriesIdentities[0]]
+                                data: [categoryIdentities[0], seriesIdentities[0]],
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ],
                         data2: [
                             {
-                                dataMap: { 'select0': categoryIdentities[0], 'select1': seriesIdentities[0] }
+                                dataMap: { 'select0': categoryIdentities[0], 'select1': seriesIdentities[0] },
+                                metadata: dataViewMetadataCategorySeriesColumns.columns[2].queryName
                             }
                         ]
                     });
@@ -2996,7 +3004,7 @@ module powerbitests {
                         displayName: 'EventCount',
                         queryName: 'EventCount',
                         isMeasure: true,
-                        properties: { "Y": true },
+                        roles: { 'Values': true },
                         type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                         objects: { dataPoint: { fill: { solid: { color: 'red' } } } }
                     },
@@ -3004,7 +3012,7 @@ module powerbitests {
                         displayName: 'MedalCount',
                         queryName: 'MedalCount',
                         isMeasure: true,
-                        properties: { "Y": true },
+                        roles: { 'Values': true },
                         type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
                     }
                 ]
@@ -3057,8 +3065,8 @@ module powerbitests {
         it('treemap dataView multi measure with null values',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'EventCost', queryName: 'EventCost', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } } },
-                    { displayName: 'MedalCount', queryName: 'MedalCount', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'EventCost', queryName: 'EventCost', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } } },
+                    { displayName: 'MedalCount', queryName: 'MedalCount', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
 
@@ -3103,8 +3111,8 @@ module powerbitests {
         it('treemap dataView multi category single measure', () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Continent', queryName: 'select0', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'EventCost', queryName: 'select1', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } } },
+                    { displayName: 'Continent', queryName: 'select0', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'EventCost', queryName: 'select1', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } } },
                 ]
             };
             let categoryIdentities = [
@@ -3181,9 +3189,9 @@ module powerbitests {
         it('treemap dataView multi category multi measure', () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Continent', queryName: 'select0', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: 'MedalCount', queryName: 'select2', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Continent', queryName: 'select0', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'MedalCount', queryName: 'select2', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3286,12 +3294,11 @@ module powerbitests {
             expect(treeMapData.legendData.dataPoints[0].label).toBe('Africa');
         });
 
-        it('treemap dataView multi series one measure',() => {
-
+        it('treemap dataView multi category one measure',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Year', queryName: 'select0', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'MedalCount', queryName: 'select1', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Year', queryName: 'select0', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'MedalCount', queryName: 'select1', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3322,8 +3329,8 @@ module powerbitests {
             let treeMapData = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport);
             let rootNode = treeMapData.root;
             let selectionIds = [
-                SelectionId.createWithId(categoryIdentities[0]),
-                SelectionId.createWithId(categoryIdentities[2]),
+                SelectionId.createWithIdAndMeasure(categoryIdentities[0], metadata.columns[1].queryName),
+                SelectionId.createWithIdAndMeasure(categoryIdentities[2], metadata.columns[1].queryName),
             ];
 
             let nodes = rootNode.children;
@@ -3351,11 +3358,11 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { queryName: 'selectA', displayName: 'Continent', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { queryName: 'selectB', displayName: 'Year', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectC', displayName: null, groupName: '2004', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectD', displayName: null, groupName: '2008', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectE', displayName: null, groupName: '2012', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { queryName: 'selectA', displayName: 'Continent', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { queryName: 'selectB', displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectC', displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectD', displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectE', displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3404,9 +3411,9 @@ module powerbitests {
             let treeMapData = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport);
             let rootNode = treeMapData.root;
             let selectionIds: SelectionId[] = [
-                SelectionId.createWithId(categoryIdentities[0]),
-                SelectionId.createWithId(categoryIdentities[4]),
-                SelectionId.createWithIds(categoryIdentities[4], seriesIdentities[2]),
+                SelectionId.createWithSelectorForColumnAndMeasure(buildSelectorForColumn(metadata.columns[0].queryName, categoryIdentities[0]), null),
+                SelectionId.createWithSelectorForColumnAndMeasure(buildSelectorForColumn(metadata.columns[0].queryName, categoryIdentities[4]), null),
+                SelectionId.createWithSelectorForColumnAndMeasure(buildSelectorForColumn(metadata.columns[1].queryName, seriesIdentities[2], buildSelectorForColumn(metadata.columns[0].queryName, categoryIdentities[4])), metadata.columns[4].queryName),
             ];
 
             let nodes = rootNode.children;
@@ -3443,11 +3450,11 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { queryName: 'selectA', displayName: 'Continent', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { queryName: 'selectB', displayName: 'Year', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectC', displayName: null, groupName: '2004', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectD', displayName: null, groupName: '2008', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { queryName: 'selectE', displayName: null, groupName: '2012', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { queryName: 'selectA', displayName: 'Continent', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { queryName: 'selectB', displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectC', displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectD', displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { queryName: 'selectE', displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3524,11 +3531,11 @@ module powerbitests {
         it('treemap dataView multi category/series with null values',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Continent', queryName: 'select1', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'Year', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2004', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2008', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2012', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Continent', queryName: 'select1', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3595,11 +3602,11 @@ module powerbitests {
         it('treemap dataView multi category/series with null values tooltip data test',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Continent', properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'Year', properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2004', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2008', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2012', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Continent', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3663,9 +3670,9 @@ module powerbitests {
         it('treemap non-categorical multi-measure tooltip values test',() => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'a', queryName: 'a', isMeasure: true },
-                    { displayName: 'b', queryName: 'b', isMeasure: true },
-                    { displayName: 'c', queryName: 'c', isMeasure: true }
+                    { displayName: 'a', queryName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'b', queryName: 'b', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'c', queryName: 'c', isMeasure: true, roles: { 'Values': true } }
                 ]
             };
 
@@ -3705,9 +3712,9 @@ module powerbitests {
         it('validate tooltip info not being created when tooltips are disabled', () => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'a', queryName: 'a', isMeasure: true },
-                    { displayName: 'b', queryName: 'b', isMeasure: true },
-                    { displayName: 'c', queryName: 'c', isMeasure: true }
+                    { displayName: 'a', queryName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'b', queryName: 'b', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'c', queryName: 'c', isMeasure: true, roles: { 'Values': true } }
                 ]
             };
 
@@ -3747,8 +3754,8 @@ module powerbitests {
         it('treemap dataView multi measure',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: 'MedalCount', queryName: 'select2', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'MedalCount', queryName: 'select2', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let dataView: DataView = {
@@ -3799,7 +3806,7 @@ module powerbitests {
         it('treemap dataView single measure',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, properties: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'EventCount', queryName: 'select1', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let dataView: DataView = {
@@ -3896,7 +3903,7 @@ module powerbitests {
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col2', isMeasure: true, roles: { 'Values': true }},
                     { displayName: 'col3', isMeasure: true, roles: { 'Gradient': true } }
                 ]
             };
@@ -3947,7 +3954,7 @@ module powerbitests {
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col2', isMeasure: true, roles: { 'Values': true } },
                     { displayName: 'col3', roles: { 'Gradient': true } }
                 ]
             };
@@ -3995,9 +4002,9 @@ module powerbitests {
 
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true, roles: { 'Y': true, 'Gradient': true } },
-                    { displayName: 'col3', isMeasure: true }
+                    { displayName: 'col1'},
+                    { displayName: 'col2', isMeasure: true, roles: { 'Gradient': true } },
+                    { displayName: 'col3', isMeasure: true, roles: { 'Values': true } }
                 ]
             };
 
@@ -4041,15 +4048,15 @@ module powerbitests {
         it('treemap non-categorical series, formatted color', () => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1', },
+                    { displayName: 'col1', queryName: 'col1', roles: { 'Values': true }},
                     { displayName: 'col2', queryName: 'col2', isMeasure: true }]
             };
 
             let dataViewMetadata3Measure: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1', isMeasure: true, },
-                    { displayName: 'col2', queryName: 'col2', isMeasure: true, },
-                    { displayName: 'col3', queryName: 'col3', isMeasure: true, }]
+                    { displayName: 'col1', queryName: 'col1', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { 'Values': true } }
+                ]
             };
 
             let dataView: powerbi.DataView = {
@@ -4085,7 +4092,48 @@ module powerbitests {
             helpers.assertColorsMatch(node1.color, '#00FF00');
             helpers.assertColorsMatch(node2.color, '#FF0000' );
         });
+        
+        describe("Field used a gradient and value", () => {
+            let dataBuilder: TreemapDataBuilder;
 
+            beforeEach(() => {
+                dataBuilder = new TreemapDataBuilder();
+            });
+            
+            it("Categorial treemap with gradient (multiple value columns)", () => {
+
+                let dataView = dataBuilder.build(true, true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure the number of categories in the node match the number of categories in the data view
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.categories[0].values.length);
+            });
+
+            it("Categorial treemap with gradient (single value column)", () => {
+
+                let dataView = dataBuilder.withOneValueColumn().build(true, true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure the number of categories in the node match the number of categories in the data view
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.categories[0].values.length);
+            });
+
+            it("Non-categorial treemap with gradient", () => {
+
+                let dataView = dataBuilder.withSingleValues().withoutCategory().build(true, true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // Make sure we're getting the right number of values back
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.values.length);
+            });
+        });
+        
         describe("Correct number of nodes", () => {
             let dataBuilder: TreemapDataBuilder;
 
@@ -4153,9 +4201,9 @@ module powerbitests {
         public singleCategoryValues = ['Front end'];
 
         public valueColumns: powerbi.DataViewMetadataColumn[] = [
-            { displayName: 'value1', isMeasure: true, queryName: 'value1' },
-            { displayName: 'value2', isMeasure: true, queryName: 'value2' },
-            { displayName: 'value3', isMeasure: true, queryName: 'value3' },
+            { displayName: 'value1', isMeasure: true, queryName: 'value1', roles: {'Values': true} },
+            { displayName: 'value2', isMeasure: true, queryName: 'value2', roles: {'Values': true} },
+            { displayName: 'value3', isMeasure: true, queryName: 'value3', roles: {'Values': true} },
         ];
         public values = [[110, 120], [210, 220], [310, 320]];
         public singleValues = [[110], [210], [310]];
@@ -4164,7 +4212,7 @@ module powerbitests {
         public gradientValues = [410, 420]; 
         public gradientSingleValues = [410];
 
-        public build(gradient: boolean): powerbi.DataView {
+        public build(gradient: boolean, gradientValuesRole?: boolean): powerbi.DataView {
 
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: []
@@ -4187,11 +4235,17 @@ module powerbitests {
             }
             
             if (gradient) {
-                dataViewMetadata.columns.push(this.gradientColumn);
-                valueDataArray.push({
-                    source: this.gradientColumn,
-                    values: this.gradientValues
-                });
+                
+                if (gradientValuesRole) {
+                    let gradientColumn = valueDataArray[0];
+                    gradientColumn.source.roles['Gradient'] = true;
+                } else {
+                    dataViewMetadata.columns.push(this.gradientColumn);
+                    valueDataArray.push({
+                        source: this.gradientColumn,
+                        values: this.gradientValues
+                    });
+                }
             }
             
             let categories: powerbi.DataViewCategoryColumn[] = this.buildCategories(dataViewMetadata);

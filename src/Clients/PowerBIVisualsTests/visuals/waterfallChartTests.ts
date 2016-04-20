@@ -27,7 +27,6 @@
 module powerbitests {
     import WaterfallChart = powerbi.visuals.WaterfallChart;
     import ValueType = powerbi.ValueType;
-    import PrimitiveType = powerbi.PrimitiveType;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import SVGUtil = powerbi.visuals.SVGUtil;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
@@ -391,67 +390,6 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('background image', (done) => {
-                let dataViewMetadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        {
-                            displayName: 'col1',
-                            queryName: 'col1',
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-                        }, {
-                            displayName: 'col2',
-                            queryName: 'col2',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        }, {
-                            displayName: 'col3',
-                            queryName: 'col3',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        }, {
-                            displayName: 'col4',
-                            queryName: 'col4',
-                            isMeasure: true,
-                            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-                        }]
-                };
-
-                let metadata = _.cloneDeep(dataViewMetadata);
-                metadata.objects = {
-                    plotArea: {
-                        image: {
-                            url: 'data:image/gif;base64,R0lGO',
-                            name: 'someName',
-                        },
-                    },
-                };
-                v.onDataChanged({
-                    dataViews: [{
-                        metadata: metadata,
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: ['a', 'b', 'c', 'd', 'e']
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[1],
-                                values: [500000, 495000, 490000, 480000, 500000],
-                                subtotal: 246500
-                            }])
-                        }
-                    }]
-                });
-                setTimeout(() => {
-                    let backgroundImage = $('.background-image');
-                    expect(backgroundImage.length).toBeGreaterThan(0);
-                    expect(backgroundImage.css('height')).toBeDefined();
-                    expect(backgroundImage.css('width')).toBeDefined();
-                    expect(backgroundImage.css('margin-left')).toBeDefined();
-                    expect(backgroundImage.css('margin-top')).toBeDefined();
-                    done();
-                }, DefaultWaitForRender);
-            });
-
             it('should have correct tick labels after scrolling', (done) => {
                 setTimeout(() => {
                     let tickCount = helpers.getAxisTicks('x').length;
@@ -663,6 +601,29 @@ module powerbitests {
             }
         });
 
+        it('background image', (done) => {
+            let v = new WaterfallVisualBuilder().build();
+            let dataView = new WaterfallDataBuilder().build();
+            dataView.metadata.objects = {
+                plotArea: {
+                    image: {
+                        url: 'data:image/gif;base64,R0lGO',
+                        name: 'someName',
+                    },
+                },
+            };
+            v.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                let backgroundImage = $('.background-image');
+                expect(backgroundImage.length).toBeGreaterThan(0);
+                expect(backgroundImage.css('height')).toBeDefined();
+                expect(backgroundImage.css('width')).toBeDefined();
+                expect(backgroundImage.css('margin-left')).toBeDefined();
+                expect(backgroundImage.css('margin-top')).toBeDefined();
+                done();
+            }, DefaultWaitForRender);
+        });
+
         describe("selection", () => {
             let visualBuilder: WaterfallVisualBuilder;
             let dataBuilder: WaterfallDataBuilder;
@@ -692,12 +653,14 @@ module powerbitests {
                         {
                             data: [
                                 {
-                                    data: [data]
+                                    data: [data],
+                                    metadata: dataBuilder.measureColumn.queryName,
                                 }
                             ],
                             data2: [
                                 {
-                                    dataMap: dataMap
+                                    dataMap: dataMap,
+                                    metadata: dataBuilder.measureColumn.queryName,
                                 }
                             ]
                         });
@@ -723,7 +686,8 @@ module powerbitests {
                         {
                             data: [
                                 {
-                                    dataMap: dataMap
+                                    dataMap: dataMap,
+                                    metadata: dataBuilder.measureColumn.queryName,
                                 }
                             ],
                             position: {
@@ -987,7 +951,7 @@ module powerbitests {
     });
 
     class WaterfallDataBuilder {
-        private _categoryColumn: powerbi.DataViewMetadataColumn = { displayName: "year", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), queryName: "Year.Year" };
+        private _categoryColumn: powerbi.DataViewMetadataColumn = { displayName: "year", type: ValueType.fromDescriptor({ text: true }), queryName: "Year.Year" };
         public get categoryColumn(): powerbi.DataViewMetadataColumn { return this._categoryColumn; }
 
         private _categoryValues: any[] = [2015, 2016, 2017, 2018, 2019, 2020];
@@ -996,7 +960,8 @@ module powerbitests {
         private _categoryIdentities: powerbi.DataViewScopeIdentity[] = this.categoryValues.map((v) => mocks.dataViewScopeIdentity(v));
         public get categoryIdentities(): powerbi.DataViewScopeIdentity[] { return this._categoryIdentities; }
 
-        private _measureColumn: powerbi.DataViewMetadataColumn = { displayName: "sales", isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: "$0" } } };
+        private _measureColumn: powerbi.DataViewMetadataColumn = { displayName: "sales", isMeasure: true, type: ValueType.fromDescriptor({ integer: true }), queryName: 'Sales.Sales', objects: { general: { formatString: "$0" } }
+};
         public get measureColumn(): powerbi.DataViewMetadataColumn { return this._measureColumn; }
 
         private _measureValues: any[] = [100, -200, 0, 300, null, NaN];

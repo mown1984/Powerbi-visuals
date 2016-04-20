@@ -3545,6 +3545,7 @@ module powerbitests {
             };
 
             let binder = new powerbi.visuals.MatrixBinder(null, binderOptions);
+            binder.onDataViewChanged(Matrix.converter(matrixOneMeasureDataView));
             let ext = new powerbi.visuals.controls.internal.TablixCellPresenter(false, Controls.TablixLayoutKind.Canvas);
 
             let position = new TablixUtils.CellPosition();
@@ -3553,6 +3554,8 @@ module powerbitests {
                 type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "", colIndex: 0, isBottomMost: false, isLeftMost: false, isRightMost: false, isTopMost: false, rowIndex: 0,
                 extension: ext,
                 position: position,
+                contentHeight: 0, contentWidth: 0, style: new TablixUtils.CellStyle(), applyStyle: function () { }, unfixRowHeight: function () { },
+                containerHeight: 0, containerWidth: 0
             });
 
             expect(callBackCalled).toBe(true);
@@ -3573,6 +3576,8 @@ module powerbitests {
                 type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "", colIndex: 0, isBottomMost: false, isLeftMost: false, isRightMost: false, isTopMost: false, rowIndex: 0,
                 extension: ext,
                 position,
+                contentHeight: 0, contentWidth: 0, style: new TablixUtils.CellStyle(), applyStyle: function () { }, unfixRowHeight: function () { },
+                containerHeight: 0, containerWidth: 0
             });
 
             expect(unregisterCalled).toBe(false);
@@ -4562,7 +4567,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("multiple onDataChangedCalls to add matrix columns + resize", (done) => {
+        it("multiple onDataChangedCalls to add matrix columns + resize", (done) => {
             let selector = ".tablixCanvas tr";
             let matrix0 = matrixOneMeasure;
             let objects = {
@@ -4585,7 +4590,7 @@ module powerbitests {
                 let queryNames0 = columnWidthManager.getColumnWidthObjects();
                 expect(queryNames0.length).toBe(1);
                 expect(queryNames0[0].queryName).toBe(measureSource1.queryName);
-                expect(rowCells0.eq(1).children(0).width()).toEqual(63);
+                expect(rowCells0.eq(1).children(0).width()).toEqual(66);
 
                 // 2nd onDataChanged call with two columns in matrix
                 let matrix1 = matrixTwoMeasures;
@@ -4599,7 +4604,7 @@ module powerbitests {
                     expect(queryNames1[0].queryName).toBe(measureSource1.queryName);
                     expect(queryNames1[1].queryName).toBe(measureSource2.queryName);
                     expect(rowCells1.eq(1).children(0).width()).toEqual(48);
-                    expect(rowCells1.eq(2).children(0).width()).toEqual(65);
+                    expect(rowCells1.eq(2).children(0).width()).toEqual(66);
 
                     // 3rd onDataChanged call with three columns in matrix
                     let matrix2 = matrixThreeMeasures;
@@ -4614,8 +4619,8 @@ module powerbitests {
                         expect(queryNames2[1].queryName).toBe(measureSource2.queryName);
                         expect(queryNames2[2].queryName).toBe(measureSource3.queryName);
                         expect(rowCells2.eq(1).children(0).width()).toEqual(48);
-                        expect(rowCells2.eq(2).children(0).width()).toEqual(65);
-                        expect(rowCells2.eq(3).children(0).width()).toEqual(65);
+                        expect(rowCells2.eq(2).children(0).width()).toEqual(66);
+                        expect(rowCells2.eq(3).children(0).width()).toEqual(66);
 
                         // Resize column 2
                         let newMeasureSource: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 7, objects: { general: { formatString: "#.00", columnWidth: 120 } } };
@@ -4626,8 +4631,8 @@ module powerbitests {
                             let rows3 = $(selector);
                             let rowCells3 = rows3.eq(1).find('td');
                             expect(rowCells3.eq(1).children(0).width()).toEqual(120);
-                            expect(rowCells3.eq(2).children(0).width()).toEqual(65);
-                            expect(rowCells3.eq(3).children(0).width()).toEqual(65);
+                            expect(rowCells3.eq(2).children(0).width()).toEqual(66);
+                            expect(rowCells3.eq(3).children(0).width()).toEqual(66);
                             done();
                         }, DefaultWaitForRender);
                     }, DefaultWaitForRender);

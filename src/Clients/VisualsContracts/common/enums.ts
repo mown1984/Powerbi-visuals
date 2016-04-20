@@ -44,6 +44,7 @@ module powerbi {
         Resize = 1 << 2,
         ViewMode = 1 << 3,
         Style = 1 << 4,
+        ResizeEnd = 1 << 5,
     }
 
     export enum VisualPermissions {

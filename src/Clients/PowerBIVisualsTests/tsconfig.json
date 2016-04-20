@@ -36,6 +36,7 @@
         "visuals/comboChartTests.ts",
         "visuals/common/animatorTests.ts",
         "visuals/common/axisHelperTests.ts",
+        "visuals/common/capabilitiesValidationTests.ts",
         "visuals/common/cartesianHelperTests.ts",
         "visuals/common/colorHelperTests.ts",
         "visuals/common/converterHelperTests.ts",
@@ -138,6 +139,7 @@
         "customVisuals/ganttTests.ts",
         "customVisuals/chicletSlicerTests.ts",
         "customVisuals/streamGraphTests.ts",
-        "customVisuals/pulseChartTests.ts"
+        "customVisuals/pulseChartTests.ts",
+        "data/dataView/dataViewCategoricalReaderTests.ts"
     ]
 }

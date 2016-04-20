@@ -30,8 +30,9 @@ module powerbitests {
     import createInitOptions = helpers.createInitOptions;
 
     describe('VisualAdapter', () => {
-        let visualApiVersionsBackup = powerbi.extensibility.visualApiVersions;
-
+        
+        let visualApiVersionsBackup = powerbi.extensibility.visualApiVersions; 
+        
         beforeAll(() => {
             powerbi.extensibility.visualApiVersions = mocks.MockVisualVersions;
         });
@@ -39,7 +40,7 @@ module powerbitests {
         afterAll(() => {
             powerbi.extensibility.visualApiVersions = visualApiVersionsBackup;
         });
-
+        
         describe('Deprecated Visual Methods', () => {
             let adapter: powerbi.IVisual & powerbi.extensibility.WrappedVisual;
             let spyData: jasmine.Spy;

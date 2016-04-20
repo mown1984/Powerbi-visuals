@@ -40,6 +40,7 @@ module powerbi.visuals {
         private mapPointerEventsDisabled = false;
         private mapPointerTimeoutSet = false;
         private viewChangedSinceLastClearMouseDown = false;
+        private receivedZoomOrPanEvent = false;
 
         public bindEvents(options: MapBehaviorOptions, selectionHandler: ISelectionHandler): void {
             let bubbles = this.bubbles = options.bubbles;
@@ -104,6 +105,16 @@ module powerbi.visuals {
                         }, 200);
                     }
                 });
+
+                slices.on('contextmenu', (slice: D3.Layout.ArcDescriptor) => {
+                    if (d3.event.ctrlKey)
+                        return;
+
+                    d3.event.preventDefault();
+                    let position = InteractivityUtils.getPositionOfLastInputEvent();
+
+                    selectionHandler.handleContextMenu(slice.data, position);
+                });
             }
 
             if (shapes) {
@@ -128,12 +139,18 @@ module powerbi.visuals {
             }
 
             clearCatcher.on('mouseup', () => {
-                if (!this.viewChangedSinceLastClearMouseDown)
+                if (!this.viewChangedSinceLastClearMouseDown) {
                     selectionHandler.handleClearSelection();
+                    this.receivedZoomOrPanEvent = true;
+                }
             });
 
             clearCatcher.on('mousedown', () => {
                 this.viewChangedSinceLastClearMouseDown = false;
+            });
+
+            clearCatcher.on('mousewheel', () => {
+                this.receivedZoomOrPanEvent = true;
             });
         }
 
@@ -163,6 +180,14 @@ module powerbi.visuals {
 
         public viewChanged() {
             this.viewChangedSinceLastClearMouseDown = true;
+        }
+
+        public resetZoomPan() {
+            this.receivedZoomOrPanEvent = false;
+        }
+
+        public hasReceivedZoomOrPanEvent(): boolean {
+            return this.receivedZoomOrPanEvent;
         }
     }
 }

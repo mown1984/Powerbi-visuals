@@ -32,7 +32,8 @@ module powerbi.visuals {
                     name: 'Category',
                     kind: VisualDataRoleKind.Grouping,
                     displayName: data.createDisplayNameGetter('Role_DisplayName_Axis'),
-                    description: data.createDisplayNameGetter('Role_DisplayName_AxisDescription')
+                    description: data.createDisplayNameGetter('Role_DisplayName_AxisDescription'),
+                    cartesianKind: CartesianRoleKind.X,
                 }, {
                     name: 'Series',
                     kind: VisualDataRoleKind.Grouping,
@@ -43,6 +44,7 @@ module powerbi.visuals {
                     kind: VisualDataRoleKind.Measure,
                     displayName: data.createDisplayNameGetter('Role_DisplayName_Value'),
                     requiredTypes: [{ numeric: true }, { integer: true }],
+                    cartesianKind: CartesianRoleKind.Y,
                 }, {
                     name: 'Gradient',
                     kind: VisualDataRoleKind.Measure,
@@ -306,7 +308,40 @@ module powerbi.visuals {
                             },
                         }
                     }
-                },               
+                },
+                trend: {
+                    displayName: data.createDisplayNameGetter('Visual_Trend_Line'),
+                    properties: {
+                        show: {
+                            type: { bool: true }
+                        },
+                        lineColor: {
+                            displayName: data.createDisplayNameGetter('Visual_Trend_Line_Color'),
+                            description: data.createDisplayNameGetter('Visual_Trend_Line_Color_Description'),
+                            type: { fill: { solid: { color: true } } }
+                        },
+                        transparency: {
+                            displayName: data.createDisplayNameGetter('Visual_Trend_Line_Transparency'),
+                            description: data.createDisplayNameGetter('Visual_Trend_Line_Transparency_Description'),
+                            type: { numeric: true }
+                        },
+                        style: {
+                            displayName: data.createDisplayNameGetter('Visual_Trend_Line_Style'),
+                            description: data.createDisplayNameGetter('Visual_Trend_Line_Style_Description'),
+                            type: { enumeration: lineStyle.type }
+                        },
+                        combineSeries: {
+                            displayName: data.createDisplayNameGetter('Visual_Trend_Line_Combine_Series'),
+                            description: data.createDisplayNameGetter('Visual_Trend_Line_Combine_Series_Description'),
+                            type: { bool: true }
+                        },
+                        useHighlightValues: {
+                            displayName: data.createDisplayNameGetter('Visual_Trend_Line_UseHighlightValues'),
+                            description: data.createDisplayNameGetter('Visual_Trend_Line_UseHighlightValues_Description'),
+                            type: { bool: true }
+                        },
+                    }
+                },
                 labels: {
                     displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
                     description: data.createDisplayNameGetter('Visual_DataPointsLabelsDescription'),
@@ -381,6 +416,29 @@ module powerbi.visuals {
                     },
                     rowCount: { preferred: { min: 2 }, supported: { min: 0 } }
                 },
+            }, {
+                conditions: [
+                    { 'Category': { max: 1 }, 'Series': { max: 0 }, 'Gradient': { max: 0 } },
+                    { 'Category': { max: 1 }, 'Series': { min: 1, max: 1 }, 'Y': { max: 1 }, 'Gradient': { max: 0 } },
+                    { 'Category': { max: 1 }, 'Series': { max: 0 }, 'Y': { min: 0, max: 1 }, 'Gradient': { max: 1 } },
+                ],
+                requiredProperties: [{ objectName: 'trend', propertyName: 'show' }],
+                usage: {
+                    regression: {
+                        combineSeries: { objectName: 'trend', propertyName: 'combineSeries' }
+                    },
+                },
+                categorical: {
+                    categories: {
+                        for: { in: 'regression.X' },
+                    },
+                    values: {
+                        group: {
+                            by: 'regression.Series',
+                            select: [{ for: { in: 'regression.Y' } }],
+                        },
+                    }
+                }
             }],
             supportsHighlight: true,
             sorting: {

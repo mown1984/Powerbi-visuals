@@ -73,9 +73,9 @@ module powerbitests.customVisuals {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
                     var elements = visualBuilder.mainElement.find('.column');
-                    expect(elements.first().css('fill')).toBe('#ff0000');
-                    expect(elements.last().css('fill')).toBe('#ff0000');
-
+                    elements.each((index, elem) => {
+                        expect($(elem).css('fill')).toBe('#ff0000');
+                    });
                     done();
                 }, DefaultWaitForRender);
             });
@@ -105,11 +105,45 @@ module powerbitests.customVisuals {
                     }, DefaultWaitForRender);
                 }, DefaultWaitForRender);                
             });
+
+            it('Validate start bigger than end at y axis', (done) => {
+                dataViews[0].metadata.objects = {
+                    yAxis: {
+                        start: 65,
+                        end:33
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    var firstY = parseInt(visualBuilder.mainElement.find('.axis:last .tick:first text').text(),10);
+                    expect(firstY).toBe(0);
+                  
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('Validate Data Label', (done) => {
+                dataViews[0].metadata.objects = {
+                    labels: {
+                        show: true
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    var columns = (visualBuilder.mainElement.find('.columns rect')).length;
+                    var dataLabels = (visualBuilder.mainElement.find('.labels text')).length;
+                    expect(columns).toBe(dataLabels);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
         });
     });
 
     class HistogramChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number = 200, width: number = 1000, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();

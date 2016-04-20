@@ -22,6 +22,7 @@
         "data/dataViewMapping.d.ts",
         "data/dataViewObject.d.ts",
         "data/dataViewObjectDescriptor.d.ts",
+		"data/dataViewRoleWildcard.d.ts",
         "data/dataViewScopeIdentity.d.ts",
         "data/dataViewScopeWildcard.d.ts",
         "data/displayNameGetter.d.ts",

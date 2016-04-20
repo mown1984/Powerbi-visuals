@@ -26,6 +26,8 @@
 
 module powerbitests {
     import lineStyle = powerbi.visuals.lineStyle;
+    import ColorHelper = powerbi.visuals.ColorHelper;
+    import DataColorPalette = powerbi.visuals.DataColorPalette;
     import ObjectEnumerationBuilder = powerbi.visuals.ObjectEnumerationBuilder;
     import TrendLineHelper = powerbi.visuals.TrendLineHelper;
     import TrendLine = powerbi.visuals.TrendLine;
@@ -33,6 +35,12 @@ module powerbitests {
 
     describe('TrendLineHelper', () => {
         let samplePoints: powerbi.visuals.IPoint[] = [{ x: 0, y: 0 }, { x: 100, y: 100 }];
+
+        let defaultColors: DataColorPalette;
+
+        beforeEach(() => {
+            defaultColors = new DataColorPalette();
+        });
 
         describe('enumerateObjectInstances', () => {
             it('with no trend lines generates a trend line object', () => {
@@ -45,6 +53,10 @@ module powerbitests {
                     selector: null,
                     properties: {
                         show: false,
+                        lineColor: TrendLineHelper.defaults.lineColor,
+                        transparency: TrendLineHelper.defaults.transparency,
+                        style: TrendLineHelper.defaults.lineStyle,
+                        combineSeries: TrendLineHelper.defaults.combineSeries,
                     },
                     objectName: 'trend',
                 });
@@ -61,6 +73,7 @@ module powerbitests {
                     transparency: 20,
                     combineSeries: true,
                     y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 };
 
                 TrendLineHelper.enumerateObjectInstances(enumerationBuilder, [trendLine]);
@@ -74,155 +87,239 @@ module powerbitests {
                         style: lineStyle.dotted,
                         transparency: 20,
                         combineSeries: true,
+                        useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                     },
                     objectName: 'trend',
                 });
             });
         });
 
-        describe('readDataViews', () => {
-            it('invalid data views', () => {
-                expect(TrendLineHelper.readDataViews([])).toEqual([]);
-                expect(TrendLineHelper.readDataViews([null])).toEqual([]);
-            });
-
-            it('single regression data view', () => {
-                let [layerDataView, regressionDataView] = helpers.buildTrendLineDataViews({ trend: { show: true } }, /*  */ true, /* xIsMeasure */ false);
-
-                expect(TrendLineHelper.readDataViews([layerDataView, regressionDataView]).length).toBe(1);
-                expect(TrendLineHelper.readDataViews([layerDataView])).toEqual([]);
-            });
-
-            it('multiple regression data views', () => {
-                let [layer1, regression1] = helpers.buildTrendLineDataViews({ trend: { show: true } }, /* combined */ true, /* xIsMeasure */ false);
-                let [layer2, regression2] = helpers.buildTrendLineDataViews({ trend: { show: true } }, /* combined */ true, /* xIsMeasure */ false);
-
-                let trendLines = TrendLineHelper.readDataViews([layer1, layer2, regression1, regression2]);
-                expect(trendLines.length).toBe(2);
-                expect(trendLines[0].y2Axis).toBe(false);
-                expect(trendLines[1].y2Axis).toBe(true);
-            });
-        });
-
         describe('readDataView', () => {
             it('invalid data view', () => {
-                expect(TrendLineHelper.readDataView(null, false)).toBeUndefined();
+                expect(TrendLineHelper.readDataView(null, null, false, defaultColors)).toBeUndefined();
 
-                expect(TrendLineHelper.readDataView({ single: { value: 10 }, metadata: { columns: [] } }, false)).toBeUndefined();
+                expect(TrendLineHelper.readDataView(
+                    { single: { value: 10 }, metadata: { columns: [] } },
+                    { single: { value: 10 }, metadata: { columns: [] } },
+                    false,
+                    defaultColors)).toBeUndefined();
 
-                expect(TrendLineHelper.readDataView({
-                    categorical: {
-                        categories: [],
-                        values: DataViewTransform.createValueColumns(),
+                expect(TrendLineHelper.readDataView(
+                    {
+                        categorical: {
+                            categories: [],
+                            values: DataViewTransform.createValueColumns(),
+                        },
+                        metadata: {
+                            columns: []
+                        },
                     },
-                    metadata: {
-                        columns: []
+                    {
+                        categorical: {
+                            categories: [],
+                            values: DataViewTransform.createValueColumns(),
+                        },
+                        metadata: {
+                            columns: []
+                        },
                     },
-                }, false)).toBeUndefined();
+                    false,
+                    defaultColors)).toBeUndefined();
 
                 // Only category column
                 let categoryField = powerbi.data.SQExprBuilder.entity('schema', 'table', 'category_column');
                 let categoryValues = ['a', 'b'];
-                expect(TrendLineHelper.readDataView(
-                    powerbi.data.createCategoricalDataViewBuilder().withCategory({
-                        identityFrom: {
-                            fields: [categoryField],
-                            identities: _.map(categoryValues, v => mocks.dataViewScopeIdentity(v))
-                        },
-                        source: {
-                            displayName: 'category column',
-                            isMeasure: false,
-                            index: 0,
-                            queryName: 'select1',
-                            roles: { 'Category': true },
-                            type: powerbi.ValueType.fromDescriptor({ text: true }),
-                        },
-                        values: categoryValues
-                    }).build(), false)).toBeUndefined();
+                let dataViewWithOnlyCategories = powerbi.data.createCategoricalDataViewBuilder().withCategory({
+                    identityFrom: {
+                        fields: [categoryField],
+                        identities: _.map(categoryValues, v => mocks.dataViewScopeIdentity(v))
+                    },
+                    source: {
+                        displayName: 'category column',
+                        isMeasure: false,
+                        index: 0,
+                        queryName: 'select1',
+                        roles: { 'Category': true },
+                        type: powerbi.ValueType.fromDescriptor({ text: true }),
+                    },
+                    values: categoryValues
+                }).build();
+                expect(TrendLineHelper.readDataView(dataViewWithOnlyCategories, dataViewWithOnlyCategories, false, defaultColors)).toBeUndefined();
 
                 // Only value column
-                expect(TrendLineHelper.readDataView(
-                    powerbi.data.createCategoricalDataViewBuilder().withValues({
-                        columns: [
-                            {
-                                source: {
-                                    displayName: 'value column',
-                                    isMeasure: false,
-                                    index: 0,
-                                    queryName: 'select1',
-                                    roles: { 'Y': true },
-                                    type: powerbi.ValueType.fromDescriptor({ numeric: true }),
-                                },
-                                values: [1],
-                            }
-                        ]
-                    }).build(), false)).toBeUndefined();
+                let dataViewWithOnlyValues = powerbi.data.createCategoricalDataViewBuilder().withValues({
+                    columns: [
+                        {
+                            source: {
+                                displayName: 'value column',
+                                isMeasure: false,
+                                index: 0,
+                                queryName: 'select1',
+                                roles: { 'Y': true },
+                                type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                            },
+                            values: [1],
+                        }
+                    ]
+                }).build();
+                expect(TrendLineHelper.readDataView(dataViewWithOnlyValues, dataViewWithOnlyValues, false, defaultColors)).toBeUndefined();
             });
 
-            it('data view with defaults', () => {
-                let dataView = buildValidGroupedDataView();
-
-                expect(TrendLineHelper.readDataView(dataView, false)).toEqual([{
-                    points: [{ x: 1, y: 10 }, { x: 6, y: 65 }],
-                    show: false,
-                    lineColor: { solid: { color: '#000' } },
-                    transparency: TrendLineHelper.defaults.transparency,
-                    style: TrendLineHelper.defaults.lineStyle,
+            it('combined series', () => {
+                let dataViews = new helpers.TrendLineBuilder({
                     combineSeries: true,
-                    y2Axis: false,
-                }]);
-            });
+                    multipleSeries: true,
+                }).buildDataViews();
 
-            it('grouped data view for multiple series', () => {
-                let dataView = buildValidGroupedDataView(false);
-                dataView.metadata.objects = {
-                    trend: {
-                        show: true,
-                        combineSeries: false,
-                    }
-                };
-
-                expect(TrendLineHelper.readDataView(dataView, false)).toEqual([{
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([{
                     points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
                     show: true,
                     lineColor: { solid: { color: '#000' } },
                     transparency: TrendLineHelper.defaults.transparency,
                     style: TrendLineHelper.defaults.lineStyle,
-                    combineSeries: false,
+                    combineSeries: true,
                     y2Axis: false,
-                }, {
-                    points: [{ x: 1, y: 15 }, { x: 6, y: 65}],
-                    show: true,
-                    lineColor: { solid: { color: '#000' } },
-                    transparency: TrendLineHelper.defaults.transparency,
-                    style: TrendLineHelper.defaults.lineStyle,
-                    combineSeries: false,
-                    y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 }]);
             });
 
-            it('legacy color', () => {
-                let dataView = buildValidGroupedDataView();
+            it('grouped data view for multiple series', () => {
+                let dataViews = new helpers.TrendLineBuilder({
+                    combineSeries: false,
+                    dynamicSeries: true,
+                    multipleSeries: true,
+                }).buildDataViews();
 
-                dataView.categorical.values[0].source.objects = {
+                let sourceDataView = dataViews[0];
+                let groups = sourceDataView.categorical.values.grouped();
+                let colorHelper = new ColorHelper(defaultColors);
+
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([
+                    {
+                        points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                        show: true,
+                        lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor(colorHelper.getColorForSeriesValue(null, sourceDataView.categorical.values.identityFields, groups[0].name)) } },
+                        transparency: TrendLineHelper.defaults.transparency,
+                        style: TrendLineHelper.defaults.lineStyle,
+                        combineSeries: false,
+                        y2Axis: false,
+                        useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                    }, {
+                        points: [{ x: 1, y: 15 }, { x: 6, y: 65 }],
+                        show: true,
+                        lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor(colorHelper.getColorForSeriesValue(null, sourceDataView.categorical.values.identityFields, groups[1].name)) } },
+                        transparency: TrendLineHelper.defaults.transparency,
+                        style: TrendLineHelper.defaults.lineStyle,
+                        combineSeries: false,
+                        y2Axis: false,
+                        useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                    }]);
+            });
+
+            describe('explicit colors in source data view are matched', () => {
+                it('dynamic series color', () => {
+                    let dataViews = new helpers.TrendLineBuilder({
+                        combineSeries: false,
+                        dynamicSeries: true,
+                        multipleSeries: true,
+                    }).buildDataViews();
+
+                    let sourceDataView = dataViews[0];
+                    let groups = sourceDataView.categorical.values.grouped();
+                    groups[1].objects = {
+                        dataPoint: {
+                            fill: { solid: { color: '#123' } }
+                        }
+                    };
+                    sourceDataView.categorical.values.grouped = () => groups;
+                    let colorHelper = new ColorHelper(defaultColors, { objectName: 'dataPoint', propertyName: 'fill' });
+
+                    expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([
+                        {
+                            points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                            show: true,
+                            lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor(colorHelper.getColorForSeriesValue(groups[0].objects, sourceDataView.categorical.values.identityFields, groups[0].name)) } },
+                            transparency: TrendLineHelper.defaults.transparency,
+                            style: TrendLineHelper.defaults.lineStyle,
+                            combineSeries: false,
+                            y2Axis: false,
+                            useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                        }, {
+                            points: [{ x: 1, y: 15 }, { x: 6, y: 65 }],
+                            show: true,
+                            lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor('#123') } },
+                            transparency: TrendLineHelper.defaults.transparency,
+                            style: TrendLineHelper.defaults.lineStyle,
+                            combineSeries: false,
+                            y2Axis: false,
+                            useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                        }]);
+                });
+
+                it('static series color', () => {
+                    let dataViews = new helpers.TrendLineBuilder({
+                        combineSeries: false,
+                        dynamicSeries: false,
+                        multipleSeries: true,
+                    }).buildDataViews();
+
+                    let sourceDataView = dataViews[0];
+                    sourceDataView.categorical.values[1].source.objects = {
+                        dataPoint: {
+                            fill: { solid: { color: '#123' } }
+                        }
+                    };
+                    let colorHelper = new ColorHelper(defaultColors, { objectName: 'dataPoint', propertyName: 'fill' });
+
+                    expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([
+                        {
+                            points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                            show: true,
+                            lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor(colorHelper.getColorForMeasure(sourceDataView.categorical.values[0].source.objects, sourceDataView.categorical.values[0].source.queryName)) } },
+                            transparency: TrendLineHelper.defaults.transparency,
+                            style: TrendLineHelper.defaults.lineStyle,
+                            combineSeries: false,
+                            y2Axis: false,
+                            useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                        }, {
+                            points: [{ x: 1, y: 15 }, { x: 6, y: 65 }],
+                            show: true,
+                            lineColor: { solid: { color: TrendLineHelper.darkenTrendLineColor('#123') } },
+                            transparency: TrendLineHelper.defaults.transparency,
+                            style: TrendLineHelper.defaults.lineStyle,
+                            combineSeries: false,
+                            y2Axis: false,
+                            useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                        }]);
+                });
+            });
+
+            it('legacy color', () => {
+                let dataViews = new helpers.TrendLineBuilder({
+                    combineSeries: true,
+                }).buildDataViews();
+
+                dataViews[1].categorical.values[0].source.objects = {
                     dataPoint: {
                         fill: { solid: { color: '#123' } },
                     }
                 };
 
-                expect(TrendLineHelper.readDataView(dataView, false)).toEqual([{
-                    points: [{ x: 1, y: 10 }, { x: 6, y: 65 }],
-                    show: false,
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([{
+                    points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                    show: true,
                     lineColor: { solid: { color: '#123' } },
                     transparency: TrendLineHelper.defaults.transparency,
                     style: TrendLineHelper.defaults.lineStyle,
                     combineSeries: true,
                     y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 }]);
 
                 // --- Legacy color overrides line color
-                dataView.metadata.objects = {
+                dataViews[1].metadata.objects = {
                     trend: {
+                        show: true,
                         lineColor: { solid: { color: '#456' } }
                     },
                     dataPoint: {
@@ -230,46 +327,67 @@ module powerbitests {
                     }
                 };
 
-                expect(TrendLineHelper.readDataView(dataView, false)).toEqual([{
-                    points: [{ x: 1, y: 10 }, { x: 6, y: 65 }],
-                    show: false,
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([{
+                    points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                    show: true,
                     lineColor: { solid: { color: '#123' } },
                     transparency: TrendLineHelper.defaults.transparency,
                     style: TrendLineHelper.defaults.lineStyle,
                     combineSeries: true,
                     y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 }]);
             });
 
             it('invalid numbers', () => {
-                let dataView = buildValidGroupedDataView();
+                let dataViews = new helpers.TrendLineBuilder({}).buildDataViews();
 
-                dataView.categorical.categories[0].values = [20, null];
-                dataView.categorical.values[0].values = [NaN, 100];
-                dataView.categorical.values.grouped()[0].values[0].values = [NaN, 100];
+                let regressionDataView = dataViews[1];
+                regressionDataView.categorical.categories[0].values = [20, null];
+                regressionDataView.categorical.values[0].values = [NaN, 100];
+                regressionDataView.categorical.values.grouped()[0].values[0].values = [NaN, 100];
 
-                expect(TrendLineHelper.readDataView(dataView, false)).toEqual([{
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([{
                     points: [],
-                    show: false,
-                    lineColor: TrendLineHelper.defaults.color,
+                    show: true,
+                    lineColor: TrendLineHelper.defaults.lineColor,
                     transparency: TrendLineHelper.defaults.transparency,
                     style: TrendLineHelper.defaults.lineStyle,
                     combineSeries: true,
                     y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 }]);
             });
 
             it('use y2 axis', () => {
-                let dataView = buildValidGroupedDataView();
+                let dataViews = new helpers.TrendLineBuilder({}).buildDataViews();
 
-                expect(TrendLineHelper.readDataView(dataView, true)).toEqual([{
-                    points: [{ x: 1, y: 10 }, { x: 6, y: 65 }],
-                    show: false,
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], true, defaultColors)).toEqual([{
+                    points: [{ x: 1, y: 10 }, { x: 6, y: 60 }],
+                    show: true,
                     lineColor: { solid: { color: '#000' } },
                     transparency: TrendLineHelper.defaults.transparency,
                     style: TrendLineHelper.defaults.lineStyle,
                     combineSeries: true,
                     y2Axis: true,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
+                }]);
+            });
+
+            it('useHighlightValues', () => {
+                let dataViews = new helpers.TrendLineBuilder({
+                    highlights: true,
+                }).buildDataViews();
+
+                expect(TrendLineHelper.readDataView(dataViews[1], dataViews[0], false, defaultColors)).toEqual([{
+                    points: [{ x: 1, y: 3 }, { x: 6, y: 6 }],
+                    show: true,
+                    lineColor: { solid: { color: '#000' } },
+                    transparency: TrendLineHelper.defaults.transparency,
+                    style: TrendLineHelper.defaults.lineStyle,
+                    combineSeries: true,
+                    y2Axis: false,
+                    useHighlightValues: TrendLineHelper.defaults.useHighlightValues,
                 }]);
             });
         });
@@ -301,9 +419,5 @@ module powerbitests {
 
             expect(TrendLineHelper.isDataViewForRegression(dataView)).toBe(true);
         });
-
-        function buildValidGroupedDataView(combined: boolean = true, xIsMeasure: boolean = false): powerbi.DataView {
-            return helpers.buildTrendLineDataViews({ trend: { show: false } }, combined, xIsMeasure)[1];
-        }
     });
 }

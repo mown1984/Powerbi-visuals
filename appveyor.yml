@@ -47,5 +47,4 @@ build_script:
 #---------------------------------#
 
 test_script:
-  - gulp tslint
   - gulp run:tests

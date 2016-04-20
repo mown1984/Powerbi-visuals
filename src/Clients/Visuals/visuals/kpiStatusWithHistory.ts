@@ -321,13 +321,13 @@ module powerbi.visuals {
             }
         }
 
-        private static getFormattedValue(metaDataColumn: DataViewMetadataColumn, theValue: number, precision: number, displayUnits: number): string {
+        private static getFormattedValue(metaDataColumn: DataViewMetadataColumn, theValue: number, precision: number, displayUnits: number, displayUnitSystemType: DisplayUnitSystemType = DisplayUnitSystemType.WholeUnits): string {
             let isDefaultDisplayUnit = displayUnits === 0;
             let formatter = valueFormatter.create({
                 format: KPIStatusWithHistory.getFormatString(metaDataColumn),
                 value: displayUnits,
                 precision: precision,
-                displayUnitSystemType: DisplayUnitSystemType.WholeUnits, // keeps this.displayUnitSystemType as the displayUnitSystemType unless the user changed the displayUnits or the precision
+                displayUnitSystemType: displayUnitSystemType,
                 formatSingleValues: isDefaultDisplayUnit ? true : false,
                 allowFormatBeautification: true,
                 columnType: metaDataColumn ? metaDataColumn.type : undefined
@@ -463,7 +463,7 @@ module powerbi.visuals {
                 historyExists = false;
             }
 
-            formattedValue = KPIStatusWithHistory.getFormattedValue(metaDataColumn, actual, precision, displayUnits);
+            formattedValue = KPIStatusWithHistory.getFormattedValue(metaDataColumn, actual, precision, displayUnits, DisplayUnitSystemType.DataLabels);
 
             formattedGoalString = KPIStatusWithHistory.getFormattedGoalString(metaDataColumn, goals, precision, displayUnits);
 

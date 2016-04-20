@@ -216,7 +216,7 @@ module powerbi.visuals {
             let x = columnCenters[selectedColumnIndex];
 
             if (!this.columnSelectionLineHandle) {
-                let handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
+                let handle = this.columnSelectionLineHandle = this.graphicsContext.unclippedGraphicsContext.append('g');
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({
@@ -535,7 +535,7 @@ module powerbi.visuals {
             let y = barCenters[selectedColumnIndex];
 
             if (!this.columnSelectionLineHandle) {
-                let handle = this.columnSelectionLineHandle = this.graphicsContext.mainGraphicsContext.append('g');
+                let handle = this.columnSelectionLineHandle = this.graphicsContext.unclippedGraphicsContext.append('g');
                 handle.append('line')
                     .classed('interactive-hover-line', true)
                     .attr({

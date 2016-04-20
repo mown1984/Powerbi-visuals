@@ -117,6 +117,11 @@ module powerbi.visuals.controls {
          * Weight outline. Shared across all regions
         */
         rowPadding?: number;
+
+        /**
+         * Maximum height of images in pixels
+        */
+        imageHeight?: number;
     }
 
     /**
@@ -190,7 +195,6 @@ module powerbi.visuals.controls {
      * Formatting Properties for Table Visual
     */
     export interface TablixFormattingPropertiesTable {
-        isFormattingEnabled: boolean;
         // TODO: VSTS 7167767: Remove temporary code for product demo.
         isConditionalFormattingEnabled: boolean;
         general?: TablixFormattingPropertiesGeneralTable;
@@ -204,7 +208,6 @@ module powerbi.visuals.controls {
      * Formatting Properties for Matrix Visual
     */
     export interface TablixFormattingPropertiesMatrix {
-        isFormattingEnabled: boolean;
         general?: TablixFormattingPropertiesGeneralMatrix;
         grid?: TablixFormattingPropertiesGrid;
         columnHeaders?: TablixFormattingPropertiesRegion;

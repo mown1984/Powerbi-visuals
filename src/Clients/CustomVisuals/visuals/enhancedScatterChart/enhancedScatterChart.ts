@@ -1413,7 +1413,7 @@ module powerbi.visuals.samples {
             if ((legendData.dataPoints.length === 1 && !legendData.grouped) || this.hideLegends()) {
                 legendData.dataPoints = [];
             }
-            
+
             let viewport = this.viewport;
             legend.drawLegend(legendData, { height: viewport.height, width: viewport.width });
             Legend.positionChartArea(this.svg, legend);
@@ -1654,7 +1654,11 @@ module powerbi.visuals.samples {
             let dataLabelsSettings = this.data.dataLabelsSettings;
             if (dataLabelsSettings.show) {
                 let layout = this.getEnhanchedScatterChartLabelLayout(dataLabelsSettings, this.viewportIn, data.sizeRange);
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.mainGraphicsG, layout, this.viewportIn);
+                let clonedDataPoints: Array<EnhancedScatterChartDataPoint> = this.cloneDataPoints(dataPoints);
+                //fix bug 3863: drawDefaultLabelsForDataPointChart add to datapoints[xxx].size = object , which causes when
+                //category labels is on and Fill Points option off to fill the points when mouse click occures because of default size
+                //is set to datapoints.
+                dataLabelUtils.drawDefaultLabelsForDataPointChart(clonedDataPoints, this.mainGraphicsG, layout, this.viewportIn);
                 let offset = dataLabelsSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
                 this.mainGraphicsG.select('.labels').attr('transform', SVGUtil.translate(offset, 0));
             }
@@ -1686,6 +1690,17 @@ module powerbi.visuals.samples {
                     this.interactivityService.bind(dataPoints, this.behavior, cbehaviorOptions);
                 }
             }
+        }
+
+        private cloneDataPoints(dataPoints: Array<EnhancedScatterChartDataPoint>): Array<EnhancedScatterChartDataPoint> {
+            let clonedDataPoints: Array<EnhancedScatterChartDataPoint> = new Array<EnhancedScatterChartDataPoint>();
+
+            for (let dataPoint of dataPoints) {
+                let clonedDataPoint: EnhancedScatterChartDataPoint = _.clone(dataPoint);
+                clonedDataPoints.push(clonedDataPoint);
+            }
+
+            return clonedDataPoints;
         }
 
         private darkenZeroLine(g: D3.Selection): void {
@@ -1781,7 +1796,7 @@ module powerbi.visuals.samples {
                     .style("font-size", "10px")
                     .style("stroke", "gray")
                     .style("stroke-width", "0.5px");
-                
+
                 let addCrossHair = (xCoord, yCoord) => {
                     
                     // Update horizontal cross hair

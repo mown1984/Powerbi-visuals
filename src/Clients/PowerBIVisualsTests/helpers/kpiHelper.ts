@@ -39,6 +39,23 @@ module powerbitests.kpiHelper {
         return dataView;
     }
 
+    export function buildDataViewForGreenTrendWithPercentages(): powerbi.DataView {
+        let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
+        let dataView: powerbi.DataView = {
+            metadata: dataViewMetadata,
+            categorical: dataViewCategorical
+        };
+
+        dataView.metadata.objects = { indicator: { indicatorPrecision: 5 } };
+        dataView.metadata.columns[1].objects = { general: { formatString: "0.00 %;-0.00 %;0.00 %" } };
+        dataView.metadata.columns[2].objects = { general: { formatString: "0.00 %;-0.00 %;0.00 %" } };
+        dataView.categorical.values[1].values = [0.102, 0.3256, 0.256, 0.51863, 0.78123456789]; // indicator
+        dataView.categorical.values[2].values = [0.8, 0.2556, 0.386, 0.42863, 0.72123456789];   // goal
+
+        return dataView;
+    }
+
     function buildDefaultDataViewMetadata(): powerbi.DataViewMetadata {
         return buildDataViewMetadata(true, true, true, false);
     }

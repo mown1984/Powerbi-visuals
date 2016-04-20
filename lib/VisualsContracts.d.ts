@@ -43,6 +43,7 @@ declare module powerbi {
         Resize = 4,
         ViewMode = 8,
         Style = 16,
+        ResizeEnd = 32,
     }
     enum VisualPermissions {
     }
@@ -926,6 +927,15 @@ declare module powerbi.data {
 }
 ﻿
 
+declare module powerbi.data {
+    /** Defines a match against all instances of given roles. */
+    export interface DataViewRoleWildcard {
+        roles: string[];
+        key: string;
+    }
+}
+﻿
+
 declare module powerbi {
     /** Encapsulates the identity of a data scope in a DataView. */
     export interface DataViewScopeIdentity {
@@ -983,7 +993,7 @@ declare module powerbi.data {
         id?: string;
     }
 
-    export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard; 
+    export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard | DataViewRoleWildcard; 
 }
 ﻿
 
@@ -1151,7 +1161,6 @@ declare module powerbi.extensibility.v100 {
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
-        resizeMode?: ResizeMode;
     }
 
     export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
@@ -1192,7 +1201,6 @@ declare module powerbi.extensibility.v110 {
         dataViews: DataView[];
         type: VisualUpdateType;
         viewMode?: ViewMode;
-        resizeMode?: ResizeMode;
     }
 
     export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {

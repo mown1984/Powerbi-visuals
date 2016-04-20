@@ -232,9 +232,9 @@ module powerbi.visuals.controls.internal {
         private _owner: TablixCell;
 
         private _tableCell: HTMLTableCellElement;
-        // Outer DIV
+        /** Outer DIV */
         private _contentElement: HTMLDivElement;
-        // Inner DIV
+        /** Inner DIV */
         private _contentHost: HTMLDivElement;
 
         private _resizer: TablixResizer;
@@ -298,11 +298,11 @@ module powerbi.visuals.controls.internal {
             this._contentElement.onclick = null;
         }
 
-        public onContentWidthChanged(value: number): void {
+        public onContainerWidthChanged(value: number): void {
             HTMLElementUtils.setElementWidth(this._contentElement, value);
         }
 
-        public onContentHeightChanged(height: number): void {
+        public onContinerHeightChanged(height: number): void {
             HTMLElementUtils.setElementHeight(this._contentElement, height);
         }
 
@@ -447,30 +447,22 @@ module powerbi.visuals.controls.internal {
         }
 
         public getCellHeight(cell: ITablixCell): number {
-            if (!(<TablixCell>cell)._presenter)
-                return 0;
-            return HTMLElementUtils.getElementHeight((<TablixCell>cell)._presenter.tableCell);
+            return cell.containerHeight;
         }
 
         public getCellContentHeight(cell: ITablixCell): number {
-            if (!(<TablixCell>cell)._presenter)
-                return 0;
-            return HTMLElementUtils.getElementHeight((<TablixCell>cell)._presenter.contentElement);
+            return cell.contentHeight;
         }
 
     }
 
     export class CanvasRowPresenter extends TablixRowPresenter {
         public getCellHeight(cell: ITablixCell): number {
-            if (!(<TablixCell>cell)._presenter)
-                return 0;
-            return HTMLElementUtils.getElementHeight((<TablixCell>cell)._presenter.tableCell);
+            return cell.containerHeight;
         }
 
         public getCellContentHeight(cell: ITablixCell): number {
-            if (!(<TablixCell>cell)._presenter)
-                return 0;
-            return HTMLElementUtils.getElementHeight((<TablixCell>cell)._presenter.contentElement);
+            return cell.contentHeight;
         }
 
     }

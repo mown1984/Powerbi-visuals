@@ -482,6 +482,8 @@ module powerbi.visuals.samples {
         };
 
         private durationAnimations: number = 200;
+        private oldInnerPaddingRatio: number = CartesianChart.InnerPaddingRatio;
+        private oldMinOrdinalRectThickness: number=CartesianChart.MinOrdinalRectThickness ;
 
         private viewport: IViewport;
         private hostService: IVisualHostServices;
@@ -512,8 +514,6 @@ module powerbi.visuals.samples {
         };
 
         constructor(histogramConstructorOptions?: HistogramConstructorOptions) {
-            //TODO: Quick fix for GitHub public repo.
-            // CartesianChart.InnerPaddingRatio = 1;
 
             if (histogramConstructorOptions) {
                 if (histogramConstructorOptions.svg) {
@@ -1096,7 +1096,8 @@ module powerbi.visuals.samples {
                 !visualUpdateOptions.dataViews[0]) {
                 return;
             }
-
+            // CartesianChart.InnerPaddingRatio = 1;
+           
             let dataView: DataView = visualUpdateOptions.dataViews[0];
 
             this.durationAnimations = getAnimationDuration(
@@ -1124,6 +1125,9 @@ module powerbi.visuals.samples {
             this.yAxisProperties = this.calculateYAxes(ySource, this.textProperties, false);
 
             this.render();
+
+            CartesianChart.InnerPaddingRatio = this.oldInnerPaddingRatio;
+            CartesianChart.MinOrdinalRectThickness = this.oldMinOrdinalRectThickness;
         }
 
         private fixXTicSize(): void {
@@ -1139,13 +1143,10 @@ module powerbi.visuals.samples {
                 fontFamily: this.textProperties.fontFamily,
                 fontSize: this.textProperties.fontSize
             };
-
             /* tslint:disable */
             let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
             /* tslint:enable */
-
-            //TODO: Quick fix for GitHub public repo.
-            //CartesianChart.MinOrdinalRectThickness = widthOfLabel + 3;
+            // CartesianChart.MinOrdinalRectThickness = widthOfLabel + 3;
         }
 
         private setSize(viewport: IViewport): void {

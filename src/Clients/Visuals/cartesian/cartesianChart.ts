@@ -113,7 +113,6 @@ module powerbi.visuals {
         tooltipsEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
         trimOrdinalDataOnOverflow?: boolean;
-        trendLinesEnabled?: boolean;
     }
 
     export interface ICartesianVisual {
@@ -286,7 +285,6 @@ module powerbi.visuals {
         private trimOrdinalDataOnOverflow: boolean;
         private isMobileChart: boolean;
 
-        private trendLinesEnabled: boolean;
         private trendLines: TrendLine[];
 
         private xRefLine: ClassAndSelector = createClassAndSelector('x-ref-line');
@@ -338,8 +336,6 @@ module powerbi.visuals {
                 if (options.behavior) {
                     this.behavior = options.behavior;
                 }
-
-                this.trendLinesEnabled = !!options.trendLinesEnabled;
             }
 
             this.axes = new CartesianAxes(isScrollable, ScrollableAxes.ScrollbarWidth, this.trimOrdinalDataOnOverflow);
@@ -498,14 +494,26 @@ module powerbi.visuals {
                 }
 
                 this.sharedColorPalette.clearPreferredScale();
+                let layerDataViews = getLayerDataViews(dataViews);
+                let trendLineDataViews = _.filter(dataViews, (dataView) => TrendLineHelper.isDataViewForRegression(dataView));
+                this.trendLines = [];
+
                 for (let i = 0, layerCount = layers.length; i < layerCount; i++) {
-                    layers[i].setData(getLayerData(dataViews, i));
+                    let layerDataView = layerDataViews[i];
+                    layers[i].setData(layerDataView ? [layerDataView] : []);
+
+                    if (this.supportsTrendLines(i)) {
+                        let trendLineDataView = trendLineDataViews[i];
+                        if (trendLineDataView) {
+                            let y2 = (i > 0);
+                            let trendLines = TrendLineHelper.readDataView(trendLineDataView, layerDataView, y2, this.sharedColorPalette);
+                            this.trendLines.push(...trendLines);
+                        }
+                    }
 
                     if (layerCount > 1)
                         this.sharedColorPalette.rotateScale();
                 }
-
-                this.trendLines = TrendLineHelper.readDataViews(dataViews);
             }
 
             this.render(!this.hasSetData || options.suppressAnimations, options.resizeMode);
@@ -591,11 +599,8 @@ module powerbi.visuals {
                 ReferenceLineHelper.enumerateObjectInstances(enumeration, this.xAxisReferenceLines, refLinedefaultColor, options.objectName);
             }
             else if (options.objectName === 'trend') {
-                // TODO: make sure we have a trend line, we should..
-                if (this.trendLinesEnabled) {
-                    if (!_.isEmpty(this.layers) && _.all(this.layers, (layer) => layer.supportsTrendLine && layer.supportsTrendLine())) {
-                        TrendLineHelper.enumerateObjectInstances(enumeration, this.trendLines);
-                    }
+                if (this.supportsTrendLines()) {
+                    TrendLineHelper.enumerateObjectInstances(enumeration, this.trendLines);
                 }
             }
             else if (options.objectName === 'plotArea') {
@@ -616,6 +621,22 @@ module powerbi.visuals {
             }
 
             return enumeration.complete();
+        }
+
+        private supportsTrendLines(layerIndex?: number): boolean {
+            let layerDataViews = getLayerDataViews(this.dataViews);
+
+            if (_.isEmpty(this.layers))
+                return false;
+
+            // If layerIndex was not given then check all layers.
+            let layers = layerIndex == null ? this.layers : [this.layers[layerIndex]];
+
+            return _.all(layers, (layer, index) => {
+                    if (!layerDataViews[index])
+                        return true;
+                    return layer.supportsTrendLine && layer.supportsTrendLine();
+                });
         }
 
         private shouldShowLegendCard(): boolean {
@@ -1069,10 +1090,10 @@ module powerbi.visuals {
 
             this.renderLayers(layers, plotArea, axes, suppressAnimations, resizeMode);
 
-            this.renderTrendLine(axesLayout);
+            this.renderTrendLines(axesLayout);
         }
 
-        private renderTrendLine(axesLayout: CartesianAxesLayout): void {
+        private renderTrendLines(axesLayout: CartesianAxesLayout): void {
             let scrollableRegion = this.svgAxes.getScrollableRegion();
             TrendLineHelper.render(this.trendLines, scrollableRegion, axesLayout.axes, axesLayout.plotArea);
         }
@@ -1437,13 +1458,12 @@ module powerbi.visuals {
         }
     }
 
-    function getLayerData(dataViews: DataView[], currentIdx: number): DataView[] {
+    function getLayerDataViews(dataViews: DataView[]): DataView[] {
         if (_.isEmpty(dataViews))
             return [];
 
         // TODO: figure out a more general way to correlate between layers and input data views.
-        let layerDataViews = _.filter(dataViews, (dataView) => !TrendLineHelper.isDataViewForRegression(dataView));
-        return [layerDataViews[currentIdx]];
+        return _.filter(dataViews, (dataView) => !TrendLineHelper.isDataViewForRegression(dataView));
     }
 
     function hasMultipleYAxes(layers: ICartesianVisual[]): boolean {

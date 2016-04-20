@@ -79,7 +79,8 @@ module powerbi.visuals {
             general: {
                 properties: {
                     shapeType: {
-                        type: { text: true }
+                        type: { text: true },
+                        suppressFormatPainterCopy: true,
                     }
                 }
             }

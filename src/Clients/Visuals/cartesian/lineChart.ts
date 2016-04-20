@@ -731,10 +731,8 @@ module powerbi.visuals {
         }
 
         public supportsTrendLine(): boolean {
-            if (!this.xAxisProperties)
-                return false;
-
-            return !AxisHelper.isOrdinalScale(this.xAxisProperties.scale);
+            let isScalar = this.data ? this.data.isScalar : false;
+            return !EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) && isScalar;
         }
 
         private getLabelSettingsOptions(enumeration: ObjectEnumerationBuilder, labelSettings: LineChartDataLabelsSettings, series?: LineChartSeries, showAll?: boolean): VisualDataLabelsSettingsOptions {
@@ -1673,9 +1671,6 @@ module powerbi.visuals {
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
             let lineshift = this.getXOfFirstCategory();
-            let bandRange = lineshift * 2;
-            let innerPaddingRatio = CartesianChart.InnerPaddingRatio;
-            let horizontalInnerPadding = innerPaddingRatio * bandRange / (1 - innerPaddingRatio);//get inner padding from bandRange value
             let data = this.data;
             let series = data.series;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
@@ -1721,13 +1716,14 @@ module powerbi.visuals {
                     let isParentRect: boolean = false;
 
                     if (isStackedArea) {
-                        let bottomPos = Math.max(dataPoint.stackedValue - dataPoint.value, yScale.domain()[0]);//this is to make sure the bottom position doesn't go below the domain
+                        let bottomPos = Math.max(dataPoint.stackedValue - dataPoint.value, yScale.domain()[0]); //this is to make sure the bottom position doesn't go below the domain
+                        let areaWidth = this.currentViewport.width; // Conceptually, we allow line labels to fill the full plot area, so the width is equal to the plot area
 
                         parentShape = {
                             rect: {
-                                left: xScale(this.getXValue(dataPoint)) - horizontalInnerPadding,
+                                left: xScale(this.getXValue(dataPoint)) - areaWidth / 2,
                                 top: yScale(Math.max(dataPoint.stackedValue, dataPoint.stackedValue - dataPoint.value)),
-                                width: bandRange + (2 * horizontalInnerPadding),
+                                width: areaWidth,
                                 height: Math.abs(yScale(dataPoint.stackedValue) - yScale(bottomPos))
                             },
                             orientation: dataPoint.value >= 0 ? NewRectOrientation.VerticalBottomBased : NewRectOrientation.VerticalTopBased,

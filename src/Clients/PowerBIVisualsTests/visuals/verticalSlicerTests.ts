@@ -301,7 +301,7 @@ module powerbitests {
             }
             function scrollBy(itemCount: number): void {
                 // Get 'real' row height
-                let rowHeight = $('.slicerItemContainer').eq(0).outerHeight(true);
+                let rowHeight = $('.row').eq(0).outerHeight(true);
                 // Scrolling
                 $(".slicerBody .scrollbar-inner.scroll-content").scrollTop(itemCount * rowHeight);
             }

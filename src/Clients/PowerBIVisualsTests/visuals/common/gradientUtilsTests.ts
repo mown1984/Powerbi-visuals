@@ -83,9 +83,9 @@ module powerbitests {
             objectDefns = {
                 dataPoint: [
                     { properties: { fillRule: fillRuleDefinition } },
-                    { properties: { fill: { solid: { color: "#00FF00" } } }, selector: buildSelector("q", "data1") },
-                    { properties: { fill: { solid: { color: "#0000FF" } } }, selector: buildSelector("q", "data2") },
-                    { properties: { fill: { solid: { color: "#000000" } } }, selector: buildSelector("q", "data3") }
+                    { properties: { fill: { solid: { color: "#00FF00" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data1")) },
+                    { properties: { fill: { solid: { color: "#0000FF" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data2")) },
+                    { properties: { fill: { solid: { color: "#000000" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data3")) }
                 ]
             };
             fillRule = powerbi.visuals.GradientUtils.getFillRule(objectDefns);
@@ -93,9 +93,9 @@ module powerbitests {
 
             objectDefns = {
                 dataPoint: [
-                    { properties: { fill: { solid: { color: "#FF0000" } } }, selector: buildSelector("q", "data1") },
-                    { properties: { fill: { solid: { color: "#00FF00" } } }, selector: buildSelector("q", "data2") },
-                    { properties: { fill: { solid: { color: "#0000FF" } } }, selector: buildSelector("q", "data3") },
+                    { properties: { fill: { solid: { color: "#FF0000" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data1")) },
+                    { properties: { fill: { solid: { color: "#00FF00" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data2")) },
+                    { properties: { fill: { solid: { color: "#0000FF" } } }, selector: buildSelector("q", mocks.dataViewScopeIdentity("data3")) },
                     { properties: { fillRule: fillRuleDefinition } }
                 ]
             };

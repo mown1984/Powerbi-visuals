@@ -27,14 +27,22 @@
 module powerbitests {
     import ArrayExtensions = jsCommon.ArrayExtensions;
     import AxisType = powerbi.visuals.axisType;
+    import BaseAnimator = powerbi.visuals.BaseAnimator;
+    import CartesianChart = powerbi.visuals.CartesianChart;
+    import CartesianChartBehavior = powerbi.visuals.CartesianChartBehavior;
+    import CartesianChartType = powerbi.visuals.CartesianChartType;
     import DataViewObjects = powerbi.DataViewObjects;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
     import DataViewTransform = powerbi.data.DataViewTransform;
     import LabelsBehavior = powerbi.visuals.LabelsBehavior;
     import lineStyle = powerbi.visuals.lineStyle;
+    import MobileVisualPluginService = powerbi.visuals.visualPluginFactory.MobileVisualPluginService;
     import PixelConverter = jsCommon.PixelConverter;
     import PrimitiveType = powerbi.PrimitiveType;
     import ScatterChart = powerbi.visuals.ScatterChart;
+    import ScatterChartMobileBehavior = powerbi.visuals.ScatterChartMobileBehavior;
+    import ScatterChartWebBehavior = powerbi.visuals.ScatterChartWebBehavior;
+    import TrendLineHelper = powerbi.visuals.TrendLineHelper;
     import SelectionId = powerbi.visuals.SelectionId;
     import ValueType = powerbi.ValueType;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
@@ -463,10 +471,10 @@ module powerbitests {
             beforeEach(() => {
                 hostServices = powerbitests.mocks.createVisualHostServices();
                 element = powerbitests.helpers.testDom('500', '500');
-                let visualPluginfactory = interactiveChart ?
-                    powerbi.visuals.visualPluginFactory.createMobile() :
-                    powerbi.visuals.visualPluginFactory.create();
-                v = visualPluginfactory.getPlugin('scatterChart').create();
+                let visualBuilder = new ScatterVisualBuilder();
+                if (interactiveChart)
+                    visualBuilder = visualBuilder.forMobile();
+                v = visualBuilder.build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -1975,7 +1983,7 @@ module powerbitests {
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ true);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: true, xIsMeasure: true }).withObjects(objects).buildDataViews();
 
                     v.onDataChanged({
                         dataViews: dataViews,
@@ -1994,36 +2002,31 @@ module powerbitests {
                 });
 
                 it('separate series', (done) => {
-                    let trendLineColor = '#FF0000';
                     let objects: DataViewObjects = {
                         trend: {
                             show: true,
-                            lineColor: {
-                                solid: {
-                                    color: trendLineColor,
-                                }
-                            },
                             transparency: 20,
                             style: lineStyle.dotted,
                             combineSeries: false,
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ true);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: false, xIsMeasure: true }).withObjects(objects).buildDataViews();
 
                     v.onDataChanged({
                         dataViews: dataViews,
                     });
                     setTimeout(() => {
                         let trendLines = $('.trend-line');
+                        let seriesGroups = $('.scatterMarkerSeriesGroup');
 
                         helpers.verifyTrendLines(trendLines, [
                             {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(seriesGroups.eq(0).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(seriesGroups.eq(1).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }
@@ -2090,7 +2093,7 @@ module powerbitests {
 
             it('scatter chart projectSizeToPixel validation', () => {
                 let element = powerbitests.helpers.testDom('500', '500');
-                let v = powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').create();
+                let v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: powerbitests.mocks.createVisualHostServices(),
@@ -2161,7 +2164,7 @@ module powerbitests {
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
                 hostServices = mocks.createVisualHostServices();
-                v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false }).getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().withAnimator().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -2866,7 +2869,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('scatter chart markers not grouped when animating becauser there are few data points', (done) => {
+            it('scatter chart markers not grouped when animating because there are few data points', (done) => {
                 let NoAnimationThreshold = powerbi.visuals.ScatterChart.NoAnimationThreshold;
 
                 let categoryValues = [0, 1, 2];
@@ -3027,7 +3030,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.createMobile().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().forMobile().build();
                 v.init({
                     element: element,
                     host: powerbitests.mocks.createVisualHostServices(),
@@ -3275,7 +3278,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: powerbitests.mocks.createVisualHostServices(),
@@ -3725,7 +3728,7 @@ module powerbitests {
             beforeEach(() => {
                 hostServices = powerbitests.mocks.createVisualHostServices();
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -4189,8 +4192,7 @@ module powerbitests {
             beforeEach(() => {
                 hostServices = powerbitests.mocks.createVisualHostServices();
                 element = powerbitests.helpers.testDom('500', '500');
-                let visualPluginfactory = powerbi.visuals.visualPluginFactory.create();
-                v = visualPluginfactory.getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -4352,7 +4354,7 @@ module powerbitests {
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
                 hostServices = mocks.createVisualHostServices();
-                v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, isLabelInteractivityEnabled: true }).getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().withLabelInteractivity().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -4503,7 +4505,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: powerbitests.mocks.createVisualHostServices(),
@@ -4676,7 +4678,7 @@ module powerbitests {
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
                 hostServices = mocks.createVisualHostServices();
-                v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false, isLabelInteractivityEnabled: true }).getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -4751,9 +4753,9 @@ module powerbitests {
             let element = powerbitests.helpers.testDom(domSizeHeightString, domSizeWidthString);
             let v;
             if (isMobile) {
-                v = powerbi.visuals.visualPluginFactory.createMobile().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().forMobile().build();
             } else {
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').create();
+                v = new ScatterVisualBuilder().build();
             }
             v.init({
                 element: element,
@@ -6005,4 +6007,53 @@ module powerbitests {
 
         });
     });
+
+    class ScatterVisualBuilder {
+        private isMobile: boolean;
+        private labelInteractivity: boolean;
+        private hasAnimator: boolean;
+
+        public forMobile(): this {
+            this.isMobile = true;
+            return this;
+        }
+
+        public withLabelInteractivity(): this {
+            this.labelInteractivity = true;
+            return this;
+        }
+
+        public withAnimator(): this {
+            this.hasAnimator = true;
+            return this;
+        }
+
+        public build(): CartesianChart {
+            let options: powerbi.visuals.CartesianConstructorOptions = {
+                chartType: CartesianChartType.Scatter,
+                trendLinesEnabled: true,
+            };
+
+            if (this.isMobile) {
+                options.cartesianSmallViewPortProperties = {
+                    hideAxesOnSmallViewPort: true,
+                    hideLegendOnSmallViewPort: true,
+                    MinHeightLegendVisible: MobileVisualPluginService.MinHeightLegendVisible,
+                    MinHeightAxesVisible: MobileVisualPluginService.MinHeightAxesVisible,
+                };
+                options.behavior = new CartesianChartBehavior([new ScatterChartMobileBehavior()]);
+            }
+            else {
+                options.behavior = new CartesianChartBehavior([new ScatterChartWebBehavior()]);
+            }
+
+            if (this.labelInteractivity)
+                options.isLabelInteractivityEnabled = true;
+
+            if (this.hasAnimator)
+                options.animator = new BaseAnimator();
+
+            return new powerbi.visuals.CartesianChart(options);
+        }
+    }
 }

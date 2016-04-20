@@ -156,10 +156,7 @@ module powerbitests.customVisuals {
         }
 
         public get columnElement() {
-            return this.mainElement
-                        .children("svg.svgScrollable")
-                        .children("g.axisGraphicsContext")
-                        .children("g.columnChartMainGraphicsContext");
+            return this.mainElement.find("svg.svgScrollable g.axisGraphicsContext .columnChartMainGraphicsContext");
         }
 
         private build(): void {

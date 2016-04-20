@@ -753,7 +753,7 @@ module powerbitests {
         describe("getIntersection", () => {
             it("returns values in the intersection", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView, false);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
@@ -773,7 +773,7 @@ module powerbitests {
 
             it("returns weburl values", () => {
                 let dataView = tableWebUrl;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView, false);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
@@ -789,15 +789,15 @@ module powerbitests {
 
             it("returns Kpi Markup", () => {
                 let dataView = tableKpi;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView, false);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
 
                 let expectedValues: string[][] = [
-                    ['<div class="powervisuals-glyph circle kpi-red" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
-                    ['<div class="powervisuals-glyph circle kpi-yellow" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
-                    ['<div class="powervisuals-glyph circle kpi-green" style="display: inline-block; vertical-align: bottom; margin: 0px 1px 1px 0px;"></div>'],
+                    ['<div class="powervisuals-glyph circle kpi-red" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
+                    ['<div class="powervisuals-glyph circle kpi-yellow" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
+                    ['<div class="powervisuals-glyph circle kpi-green" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
                 ];
 
                 expect(fillResult<string>(navigator, rows, columns, "domContent")).toEqual(expectedValues);
@@ -883,7 +883,7 @@ module powerbitests {
 
             it("returns true if the two items are the same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let dataViewVisualTable = Table.converter(dataView, false, false);
+                let dataViewVisualTable = Table.converter(dataView, false);
                 let navigator = createNavigator(dataViewVisualTable);
                 let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
                 let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
@@ -893,7 +893,7 @@ module powerbitests {
 
             it("returns false if the two items are not same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let dataViewVisualTable = Table.converter(dataView, false, false);
+                let dataViewVisualTable = Table.converter(dataView, false);
                 let navigator = createNavigator(dataViewVisualTable);
                 let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[1]);
                 let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[2]);
@@ -1016,8 +1016,7 @@ module powerbitests {
             let callBackCalled = false;
             let binderOptions: powerbi.visuals.TableBinderOptions = {
                 onBindRowHeader: () => { callBackCalled = true; },
-                layoutKind: powerbi.visuals.controls.TablixLayoutKind.Canvas,
-                formattingEnabled: false,
+                layoutKind: powerbi.visuals.controls.TablixLayoutKind.Canvas
             };
 
             let binder = new powerbi.visuals.TableBinder(binderOptions);
@@ -1029,7 +1028,13 @@ module powerbitests {
                 rowSpan: 0,
                 textAlign: "",
                 position: position,
-                extension: new powerbi.visuals.controls.internal.TablixCellPresenter(false, Controls.TablixLayoutKind.Canvas)
+                extension: new powerbi.visuals.controls.internal.TablixCellPresenter(false, Controls.TablixLayoutKind.Canvas),
+                style: new TablixUtils.CellStyle(),
+                contentHeight: 0,
+                contentWidth: 0,
+                applyStyle: function () { },
+                unfixRowHeight: function () { },
+                containerHeight: 0, containerWidth: 0
             };
             binder.bindRowHeader({ name: null }, cell);
 
@@ -1517,7 +1522,7 @@ module powerbitests {
             tablixHelper.validateClassNames(expectedValues, ".tablixCanvas tr");
         }
 
-        xit("resize with autoSizeColumnwidth on", (done) => {
+        it("resize with autoSizeColumnwidth on", (done) => {
             let selector = ".tablixCanvas tr";
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
@@ -1537,7 +1542,7 @@ module powerbitests {
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(63);
+                expect(rowCells.eq(1).width()).toEqual(65);
                 expect(rowCells.eq(2).width()).toEqual(73);
                 expect(rowCells.eq(3).width()).toEqual(65);
                 
@@ -1554,7 +1559,7 @@ module powerbitests {
                 setTimeout(() => {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
-                    expect(newRowCells.eq(1).width()).toEqual(63);
+                    expect(newRowCells.eq(1).width()).toEqual(65);
                     expect(newRowCells.eq(2).width()).toEqual(45);
                     expect(newRowCells.eq(3).width()).toEqual(65);
                     done();
@@ -1562,7 +1567,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth on to off then resize", (done) => {
+        it("autoSizeColumnwidth on to off then resize", (done) => {
             let selector = ".tablixCanvas tr";
             let dataView: DataView = {
                 metadata: {
@@ -1575,7 +1580,7 @@ module powerbitests {
             setTimeout(() => {
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(63);
+                expect(rowCells.eq(1).width()).toEqual(65);
                 expect(rowCells.eq(2).width()).toEqual(73);
                 expect(rowCells.eq(3).width()).toEqual(65);
 
@@ -1597,7 +1602,7 @@ module powerbitests {
                 setTimeout(() => {
                     let newRows = $(selector);
                     let newRowCells = newRows.eq(0).find('td');
-                    expect(newRowCells.eq(1).width()).toEqual(63);
+                    expect(newRowCells.eq(1).width()).toEqual(65);
                     expect(newRowCells.eq(2).width()).toEqual(45);
                     expect(newRowCells.eq(3).width()).toEqual(65);
                     done();
@@ -1605,7 +1610,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("autoSizeColumnwidth off to on", (done) => {
+        it("autoSizeColumnwidth off to on", (done) => {
             let selector = ".tablixCanvas tr";
             let dataViewObjects: powerbi.DataViewObjects = {
                 general: {
@@ -1629,7 +1634,7 @@ module powerbitests {
                 let tableVisual = <Table>v;
                 let rows = $(selector);
                 let rowCells = rows.eq(0).find('td');
-                expect(rowCells.eq(1).width()).toEqual(63);
+                expect(rowCells.eq(1).width()).toEqual(65);
                 expect(rowCells.eq(2).width()).toEqual(45);
                 expect(rowCells.eq(3).width()).toEqual(65);
 
@@ -1655,7 +1660,7 @@ module powerbitests {
                 setTimeout(() => {
                     let rows = $(selector);
                     let rowCells = rows.eq(0).find('td');
-                    expect(rowCells.eq(1).width()).toEqual(63);
+                    expect(rowCells.eq(1).width()).toEqual(65);
                     expect(rowCells.eq(2).width()).toEqual(73);
                     expect(rowCells.eq(3).width()).toEqual(65);
                     done();

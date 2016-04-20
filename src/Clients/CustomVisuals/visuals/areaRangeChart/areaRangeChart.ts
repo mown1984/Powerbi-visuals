@@ -25,7 +25,6 @@
  */
 
 module powerbi.visuals.samples {
-    import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import AxisScale = powerbi.visuals.axisScale;
@@ -35,16 +34,26 @@ module powerbi.visuals.samples {
         animator?: IGenericAnimator;
     }
 
-    export interface AreaRangeChartSeries extends LineChartSeries {
+    export interface AreaRangeChartSeries extends SelectableDataPoint {
         name?: string;
         data: AreaRangeChartDataPoint[];
         color: string;
-        identity: SelectionId;
+        displayName: string;
+        key: string;
+        lineIndex: number;
+        xCol: DataViewMetadataColumn;
+        yCol: DataViewMetadataColumn;
     }
 
-    export interface AreaRangeChartDataPoint extends LineChartDataPoint {
+    export interface AreaRangeChartDataPoint extends TooltipEnabledDataPoint, SelectableDataPoint {
         y0?: number;
         y1?: number;
+        value: number;
+        categoryValue: any;
+        categoryIndex: number;
+        seriesIndex: number;
+        key: string;
+        pointColor?: string;
     }
 
     export interface AreaRangeChartLegend extends DataViewObject {
@@ -57,19 +66,17 @@ module powerbi.visuals.samples {
     export interface AreaRangeChartSettings {
         displayName?: string;
         fillColor?: string;
-        precision: number;
         legend?: AreaRangeChartLegend;
         colors?: IColorPalette;
     }
 
-    export interface AreaRangeChartData /*extends LineChartData*/ {
+    export interface AreaRangeChartData {
 
         categoryMetadata: DataViewMetadataColumn;
         hasHighlights?: boolean;
 
-        series: LineChartSeries[];
+        series: AreaRangeChartSeries[];
         isScalar?: boolean;
-        dataLabelsSettings: PointDataLabelsSettings;
         axesLabels: ChartAxesLabels;
         hasDynamicSeries?: boolean;
         defaultSeriesColor?: string;
@@ -85,6 +92,38 @@ module powerbi.visuals.samples {
 
         lowerMeasureIndex: number;
         upperMeasureIndex: number;
+    }
+
+    export interface AreaRangeBehaviorOptions {
+        selection: D3.Selection;
+        clearCatcher: D3.Selection;
+        interactivityService: IInteractivityService;
+    }
+
+    class AreaRangeWebBehavior implements IInteractiveBehavior {
+        private selection: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private interactivityService: IInteractivityService;
+
+        public bindEvents(options: AreaRangeBehaviorOptions, selectionHandler: ISelectionHandler) {
+            this.selection = options.selection;
+            this.clearCatcher = options.clearCatcher;
+            this.interactivityService = options.interactivityService;
+
+            this.selection.on('click', (d: AreaRangeChartSeries) => {
+                selectionHandler.handleSelection(d, d3.event.ctrlKey);
+            });
+
+            this.clearCatcher.on('click', () => {
+                selectionHandler.handleClearSelection();
+            });
+        }
+
+        public renderSelection(hasSelection: boolean) {
+            this.selection.style("fill-opacity", (d: AreaRangeChartSeries) => {
+                return (hasSelection && !d.selected) ? LineChart.DimmedAreaFillOpacity : LineChart.AreaFillOpacity;
+            });
+        }
     }
 
     export class AreaRangeChart implements IVisual {
@@ -107,12 +146,6 @@ module powerbi.visuals.samples {
                 fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
                 showAllDataPoints: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'showAllDataPoints' },
             },
-            labels: {
-                labelPrecision: <DataViewObjectPropertyIdentifier>{
-                    objectName: "labels",
-                    propertyName: "labelPrecision"
-                }
-            }
         };
 
         private static RoleNames = {
@@ -221,16 +254,7 @@ module powerbi.visuals.samples {
                         }
                     }
                 },
-                label: {
-                    displayName: data.createDisplayNameGetter("Label"),
-                    properties: {
-                        fill: {
-                            displayName: data.createDisplayNameGetter("Fill"),
-                            type: { fill: { solid: { color: true } } }
-                        }
-                    }
-                }
-            }
+            },
         };
 
         private static VisualClassName = 'areaRangeChart';
@@ -239,26 +263,18 @@ module powerbi.visuals.samples {
         private static Area: ClassAndSelector = createClassAndSelector('area');
         private static Axis: ClassAndSelector = createClassAndSelector('axis');
 
-        private static DimmedFillOpacity = 0.4;
-        private static FillOpacity = 1;
-
-        private svg: D3.Selection;
-
+        private interactivityService: IInteractivityService;
+        private behavior: IInteractiveBehavior;
         private colors: IDataColorPalette;
-        private selectionManager: SelectionManager;
-
         private viewport: IViewport;
-
         private animator: IGenericAnimator;
         private margin: IMargin;
         private legend: ILegend;
-
         private dataViewCat: DataViewCategorical;
         private data: AreaRangeChartData;
 
         private static DefaultSettings: AreaRangeChartSettings = {
             displayName: "Area Range Chart",
-            precision: 2,
             legend: {
                 show: true,
                 position: LegendPosition.Top,
@@ -283,11 +299,12 @@ module powerbi.visuals.samples {
             height: 50
         };
 
+        private svg: D3.Selection;
+        private clearCatcher: D3.Selection;
         private chart: D3.Selection;
         private axis: D3.Selection;
         private axisX: D3.Selection;
         private axisY: D3.Selection;
-        private cartesianInnerPaddingRatio: number;
         private cartesianMinOrdinalRectThickness: number;
 
         private scaleType: string = AxisScale.linear;
@@ -301,15 +318,17 @@ module powerbi.visuals.samples {
         }
 
         public init(options: VisualInitOptions): void {
-            var element = options.element;
-            this.selectionManager = new SelectionManager({ hostServices: options.host });
-
+            let element = options.element;
             this.colors = options.style.colorPalette.dataColors;
-            this.legend = createLegend(element, false, null);
+            this.behavior = new AreaRangeWebBehavior();
+            let interactivity = options.interactivity;
+            this.interactivityService = createInteractivityService(options.host);
 
             this.svg = d3.select(element.get(0))
                 .append('svg')
                 .classed(AreaRangeChart.VisualClassName, true);
+
+            this.clearCatcher = appendClearCatcher(this.svg);
 
             this.chart = this.svg
                 .append('g')
@@ -326,6 +345,8 @@ module powerbi.visuals.samples {
             this.axisY = this.axis
                 .append('g')
                 .classed(AreaRangeChart.Axis.class, true);
+
+            this.legend = createLegend(element, interactivity && interactivity.isInteractiveLegend, this.interactivityService, true);
         }
 
         private isSizeAvailable(viewport: IViewport): boolean {
@@ -336,51 +357,35 @@ module powerbi.visuals.samples {
             return true;
         }
 
-        private updateInternal(options: VisualUpdateOptions): void {
-            if (!options.dataViews || !options.dataViews[0]) {
-                return;
-            }
-
-            var dataView = options.dataViews[0];
-            if (!dataView ||
-                !dataView.categorical ||
-                !dataView.categorical.values ||
-                !dataView.categorical.values[0] ||
-                !dataView.categorical.values[0].values) {
-                this.clearChart();
-                return;
-            }
-
-            if (!this.isSizeAvailable(options.viewport)) {
-                this.clearChart();
-                return;
-            }
-
-            this.cartesianInnerPaddingRatio = CartesianChart.InnerPaddingRatio;
-            this.cartesianMinOrdinalRectThickness = CartesianChart.MinOrdinalRectThickness;
-            //TODO: Quick fix for GitHub public repo.
-            // CartesianChart.InnerPaddingRatio = 1;
-
-            this.setSize(options.viewport);
-            this.setData(options.dataViews);
-
-            if (typeof (this.data) === 'undefined') {
-                this.clearChart();
-                return;
-            }
-
-            this.calculateAxesProperties(null);
-            this.render(options.suppressAnimations);
-            //TODO: Quick fix for GitHub public repo.
-            // CartesianChart.InnerPaddingRatio = this.cartesianInnerPaddingRatio;
-            // CartesianChart.MinOrdinalRectThickness = this.cartesianMinOrdinalRectThickness;
-        }
-
         public update(options: VisualUpdateOptions): void {
             if (!options.dataViews || !options.dataViews[0]) {
                 return;
             }
-            this.updateInternal(options);
+
+            let dataView = options.dataViews[0];
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values ||
+                !this.isSizeAvailable(options.viewport)) {
+                this.clearChart();
+                return;
+            }
+
+            this.cartesianMinOrdinalRectThickness = CartesianChart.MinOrdinalRectThickness;
+
+            this.setSize(options.viewport);
+            this.setData(options.dataViews);
+
+            if (!this.data) {
+                this.clearChart();
+                return;
+            }
+
+            this.calculateAxesProperties();
+            this.render(options.suppressAnimations);
+            CartesianChart.MinOrdinalRectThickness = this.cartesianMinOrdinalRectThickness;
         }
 
         private static getColor(
@@ -391,7 +396,7 @@ module powerbi.visuals.samples {
             seriesIndex: number,
             groupedIdentity: DataViewValueColumnGroup): string {
 
-            var objects: DataViewObjects;
+            let objects: DataViewObjects;
             if (hasDynamicSeries) {
                 if (grouped && grouped[seriesIndex])
                     objects = grouped[seriesIndex].objects;
@@ -408,45 +413,41 @@ module powerbi.visuals.samples {
         public setData(dataViews: DataView[]): void {
             this.data = {
                 series: [],
-                dataLabelsSettings: dataLabelUtils.getDefaultPointLabelSettings(),
                 axesLabels: { x: null, y: null },
                 hasDynamicSeries: false,
                 categories: [],
                 categoryMetadata: undefined,
                 lowerMeasureIndex: undefined,
                 upperMeasureIndex: undefined,
-                //labelDensity: 0,
             };
 
             if (dataViews.length > 0) {
-                var dataView = dataViews[0];
+                let dataView = dataViews[0];
 
                 if (dataView) {
                     if (dataView.categorical) {
-                        var dataViewCat = this.dataViewCat = dataView.categorical;
-                        var dvCategories = dataViewCat.categories;
-                        var categoryType: ValueType | ValueTypeDescriptor = ValueType.fromDescriptor({ text: true });
+                        let dataViewCat = this.dataViewCat = dataView.categorical;
+                        let dvCategories = dataViewCat.categories;
+                        let categoryType: ValueType | ValueTypeDescriptor = ValueType.fromDescriptor({ text: true });
                         if (dvCategories && dvCategories.length > 0 && dvCategories[0].source && dvCategories[0].source.type)
                             categoryType = dvCategories[0].source.type;
 
-                        //var axisType = lineChartProps.categoryAxis.axisType
-                        var axisType = AreaRangeChart.properties.general.formatString;
+                        let axisType = AreaRangeChart.properties.general.formatString;
 
-                        var convertedData = AreaRangeChart.converter(
+                        this.data = AreaRangeChart.converter(
                             dataView,
                             valueFormatter.format(null),
                             this.colors,
                             CartesianChart.getIsScalar(dataView.metadata ? dataView.metadata.objects : null, axisType, categoryType),
-                            null);
-                        this.data = convertedData;
+                            this.interactivityService);
                     }
                 }
             }
         }
 
         public static converter(dataView: DataView, blankCategoryValue: string, colors: IDataColorPalette, isScalar: boolean, interactivityService?: IInteractivityService): AreaRangeChartData {
-            var categorical = dataView.categorical;
-            var category = categorical.categories && categorical.categories.length > 0
+            let categorical: DataViewCategorical = dataView.categorical;
+            let category = categorical.categories && categorical.categories.length > 0
                 ? categorical.categories[0]
                 : {
                     source: undefined,
@@ -461,108 +462,83 @@ module powerbi.visuals.samples {
 
             let textProperties: powerbi.TextProperties = {
                 text: maxLabel,
-                fontFamily: this.defaultTextProperties.fontFamily,
-                fontSize: this.defaultTextProperties.fontSize
+                fontFamily: AreaRangeChart.defaultTextProperties.fontFamily,
+                fontSize: AreaRangeChart.defaultTextProperties.fontSize
             };
-
             /* tslint:disable */
             let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
             /* tslint:enable */
-
-            //TODO: Quick fix for GitHub public repo.
             // CartesianChart.MinOrdinalRectThickness = widthOfLabel + 4;
 
-            var xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataView.metadata);
+            let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataView.metadata);
             isScalar = CartesianHelper.isScalar(isScalar, xAxisCardProperties);
             categorical = ColumnUtil.applyUserMinMax(isScalar, categorical, xAxisCardProperties);
 
-            var formatStringProp = AreaRangeChart.properties.general.formatString;
-            var categoryType: ValueType = AxisHelper.getCategoryValueType(category.source, isScalar);
-            var isDateTime = AxisHelper.isDateTime(categoryType);
-            var categoryValues = category.values;
-            var series: AreaRangeChartSeries[] = [];
-            var seriesLen = categorical.values ? categorical.values.length : 0;
-            var hasDynamicSeries = !!(categorical.values && categorical.values.source);
-            var values = categorical.values;
-            var labelFormatString: string = values && values[0] ? valueFormatter.getFormatString(values[0].source, formatStringProp) : undefined;
-            var defaultLabelSettings: LineChartDataLabelsSettings = dataLabelUtils.getDefaultLineChartLabelSettings();
+            let formatStringProp = AreaRangeChart.properties.general.formatString;
+            let categoryType: ValueType = AxisHelper.getCategoryValueType(category.source, isScalar);
+            let isDateTime = AxisHelper.isDateTime(categoryType);
+            let categoryValues = category.values;
+            let series: AreaRangeChartSeries[] = [];
+            let seriesLen = categorical.values ? categorical.values.length : 0;
+            let hasDynamicSeries = !!(categorical.values && categorical.values.source);
+            let values = categorical.values;
 
-            var defaultSeriesColor: string;
-
+            let defaultSeriesColor: string;
             if (dataView.metadata && dataView.metadata.objects) {
-                var objects = dataView.metadata.objects;
+                let objects = dataView.metadata.objects;
                 defaultSeriesColor = DataViewObjects.getFillColor(objects, lineChartProps.dataPoint.defaultColor);
-
-                //var labelsObj = <DataLabelObject>objects['labels'];
-                //dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, defaultLabelSettings);
             }
 
-            var settings: AreaRangeChartSettings = AreaRangeChart.parseSettings(dataView);
-
+            let settings: AreaRangeChartSettings = AreaRangeChart.parseSettings(dataView);
             if (!settings) {
                 return;
             }
 
-            var colorHelper = new ColorHelper(colors, lineChartProps.dataPoint.fill, defaultSeriesColor);
+            let colorHelper = new ColorHelper(colors, lineChartProps.dataPoint.fill, defaultSeriesColor);
 
-            var grouped: DataViewValueColumnGroup[];
-            if (dataView.categorical.values) {
-                grouped = dataView.categorical.values.grouped();
+            let grouped: DataViewValueColumnGroup[];
+            if (values) {
+                grouped = values.grouped();
             }
 
-            var lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
-            var upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
+            let lowerMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Lower);
+            let upperMeasureIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, AreaRangeChart.RoleNames.Upper);
 
             if (lowerMeasureIndex < 0 || upperMeasureIndex < 0) {
                 return;
             }
 
             seriesLen = grouped.length;
+            let formatterLarge = valueFormatter.create({ format: "0", value: 1e6 });
 
-            for (var seriesIndex = 0; seriesIndex < seriesLen; seriesIndex++) {
-                var column = categorical.values[seriesIndex];
-                var valuesMetadata = column.source;
-                var dataPoints: AreaRangeChartDataPoint[] = [];
-                var groupedIdentity = grouped[seriesIndex];
-                var identity = hasDynamicSeries && groupedIdentity ?
+            for (let seriesIndex = 0; seriesIndex < seriesLen; seriesIndex++) {
+                let column = categorical.values[seriesIndex];
+                let dataPoints: AreaRangeChartDataPoint[] = [];
+                let groupedIdentity = grouped[seriesIndex];
+                let identity = hasDynamicSeries && groupedIdentity ?
                     SelectionId.createWithIdAndMeasure(groupedIdentity.identity, column.source.queryName) :
                     SelectionId.createWithMeasure(column.source.queryName);
-                var key = identity.getKey();
-                var color = AreaRangeChart.getColor(colorHelper, hasDynamicSeries, values, grouped, seriesIndex, groupedIdentity);
-                var seriesLabelSettings: LineChartDataLabelsSettings;
+                let key = identity.getKey();
+                let color = AreaRangeChart.getColor(colorHelper, hasDynamicSeries, values, grouped, seriesIndex, groupedIdentity);
+                let y0_group = groupedIdentity.values[lowerMeasureIndex];
+                let y1_group = groupedIdentity.values[upperMeasureIndex];
 
-                if (!hasDynamicSeries) {
-                    var labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null;
-                    var labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject>labelsSeriesGroup.source.objects['labels'] : null;
-                    if (labelObjects) {
-                        //seriesLabelSettings = Prototype.inherit(defaultLabelSettings);
-                        //dataLabelUtils.updateLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings);
-                    }
-                }
-
-                var dataPointLabelSettings = (seriesLabelSettings) ? seriesLabelSettings : defaultLabelSettings;
-
-                for (var categoryIndex = 0, len = column.values.length; categoryIndex < len; categoryIndex++) {
-                    var categoryValue = categoryValues[categoryIndex];
-                    var value = AxisHelper.normalizeNonFiniteNumber(column.values[categoryIndex]);
-
+                for (let categoryIndex = 0, len = column.values.length; categoryIndex < len; categoryIndex++) {
+                    let categoryValue = categoryValues[categoryIndex];
+                    let value = AxisHelper.normalizeNonFiniteNumber(column.values[categoryIndex]);
+                    
                     // When Scalar, skip null categories and null values so we draw connected lines and never draw isolated dots.
                     if (isScalar && (categoryValue === null || value === null)) {
                         continue;
                     }
 
-                    var categorical: DataViewCategorical = dataView.categorical;
-                    var y0_group = groupedIdentity.values[lowerMeasureIndex];
-                    var y1_group = groupedIdentity.values[upperMeasureIndex];
+                    let y0 = y0_group.values[categoryIndex];
+                    let y1 = y1_group.values[categoryIndex];
 
-                    var y0 = y0_group.values[categoryIndex];
-                    var y1 = y1_group.values[categoryIndex];
+                    let formatted_y0 = (y0 != null ? (String(y0).length >= 6 ? formatterLarge.format(y0) : y0) : y0);
+                    let formatted_y1 = (y1 != null ? (String(y1).length >= 6 ? formatterLarge.format(y1) : y1) : y1);
 
-                    var formatterLarge = valueFormatter.create({ format: "0", value: 1e6 });
-                    var formatted_y0 = (y0 != null ? (String(y0).length >= 6 ? formatterLarge.format(y0) : y0) : y0);
-                    var formatted_y1 = (y1 != null ? (String(y1).length >= 6 ? formatterLarge.format(y1) : y1) : y1);
-
-                    var seriesData: TooltipSeriesDataItem[] = [
+                    let seriesData: TooltipSeriesDataItem[] = [
                         {
                             value: formatted_y0,
                             metadata: y0_group
@@ -572,15 +548,17 @@ module powerbi.visuals.samples {
                             metadata: y1_group
                         }];
 
-                    if (typeof (categorical.categories) === 'undefined') {
-                        return;
-                    }
-                    var categoryColumns: DataViewCategoryColumn[] = [
-                        categorical.categories[0]
-                    ];
-                    var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(formatStringProp, null /*categorical*/, categoryValue, null, categoryColumns, seriesData, null);
+                    let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
+                        formatStringProp,
+                        categorical,
+                        categoryValue,
+                        value,
+                        null,
+                        seriesData,
+                        seriesIndex,
+                        categoryIndex);
 
-                    var dataPoint: AreaRangeChartDataPoint = {
+                    dataPoints.push({
                         categoryValue: isDateTime && categoryValue ? categoryValue.getTime() : categoryValue,
                         value: value,
                         categoryIndex: categoryIndex,
@@ -589,22 +567,17 @@ module powerbi.visuals.samples {
                         selected: false,
                         identity: identity,
                         key: JSON.stringify({ ser: key, catIdx: categoryIndex }),
-                        labelFill: dataPointLabelSettings.labelColor,
-                        labelFormatString: labelFormatString || valuesMetadata.format,
-                        labelSettings: dataPointLabelSettings,
                         y0: y0,
                         y1: y1,
                         pointColor: color,
-                    };
-
-                    dataPoints.push(dataPoint);
+                    });
                 }
 
                 if (interactivityService) {
                     interactivityService.applySelectionStateToData(dataPoints);
                 }
 
-                if (dataPoints.length > 0) {
+                if (dataPoints.length > 0)
                     series.push({
                         displayName: grouped[seriesIndex].name,
                         key: key,
@@ -615,33 +588,27 @@ module powerbi.visuals.samples {
                         data: dataPoints,
                         identity: identity,
                         selected: false,
-                        labelSettings: seriesLabelSettings,
                     });
-                }
             }
 
             xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataView.metadata);
-            var valueAxisProperties = CartesianHelper.getValueAxisProperties(dataView.metadata);
+            let valueAxisProperties = CartesianHelper.getValueAxisProperties(dataView.metadata);
              
             // Convert to DataViewMetadataColumn
-            var valuesMetadataArray: powerbi.DataViewMetadataColumn[] = [];
-            if (values) {
-                for (var i = 0; i < values.length; i++) {
-
-                    if (values[i] && values[i].source && values[i].source.displayName) {
-                        valuesMetadataArray.push({ displayName: values[i].source.displayName });
-                    }
+            let valuesMetadataArray: powerbi.DataViewMetadataColumn[] = [];
+            if (values)
+                for (let value of values) {
+                    if (value && value.source && value.source.displayName)
+                        valuesMetadataArray.push({ displayName: value.source.displayName });
                 }
-            }
 
-            var axesLabels = converterHelper.createAxesLabels(xAxisCardProperties, valueAxisProperties, category.source, valuesMetadataArray);
+            let axesLabels = converterHelper.createAxesLabels(xAxisCardProperties, valueAxisProperties, category.source, valuesMetadataArray);
             if (interactivityService) {
                 interactivityService.applySelectionStateToData(series);
             }
             return {
                 series: series,
                 isScalar: isScalar,
-                dataLabelsSettings: defaultLabelSettings,
                 axesLabels: { x: axesLabels.xAxisLabel, y: axesLabels.yAxisLabel },
                 hasDynamicSeries: hasDynamicSeries,
                 categoryMetadata: category.source,
@@ -659,27 +626,21 @@ module powerbi.visuals.samples {
         }
 
         public render(suppressAnimations: boolean): CartesianVisualRenderResult {
-            var duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
-            var result: CartesianVisualRenderResult;
-            var data = this.data;
-
-            if (!data) {
-                this.clearChart();
-                return;
-            }
-
+            let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
+            let result: CartesianVisualRenderResult;
+            let data = this.data;
             this.renderAxis(data, duration);
-            this.renderChart(data, duration);      
+            this.renderChart(data, duration);
             
-            //calculateLegend
-            var legendData = this.createLegendDataPoints(0);
+            // Calculate Legend
+            let legendData = this.createLegendDataPoints(0);
 
             if (data.settings && data.settings.legend) {
                 LegendData.update(legendData, data.settings.legend);
                 this.legend.changeOrientation(data.settings.legend.position);
             }
 
-            var isDrawLegend = false;
+            let isDrawLegend = false;
 
             if (isDrawLegend) {
                 this.legend.drawLegend(legendData, this.viewport);
@@ -688,7 +649,7 @@ module powerbi.visuals.samples {
         }
 
         private setSize(viewport: IViewport): void {
-            var height: number,
+            let height: number,
                 width: number;
 
             height = viewport.height - this.margin.top - this.margin.bottom;
@@ -707,8 +668,8 @@ module powerbi.visuals.samples {
 
         private updateElements(height: number, width: number): void {
             this.svg.attr({
-                'height': height,
-                'width': width
+                'height': height + 'px',
+                'width': width + 'px'
             });
             this.axisY.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top));
             this.axisX.attr('transform', SVGUtil.translate(this.margin.left, this.margin.top + this.viewport.height));
@@ -725,17 +686,8 @@ module powerbi.visuals.samples {
             return dataView.metadata.objects;
         }
 
-        private static getPrecision(objects: DataViewObjects): number {
-            var precision: number = DataViewObjects.getValue(
-                objects,
-                AreaRangeChart.properties.labels.labelPrecision,
-                AreaRangeChart.DefaultSettings.precision);
-
-            return precision;
-        }
-
         private static getLegendSettings(objects: DataViewObjects): DataViewObject {
-            var legend: any = objects["legend"];
+            let legend: any = objects["legend"];
 
             legend.show = DataViewObjects.getValue(objects,
                 AreaRangeChart.properties.legend.show,
@@ -754,12 +706,12 @@ module powerbi.visuals.samples {
         }
 
         private static getDataColorsSettings(objects: DataViewObjects): IColorPalette {
-            var legend: any = objects["dataPoints"];
+            let legend: any = objects["dataPoints"];
             return legend;
         }
 
         private static parseSettings(dataView: DataView): AreaRangeChartSettings {
-            var settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
+            let settings: AreaRangeChartSettings = <AreaRangeChartSettings>{},
                 objects: DataViewObjects;
 
             settings.displayName = AreaRangeChart.DefaultSettings.displayName;
@@ -767,15 +719,13 @@ module powerbi.visuals.samples {
             objects = AreaRangeChart.getObjectsFromDataView(dataView);
 
             if (objects) {
-                settings.precision = AreaRangeChart.getPrecision(objects);
-
                 settings.legend = AreaRangeChart.getLegendSettings(objects);
                 settings.colors = AreaRangeChart.getDataColorsSettings(objects);
             }
             return settings;
         }
 
-        public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] {
+        public calculateAxesProperties(): IAxisProperties[] {
 
             this.data.xAxisProperties = this.getXAxisProperties();
             this.data.yAxisProperties = this.getYAxisProperties();
@@ -785,21 +735,22 @@ module powerbi.visuals.samples {
 
         private lookupXValue(index: number, type: ValueType): any {
 
-            var isDateTime = AxisHelper.isDateTime(type);
-            if (isDateTime && this.data.isScalar) {
-                return new Date(index);
+            let isDateTime = AxisHelper.isDateTime(type);
+            if (this.data.isScalar) {
+                if (isDateTime)
+                    return new Date(index);
+                return index;
             }
 
             if (this.data && this.data.series && this.data.series.length > 0) {
-                var firstSeries = this.data.series[0];
+                let firstSeries = this.data.series[0];
                 if (firstSeries) {
-                    var data = firstSeries.data;
+                    let data = firstSeries.data;
                     if (data) {
-                        var dataAtIndex = data[index];
+                        let dataAtIndex = data[index];
                         if (dataAtIndex) {
-                            if (isDateTime) {
+                            if (isDateTime && dataAtIndex.categoryValue != null)
                                 return new Date(dataAtIndex.categoryValue);
-                            }
                             return dataAtIndex.categoryValue;
                         }
                     }
@@ -810,24 +761,20 @@ module powerbi.visuals.samples {
         }
 
         private getXAxisProperties(): IAxisProperties {
-            var data = this.data;
+            let data = this.data;
+            let categoryDataType: ValueType = AxisHelper.getCategoryValueType(data.series[0].xCol); //data.categoryMetadata
+            let xDomain = AxisHelper.createDomain(data.series, categoryDataType, data.isScalar, null);
+            let origCatgSize = data.series && data.series.length > 0 ? data.series[0].data.length : 0;
+            let categoryThickness = CartesianChart.getCategoryThickness(data.series, origCatgSize, this.viewport.width, xDomain, data.isScalar, false);
+            let xMetaDataColumn: DataViewMetadataColumn = data.series[0].xCol; //data.categoryMetadata
 
-            var origCatgSize = data.series && data.series.length > 0 ? data.series[0].data.length : 0;
-            var categoryThickness = CartesianChart.getCategoryThickness(data.series, origCatgSize, this.viewport.width, xDomain, data.isScalar, false);
-
-            var categoryDataType: ValueType = AxisHelper.getCategoryValueType(data.categoryMetadata);
-
-            var xDomain = AxisHelper.createDomain(data.series, categoryDataType, data.isScalar, null);
-            var xMetaDataColumn: DataViewMetadataColumn = data.categoryMetadata;
-
-            var xAxisProperties = AxisHelper.createAxis({
+            let xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: this.viewport.width,
                 dataDomain: xDomain,
                 metaDataColumn: xMetaDataColumn,
-                //formatStringProp: lineChartProps.general.formatString,
                 formatString: valueFormatter.getFormatString(xMetaDataColumn, AreaRangeChart.properties.general.formatString),
                 outerPadding: 0,
-                isScalar: this.data.isScalar,
+                isScalar: data.isScalar,
                 isVertical: false,
                 forcedTickCount: undefined,
                 useTickIntervalForDisplayUnits: true,
@@ -865,14 +812,14 @@ module powerbi.visuals.samples {
                 return null;
             }
 
-            var minY0 = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.y0; }); });
-            var minY1 = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.y1; }); });
+            let minY0 = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.y0; }); });
+            let minY1 = <number>d3.min(data, (kv) => { return d3.min(kv.data, d => { return d.y1; }); });
 
-            var maxY0 = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.y0; }); });
-            var maxY1 = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.y1; }); });
+            let maxY0 = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.y0; }); });
+            let maxY1 = <number>d3.max(data, (kv) => { return d3.max(kv.data, d => { return d.y1; }); });
 
-            var minY = Math.min(minY0, minY1);
-            var maxY = Math.max(maxY0, maxY1);
+            let minY = Math.min(minY0, minY1);
+            let maxY = Math.max(maxY0, maxY1);
 
             if (includeZero) {
                 return [Math.min(minY, 0), Math.max(maxY, 0)];
@@ -881,17 +828,16 @@ module powerbi.visuals.samples {
         }
 
         private getYAxisProperties(): IAxisProperties {
-            var yDomain = AreaRangeChart.createValueDomain(this.data.series, false);
-            var lowerMeasureIndex = this.data.series.length === 1 ? 0 : this.data.lowerMeasureIndex;
-            var yMetaDataColumn: DataViewMetadataColumn = this.data.series.length ? this.data.series[lowerMeasureIndex].yCol : undefined;
-            var yAxisProperties = AxisHelper.createAxis({
+            let yDomain = AreaRangeChart.createValueDomain(this.data.series, false);
+            let lowerMeasureIndex = this.data.series.length === 1 ? 0 : this.data.lowerMeasureIndex;
+            let yMetaDataColumn: DataViewMetadataColumn = this.data.series.length ? this.data.series[lowerMeasureIndex].yCol : undefined;
+            let yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: this.viewport.height,
                 dataDomain: yDomain,
                 metaDataColumn: yMetaDataColumn,
-                //formatStringProp: AreaRangeChart.properties.general.formatString,
                 formatString: valueFormatter.getFormatString(yMetaDataColumn, AreaRangeChart.properties.general.formatString),
                 outerPadding: 0,
-                isScalar: true,//this.data.isScalar,
+                isScalar: true, //this.data.isScalar,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: false,
@@ -902,8 +848,8 @@ module powerbi.visuals.samples {
         }
 
         private renderAxis(data: AreaRangeChartData, duration: number): void {
-            var xAxis = data.xAxisProperties.axis;
-            var yAxis = data.yAxisProperties.axis;
+            let xAxis = data.xAxisProperties.axis;
+            let yAxis = data.yAxisProperties.axis;
 
             xAxis.orient('bottom');
             yAxis.orient('left');
@@ -921,20 +867,20 @@ module powerbi.visuals.samples {
         }
 
         private renderChart(data: AreaRangeChartData, duration: number): void {
-            var series: AreaRangeChartSeries[] = data.series,
+            let series: AreaRangeChartSeries[] = data.series,
                 isScalar: boolean = data.isScalar,
                 xScale: D3.Scale.LinearScale = <D3.Scale.LinearScale>data.xAxisProperties.scale,
                 yScale: D3.Scale.LinearScale = <D3.Scale.LinearScale>data.yAxisProperties.scale,
-                sm = this.selectionManager;
+                hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
 
-            var area: D3.Svg.Area = d3.svg.area()
+            let area: D3.Svg.Area = d3.svg.area()
                 .x((d: AreaRangeChartDataPoint) => {
                     return xScale(isScalar ? d.categoryValue : d.categoryIndex);
                 })
                 .y0((d: AreaRangeChartDataPoint) => yScale(d.y0))
                 .y1((d: AreaRangeChartDataPoint) => yScale(d.y1));
 
-            var selection = this.chart.selectAll(AreaRangeChart.Area.selector).data(series);
+            let selection = this.chart.selectAll(AreaRangeChart.Area.selector).data(series);
 
             selection
                 .enter()
@@ -944,29 +890,26 @@ module powerbi.visuals.samples {
             selection
                 .attr('fill', (d: AreaRangeChartSeries) => d.color)
                 .attr('stroke', (d: AreaRangeChartSeries) => d.color)
-                .attr('d', (d: AreaRangeChartSeries) => {
-                    return area(d.data);
-                })
-                .style('fill-opacity', AreaRangeChart.DimmedFillOpacity)
-                .on('click', function (d: AreaRangeChartSeries) {
-                    if (series.length > 1) {
-                        sm.select(d.identity).then(ids => {
-                            if (ids.length > 0) {
-                                selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
-                                d3.select(this).transition()
-                                    .duration(duration)
-                                    .style('fill-opacity', AreaRangeChart.FillOpacity);
-                            } else {
-                                selection.style('fill-opacity', AreaRangeChart.DimmedFillOpacity);
-                            }
-                        });
-                    }
-                    d3.event.stopPropagation();
-                });
+                .style('fill-opacity', (d: AreaRangeChartSeries) => (hasSelection && !d.selected) ? LineChart.DimmedAreaFillOpacity : LineChart.AreaFillOpacity)
+                .transition()
+                .duration(duration)
+                .attr('d', (d: AreaRangeChartSeries) => area(d.data));
 
             selection.exit().remove();
-            this.renderTooltip(selection, xScale, data.isScalar);
 
+            let interactivityService = this.interactivityService;
+
+            if (interactivityService) {
+                let behaviorOptions: AreaRangeBehaviorOptions = {
+                    selection: selection,
+                    clearCatcher: this.clearCatcher,
+                    interactivityService: this.interactivityService,
+                };
+
+                interactivityService.bind(series, this.behavior, behaviorOptions);
+            }
+
+            this.renderTooltip(selection, xScale, data.isScalar);
             let xOfFirstCategory: number = this.getXOfFirstCategory();
             this.chart.attr('transform', SVGUtil.translate(this.margin.left + xOfFirstCategory, this.margin.top));
         }
@@ -974,21 +917,21 @@ module powerbi.visuals.samples {
         private getXOfFirstCategory(): number {
             if (!this.data.isScalar) {
                 let xScale = <D3.Scale.OrdinalScale>this.data.xAxisProperties.scale;
-                if (xScale.rangeBand)
+                if (xScale.rangeBand && !isNaN(xScale.rangeBand()))
                     return xScale.rangeBand() / 2;
             }
             return 0;
         }
 
         private static findClosestXAxisIndex(currentX: number, xAxisValues: AreaRangeChartDataPoint[], isScalar: boolean): number {
-            var closestValueIndex: number = -1;
-            var minDistance = Number.MAX_VALUE;
-            for (var i in xAxisValues) {
+            let closestValueIndex: number = -1;
+            let minDistance = Number.MAX_VALUE;
+            for (let i in xAxisValues) {
 
-                var element = <AreaRangeChartDataPoint>xAxisValues[i];
-                var value = isScalar ? element.categoryValue : element.categoryIndex;
+                let element = <AreaRangeChartDataPoint>xAxisValues[i];
+                let value = isScalar ? element.categoryValue : element.categoryIndex;
 
-                var distance = Math.abs(currentX - value);
+                let distance = Math.abs(currentX - value);
                 if (distance < minDistance) {
                     minDistance = distance;
                     closestValueIndex = <any>i;
@@ -999,46 +942,46 @@ module powerbi.visuals.samples {
 
         public static getTooltipInfoByPointX(pointData: any, xScale: D3.Scale.LinearScale, isScalar: boolean, pointX: number): TooltipDataItem[] {
 
-            var index: number = 0;
-            var currentX = powerbi.visuals.AxisHelper.invertScale(xScale, pointX);
+            let index: number = 0;
+            let currentX = powerbi.visuals.AxisHelper.invertScale(xScale, pointX);
             index = AreaRangeChart.findClosestXAxisIndex(currentX, pointData.data, isScalar);
             return pointData.data[index].tooltipInfo;
         }
 
         private renderTooltip(selection: D3.UpdateSelection, xScale: D3.Scale.LinearScale, isScalar: boolean): void {
             TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                var pointX: number = tooltipEvent.elementCoordinates[0];
+                let pointX: number = tooltipEvent.elementCoordinates[0];
                 return AreaRangeChart.getTooltipInfoByPointX(tooltipEvent.data, xScale, isScalar, pointX);
             }, true);
         }
 
         private createLegendDataPoints(columnIndex: number): LegendData {
-            var data = this.data;
+            let data = this.data;
             if (!data) {
                 return null;
             }
 
-            var legendDataPoints: LegendDataPoint[] = [];
-            var category: any;
+            let legendDataPoints: LegendDataPoint[] = [];
+            let category: any;
 
             // Category will be the same for all series. This is an optimization.
             if (data.series.length > 0) {
-                var lineDatePointFirstSeries: LineChartDataPoint = data.series[0].data[columnIndex];
-                var isDateTime = AxisHelper.isDateTime(this.data.xAxisProperties.axisType);
-                var value = (isDateTime && this.data.isScalar && lineDatePointFirstSeries) ? lineDatePointFirstSeries.categoryValue : columnIndex;
+                let lineDatePointFirstSeries: AreaRangeChartDataPoint = data.series[0].data[columnIndex];
+                let isDateTime = AxisHelper.isDateTime(this.data.xAxisProperties.axisType);
+                let value = (isDateTime && this.data.isScalar && lineDatePointFirstSeries) ? lineDatePointFirstSeries.categoryValue : columnIndex;
                 category = lineDatePointFirstSeries && this.lookupXValue(value, this.data.xAxisProperties.axisType);
             }
 
-            var formatStringProp = lineChartProps.general.formatString;
-            var seriesYCol: DataViewMetadataColumn = null;
-            // iterating over the line data (i is for a line)
-            for (var i = 0, len = data.series.length; i < len; i++) {
-                var series = data.series[i];
-                var lineData = series.data;
-                var lineDataPoint = lineData[columnIndex];
-                var measure = lineDataPoint && lineDataPoint.value;
+            let formatStringProp = lineChartProps.general.formatString;
+            let seriesYCol: DataViewMetadataColumn = null;
+            // Iterating over the line data (i is for a line)
+            for (let i = 0, len = data.series.length; i < len; i++) {
+                let series = data.series[i];
+                let lineData = series.data;
+                let lineDataPoint = lineData[columnIndex];
+                let measure = lineDataPoint && lineDataPoint.value;
 
-                var label = converterHelper.getFormattedLegendLabel(series.yCol, this.dataViewCat.values, formatStringProp);
+                let label = converterHelper.getFormattedLegendLabel(series.yCol, this.dataViewCat.values, formatStringProp);
                 seriesYCol = series.yCol;
                 legendDataPoints.push({
                     color: series.color,
@@ -1051,8 +994,8 @@ module powerbi.visuals.samples {
                 });
             }
 
-            var dvValues = this.dataViewCat ? this.dataViewCat.values : null;
-            var title = dvValues && dvValues.source ? dvValues.source.displayName : "";
+            let dvValues = this.dataViewCat ? this.dataViewCat.values : null;
+            let title = dvValues && dvValues.source ? dvValues.source.displayName : "";
 
             return {
                 title: title,
@@ -1061,15 +1004,15 @@ module powerbi.visuals.samples {
         }
 
         private enumerateLegend(enumeration: ObjectEnumerationBuilder): ObjectEnumerationBuilder {
-            var data = this.data;
+            let data = this.data;
 
             if (typeof (data) === 'undefined') {
                 return;
             }
-            var legendObjectProperties: DataViewObjects = { legend: data.settings.legend };
-            var show = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.show, this.legend.isVisible());
-            var showTitle = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.showTitle, true);
-            var titleText = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.titleText, null);
+            let legendObjectProperties: DataViewObjects = { legend: data.settings.legend };
+            let show = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.show, this.legend.isVisible());
+            let showTitle = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.showTitle, true);
+            let titleText = DataViewObjects.getValue(legendObjectProperties, AreaRangeChart.properties.legend.titleText, null);
 
             enumeration.pushInstance({
                 selector: null,
@@ -1084,19 +1027,17 @@ module powerbi.visuals.samples {
         }
 
         private enumerateDataPoints(enumeration: ObjectEnumerationBuilder): ObjectEnumerationBuilder {
-            var data = this.data;
+            let data = this.data;
             if (!data) {
                 return;
             }
 
-            var series = data.series;
+            let series = data.series;
 
-            for (var i = 0; i < series.length; i++) {
-                var item = series[i];
-
-                var color = item.color;
-                var selector = item.identity.getSelector();
-                var isSingleSeries = !!selector.data;
+            for (let item of series) {
+                let color = item.color;
+                let selector = item.identity.getSelector();
+                let isSingleSeries = !!selector.data;
 
                 enumeration.pushInstance({
                     objectName: 'dataPoint',
@@ -1110,7 +1051,7 @@ module powerbi.visuals.samples {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            var enumeration = new ObjectEnumerationBuilder();
+            let enumeration = new ObjectEnumerationBuilder();
 
             switch (options.objectName) {
                 case 'legend':

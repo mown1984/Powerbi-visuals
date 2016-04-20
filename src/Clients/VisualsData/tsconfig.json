@@ -52,6 +52,7 @@
         "iFormattingService.ts",
         "semanticQuery/exprPatterns/fieldExprPattern.ts",
         "dataView/dataViewAnalysis.ts",
+		"dataView/dataViewRoleWildcard.ts",
         "dataView/dataViewScopeIdentity.ts",
         "dataView/dataViewScopeWildcard.ts",
         "dataView/rules/colorAllocatorCache.ts",

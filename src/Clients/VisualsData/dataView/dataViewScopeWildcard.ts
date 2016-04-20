@@ -36,6 +36,11 @@ module powerbi.data {
             return SQExprUtils.sequenceEqual(<SQExpr[]>wildcard.exprs, instanceExprs);
         }
 
+        export function equals(firstScopeWildcard: DataViewScopeWildcard, secondScopeWildcard: DataViewScopeWildcard): boolean {
+            return firstScopeWildcard.key === secondScopeWildcard.key &&
+                SQExprUtils.sequenceEqual(<SQExpr[]>firstScopeWildcard.exprs, <SQExpr[]>secondScopeWildcard.exprs);
+        }
+
         export function fromExprs(exprs: SQExpr[]): DataViewScopeWildcard {
             return new DataViewScopeWildcardImpl(exprs);
         }

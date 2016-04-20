@@ -37,5 +37,5 @@ declare module powerbi.data {
         id?: string;
     }
 
-    export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard; 
+    export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard | DataViewRoleWildcard; 
 }

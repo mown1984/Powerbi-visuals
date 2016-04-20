@@ -84,6 +84,84 @@ module powerbitests.customVisuals {
                 }, DefaultWaitForRender);
             });
 
+            describe("Data Labels", () => {
+                beforeEach(() => {
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true
+                        }
+                    };
+                });
+                
+                it("Default Data Labels", (done) => {
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        let numOfLabels = dataViews[0].categorical.values[0].values.length;
+                        let labels: JQuery = $(".asterPlot .labels .data-labels");
+                        expect(labels.length).toBe(numOfLabels);
+                        let lines: JQuery = $(".asterPlot .lines .line-label");
+                        expect(lines.length).toBe(numOfLabels);
+                        let slices: JQuery = $(".asterPlot .asterSlice");
+                        expect(slices.length).toBe(numOfLabels);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("Data Labels have conflict with viewport", (done) => {
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        let numOfLabels = dataViews[0].categorical.values[0].values.length;
+                        let labels: JQuery = $(".asterPlot .labels .data-labels");
+                        let lines: JQuery = $(".asterPlot .lines .line-label");
+                        expect(lines.length).toBe(numOfLabels);
+                        expect(labels.length).toBe(numOfLabels);
+                        //The viewport is reduced
+                        visualBuilder.updateWithViewport(dataViews, { height: 200, width: 350 });
+                        let labelsAfterResize: JQuery = $(".asterPlot .labels .data-labels");
+                        let linesAfterResize: JQuery = $(".asterPlot .lines .line-label");
+                        expect(labelsAfterResize.length).toBe(numOfLabels);
+                        expect(linesAfterResize.length).toBe(numOfLabels);
+
+                        let firsrtLabelX = $(labels).first().attr('x');
+                        let firsrtLabelY = $(labels).first().attr('y');
+                        //let lastLabelX = $(labels).last().attr('x');
+                        let lastLabelY = $(labels).last().attr('y');
+                        let firsrtResizeLabelX = $(labelsAfterResize).first().attr('x');
+                        let firsrtResizeLabelY = $(labelsAfterResize).first().attr('y');
+                        //let lastResizeLabelX = $(labelsAfterResize).last().attr('x');
+                        let lastResizeLabelY = $(labelsAfterResize).last().attr('y');
+
+                        expect(firsrtLabelX).toBeGreaterThan(parseFloat(firsrtResizeLabelX));
+                        expect(firsrtLabelY).toBeLessThan(parseFloat(firsrtResizeLabelY));
+
+                        // TODO: uncomment and fix
+                        //expect(lastLabelX).toBeGreaterThan(parseFloat(lastResizeLabelX));
+                        expect(lastLabelY).toBeLessThan(parseFloat(lastResizeLabelY));
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("Data Labels - Decimal value for Labels should have a limit to 17", (done) => {
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true,
+                            labelPrecision: 5666
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        let labels: JQuery = $(".asterPlot .labels .data-labels");
+                        let dataLabels = $(labels).first().text();
+                        let maxPrecision: number = 17;
+                        expect(dataLabels).toBe("0.86618686000000000M");
+                        expect(dataLabels.length - 3).toBe(maxPrecision);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+            });
+
             describe("Default Legend", () => {
                 let defaultLegendLabelFontSize = 8;
 
@@ -223,6 +301,13 @@ module powerbitests.customVisuals {
             } else {
                 this.visual = new VisualClass();
             }
+            }
+
+            public updateWithViewport(dataViews: powerbi.DataView[], viewport: powerbi.IViewport ): void {
+                this.visual.update(<powerbi.VisualUpdateOptions>{
+                    dataViews: dataViews,
+                    viewport: viewport
+                });
         }
     }
 }

@@ -44,7 +44,7 @@ module powerbitests {
         });
     });
 
-    describe("Tooltip DOM tests",() => {
+    describe("Tooltip DOM tests", () => {
         let element: JQuery;
         let d3Element: D3.Selection;
         let tooltipInfo: powerbi.visuals.TooltipDataItem[];
@@ -56,7 +56,7 @@ module powerbitests {
         afterEach(function () {
         });
 
-        it('DOM container exists',() => {
+        it('DOM container exists', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -65,7 +65,7 @@ module powerbitests {
             expect(tooltipContainer.length).toBe(1);
         });
 
-        it('Has single instance of DOM container',() => {
+        it('Has single instance of DOM container', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -89,7 +89,7 @@ module powerbitests {
             expect(tooltipContainer.length).toBe(1);
         });
 
-        it('DOM two rows exist',() => {
+        it('DOM two rows exist', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -99,7 +99,7 @@ module powerbitests {
             expect(tooltipRow.length).toBe(2);
         });
 
-        it('DOM two title cells exist',() => {
+        it('DOM two title cells exist', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -109,7 +109,7 @@ module powerbitests {
             expect(tooltipTitle.length).toBe(2);
         });
 
-        it('DOM two value cells exist',() => {
+        it('DOM two value cells exist', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -119,7 +119,7 @@ module powerbitests {
             expect(tooltipValue.length).toBe(2);
         });
 
-        it('DOM content container exists',() => {
+        it('DOM content container exists', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -128,7 +128,7 @@ module powerbitests {
             expect(tooltipContentContainer.length).toBe(1);
         });
 
-        it('DOM container visible',() => {
+        it('DOM container visible', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -137,7 +137,7 @@ module powerbitests {
             expect(tooltipContainer).toBeVisible();
         });
 
-        it('DOM container is visible - Show ToolTip',() => {
+        it('DOM container is visible - Show ToolTip', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -146,7 +146,7 @@ module powerbitests {
             expect(tooltipContainerVisibility).toBeVisible();
         });
 
-        it('DOM container style Opacity is 1 - Show ToolTip',() => {
+        it('DOM container style Opacity is 1 - Show ToolTip', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -157,7 +157,7 @@ module powerbitests {
             expect(tooltipContainerOpacity).toBeCloseTo(1, 2);
         });
 
-        it('DOM container hiden - Hide ToolTip',() => {
+        it('DOM container hiden - Hide ToolTip', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -170,7 +170,7 @@ module powerbitests {
             expect("hidden").toBe(visibility);
         });
 
-        it('DOM container style Opacity is 1 - Hide ToolTip',() => {
+        it('DOM container style Opacity is 1 - Hide ToolTip', () => {
             // Show tooltip
             let clickedArea = new powerbi.visuals.controls.TouchUtils.Rectangle(200, 200, 0, 0);
             TooltipManager.ToolTipInstance.show(tooltipInfo, clickedArea);
@@ -205,7 +205,7 @@ module powerbitests {
             let arrowClass: string;
             let tooltipContainer = $('.tooltip-container');
             let arrow = tooltipContainer.find('.arrow');
-            
+
             arrowClass = arrow.attr('class');
             expect(arrowClass).toBe('arrow top left');
 
@@ -267,7 +267,7 @@ module powerbitests {
             }, 513);
         });
 
-        it('tooltip is visible after 200ms',(done) => {
+        it('tooltip is visible after 200ms', (done) => {
             hideTooltip();
 
             let tooltipEvent = getMockTooltipEvent();
@@ -280,7 +280,7 @@ module powerbitests {
             }, 200);
         });
 
-        it('tooltip is visible after 500ms',(done) => {
+        it('tooltip is visible after 500ms', (done) => {
             hideTooltip();
 
             let tooltipEvent = getMockTooltipEvent();
@@ -292,7 +292,7 @@ module powerbitests {
                 done();
             }, 513);
         });
-        
+
         function getMockTooltipEvent(): TooltipEvent {
             return {
                 data: null,
@@ -401,7 +401,7 @@ module powerbitests {
             let tooltipRow = $('.tooltip-row');
             let firstRow = $(tooltipRow[0]);
             let children = firstRow.children();
-            
+
             let color = $(children[0]).find('circle')[0].style["fill"];
             let name = $(children[1]).html();
             let value = $(children[2]).html();
@@ -440,9 +440,9 @@ module powerbitests {
         }
     });
 
-    describe("Tooltip Builder tests",() => {
+    describe("Tooltip Builder tests", () => {
 
-        it('createTooltipInfo: category & measure',() => {
+        it('createTooltipInfo: category & measure', () => {
             let columns: powerbi.DataViewMetadataColumn[] = [
                 {
                     displayName: 'cat',
@@ -485,7 +485,7 @@ module powerbitests {
                 { displayName: 'val', value: '123.321' }]);
         });
 
-        it('createTooltipInfo: category, series & measure',() => {
+        it('createTooltipInfo: category, series & measure', () => {
             let columns: powerbi.DataViewMetadataColumn[] = [
                 {
                     displayName: 'cat',
@@ -535,7 +535,7 @@ module powerbitests {
                 { displayName: 'val', value: '123.321' }]);
         });
 
-        it('createTooltipInfo: self cross-joined category & measure',() => {
+        it('createTooltipInfo: self cross-joined category & measure', () => {
             let columns: powerbi.DataViewMetadataColumn[] = [
                 {
                     displayName: 'cat',

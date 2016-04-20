@@ -245,7 +245,7 @@ module powerbitests {
                         selector: undefined,
                         properties: {
                             show: true,
-                            color: '#333333',
+                            color: '#ACACAC',
                             fontSize: 9
                         },
                     }]
@@ -285,7 +285,7 @@ module powerbitests {
                         selector: undefined,
                         properties: {
                             show: true,
-                            color: '#333333',
+                            color: '#ACACAC',
                             fontSize: 9
                         },
                     }]
@@ -667,19 +667,19 @@ module powerbitests {
                 helpers.runWithImmediateAnimationFrames(() => {
                     fireOnDataChanged(v, { dataViews: [singleRowdata] });
 
-                    let cardBottomMargin = parseInt(element.find(".card").last().css("margin-bottom"), 10);
+                    let cardBottomMargin = parseInt(element.find(".row").last().css("margin-bottom"), 10);
                     expect(cardBottomMargin).toEqual(0);
 
                     helpers.runWithImmediateAnimationFrames(() => {
                         fireOnDataChanged(v, { dataViews: [dataWithTitle] });
 
-                        cardBottomMargin = parseInt(element.find(".card").last().css("margin-bottom"), 10);
+                        cardBottomMargin = parseInt(element.find(".row").last().css("margin-bottom"), 10);
                         expect(cardBottomMargin).toEqual(20);
 
                         helpers.runWithImmediateAnimationFrames(() => {
                             fireOnDataChanged(v, { dataViews: [data] });
 
-                            cardBottomMargin = parseInt(element.find(".card").last().css("margin-bottom"), 10);
+                            cardBottomMargin = parseInt(element.find(".row").last().css("margin-bottom"), 10);
                             expect(cardBottomMargin).toEqual(20);
                         });
                     });
@@ -706,7 +706,7 @@ module powerbitests {
                     expect($('.card .caption').first().css('font-size')).toBe('13px');
                     expect($('.card .details').first().css('font-size')).toBe('12px');
                     helpers.assertColorsMatch($('.card .caption').first().css('color'), '#333333');
-                    helpers.assertColorsMatch($('.card .details').first().css('color'), '#333333');
+                    helpers.assertColorsMatch($('.card .details').first().css('color'), '#ACACAC');
                 });
             });
 
@@ -726,7 +726,7 @@ module powerbitests {
                     expect($('.card .caption').first().css('font-size')).toBe('13px');
                     expect($('.card .details').first().css('font-size')).toBe('12px');
                     helpers.assertColorsMatch($('.card .caption').first().css('color'), '#333333');
-                    helpers.assertColorsMatch($('.card .details').first().css('color'), '#333333');
+                    helpers.assertColorsMatch($('.card .details').first().css('color'), '#ACACAC');
                 });
             });
 
@@ -823,6 +823,30 @@ module powerbitests {
 
                     // To prevent this test from being fragile, compare the width within an acceptable range. Expected value: ~125px
                     expect(helpers.isCloseTo(width, /*expected*/ 125, /*tolerance*/ 5)).toBeTruthy();
+                });
+            });
+            
+            it("Validate multiRowCard cardrow column width excludes title column", () => {
+                v.init(getVisualInitOptions(element = helpers.testDom("100", "760")));
+                
+                helpers.runWithImmediateAnimationFrames(() => {
+                    
+                    // Build a data view with text to be promoted as a title and numeric values
+                    let columnTypes: tableDataViewHelper.ColumnType[] = [];
+                    columnTypes.push(tableDataViewHelper.ColumnType.Text);
+                    
+                    for(let i = 0; i < 3; i++){
+                        columnTypes.push(tableDataViewHelper.ColumnType.Numeric);
+                    }
+                    
+                    fireOnDataChanged(v, { dataViews: [tableDataViewHelper.getDataWithColumnsOfType(columnTypes, false, 5)] });
+
+                    expect($(".card")).toBeInDOM();
+                    expect($(".card .cardItemContainer")).toBeInDOM();
+                    let width = element.find(".cardItemContainer").last().innerWidth();
+
+                    // To prevent this test from being fragile, compare the width within an acceptable range. Expected value: ~249px
+                    expect(helpers.isCloseTo(width, /*expected*/ 249, /*tolerance*/ 5)).toBeTruthy();
                 });
             });
 

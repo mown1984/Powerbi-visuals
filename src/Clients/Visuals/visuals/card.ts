@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -85,7 +85,7 @@ module powerbi.visuals {
             value: {
                 textSize: 27,
                 color: '#333333',
-                fontFamily: 'wf_segoe-ui_Semibold'
+                fontFamily: 'wf_standard-font'
             }
         };
 
@@ -253,7 +253,8 @@ module powerbi.visuals {
                 if (!forceUpdate && start === target)
                     return;
 
-                if (start !== target)
+                // We want to format for null/blank/empty string and anything that is not a string
+                if (start !== target && (_.isEmpty(target) || typeof (target) !== "string"))
                     target = formatter.format(target);
 
                 let label: string = metaDataColumn ? metaDataColumn.displayName : undefined;

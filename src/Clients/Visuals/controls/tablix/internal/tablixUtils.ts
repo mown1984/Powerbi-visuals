@@ -138,7 +138,7 @@ module powerbi.visuals.controls.internal {
                 this.propertyName = propertyName;
                 this.defaultValue = defaultValue;
                 this.getterFuntion = getterFuntion;
-        }
+            }
 
             /**
              * Gets the PropertyIdentifier for the Property
@@ -154,14 +154,11 @@ module powerbi.visuals.controls.internal {
              * @param {boolean} useDefault True to fall back to the Default value if the Property is missing from the objects. False to return undefined
              * @returns Value of the property
              */
-            public getValue<T>(objects: DataViewObjects, useDefault?: boolean): T {
+            public getValue<T>(objects: DataViewObjects): T {
                 // We use this when we intend to have undefined for missing properties. Useful in letting styles fallback to CSS if not defined
-                if (useDefault === false)
-                    return this.getterFuntion<T>(objects, this.getPropertyID());
-                else
-                    return this.getterFuntion<T>(objects, this.getPropertyID(), this.defaultValue);
-        }
+                return this.getterFuntion<T>(objects, this.getPropertyID(), this.defaultValue);
             }
+        }
 
         // Per Column
         export const PropColumnFormatString = new TablixProperty(ObjectGeneral, 'formatString', undefined, DataViewObjects.getValue);
@@ -182,8 +179,9 @@ module powerbi.visuals.controls.internal {
         export const PropGridHorizontalColor = new TablixProperty(ObjectGrid, 'gridHorizontalColor', "#E8E8E8", DataViewObjects.getFillColor);
         export const PropGridHorizontalWeight = new TablixProperty(ObjectGrid, 'gridHorizontalWeight', 1, DataViewObjects.getValue);
         export const PropGridRowPadding = new TablixProperty(ObjectGrid, 'rowPadding', 0, DataViewObjects.getValue);
-        export const PropGridOutlineColor = new TablixProperty(ObjectGrid, 'outlineColor', "#E8E8E8", DataViewObjects.getFillColor);
-        export const PropGridOutlineWeight = new TablixProperty(ObjectGrid, 'outlineWeight', 2, DataViewObjects.getValue);
+        export const PropGridOutlineColor = new TablixProperty(ObjectGrid, 'outlineColor', "#CCC", DataViewObjects.getFillColor);
+        export const PropGridOutlineWeight = new TablixProperty(ObjectGrid, 'outlineWeight', 1, DataViewObjects.getValue);
+        export const PropGridImageHeight = new TablixProperty(ObjectGrid, 'imageHeight', 75, DataViewObjects.getValue);
 
         // Column Headers
         export const PropColumnsFontColor = new TablixProperty(ObjectColumnHeaders, 'fontColor', "#666", DataViewObjects.getFillColor);
@@ -198,20 +196,20 @@ module powerbi.visuals.controls.internal {
         // Values
         // VSTS 7167767: Remove temporary code for product demo.
         export const PropValuesBackColorConditionalFormatting = new TablixProperty(ObjectValues, 'backgroundColorConditional', false, DataViewObjects.getValue);
-        export const PropValuesFontColorPrimary = new TablixProperty(ObjectValues, 'fontColorPrimary', "#666", DataViewObjects.getFillColor);
+        export const PropValuesFontColorPrimary = new TablixProperty(ObjectValues, 'fontColorPrimary', "#333", DataViewObjects.getFillColor);
         export const PropValuesBackColorPrimary = new TablixProperty(ObjectValues, 'backColorPrimary', undefined, DataViewObjects.getFillColor);
-        export const PropValuesFontColorSecondary = new TablixProperty(ObjectValues, 'fontColorSecondary', "#666", DataViewObjects.getFillColor);
+        export const PropValuesFontColorSecondary = new TablixProperty(ObjectValues, 'fontColorSecondary', "#333", DataViewObjects.getFillColor);
         export const PropValuesBackColorSecondary = new TablixProperty(ObjectValues, 'backColorSecondary', undefined, DataViewObjects.getFillColor);
         export const PropValuesOutline = new TablixProperty(ObjectValues, 'outline', "None", DataViewObjects.getValue);
         export const PropValuesUrlIconProp = new TablixProperty(ObjectValues, 'urlIcon', false, DataViewObjects.getValue);
 
         // Total
-        export const PropTotalFontColor = new TablixProperty(ObjectTotal, 'fontColor', "#666", DataViewObjects.getFillColor);
-        export const PropTotalBackColor = new TablixProperty(ObjectTotal, 'backColor', "#FFF", DataViewObjects.getFillColor);
+        export const PropTotalFontColor = new TablixProperty(ObjectTotal, 'fontColor', "#333", DataViewObjects.getFillColor);
+        export const PropTotalBackColor = new TablixProperty(ObjectTotal, 'backColor', undefined, DataViewObjects.getFillColor);
         export const PropTotalOutline = new TablixProperty(ObjectTotal, 'outline', "TopOnly", DataViewObjects.getValue);
 
         // SubTotals
-        export const PropSubTotalsFontColor = new TablixProperty(ObjectSubTotals, 'fontColor', "#666", DataViewObjects.getFillColor);
+        export const PropSubTotalsFontColor = new TablixProperty(ObjectSubTotals, 'fontColor', "#333", DataViewObjects.getFillColor);
         export const PropSubTotalsBackColor = new TablixProperty(ObjectSubTotals, 'backColor', undefined, DataViewObjects.getFillColor);
         export const PropSubTotalsOutline = new TablixProperty(ObjectSubTotals, 'outline', "TopOnly", DataViewObjects.getValue);
 
@@ -225,9 +223,9 @@ module powerbi.visuals.controls.internal {
                 return dataview.metadata.objects;
 
             return null;
-        } 
+        }
 
-        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isFormattingPropertiesEnabled: boolean, isConditionalFormattingEnabled: boolean, tablixType: TablixType): void {
+        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isConditionalFormattingEnabled: boolean, tablixType: TablixType): void {
             debug.assertValue(dataView, "dataView can't be undefined");
 
             let objects = getMetadadataObjects(dataView);
@@ -248,31 +246,26 @@ module powerbi.visuals.controls.internal {
                     enumerateGeneralOptions(enumeration, objects, tablixType, dataView);
                     break;
                 case TablixObjects.ObjectGrid:
-                    if (isFormattingPropertiesEnabled)
-                        enumerateGridOptions(enumeration, objects, tablixType);
+                    enumerateGridOptions(enumeration, objects, tablixType);
                     break;
                 case TablixObjects.ObjectColumnHeaders:
-                    if (isFormattingPropertiesEnabled)
-                        enumerateColumnHeadersOptions(enumeration, objects);
+                    enumerateColumnHeadersOptions(enumeration, objects);
                     break;
                 case TablixObjects.ObjectRowHeaders:
-                    if (isFormattingPropertiesEnabled)
-                        enumerateRowHeadersOptions(enumeration, objects);
+                    enumerateRowHeadersOptions(enumeration, objects);
                     break;
                 case TablixObjects.ObjectValues:
-                    if (isFormattingPropertiesEnabled) {
-                        enumerateValuesOptions(enumeration, objects, tablixType);
+                    enumerateValuesOptions(enumeration, objects, tablixType);
 
-                        if (tablixType === TablixType.Table && isConditionalFormattingEnabled)
-                            enumerateValuesOptionConditionalFormat(enumeration, objects);
-                    }
+                    if (tablixType === TablixType.Table && isConditionalFormattingEnabled)
+                        enumerateValuesOptionConditionalFormat(enumeration, objects);
                     break;
                 case TablixObjects.ObjectTotal:
-                    if (isFormattingPropertiesEnabled && totalsShown)
+                    if (totalsShown)
                         enumerateTotalOptions(enumeration, objects);
                     break;
                 case TablixObjects.ObjectSubTotals:
-                    if (isFormattingPropertiesEnabled && totalsShown)
+                    if (totalsShown)
                         enumerateSubTotalsOptions(enumeration, objects);
                     break;
                 default:
@@ -282,13 +275,13 @@ module powerbi.visuals.controls.internal {
 
         export function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, tablixType: TablixType, dataView: DataView): void {
             let visualObjectinstance: VisualObjectInstance = {
-                            selector: null,
+                selector: null,
                 objectName: TablixObjects.ObjectGeneral,
-                            properties: {
+                properties: {
                     autoSizeColumnWidth: TablixObjects.PropGeneralAutoSizeColumns.getValue(objects),
                     textSize: TablixObjects.PropGeneralTextSize.getValue<number>(objects),
-                            }
-                        };
+                }
+            };
 
             let properties = visualObjectinstance.properties;
 
@@ -297,25 +290,25 @@ module powerbi.visuals.controls.internal {
                 case TablixType.Table:
                     if (shouldShowTableTotalsOption(dataView))
                         properties[TablixObjects.PropGeneralTableTotals.propertyName] = shouldShowTableTotals(objects);
-                        break;
+                    break;
 
                 case TablixType.Matrix:
-                        if (shouldShowRowSubtotalsOption(dataView))
+                    if (shouldShowRowSubtotalsOption(dataView))
                         properties[TablixObjects.PropGeneralMatrixRowSubtotals.propertyName] = shouldShowRowSubtotals(objects);
-                        if (shouldShowColumnSubtotalsOption(dataView))
+                    if (shouldShowColumnSubtotalsOption(dataView))
                         properties[TablixObjects.PropGeneralMatrixColumnSubtotals.propertyName] = shouldShowColumnSubtotals(objects);
-                        break;
-                }
+                    break;
+            }
 
             enumeration.pushInstance(visualObjectinstance);
-            }
+        }
 
         export function enumerateGridOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, tablixType: TablixType): void {
             let visualObjectinstance: VisualObjectInstance = {
-                            selector: null,
+                selector: null,
                 objectName: TablixObjects.ObjectGeneral,
                 properties: {}
-                        };
+            };
             let properties = visualObjectinstance.properties;
 
             // Vertical Grid
@@ -332,7 +325,7 @@ module powerbi.visuals.controls.internal {
             if (horizontalGridEnabled) {
                 properties[TablixObjects.PropGridHorizontalColor.propertyName] = TablixObjects.PropGridHorizontalColor.getValue<string>(objects);
                 properties[TablixObjects.PropGridHorizontalWeight.propertyName] = TablixObjects.PropGridHorizontalWeight.getValue<number>(objects);
-                            }
+            }
 
             // Row Padding
             properties[TablixObjects.PropGridRowPadding.propertyName] = TablixObjects.PropGridRowPadding.getValue<number>(objects);
@@ -341,8 +334,11 @@ module powerbi.visuals.controls.internal {
             properties[TablixObjects.PropGridOutlineColor.propertyName] = TablixObjects.PropGridOutlineColor.getValue<string>(objects);
             properties[TablixObjects.PropGridOutlineWeight.propertyName] = TablixObjects.PropGridOutlineWeight.getValue<number>(objects);
 
-                        enumeration.pushInstance(visualObjectinstance);
-                }
+            // Image Height
+            properties[TablixObjects.PropGridImageHeight.propertyName] = TablixObjects.PropGridImageHeight.getValue<number>(objects);
+
+            enumeration.pushInstance(visualObjectinstance);
+        }
 
         export function enumerateColumnHeadersOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void {
             enumeration.pushInstance({
@@ -423,11 +419,10 @@ module powerbi.visuals.controls.internal {
             });
         }
 
-        export function getTableObjects(dataView: DataView, isFormattingEnabled: boolean, isConditionalFormattingEnabled: boolean): TablixFormattingPropertiesTable {
+        export function getTableObjects(dataView: DataView, isConditionalFormattingEnabled: boolean): TablixFormattingPropertiesTable {
             let objects = getMetadadataObjects(dataView);
 
             let formattingProperties: TablixFormattingPropertiesTable = {
-                isFormattingEnabled: isFormattingEnabled,
                 // TODO: VSTS 7167767: Remove temporary code for product demo.
                 isConditionalFormattingEnabled: isConditionalFormattingEnabled,
 
@@ -435,47 +430,46 @@ module powerbi.visuals.controls.internal {
                     autoSizeColumnWidth: TablixObjects.PropGeneralAutoSizeColumns.getValue<boolean>(objects),
                     textSize: TablixObjects.PropGeneralTextSize.getValue<number>(objects),
                     totals: shouldShowTableTotals(objects),
-                    },
+                },
             };
 
-            if (isFormattingEnabled) {
-                formattingProperties.grid = {
-                    gridVertical: TablixObjects.PropGridVertical.getValue<boolean>(objects),
-                    gridVerticalColor: TablixObjects.PropGridVerticalColor.getValue<string>(objects),
-                    gridVerticalWeight: TablixObjects.PropGridVerticalWeight.getValue<number>(objects),
-                    gridHorizontal: TablixObjects.PropGridHorizontalTable.getValue<boolean>(objects),
-                    gridHorizontalColor: TablixObjects.PropGridHorizontalColor.getValue<string>(objects),
-                    gridHorizontalWeight: TablixObjects.PropGridHorizontalWeight.getValue<number>(objects),
-                    outlineColor: TablixObjects.PropGridOutlineColor.getValue<string>(objects),
-                    outlineWeight: TablixObjects.PropGridOutlineWeight.getValue<number>(objects),
-                    rowPadding: TablixObjects.PropGridRowPadding.getValue<number>(objects, false),
-                };
+            formattingProperties.grid = {
+                gridVertical: TablixObjects.PropGridVertical.getValue<boolean>(objects),
+                gridVerticalColor: TablixObjects.PropGridVerticalColor.getValue<string>(objects),
+                gridVerticalWeight: TablixObjects.PropGridVerticalWeight.getValue<number>(objects),
+                gridHorizontal: TablixObjects.PropGridHorizontalTable.getValue<boolean>(objects),
+                gridHorizontalColor: TablixObjects.PropGridHorizontalColor.getValue<string>(objects),
+                gridHorizontalWeight: TablixObjects.PropGridHorizontalWeight.getValue<number>(objects),
+                outlineColor: TablixObjects.PropGridOutlineColor.getValue<string>(objects),
+                outlineWeight: TablixObjects.PropGridOutlineWeight.getValue<number>(objects),
+                rowPadding: TablixObjects.PropGridRowPadding.getValue<number>(objects),
+                imageHeight: TablixObjects.PropGridImageHeight.getValue<number>(objects),
+            };
 
-                formattingProperties.columnHeaders = {
-                    fontColor: TablixObjects.PropColumnsFontColor.getValue<string>(objects, false),
-                    backColor: TablixObjects.PropColumnsBackColor.getValue<string>(objects, false),
-                    outline: TablixObjects.PropColumnsOutline.getValue<string>(objects),
-                };
+            formattingProperties.columnHeaders = {
+                fontColor: TablixObjects.PropColumnsFontColor.getValue<string>(objects),
+                backColor: TablixObjects.PropColumnsBackColor.getValue<string>(objects),
+                outline: TablixObjects.PropColumnsOutline.getValue<string>(objects),
+            };
 
-                formattingProperties.values = {
-                    fontColorPrimary: TablixObjects.PropValuesFontColorPrimary.getValue<string>(objects, false),
-                    backColorPrimary: TablixObjects.PropValuesBackColorPrimary.getValue<string>(objects, false),
-                    fontColorSecondary: TablixObjects.PropValuesFontColorSecondary.getValue<string>(objects, false),
-                    backColorSecondary: TablixObjects.PropValuesBackColorSecondary.getValue<string>(objects, false),
-                    outline: TablixObjects.PropValuesOutline.getValue<string>(objects),
-                    urlIcon: TablixObjects.PropValuesUrlIconProp.getValue<boolean>(objects),
-                };
+            formattingProperties.values = {
+                fontColorPrimary: TablixObjects.PropValuesFontColorPrimary.getValue<string>(objects),
+                backColorPrimary: TablixObjects.PropValuesBackColorPrimary.getValue<string>(objects),
+                fontColorSecondary: TablixObjects.PropValuesFontColorSecondary.getValue<string>(objects),
+                backColorSecondary: TablixObjects.PropValuesBackColorSecondary.getValue<string>(objects),
+                outline: TablixObjects.PropValuesOutline.getValue<string>(objects),
+                urlIcon: TablixObjects.PropValuesUrlIconProp.getValue<boolean>(objects),
+            };
 
-                if (isConditionalFormattingEnabled) {
-                    formattingProperties.values.conditionalFormatting = TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(objects);
-                }
-
-                formattingProperties.total = {
-                    fontColor: TablixObjects.PropTotalFontColor.getValue<string>(objects, false),
-                    backColor: TablixObjects.PropTotalBackColor.getValue<string>(objects, false),
-                    outline: TablixObjects.PropTotalOutline.getValue<string>(objects),
-                };
+            if (isConditionalFormattingEnabled) {
+                formattingProperties.values.conditionalFormatting = TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(objects);
             }
+
+            formattingProperties.total = {
+                fontColor: TablixObjects.PropTotalFontColor.getValue<string>(objects),
+                backColor: TablixObjects.PropTotalBackColor.getValue<string>(objects),
+                outline: TablixObjects.PropTotalOutline.getValue<string>(objects),
+            };
 
             return formattingProperties;
         }
@@ -485,59 +479,56 @@ module powerbi.visuals.controls.internal {
             return TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(getMetadadataObjects(dataView));
         }
 
-        export function getMatrixObjects(dataView: DataView, isFormattingEnabled): TablixFormattingPropertiesMatrix {
+        export function getMatrixObjects(dataView: DataView): TablixFormattingPropertiesMatrix {
             let objects = getMetadadataObjects(dataView);
 
             let formattingProperties: TablixFormattingPropertiesMatrix = {
-                isFormattingEnabled: isFormattingEnabled,
-
                 general: {
                     autoSizeColumnWidth: TablixObjects.PropGeneralAutoSizeColumns.getValue<boolean>(objects),
                     textSize: TablixObjects.PropGeneralTextSize.getValue<number>(objects),
                     rowSubtotals: shouldShowRowSubtotals(objects),
                     columnSubtotals: shouldShowColumnSubtotals(objects),
-                    },
+                },
             };
 
-            if (isFormattingEnabled) {
-                formattingProperties.grid = {
-                    gridVertical: TablixObjects.PropGridVertical.getValue<boolean>(objects),
-                    gridVerticalColor: TablixObjects.PropGridVerticalColor.getValue<string>(objects),
-                    gridVerticalWeight: TablixObjects.PropGridVerticalWeight.getValue<number>(objects),
-                    gridHorizontal: TablixObjects.PropGridHorizontalMatrix.getValue<boolean>(objects),
-                    gridHorizontalColor: TablixObjects.PropGridHorizontalColor.getValue<string>(objects),
-                    gridHorizontalWeight: TablixObjects.PropGridHorizontalWeight.getValue<number>(objects),
-                    outlineColor: TablixObjects.PropGridOutlineColor.getValue<string>(objects),
-                    outlineWeight: TablixObjects.PropGridOutlineWeight.getValue<number>(objects),
-                    rowPadding: TablixObjects.PropGridRowPadding.getValue<number>(objects, false),
-                };
+            formattingProperties.grid = {
+                gridVertical: TablixObjects.PropGridVertical.getValue<boolean>(objects),
+                gridVerticalColor: TablixObjects.PropGridVerticalColor.getValue<string>(objects),
+                gridVerticalWeight: TablixObjects.PropGridVerticalWeight.getValue<number>(objects),
+                gridHorizontal: TablixObjects.PropGridHorizontalMatrix.getValue<boolean>(objects),
+                gridHorizontalColor: TablixObjects.PropGridHorizontalColor.getValue<string>(objects),
+                gridHorizontalWeight: TablixObjects.PropGridHorizontalWeight.getValue<number>(objects),
+                outlineColor: TablixObjects.PropGridOutlineColor.getValue<string>(objects),
+                outlineWeight: TablixObjects.PropGridOutlineWeight.getValue<number>(objects),
+                rowPadding: TablixObjects.PropGridRowPadding.getValue<number>(objects),
+                imageHeight: TablixObjects.PropGridImageHeight.getValue<number>(objects),
+            };
 
-                formattingProperties.columnHeaders = {
-                    fontColor: TablixObjects.PropColumnsFontColor.getValue<string>(objects, false),
-                    backColor: TablixObjects.PropColumnsBackColor.getValue<string>(objects, false),
-                    outline: TablixObjects.PropColumnsOutline.getValue<string>(objects),
-                };
+            formattingProperties.columnHeaders = {
+                fontColor: TablixObjects.PropColumnsFontColor.getValue<string>(objects),
+                backColor: TablixObjects.PropColumnsBackColor.getValue<string>(objects),
+                outline: TablixObjects.PropColumnsOutline.getValue<string>(objects),
+            };
 
-                formattingProperties.rowHeaders = {
-                    fontColor: TablixObjects.PropRowsFontColor.getValue<string>(objects, false),
-                    backColor: TablixObjects.PropRowsBackColor.getValue<string>(objects, false),
-                    outline: TablixObjects.PropRowsOutline.getValue<string>(objects),
-                };
+            formattingProperties.rowHeaders = {
+                fontColor: TablixObjects.PropRowsFontColor.getValue<string>(objects),
+                backColor: TablixObjects.PropRowsBackColor.getValue<string>(objects),
+                outline: TablixObjects.PropRowsOutline.getValue<string>(objects),
+            };
 
-                formattingProperties.values = {
-                    fontColorPrimary: TablixObjects.PropValuesFontColorPrimary.getValue<string>(objects, false),
-                    backColorPrimary: TablixObjects.PropValuesBackColorPrimary.getValue<string>(objects, false),
-                    fontColorSecondary: TablixObjects.PropValuesFontColorSecondary.getValue<string>(objects, false),
-                    backColorSecondary: TablixObjects.PropValuesBackColorSecondary.getValue<string>(objects, false),
-                    outline: TablixObjects.PropValuesOutline.getValue<string>(objects),
-                };
+            formattingProperties.values = {
+                fontColorPrimary: TablixObjects.PropValuesFontColorPrimary.getValue<string>(objects),
+                backColorPrimary: TablixObjects.PropValuesBackColorPrimary.getValue<string>(objects),
+                fontColorSecondary: TablixObjects.PropValuesFontColorSecondary.getValue<string>(objects),
+                backColorSecondary: TablixObjects.PropValuesBackColorSecondary.getValue<string>(objects),
+                outline: TablixObjects.PropValuesOutline.getValue<string>(objects),
+            };
 
-                formattingProperties.subtotals = {
-                    fontColor: TablixObjects.PropSubTotalsFontColor.getValue<string>(objects, false),
-                    backColor: TablixObjects.PropSubTotalsBackColor.getValue<string>(objects, false),
-                    outline: TablixObjects.PropSubTotalsOutline.getValue<string>(objects),
-                };
-            }
+            formattingProperties.subtotals = {
+                fontColor: TablixObjects.PropSubTotalsFontColor.getValue<string>(objects),
+                backColor: TablixObjects.PropSubTotalsBackColor.getValue<string>(objects),
+                outline: TablixObjects.PropSubTotalsOutline.getValue<string>(objects),
+            };
 
             return formattingProperties;
         }
@@ -556,8 +547,8 @@ module powerbi.visuals.controls.internal {
                         totals: DataViewObjectDefinitions.encodePropertyValue(false, { bool: true }),
                     }
                 }],
-                };
-            }
+            };
+        }
 
         export function getTextSizeInPx(textSize: number): string {
             return jsCommon.PixelConverter.fromPoint(textSize);
@@ -634,6 +625,12 @@ module powerbi.visuals.controls.internal {
         const SortIconContainerClassName: string = "tablixSortIconContainer";
         export const CellPaddingLeft: number = 10;
         export const CellPaddingRight: number = 5;
+        export const CellPaddingLeftMatrixTotal: number = 5;
+        export const FontFamilyCell: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
+        export const FontFamilyHeader: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
+        export const FontFamilyTotal: string = "'Segoe UI Bold','wf_segoe-ui_bold', helvetica, arial, sans-serif";
+        export const FontColorCells: string = "#333";
+        export const FontColorHeaders: string = "#666";
 
         export interface Surround<T> {
             top?: T;
@@ -647,23 +644,20 @@ module powerbi.visuals.controls.internal {
              * Weight in pixels. 0 to remove border. Undefined to fall back to CSS
             */
             public weight: number;
-            public style: string;
             public color: string;
 
-            constructor(weight?: number, color?: string, style?: string) {
-                this.applyParams(true, weight, color, style);
+            constructor(weight?: number, color?: string) {
+                this.applyParams(true, weight, color);
             }
 
-            public applyParams(shown: boolean, weight: number, color?: string, style?: string) {
+            public applyParams(shown: boolean, weight: number, color?: string) {
                 if (shown) {
-                    this.weight = weight;
-                    this.color = color;
-                    this.style = style ? style : 'solid';
+                    this.weight = weight == null ? 0 : weight;
+                    this.color = color == null ? 'black' : color;
                 }
                 else {
                     this.weight = 0;
-                    this.color = undefined;
-                    this.style = undefined;
+                    this.color = 'black';
                 }
             }
 
@@ -674,8 +668,8 @@ module powerbi.visuals.controls.internal {
                     css.push(this.weight + UnitOfMeasurement);
                     if (this.color)
                         css.push(this.color);
-                    if (this.style)
-                        css.push(this.style);
+
+                    css.push('solid');
                 }
 
                 return css.join(' ');
@@ -687,14 +681,21 @@ module powerbi.visuals.controls.internal {
          */
         export class CellStyle {
             /**
-             * Font color of the cell, undefined to fall back to CSS
+             * Font family of the cell. If undefined, it will be cleared to fall back to table font family
+            */
+            public fontFamily: string;
+            /**
+             * Font color of the cell. If undefined, it will be cleared to fall back to table font color
             */
             public fontColor: string;
             /**
-             * Background color of the cell, undefined to fall back to CSS
+             * Background color of the cell. If undefined, it will be cleared to fall back to default (transparent)
             */
             public backColor: string;
-
+            /**
+             * Indicates whether the Cell contains an Image or not. Affecting cell height.
+            */
+            public hasImage: boolean;
             /**
             * Settings for Borders
             */
@@ -707,7 +708,15 @@ module powerbi.visuals.controls.internal {
 
             constructor() {
                 this.borders = {};
-                this.paddings = {};
+                this.paddings = { top: 0, left: TablixUtils.CellPaddingLeft, bottom: 0, right: TablixUtils.CellPaddingRight };
+
+                // Initializing values with empty string would cause CSS attributes to not be set if they are undefined
+                this.fontFamily = "";
+
+                this.fontColor = "";
+                this.backColor = "";
+
+                this.hasImage = false;
             }
 
             /**
@@ -718,18 +727,41 @@ module powerbi.visuals.controls.internal {
                 let div = cell.extension.contentHost;
                 let style = div.style;
 
-                style.color = this.fontColor ? this.fontColor : "";
-                style.backgroundColor = this.backColor ? this.backColor : "";
+                style.fontFamily = this.fontFamily;
 
-                style.borderTop = this.borders.top ? this.borders.top.getCSS() : "";
-                style.borderRight = this.borders.right ? this.borders.right.getCSS() : "";
-                style.borderBottom = this.borders.bottom ? this.borders.bottom.getCSS() : "";
-                style.borderLeft = this.borders.left ? this.borders.left.getCSS() : "";
+                style.color = this.fontColor;
+                style.backgroundColor = this.backColor;
 
-                style.paddingTop = _.isNumber(this.paddings.top) ? (this.paddings.top + UnitOfMeasurement) : "";
-                style.paddingRight = _.isNumber(this.paddings.right) ? (this.paddings.right + UnitOfMeasurement) : "";
-                style.paddingBottom = _.isNumber(this.paddings.bottom) ? (this.paddings.bottom + UnitOfMeasurement) : "";
-                style.paddingLeft = _.isNumber(this.paddings.left) ? (this.paddings.left + UnitOfMeasurement) : "";
+                /**
+                 * We are setting the borders as inset shadow
+                 * This way we can control how intersecting borders would look like when they have different colors
+                 */
+                let borderShadow: string[] = [];
+
+                style.border = "none";
+
+                if (this.borders.left) {
+                    borderShadow.push("inset " + this.borders.left.weight + UnitOfMeasurement + " 0 0 0 " + this.borders.left.color);
+                }
+
+                if (this.borders.right) {
+                    borderShadow.push("inset -" + this.borders.right.weight + UnitOfMeasurement + " 0 0 0 " + this.borders.right.color);
+                }
+
+                if (this.borders.top) {
+                    borderShadow.push("inset 0 " + this.borders.top.weight + UnitOfMeasurement + " 0 0 " + this.borders.top.color);
+                }
+
+                if (this.borders.bottom) {
+                    borderShadow.push("inset 0 -" + this.borders.bottom.weight + UnitOfMeasurement + " 0 0 " + this.borders.bottom.color);
+                }
+
+                style.boxShadow = borderShadow.join(', ');
+
+                style.paddingTop = ((this.paddings.top == null ? 0 : this.paddings.top) + (this.borders.top == null ? 0 : this.borders.top.weight)) + UnitOfMeasurement;
+                style.paddingRight = ((this.paddings.right == null ? CellPaddingRight : this.paddings.right) + (this.borders.right == null ? 0 : this.borders.right.weight)) + UnitOfMeasurement;
+                style.paddingBottom = ((this.paddings.bottom == null ? 0 : this.paddings.bottom) + (this.borders.bottom == null ? 0 : this.borders.bottom.weight)) + UnitOfMeasurement;
+                style.paddingLeft = ((this.paddings.left == null ? CellPaddingLeft : this.paddings.left) + (this.borders.left == null ? 0 : this.borders.left.weight)) + UnitOfMeasurement;
             }
 
             public getExtraTop(): number {
@@ -753,6 +785,28 @@ module powerbi.visuals.controls.internal {
 
                 return extra;
             }
+
+            public getExtraRight(): number {
+                let extra = 0;
+
+                if (this.paddings.right)
+                    extra += this.paddings.right;
+                if (this.borders.right)
+                    extra += this.borders.right.weight;
+
+                return extra;
+            }
+
+            public getExtraLeft(): number {
+                let extra = 0;
+
+                if (this.paddings.left)
+                    extra += this.paddings.left;
+                if (this.borders.left)
+                    extra += this.borders.left.weight;
+
+                return extra;
+            }
         }
 
         /**
@@ -773,7 +827,7 @@ module powerbi.visuals.controls.internal {
             constructor() {
                 this.row = new DimensionPosition();
                 this.column = new DimensionPosition();
-        }
+            }
 
             public isMatch(position: CellPosition) {
                 return this.column.index === position.column.index &&
@@ -798,7 +852,7 @@ module powerbi.visuals.controls.internal {
                 this.backColorCustomFormatting = undefined;
 
                 this.position = new TablixUtils.CellPosition();
-        }
+            }
 
             public get textContent(): string {
                 if (this.dataPoint == null)
@@ -820,14 +874,18 @@ module powerbi.visuals.controls.internal {
                     return this.columnMetadata.type.numeric && !this.columnMetadata.kpi;
             };
 
-            public get isValidUrl(): boolean {
+            public get isUrl(): boolean {
                 if (this.columnMetadata)
-                return converterHelper.isWebUrlColumn(this.columnMetadata) && jsCommon.UrlUtils.isValidUrl(this.textContent);
+                    return converterHelper.isWebUrlColumn(this.columnMetadata);
             };
 
-            public get isValidImage(): boolean {
+            public get isImage(): boolean {
                 if (this.columnMetadata)
-                return converterHelper.isImageUrlColumn(this.columnMetadata) && jsCommon.UrlUtils.isValidImageUrl(this.textContent);
+                    return converterHelper.isImageUrlColumn(this.columnMetadata);
+            }
+
+            public get isValidUrl(): boolean {
+                return jsCommon.UrlUtils.isValidImageUrl(this.textContent);
             };
 
             public isMatch(item: TablixVisualCell) {
@@ -866,6 +924,7 @@ module powerbi.visuals.controls.internal {
         export function clearCellTextAndTooltip(cell: controls.ITablixCell): void {
             cell.extension.contentHost.textContent = '';
             cell.extension.contentHost.removeAttribute('title');
+            cell.contentHeight = cell.contentWidth = 0;
             HTMLElementUtils.clearChildren(cell.extension.contentHost);
         }
 
@@ -887,9 +946,10 @@ module powerbi.visuals.controls.internal {
             if (element.childElementCount === 0) {
                 atag = document.createElement('a');
                 element.appendChild(atag);
-            } else {
+            }
+            else {
                 atag = <HTMLAnchorElement>element.children[0];
-        }
+            }
 
             atag.href = value;
             atag.target = '_blank';
@@ -898,30 +958,25 @@ module powerbi.visuals.controls.internal {
             if (urlIcon === true) {
                 atag.className = CssClassValueURLIcon;
                 element.className = CssClassValueURLIconContainer;
-
             }
             else {
                 atag.innerText = value;
             }
         }
 
-        export function appendImgTagToBodyCell(value: string, cell: controls.ITablixCell): void {
+        export function appendImgTagToBodyCell(value: string, cell: controls.ITablixCell, imageHeight: number): void {
             let element = <HTMLElement>cell.extension.contentHost;
-            let contentElement = element.parentElement;
-            let imgTag: HTMLImageElement;
-            if (element.childElementCount === 0) {
-                imgTag = document.createElement('img');
-                element.appendChild(imgTag);
-            } else {
-                imgTag = <HTMLImageElement>element.children[0];
-            }
-            // set padding for contentElement
-            contentElement.style.paddingBottom = '3px';
-            contentElement.style.paddingTop = '3px';
+            let imgContainer: HTMLDivElement = TablixUtils.createDiv();
+            let imgTag: HTMLImageElement = document.createElement('img');
+
+            imgContainer.style.height = imageHeight + "px";
+            imgContainer.style.width = "100%";
+            imgContainer.style.textAlign = "center";
             imgTag.src = value;
-            imgTag.style.maxHeight = '75px';
-            imgTag.style.maxWidth = '100px';
-            imgTag.style.height = '100%';
+            imgTag.style.maxHeight = "100%";
+            imgTag.style.maxWidth = "100%";
+            imgContainer.appendChild(imgTag);
+            element.appendChild(imgContainer);
         }
 
         export function createKpiDom(kpi: DataViewKpiColumnMetadata, kpiValue: string): JQuery {
@@ -933,14 +988,14 @@ module powerbi.visuals.controls.internal {
                 .css({
                     'display': 'inline-block',
                     'vertical-align': 'bottom',
-                    'margin': '0 1px 1px 0',
+                    'margin': '0',
                 });
         }
 
         export function isValidStatusGraphic(kpi: DataViewKpiColumnMetadata, kpiValue: string): boolean {
             if (!kpi || kpiValue === undefined) {
                 return false;
-        }
+            }
 
             return !!KpiUtil.getClassForKpi(kpi, kpiValue);
         }

@@ -112,6 +112,23 @@ module powerbitests.customVisuals {
                 Helpers.assertColorsMatch(itemColor, hexCustomColor);
             });
 
+            it('Fill color should be false when category labels = on && fill point = off', () => {
+                dataViews[0].metadata.objects = {
+                    fillPoint: { show: false },
+                    categoryLabels: {
+                        show: true
+                    }
+                };
+
+                visualBuilder.update(dataViews);
+
+                let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
+                $(selector).each((index, elem) => {
+                    let opacity = $(elem).css('fill-opacity');
+                    expect(opacity).toBe("0");
+                });
+            });
+
             describe("Legend", () => {
                 let labelColor: string = powerbi.visuals.dataLabelUtils.defaultLabelColor;
                 let labelFontSizeInPoints = 10;  // 10 (in points) ==> 13.333333 (in pixels)
@@ -133,21 +150,21 @@ module powerbitests.customVisuals {
 
                 it("Should add legend", () => {
                     visualBuilder.update(dataViews);
-                    
+
                     let legend: JQuery = $(".enhancedScatterChart .legend");
                     expect(legend).toBeInDOM();
                 });
 
                 it("Should add right amount of legend items", () => {
                     visualBuilder.update(dataViews);
-                    
+
                     let legendItems: JQuery = $(".enhancedScatterChart #legendGroup .legendItem");
                     expect(legendItems.length).toEqual(2);
                 });
 
                 it("Should add correct legend title & tooltip", () => {
                     visualBuilder.update(dataViews);
-                    
+
                     let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
 

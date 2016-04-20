@@ -26,7 +26,8 @@
 
 module powerbi.extensibility {
     import ISelectionId = visuals.ISelectionId;
-    
+    import IPoint = visuals.IPoint;
+
     export interface SelectionManagerOptions{
         hostServices: IVisualHostServices;
     };
@@ -43,7 +44,7 @@ module powerbi.extensibility {
         }
         
         public select(selectionId: ISelectionId, multiSelect: boolean = false): IPromise<ISelectionId[]> {
-            let defered: IDeferred<data.Selector[]> = this.promiseFactory.defer();
+            let deferred: IDeferred<data.Selector[]> = this.promiseFactory.defer();
             
             if (this.hostServices.shouldRetainSelection()) {
                 this.sendSelectionToHost([selectionId]);
@@ -53,8 +54,17 @@ module powerbi.extensibility {
                 this.sendSelectionToHost(this.selectedIds);
             }
 
-            defered.resolve(this.selectedIds);
-            return defered.promise;
+            deferred.resolve(this.selectedIds);
+            return deferred.promise;
+        }
+
+        public showContextMenu(selectionId: ISelectionId, position: IPoint): IPromise<{}> {
+            let deferred: IDeferred<{}> = this.promiseFactory.defer();
+
+            this.sendContextMenuToHost(selectionId, position);
+
+            deferred.resolve(null);
+            return deferred.promise;
         }
 
         public hasSelection(): boolean {
@@ -62,11 +72,11 @@ module powerbi.extensibility {
         }
 
         public clear(): IPromise<{}> {
-            let defered = this.promiseFactory.defer();
+            let deferred = this.promiseFactory.defer();
             this.selectedIds = [];
             this.sendSelectionToHost([]);
-            defered.resolve(null);
-            return defered.promise;
+            deferred.resolve(null);
+            return deferred.promise;
         }
 
         public getSelectionIds(): ISelectionId[] {
@@ -80,14 +90,33 @@ module powerbi.extensibility {
                     .map((value: ISelectionId) => value.getSelector())
             };
 
-            let data2: SelectorsByColumn[] = ids
-                .filter((value: ISelectionId) => value.getSelectorsByColumn() && value.hasIdentity())
-                .map((value: ISelectionId) => value.getSelectorsByColumn());
+            let data2 = this.getSelectorsByColumn(ids);
 
-            if (data2 && data2.length > 0)
+            if (!_.isEmpty(data2))
                 selectArgs.data2 = data2;
 
             this.hostServices.onSelect(selectArgs);
+        }
+
+        private sendContextMenuToHost(selectionId: ISelectionId, position: IPoint): void {
+            let selectors = this.getSelectorsByColumn([selectionId]);
+            if (_.isEmpty(selectors))
+                return;
+
+            let args: ContextMenuArgs = {
+                data: selectors,
+                position: position
+            };
+
+            this.hostServices.onContextMenu(args);
+        }
+
+        private getSelectorsByColumn(selectionIds: ISelectionId[]): SelectorsByColumn[] {
+            return _(selectionIds)
+                .filter(value => value.hasIdentity)
+                .map(value => value.getSelectorsByColumn())
+                .compact()
+                .value();
         }
 
         private selectInternal(selectionId: ISelectionId, multiSelect: boolean) {

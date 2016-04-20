@@ -37,15 +37,16 @@ module powerbitests.customVisuals {
         constructor(
             height: number = 200,
             width: number = 300,
-            isMinervaVisualPlugin: boolean = false) {
+            isMinervaVisualPlugin: boolean = false,
+            element: JQuery = powerbitests.helpers.testDom(height.toString(), width.toString())) {
 
-            this.element = powerbitests.helpers.testDom(height.toString(), width.toString());
+            this.element = element;
             this.host = mocks.createVisualHostServices();
             this.style = powerbi.visuals.visualStyles.create();
             this.isMinervaVisualPlugin = isMinervaVisualPlugin;
             this.viewport = {
-                height: this.element.height(),
-                width: this.element.width()
+                height: height,
+                width: width
             };
         }
 

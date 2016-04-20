@@ -1328,6 +1328,12 @@ body {
 .powervisuals-glyph.caret-down::before {
   content: '\E116';
 }
+.powervisuals-glyph.chevron-up::before {
+  content: '\E119';
+}
+.powervisuals-glyph.chevron-down::before {
+  content: '\E118';
+}
 .powervisuals-glyph.circle::before {
   content: '\E700';
 }
@@ -2040,9 +2046,6 @@ body {
   fill: none;
   shape-rendering: crispEdges;
 }
-.visual .cartesianChart .axisGraphicsContext .trend-line {
-  stroke-width: 2px;
-}
 .visual .cartesianChart .brush .background {
   fill-opacity: 0.5;
   fill: #EAEAEA;
@@ -2052,6 +2055,10 @@ body {
 .visual .cartesianChart .brush .extent {
   fill-opacity: 0.2;
   cursor: default !important;
+}
+.visual .cartesianChart .trend-line {
+  stroke-width: 2px;
+  pointer-events: none;
 }
 .visual .animatedNumber .mainText,
 .visual .card .mainText {
@@ -2120,10 +2127,6 @@ body {
 .visual .lineChart .drag-handle {
   fill: #666666;
   opacity: 1;
-}
-.visual .trend-line {
-  stroke-width: 2px;
-  pointer-events: none;
 }
 .visual .funnelChart line {
   shape-rendering: crispEdges;
@@ -2273,19 +2276,16 @@ body {
 }
 .visual .tablixContainer {
   overflow: hidden;
-  /** Preserve previous dashboard tile font-size */
-  font-size: 11px;
 }
 .visual .tablixContainer .tablixDiv {
   white-space: nowrap;
   overflow: hidden;
-  line-height: normal;
   text-overflow: ellipsis;
+  line-height: normal;
   box-sizing: border-box;
 }
 .visual .tablixContainer .tablixCanvas {
   position: relative;
-  text-align: left;
 }
 .visual .tablixContainer .tablixCanvas .unselectable {
   -webkit-user-select: none;
@@ -2298,18 +2298,13 @@ body {
   line-height: normal;
   font-weight: normal;
   table-layout: fixed;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  color: #333333;
 }
 .visual .tablixContainer .tablixCanvas tr {
   line-height: normal;
 }
 .visual .tablixContainer .tablixCanvas td {
   line-height: normal;
-  box-sizing: border-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   vertical-align: top;
   position: relative;
 }
@@ -2333,17 +2328,6 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  padding: 0px 5px 0px 10px;
-}
-.visual .tablixContainer .tablixCanvas .tablixHeader {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  color: #666666;
-  text-align: left;
-}
-.visual .tablixContainer .tablixCanvas .tablixColumnHeaderLeaf {
-  border-bottom-width: 1pt;
-  border-bottom-style: solid;
-  border-bottom-color: #CCCCCC;
 }
 .visual .tablixContainer .tablixCanvas .tablixColumnHeaderLeaf .tablixSortIconContainer {
   float: right;
@@ -2360,22 +2344,6 @@ body {
 .visual .tablixContainer .tablixCanvas .tablixColumnHeaderLeaf > div:hover i.future {
   display: inline-block;
 }
-.visual .tablixContainer .tablixCanvas .matrixRowHeaderLeaf {
-  border-right-width: 1px;
-  border-right-color: #CCCCCC;
-  border-right-style: solid;
-}
-.visual .tablixContainer .tablixCanvas .matrixRowHeaderSubTotal {
-  padding-left: 0px;
-}
-.visual .tablixContainer .tablixCanvas .tableBodyCell {
-  border-bottom-width: 1pt;
-  border-bottom-style: solid;
-  border-bottom-color: #E8E8E8;
-}
-.visual .tablixContainer .tablixCanvas .tableBodyCellBottom {
-  border: 0;
-}
 .visual .tablixContainer .tablixCanvas .tablixValueNumeric {
   text-align: right;
 }
@@ -2385,14 +2353,6 @@ body {
 .visual .tablixContainer .tablixCanvas .tablixValueUrlIcon .tablixUrlIconGlyph {
   text-decoration: none;
   color: inherit;
-}
-.visual .tablixContainer .tablixCanvas .tablixValueTotal {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-}
-.visual .tablixContainer .tablixCanvas .tableFooterCell {
-  border-top-width: 1pt;
-  border-top-style: solid;
-  border-top-color: #CCCCCC;
 }
 .visual .tablixContainer .tablixCanvas .scroll-bar-div {
   background: #F1F1F1;
@@ -2419,7 +2379,6 @@ body {
 }
 .visual .tablixContainer .tablixDashboard {
   position: relative;
-  text-align: left;
 }
 .visual .tablixContainer .tablixDashboard .unselectable {
   -webkit-user-select: none;
@@ -2431,18 +2390,14 @@ body {
 .visual .tablixContainer .tablixDashboard table {
   line-height: normal;
   font-weight: normal;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  color: #333333;
+  table-layout: fixed;
 }
 .visual .tablixContainer .tablixDashboard tr {
   line-height: normal;
 }
 .visual .tablixContainer .tablixDashboard td {
   line-height: normal;
-  box-sizing: border-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   vertical-align: top;
   position: relative;
 }
@@ -2456,6 +2411,7 @@ body {
   overflow: hidden;
   position: absolute;
   left: 0;
+  background-color: white;
 }
 .visual .tablixContainer .tablixDashboard .tablixCellContentElement {
   position: relative;
@@ -2466,17 +2422,6 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  padding: 0px 5px 0px 10px;
-}
-.visual .tablixContainer .tablixDashboard .tablixHeader {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  color: #666666;
-  text-align: left;
-}
-.visual .tablixContainer .tablixDashboard .tablixColumnHeaderLeaf {
-  border-bottom-width: 1pt;
-  border-bottom-style: solid;
-  border-bottom-color: #CCCCCC;
 }
 .visual .tablixContainer .tablixDashboard .tablixColumnHeaderLeaf .tablixSortIconContainer {
   float: right;
@@ -2487,22 +2432,6 @@ body {
 .visual .tablixContainer .tablixDashboard .tablixColumnHeaderLeaf i.sorted {
   display: inline-block;
 }
-.visual .tablixContainer .tablixDashboard .matrixRowHeaderLeaf {
-  border-right-width: 1px;
-  border-right-color: #CCCCCC;
-  border-right-style: solid;
-}
-.visual .tablixContainer .tablixDashboard .matrixRowHeaderSubTotal {
-  padding-left: 0px;
-}
-.visual .tablixContainer .tablixDashboard .tableBodyCell {
-  border-bottom-width: 1pt;
-  border-bottom-style: solid;
-  border-bottom-color: #E8E8E8;
-}
-.visual .tablixContainer .tablixDashboard .tableBodyCellBottom {
-  border: 0;
-}
 .visual .tablixContainer .tablixDashboard .tablixValueNumeric {
   text-align: right;
 }
@@ -2512,15 +2441,6 @@ body {
 .visual .tablixContainer .tablixDashboard .tablixValueUrlIcon .tablixUrlIconGlyph {
   text-decoration: none;
   color: inherit;
-}
-.visual .tablixContainer .tablixDashboard .tablixValueTotal {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-}
-.visual .tablixContainer .tablixDashboard .tableFooterCell {
-  border-top-width: 1pt;
-  border-top-style: solid;
-  border-top-color: #CCCCCC;
-  background-color: white;
 }
 .visual .imageBackground {
   background-size: contain;
@@ -2638,8 +2558,6 @@ body {
 }
 .visual .multiRowCard .card {
   box-sizing: border-box;
-  border-left: 3px solid;
-  border-left-color: #A6A6A6;
   color: #767676;
   padding-left: 10px;
   position: relative;

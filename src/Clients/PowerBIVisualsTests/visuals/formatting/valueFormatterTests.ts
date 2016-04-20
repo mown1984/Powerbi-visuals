@@ -626,5 +626,12 @@ module powerbitests {
             expect(displayUnits).toBeDefined();
             expect(displayUnits.length).toBeGreaterThan(0);
         });
+
+        it("DisplayUnitSystem doesn't null ref when given non-number values", () => {
+            let spy = spyOn(debug, "assert");
+            let displayUnitSystem = new powerbi.DisplayUnitSystem();
+            expect(displayUnitSystem.format(<any>"cat", "0 %;-0 %;0 %")).toEqual("cat");
+            expect(spy).toHaveBeenCalledWith(false, 'value must be a number');
+        });
     });
 }

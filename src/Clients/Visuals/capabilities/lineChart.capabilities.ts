@@ -130,6 +130,11 @@ module powerbi.visuals {
                         description: data.createDisplayNameGetter('Visual_Trend_Line_Combine_Series_Description'),
                         type: { bool: true }
                     },
+                    useHighlightValues: {
+                        displayName: data.createDisplayNameGetter('Visual_Trend_Line_UseHighlightValues'),
+                        description: data.createDisplayNameGetter('Visual_Trend_Line_UseHighlightValues_Description'),
+                        type: { bool: true }
+                    },
                 }
             },
             categoryAxis: {

@@ -29,6 +29,7 @@ module powerbi.visuals {
         dataRoles: [{
             name: 'Values',
             kind: VisualDataRoleKind.GroupingOrMeasure,
+            displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
         }],
         objects: {
             general: {
@@ -101,6 +102,11 @@ module powerbi.visuals {
                     rowPadding: {
                         displayName: data.createDisplayNameGetter('Visual_RowPadding'),
                         description: data.createDisplayNameGetter('Visual_RowPadding_Desc'),
+                        type: { numeric: true }
+                    },
+                    imageHeight: {
+                        displayName: data.createDisplayNameGetter('Visual_Tablix_ImageHeight'),
+                        description: data.createDisplayNameGetter('Visual_Tablix_ImageHeight_Desc'),
                         type: { numeric: true }
                     },
                 }

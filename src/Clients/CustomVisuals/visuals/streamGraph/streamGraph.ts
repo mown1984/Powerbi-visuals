@@ -27,24 +27,25 @@
 module powerbi.visuals.samples {
 
     import ValueFormatter = powerbi.visuals.valueFormatter;
-    import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
 
     export interface StreamData {
         dataPoints: StreamDataPoint[][];
+        highlightedDataPoints?: StreamDataPoint[][];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
         categoryFormatter: IValueFormatter;
         streamGraphSettings: StreamGraphSettings;
+        categoriesText: string[];
     }
 
-    export interface StreamDataPoint {
+    export interface StreamDataPoint extends SelectableDataPoint {
         x: number;
         y: number;
         y0?: number;
         tooltipInfo?: TooltipDataItem[];
-        identity: SelectionId;
+        highlight?: boolean;
         text: string;
         labelFontSize: string;
     }
@@ -81,6 +82,7 @@ module powerbi.visuals.samples {
     const StreamGraphDefaultColor = "#777";
     const StreamGraphDefaultFontSizeInPoints: number = 8;
     const DefaultDataLabelsOffset: number = 4;
+    const DefaultLabelTickWidth: number = 10;
     const DefaultLegendLabelFillColor: string = '#666666';
     const StreamGraphDefaultFontFamily: string = 'wf_segoe-ui_normal';
     const StreamGraphDefaultFontWeight: string = 'normal';
@@ -110,6 +112,39 @@ module powerbi.visuals.samples {
         },
         dataLabelsSettings: dataLabelUtils.getDefaultPointLabelSettings(),
     };
+
+    export interface StreamGraphBehaviorOptions {
+        selection: D3.Selection;
+        clearCatcher: D3.Selection;
+        interactivityService: IInteractivityService;
+    }
+
+    class StreamGraphWebBehavior implements IInteractiveBehavior {
+        private selection: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private interactivityService: IInteractivityService;
+
+        public bindEvents(options: StreamGraphBehaviorOptions, selectionHandler: ISelectionHandler) {
+            this.selection = options.selection;
+            this.clearCatcher = options.clearCatcher;
+            this.interactivityService = options.interactivityService;
+
+            this.selection.on('click', (d: StreamDataPoint[], i: number) => {
+                selectionHandler.handleSelection(d[0], d3.event.ctrlKey);
+            });
+
+            this.clearCatcher.on('click', () => {
+                selectionHandler.handleClearSelection();
+            });
+        }
+
+        public renderSelection(hasSelection: boolean) {
+            let hasHighlights = this.interactivityService.hasSelection();
+            this.selection.style("fill-opacity", (d: StreamDataPoint[]) => {
+                return ColumnUtil.getFillOpacity(d[0].selected, d[0].highlight, !d[0].highlight && hasSelection, !d[0].selected && hasHighlights);
+            });
+        }
+    }
 
     export class StreamGraph implements IVisual {
         private static VisualClassName = 'streamGraph';
@@ -331,7 +366,8 @@ module powerbi.visuals.samples {
                         },
                     }
                 }
-            }
+            },
+            supportsHighlight: true,
         };
 
         private margin: IMargin = { left: YAxisOnSize, right: 15, bottom: XAxisOnSize, top: 10 };
@@ -343,13 +379,16 @@ module powerbi.visuals.samples {
         private axisGraphicsContext: D3.Selection;
         private xAxis: D3.Selection;
         private yAxis: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private interactivityService: IInteractivityService;
+        private behavior: IInteractiveBehavior;
         private colors: IDataColorPalette;
-        private selectionManager: utility.SelectionManager;
         private dataView: DataView;
         private legend: ILegend;
         private data: StreamData;
+        private hasHighlights: boolean;
 
-        public converter(dataView: DataView, colors: IDataColorPalette): StreamData {
+        public converter(dataView: DataView, colors: IDataColorPalette, interactivityService: IInteractivityService): StreamData {
             if (!dataView || !dataView.categorical || !dataView.categorical.values || !dataView.categorical.categories)
                 return null;
 
@@ -357,6 +396,7 @@ module powerbi.visuals.samples {
                 categories = catDv.categories,
                 values: DataViewValueColumns = catDv.values,
                 dataPoints: StreamDataPoint[][] = [],
+                highlightedDataPoints: StreamDataPoint[][] = [],
                 legendData: LegendData = {
                     dataPoints: [],
                     title: values.source ? values.source.displayName : "",
@@ -368,12 +408,14 @@ module powerbi.visuals.samples {
 
             let category = categories && categories.length > 0 ? categories[0] : null;
             let formatString = StreamGraph.Properties.general.formatString;
+            let hasHighlights: boolean = this.hasHighlights = !!(values.length > 0 && values[0].highlights);
 
             let streamGraphSettings: StreamGraphSettings = this.parseSettings(dataView);
             let fontSizeInPx = PixelConverter.fromPoint(streamGraphSettings.dataLabelsSettings.fontSize);
 
             for (let i = 0; i < values.length; i++) {
-                dataPoints.push([]);
+                if (hasHighlights)
+                    highlightedDataPoints.push([]);
                 let groupName = values[i].source.groupName;
 
                 if (groupName)
@@ -385,7 +427,7 @@ module powerbi.visuals.samples {
                         identity: SelectionId.createWithId(values[i].identity)
                     });
 
-                var tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
+                let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
                     formatString,
                     catDv,
                     category.values[i],
@@ -395,6 +437,10 @@ module powerbi.visuals.samples {
                     i);
 
                 let dataPointsValues = values[i].values;
+                if (dataPointsValues.length === 0)
+                    continue;
+
+                dataPoints.push([]);
                 for (let k = 0; k < dataPointsValues.length; k++) {
                     let id: SelectionId = SelectionIdBuilder
                         .builder()
@@ -410,12 +456,38 @@ module powerbi.visuals.samples {
 
                     dataPoints[i].push({
                         x: k,
-                        y: y,
+                        y: isNaN(y) ? 0 : y,
                         identity: id,
+                        selected: false,
                         tooltipInfo: tooltipInfo,
                         text: groupName,
-                        labelFontSize: fontSizeInPx
+                        labelFontSize: fontSizeInPx,
+                        contentPosition: ContentPositions.MiddleLeft, // 8
                     });
+                    
+                    // Handle highlights
+                    if (hasHighlights) {
+                        let highlightIdentity: SelectionId = SelectionId.createWithHighlight(id);
+                        y = values[i].highlights[k];
+
+                        highlightedDataPoints[i].push({
+                            x: k,
+                            y: y,
+                            identity: highlightIdentity,
+                            selected: false,
+                            tooltipInfo: tooltipInfo,
+                            text: groupName,
+                            labelFontSize: fontSizeInPx,
+                            contentPosition: ContentPositions.MiddleLeft, // 8
+                            highlight: true,
+                        });
+                    }
+                }
+
+                if (interactivityService) {
+                    interactivityService.applySelectionStateToData(dataPoints[i]);
+                    if (hasHighlights)
+                        interactivityService.applySelectionStateToData(highlightedDataPoints[i]);
                 }
             }
 
@@ -431,12 +503,28 @@ module powerbi.visuals.samples {
                 value: category.values
             });
 
+            let categoriesText: string[] = [];
+            let getTextPropertiesFunction = this.getTextPropertiesFunction;
+
+            for (let index = 0; index < category.values.length; index++) {
+                let formattedValue: string;
+                if (category.values[index] != null) {
+                    formattedValue = categoryFormatter.format(category.values[index]);
+                    let textLength = TextMeasurementService.measureSvgTextWidth(getTextPropertiesFunction(formattedValue));
+                    if (textLength > StreamGraph.MaxNumberOfAxisXValues)
+                        StreamGraph.MaxNumberOfAxisXValues = textLength;
+                }
+                categoriesText.push(formattedValue);
+            }
+
             return {
                 dataPoints: dataPoints,
+                highlightedDataPoints: highlightedDataPoints,
                 legendData: legendData,
                 valueFormatter: valueFormatter,
                 categoryFormatter: categoryFormatter,
-                streamGraphSettings: streamGraphSettings
+                streamGraphSettings: streamGraphSettings,
+                categoriesText: categoriesText
             };
         }
 
@@ -480,21 +568,22 @@ module powerbi.visuals.samples {
         public init(options: VisualInitOptions): void {
             let element: JQuery = options.element;
 
-            this.selectionManager = new SelectionManager({ hostServices: options.host });
-
-            this.svg = d3.select(element.get(0))
+            let svg: D3.Selection = this.svg = d3.select(element.get(0))
                 .append('svg')
                 .classed(StreamGraph.VisualClassName, true)
                 .style('position', 'absolute');
 
-            this.axisGraphicsContext = this.svg.append('g').classed(StreamGraphAxisGraphicsContextClassName, true);
+            this.clearCatcher = appendClearCatcher(svg);
+            this.axisGraphicsContext = svg.append('g').classed(StreamGraphAxisGraphicsContextClassName, true);
             this.xAxis = this.axisGraphicsContext.append('g').classed(StreamGraphXAxisClassName, true);
             this.yAxis = this.axisGraphicsContext.append('g').classed(StreamGraphYAxisClassName, true);
-            this.dataPointsContainer = this.svg.append('g').classed(DataPointsContainer, true);
+            this.dataPointsContainer = svg.append('g').classed(DataPointsContainer, true);
 
             this.colors = options.style.colorPalette.dataColors;
-
-            this.legend = createLegend(element, false, null, true);
+            this.behavior = new StreamGraphWebBehavior();
+            let interactivity = options.interactivity;
+            this.interactivityService = createInteractivityService(options.host);
+            this.legend = createLegend(element, interactivity && interactivity.isInteractiveLegend, this.interactivityService, true);
         }
 
         public update(options: VisualUpdateOptions): void {
@@ -510,7 +599,7 @@ module powerbi.visuals.samples {
 
             let duration: number = options.suppressAnimations ? 0 : 250,
                 dataView: DataView = this.dataView = options.dataViews[0],
-                data: StreamData = this.data = this.converter(dataView, this.colors);
+                data: StreamData = this.data = this.converter(dataView, this.colors, this.interactivityService);
 
             if (!data || !data.dataPoints || !data.dataPoints.length) {
                 this.clearData();
@@ -521,22 +610,76 @@ module powerbi.visuals.samples {
             this.renderXAxisLabels();
             this.renderYAxisLabels();
 
-            let width: number = Math.max(0, this.viewport.width);
-            let height: number = Math.max(0, this.viewport.height);
-
             this.svg.attr({
-                'width': width,
-                'height': height
+                'width': this.viewport.width + 'px',
+                'height': this.viewport.height + 'px'
             });
 
-            let stack: D3.Layout.StackLayout = d3.layout.stack();
+            let selection: D3.UpdateSelection;
+            if (this.hasHighlights)
+                selection = this.renderChart(data.highlightedDataPoints, duration, true);
+            else
+                selection = this.renderChart(data.dataPoints, duration);
 
-            if (this.getWiggle(dataView))
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
+                return (tooltipEvent.data[0]).tooltipInfo;
+            });
+
+            let interactivityService = this.interactivityService;
+
+            if (interactivityService) {
+                let behaviorOptions: StreamGraphBehaviorOptions = {
+                    selection: selection,
+                    clearCatcher: this.clearCatcher,
+                    interactivityService: this.interactivityService,
+                };
+                
+                // Merge all points into a single array
+                let dataPointsArray: StreamDataPoint[] = [];
+                for (let i = 0; i < data.dataPoints.length; i++) {
+                    dataPointsArray = dataPointsArray.concat(data.dataPoints[i]);
+                    if (this.hasHighlights)
+                        dataPointsArray = dataPointsArray.concat(data.highlightedDataPoints[i]);
+                }
+
+                interactivityService.bind(dataPointsArray, this.behavior, behaviorOptions);
+            }
+        }
+
+        private getStreamGraphLabelLayout(xScale: D3.Scale.LinearScale, yScale: D3.Scale.LinearScale): ILabelLayout {
+            let dataLabelsSettings = this.data.streamGraphSettings.dataLabelsSettings;
+            let fontSize = PixelConverter.fromPoint(dataLabelsSettings.fontSize);
+
+            return {
+                labelText: (d: StreamDataPoint) => {
+                    return d.text;
+                },
+                labelLayout: {
+                    x: (d: StreamDataPoint) => xScale(d.x),
+                    y: (d: StreamDataPoint) => yScale(d.y0)
+                },
+                filter: (d: StreamDataPoint) => {
+                    return (d != null && !_.isEmpty(d.text));
+                },
+                style: {
+                    'fill': dataLabelsSettings.labelColor,
+                    'font-size': fontSize,
+                },
+            };
+        }
+
+        private renderChart(dataPoints: StreamDataPoint[][], duration: number, isHighlight: boolean = false): D3.UpdateSelection {
+            let stack: D3.Layout.StackLayout = d3.layout.stack();
+            let width: number = this.viewport.width;
+            let height: number = this.viewport.height;
+
+            if (this.getWiggle(this.dataView))
                 stack.offset('wiggle');
 
-            let dataPoints: StreamDataPoint[][] = data.dataPoints;
             let layers: StreamDataPoint[][] = stack(dataPoints);
             let margin: IMargin = this.margin;
+            let hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
+            let hasHighlights: boolean = this.hasHighlights;
 
             let xScale: D3.Scale.LinearScale = d3.scale.linear()
                 .domain([0, dataPoints[0].length - 1])
@@ -563,9 +706,8 @@ module powerbi.visuals.samples {
                 .interpolate('monotone')
                 .x(d => xScale(d.x))
                 .y0(d => yScale(d.y0))
-                .y1(d => yScale(d.y0 + d.y));
-
-            let selectionManager: SelectionManager = this.selectionManager;
+                .y1(d => yScale(d.y0 + d.y))
+                .defined((d: StreamDataPoint) => !isNaN(d.y0) && !isNaN(d.y));
 
             let selection: D3.UpdateSelection = this.dataPointsContainer.selectAll(StreamGraph.Layer.selector)
                 .data(layers);
@@ -576,14 +718,8 @@ module powerbi.visuals.samples {
 
             selection
                 .style("fill", (d, i) => this.colors.getColorByIndex(i).value)
-                .on('click', function (d) {
-                    selectionManager.select(d[0].identity).then(ids=> {
-                        if (ids.length > 0) {
-                            selection.style('opacity', 0.5);
-                            d3.select(this).style('opacity', 1);
-                        } else
-                            selection.style('opacity', 1);
-                    });
+                .style("fill-opacity", (d) => {
+                    return ColumnUtil.getFillOpacity(d[0].selected, d[0].highlight, hasSelection, hasHighlights);
                 })
                 .transition()
                 .duration(duration)
@@ -593,65 +729,66 @@ module powerbi.visuals.samples {
 
             selection.exit().remove();
 
-            if (this.data.streamGraphSettings.dataLabelsSettings.show) {
-                let layout = this.getStreamGraphLabelLayout(xScale, yScale);
+            // Draw data labels only if they are on and there are no highlights or there are highlights and this is the highlighted data labels
+            if (this.data.streamGraphSettings.dataLabelsSettings.show && (!hasHighlights || (hasHighlights && isHighlight))) {
+                let labelsXScale: D3.Scale.LinearScale = d3.scale.linear()
+                    .domain([0, dataPoints[0].length - 1])
+                    .range([0, width - margin.left - margin.right]);
+                let labelsYScale: D3.Scale.LinearScale = d3.scale.linear()
+                    .domain([Math.min(yMin, 0), yMax])
+                    .range([height - margin.bottom - margin.top, 0])
+                    .nice();
+                let layout = this.getStreamGraphLabelLayout(labelsXScale, labelsYScale);
                 
                 // Merge all points into a single array
                 let dataPointsArray: StreamDataPoint[] = [];
-                for (let i = 0; i < dataPoints.length; i++) {
+                for (let i = 0; i < dataPoints.length; i++)
                     dataPointsArray = dataPointsArray.concat(dataPoints[i]);
-                }
+
                 let viewport: IViewport = {
                     height: height - margin.top - margin.bottom,
                     width: width - margin.right - margin.left,
                 };
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPointsArray, this.svg, layout, viewport);
-                let offset = DefaultDataLabelsOffset * this.data.streamGraphSettings.dataLabelsSettings.fontSize;
-                this.svg.select('.labels').attr('transform', SVGUtil.translate(offset, 0));
+                let labels: D3.UpdateSelection = dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPointsArray, this.svg, layout, viewport);
+                if (labels) {
+                    let offset: number = DefaultDataLabelsOffset + margin.left;
+                    labels.attr('transform', (d) => SVGUtil.translate(offset + (d.size.width / 2), margin.top + (d.size.height / 2)));
+                }
             }
             else
                 dataLabelUtils.cleanDataLabels(this.svg);
 
-            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => {
-                return (tooltipEvent.data[0]).tooltipInfo;
-            });
+            // Draw axis only for the non highlighted data
+            if (!isHighlight)
+                this.drawAxis(this.data, xScale, yScale);
 
-            this.drawAxis(data, xScale, yScale);
-        }
-
-        private getStreamGraphLabelLayout(xScale: D3.Scale.LinearScale, yScale: D3.Scale.LinearScale): ILabelLayout {
-            let dataLabelsSettings = this.data.streamGraphSettings.dataLabelsSettings;
-            let fontSize = PixelConverter.fromPoint(dataLabelsSettings.fontSize);
-            let offset = dataLabelsSettings.fontSize * DefaultDataLabelsOffset;
-
-            return {
-                labelText: (d: StreamDataPoint) => {
-                    return d.text;
-                },
-                labelLayout: {
-                    x: (d: StreamDataPoint) => xScale(d.x) - offset,
-                    y: (d: StreamDataPoint) => yScale(d.y0)
-                },
-                filter: (d: StreamDataPoint) => {
-                    return (d != null);
-                },
-                style: {
-                    'fill': dataLabelsSettings.labelColor,
-                    'font-size': fontSize,
-                },
-            };
+            return selection;
         }
 
         private drawAxis(data: StreamData, xScale: D3.Scale.LinearScale, yScale: D3.Scale.LinearScale) {
             let margin: IMargin = this.margin,
                 shiftY: number = this.viewport.height - margin.bottom,
                 shiftX: number = this.viewport.width - margin.left - margin.right,
+                categoriesText = this.data.categoriesText,
                 xAxis: D3.Svg.Axis = d3.svg.axis(),
+                maxNumberOfAxisXValues: number = StreamGraph.MaxNumberOfAxisXValues,
                 getTextPropertiesFunction = this.getTextPropertiesFunction;
+
+            for (let index = 0; index < categoriesText.length; index++) {
+                if (categoriesText[index] != null) {
+                    let str = categoriesText[index].toString();
+                    let textLength = TextMeasurementService.measureSvgTextWidth(getTextPropertiesFunction(str));
+                    if (textLength > maxNumberOfAxisXValues)
+                        maxNumberOfAxisXValues = textLength;
+                }
+            }
 
             xAxis.scale(xScale)
                 .orient("bottom")
-                .tickFormat(((item: any, index: number): any => {
+                .ticks(categoriesText.length)
+                .tickFormat(((index: number): any => {
+                    let item = categoriesText[index];
+
                     if (data.categoryFormatter)
                         item = data.categoryFormatter.format(item);
 
@@ -668,13 +805,15 @@ module powerbi.visuals.samples {
                 .scale(yScale)
                 .orient("left")
                 .tickFormat((item: any): any => {
+                    let tempItem = item;
                     if (data.valueFormatter) {
-                        return data.valueFormatter.format(item);
+                        tempItem = data.valueFormatter.format(tempItem);
                     }
-                    return item;
+                    tempItem = TextMeasurementService.getTailoredTextOrDefault(getTextPropertiesFunction(tempItem.toString()), YAxisOnSize - DefaultLabelTickWidth);
+                    return tempItem;
                 });
 
-            this.setMaxTicks(xAxis, shiftX, StreamGraph.MaxNumberOfAxisXValues);
+            this.setMaxTicks(xAxis, shiftX, Math.max(2, Math.round(shiftX / maxNumberOfAxisXValues)));
             this.setMaxTicks(yAxis, shiftY);
 
             let valueAxisSettings = this.data.streamGraphSettings.valueAxisSettings;
@@ -1009,6 +1148,11 @@ module powerbi.visuals.samples {
             this.xAxis.selectAll("*").remove();
             this.axisGraphicsContext.selectAll(StreamGraph.XAxisLabel.selector).remove();
             this.svg.select('.labels').remove();
+        }
+
+        public onClearSelection(): void {
+            if (this.interactivityService)
+                this.interactivityService.clearSelection();
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {

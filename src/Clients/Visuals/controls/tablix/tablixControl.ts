@@ -113,6 +113,8 @@ module powerbi.visuals.controls {
         private minimumWidth: number;
         private minimumHeight: number;
         private textFontSize: string;
+        private textFontFamily: string;
+        private textFontColor: string;
 
         private options: TablixOptions;
         private isTouchEnabled: boolean;
@@ -148,6 +150,8 @@ module powerbi.visuals.controls {
             this.className = layoutManager.getTablixClassName();
             this.autoSizeWidth = false;
             this.autoSizeHeight = false;
+            this.fontFamily = internal.TablixUtils.FontFamilyCell;
+            this.fontColor = internal.TablixUtils.FontColorCells;
             this.fontSize = options.fontSize;
 
             parentDomElement.className = TablixControl.TablixContainerClassName;
@@ -330,9 +334,31 @@ module powerbi.visuals.controls {
             this.containerElement.style.minHeight = this.minimumHeight + TablixControl.UnitOfMeasurement;
         }
 
+        public get fontSize(): string {
+            return this.textFontSize;
+        }
+
         public set fontSize(value: string) {
             this.textFontSize = !value ? TablixControl.DefaultFontSize : value;
             this.containerElement.style.fontSize = this.textFontSize;
+        }
+
+        public get fontFamily(): string {
+            return this.textFontFamily;
+        }
+
+        public set fontFamily(value: string) {
+            this.textFontFamily = value;
+            this.containerElement.style.fontFamily = value;
+        }
+
+        public get fontColor(): string {
+            return this.textFontColor;
+        }
+
+        public set fontColor(value: string) {
+            this.textFontColor = value;
+            this.containerElement.style.color = value;
         }
 
         public set scrollbarWidth(value: number) {

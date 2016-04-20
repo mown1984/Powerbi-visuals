@@ -99,17 +99,45 @@ module powerbi.data {
             debug.assertValue(sqExpr, 'Failed to convert FieldExprPattern into SQExpr');
             return sqExpr;
         }
+        
+        export function fromColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQAggregationExpr {
+            return aggregate(fromColumn(columnAggr), columnAggr.aggregate);
+        }
+        
+        export function fromColumn(column: FieldExprColumnPattern): SQColumnRefExpr {
+            return columnRef(fromEntity(column), column.name);
+        }
+        
+        export function fromEntity(entityPattern: FieldExprEntityPattern): SQEntityExpr {
+            return entity(entityPattern.schema, entityPattern.entity, entityPattern.entityVar);
+        }
+        
+        export function fromEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQAggregationExpr {
+            return aggregate(fromEntity(entityAggr), entityAggr.aggregate);
+        }
+        
+        export function fromHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQAggregationExpr {
+            return aggregate(fromHierarchyLevel(hierarchyLevelAggr), hierarchyLevelAggr.aggregate);
+        }
+        
+        export function fromHierarchyLevel(hierarchyLevelPattern: FieldExprHierarchyLevelPattern): SQHierarchyLevelExpr {
+            return hierarchyLevel(fromHierarchy(hierarchyLevelPattern), hierarchyLevelPattern.level);
+        }
+        
+        export function fromHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr {
+             return hierarchy(fromEntity(hierarchyPattern), hierarchyPattern.name);
+        }
 
         class FieldExprToSQExprVisitor implements IFieldExprPatternVisitor<SQExpr> {
             public static instance: FieldExprToSQExprVisitor = new FieldExprToSQExprVisitor();
 
             public visitColumn(column: FieldExprColumnPattern): SQColumnRefExpr {
-                return columnRef(this.visitEntity(column), column.name);
+                return fromColumn(column);   
             }
 
             public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQAggregationExpr {
-                return aggregate(this.visitColumn(columnAggr), columnAggr.aggregate);
-            }
+                return fromColumnAggr(columnAggr);
+            } 
 
             public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariationPattern: FieldExprColumnHierarchyLevelVariationPattern): SQPropertyVariationSourceExpr {
                 return propertyVariationSource(
@@ -119,23 +147,23 @@ module powerbi.data {
             }
 
             public visitEntity(entityPattern: FieldExprEntityPattern): SQEntityExpr {
-                return entity(entityPattern.schema, entityPattern.entity, entityPattern.entityVar);
+                return fromEntity(entityPattern);
             }
 
             public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQAggregationExpr {
-                return aggregate(this.visitEntity(entityAggr), entityAggr.aggregate);
+                return fromEntityAggr(entityAggr);   
             }
 
             public visitHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr {
-                return hierarchy(this.visitEntity(hierarchyPattern), hierarchyPattern.name);
+                return fromHierarchy(hierarchyPattern);
             }
 
             public visitHierarchyLevel(level: FieldExprHierarchyLevelPattern): SQHierarchyLevelExpr {
-                return hierarchyLevel(this.visitHierarchy(level), level.level);
+                return fromHierarchyLevel(level);
             }
 
             public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQAggregationExpr {
-                return aggregate(this.visitHierarchyLevel(hierarchyLevelAggr), hierarchyLevelAggr.aggregate);
+                return fromHierarchyLevelAggr(hierarchyLevelAggr);
             }
 
             public visitMeasure(measure: FieldExprMeasurePattern): SQMeasureRefExpr {
@@ -370,7 +398,7 @@ module powerbi.data {
                 return visitHierarchyLevelAggr(fieldExprPattern.hierarchyLevelAggr, visitor);
             if (fieldExprPattern.measure)
                 return visitMeasure(fieldExprPattern.measure, visitor);
-
+                
             debug.assertFail('failed to visit a fieldExprPattern.');
             return;
         }
@@ -447,6 +475,12 @@ module powerbi.data {
                 columnPattern.name);
         }
 
+        export function getAggregate(fieldExpr: FieldExprPattern): QueryAggregateFunction {
+            debug.assertValue(fieldExpr, 'fieldExpr');
+       
+            return visit(fieldExpr, FieldExprPatternAggregateVisitor.instance);
+        }
+
         export function hasFieldExprName(fieldExpr: FieldExprPattern): boolean {
             return (fieldExpr.column ||
                 fieldExpr.columnAggr ||
@@ -491,6 +525,46 @@ module powerbi.data {
 
         export function toFieldExprEntityItemPattern(fieldExpr: FieldExprPattern): FieldExprEntityPattern {
             return FieldExprPattern.visit(fieldExpr, FieldExprToEntityExprPatternBuilder.instance);
+        }
+
+        class FieldExprPatternAggregateVisitor implements IFieldExprPatternVisitor<QueryAggregateFunction> {
+            public static instance: FieldExprPatternAggregateVisitor = new FieldExprPatternAggregateVisitor();
+
+            public visitColumn(column: FieldExprColumnPattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): QueryAggregateFunction {
+                return columnAggr.aggregate;
+            }
+
+            public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitEntity(entity: FieldExprEntityPattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): QueryAggregateFunction {
+                return entityAggr.aggregate;
+            }
+
+            public visitHierarchy(hierarchy: FieldExprHierarchyPattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): QueryAggregateFunction {
+                return hierarchyLevelAggr.aggregate;
+            }
+
+            public visitMeasure(measure: FieldExprMeasurePattern): QueryAggregateFunction {
+                return;
+            }
         }
 
         class FieldExprToEntityExprPatternBuilder implements IFieldExprPatternVisitor<FieldExprEntityItemPattern> {

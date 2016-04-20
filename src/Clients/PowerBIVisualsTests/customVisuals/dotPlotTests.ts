@@ -25,50 +25,60 @@
  */
 
 module powerbitests.customVisuals {
-    import VisualClass = powerbi.visuals.samples.DotPlot;
+	import VisualClass = powerbi.visuals.samples.DotPlot;
 
-    describe("DotPlot", () => {
-        describe('capabilities', () => {
-            it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
-        });
+	describe("DotPlot", () => {
+		describe('capabilities', () => {
+			it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
+		});
 
-        describe("DOM tests", () => {
-            let visualBuilder: DotPlotBuilder;
-            let dataViews: powerbi.DataView[];
+		describe("DOM tests", () => {
+			let visualBuilder: DotPlotBuilder;
+			let dataViews: powerbi.DataView[];
 
-            beforeEach(() => {
-                visualBuilder = new DotPlotBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
-            });
+			beforeEach(() => {
+				visualBuilder = new DotPlotBuilder();
+				dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
+			});
 
-            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+			it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
-            it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    expect(visualBuilder.mainElement.children(".dotplotSelector").children(".dotplotGroup").length)
-                        .toBeGreaterThan(0);
-                    expect(visualBuilder.mainElement.children('.axisGraphicsContext').children(".x.axis").children(".tick").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
-                    done();
-                }, powerbitests.DefaultWaitForRender);
-            });
-        });
-    });
+			it("update", (done) => {
+				visualBuilder.update(dataViews);
+				setTimeout(() => {
+					expect(visualBuilder.mainElement.children(".dotplotSelector").children(".dotplotGroup").length)
+						.toBeGreaterThan(0);
+					expect(visualBuilder.mainElement.children('.axisGraphicsContext').children(".x.axis").children(".tick").length)
+						.toBe(dataViews[0].categorical.categories[0].values.length);
+					visualBuilder.mainElement.children(".labels").children(".data-labels").each((i, x) => {
+						let fill = x.getAttribute("style").replace("fill: ", "").replace(";", "");
+						let hexFill = fill;
+						if (_.startsWith(fill, '#')) {
+							var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fill);
+							hexFill = "rgb(" + parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16) + ")";
+						}
+						expect(hexFill).toBe("rgb(18, 52, 86)");
+						expect(window.getComputedStyle(x).fontSize).toBe("12px");
+					});
+					done();
+				}, powerbitests.DefaultWaitForRender);
+			});
+		});
+	});
 
-    class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
-        }
+	class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
+		constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+			super(height, width, isMinervaVisualPlugin);
+			this.build();
+			this.init();
+		}
 
-        public get mainElement() {
-            return this.element.children('svg');
-        }
+		public get mainElement() {
+			return this.element.children('svg');
+		}
 
-        private build(): void {
-            this.visual = new VisualClass();
-        }
-    }
+		private build(): void {
+			this.visual = new VisualClass();
+		}
+	}
 }

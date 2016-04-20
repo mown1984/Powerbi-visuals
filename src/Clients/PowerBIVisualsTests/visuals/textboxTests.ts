@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -1141,6 +1141,9 @@ module powerbitests {
                 if (present) {
                     let $container = $element.children("div").eq(0);
                     expect($container).toBeDefined();
+                    
+                    // Note: If this class is changed, the corresponding focus handler must be updated
+                    // for PowerBI Desktop in its branch (DataExplorer)
                     expect($container).toHaveClass("textbox");
 
                     expect(setToolbarSpy).toHaveBeenCalled();

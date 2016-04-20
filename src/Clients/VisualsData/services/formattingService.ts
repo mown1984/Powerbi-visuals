@@ -622,6 +622,10 @@ module powerbi {
                         result = precision !== undefined ? value.toPrecision(precision) : value.toString();
                     } else {
                         // Otherwise use exponential
+                        // Assert that value is a number and fall back on returning value if it is not
+                        debug.assert(typeof (value) === "number", "value must be a number");
+                        if (typeof (value) !== "number")
+                            return String(value);
                         result = precision !== undefined ? value.toExponential(precision) : value.toExponential();
                         result = result.replace("e", "E");
                     }
@@ -712,6 +716,10 @@ module powerbi {
                         if (scale !== 1) {
                             value = value * scale;
                         }
+                        // Assert that value is a number and fall back on returning value if it is not
+                        debug.assert(typeof (value) === "number", "value must be a number");
+                        if (typeof (value) !== "number")
+                            return String(value);
                         let s = value.toExponential(precision);
                         let indexOfE = s.indexOf("e");
                         let mantissa = s.substr(0, indexOfE);
@@ -799,6 +807,10 @@ module powerbi {
                 // In IE it returns fixed format no matter what's the number. In FF and Chrome the method returns exponential format for numbers greater than 1E21.
                 // So we need to check for range and convert the to exponential with the max precision.
                 // Then we convert exponential string to fixed by removing the dot and padding with "power" zeros.
+                // Assert that value is a number and fall back on returning value if it is not
+                debug.assert(typeof (value) === "number", "value must be a number");
+                if (typeof (value) !== "number")
+                    return String(value);
                 result = value.toExponential(15);
                 let indexOfE = result.indexOf("e");
                 if (indexOfE > 0) {

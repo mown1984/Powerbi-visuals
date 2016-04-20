@@ -114,7 +114,8 @@ module powerbi {
             return undefined;
         }
 
-        public format(value: number, format: string, decimals?: number, trailingZeros?: boolean ): string {
+        public format(value: number, format: string, decimals?: number, trailingZeros?: boolean): string {
+            debug.assert(typeof (value) === "number", "value must be a number");
             if (this.isFormatSupported(format)) {
                 decimals = this.getNumberOfDecimalsForFormatting(format, decimals);
 

@@ -34,6 +34,7 @@ module powerbitests {
     import lineStyle = powerbi.visuals.lineStyle;
     import PixelConverter = jsCommon.PixelConverter;
     import PrimitiveType = powerbi.PrimitiveType;
+    import TrendLineHelper = powerbi.visuals.TrendLineHelper;
     import ValueType = powerbi.ValueType;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
@@ -177,7 +178,7 @@ module powerbitests {
 
         beforeEach((done) => {
             element = powerbitests.helpers.testDom('500', '500');
-            visualBuilder = new VisualBuilder("comboChart");
+            visualBuilder = new VisualBuilder("lineClusteredColumnComboChart");
 
             done();
         });
@@ -613,9 +614,7 @@ module powerbitests {
         });
 
         it("Ensure scrollbar is shown at smaller viewport dimensions", (done) => {
-            visualBuilder.setSize("100", "100");
-
-            visualBuilder.buildVisualMinerva("lineClusteredColumnComboChart");
+            visualBuilder = new VisualBuilder("lineClusteredColumnComboChart", "100", "100");
 
             visualBuilder.onDataChanged({
                 dataViews: [
@@ -829,8 +828,8 @@ module powerbitests {
         });
 
         it('validate dataPoint enumerateObjectInstances for combochart with column and line', (done) => {
-            let dataView1 = dataViewFactory.buildDataForLabelsFirstType();
-            let dataView2 = dataViewFactory.buildDataForLabelsFirstType();
+            let dataView1 = dataViewFactory.buildDataForLabelsFirstType(undefined, undefined, undefined, undefined, true);
+            let dataView2 = dataViewFactory.buildDataForLabelsFirstType(undefined, undefined, undefined, undefined, true);
 
             visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
 
@@ -1273,7 +1272,7 @@ module powerbitests {
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: true }).withObjects(objects).buildDataViews();
 
                     visualBuilder.onDataChanged({
                         dataViews: dataViews,
@@ -1293,22 +1292,16 @@ module powerbitests {
                 });
 
                 it('separate series', (done) => {
-                    let trendLineColor = '#FF0000';
                     let objects: DataViewObjects = {
                         trend: {
                             show: true,
-                            lineColor: {
-                                solid: {
-                                    color: trendLineColor,
-                                }
-                            },
                             transparency: 20,
                             style: lineStyle.dotted,
                             combineSeries: false,
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: false }).withObjects(objects).buildDataViews();
 
                     visualBuilder.onDataChanged({
                         dataViews: dataViews,
@@ -1316,14 +1309,15 @@ module powerbitests {
 
                     setTimeout(() => {
                         let trendLines = $('.trend-line');
+                        let columnSeries = $('.columnChart .series');
 
                         helpers.verifyTrendLines(trendLines, [
                             {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(columnSeries.eq(0).css('fill')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(columnSeries.eq(1).css('fill')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }
@@ -1351,8 +1345,8 @@ module powerbitests {
                         }
                     };
 
-                    let [layer1, regression1] = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
-                    let [layer2, regression2] = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+                    let [layer1, regression1] = new helpers.TrendLineBuilder({ combineSeries: true, dynamicSeries: true }).withObjects(objects).buildDataViews();
+                    let [layer2, regression2] = new helpers.TrendLineBuilder({ combineSeries: true, dynamicSeries: false }).withObjects(objects).buildDataViews();
                     
                     visualBuilder.onDataChanged({
                         dataViews: [layer1, layer2, regression1, regression2],
@@ -1378,23 +1372,17 @@ module powerbitests {
                 });
 
                 it('separate series', (done) => {
-                    let trendLineColor = '#FF0000';
                     let objects: DataViewObjects = {
                         trend: {
                             show: true,
-                            lineColor: {
-                                solid: {
-                                    color: trendLineColor,
-                                }
-                            },
                             transparency: 20,
                             style: lineStyle.dotted,
                             combineSeries: false,
                         }
                     };
 
-                    let [layer1, regression1] = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
-                    let [layer2, regression2] = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+                    let [layer1, regression1] = new helpers.TrendLineBuilder({ combineSeries: false, dynamicSeries: true }).withObjects(objects).buildDataViews();
+                    let [layer2, regression2] = new helpers.TrendLineBuilder({ combineSeries: false, dynamicSeries: false }).withObjects(objects).buildDataViews();
 
                     visualBuilder.onDataChanged({
                         dataViews: [layer1, layer2, regression1, regression2],
@@ -1402,22 +1390,24 @@ module powerbitests {
 
                     setTimeout(() => {
                         let trendLines = $('.trend-line');
+                        let columnSeries = $('.columnChart .series');
+                        let lines = $('.lineChart .line');
 
                         helpers.verifyTrendLines(trendLines, [
                             {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(columnSeries.eq(0).css('fill')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(columnSeries.eq(1).css('fill')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(lines.eq(0).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(lines.eq(1).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }
@@ -1685,7 +1675,7 @@ module powerbitests {
         }
 
         constructor(pluginName: string, width: string = "400", height: string = "400") {
-            this._visual = powerbi.visuals.visualPluginFactory.create().getPlugin(pluginName).create();
+            this._visual = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin(pluginName).create();
 
             this.setSize(width, height);
         }
@@ -1698,13 +1688,6 @@ module powerbitests {
             this._hostService.setWarnings = this.warningSpy;
 
             this.initVisual();
-        }
-
-        public buildVisualMinerva(pluginName: string) {
-            this._visual =
-            powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin(pluginName).create();
-
-            this.init();
         }
 
         public initVisual() {
@@ -2097,11 +2080,18 @@ module powerbitests {
             dataViewBuilder.objects = objects;
         }
 
-        export function buildDataForLabelsFirstType(color?: any, labelDisplayUnits?: number, labelPrecision?: number, fontSize?: number) {
+        export function buildDataForLabelsFirstType(color?: any, labelDisplayUnits?: number, labelPrecision?: number, fontSize?: number, showAll?: boolean) {
             let dataViewBuilder: DataViewBuilder = new DataViewBuilder();
 
             setLabels(dataViewBuilder, color, labelDisplayUnits, labelPrecision, fontSize);
 
+            if(showAll !== undefined){
+                let showAllProp = powerbi.visuals.columnChartProps.dataPoint.showAllDataPoints;
+                let objectName = showAllProp.objectName;
+                let showAllObjects = dataViewBuilder.objects[objectName] = dataViewBuilder.objects[objectName] || {};
+                showAllObjects[showAllProp.propertyName] = showAll;
+            }
+            
             dataViewBuilder.columns = columns;
             dataViewBuilder.categoriesValues = ["a", "b", "c", "d", "e"];
             dataViewBuilder.values = [[50, 40, 150, 200, 500]];
@@ -2109,11 +2099,18 @@ module powerbitests {
             return build(dataViewBuilder);
         }
 
-        export function buildDataForLabelsSecondType(color?: any, labelDisplayUnits?: number, labelPrecision?: number, fontSize?: number, labelDensity?: number) {
+        export function buildDataForLabelsSecondType(color?: any, labelDisplayUnits?: number, labelPrecision?: number, fontSize?: number, labelDensity?: number, showAll?: boolean) {
             let dataViewBuilder: DataViewBuilder = new DataViewBuilder();
 
             setLabels(dataViewBuilder, color, labelDisplayUnits, labelPrecision, fontSize, labelDensity);
-
+            
+            if(showAll !== undefined){
+                let showAllProp = powerbi.visuals.columnChartProps.dataPoint.showAllDataPoints;
+                let objectName = showAllProp.objectName;
+                let showAllObjects = dataViewBuilder.objects[objectName] = dataViewBuilder.objects[objectName] || {};
+                showAllObjects[showAllProp.propertyName] = showAll;
+            }
+            
             dataViewBuilder.columns = columns;
             dataViewBuilder.categoriesValues = ["a", "b", "c", "d", "e"];
             dataViewBuilder.values = [[200, 100, 300, 250, 400]];

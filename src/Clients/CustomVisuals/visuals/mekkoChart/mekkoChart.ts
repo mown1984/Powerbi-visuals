@@ -2591,6 +2591,7 @@ module powerbi.visuals.samples {
         public static BorderClass: ClassAndSelector = createClassAndSelector("mekkoborder");
 
         private svg: D3.Selection;
+        private unclippedGraphicsContext: D3.Selection;
         private mainGraphicsContext: D3.Selection;
         private labelGraphicsContext: D3.Selection;
         private xAxisProperties: IAxisProperties;
@@ -2629,7 +2630,8 @@ module powerbi.visuals.samples {
 
         public init(options: CartesianVisualInitOptions) {
             this.svg = options.svg;
-            this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
+            this.unclippedGraphicsContext = this.svg.append('g').classed('columnChartUnclippedGraphicsContext', true);
+            this.mainGraphicsContext = this.unclippedGraphicsContext.append('svg').classed('columnChartMainGraphicsContext', true);
             this.labelGraphicsContext = this.svg.append('g').classed(NewDataLabelUtils.labelGraphicsContextClass.class, true);
 
             this.style = options.style;
@@ -3446,6 +3448,7 @@ module powerbi.visuals.samples {
                 width: preferredPlotArea.width,
                 duration: 0,
                 hostService: this.hostService,
+                unclippedGraphicsContext: this.unclippedGraphicsContext,
                 mainGraphicsContext: this.mainGraphicsContext,
                 labelGraphicsContext: this.labelGraphicsContext,
                 margin: this.margin,
@@ -3605,6 +3608,15 @@ module powerbi.visuals.samples {
         public render(suppressAnimations: boolean): MekkoVisualRenderResult {
             var MekkoColumnChartDrawInfo = this.columnChart.drawColumns(!suppressAnimations /* useAnimations */);
             var data: MekkoColumnChartData = this.data;
+
+            let margin = this.margin;
+            let viewport = this.currentViewport;
+            let height = viewport.height - (margin.top + margin.bottom);
+            let width = viewport.width - (margin.left + margin.right);
+
+            this.mainGraphicsContext
+                .attr('height', height)
+                .attr('width', width);
 
             TooltipManager.addTooltip(MekkoColumnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
             var allDataPoints: ColumnChartDataPoint[] = [];

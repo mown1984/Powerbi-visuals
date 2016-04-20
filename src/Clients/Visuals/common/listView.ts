@@ -192,6 +192,19 @@ module powerbi.visuals {
 
             let position0 = Math.max(0, Math.min(scrollPosition, totalRows - visibleRows + 1)),
                 position1 = position0 + visibleRows;
+            
+            if (this.options.scrollEnabled) {
+
+                // Subtract the amount of height of the top row that's hidden when it's partially visible.
+                let topRowHiddenHeight = scrollTop - (scrollPosition * rowHeight);
+                let halfRowHeight = rowHeight * 0.5;
+
+                // If more than half the top row is hidden, we'll need to render an extra item at the bottom
+                if (topRowHiddenHeight > halfRowHeight) {
+                    position1++;  // Add 1 to handle when rows are partially visible (when scrolling)
+                }
+            }
+            
             let rowSelection = visibleGroupContainer.selectAll(".row")
                 .data(this._data.slice(position0, Math.min(position1, totalRows)), this.getDatumIndex);
 
@@ -253,7 +266,7 @@ module powerbi.visuals {
                 //measure row height
                 let rows = listView.visibleGroupContainer.select(".row");
                 if (!rows.empty()) {
-                    let firstRow = rows.node().firstChild;
+                    let firstRow = rows.node();
                     let rowHeight: number = $(firstRow).outerHeight(true);
                     listView.rowHeight(rowHeight);
                     deferred.resolve(rowHeight);

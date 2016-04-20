@@ -133,9 +133,10 @@ module powerbi.visuals {
         public isColumnHierarchyLeaf(cornerItem: any): boolean {
             return true;
         }
-        
+
         public isFirstItem(item: MatrixVisualNode, items: MatrixVisualNode[]): boolean {
-            return item.index === 0;
+            // checking for item.index is unreliable because reordering the columns would cause a mismatch between index and items order
+            return item === items[0];
         }
 
         public areAllParentsFirst(item: any, items: any): boolean {
@@ -150,7 +151,7 @@ module powerbi.visuals {
 
             return items[items.length - 1] === item;
         }
-        
+
         public areAllParentsLast(item: any, items: any[]): boolean {
             return this.isLastItem(item, items);
         }
@@ -161,7 +162,7 @@ module powerbi.visuals {
         public getChildren(item: any): any {
             return null;
         }
-        
+
         public getChildrenLevelDifference(item: any) {
             return Infinity;
         }
@@ -296,7 +297,6 @@ module powerbi.visuals {
         onBindRowHeader?(item: any): void;
         onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
         layoutKind?: controls.TablixLayoutKind;
-        formattingEnabled: boolean;
     }
     
     /**
@@ -307,6 +307,10 @@ module powerbi.visuals {
         private formattingProperties: TablixFormattingProperties;
         private tableDataView: DataViewVisualTable;
 
+        private textHeightHeader: number;
+        private textHeightValue: number;
+        private textHeightTotal: number;
+
         constructor(options: TableBinderOptions) {
             this.options = options;
         }
@@ -314,6 +318,25 @@ module powerbi.visuals {
         public onDataViewChanged(dataView: DataViewVisualTable): void {
             this.tableDataView = dataView;
             this.formattingProperties = dataView.formattingProperties;
+
+            this.updateTextHeights();
+        }
+
+        private updateTextHeights(): void {
+            let textProps: TextProperties = {
+                fontFamily: '',
+                fontSize: TablixObjects.getTextSizeInPx(this.formattingProperties.general.textSize),
+                text: 'a',
+            };
+
+            textProps.fontFamily = TablixUtils.FontFamilyHeader;
+            this.textHeightHeader = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+
+            textProps.fontFamily = TablixUtils.FontFamilyCell;
+            this.textHeightValue = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+
+            textProps.fontFamily = TablixUtils.FontFamilyTotal;
+            this.textHeightTotal = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
         }
 
         public onStartRenderingSession(): void {
@@ -326,7 +349,7 @@ module powerbi.visuals {
          * Row Header.
          */
         public bindRowHeader(item: any, cell: controls.ITablixCell): void {
-            this.ensureHeight(item, cell);
+            cell.contentHeight = this.textHeightValue;
 
             // To clear the CSS classes that adds paddings
             TablixUtils.clearCellStyle(cell);
@@ -346,8 +369,17 @@ module powerbi.visuals {
         public bindColumnHeader(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
             cell.extension.disableDragResize();
             TablixUtils.resetCellCssClass(cell);
+
             TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixHeader);
             TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixColumnHeaderLeaf);
+
+            let cellStyle = new TablixUtils.CellStyle();
+            // Set default style
+            cellStyle.fontFamily = TablixUtils.FontFamilyHeader;
+            cellStyle.fontColor = TablixUtils.FontColorHeaders;
+            cellStyle.borders.bottom = new TablixUtils.EdgeSettings(TablixObjects.PropGridOutlineWeight.defaultValue, TablixObjects.PropGridOutlineColor.defaultValue);
+
+            cell.contentHeight = this.textHeightHeader;
 
             if (this.sortIconsEnabled())
                 TablixUtils.createColumnHeaderWithSortIcon(item, cell);
@@ -357,24 +389,22 @@ module powerbi.visuals {
             if (this.options.onColumnHeaderClick) {
                 let handler = (e: MouseEvent) => {
                     if (TablixUtils.isValidSortClick(e)) {
-                    let sortDirection: SortDirection = TablixUtils.reverseSort(item.sort);
-                    this.options.onColumnHeaderClick(item.queryName ? item.queryName : item.displayName, sortDirection);
+                        let sortDirection: SortDirection = TablixUtils.reverseSort(item.sort);
+                        this.options.onColumnHeaderClick(item.queryName ? item.queryName : item.displayName, sortDirection);
                     }
                 };
                 cell.extension.registerClickHandler(handler);
             }
+            this.setColumnHeaderStyle(cell, cellStyle);
 
-            if (this.formattingProperties.isFormattingEnabled) {
-                this.getColumnHeaderStyle(cell).applyStyle(cell);
-            }
+            cell.applyStyle(cellStyle);
         }
 
-        private getColumnHeaderStyle(cell: controls.ITablixCell): TablixUtils.CellStyle {
+        private setColumnHeaderStyle(cell: controls.ITablixCell, style: TablixUtils.CellStyle): void {
             let propsGrid = this.formattingProperties.grid;
             let props = this.formattingProperties.columnHeaders;
             let propsTotal = this.formattingProperties.total;
-
-            let style = new TablixUtils.CellStyle();
+            let propsValues = this.formattingProperties.values;
 
             style.borders.top = new TablixUtils.EdgeSettings();
             style.borders.top.applyParams(outline.showTop(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
@@ -386,28 +416,26 @@ module powerbi.visuals {
             if (cell.position.column.isFirst) {
                 style.borders.left.applyParams(outline.showLeft(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
-                // If we dont have left border, but Footer has, we need to apply padding
-                if (!outline.showLeft(props.outline) && outline.showLeft(propsTotal.outline))
-                    style.paddings.left = propsGrid.outlineWeight + TablixUtils.CellPaddingLeft;
+                // If we dont have left border, but Footer or Body has, we need to apply extra padding
+                if (!outline.showLeft(props.outline) && (outline.showLeft(propsTotal.outline) || outline.showLeft(propsValues.outline)))
+                    style.paddings.left += propsGrid.outlineWeight;
             } // else: do nothing
 
             style.borders.right = new TablixUtils.EdgeSettings();
             if (cell.position.column.isLast) {
                 style.borders.right.applyParams(outline.showRight(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
-                // If we dont have right border, but Footer has, we need to apply padding
-                if (!outline.showRight(props.outline) && outline.showRight(propsTotal.outline))
-                    style.paddings.right = propsGrid.outlineWeight + TablixUtils.CellPaddingRight;
+                // If we dont have right border, but Footer or Body has, we need to apply extra padding
+                if (!outline.showRight(props.outline) && (outline.showRight(propsTotal.outline) || outline.showRight(propsValues.outline)))
+                    style.paddings.right += propsGrid.outlineWeight;
             }
             else {
                 style.borders.right.applyParams(propsGrid.gridVertical, propsGrid.gridVerticalWeight, propsGrid.gridVerticalColor);
-        }
+            }
 
             style.fontColor = props.fontColor;
             style.backColor = props.backColor;
             style.paddings.top = style.paddings.bottom = propsGrid.rowPadding;
-
-            return style;
         }
 
         public unbindColumnHeader(item: any, cell: controls.ITablixCell): void {
@@ -427,14 +455,28 @@ module powerbi.visuals {
          */
         public bindBodyCell(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void {
             TablixUtils.resetCellCssClass(cell);
+            let imgHeight: number;
+            imgHeight = this.formattingProperties.grid.imageHeight;
 
-            if (item.isValidUrl) {
-                TablixUtils.appendATagToBodyCell(item.textContent, cell, this.formattingProperties.isFormattingEnabled && this.formattingProperties.values.urlIcon);
+            let cellStyle = new TablixUtils.CellStyle();
+
+            if (item.isImage) {
+                cell.contentHeight = imgHeight;
             }
-            else if (item.isValidImage)
-                TablixUtils.appendImgTagToBodyCell(item.textContent, cell);
-            else if (!_.isEmpty(item.domContent))
+            else {
+                cell.contentHeight = this.textHeightValue;
+            }
+
+            if (item.isUrl && item.isValidUrl) {
+                TablixUtils.appendATagToBodyCell(item.textContent, cell, this.formattingProperties.values.urlIcon);
+            }
+            else if (item.isImage && item.isValidUrl) {
+                TablixUtils.appendImgTagToBodyCell(item.textContent, cell, imgHeight);
+                cellStyle.hasImage = true;
+            }
+            else if (item.domContent) {
                 $(cell.extension.contentHost).append(item.domContent);
+            }
             else if (item.textContent) {
                 TablixUtils.setCellTextAndTooltip(cell, item.textContent);
             }
@@ -445,33 +487,36 @@ module powerbi.visuals {
             if (item.isTotal) {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixValueTotal);
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTableFooter);
+
+                cellStyle.fontFamily = TablixUtils.FontFamilyTotal;
+                cellStyle.borders.top = new TablixUtils.EdgeSettings(TablixObjects.PropGridOutlineWeight.defaultValue, TablixObjects.PropGridOutlineColor.defaultValue);
+
+                cell.contentHeight = this.textHeightTotal;
             }
             else if (item.position.row.isLast) {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTableBodyCellBottom);
             }
             else {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTableBodyCell);
+                cellStyle.borders.bottom = new TablixUtils.EdgeSettings(TablixObjects.PropGridHorizontalWeight.defaultValue, TablixObjects.PropGridHorizontalColor.defaultValue);
             }
 
             if (item.isNumeric)
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixValueNumeric);
 
-            if (this.formattingProperties.isFormattingEnabled) {
-                if (item.isTotal) {
-                    this.getFooterStyle(cell).applyStyle(cell);
-                }
-                else {
-                    this.getBodyStyle(item, cell).applyStyle(cell);
-                }
-            }
+            if (item.isTotal)
+                this.setFooterStyle(cell, cellStyle);
+            else
+                this.setBodyStyle(item, cell, cellStyle);
+
+            cell.applyStyle(cellStyle);
         }
 
-        private getBodyStyle(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): TablixUtils.CellStyle {
+        private setBodyStyle(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell, style: TablixUtils.CellStyle): void {
             let propsGrid = this.formattingProperties.grid;
             let props = this.formattingProperties.values;
             let propsTotal = this.formattingProperties.total;
-
-            let style = new TablixUtils.CellStyle();
+            let propsColumns = this.formattingProperties.columnHeaders;
 
             style.borders.top = new TablixUtils.EdgeSettings();
             if (cell.position.row.isFirst) { // First Row
@@ -490,18 +535,18 @@ module powerbi.visuals {
             if (cell.position.column.isFirst) { // First Column 
                 style.borders.left.applyParams(outline.showLeft(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
-                // If we dont have left border, but Footer has, we need to apply padding
-                if (!outline.showLeft(props.outline) && outline.showLeft(propsTotal.outline))
-                    style.paddings.left = propsGrid.outlineWeight + TablixUtils.CellPaddingLeft;
+                // If we dont have left border, but Footer or Header has, we need to apply extra padding
+                if (!outline.showLeft(props.outline) && (outline.showLeft(propsTotal.outline) || outline.showLeft(propsColumns.outline)))
+                    style.paddings.left += propsGrid.outlineWeight;
             } // else: do nothing
 
             style.borders.right = new TablixUtils.EdgeSettings();
             if (cell.position.column.isLast) { // Last Column
                 style.borders.right.applyParams(outline.showRight(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
-                // If we dont have right border, but Footer has, we need to apply padding
-                if (!outline.showRight(props.outline) && outline.showRight(propsTotal.outline))
-                    style.paddings.right = propsGrid.outlineWeight + TablixUtils.CellPaddingRight;
+                // If we dont have right border, but Footer has, we need to apply extra padding
+                if (!outline.showRight(props.outline) && (outline.showRight(propsTotal.outline) || outline.showRight(propsColumns.outline)))
+                    style.paddings.right += propsGrid.outlineWeight;
             }
             else {
                 style.borders.right.applyParams(propsGrid.gridVertical, propsGrid.gridVerticalWeight, propsGrid.gridVerticalColor);
@@ -515,17 +560,13 @@ module powerbi.visuals {
                 style.backColor = cell.position.row.index % 2 === 0 ? props.backColorPrimary : props.backColorSecondary;
 
             style.paddings.top = style.paddings.bottom = propsGrid.rowPadding;
-
-            return style;
         }
 
-        private getFooterStyle(cell: controls.ITablixCell): TablixUtils.CellStyle {
+        private setFooterStyle(cell: controls.ITablixCell, style: TablixUtils.CellStyle): void {
             let props = this.formattingProperties.total;
             let propsGrid = this.formattingProperties.grid;
             let propsValues = this.formattingProperties.values;
             let propsColumns = this.formattingProperties.columnHeaders;
-
-            let style = new TablixUtils.CellStyle();
 
             style.borders.top = new TablixUtils.EdgeSettings();
             style.borders.top.applyParams(outline.showTop(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
@@ -539,7 +580,7 @@ module powerbi.visuals {
 
                 // If we dont have left border, but values or column headers have, we need to apply padding
                 if (!outline.showLeft(props.outline) && (outline.showLeft(propsValues.outline) || outline.showLeft(propsColumns.outline)))
-                    style.paddings.left = propsGrid.outlineWeight + TablixUtils.CellPaddingLeft;
+                    style.paddings.left += propsGrid.outlineWeight;
 
             } // else: do nothing
 
@@ -549,7 +590,7 @@ module powerbi.visuals {
 
                 // If we dont have left border, but values or column headers have, we need to apply padding
                 if (!outline.showRight(props.outline) && (outline.showRight(propsValues.outline) || outline.showRight(propsColumns.outline)))
-                    style.paddings.right = propsGrid.outlineWeight + TablixUtils.CellPaddingRight;
+                    style.paddings.right += propsGrid.outlineWeight;
             }
             else {
                 style.borders.right.applyParams(propsGrid.gridVertical, propsGrid.gridVerticalWeight, propsGrid.gridVerticalColor);
@@ -559,8 +600,6 @@ module powerbi.visuals {
             style.backColor = props.backColor;
 
             style.paddings.top = style.paddings.bottom = propsGrid.rowPadding;
-
-            return style;
         }
 
         public unbindBodyCell(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void {
@@ -608,36 +647,12 @@ module powerbi.visuals {
             return false;
         }
 
-        private ensureHeight(item: any, cell: controls.ITablixCell) {
-            if (!item.values)
-                return;
-
-            let count = item.values.length;
-            if (count === 0)
-                return;
-
-            let allValuesEmpty = true;
-            for (let i: number = 0; i < count; i++) {
-                if (item.values[i]) {
-                    allValuesEmpty = false;
-                    break;
-                }
-            }
-
-            // In order to maintain the height of the row when the values are null or empty
-            // we set the innerHTML to be a nonBreakingSpace. The nonBreakingSpace does not
-            // show up in the visual because for actual cell content we use the textContent property instead.
-            if (allValuesEmpty)
-                cell.extension.contentHost.innerHTML = TablixUtils.StringNonBreakingSpace;
-        }
-
         private sortIconsEnabled(): boolean {
             return this.options.layoutKind === controls.TablixLayoutKind.Canvas;
         }
     }
 
     export interface TableConstructorOptions {
-        isFormattingPropertiesEnabled?: boolean;
         isConditionalFormattingEnabled?: boolean;
         isTouchEnabled?: boolean;
     }
@@ -661,7 +676,6 @@ module powerbi.visuals {
         private waitingForSort: boolean;
         private columnWidthManager: controls.TablixColumnWidthManager;
         private dataView: DataView;
-        private isFormattingPropertiesEnabled: boolean;
         private isConditionalFormattingEnabled: boolean;
 
         /**
@@ -671,7 +685,6 @@ module powerbi.visuals {
 
         constructor(options?: TableConstructorOptions) {
             if (options) {
-                this.isFormattingPropertiesEnabled = options.isFormattingPropertiesEnabled;
                 // TODO: VSTS 7167767: Remove temporary code for product demo.
                 this.isConditionalFormattingEnabled = options.isConditionalFormattingEnabled;
                 this.isTouchEnabled = options.isTouchEnabled;
@@ -711,7 +724,7 @@ module powerbi.visuals {
          * Note: Public for testability.
          */
         // TODO: VSTS 7167767: Remove temporary code for product demo.
-        public static converter(dataView: DataView, isFormattingEnabled: boolean, isConditionalFormattingEnabled: boolean): DataViewVisualTable {
+        public static converter(dataView: DataView, isConditionalFormattingEnabled: boolean): DataViewVisualTable {
             let table = dataView.table;
             debug.assertValue(table, 'table');
             debug.assertValue(table.rows, 'table.rows');
@@ -727,7 +740,7 @@ module powerbi.visuals {
                 visualTable.visualRows.push(visualRow);
             }
             // TODO: VSTS 7167767: Remove temporary code for product demo.
-            visualTable.formattingProperties = TablixObjects.getTableObjects(dataView, isFormattingEnabled, isConditionalFormattingEnabled);
+            visualTable.formattingProperties = TablixObjects.getTableObjects(dataView, isConditionalFormattingEnabled);
 
             return visualTable;
         }
@@ -760,7 +773,7 @@ module powerbi.visuals {
                     return;
                 }
                 // TODO: VSTS 7167767: Remove temporary code for product demo.
-                let visualTable = Table.converter(this.dataView, this.isFormattingPropertiesEnabled, this.isConditionalFormattingEnabled);
+                let visualTable = Table.converter(this.dataView, this.isConditionalFormattingEnabled);
                 let textSize = visualTable.formattingProperties.general.textSize;
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
@@ -840,8 +853,7 @@ module powerbi.visuals {
             let tableBinderOptions: TableBinderOptions = {
                 onBindRowHeader: (item: any) => this.onBindRowHeader(item),
                 onColumnHeaderClick: (queryName: string, sortDirection: SortDirection) => this.onColumnHeaderClick(queryName, sortDirection),
-                layoutKind: layoutKind,
-                formattingEnabled: this.isFormattingPropertiesEnabled,
+                layoutKind: layoutKind
             };
 
             let tableBinder = new TableBinder(tableBinderOptions);
@@ -961,7 +973,7 @@ module powerbi.visuals {
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
             // we are resilient here when we do not have data view.
             if (this.dataView) {
-                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, this.isFormattingPropertiesEnabled, this.isConditionalFormattingEnabled, controls.TablixType.Table);
+                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, this.isConditionalFormattingEnabled, controls.TablixType.Table);
             }
 
             return enumeration.complete();

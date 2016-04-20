@@ -766,10 +766,14 @@ interface ErrorInfoKeyValuePair {
     errorInfoKey: string;
     errorInfoValue: string;
 }
+declare const enum ErrorType {
+    VisualNotSupported = 1,
+}
 interface ErrorDetails {
     message: string;
     additionalErrorInfo: ErrorInfoKeyValuePair[];
     helpLink?: string;
+    errorType?: ErrorType;
 }
 declare module jsCommon {
     module Formatting {

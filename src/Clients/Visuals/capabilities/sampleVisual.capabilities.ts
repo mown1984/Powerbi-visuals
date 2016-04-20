@@ -30,11 +30,15 @@ module powerbi.visuals {
             {
                 name: 'Category',
                 kind: VisualDataRoleKind.Grouping,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Axis'),
+                description: data.createDisplayNameGetter('Role_DisplayName_AxisDescription')
             },
             {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 requiredTypes: [{ numeric: true }, { integer: true }],
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Y'),
+                description: data.createDisplayNameGetter('Role_DisplayName_YDescription')
             },
         ],
         dataViewMappings: [{

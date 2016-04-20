@@ -30,14 +30,25 @@ module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
     import UrlUtils = jsCommon.UrlUtils;
+    import Surround = powerbi.visuals.controls.internal.TablixUtils.Surround;
+    import EdgeSettings = powerbi.visuals.controls.internal.TablixUtils.EdgeSettings;
 
     const TitleFontFamily = 'wf_segoe-ui_semibold';
     const DefaultFontFamily = 'wf_segoe-ui_normal';
     const DefaultCaptionFontSizeInPt = 10;
     const DefaultTitleFontSizeInPt = 13;
     const DefaultDetailFontSizeInPt = 9;
+    
     const DefaultTitleColor = '#767676';
     const DefaultTextColor = '#333333';
+    const DefaultCategoryColor = '#ACACAC';
+    const DefaultOutline = outline.none;
+    const DefaultOutlineColor = '#E8E8E8';
+    const DefaultOutlineWeight = 1;
+    const DefaultBarShow = true;
+    const DefaultBarColor = '#A6A6A6';
+    const DefaultBarOutline = outline.leftOnly;
+    const DefaultBarWeight = 3;
 
     export interface CardItemData {
         caption: string;
@@ -47,12 +58,27 @@ module powerbi.visuals {
         showKPI: boolean;
         columnIndex: number;
     }
-
+    
+    export interface CardSettings {
+        outlineSettings: OutlineSettings;
+        barSettings: OutlineSettings;
+        cardPadding: number;
+        cardBackground: string;
+    }
+    
+    export interface OutlineSettings{
+        outline: string;
+        color: string;
+        weight: number;
+    }
+    
     export interface MultiRowCardData {
         dataModel: CardData[];
+        dataColumnCount: number;
         cardTitleSettings: VisualDataLabelsSettings;
         dataLabelsSettings: VisualDataLabelsSettings;
         categoryLabelsSettings: VisualDataLabelsSettings;
+        cardSettings: CardSettings;
     }
 
     export interface CardData {
@@ -74,8 +100,13 @@ module powerbi.visuals {
     }
 
     interface MultiRowCardStyle {
-        card?: {
+        row?: {
+            border?: Surround<EdgeSettings>;
             marginBottom?: number;
+            background?: string
+        };
+        card?: {
+            border?: Surround<EdgeSettings>;
             maxRows?: number;
         };
         cardItemContainer?: {
@@ -141,8 +172,13 @@ module powerbi.visuals {
          * Cards have specific styling so defined inline styles and also to support theming and improve performance.
          */
         private static DefaultStyle: MultiRowCardStyle = {
+            row: {
+                border: null,
+                marginBottom: 20,
+                background: undefined 
+            },
             card: {
-                marginBottom: 20
+                border: null
             },
             cardItemContainer: {
                 paddingRight: 20,
@@ -239,13 +275,45 @@ module powerbi.visuals {
             else {
                 this.data = {
                     dataModel: [],
+                    dataColumnCount: 0,
                     cardTitleSettings: dataLabelUtils.getDefaultLabelSettings(true, DefaultTitleColor, DefaultTitleFontSizeInPt),
-                    categoryLabelsSettings: dataLabelUtils.getDefaultLabelSettings(true, DefaultTextColor, DefaultDetailFontSizeInPt),
+                    categoryLabelsSettings: dataLabelUtils.getDefaultLabelSettings(true, DefaultCategoryColor, DefaultDetailFontSizeInPt),
                     dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(true, DefaultTextColor, DefaultCaptionFontSizeInPt),
+                    cardSettings: MultiRowCard.getCardSettings(null)
                 };
             }
 
             this.waitingForData = false;
+        }
+        
+        private static getCardSettings(dataView: DataView): CardSettings {
+
+            let objects = dataView && dataView.metadata && dataView.metadata.objects ? dataView.metadata.objects : null;
+
+            let outlineSettings: OutlineSettings = {
+                outline: DataViewObjects.getValue(objects, multiRowCardProps.card.outline, DefaultOutline),
+                color: DataViewObjects.getFillColor(objects, multiRowCardProps.card.outlineColor, DefaultOutlineColor),
+                weight: DataViewObjects.getValue(objects, multiRowCardProps.card.outlineWeight, DefaultOutlineWeight),
+            };
+
+            let barShow = DataViewObjects.getValue(objects, multiRowCardProps.card.barShow, DefaultBarShow);
+
+            let barSettings: OutlineSettings = {
+                // If the bar is hidden, set the outline to none
+                outline: barShow ? DefaultBarOutline : outline.none,
+                color: DataViewObjects.getFillColor(objects, multiRowCardProps.card.barColor, DefaultBarColor),
+                weight: DataViewObjects.getValue(objects, multiRowCardProps.card.barWeight, DefaultBarWeight),
+            };
+
+            let cardPadding = DataViewObjects.getValue(objects, multiRowCardProps.card.cardPadding, MultiRowCard.DefaultStyle.row.marginBottom);
+            let cardBackground = DataViewObjects.getFillColor(objects, multiRowCardProps.card.cardBackground, MultiRowCard.DefaultStyle.row.background);
+
+            return {
+                outlineSettings: outlineSettings,
+                barSettings: barSettings,
+                cardPadding: cardPadding,
+                cardBackground: cardBackground
+            };
         }
 
         public onResizing(viewport: IViewport): void {
@@ -263,7 +331,7 @@ module powerbi.visuals {
 
             this.listView.viewport(viewport);
         }
-
+        
         public static converter(dataView: DataView, columnCount: number, maxCards: number, isDashboardVisual: boolean = false): MultiRowCardData {
             let details: CardData[] = [];
             let tableDataRows = dataView.table.rows;
@@ -274,7 +342,7 @@ module powerbi.visuals {
 
             cardTitleSettings = dataLabelUtils.getDefaultLabelSettings(true, DefaultTitleColor, DefaultTitleFontSizeInPt);
             dataLabelsSettings = dataLabelUtils.getDefaultLabelSettings(true, DefaultTextColor, DefaultCaptionFontSizeInPt);
-            categoryLabelsSettings = dataLabelUtils.getDefaultLabelSettings(true, DefaultTextColor, DefaultDetailFontSizeInPt);
+            categoryLabelsSettings = dataLabelUtils.getDefaultLabelSettings(true, DefaultCategoryColor, DefaultDetailFontSizeInPt);
 
             if (dataView.metadata && dataView.metadata.objects) {
                 let cardTitleLabelObjects = <DataLabelObject>DataViewObjects.getObject(dataView.metadata.objects, 'cardTitle');
@@ -348,9 +416,11 @@ module powerbi.visuals {
             }
             return {
                 dataModel: details,
+                dataColumnCount: details[0] ? details[0].cardItemsData.length : 0,
                 cardTitleSettings: cardTitleSettings,
                 categoryLabelsSettings: categoryLabelsSettings,
                 dataLabelsSettings: dataLabelsSettings,
+                cardSettings: MultiRowCard.getCardSettings(dataView)
             };
         }
 
@@ -428,6 +498,14 @@ module powerbi.visuals {
                 let dataLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(false, style.caption.fontSize));
                 let categoryLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(false, style.details.fontSize));
                 let titleLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(true, style.title.fontSize));
+                let rowBorderStyle = this.getBorderStyles(style.row.border);
+                
+                rowSelection
+                    .style(rowBorderStyle)
+                    .style({
+                        'margin-bottom': isDashboardVisual ? '0px' : (this.isSingleRowCard ? '0px' : getPixelString(style.row.marginBottom)),
+                        'background': style.row.background
+                    });
 
                 if (!isDashboardVisual && this.cardHasTitle) {
                     rowSelection.selectAll(MultiRowCard.Title.selector)
@@ -463,8 +541,11 @@ module powerbi.visuals {
                             element.classed(d.title);
                         });
                 }
-
+   
                 let cardSelection = rowSelection.selectAll(MultiRowCard.Card.selector);
+                
+                let cardBorderStyle = this.getBorderStyles(style.card.border);
+                cardSelection.style(cardBorderStyle);
 
                 cardSelection
                     .selectAll(MultiRowCard.Caption.selector)
@@ -493,7 +574,7 @@ module powerbi.visuals {
                             return this.isLastRowItem(d.columnIndex, this.dataView.metadata.columns.length) ? '0px' : getPixelString(style.cardItemContainer.paddingRight);
                         },
                         'width': (d: CardItemData) => {
-                            return this.getColumnWidth(d.columnIndex, this.dataView.metadata.columns.length);
+                            return this.getColumnWidth(d.columnIndex, this.data.dataColumnCount);
                         },
                         'display': (d: CardItemData) => {
                             return (this.hideColumn(d.columnIndex) ? 'none' : 'inline-block');
@@ -521,9 +602,6 @@ module powerbi.visuals {
                         })
                         .attr('title', (d: CardItemData) => d.details);
                 }
-
-                cardSelection
-                    .style('margin-bottom', isDashboardVisual ? '0px' : (this.isSingleRowCard ? '0px' : getPixelString(style.card.marginBottom)));
             };
 
             let rowExit = (rowSelection: D3.Selection) => {
@@ -546,11 +624,21 @@ module powerbi.visuals {
 
             this.listView = ListViewFactory.createListView(listViewOptions);
         }
+        
+        private getBorderStyles(border: Surround<EdgeSettings>): { [property: string]: string } {
+            
+            return {
+                'border-top': border && border.top ? border.top.getCSS() : '',
+                'border-right': border && border.right ? border.right.getCSS() : '',
+                'border-bottom': border && border.bottom ? border.bottom.getCSS() : '',
+                'border-left': border && border.left ? border.left.getCSS() : ''
+            };
+        } 
 
         private getMaxColPerRow(): number {
             let rowWidth = this.currentViewport.width;
             let minColumnWidth = this.getStyle().cardItemContainer.minWidth;
-            let columnCount = this.dataView.metadata.columns.length;
+            let columnCount = this.data.dataColumnCount;
             //atleast one column fits in a row
             let maxColumnPerRow = Math.floor(rowWidth / minColumnWidth) || 1;
             return Math.min(columnCount, maxColumnPerRow);
@@ -561,9 +649,11 @@ module powerbi.visuals {
         }
 
         private getStyle(): MultiRowCardStyle {
-            let defaultStyle = this.getOverridenStyle();
+            let defaultStyles = MultiRowCard.DefaultStyle;
+            let customStyles = this.getCustomStyles();
+            
             if (!this.isInteractivityOverflowHidden)
-                return $.extend(true, {}, defaultStyle);
+                return $.extend(true, {}, defaultStyles, customStyles);
 
             let viewportWidth = this.currentViewport.width;
             let overrideStyle: MultiRowCardStyle = {};
@@ -572,16 +662,43 @@ module powerbi.visuals {
                     overrideStyle = currentQuery.style;
                     break;
                 }
-            return $.extend(true, {}, defaultStyle, overrideStyle);
+                
+            return $.extend(true, {}, defaultStyles, customStyles, overrideStyle);
+        }
+        
+        private getSurroundSettings(outlineSettings: OutlineSettings): Surround<EdgeSettings>{
+            
+            let edge = new EdgeSettings(outlineSettings.weight, outlineSettings.color);
+            let outlineProp = outlineSettings.outline;
+                
+            return {
+                top: outline.showTop(outlineProp) ? edge : null,
+                right: outline.showRight(outlineProp) ? edge : null,
+                bottom: outline.showBottom(outlineProp) ? edge : null,
+                left: outline.showLeft(outlineProp) ? edge : null,
+            };
         }
 
-        private getOverridenStyle(): MultiRowCardStyle {
-            let defaultStyle = MultiRowCard.DefaultStyle;
+        private getCustomStyles(): MultiRowCardStyle {
             let dataLabelsSettings = this.data.dataLabelsSettings;
             let categoryLabelSettings = this.data.categoryLabelsSettings;
             let titleLabelSettings = this.data.cardTitleSettings;
-
-            let overrideStyle: MultiRowCardStyle = {
+            let cardSettings = this.data.cardSettings;
+            
+            let customStyle: MultiRowCardStyle = {
+                row: {
+                    border: this.getSurroundSettings(cardSettings.outlineSettings),
+                    marginBottom: cardSettings.cardPadding,
+                    background: cardSettings.cardBackground
+                },
+                card: {
+                    border: this.getSurroundSettings(cardSettings.barSettings)
+                },
+                details: {
+                    fontSize: categoryLabelSettings.fontSize,
+                    color: categoryLabelSettings.labelColor,
+                    isVisible: categoryLabelSettings.show,
+                },
                 caption: {
                     fontSize: dataLabelsSettings.fontSize,
                     color: dataLabelsSettings.labelColor,
@@ -589,15 +706,10 @@ module powerbi.visuals {
                 title: {
                     fontSize: titleLabelSettings.fontSize,
                     color: titleLabelSettings.labelColor,
-                },
-                details: {
-                    fontSize: categoryLabelSettings.fontSize,
-                    color: categoryLabelSettings.labelColor,
-                    isVisible: categoryLabelSettings.show,
                 }
             };
 
-            return $.extend(true, overrideStyle, defaultStyle);
+            return customStyle;
         }
 
         private static getTextProperties(isTitle: boolean, fontSizeInPt: number): TextProperties {
@@ -698,9 +810,48 @@ module powerbi.visuals {
                 case 'categoryLabels':
                     dataLabelUtils.enumerateDataLabels(MultiRowCard.getDataLabelSettingsOptions(enumeration, categoryLabelsSettings, true));
                     break;
+                case multiRowCardProps.card.outline.objectName:
+                    this.enumerateCard(enumeration);
+                    break;
             }
 
             return enumeration.complete();
+        }
+        
+        private enumerateCard(enumeration: ObjectEnumerationBuilder): void {
+
+            let cardSettings = this.data.cardSettings;
+            let propNames = multiRowCardProps.card;
+
+            let properties: any = {};
+
+            let outlineSettings = cardSettings.outlineSettings;
+            properties[propNames.outline.propertyName] = outlineSettings.outline;
+
+            if (outlineSettings.outline !== outline.none) {
+                properties[propNames.outlineColor.propertyName] = outlineSettings.color;
+                properties[propNames.outlineWeight.propertyName] = outlineSettings.weight;
+            }
+
+            let barSettings = cardSettings.barSettings;
+
+            // The bar is shown if the outline value is not none
+            let barShow = barSettings.outline !== outline.none;
+            properties[propNames.barShow.propertyName] = barShow;
+
+            if (barShow) {
+                properties[propNames.barColor.propertyName] = barSettings.color;
+                properties[propNames.barWeight.propertyName] = barSettings.weight;
+            }
+
+            properties[propNames.cardPadding.propertyName] = cardSettings.cardPadding;
+            properties[propNames.cardBackground.propertyName] = cardSettings.cardBackground;
+
+            enumeration.pushInstance({
+                selector: null,
+                objectName: propNames.outline.objectName,
+                properties: properties
+            });
         }
     }
 

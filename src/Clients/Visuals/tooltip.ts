@@ -341,7 +341,7 @@ module powerbi.visuals {
                 // Ignore mouseover while handling touch events
                 if (handleTouchTimeoutId || !canDisplayTooltip(d3.event))
                     return;
-                    
+
                 mouseCoordinates = getCoordinates(rootNode, true);
                 let elementCoordinates: number[] = getCoordinates(target, true);
                 let tooltipEvent: TooltipEvent = {
@@ -351,7 +351,7 @@ module powerbi.visuals {
                     context: target,
                     isTouchEvent: false
                 };
-                
+
                 clearTooltipTimeout();
                 
                 // if it is already visible, change contents immediately (use 16ms minimum perceivable frame rate to prevent thrashing)
@@ -377,7 +377,7 @@ module powerbi.visuals {
                 // Ignore mousemove while handling touch events
                 if (handleTouchTimeoutId || !canDisplayTooltip(d3.event))
                     return;
-                    
+
                 mouseCoordinates = getCoordinates(rootNode, true);
                 let elementCoordinates: number[] = getCoordinates(target, true);
                 let tooltipEvent: TooltipEvent = {
@@ -387,7 +387,7 @@ module powerbi.visuals {
                     context: target,
                     isTouchEvent: false
                 };
-                
+
                 moveTooltipEventHandler(tooltipEvent, getTooltipInfoDelegate, reloadTooltipDataOnMouseMove);
             });
             
@@ -397,7 +397,7 @@ module powerbi.visuals {
             let touchStartEventName: string = getTouchStartEventName();
             let touchEndEventName: string = getTouchEndEventName();
             let isPointerEvent: boolean = touchStartEventName === "pointerdown" || touchStartEventName === "MSPointerDown";
-            
+
             if (!GlobalTooltipEventsAttached) {
                 // Add root container hide tooltip event
                 attachGlobalEvents(touchStartEventName);
@@ -407,7 +407,7 @@ module powerbi.visuals {
             selection.on(touchStartEventName, () => {
                 let target = <HTMLElement>d3.event.target;
                 let data = d3.select(target).datum();
-                
+
                 hideTooltipEventHandler();
                 let coordinates: number[] = getCoordinates(rootNode, isPointerEvent);
                 let elementCoordinates: number[] = getCoordinates(target, isPointerEvent);
@@ -423,7 +423,7 @@ module powerbi.visuals {
             });
 
             selection.on(touchEndEventName, () => {
-                
+
                 clearTooltipTimeout();
                 if (handleTouchTimeoutId)
                     clearTimeout(handleTouchTimeoutId);
@@ -574,7 +574,7 @@ module powerbi.visuals {
             seriesIndex?: number,
             categoryIndex?: number,
             highlightedValue?: any,
-            gradientValueColumn?: DataViewValueColumn): TooltipDataItem[]{
+            gradientValueColumn?: DataViewValueColumn): TooltipDataItem[] {
             let categorySource: TooltipCategoryDataItem;
             let seriesSource: TooltipSeriesDataItem[] = [];
             let valuesSource: DataViewMetadataColumn = undefined;

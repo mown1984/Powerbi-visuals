@@ -35,6 +35,9 @@ module powerbi.visuals.samples {
     const AsterDefaultOuterLineThickness: number = 1;
     const AsterDefaultLabelFill: Fill = { solid: { color: '#333' } };
     const AsterDefaultLegendFontSize: number = 8;
+    const AsterRadiusRatio: number = 0.9;
+    const AsterConflictRatio = 0.9;
+    const MaxPrecision: number = 17;
 
     export interface AsterData {
         dataPoints: AsterDataPoint[];
@@ -54,6 +57,10 @@ module powerbi.visuals.samples {
         labelColor: string;
         titleText: string;
         fontSize: number;
+    }
+
+    export interface AsterArcDescriptor extends ArcDescriptor {
+        isLabelHasConflict?: boolean;
     }
 
     export interface AsterDataPoint extends SelectableDataPoint {
@@ -363,10 +370,9 @@ module powerbi.visuals.samples {
             let formatStringProp = AsterPlot.Properties.general.formatString;
             let maxValue: number = Math.max(d3.min(values[0].values));
             let minValue: number = Math.min(0, d3.min(values[0].values));
-            let maxPrecisionValue = 17;
             let labelFormatter: IValueFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(catSource, AsterPlot.Properties.general.formatString),
-                precision: Math.min(maxPrecisionValue, labelSettings.precision),
+                precision: Math.min(MaxPrecision, labelSettings.precision),
                 value: (labelSettings.displayUnits === 0) && (maxValue != null) ? maxValue : labelSettings.displayUnits,
             });
             let categorySourceFormatString = valueFormatter.getFormatString(catSource, formatStringProp);
@@ -483,9 +489,9 @@ module powerbi.visuals.samples {
 
         private getLabelSettings(objects: DataViewObjects, labelSettings: VisualDataLabelsSettings): VisualDataLabelsSettings {
             let asterPlotLabelsProperties = AsterPlot.Properties;
-
+            let precision = Math.min(DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelPrecision, labelSettings.precision), MaxPrecision);
             labelSettings.show = DataViewObjects.getValue<boolean>(objects, asterPlotLabelsProperties.labels.show, labelSettings.show);
-            labelSettings.precision = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelPrecision, labelSettings.precision);
+            labelSettings.precision = precision;
             labelSettings.fontSize = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.fontSize, labelSettings.fontSize);
             labelSettings.displayUnits = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelDisplayUnits, labelSettings.displayUnits);
             let colorHelper: ColorHelper = new ColorHelper(this.colors, asterPlotLabelsProperties.labels.color, labelSettings.labelColor);
@@ -600,7 +606,7 @@ module powerbi.visuals.samples {
             let width: number = this.currentViewport.width - margin.left - margin.right;
             let height: number = this.currentViewport.height - margin.top - margin.bottom;
             let radius: number = Math.min(width, height) / 2;
-            let innerRadius: number = 0.3 * radius;
+            let innerRadius: number = labelSettings.show ? 0.3 * radius * AsterRadiusRatio : 0.3 * radius;
             let maxScore: number = d3.max(dataPoints, d => d.sliceHeight);
             let totalWeight: number = d3.sum(dataPoints, d => d.sliceWidth);
             let hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
@@ -614,8 +620,10 @@ module powerbi.visuals.samples {
                 .innerRadius(innerRadius)
                 .outerRadius(d => {
                     let height: number = (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius + 1;
+                    //The chart should shrink if data labels are on
+                    let heightIsLabelsOn = labelSettings.show ? height * AsterRadiusRatio : height;
                     // Prevent from data to be inside the inner radius
-                    return Math.max(height, innerRadius);
+                    return Math.max(heightIsLabelsOn, innerRadius);
                 });
 
             let arcDescriptorDataPoints: ArcDescriptor[] = pie(dataPoints);
@@ -676,29 +684,42 @@ module powerbi.visuals.samples {
         }
 
         private getLabelLayout(labelSettings: VisualDataLabelsSettings, arc: D3.Svg.Arc, viewport: IViewport): ILabelLayout {
-
             let midAngle = function (d: ArcDescriptor) { return d.startAngle + (d.endAngle - d.startAngle) / 2; };
             let textProperties: TextProperties = {
                 fontFamily: dataLabelUtils.StandardFontFamily,
                 fontSize: jsCommon.PixelConverter.fromPoint(labelSettings.fontSize),
                 text: '',
             };
+            let isLabelsHasConflict = function (d: AsterArcDescriptor) {
+                let pos = arc.centroid(d);
+                textProperties.text = d.data.value;
+                let textWidth = TextMeasurementService.measureSvgTextWidth(textProperties);
+                let horizontalSpaceAvaliableForLabels = viewport.width / 2 - Math.abs(pos[0] * AsterRadiusRatio);
+                let textHeight = TextMeasurementService.measureSvgTextHeight(textProperties);
+                let verticalSpaceAvaliableForLabels = viewport.height / 2 - Math.abs(pos[1] * AsterRadiusRatio);
+                d.isLabelHasConflict = textWidth > horizontalSpaceAvaliableForLabels || textHeight > verticalSpaceAvaliableForLabels;
+                return textWidth > horizontalSpaceAvaliableForLabels || textHeight > verticalSpaceAvaliableForLabels;
+            };
 
             return {
                 labelText: (d: ArcDescriptor) => {
                     textProperties.text = d.data.value;
                     let pos = arc.centroid(d);
-                    let spaceAvaliableForLabels = viewport.width / 2 - Math.abs(pos[0]);
+                    let xPos = isLabelsHasConflict(d) ? pos[0] * AsterConflictRatio : pos[0];
+                    let spaceAvaliableForLabels = viewport.width / 2 - Math.abs(xPos * AsterRadiusRatio);
                     return TextMeasurementService.getTailoredTextOrDefault(textProperties, spaceAvaliableForLabels);
                 },
                 labelLayout: {
                     x: (d: ArcDescriptor) => {
                         let pos = arc.centroid(d);
-                        return pos[0];
+                        textProperties.text = d.data.value;
+                        let xPos = isLabelsHasConflict(d) ? pos[0] * AsterConflictRatio : pos[0];
+                        return xPos * AsterRadiusRatio;
                     },
                     y: (d: ArcDescriptor) => {
                         let pos = arc.centroid(d);
-                        return pos[1];
+                        let yPos = isLabelsHasConflict(d) ? pos[1] * AsterConflictRatio : pos[1];
+                        return yPos * AsterRadiusRatio;
                     },
                 },
                 filter: (d: ArcDescriptor) => (d != null && !_.isEmpty(d.data.value)),
@@ -765,12 +786,14 @@ module powerbi.visuals.samples {
                 .classed('line-label', true);
 
             lines
-                .attr('points', function (d: ArcDescriptor) {
+                .attr('points', function (d: AsterArcDescriptor) {
                     let textPoint = labelArc.centroid(d);
-                    textPoint[0] += (midAngle(d) < Math.PI ? -1 : 1 * labelLinePadding);
+                let currentAsterRadiusRatio = d.isLabelHasConflict ? AsterRadiusRatio * AsterConflictRatio : AsterRadiusRatio;
+                textPoint[0] = (textPoint[0] + (midAngle(d) < Math.PI ? -1 : 1 * labelLinePadding)) * currentAsterRadiusRatio;
+                textPoint[1] *= currentAsterRadiusRatio;
                     let chartPoint = outlineArc.centroid(d);
-                    chartPoint[0] *= chartLinePadding;
-                    chartPoint[1] *= chartLinePadding;
+                    chartPoint[0] *= chartLinePadding * AsterRadiusRatio;
+                    chartPoint[1] *= chartLinePadding * AsterRadiusRatio;
                     return [chartPoint, textPoint];
                 }).
                 style({

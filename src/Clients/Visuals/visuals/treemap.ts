@@ -128,6 +128,7 @@ module powerbi.visuals {
             fontFamily: 'wf_segoe-ui_normal',
             fontSize: Treemap.MajorLabelTextSize + 'px'
         };
+        private static ValuesRoleName = 'Values'; 
 
         /**
          * A rect with an area of 9 is a treemap rectangle of only
@@ -295,14 +296,15 @@ module powerbi.visuals {
                 dataWasCulled = false;
                 let shouldCullValue = undefined;
                 let highlight = undefined;
-                let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(data);
                 let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(data);
+                
                 if ((data.categories == null) && !_.isEmpty(values)) {
                     // No categories, sliced by series and measures
                     for (let i = 0, ilen = values[0].length; i < ilen; i++) {
-
-                        // Don't add the gradient data as a node
-                        if (i === gradientMeasureIndex) {
+                        
+                        let valueColumn = valueColumns[i];
+                        
+                        if(!powerbi.data.DataRoleHelper.hasRoleInValueColumn(valueColumn, Treemap.ValuesRoleName)){
                             continue;
                         }
 
@@ -314,12 +316,13 @@ module powerbi.visuals {
                             dataWasCulled = dataWasCulled || shouldCullValue;
                             continue;
                         }
-                        let valueColumn = valueColumns[i];
+                        
                         let nodeName = converterHelper.getFormattedLegendLabel(valueColumn.source, valueColumns, formatStringProp);
 
-                        let identity = hasDynamicSeries
-                            ? SelectionId.createWithId(valueColumns[i].identity)
-                            : SelectionId.createWithMeasure(valueColumns[i].source.queryName);
+                        let identity = new SelectionIdBuilder()
+                            .withSeries(valueColumns, hasDynamicSeries ? valueColumns[i] : undefined)
+                            .withMeasure(valueColumns[i].source.queryName)
+                            .createSelectionId();
 
                         let key = identity.getKey();
 
@@ -366,8 +369,9 @@ module powerbi.visuals {
                     }
                 }
                 else if (data.categories && data.categories.length > 0) {
-                    // Remove 1 from the value column count if there is a gradient
-                    let valueColumnCount = valueColumns.length - (gradientMeasureIndex !== -1 ? 1 : 0);
+                    
+                    // Count the columns that have the value roles
+                    let valueColumnCount = _.filter(valueColumns, x => x.source && x.source.roles && x.source.roles[Treemap.ValuesRoleName] === true).length;
 
                     // Do not add second level if it's one and only one data point per shape and it's not a group value
                     // e.g. Category/Series group plus only one Value field (excluding the gradient)
@@ -381,12 +385,6 @@ module powerbi.visuals {
                     let categoryFormat = valueFormatter.getFormatString(categoryColumn.source, formatStringProp);
 
                     for (let categoryIndex = 0, categoryLen = values.length; categoryIndex < categoryLen; categoryIndex++) {
-                        let identity: SelectionId = SelectionIdBuilder.builder()
-                            .withCategory(categoryColumn, categoryIndex)
-                            .createSelectionId();
-
-                        let key = JSON.stringify({ nodeKey: identity.getKey(), depth: 1 });
-
                         let objects = categoryColumn.objects && categoryColumn.objects[categoryIndex];
 
                         let color = colorHelper.getColorForSeriesValue(objects, categoryColumn.identityFields, categoryColumn.values[categoryIndex]);
@@ -397,10 +395,8 @@ module powerbi.visuals {
                         categorical = dataView.categorical;
 
                         // This section area builds the tooltip for the parent node. It's only displayed if the node doesn't have any children (essentially if omitSecondLevel is true).
-                        // seriesIndex is used to figure determine what the value is for this tooltip. 
-                        // If omitSecondLevel is true, currentValues should have (at most) 2 series - one for the value and optionally one for the gradient.
-                        // seriesIndex is set the 1st series that is not a gradient
-                        let seriesIndex = gradientMeasureIndex === 0 ? 1 : 0;
+                        // seriesIndex is the index of the 1st series with the role Values.
+                        let seriesIndex = powerbi.data.DataRoleHelper.getMeasureIndexOfRole(grouped, Treemap.ValuesRoleName);
                         let value = currentValues[seriesIndex];
                         let highlightValue = hasHighlights && highlights ? highlights[categoryIndex][seriesIndex] : undefined;
                                                 
@@ -413,6 +409,13 @@ module powerbi.visuals {
                                 highlightedTooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex, categoryIndex, highlightValue, omitSecondLevel ? gradientValueColumn : undefined);
                             }
                         }
+
+                        let identity: SelectionId = SelectionIdBuilder.builder()
+                            .withCategory(categoryColumn, categoryIndex)
+                            .withMeasure(omitSecondLevel ? valueColumns[seriesIndex].source.queryName : undefined)
+                            .createSelectionId();
+
+                        let key = JSON.stringify({ nodeKey: identity.getKey(), depth: 1 });
 
                         let node: TreemapNode = {
                             key: key,
@@ -441,13 +444,13 @@ module powerbi.visuals {
                         let highlightTotal = 0; // Used if omitting second level
 
                         for (let j = 0, jlen = currentValues.length; j < jlen; j++) {
+                            
+                            let valueColumn = valueColumns[j];
 
-                            // Don't add the gradient data as a node
-                            if (j === gradientMeasureIndex) {
+                            if (!powerbi.data.DataRoleHelper.hasRoleInValueColumn(valueColumn, Treemap.ValuesRoleName)) {
                                 continue;
                             }
-
-                            let valueColumn = valueColumns[j];
+                        
                             let value = currentValues[j];
                             let highlight: number;
 
@@ -476,7 +479,7 @@ module powerbi.visuals {
                                 }
 
                                 let categoricalValues = categorical ? categorical.values : null;
-                                let measureId = isMultiSeries ? valueColumn.source.queryName : undefined;
+                                let measureId = valueColumn.source.queryName;
                                 let childIdentity = SelectionIdBuilder.builder()
                                     .withCategory(categoryColumn, categoryIndex)
                                     .withSeries(categoricalValues, valueColumn)

@@ -43,6 +43,12 @@ module powerbitests.helpers {
         };
     };
 
+    function node1IsBeforeNode2(node1: JQuery, node2: JQuery): boolean {
+        let flags = node1.get(0).compareDocumentPosition(node2.get(0));
+
+        return 0 !== (flags & Node.DOCUMENT_POSITION_FOLLOWING);
+    }
+
     export function verifyReferenceLine(line: JQuery, label: JQuery, graphicsContext: JQuery, properties: VerifyReferenceLineProperties) {
 
         helpers.assertColorsMatch(line.css('stroke'), properties.color);
@@ -67,12 +73,7 @@ module powerbitests.helpers {
             expect(x1).toEqual(x2);
         }
 
-        let index = line.index();
-        let graphicsIndex = graphicsContext.index();
-        if (properties.inFront)
-            expect(index).toBeGreaterThan(graphicsIndex);
-        else
-            expect(index).toBeLessThan(graphicsIndex);
+        expect(node1IsBeforeNode2(line, graphicsContext)).toBe(!properties.inFront);
 
         if (!properties.label)
             return;
@@ -93,18 +94,18 @@ module powerbitests.helpers {
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {
-                expect(labelY).toBeLessThan(+y1);
+                expect(labelY).toBeLessThan(parseFloat(y1));
             }
             else {
-                expect(labelY).toBeGreaterThan(+y1);
+                expect(labelY).toBeGreaterThan(parseFloat(y1));
             }
         }
         else {
             if (properties.label.horizontalPosition === powerbi.visuals.referenceLineDataLabelHorizontalPosition.left) {
-                expect(labelX).toBeLessThan(+x1);
+                expect(labelX).toBeLessThan(parseFloat(x1));
             }
             else {
-                expect(labelX).toBeGreaterThan(+x1);
+                expect(labelX).toBeGreaterThan(parseFloat(x1));
             }
 
             if (properties.label.verticalPosition === powerbi.visuals.referenceLineDataLabelVerticalPosition.above) {

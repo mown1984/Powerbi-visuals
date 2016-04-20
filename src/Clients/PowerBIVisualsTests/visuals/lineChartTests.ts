@@ -28,6 +28,7 @@ module powerbitests {
     import AxisType = powerbi.visuals.axisType;
     import AxisScale = powerbi.visuals.axisScale;
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
+    import CartesianChartType = powerbi.visuals.CartesianChartType;
     import DataViewObjects = powerbi.DataViewObjects;
     import DataViewPivotCategorical = powerbi.data.DataViewPivotCategorical;
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -40,6 +41,8 @@ module powerbitests {
     import Helpers = powerbitests.helpers;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import PixelConverter = jsCommon.PixelConverter;
+    import LabelParentRect = powerbi.LabelParentRect;
+    import TrendLineHelper = powerbi.visuals.TrendLineHelper;
 
     let labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
     let labelDensityMax = powerbi.visuals.NewDataLabelUtils.LabelDensityMax;
@@ -1608,7 +1611,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+                v = new LineChartVisualBuilder().build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -1889,7 +1892,7 @@ module powerbitests {
                         'Sep 2015'];
 
                     for (let i = 0, ilen = ticks.length; i < ilen; i++) {
-                        let tick = $(ticks[i]).text();
+                        let tick = helpers.findElementText(ticks.eq(i));
                         let tickDate = new Date(tick).toUTCString();
                         let expectedDate = new Date(expectedValues[i]).toUTCString();
                         expect(tickDate).toEqual(expectedDate);
@@ -3089,135 +3092,6 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('line chart reference line dom validation', (done) => {
-                let refLineColor1 = '#ff0000';
-                let refLineColor2 = '#ff00ff';
-                let metadata: powerbi.DataViewMetadata = {
-                    columns: [
-                        dataViewMetadata.columns[0],
-                        dataViewMetadata.columns[1],
-                    ],
-                };
-
-                let dataView: powerbi.DataView = {
-                    metadata: metadata,
-                    categorical: {
-                        categories: [{
-                            source: metadata.columns[0],
-                            values: ['John Domo', 'Delta Force', 'Jean Tablau']
-                        }],
-                        values: DataViewTransform.createValueColumns([
-                            {
-                                source: metadata.columns[1],
-                                values: [100, 200, 700],
-                            }],
-                            undefined,
-                            metadata.columns[2])
-                    },
-                };
-
-                let yAxisReferenceLine: powerbi.DataViewObject = {
-                    show: true,
-                    value: 450,
-                    lineColor: { solid: { color: refLineColor1 } },
-                    transparency: 60,
-                    style: lineStyle.dashed,
-                    position: powerbi.visuals.referenceLinePosition.back,
-                    dataLabelShow: true,
-                    dataLabelColor: { solid: { color: refLineColor1 } },
-                    dataLabelDecimalPoints: 0,
-                    dataLabelHorizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                    dataLabelVerticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                    dataLabelDisplayUnits: 0,
-                };
-
-                dataView.metadata.objects = {
-                    y1AxisReferenceLine: [
-                        {
-                            id: '0',
-                            object: yAxisReferenceLine,
-                        }
-                    ]
-                };
-
-                v.onDataChanged({
-                    dataViews: [dataView]
-                });
-
-                setTimeout(() => {
-                    let graphicsContext = $('.lineChart .lineChartSVG');
-
-                    let yLine = $('.y1-ref-line');
-                    let yLabel = $('.labelGraphicsContext .label').eq(0);
-                    helpers.verifyReferenceLine(
-                        yLine,
-                        yLabel,
-                        graphicsContext,
-                        {
-                            inFront: false,
-                            isHorizontal: true,
-                            color: refLineColor1,
-                            style: lineStyle.dashed,
-                            opacity: 0.4,
-                            label: {
-                                color: refLineColor1,
-                                horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                text: '450',
-                                verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                                displayUnits: 0,
-                            },
-                        });
-
-                    yAxisReferenceLine['lineColor'] = { solid: { color: refLineColor2 } };
-                    yAxisReferenceLine['transparency'] = 0;
-                    yAxisReferenceLine['style'] = lineStyle.dotted;
-                    yAxisReferenceLine['position'] = powerbi.visuals.referenceLinePosition.front;
-                    yAxisReferenceLine['dataLabelColor'] = { solid: { color: refLineColor2 } };
-                    yAxisReferenceLine['dataLabelDisplayUnits'] = 1000000;
-
-                    v.onDataChanged({
-                        dataViews: [dataView]
-                    });
-
-                    setTimeout(() => {
-                        yLine = $('.y1-ref-line');
-                        yLabel = $('.labelGraphicsContext .label').eq(0);
-                        helpers.verifyReferenceLine(
-                            yLine,
-                            yLabel,
-                            graphicsContext,
-                            {
-                                inFront: true,
-                                isHorizontal: true,
-                                color: refLineColor2,
-                                style: lineStyle.dotted,
-                                opacity: 1.0,
-                                label: {
-                                    color: refLineColor2,
-                                    horizontalPosition: powerbi.visuals.referenceLineDataLabelHorizontalPosition.left,
-                                    text: '0M',
-                                    verticalPosition: powerbi.visuals.referenceLineDataLabelVerticalPosition.above,
-                                    displayUnits: 1000000,
-                                },
-                            });
-
-                        yAxisReferenceLine['show'] = false;
-                        yAxisReferenceLine['dataLabelShow'] = false;
-
-                        v.onDataChanged({
-                            dataViews: [dataView]
-                        });
-
-                        setTimeout(() => {
-                            expect($('.y1-ref-line').length).toBe(0);
-                            expect($('.columnChart .labelGraphicsContext .label').length).toBe(0);
-
-                            done();
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);
-            });
-
             it('line chart reference line dom validation with values', (done) => {
                 let refLineColor1 = '#ff0000';
                 let refLineColor2 = '#ff00ff';
@@ -3364,7 +3238,7 @@ module powerbitests {
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ true, /* xIsMeasure */ false);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: true }).withObjects(objects).buildDataViews();
 
                     v.onDataChanged({
                         dataViews: dataViews,
@@ -3383,41 +3257,63 @@ module powerbitests {
                 });
 
                 it('separate series', (done) => {
-                    let trendLineColor = '#FF0000';
                     let objects: DataViewObjects = {
                         trend: {
                             show: true,
-                            lineColor: {
-                                solid: {
-                                    color: trendLineColor,
-                                }
-                            },
                             transparency: 20,
                             style: lineStyle.dotted,
                             combineSeries: false,
                         }
                     };
 
-                    let dataViews = helpers.buildTrendLineDataViews(objects, /* combined */ false, /* xIsMeasure */ false);
+                    let dataViews = new helpers.TrendLineBuilder({ combineSeries: false }).withObjects(objects).buildDataViews();
 
                     v.onDataChanged({
                         dataViews: dataViews,
                     });
                     setTimeout(() => {
                         let trendLines = $('.trend-line');
+                        let lines = $('.line');
 
                         helpers.verifyTrendLines(trendLines, [
                             {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(lines.eq(0).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }, {
-                                color: trendLineColor,
+                                color: TrendLineHelper.darkenTrendLineColor(lines.eq(1).css('stroke')),
                                 opacity: 0.8,
                                 style: lineStyle.dotted,
                             }
                         ]);
 
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it('not supported with ordinal axis', (done) => {
+                    let objects: DataViewObjects = {
+                        trend: {
+                            show: true,
+                            transparency: 20,
+                            style: lineStyle.dotted,
+                            combineSeries: false,
+                        },
+                        categoryAxis: {
+                            show: true,
+                            axisType: AxisType.categorical,
+                        },
+                    };
+
+                    let dataViews = new helpers.TrendLineBuilder({}).withObjects(objects).buildDataViews();
+
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+
+                    setTimeout(() => {
+                        let trendLines = $('.trend-line');
+                        helpers.verifyTrendLines(trendLines, []);
                         done();
                     }, DefaultWaitForRender);
                 });
@@ -3517,7 +3413,7 @@ module powerbitests {
 
         describe("interactive lineChart DOM validation", () => lineChartDomValidation(true));
 
-        function areaChartDomValidation(interactiveChart: boolean, areaChartType: string) {
+        function areaChartDomValidation(interactiveChart: boolean, isStacked: boolean) {
             let v: powerbi.IVisual, element: JQuery;
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -3545,7 +3441,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin(areaChartType).create();
+                v = new LineChartVisualBuilder().areaChart(isStacked).build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -3652,7 +3548,7 @@ module powerbitests {
 
                     setTimeout(() => {
                         let areaBounds = (<any>$('.catArea')[2]).getBBox(); //the all negative one
-                        if (areaChartType.indexOf('stack') < 0)
+                        if (!isStacked)
                             expect(areaBounds.height).toBeLessThan(50); // check to make sure we shade towards zero (is has small height)
                         else
                             expect(areaBounds.height).toBeGreaterThan(400); //when stacked, this puppy takes up most of the viewport
@@ -3779,9 +3675,9 @@ module powerbitests {
             });
         }
 
-        describe("areaChart DOM validation", () => areaChartDomValidation(false, 'areaChart'));
+        describe("areaChart DOM validation", () => areaChartDomValidation(/* interactive */ false, /* isStacked */ false));
 
-        describe("interactive areaChart DOM validation", () => areaChartDomValidation(true, 'areaChart'));
+        describe("interactive areaChart DOM validation", () => areaChartDomValidation(/* interactive */ true, /* isStacked */ false));
 
         function stackedAreaChartDomValidation(interactiveChart: boolean) {
             let v: powerbi.IVisual, element: JQuery;
@@ -3827,7 +3723,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('stackedAreaChart').create();
+                v = new LineChartVisualBuilder().areaChart(/* isStacked */ true).build();
                 v.init({
                     element: element,
                     host: hostServices,
@@ -4197,15 +4093,35 @@ module powerbitests {
                 expect(labelDataPoints[3].text).toEqual("50");
                 expect(labelDataPoints[4].text).toEqual("0");
             });
+
+            it('trend lines not enabled', (done) => {
+                let objects: DataViewObjects = {
+                    trend: {
+                        show: true,
+                    }
+                };
+
+                let dataViews = new helpers.TrendLineBuilder({}).withObjects(objects).buildDataViews();
+
+                v.onDataChanged({
+                    dataViews: dataViews,
+                });
+
+                setTimeout(() => {
+                    let trendLines = $('.trend-line');
+                    helpers.verifyTrendLines(trendLines, []);
+                    done();
+                }, DefaultWaitForRender);
+            });
         }
 
-        describe("stackedAreaChart DOM validation", () => areaChartDomValidation(false, 'stackedAreaChart'));
+        describe("stackedAreaChart DOM validation", () => areaChartDomValidation(/* interactive */ false, /* isStacked*/ true));
 
-        describe("interactive stackedAreaChart DOM validation", () => areaChartDomValidation(true, 'stackedAreaChart'));
+        describe("interactive stackedAreaChart DOM validation", () => areaChartDomValidation(/* interactive */ true, /* isStacked */ true));
 
-        describe("stackedAreaChart specific DOM validation", () => stackedAreaChartDomValidation(false));
+        describe("stackedAreaChart specific DOM validation", () => stackedAreaChartDomValidation(/* interactive */ false));
 
-        describe("stackedAreaChart specific DOM validation", () => stackedAreaChartDomValidation(true));
+        describe("stackedAreaChart specific DOM validation", () => stackedAreaChartDomValidation(/* interactive */ true));
     });
 
     describe("Line Chart Legend Formatting", () => {
@@ -4228,7 +4144,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
             v.init({
                 element: element,
                 host: hostServices,
@@ -4328,7 +4244,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
 
             v.init({
                 element: element,
@@ -4422,7 +4338,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.createMobile().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().forMobile().build();
             v.init({
                 element: element,
                 host: hostServices,
@@ -4510,7 +4426,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
             v.init({
                 element: element,
                 host: hostServices,
@@ -4586,7 +4502,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
 
             v.init({
                 element: element,
@@ -4646,8 +4562,6 @@ module powerbitests {
         });
 
         it('Data label per series when container visible and collapsed', (done) => {
-            let featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-            };
             let metadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata);
             metadataWithLabels.objects = {
                 labels: {
@@ -4655,7 +4569,7 @@ module powerbitests {
                     showAll: true,
                 }
             };
-            v = powerbi.visuals.visualPluginFactory.createMinerva(featureSwitches).getPlugin('columnChart').create();
+            v = new LineChartVisualBuilder().build();
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -4677,13 +4591,13 @@ module powerbitests {
                         values: DataViewTransform.createValueColumns([
                             {
                                 source: dataViewMetadata.columns[1],
-                                values: [100, 200, 300, 400, 500]
+                                values: [100, 200, 300]
                             }, {
                                 source: dataViewMetadata.columns[2],
-                                values: [200, 400, 600, 800, 1000]
+                                values: [200, 400, 600]
                             }, {
                                 source: dataViewMetadata.columns[3],
-                                values: [1, 2, 3, 4, 5]
+                                values: [1, 2, 3]
                             }])
                     }
                 }]
@@ -4718,7 +4632,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('150', '75');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
 
             v.init({
                 element: element,
@@ -4750,7 +4664,7 @@ module powerbitests {
             });
         });
 
-        it('Line Chart Scrollbar DOM Validation', (done) => {
+        xit('Line Chart Scrollbar DOM Validation', (done) => {
             setTimeout(() => {
                 expect($('.lineChart')).toBeInDOM();
                 expect($('rect.extent').length).toBe(1);
@@ -4814,7 +4728,7 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '500');
-                v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+                v = new LineChartVisualBuilder().build();
 
                 v.init({
                     element: element,
@@ -5196,7 +5110,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('150', '75');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin('areaChart').create();
+            v = new LineChartVisualBuilder().areaChart(false).build();
 
             v.init({
                 element: element,
@@ -5269,7 +5183,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
             v.init({
                 element: element,
                 host: hostServices,
@@ -5616,7 +5530,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().build();
             v.init({
                 element: element,
                 host: hostServices,
@@ -5876,9 +5790,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('150', '75');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({
-                lineChartLabelDensityEnabled: true,
-            }).getPlugin('lineChart').create();
+            v = new LineChartVisualBuilder().withLabelDensity().build();
 
             v.init({
                 element: element,
@@ -6267,6 +6179,85 @@ module powerbitests {
             expect(labelDataPoints[3].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[2].key }));
             expect(labelDataPoints[4].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[3].key }));
         });
+
+        it("Label data points do not have zero width parent for stacked area with scalar axis", () => {
+            let areaChart = powerbi.visuals.visualPluginFactory.createMinerva({
+                lineChartLabelDensityEnabled: true,
+            }).getPlugin('stackedAreaChart').create();
+
+            areaChart.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+                interactivity: {},
+            });
+
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        format: '0.##;-0.##;0',
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                        labelDensity: labelDensityMax,
+                    },
+                    categoryAxis: {
+                        scalar: true,
+                    },
+                }
+            };
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity('a'),
+                mocks.dataViewScopeIdentity('b'),
+                mocks.dataViewScopeIdentity('c'),
+                mocks.dataViewScopeIdentity('d'),
+                mocks.dataViewScopeIdentity('e'),
+            ];
+            areaChart.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e'],
+                            identity: categoryIdentities,
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(areaChart);
+
+            // Important labels (last, first) should be first
+            expect((<LabelParentRect>labelDataPoints[0].parentShape).rect.width).toBeGreaterThan(0);
+            expect((<LabelParentRect>labelDataPoints[1].parentShape).rect.width).toBeGreaterThan(0);
+            expect((<LabelParentRect>labelDataPoints[2].parentShape).rect.width).toBeGreaterThan(0);
+            expect((<LabelParentRect>labelDataPoints[3].parentShape).rect.width).toBeGreaterThan(0);
+            expect((<LabelParentRect>labelDataPoints[4].parentShape).rect.width).toBeGreaterThan(0);
+        });
     });
 
     //describe("label data point density single series validation", () => {
@@ -6597,5 +6588,44 @@ module powerbitests {
      */
     function getComboOrMobileTooltip(lineChart: LineChart, seriesData: any, pointX: number, context?: HTMLElement): powerbi.visuals.TooltipDataItem[] {
         return lineChart.getTooltipInfoForCombo(createTooltipEvent(seriesData, context), pointX);
+    }
+
+    class LineChartVisualBuilder {
+        private isMobile: boolean;
+        private isAreaChart: boolean;
+        private isStacked: boolean;
+        private lineChartLabelDensityEnabled: boolean;
+
+        public areaChart(isStacked: boolean): this {
+            this.isAreaChart = true;
+            this.isStacked = isStacked;
+            return this;
+        }
+
+        public forMobile(): this {
+            this.isMobile = true;
+            return this;
+        }
+
+        public withLabelDensity(): this {
+            this.lineChartLabelDensityEnabled = true;
+            return this;
+        }
+
+        public build(): powerbi.visuals.CartesianChart {
+            let chartType = CartesianChartType.Line;
+            if (this.isAreaChart) {
+                chartType = this.isStacked
+                    ? CartesianChartType.StackedArea
+                    : CartesianChartType.Area;
+            }
+
+            return new powerbi.visuals.CartesianChart({
+                chartType: chartType,
+                trimOrdinalDataOnOverflow: this.isMobile ? false : true,
+                isScrollable: this.isMobile ? false : true,
+                lineChartLabelDensityEnabled: this.lineChartLabelDensityEnabled,
+            });
+        }
     }
 }

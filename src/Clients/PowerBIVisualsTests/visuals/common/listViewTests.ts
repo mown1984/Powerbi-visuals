@@ -64,6 +64,26 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+        
+         xit("Scroll partially down to check if the next item is added to the dom", (done) => {
+            listViewBuilder.buildHtmlListView();
+            setTimeout(() => {
+                let itemCount = listViewBuilder.element.find(".item").length;
+                expect(itemCount).toBeLessThan(9); // Some should be virtualized, so shouldn't show all 9 items
+
+                // Scroll just over half way down 1 element. This should force the next element to be added.
+                listViewBuilder.scrollElement.scrollTop(6);
+                setTimeout(() => {
+                    let items = listViewBuilder.element.find(".item");
+                    let newItemCount = items.length;
+                    let lastElem2 = items.last().text();
+                    expect(lastElem2).toEqual("-->Sachin-->Patney");
+                    expect(newItemCount).toEqual(itemCount + 1); // We should have an extra element since we're displaying an extra row.
+                    expect(listViewBuilder.spyOnLoadMoreData).toHaveBeenCalled();
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
 
         xit("Scroll to last to check if items come in view HTML", (done) => {
             listViewBuilder.buildHtmlListView();
@@ -80,6 +100,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
+        
 
         xit("Reset scrollbar position when ResetScrollbar flag is set", (done) => {
             listViewBuilder.buildHtmlListView();

@@ -25,6 +25,7 @@
  */
 
 module powerbi.visuals {
+    import Color = jsCommon.Color;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface TrendLine {
@@ -34,6 +35,7 @@ module powerbi.visuals {
         transparency: number;
         style: string;
         combineSeries: boolean;
+        useHighlightValues: boolean;
         y2Axis: boolean;
     }
 
@@ -43,17 +45,20 @@ module powerbi.visuals {
             lineColor: 'lineColor',
             transparency: 'transparency',
             style: 'style',
-            combineSeries: 'combineSeries'
+            combineSeries: 'combineSeries',
+            useHighlightValues: 'useHighlightValues',
         };
         const trendObjectName = 'trend';
 
         export const defaults = {
-            color: <Fill>{ solid: { color: '#000' } },
-            lineStyle: lineStyle.solid,
+            lineColor: <Fill>{ solid: { color: '#000' } },
+            lineStyle: lineStyle.dashed,
             transparency: 0,
             combineSeries: true,
+            useHighlightValues: true,
         };
         const TrendLineClassSelector: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('trend-line');
+        const TrendLineLayerClassSelector: jsCommon.CssConstants.ClassAndSelector = jsCommon.CssConstants.createClassAndSelector('trend-line-layer');
 
         export function enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, trendLines: TrendLine[]): void {
             debug.assertValue(enumeration, 'enumeration');
@@ -63,6 +68,10 @@ module powerbi.visuals {
                     selector: null,
                     properties: {
                         show: false,
+                        lineColor: defaults.lineColor,
+                        transparency: defaults.transparency,
+                        style: defaults.lineStyle,
+                        combineSeries: defaults.combineSeries,
                     },
                     objectName: trendObjectName,
                 });
@@ -71,15 +80,20 @@ module powerbi.visuals {
             }
 
             let trendLine = trendLines[0];
+            let properties: { [propertyName: string]: DataViewPropertyValue } = {};
+            properties['show'] = trendLine.show;
+
+            if (trendLine.combineSeries)
+                properties['lineColor'] = trendLine.lineColor;
+
+            properties['transparency'] = trendLine.transparency;
+            properties['style'] = trendLine.style;
+            properties['combineSeries'] = trendLine.combineSeries;
+            properties['useHighlightValues'] = trendLine.useHighlightValues;
+
             enumeration.pushInstance({
                 selector: null,
-                properties: {
-                    show: trendLine.show,
-                    lineColor: trendLine.lineColor,
-                    transparency: trendLine.transparency,
-                    style: trendLine.style,
-                    combineSeries: trendLine.combineSeries,
-                },
+                properties: properties,
                 objectName: trendObjectName,
             });
         }
@@ -88,24 +102,7 @@ module powerbi.visuals {
             return DataRoleHelper.hasRoleInDataView(dataView, 'regression.X');
         }
 
-        export function readDataViews(dataViews: DataView[]): TrendLine[] {
-            let trendLineDataViews = _.filter(dataViews, (dataView) => isDataViewForRegression(dataView));
-            debug.assert(trendLineDataViews.length <= 2, 'expected at most 2 trend line dataviews');
-
-            let allTrendLines: TrendLine[] = [];
-            let y2 = false;
-            for (let trendLineDataView of trendLineDataViews) {
-                let trendLines = TrendLineHelper.readDataView(trendLineDataView, y2);
-                if (!_.isEmpty(trendLines))
-                    allTrendLines.push(...trendLines);
-
-                y2 = true;
-            }
-
-            return allTrendLines;
-        }
-
-        export function readDataView(dataView: DataView, y2: boolean): TrendLine[] {
+        export function readDataView(dataView: DataView, sourceDataView: DataView, y2: boolean, colors: IDataColorPalette): TrendLine[] {
             if (!dataView || !dataView.categorical)
                 return;
 
@@ -120,10 +117,11 @@ module powerbi.visuals {
 
             let trendProperties = DataViewObjects.getObject(dataView.metadata.objects, trendObjectName, {});
             let show = DataViewObject.getValue<boolean>(trendProperties, trendLinePropertyNames.show, false);
-            let lineColor = DataViewObject.getValue<Fill>(trendProperties, trendLinePropertyNames.lineColor, defaults.color);
+            let lineColor = DataViewObject.getValue<Fill>(trendProperties, trendLinePropertyNames.lineColor);
             let transparency = DataViewObject.getValue<number>(trendProperties, trendLinePropertyNames.transparency, defaults.transparency);
             let style = DataViewObject.getValue<string>(trendProperties, trendLinePropertyNames.style, defaults.lineStyle);
             let combineSeries = DataViewObject.getValue<boolean>(trendProperties, trendLinePropertyNames.combineSeries, defaults.combineSeries);
+            let useHighlightValues = DataViewObject.getValue<boolean>(trendProperties, trendLinePropertyNames.useHighlightValues, defaults.useHighlightValues);
 
             // Trend lines generated by Insights will be putting line color here, we should convert the Insights code to create
             // "trend" objects like above and write the upgrade code to handle pinned tiles with trend lines before removing any feature switch.
@@ -131,15 +129,30 @@ module powerbi.visuals {
             if (legacyColor)
                 lineColor = legacyColor;
 
+            let objects = sourceDataView.metadata.objects;
+            let defaultColor = DataViewObjects.getFillColor(objects, { objectName: 'dataPoint', propertyName: 'defaultColor' });
+            let colorHelper = new ColorHelper(colors, { objectName: 'dataPoint', propertyName: 'fill' }, defaultColor);
+
             let trendLines: TrendLine[] = [];
-            for (let group of groups) {
+            for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+                let group = groups[groupIndex];
+
                 let points: IPoint[] = [];
                 for (let i = 0; i < categories.length; i++) {
                     let x = AxisHelper.normalizeNonFiniteNumber(categories[i]);
 
                     // There is a assumption here that the group only has 1 set of values in it. Once we add more things like confidence bands,
                     // this assumption will not be true. This assumption comes from the way dataViewRegresion generates the dataView
-                    let y = AxisHelper.normalizeNonFiniteNumber(group.values[0].values[i]);
+                    let valueColumn = group.values[0];
+
+                    let values: any[];
+                    if (useHighlightValues && valueColumn.highlights) {
+                        values = valueColumn.highlights;
+                    }
+                    else {
+                        values = valueColumn.values;
+                    }
+                    let y = AxisHelper.normalizeNonFiniteNumber(values[i]);
 
                     if (x != null && y != null) {
                         points.push({
@@ -149,21 +162,60 @@ module powerbi.visuals {
                     }
                 }
 
+                let seriesLineColor: Fill;
+                if (combineSeries) {
+                    seriesLineColor = lineColor || defaults.lineColor;
+                }
+                else {
+                    // TODO: This should likely be delegated to the layer which knows how to choose the correct color for any given situation.
+                    if (sourceDataView.categorical.values.source) {
+                        // Dynamic series
+                        let sourceGroups = sourceDataView.categorical.values.grouped();
+                        let color = colorHelper.getColorForSeriesValue(sourceGroups[groupIndex].objects, sourceDataView.categorical.values.identityFields, group.name);
+                        color = darkenTrendLineColor(color);
+                        seriesLineColor = { solid: { color: color } };
+                    }
+                    else {
+                        // Static series
+                        let matchingMeasure = sourceDataView.categorical.values[groupIndex];
+                        let color = colorHelper.getColorForMeasure(matchingMeasure.source.objects, group.name);
+                        color = darkenTrendLineColor(color);
+                        seriesLineColor = { solid: { color: color } };
+                    }
+                }
+
                 trendLines.push({
                     points: points,
                     show: show,
-                    lineColor: lineColor,
+                    lineColor: seriesLineColor,
                     transparency: transparency,
                     style: style,
                     combineSeries: combineSeries,
+                    useHighlightValues: useHighlightValues,
                     y2Axis: y2,
                 });
             }
             return trendLines;
         }
 
+        export function darkenTrendLineColor(color: string): string {
+            let rgb = Color.parseColorString(color);
+            rgb = Color.darken(rgb, 20);
+            return Color.rgbString(rgb);
+        }
+
         export function render(trendLines: TrendLine[], graphicsContext: D3.Selection, axes: CartesianAxisProperties, viewport: IViewport): void {
-            let lines = graphicsContext.selectAll(TrendLineClassSelector.selector).data(trendLines || []);
+            let layer = graphicsContext.select(TrendLineLayerClassSelector.selector);
+            if (layer.empty()) {
+                layer = graphicsContext.append('svg').classed(TrendLineLayerClassSelector.class, true);
+            }
+
+            layer.attr({
+                height: viewport.height,
+                width: viewport.width
+            });
+
+            let lines = layer.selectAll(TrendLineClassSelector.selector).data(trendLines || []);
             lines.enter().append('path').classed(TrendLineClassSelector.class, true);
 
             lines

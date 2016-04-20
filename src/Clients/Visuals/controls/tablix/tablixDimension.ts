@@ -247,6 +247,7 @@ module powerbi.visuals.controls {
                 this._owner._unbindCell(rowHeaderCell);
                 rowHeaderCell.type = TablixCellType.RowHeader;
                 rowHeaderCell.item = item;
+                rowHeaderCell.unfixRowHeight();
             }
 
             if (this._hierarchyNavigator.isLeaf(item)) {
@@ -297,7 +298,7 @@ module powerbi.visuals.controls {
                 this._owner._unbindCell(cell);
                 cell.type = TablixCellType.BodyCell;
                 cell.item = item;
-
+                cell.unfixRowHeight();
                 this._binder.bindBodyCell(item, cell);
             }
         }
@@ -310,6 +311,7 @@ module powerbi.visuals.controls {
                 this._owner._unbindCell(cell);
                 cell.type = TablixCellType.RowHeader;
                 cell.item = item;
+                cell.unfixRowHeight();
                 this.bindRowHeader(item, cell);
                 this._tablixLayoutManager.onRowHeaderFooterRealized(item, cell);
             }
@@ -380,11 +382,13 @@ module powerbi.visuals.controls {
                 this._owner._unbindCell(cell);
                 cell.type = TablixCellType.ColumnHeader;
                 cell.item = item;
+                cell.unfixRowHeight();
             }
 
             if (this._hierarchyNavigator.isLeaf(item)) {
                 cell.rowSpan = depth - this._hierarchyNavigator.getLevel(item);
-            } else {
+            }
+            else {
                 let previousCount: number = this._layoutManager.getRealizedItemsCount();
                 this.addNodes(this._hierarchyNavigator.getChildren(item), columnIndex, depth, this.getFirstVisibleChildIndex(item));
 
@@ -400,7 +404,7 @@ module powerbi.visuals.controls {
 
             if (!match)
                 this._binder.bindColumnHeader(item, cell);
-
+            
             this._tablixLayoutManager.onColumnHeaderRealized(item, cell);
             return cell;
         }

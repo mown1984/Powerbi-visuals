@@ -1127,6 +1127,7 @@ declare module powerbi.data {
         function getCategoryIndexOfRole(categories: DataViewCategoryColumn[], roleName: string): number;
         function hasRole(column: DataViewMetadataColumn, name: string): boolean;
         function hasRoleInDataView(dataView: DataView, name: string): boolean;
+        function hasRoleInValueColumn(valueColumn: DataViewValueColumn, name: string): boolean;
     }
 }
 declare module powerbi.data {
@@ -1647,6 +1648,13 @@ declare module powerbi.data {
     }
     module SQExprBuilder {
         function fieldExpr(fieldExpr: FieldExprPattern): SQExpr;
+        function fromColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQAggregationExpr;
+        function fromColumn(column: FieldExprColumnPattern): SQColumnRefExpr;
+        function fromEntity(entityPattern: FieldExprEntityPattern): SQEntityExpr;
+        function fromEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQAggregationExpr;
+        function fromHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQAggregationExpr;
+        function fromHierarchyLevel(hierarchyLevelPattern: FieldExprHierarchyLevelPattern): SQHierarchyLevelExpr;
+        function fromHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr;
     }
     module SQExprConverter {
         function asFieldPattern(sqExpr: SQExpr): FieldExprPattern;
@@ -1654,6 +1662,7 @@ declare module powerbi.data {
     module FieldExprPattern {
         function visit<T>(expr: SQExpr | FieldExprPattern, visitor: IFieldExprPatternVisitor<T>): T;
         function toColumnRefSQExpr(columnPattern: FieldExprColumnPattern): SQColumnRefExpr;
+        function getAggregate(fieldExpr: FieldExprPattern): QueryAggregateFunction;
         function hasFieldExprName(fieldExpr: FieldExprPattern): boolean;
         function getPropertyName(fieldExpr: FieldExprPattern): string;
         function getHierarchyName(fieldExpr: FieldExprPattern): string;
@@ -1712,6 +1721,12 @@ declare module powerbi {
         function isMetadataEquivalent(metadata1: DataViewMetadata, metadata2: DataViewMetadata): boolean;
     }
 }
+declare module powerbi.data {
+    module DataViewRoleWildcard {
+        function fromRoles(roles: string[]): DataViewRoleWildcard;
+        function equals(firstRoleWildcard: DataViewRoleWildcard, secondRoleWildcard: DataViewRoleWildcard): boolean;
+    }
+}
 declare module powerbi {
     module DataViewScopeIdentity {
         /** Compares the two DataViewScopeIdentity values for equality. */
@@ -1726,6 +1741,7 @@ declare module powerbi {
 declare module powerbi.data {
     module DataViewScopeWildcard {
         function matches(wildcard: DataViewScopeWildcard, instance: DataViewScopeIdentity): boolean;
+        function equals(firstScopeWildcard: DataViewScopeWildcard, secondScopeWildcard: DataViewScopeWildcard): boolean;
         function fromExprs(exprs: SQExpr[]): DataViewScopeWildcard;
     }
 }
@@ -1765,15 +1781,10 @@ declare module powerbi.data {
          * The algorithm is as follows
          *
          * 1. Find the cartesian X and Y roles and the columns that correspond to those roles
-         * 2. Order the X-Y value pairs by the X values
-         * 3. Compute the actual regression:
-         *    i.   xBar: average of X values, yBar: average of Y values
-         *    ii.  ssXX: sum of squares of X values = Sum(xi - xBar)^2
-         *    iii. ssXY: sum of squares of X and Y values  = Sum((xi - xBar)(yi - yBar)
-         *    iv.  Slope: ssXY / ssXX
-         *    v.   Intercept: yBar - xBar * slope
-         * 4. Compute the X and Y points for regression line using Y = Slope * X + Intercept
-         * 5. Create the new dataView using the points computed above
+         * 2. Get the data points, (X, Y) pairs, for each series, combining if needed.
+         * 3. Compute the X and Y points for regression line using Y = Slope * X + Intercept
+         * If highlights values are present, repeat steps 2 & 3 using highlight values.
+         * 4. Create the new dataView using the points computed above
          */
         function linearRegressionTransform(sourceDataView: DataView, dataRoles: VisualDataRole[], regressionDataViewMapping: DataViewMapping, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, colorAllocatorFactory: IColorAllocatorFactory): DataView;
     }
@@ -2566,6 +2577,9 @@ declare module powerbi.data {
         function isRelatedToMany(schema: FederatedConceptualSchema, sourceExpr: SQEntityExpr, targetExpr: SQEntityExpr): boolean;
         function isRelatedToOne(schema: FederatedConceptualSchema, sourceExpr: SQEntityExpr, targetExpr: SQEntityExpr): boolean;
         function isRelatedOneToOne(schema: FederatedConceptualSchema, sourceExpr: SQEntityExpr, targetExpr: SQEntityExpr): boolean;
+        /** Performs a union of the 2 arrays with SQExpr.equals as comparator to skip duplicate items,
+            and returns a new array. When available, we should use _.unionWith from lodash. */
+        function concatUnique(leftExprs: SQExpr[], rightExprs: SQExpr[]): SQExpr[];
     }
 }
 declare module powerbi.data {
