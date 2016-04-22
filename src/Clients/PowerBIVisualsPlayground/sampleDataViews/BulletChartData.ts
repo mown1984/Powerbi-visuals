@@ -47,8 +47,8 @@ module powerbi.visuals.sampleDataViews {
             [60000, 50000, 40000] // Max
         ];
 
-        private sampleMin: number = 20000;
-        private sampleMax: number = 60000;
+        private sampleMins: number[] = [20000, 30000, 0, 10000, 25000, 29000, 36000, 45000, 52000];
+        private sampleMaxs: number[] = [52000, 40000, 60000, 20000, 28000, 35000, 42000, 50000, 60000];
 
         public getDataViews(): DataView[] {
 
@@ -120,11 +120,6 @@ module powerbi.visuals.sampleDataViews {
             ];
 
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-            var tableDataValues = categoryValues.map(function (metricName, idx) {
-                return [metricName, ...columns.map((column) => {
-                    return column.values[idx];
-                })]
-            });
 
             return [{
                 metadata: dataViewMetadata,
@@ -135,18 +130,14 @@ module powerbi.visuals.sampleDataViews {
                         identity: categoryIdentities,
                     }],
                     values: dataValues
-                },
-                table: {
-                    rows: tableDataValues,
-                    columns: dataViewMetadata.columns,
                 }
             }];
         }
 
         public randomize(): void {
 
-            this.sampleData = this.sampleData.map((item) => {
-                return item.map(() => this.getRandomValue(this.sampleMin, this.sampleMax));
+            this.sampleData = this.sampleData.map((item, idx) => {
+                return item.map(() => this.getRandomValue(this.sampleMins[idx], this.sampleMaxs[idx]));
             });
         }
 
