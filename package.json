@@ -1,6 +1,6 @@
 {
     "name": "powerbi-visuals",
-    "version": "0.3.10",
+    "version": "0.4.0",
     "description": "Microsoft PowerBI Visuals",
     "devDependencies": {
         "fs": "0.0.2",
@@ -70,6 +70,5 @@
     "files": [
         "CONTRIBUTING.md",
         "lib"
-    ],
-    "readme": "See README.MD file"
+    ]
 }
