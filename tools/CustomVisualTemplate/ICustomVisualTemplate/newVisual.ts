@@ -23,8 +23,6 @@
 *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 *  THE SOFTWARE.
 */
-/* Please make sure that this path is correct */
-/// <reference path="../_references.ts"/>
  
 module powerbi.visuals {
     import SelectionManager = utility.SelectionManager;
@@ -42,7 +40,7 @@ module powerbi.visuals {
         },
     };
 
-    export interface TeamData {
+    export interface VisualTeamData {
         name: string;
         value: number;
         color: string;
@@ -50,8 +48,8 @@ module powerbi.visuals {
     }
 
     export interface $safeitemname$Data {
-        teamA: TeamData;
-        teamB: TeamData;
+        teamA: VisualTeamData;
+        teamB: VisualTeamData;
         background: string;
     }
 

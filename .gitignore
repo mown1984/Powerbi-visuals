@@ -47,14 +47,29 @@ src/Clients/**/obj/*.*
 # IDE temp data
 .sublime-gulp.cache
 
-# CustomVisualTemplate
-tools/CustomVisualTemplate/CustomVisualTemplate/bin/
-tools/CustomVisualTemplate/CustomVisualTemplate/obj/
-tools/CustomVisualTemplate/ICustomVisualTemplate/bin/
-tools/CustomVisualTemplate/ICustomVisualTemplate/obj/
-tools/CustomVisualTemplate/obj/
-tools/CustomVisualTemplate/DTAR_08E86330_4835_4B5C_9E5A_61F37AE1A077_DTAR
-tools/CustomVisualTemplate/.vs/
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio 2015 cache/options directory
+.vs/
 
 # PowerBIVisualsPlayground
 src/Clients/PowerBIVisualsPlayground/**/*.css
@@ -63,8 +78,6 @@ src/Clients/PowerBIVisualsPlayground/**/*.map
 !src/Clients/PowerBIVisualsPlayground/gulpProject.js
 src/Clients/PowerBIVisualsPlayground/**/*.d.ts
 src/Clients/PowerBIVisualsPlayground/images/visuals.sprites.png
-src/Clients/PowerBIVisualsPlayground/.vs
-src/Clients/PowerBIVisualsPlayground/bin
 src/Clients/PowerBIVisualsPlayground/styles/**/*.png
 
 # Styles
