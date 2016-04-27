@@ -53,7 +53,6 @@ module powerbi.visuals {
             "kpi",
             "scriptVisual",
             "slicer",
-            "bulletChart",
             "forceGraph",
             "mekkoChart",
             "gantt",
