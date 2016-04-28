@@ -121,7 +121,7 @@ module powerbi {
             if (pbiErrorDetails) {
                 for (let i = 0; i < pbiErrorDetails.length; i++) {
                     let element = pbiErrorDetails[i];
-                    let localizedCode = localize.get(PowerBIErrorDetailHelper.serverErrorPrefix + element.code);
+                    let localizedCode = localize.getOptional(PowerBIErrorDetailHelper.serverErrorPrefix + element.code);
                     let additionErrorInfoKeyValuePair = {
                         errorInfoKey: localizedCode ? localizedCode : element.code,
                         errorInfoValue: element.detail.type === PowerBIErrorResourceType.ResourceCodeReference ? localize.get(PowerBIErrorDetailHelper.serverErrorPrefix + element.detail.value) : element.detail.value

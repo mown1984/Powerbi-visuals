@@ -25,8 +25,6 @@
 */
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
-
     interface ISelectionManager {
         select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
         hasSelection(): boolean;

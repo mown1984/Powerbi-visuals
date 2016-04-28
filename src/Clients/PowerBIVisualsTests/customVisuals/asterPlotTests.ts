@@ -160,6 +160,46 @@ module powerbitests.customVisuals {
                         done();
                     }, DefaultWaitForRender);
                 });
+
+                it("Data Labels - Change font size", (done) => {
+                    let fontSize: number = 15;
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true,
+                            fontSize: fontSize,
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        let labels: JQuery = $(".asterPlot .labels .data-labels");
+                        expect(labels.first().css('font-size')).toBe(fontSize * 4 / 3 + 'px');
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("Data Labels should be clear when removing data", (done) => {
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+                    setTimeout(() => {
+                        let labels: JQuery = $(".asterPlot .labels .data-labels");
+                        expect(labels.length).toBeGreaterThan(0);
+
+                        // Manually remove categories
+                        dataViews[0].categorical.categories = undefined;
+                        visualBuilder.update(dataViews);
+
+                        // Check that the labels were removed
+                        labels = $(".asterPlot .labels .data-labels");
+                        expect(labels.length).toBe(0);
+                        done();
+                    }, DefaultWaitForRender);
+                });
             });
 
             describe("Default Legend", () => {

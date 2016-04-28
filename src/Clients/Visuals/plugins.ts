@@ -70,7 +70,8 @@ module powerbi.visuals.plugins {
         name: 'multiRowCard',
         watermarkKey: 'multiRowCard',
         capabilities: capabilities.multiRowCard,
-        create: () => new MultiRowCard()
+        create: () => new MultiRowCard(),
+        getSortableRoles: (visualSortableOptions?: VisualSortableOptions) => MultiRowCard.getSortableRoles(visualSortableOptions),
     };
 
     export let clusteredBarChart: IVisualPlugin = {

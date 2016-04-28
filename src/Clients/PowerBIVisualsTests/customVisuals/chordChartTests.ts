@@ -107,6 +107,33 @@ module powerbitests.customVisuals {
                     done();
                 }, powerbitests.DefaultWaitForRender);
             });
+
+            it("update data Colors off", (done) => {
+                let clonedDataViews = _.cloneDeep(dataViews);
+                let labels: powerbi.DataViewObjects = { dataPoint: { showAllDataPoints: false } };
+                clonedDataViews[0].metadata.objects = labels;
+                visualBuilder.update(clonedDataViews);
+                let result = visualBuilder.enumerateObjectInstances({ objectName: 'dataPoint' });
+                setTimeout(() => {
+                    expect(result[1].properties['showAllDataPoints']).toBeFalsy();
+                    expect(result[2]).toBeUndefined();
+                    done();
+                }, powerbitests.DefaultWaitForRender);
+            });
+
+            it("update data Colors on", (done) => {
+                let clonedDataViews = _.cloneDeep(dataViews);
+                let labels: powerbi.DataViewObjects = { dataPoint: { showAllDataPoints: true } };
+                clonedDataViews[0].metadata.objects = labels;
+                visualBuilder.update(clonedDataViews);
+                let result = visualBuilder.enumerateObjectInstances({ objectName: 'dataPoint' });
+                setTimeout(() => {
+                    expect(result[1].properties['showAllDataPoints']).toBeTruthy();
+                    expect(result[2].properties['fill']).toBeDefined();
+                    done();
+                }, powerbitests.DefaultWaitForRender);
+            });
+
         });
 
         describe('enumerateObjectInstances', () => {

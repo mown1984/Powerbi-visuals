@@ -1353,7 +1353,8 @@ module powerbi.data {
 
             let dataViewTable = dataView.table;
             if (dataViewTable && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Table)) {
-                let rewrittenTable = evaluateDataRepetitionTable(dataViewTable, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
+                let rewrittenSelector = rewriteTableRoleSelector(dataViewTable, selector);
+                let rewrittenTable = evaluateDataRepetitionTable(dataViewTable, selectTransforms, objectDescriptors, rewrittenSelector, rules, containsWildcard, objectDefns, colorAllocatorCache);
                 if (rewrittenTable) {
                     // TODO: This mutates the DataView -- the assumption is that prototypal inheritance has already occurred.  We should
                     // revisit this, likely when we do lazy evaluation of DataView.
@@ -1362,6 +1363,57 @@ module powerbi.data {
 
                 // Consider capturing diagnostics for unmatched selectors to help debugging.
             }
+        }
+
+        function rewriteTableRoleSelector(dataViewTable: DataViewTable, selector: Selector): Selector {
+            if (Selector.hasRoleWildcard(selector)) {
+                selector = findSelectorForRoleWildcard(dataViewTable, selector);
+            }
+
+            return selector;
+        }
+
+        function findSelectorForRoleWildcard(dataViewTable: DataViewTable, selector: Selector): Selector {
+            let resultingSelector: Selector = {
+                data: [],
+                id: selector.id,
+                metadata: selector.metadata
+            };
+
+            for (let dataSelector of selector.data) {
+                if (Selector.isRoleWildcard(dataSelector)) {
+                    let selectorRoles = dataSelector.roles;
+                    let allColumnsBelongToSelectorRole: boolean = allColumnsBelongToRole(dataViewTable.columns, selectorRoles);
+                    let exprs = dataViewTable.identityFields;
+                    if (allColumnsBelongToSelectorRole && exprs) {
+                        resultingSelector.data.push(DataViewScopeWildcard.fromExprs(<SQExpr[]>exprs));
+                        continue;
+                    }
+                }
+
+                if (isUniqueDataSelector(resultingSelector.data, dataSelector)) {
+                    resultingSelector.data.push(dataSelector);
+                }
+            }
+
+            return resultingSelector;
+        }
+
+        function isUniqueDataSelector(dataSelectors: DataRepetitionSelector[], newSelector: DataRepetitionSelector): boolean {
+            if (_.isEmpty(dataSelectors))
+                return true;
+
+            return !_.any(dataSelectors, (dataSelector: DataRepetitionSelector) => dataSelector.key === newSelector.key);
+        }
+
+        function allColumnsBelongToRole(columns: DataViewMetadataColumn[], selectorRoles: string[]): boolean {
+            for (let column of columns) {
+                var roles = column.roles;
+                if (!roles || !_.any(selectorRoles, (selectorRole) => roles[selectorRole]))
+                    return false;
+            }
+
+            return true;
         }
 
         function evaluateDataRepetitionCategoricalCategory(

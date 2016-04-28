@@ -4664,7 +4664,7 @@ module powerbitests {
             });
         });
 
-        xit('Line Chart Scrollbar DOM Validation', (done) => {
+        it('Line Chart Scrollbar DOM Validation', (done) => {
             setTimeout(() => {
                 expect($('.lineChart')).toBeInDOM();
                 expect($('rect.extent').length).toBe(1);

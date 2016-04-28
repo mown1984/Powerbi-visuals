@@ -46,6 +46,7 @@ module powerbitests.customVisuals {
             });
 
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+
             it("update", (done) => {
                 visualBuilder.update(dataViews);
                 setTimeout(() => {
@@ -53,6 +54,21 @@ module powerbitests.customVisuals {
                         .toBeInDOM();
                     expect(visualBuilder.mainElement.children("g.axis").children("g.axis").first().children("g.tick").length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("update with null category values", (done) => {
+
+                // Set one of the values to be null
+                dataViews[0].categorical.categories[0].values[0] = null;
+
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children("g.chart").children("path.area")).toBeInDOM();
+
+                    // Make sure that the null value was rendered correctly
+                    expect(visualBuilder.mainElement.children("g.axis").children("g.axis").first().children("g.tick").first().text()).toBe('(Blank)');
                     done();
                 }, DefaultWaitForRender);
             });

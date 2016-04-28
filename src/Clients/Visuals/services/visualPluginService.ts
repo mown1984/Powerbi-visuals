@@ -681,7 +681,7 @@ module powerbi.visuals {
 
                 this.visualPlugins = <any>powerbi.visuals.plugins;
 
-                createMinervaPlugins(this.visualPlugins, {});
+                createMinervaPlugins(this.visualPlugins, null);
             }
 
             public getVisuals(): IVisualPlugin[] {

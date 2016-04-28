@@ -59,14 +59,14 @@ module powerbitests {
         let idAll = SelectionId.createWithIdsAndMeasure(categoryA, seriesa, measure1);
 
         it("SelectionIdBuilder -- empty", () => {
-            let id = new SelectionIdBuilder().createSelectionId();
+            let id = <SelectionId>new SelectionIdBuilder().createSelectionId();
             expect(id.getSelector()).toBeNull();
             expect(id.getSelectorsByColumn()).toEqual({});
             expect(id.getKey()).toEqual('{"selector":null,"highlight":false}');
         });
 
         it("SelectionIdBuilder -- withCategory", () => {
-            let id = new SelectionIdBuilder()
+            let id = <SelectionId>new SelectionIdBuilder()
                 .withCategory(categoryColumn, 0)
                 .createSelectionId();
 
@@ -76,7 +76,7 @@ module powerbitests {
         });
 
         it("SelectionIdBuilder -- withSeries", () => {
-            let id = new SelectionIdBuilder()
+            let id = <SelectionId>new SelectionIdBuilder()
                 .withSeries(seriesColumn, valueColumn)
                 .createSelectionId();
 
@@ -85,7 +85,7 @@ module powerbitests {
         });
 
         it("SelectionIdBuilder -- withMeasure", () => {
-            let id = new SelectionIdBuilder()
+            let id = <SelectionId>new SelectionIdBuilder()
                 .withMeasure(measure1)
                 .createSelectionId();
 
@@ -94,7 +94,7 @@ module powerbitests {
         });
 
         it("SelectionIdBuilder -- category, series, and measure", () => {
-            let id = new SelectionIdBuilder()
+            let id = <SelectionId>new SelectionIdBuilder()
                 .withCategory(categoryColumn, 0)
                 .withSeries(seriesColumn, valueColumn)
                 .withMeasure(measure1)

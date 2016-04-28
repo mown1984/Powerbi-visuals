@@ -53,7 +53,7 @@ module powerbi.visuals.sampleData {
             new sampleDataViews.SimpleHistogramData(),
             new sampleDataViews.SimpleDataByCountries(),
             new sampleDataViews.SimpleCountriesData(),
-            new sampleDataViews.BulletChartData(),
+            new sampleDataViews.BulletChartData()
         ];
 
         /**

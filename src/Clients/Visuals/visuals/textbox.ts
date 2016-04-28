@@ -551,7 +551,8 @@ module powerbi.visuals {
                 this.readOnly = readOnly;
 
                 this.localizationProvider = {
-                    get: (stringId: string) => this.host.getLocalizedString(stringId)
+                    get: (stringId: string) => this.host.getLocalizedString(stringId),
+                    getOptional: (stringId: string) => this.host.getLocalizedString(stringId)
                 };
 
                 this.dependenciesLoaded = $.Deferred<void>();
@@ -667,6 +668,9 @@ module powerbi.visuals {
                 this.editor.insertText(index, link, 'api');
                 this.editor.formatText(index, endIndex, 'link', link, 'api');
                 this.setSelection(index, endIndex);
+
+                this.onTextChanged(null, null);
+
                 return endIndex;
             }
 

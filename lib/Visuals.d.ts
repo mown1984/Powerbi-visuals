@@ -434,6 +434,295 @@ declare module powerbi.visuals {
     }
 }
 declare module powerbi.visuals {
+    /**
+     * This is the baseline for some most common used object properties across visuals.
+     * When adding new properties, please try to reuse the existing ones.
+     */
+    const StandardObjectProperties: {
+        axisEnd: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        axisScale: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        axisStart: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        axisStyle: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        axisType: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        backColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataLabelColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataLabelDecimalPoints: {
+            displayName: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        dataLabelDisplayUnits: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    labelDisplayUnits: boolean;
+                };
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        dataLabelHorizontalPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        dataLabelShow: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        dataLabelVerticalPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        defaultColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fill: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fontColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fontSize: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    fontSize: boolean;
+                };
+            };
+        };
+        formatString: {
+            type: {
+                formatting: {
+                    formatString: boolean;
+                };
+            };
+        };
+        image: {
+            type: {
+                image: {};
+            };
+        };
+        labelColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        labelDisplayUnits: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    labelDisplayUnits: boolean;
+                };
+            };
+        };
+        labelPrecision: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        legendPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        legendTitle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                text: boolean;
+            };
+        };
+        lineColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        outline: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        outlineColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        outlineWeight: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        show: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        showAllDataPoints: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        showLegendTitle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        referenceLinePosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        referenceLineStyle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        transparency: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        yAxisPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+    };
+}
+declare module powerbi.visuals {
     const animatedTextObjectDescs: data.DataViewObjectDescriptors;
     const animatedNumberCapabilities: VisualCapabilities;
 }
@@ -3242,6 +3531,12 @@ declare module powerbi.visuals.services {
         getBingEntity(): string;
         getUrl(): string;
     }
+    class GeocodePointQuery extends GeocodeQuery {
+        latitude: number;
+        longitude: number;
+        constructor(latitude: number, longitude: number);
+        getUrl(): string;
+    }
     class GeocodeBoundaryQuery extends GeocodeQuery {
         latitude: number;
         longitude: number;
@@ -3254,6 +3549,7 @@ declare module powerbi.visuals.services {
     function geocodeCore(geocodeQuery: GeocodeQuery): any;
     function geocode(query: string, category?: string): any;
     function geocodeBoundary(latitude: number, longitude: number, category?: string, levelOfDetail?: number, maxGeoData?: number): any;
+    function geocodePoint(latitude: number, longitude: number): any;
     function reset(): void;
 }
 declare module powerbi.visuals.services {
@@ -4531,8 +4827,21 @@ declare module powerbi.visuals.controls.internal {
          * Index within a dimension (row/column)
          */
         class DimensionPosition {
+            /**
+            * Global index within all leaf nodes
+            */
             index: number;
+            /**
+            * Index within siblings for same parent
+            */
+            indexInSiblings: number;
+            /**
+            * Is last globally
+            */
             isLast: boolean;
+            /**
+            * Is first globally
+            */
             isFirst: boolean;
         }
         /**
@@ -7733,6 +8042,7 @@ declare module powerbi.visuals {
         private static TitleImageSelector;
         private static CaptionImageSelector;
         private static KPITitle;
+        private static ValuesRole;
         /**
          * Cards have specific styling so defined inline styles and also to support theming and improve performance.
          */
@@ -7743,6 +8053,7 @@ declare module powerbi.visuals {
         private static getCardSettings(dataView);
         onResizing(viewport: IViewport): void;
         static converter(dataView: DataView, columnCount: number, maxCards: number, isDashboardVisual?: boolean): MultiRowCardData;
+        static getSortableRoles(options: VisualSortableOptions): string[];
         private initializeCardRowSelection();
         private getBorderStyles(border);
         private getMaxColPerRow();

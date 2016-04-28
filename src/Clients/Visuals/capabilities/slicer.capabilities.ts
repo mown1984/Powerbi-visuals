@@ -44,17 +44,9 @@ module powerbi.visuals {
                     defaultValue: {
                         type: { expression: { defaultValue: true } },
                     },
-                    formatString: {
-                        type: { formatting: { formatString: true } },
-                    },
-                    outlineColor: {
-                        displayName: data.createDisplayNameGetter('Visual_OutlineColor'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    outlineWeight: {
-                        displayName: data.createDisplayNameGetter('Visual_OutlineWeight'),
-                        type: { numeric: true }
-                    },
+                    formatString: StandardObjectProperties.formatString,
+                    outlineColor: StandardObjectProperties.outlineColor,
+                    outlineWeight: StandardObjectProperties.outlineWeight,
                     orientation: {
                         displayName: data.createDisplayNameGetter('Slicer_Orientation'),
                         type: { enumeration: slicerOrientation.type }
@@ -80,22 +72,13 @@ module powerbi.visuals {
             header: {
                 displayName: data.createDisplayNameGetter('Visual_Header'),
                 properties: {
-                    show: {
-                        displayName: data.createDisplayNameGetter('Visual_Show'),
-                        type: { bool: true }
-                    },
-                    fontColor: {
-                        displayName: data.createDisplayNameGetter('Visual_FontColor'),
-                        type: { fill: { solid: { color: true } } }
-                    },
+                    show: StandardObjectProperties.show,
+                    fontColor: StandardObjectProperties.fontColor,
                     background: {
                         displayName: data.createDisplayNameGetter('Visual_Background'),
                         type: { fill: { solid: { color: true } } }
                     },
-                    outline: {
-                        displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { enumeration: outline.type }
-                    },
+                    outline: StandardObjectProperties.outline,
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),
                         type: { numeric: true }
@@ -105,18 +88,12 @@ module powerbi.visuals {
             items: {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Items'),
                 properties: {
-                    fontColor: {
-                        displayName: data.createDisplayNameGetter('Visual_FontColor'),
-                        type: { fill: { solid: { color: true } } }
-                    },
+                    fontColor: StandardObjectProperties.fontColor,
                     background: {
                         displayName: data.createDisplayNameGetter('Visual_Background'),
                         type: { fill: { solid: { color: true } } }
                     },
-                    outline: {
-                        displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { enumeration: outline.type }
-                    },
+                    outline: StandardObjectProperties.outline,
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),
                         type: { numeric: true }

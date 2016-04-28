@@ -210,6 +210,27 @@ module powerbitests {
         it("FormatString property should match calculated", () => {
             expect(powerbi.data.DataViewObjectDescriptors.findFormatString(multiRowCardCapabilities.objects)).toEqual(MultiRowCard.formatStringProp);
         });
+        
+        it('Sortable roles', () => {
+            let items: powerbi.data.CompiledDataViewRoleItem[] = [];
+            let dataViewMapping: powerbi.data.CompiledDataViewMapping = {
+                metadata: {},
+                table: {
+                    rows: {
+                        for: {
+                            in: {
+                                role: 'Values',
+                                items: items
+                            }
+                        }
+                    }
+                }
+            };      
+
+            expect(MultiRowCard.getSortableRoles({
+                dataViewMappings: [dataViewMapping]
+            })).toEqual(['Values']);
+        });
 
         describe('enumerateObjectInstances', () => {
             let visual: MultiRowCard;

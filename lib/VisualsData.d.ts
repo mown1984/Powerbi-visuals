@@ -26,6 +26,7 @@ declare module powerbi.data {
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
+        visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
     }
     interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
     }
@@ -56,6 +57,7 @@ declare module powerbi.data {
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
+        visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
         visitDefault(expr: SQExpr, arg: TArg): T;
     }
     /** Default ISQExprVisitor implementation that others may derive from. */
@@ -90,6 +92,7 @@ declare module powerbi.data {
         visitLinearGradient2(gradient2: LinearGradient2Definition): void;
         visitLinearGradient3(gradient3: LinearGradient3Definition): void;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr): void;
+        visitScopedEval(expr: SQScopedEvalExpr): void;
         visitDefault(expr: SQExpr): void;
         private visitFillRuleStop(stop);
     }
@@ -477,6 +480,8 @@ declare module powerbi.data {
         function equals(x: Selector, y: Selector): boolean;
         function getKey(selector: Selector): string;
         function containsWildcard(selector: Selector): boolean;
+        function hasRoleWildcard(selector: Selector): boolean;
+        function isRoleWildcard(dataItem: DataRepetitionSelector): dataItem is DataViewRoleWildcard;
     }
 }
 declare module powerbi.data {
@@ -548,6 +553,7 @@ declare module powerbi.data {
         Arithmetic?: QueryArithmeticExpression;
         FillRule?: QueryFillRuleExpression;
         ResourcePackageItem?: QueryResourcePackageItem;
+        ScopedEval?: QueryScopedEvalExpression;
     }
     interface QueryPropertyExpression {
         Expression: QueryExpressionContainer;
@@ -661,6 +667,10 @@ declare module powerbi.data {
         PackageType: number;
         ItemName: string;
     }
+    interface QueryScopedEvalExpression {
+        Expression: QueryExpressionContainer;
+        Scope: QueryExpressionContainer[];
+    }
     enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -725,6 +735,8 @@ declare module powerbi.data {
     interface FilterMetadata {
         Restatement: string;
         Kind?: FilterKind;
+        /** The expression being filtered.  This is reflected in the filter card UI. */
+        expression?: QueryExpressionContainer;
     }
     enum FilterKind {
         Default = 0,
@@ -1145,8 +1157,19 @@ declare module powerbi.data {
         hasCategoryWithRole(roleName: string): boolean;
         getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         hasValues(roleName: string): boolean;
-        getValues(roleName: string, seriesIndex?: number): any[];
+        /**
+         * Obtains the value for the given role name, category index, and series index.
+         *
+         * Note: in cases where have multiple values in a role where the multiple values
+         * are not being used to create a static series, the first is obtained.
+         */
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains all the values for the given role name, category index, and series index, drawing
+         * from each of the value columns at that intersection.  Used when you have multiple
+         * values in a role that are not conceptually a static series.
+         */
+        getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
          * Obtains the first non-null value for the given role name and category index.
          * It should mainly be used for values that are expected to be the same across
@@ -2146,6 +2169,7 @@ declare module powerbi.data {
         visitDefaultValue(orig: SQDefaultValueExpr): SQExpr;
         visitAnyValue(orig: SQAnyValueExpr): SQExpr;
         visitArithmetic(orig: SQArithmeticExpr): SQExpr;
+        visitScopedEval(orig: SQScopedEvalExpr): SQExpr;
         visitFillRule(orig: SQFillRuleExpr): SQExpr;
         visitLinearGradient2(origGradient2: LinearGradient2Definition): LinearGradient2Definition;
         visitLinearGradient3(origGradient3: LinearGradient3Definition): LinearGradient3Definition;
@@ -2293,6 +2317,8 @@ declare module powerbi.data {
         Arithmetic = 22,
         FillRule = 23,
         ResourcePackageItem = 24,
+        ScopedEval = 25,
+        Scope = 26,
     }
     interface SQExprMetadata {
         kind: FieldKind;
@@ -2324,6 +2350,12 @@ declare module powerbi.data {
         right: SQExpr;
         operator: ArithmeticOperatorKind;
         constructor(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind);
+        accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+    }
+    class SQScopedEvalExpr extends SQExpr {
+        expression: SQExpr;
+        scope: SQExpr[];
+        constructor(expression: SQExpr, scope: SQExpr[]);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     abstract class SQPropRefExpr extends SQExpr {
@@ -2499,7 +2531,8 @@ declare module powerbi.data {
         function text(value: string, valueEncoded?: string): SQConstantExpr;
         /** Returns an SQExpr that evaluates to the constant value. */
         function typedConstant(value: PrimitiveValue, type: ValueTypeDescriptor): SQConstantExpr;
-        function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQExpr;
+        function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQArithmeticExpr;
+        function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr;
         function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr;
         function removeAggregate(expr: SQExpr): SQExpr;
         function removeEntityVariables(expr: SQExpr): SQExpr;
@@ -2538,6 +2571,7 @@ declare module powerbi.data {
         visitContains(expr: SQContainsExpr): SQExpr;
         visitStartsWith(expr: SQContainsExpr): SQExpr;
         visitArithmetic(expr: SQArithmeticExpr): SQExpr;
+        visitScopedEval(expr: SQScopedEvalExpr): SQExpr;
         private validateOperandsAndTypeForStartOrContains(left, right);
         private validateArithmeticTypes(left, right);
         private validateCompatibleType(left, right);

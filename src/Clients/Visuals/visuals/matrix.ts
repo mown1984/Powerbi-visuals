@@ -351,9 +351,11 @@ module powerbi.visuals {
             }
 
             bodyCell.position.row.index = rowIndex;
+            bodyCell.position.row.indexInSiblings = rowItem.siblings.indexOf(rowItem);
             bodyCell.position.row.isFirst = rowIndex === 0;
             bodyCell.position.row.isLast = rowIndex === this.rowHierarchy.leafNodes.length - 1;
             bodyCell.position.column.index = colIndex;
+            bodyCell.position.column.indexInSiblings = columnItem.siblings.indexOf(columnItem);
             bodyCell.position.column.isFirst = colIndex === 0;
             bodyCell.position.column.isLast = colIndex === this.columnHierarchy.leafNodes.length - 1;
 
@@ -886,18 +888,24 @@ module powerbi.visuals {
                 style.borders.right.applyParams(propsGrid.gridVertical, propsGrid.gridVerticalWeight, propsGrid.gridVerticalColor);
             }
 
+            let rowBandingIndex: number;
+            if (this.formattingProperties.general.rowSubtotals && propsTotal.backColor) // Totals breaking banding sequence
+                rowBandingIndex = item.position.row.indexInSiblings;
+            else
+                rowBandingIndex = item.position.row.index;
+
             if (item.isTotal && propsTotal.fontColor) {
                 style.fontColor = propsTotal.fontColor;
             }
             else {
-                style.fontColor = cell.position.row.index % 2 === 0 ? props.fontColorPrimary : props.fontColorSecondary;
+                style.fontColor = rowBandingIndex % 2 === 0 ? props.fontColorPrimary : props.fontColorSecondary;
             }
 
             if (item.isTotal && propsTotal.backColor) {
                 style.backColor = propsTotal.backColor;
             }
             else {
-                style.backColor = cell.position.row.index % 2 === 0 ? props.backColorPrimary : props.backColorSecondary;
+                style.backColor = rowBandingIndex % 2 === 0 ? props.backColorPrimary : props.backColorSecondary;
             }
         }
 
@@ -1094,15 +1102,27 @@ module powerbi.visuals {
          * @return Column metadata or null if the specified header node does not represent a sortable header.
          */
         private getSortableHeaderColumnMetadata(item: MatrixVisualNode): DataViewMetadataColumn {
-
             let dataView = this.hierarchyNavigator.getDataViewMatrix();
 
             // If there are no row groups, sorting is not supported (as it does not make sense).
             if (!dataView.rows || !dataView.rows.levels || dataView.rows.levels.length === 0)
                 return null;
 
-            // Note that the measures establish a level as well, so need to subtract 1
+            let isMultiMeasure: boolean = dataView.valueSources && dataView.valueSources.length > 1;
+
             let columnGroupCount = dataView.columns ? dataView.columns.levels.length : 0;
+
+            // If we have multiple values, they establish an extra level, so need to subtract 1
+            if (isMultiMeasure) {
+                columnGroupCount--;
+            }
+            // Check if it has only 1 measure with no column groups
+            else if (columnGroupCount === 1 &&
+                dataView.columns.levels[0] &&
+                dataView.columns.levels[0].sources && dataView.columns.levels[0].sources[0] &&
+                dataView.columns.levels[0].sources[0].roles && dataView.columns.levels[0].sources[0].roles["Values"]) {
+                columnGroupCount = 0;
+            }
 
             let valueIndex: number = -1;
             if (columnGroupCount === 0) {
@@ -1111,7 +1131,6 @@ module powerbi.visuals {
             }
             else if (item.isSubtotal) {
                 // Matrices with column groups support sorting only on the column grand total.
-                let isMultiMeasure: boolean = dataView.valueSources && dataView.valueSources.length > 1;
 
                 if (isMultiMeasure) {
                     // In the multi-measure case we need to check if the parent's level is 0 in order

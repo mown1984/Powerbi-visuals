@@ -68,6 +68,18 @@ module powerbitests.customVisuals {
                 }, DefaultWaitForRender);
             });
 
+            it("update with illegal values", (done) => {
+                let emptyDataViews = [new powerbitests.customVisuals.sampleDataViews.BulletChartDataEmpty().getDataView()];
+                let orientation: powerbi.DataViewObjects = { orientation: { vertical: false } };
+                emptyDataViews[0].metadata.objects = orientation;
+                visualBuilder.update(emptyDataViews);
+                setTimeout(() => {
+                    expect(visualBuilder.element.find('.rect').length).toBe(0);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
             it("update non vertical", (done) => {
                 let clonedDataViews = _.cloneDeep(dataViews);
                 let orientation: powerbi.DataViewObjects = { orientation: { vertical: false } };

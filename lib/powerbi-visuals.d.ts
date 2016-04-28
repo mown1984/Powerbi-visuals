@@ -88,6 +88,7 @@ declare module powerbi {
 declare module jsCommon {
     export interface IStringResourceProvider {
         get(id: string): string;
+        getOptional(id: string): string;
     }
 }
 
@@ -1061,7 +1062,7 @@ declare module powerbi {
 
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
+    export interface ISelectionId { }
 
     export interface ISelectionIdBuilder {
         withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
@@ -1073,8 +1074,6 @@ declare module powerbi.extensibility {
 
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
-
     interface ISelectionManager {
         select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
         hasSelection(): boolean;
@@ -1906,6 +1905,7 @@ declare module powerbi {
     export interface IGeocoder {
         geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
         geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
+        geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
     }
 
     export interface IGeocodeCoordinate {
@@ -1917,6 +1917,19 @@ declare module powerbi {
         latitude?: number;
         longitude?: number;
         locations?: IGeocodeBoundaryPolygon[]; // one location can have multiple boundary polygons
+    }
+
+    export interface IGeocodeResource extends IGeocodeCoordinate {
+        addressLine: string;
+        locality: string;
+        neighborhood: string;
+        adminDistrict: string;
+        adminDistrict2: string;
+        formattedAddress: string;
+        postalCode: string;
+        countryRegionIso2: string;
+        countryRegion: string;
+        landmark: string;
     }
 
     export interface IGeocodeBoundaryPolygon {
@@ -2314,7 +2327,6 @@ declare module powerbi.visuals.telemetry {
     var VisualException: (visualType: string, isCustom: boolean, apiVersion: string, source: string, lineNumber: number, columnNumber: number, stack: string, message: string) => ITelemetryEventI<IPBIVisualException>;
 }
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
     import IPoint = visuals.IPoint;
     interface SelectionManagerOptions {
         hostServices: IVisualHostServices;
@@ -2337,7 +2349,6 @@ declare module powerbi.extensibility {
     }
 }
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
     /**
      * This class is designed to simplify the creation of SelectionId objects
      * It allows chaining to build up an object before calling 'create' to build a SelectionId
@@ -2400,6 +2411,7 @@ declare module powerbi.extensibility {
         canResizeTo(viewport: IViewport): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         unwrap(): powerbi.IVisual;
+        isCustomVisual(): boolean;
         private executeSafely(callback);
     }
 }
@@ -4033,6 +4045,7 @@ declare module InJs {
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
+        visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
     }
     interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
     }
@@ -4063,6 +4076,7 @@ declare module InJs {
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
+        visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
         visitDefault(expr: SQExpr, arg: TArg): T;
     }
     /** Default ISQExprVisitor implementation that others may derive from. */
@@ -4097,6 +4111,7 @@ declare module InJs {
         visitLinearGradient2(gradient2: LinearGradient2Definition): void;
         visitLinearGradient3(gradient3: LinearGradient3Definition): void;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr): void;
+        visitScopedEval(expr: SQScopedEvalExpr): void;
         visitDefault(expr: SQExpr): void;
         private visitFillRuleStop(stop);
     }
@@ -4484,6 +4499,8 @@ declare module powerbi.data {
         function equals(x: Selector, y: Selector): boolean;
         function getKey(selector: Selector): string;
         function containsWildcard(selector: Selector): boolean;
+        function hasRoleWildcard(selector: Selector): boolean;
+        function isRoleWildcard(dataItem: DataRepetitionSelector): dataItem is DataViewRoleWildcard;
     }
 }
 declare module powerbi.data {
@@ -4555,6 +4572,7 @@ declare module powerbi.data {
         Arithmetic?: QueryArithmeticExpression;
         FillRule?: QueryFillRuleExpression;
         ResourcePackageItem?: QueryResourcePackageItem;
+        ScopedEval?: QueryScopedEvalExpression;
     }
     interface QueryPropertyExpression {
         Expression: QueryExpressionContainer;
@@ -4668,6 +4686,10 @@ declare module powerbi.data {
         PackageType: number;
         ItemName: string;
     }
+    interface QueryScopedEvalExpression {
+        Expression: QueryExpressionContainer;
+        Scope: QueryExpressionContainer[];
+    }
     enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -4732,6 +4754,8 @@ declare module powerbi.data {
     interface FilterMetadata {
         Restatement: string;
         Kind?: FilterKind;
+        /** The expression being filtered.  This is reflected in the filter card UI. */
+        expression?: QueryExpressionContainer;
     }
     enum FilterKind {
         Default = 0,
@@ -5152,8 +5176,19 @@ declare module powerbi.data {
         hasCategoryWithRole(roleName: string): boolean;
         getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         hasValues(roleName: string): boolean;
-        getValues(roleName: string, seriesIndex?: number): any[];
+        /**
+         * Obtains the value for the given role name, category index, and series index.
+         *
+         * Note: in cases where have multiple values in a role where the multiple values
+         * are not being used to create a static series, the first is obtained.
+         */
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains all the values for the given role name, category index, and series index, drawing
+         * from each of the value columns at that intersection.  Used when you have multiple
+         * values in a role that are not conceptually a static series.
+         */
+        getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
          * Obtains the first non-null value for the given role name and category index.
          * It should mainly be used for values that are expected to be the same across
@@ -6153,6 +6188,7 @@ declare module powerbi.data {
         visitDefaultValue(orig: SQDefaultValueExpr): SQExpr;
         visitAnyValue(orig: SQAnyValueExpr): SQExpr;
         visitArithmetic(orig: SQArithmeticExpr): SQExpr;
+        visitScopedEval(orig: SQScopedEvalExpr): SQExpr;
         visitFillRule(orig: SQFillRuleExpr): SQExpr;
         visitLinearGradient2(origGradient2: LinearGradient2Definition): LinearGradient2Definition;
         visitLinearGradient3(origGradient3: LinearGradient3Definition): LinearGradient3Definition;
@@ -6300,6 +6336,8 @@ declare module powerbi.data {
         Arithmetic = 22,
         FillRule = 23,
         ResourcePackageItem = 24,
+        ScopedEval = 25,
+        Scope = 26,
     }
     interface SQExprMetadata {
         kind: FieldKind;
@@ -6331,6 +6369,12 @@ declare module powerbi.data {
         right: SQExpr;
         operator: ArithmeticOperatorKind;
         constructor(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind);
+        accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+    }
+    class SQScopedEvalExpr extends SQExpr {
+        expression: SQExpr;
+        scope: SQExpr[];
+        constructor(expression: SQExpr, scope: SQExpr[]);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
     abstract class SQPropRefExpr extends SQExpr {
@@ -6506,7 +6550,8 @@ declare module powerbi.data {
         function text(value: string, valueEncoded?: string): SQConstantExpr;
         /** Returns an SQExpr that evaluates to the constant value. */
         function typedConstant(value: PrimitiveValue, type: ValueTypeDescriptor): SQConstantExpr;
-        function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQExpr;
+        function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQArithmeticExpr;
+        function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr;
         function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr;
         function removeAggregate(expr: SQExpr): SQExpr;
         function removeEntityVariables(expr: SQExpr): SQExpr;
@@ -6545,6 +6590,7 @@ declare module powerbi.data {
         visitContains(expr: SQContainsExpr): SQExpr;
         visitStartsWith(expr: SQContainsExpr): SQExpr;
         visitArithmetic(expr: SQArithmeticExpr): SQExpr;
+        visitScopedEval(expr: SQScopedEvalExpr): SQExpr;
         private validateOperandsAndTypeForStartOrContains(left, right);
         private validateArithmeticTypes(left, right);
         private validateCompatibleType(left, right);
@@ -7339,6 +7385,295 @@ declare module powerbi.visuals {
         private animateDefaultMajorLabels(context, nodes, labelSettings, layout);
         private animateDefaultMinorLabels(context, nodes, labelSettings, layout);
     }
+}
+declare module powerbi.visuals {
+    /**
+     * This is the baseline for some most common used object properties across visuals.
+     * When adding new properties, please try to reuse the existing ones.
+     */
+    const StandardObjectProperties: {
+        axisEnd: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        axisScale: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        axisStart: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        axisStyle: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        axisType: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        backColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataLabelColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        dataLabelDecimalPoints: {
+            displayName: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        dataLabelDisplayUnits: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    labelDisplayUnits: boolean;
+                };
+            };
+            suppressFormatPainterCopy: boolean;
+        };
+        dataLabelHorizontalPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        dataLabelShow: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        dataLabelVerticalPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        defaultColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fill: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fontColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        fontSize: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    fontSize: boolean;
+                };
+            };
+        };
+        formatString: {
+            type: {
+                formatting: {
+                    formatString: boolean;
+                };
+            };
+        };
+        image: {
+            type: {
+                image: {};
+            };
+        };
+        labelColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        labelDisplayUnits: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                formatting: {
+                    labelDisplayUnits: boolean;
+                };
+            };
+        };
+        labelPrecision: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            placeHolderText: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        legendPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        legendTitle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                text: boolean;
+            };
+        };
+        lineColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        outline: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        outlineColor: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                fill: {
+                    solid: {
+                        color: boolean;
+                    };
+                };
+            };
+        };
+        outlineWeight: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        show: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        showAllDataPoints: {
+            displayName: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        showLegendTitle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                bool: boolean;
+            };
+        };
+        referenceLinePosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        referenceLineStyle: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+        transparency: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                numeric: boolean;
+            };
+        };
+        yAxisPosition: {
+            displayName: (IStringResourceProvider: any) => string;
+            description: (IStringResourceProvider: any) => string;
+            type: {
+                enumeration: IEnumType;
+            };
+        };
+    };
 }
 declare module powerbi.visuals {
     const animatedTextObjectDescs: data.DataViewObjectDescriptors;
@@ -10149,6 +10484,12 @@ declare module powerbi.visuals.services {
         getBingEntity(): string;
         getUrl(): string;
     }
+    class GeocodePointQuery extends GeocodeQuery {
+        latitude: number;
+        longitude: number;
+        constructor(latitude: number, longitude: number);
+        getUrl(): string;
+    }
     class GeocodeBoundaryQuery extends GeocodeQuery {
         latitude: number;
         longitude: number;
@@ -10161,6 +10502,7 @@ declare module powerbi.visuals.services {
     function geocodeCore(geocodeQuery: GeocodeQuery): any;
     function geocode(query: string, category?: string): any;
     function geocodeBoundary(latitude: number, longitude: number, category?: string, levelOfDetail?: number, maxGeoData?: number): any;
+    function geocodePoint(latitude: number, longitude: number): any;
     function reset(): void;
 }
 declare module powerbi.visuals.services {
@@ -11438,8 +11780,21 @@ declare module powerbi.visuals.controls.internal {
          * Index within a dimension (row/column)
          */
         class DimensionPosition {
+            /**
+            * Global index within all leaf nodes
+            */
             index: number;
+            /**
+            * Index within siblings for same parent
+            */
+            indexInSiblings: number;
+            /**
+            * Is last globally
+            */
             isLast: boolean;
+            /**
+            * Is first globally
+            */
             isFirst: boolean;
         }
         /**
@@ -14640,6 +14995,7 @@ declare module powerbi.visuals {
         private static TitleImageSelector;
         private static CaptionImageSelector;
         private static KPITitle;
+        private static ValuesRole;
         /**
          * Cards have specific styling so defined inline styles and also to support theming and improve performance.
          */
@@ -14650,6 +15006,7 @@ declare module powerbi.visuals {
         private static getCardSettings(dataView);
         onResizing(viewport: IViewport): void;
         static converter(dataView: DataView, columnCount: number, maxCards: number, isDashboardVisual?: boolean): MultiRowCardData;
+        static getSortableRoles(options: VisualSortableOptions): string[];
         private initializeCardRowSelection();
         private getBorderStyles(border);
         private getMaxColPerRow();

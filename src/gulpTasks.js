@@ -1,20 +1,27 @@
 "use strict";
 
 var gulp = require('gulp-help')(require('gulp')),
-    runSequence = require("run-sequence").use(gulp);
+    runSequence = require("run-sequence").use(gulp),
+    ts = require("gulp-typescript"),
+    gulpRename = require("gulp-rename"),
+    pathModule = require("path"),
+    filter = require('gulp-filter'),
+    insert = require('gulp-insert');
 
-var projects = require("../gulp/projects.js");
+var projects = require("../gulp/projects.js"),
+    cliParser = require("../gulp/cliParser.js"),
+    packageBuilder = require("../gulp/packageBuilder.js");
 
-var powerBIVisualslayground = require("./Clients/PowerBIVisualsPlayground/gulpProject"),
-    visualsProject = require("./Clients/Visuals/gulpProject"),
-    customVisuals = require("./Clients/CustomVisuals/gulpProject");
+var powerBIVisualslayground = require("./Clients/PowerBIVisualsPlayground/gulpProject");
 
-require("../gulp/visualsPlayground.js");
-require("../gulp/visualsTest.js");
+require("../gulp/visualsTest");
+require("../gulp/visualsPlayground");
+
 require("./Clients/VisualsContracts/gulpProject");
 require("./Clients/VisualsExtensibility/gulpProject");
 require("./Clients/VisualsCommon/gulpProject");
 require("./Clients/VisualsData/gulpProject");
+require("./Clients/Visuals/gulpProject");
 
 gulp.task("buildAll", ["build", "build:tests"]);
 
@@ -39,26 +46,14 @@ gulp.task("run:tests", "Run tests", function(cb) {
     return runSequence("run:test:visuals", cb);
 });
 
-// TODO: add deprecated tasks like package, etc
-gulp.task("package", "This command has been depricated. Please use 'build' instead.", function(cb) {
-    console.warn("'package' command has been depricated. Please use 'build' instead.");
-    return runSequence("build", cb);
-});
-
 gulp.task("init", "Run the build and then start watchers which will build project parts after you save changes to any file", function (cb) {
     return runSequence("build", "watch", cb);
 });
 
 gulp.task("watch", function (cb) {
-    visualsProject.createWatchTask();
-    customVisuals.createWatchTask();
     powerBIVisualslayground.createWatchTask();
 
-    return runSequence(
-        "watch:visuals",
-        "watch:customVisuals",
-        "watch:powerBIVisualsPlayground",
-        cb);
+    return runSequence("watch:powerBIVisualsPlayground", cb);
 });
 
 gulp.task("tslint", "Check the source files for TypeScript Lint errors", function (callback) {
@@ -79,4 +74,50 @@ gulp.task("tslint", "Check the source files for TypeScript Lint errors", functio
 
     // run tslint tasks in parallel
     runSequence(tasks, callback);
+});
+
+
+
+gulp.task("build:customVisuals:separate", function(callback) {
+    var customVisualsProjectPath = "src/Clients/CustomVisuals",
+        packageResourcesPath = "package/resources";
+    var customVisualsFilter = filter(['**/visual/**/*.ts',
+                                      '**/visual/**/*.js'], {restore: true});
+    
+    var tsProject = ts.createProject(pathModule.join(customVisualsProjectPath, "tsconfig.json"), {
+        typescript: require('typescript'),
+        module: "amd",
+        sortOutput: false,
+        target: "ES5",
+        // declarationFiles: me.params.tsc.declarationFiles !== undefined ? me.params.tsc.declarationFiles : true, //TODO: refactor this - use lodash
+        noEmitOnError: false,
+        //removeComments:true,
+        // projectName: me.projName, // custom property
+        // outFileName: me.params.tsc.outFileName, // custom property
+        // out: me.params.tsc.outFileName ? path.join(me.projFolder, JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js") : undefined
+    });
+
+    return tsProject.src()
+        .pipe(ts(tsProject, undefined, ts.reporter.longReporter()))
+        .pipe(customVisualsFilter)
+        .pipe(insert.append(packageBuilder.portalExports))
+        .pipe(gulpRename(function (path) {
+            path.dirname = pathModule.join(path.dirname, "..", packageResourcesPath);
+        }))
+        .pipe(gulp.dest(customVisualsProjectPath));
+});
+
+gulp.task("package:all", function(callback) {
+    return packageBuilder.buildAllPackages(callback);
+});
+
+gulp.task("package", function(callback) {
+    var packageName = cliParser.visual;
+    var isAll = cliParser.all;
+    if (packageName) {
+        var pb = new packageBuilder(packageName);
+        return pb.build();
+    } else if (isAll) {
+        runSequence("build:customVisuals:separate", "package:all", callback);
+    }
 });

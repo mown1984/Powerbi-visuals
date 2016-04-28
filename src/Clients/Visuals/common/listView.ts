@@ -267,7 +267,10 @@ module powerbi.visuals {
                 let rows = listView.visibleGroupContainer.select(".row");
                 if (!rows.empty()) {
                     let firstRow = rows.node();
-                    let rowHeight: number = $(firstRow).outerHeight(true);
+                    // If the container (child) has margins amd the row (parent) doesn't, the child's margins will collapse into the parent.
+                    // outerHeight doesn't report the correct height for the parent in this case, but it does measure the child properly.
+                    // Fix for #7497261 Measures both and take the max to work around this issue.
+                    let rowHeight: number = Math.max($(firstRow).outerHeight(true), $(firstRow).children().first().outerHeight(true));
                     listView.rowHeight(rowHeight);
                     deferred.resolve(rowHeight);
                 }

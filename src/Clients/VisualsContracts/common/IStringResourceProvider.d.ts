@@ -27,5 +27,6 @@
 declare module jsCommon {
     export interface IStringResourceProvider {
         get(id: string): string;
+        getOptional(id: string): string;
     }
 }

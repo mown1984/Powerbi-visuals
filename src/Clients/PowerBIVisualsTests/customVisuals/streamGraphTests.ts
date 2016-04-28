@@ -25,10 +25,12 @@
  */
 
 module powerbitests.customVisuals {
+    import DataView = powerbi.DataView;
     import InteractivityService = powerbi.visuals.InteractivityService;
     import SVGUtil = powerbi.visuals.SVGUtil;
     import VisualClass = powerbi.visuals.samples.StreamGraph;
     import StreamData = powerbi.visuals.samples.StreamData;
+    import StreamGraphSeries = powerbi.visuals.samples.StreamGraphSeries;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     powerbitests.mocks.setLocale();
@@ -48,7 +50,7 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: StreamGraphBuilder;
-            let dataViews: powerbi.DataView[];
+            let dataViews: DataView[];
 
             beforeEach(() => {
                 visualBuilder = new StreamGraphBuilder();
@@ -87,17 +89,17 @@ module powerbitests.customVisuals {
             });
 
             it("should ellipsis text if its too long", () => {
-                let dataView: powerbi.DataView[] = [new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataView()];
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataView()];
 
                 let dataPointsArray: number[] = [];
                 for (let i = 0; i < dataViews[0].categorical.values.length; i++) {
-                    dataPointsArray = dataPointsArray.concat(dataView[0].categorical.values[i].values);
+                    dataPointsArray = dataPointsArray.concat(dataViews[0].categorical.values[i].values);
                 }
 
                 let max: number = _.max(dataPointsArray);
-                dataView[0].categorical.values[0].values[0] = max * 1000.00;
+                dataViews[0].categorical.values[0].values[0] = max * 1000.00;
 
-                visualBuilder.update(dataView);
+                visualBuilder.update(dataViews);
                 SVGUtil.flushAllD3Transitions();
 
                 let tick = $(".streamGraph .axisGraphicsContext .y.axis g").children("text").last().text();/*.each(function (index, value) { ticks.push($(value).text()); });*/
@@ -369,8 +371,9 @@ module powerbitests.customVisuals {
                 SVGUtil.flushAllD3Transitions();
                 let labels = $(".streamGraph .labels").children('text');
 
-                // First and last labels should not be shown
-                expect(labels.length).toBe(3);
+                // For 5 series that have 5 values each we should see only 13
+                // 25 values - 5 from the left and 5 from the right are cut, 2 are colliding with other labels
+                expect(labels.length).toBe(13);
 
                 // Verify that the first label is not drawn on the axis
                 expect(labels.first().attr('x')).toBeGreaterThan(5);
@@ -412,35 +415,69 @@ module powerbitests.customVisuals {
                 let legendItemsCount = legendGroup.children.length;
                 expect(legendItemsCount).toBe(dataViews[0].categorical.values.length);
             });
+        });
 
-            it('selection state set on converter result including clear', () => {
-                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+        describe("Converter tests", () => {
+            let visualBuilder: StreamGraphBuilder,
+                dataView: DataView,
+                streamData: StreamData,
+                interactivityService: InteractivityService,
+                colors: powerbi.IDataColorPalette = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+            beforeEach(() => {
+                visualBuilder = new StreamGraphBuilder();
+                dataView = new powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData().getDataView();
+                interactivityService = <InteractivityService>powerbi.visuals.createInteractivityService(visualBuilder.hostObject);
+                streamData = visualBuilder.converter(dataView, colors, interactivityService);
+            });
+
+            it("streamData is defined", () => {
+                expect(streamData).toBeDefined();
+                expect(streamData).not.toBeNull();
+            });
+
+            describe("Series", () => {
+                let series: StreamGraphSeries[];
+
+                beforeEach(() => {
+                    series = streamData.series;
+                });
+
+                it("Series are defined", () => {
+                    expect(series).toBeDefined();
+                    expect(series).not.toBeNull();
+                });
+
+                it("Identity is defined with key", () => {
+                    for (let layer of series) {
+                        expect(layer.identity).not.toBeNull();
+                        expect(layer.identity.getKey()).toBeDefined();
+                    }
+                });
+            });
+
+            it('Selection state set on converter result including clear', () => {
 
                 // Create mock interactivity service
-                let interactivityService = <InteractivityService>powerbi.visuals.createInteractivityService(visualBuilder.hostObject);
-                let seriesSelectionId = powerbi.visuals.SelectionId.createWithMeasure(dataViews[0].metadata.columns[1].groupName);
+                let seriesSelectionId = powerbi.visuals.SelectionId.createWithMeasure(dataView.metadata.columns[1].queryName);
                 interactivityService['selectedIds'] = [seriesSelectionId];
 
-                let streamData: StreamData = visualBuilder.converter(dataViews[0], colors, interactivityService);
+                let series: powerbi.visuals.samples.StreamGraphSeries[] = visualBuilder.converter(dataView, colors, interactivityService).series;
 
                 // We should see the selection state applied to resulting data
-                expect(streamData.dataPoints[0][0].selected).toBe(true);
-                expect(streamData.dataPoints[0][5].selected).toBe(true);
-                expect(streamData.dataPoints[0][10].selected).toBe(true);
-                expect(streamData.dataPoints[0][15].selected).toBe(true);
-                expect(streamData.dataPoints[1][0].selected).toBe(false);
-                expect(streamData.dataPoints[1][5].selected).toBe(false);
-                expect(streamData.dataPoints[1][10].selected).toBe(false);
-                expect(streamData.dataPoints[1][15].selected).toBe(false);
+                expect(series[0].selected).toBe(true);
+                expect(series[1].selected).toBe(false);
+                expect(series[2].selected).toBe(false);
+                expect(series[3].selected).toBe(false);
 
                 interactivityService.clearSelection();
-                streamData = visualBuilder.converter(dataViews[0], colors, interactivityService);
+                series = visualBuilder.converter(dataView, colors, interactivityService).series;
 
                 // Verify the selection has been cleared
-                expect(streamData.dataPoints[0][0].selected).toBe(false);
-                expect(streamData.dataPoints[0][5].selected).toBe(false);
-                expect(streamData.dataPoints[0][10].selected).toBe(false);
-                expect(streamData.dataPoints[0][15].selected).toBe(false);
+                expect(series[0].selected).toBe(false);
+                expect(series[1].selected).toBe(false);
+                expect(series[2].selected).toBe(false);
+                expect(series[3].selected).toBe(false);
             });
         });
     });
@@ -476,7 +513,7 @@ module powerbitests.customVisuals {
             );
         }
 
-        public converter(dataView: powerbi.DataView, colors: powerbi.IDataColorPalette, interactivityService: InteractivityService): StreamData {
+        public converter(dataView: DataView, colors: powerbi.IDataColorPalette, interactivityService: InteractivityService): StreamData {
             return this.visual.converter(dataView, colors, interactivityService);
         }
 

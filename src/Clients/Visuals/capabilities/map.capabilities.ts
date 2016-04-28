@@ -82,56 +82,27 @@ module powerbi.visuals {
             general: {
                 displayName: data.createDisplayNameGetter('Visual_General'),
                 properties: {
-                    formatString: {
-                        type: { formatting: { formatString: true } },
-                    },
+                    formatString: StandardObjectProperties.formatString,
                 },
             },
             legend: {
                 displayName: data.createDisplayNameGetter('Visual_Legend'),
                 description: data.createDisplayNameGetter('Visual_LegendDescription'),
                 properties: {
-                    show: {
-                        displayName: data.createDisplayNameGetter('Visual_Show'),
-                        type: { bool: true }
-                    },
-                    position: {
-                        displayName: data.createDisplayNameGetter('Visual_LegendPosition'),
-                        description: data.createDisplayNameGetter('Visual_LegendPositionDescription'),
-                        type: { enumeration: legendPosition.type }
-                    },
-                    showTitle: {
-                        displayName: data.createDisplayNameGetter('Visual_LegendShowTitle'),
-                        description: data.createDisplayNameGetter('Visual_LegendShowTitleDescription'),
-                        type: { bool: true }
-                    },
-                    titleText: {
-                        displayName: data.createDisplayNameGetter('Visual_LegendName'),
-                        description: data.createDisplayNameGetter('Visual_LegendNameDescription'),
-                        type: { text: true }
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
-                    }
+                    show: StandardObjectProperties.show,
+                    position: StandardObjectProperties.legendPosition,
+                    showTitle: StandardObjectProperties.showLegendTitle,
+                    titleText: StandardObjectProperties.legendTitle,
+                    fontSize: StandardObjectProperties.fontSize,
                 }
             },
             dataPoint: {
                 displayName: data.createDisplayNameGetter('Visual_DataPoint'),
                 description: data.createDisplayNameGetter('Visual_DataPointDescription'),
                 properties: {
-                    defaultColor: {
-                        displayName: data.createDisplayNameGetter('Visual_DefaultColor'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    showAllDataPoints: {
-                        displayName: data.createDisplayNameGetter('Visual_DataPoint_Show_All'),
-                        type: { bool: true }
-                    },
-                    fill: {
-                        displayName: data.createDisplayNameGetter('Visual_Fill'),
-                        type: { fill: { solid: { color: true } } }
-                    },
+                    defaultColor: StandardObjectProperties.defaultColor,
+                    showAllDataPoints: StandardObjectProperties.showAllDataPoints,
+                    fill: StandardObjectProperties.fill,
                     fillRule: {
                         displayName: data.createDisplayNameGetter('Visual_Gradient'),
                         type: { fillRule: {} },
@@ -149,19 +120,9 @@ module powerbi.visuals {
                 displayName: data.createDisplayNameGetter('Visual_CategoryLabels'),
                 description: data.createDisplayNameGetter('Visual_CategoryLabelsDescription'),
                 properties: {
-                    show: {
-                        displayName: data.createDisplayNameGetter('Visual_Show'),
-                        type: { bool: true }
-                    },
-                    color: {
-                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
-                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
-                    },
+                    show: StandardObjectProperties.show,
+                    color: StandardObjectProperties.dataColor,
+                    fontSize: StandardObjectProperties.fontSize,
                 },
             },
         },

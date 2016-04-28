@@ -25,7 +25,6 @@
 */
 
 module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
     import IPoint = visuals.IPoint;
 
     export interface SelectionManagerOptions{
@@ -86,8 +85,8 @@ module powerbi.extensibility {
         private sendSelectionToHost(ids: ISelectionId[]) {
             let selectArgs: SelectEventArgs = {
                 data: ids
-                    .filter((value: ISelectionId) => value.hasIdentity())
-                    .map((value: ISelectionId) => value.getSelector())
+                    .filter((value: ISelectionId) => (<visuals.SelectionId>value).hasIdentity())
+                    .map((value: ISelectionId) => (<visuals.SelectionId>value).getSelector())
             };
 
             let data2 = this.getSelectorsByColumn(ids);
@@ -113,8 +112,8 @@ module powerbi.extensibility {
 
         private getSelectorsByColumn(selectionIds: ISelectionId[]): SelectorsByColumn[] {
             return _(selectionIds)
-                .filter(value => value.hasIdentity)
-                .map(value => value.getSelectorsByColumn())
+                .filter(value => (<visuals.SelectionId>value).hasIdentity)
+                .map(value => (<visuals.SelectionId>value).getSelectorsByColumn())
                 .compact()
                 .value();
         }
@@ -122,7 +121,7 @@ module powerbi.extensibility {
         private selectInternal(selectionId: ISelectionId, multiSelect: boolean) {
             if (SelectionManager.containsSelection(this.selectedIds, selectionId)) {
                 this.selectedIds = multiSelect
-                    ? this.selectedIds.filter(d => !selectionId.equals(d))
+                    ? this.selectedIds.filter(d => !(<visuals.SelectionId>selectionId).equals(<visuals.SelectionId>d))
                     : this.selectedIds.length > 1
                         ? [selectionId] : [];
             } else {
@@ -134,7 +133,7 @@ module powerbi.extensibility {
         }
 
         public static containsSelection(list: ISelectionId[], id: ISelectionId) {
-            return list.some(d => id.equals(d));
+            return list.some(d => (<visuals.SelectionId>id).equals(<visuals.SelectionId>d));
         }
     }
 } 

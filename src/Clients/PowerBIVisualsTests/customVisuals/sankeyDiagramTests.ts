@@ -122,6 +122,53 @@ module powerbitests.customVisuals {
                     done();
                 }, DefaultWaitForRender);
             });
+
+            describe("Selection and deselection", () => {
+                const selectionSelector = ".selected";
+
+                it("nodes", done => {
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(() => {
+                        expect(visualBuilder.nodesElements.filter(selectionSelector)).not.toBeInDOM();
+                        let node = visualBuilder.nodesElements.first();
+                        powerbitests.helpers.clickElement(node);
+
+                        setTimeout(() => {
+                            expect(node.filter(selectionSelector)).not.toBeInDOM();
+                            expect(visualBuilder.nodesElements.filter(selectionSelector)).toBeInDOM();
+
+                            powerbitests.helpers.clickElement(node);
+                            setTimeout(() => {
+                                expect(visualBuilder.nodesElements.filter(selectionSelector)).not.toBeInDOM();
+                                done();
+                            }, DefaultWaitForRender);
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                });
+
+                it("links", done => {
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(() => {
+                        expect(visualBuilder.linksElements.filter(selectionSelector)).not.toBeInDOM();
+                        let link = visualBuilder.linksElements.first();
+                        powerbitests.helpers.clickElement(link);
+
+                        setTimeout(() => {
+                            expect(link.filter(selectionSelector)).toBeInDOM();
+                            expect(visualBuilder.linksElements.not(link).filter(selectionSelector)).not.toBeInDOM();
+
+                            powerbitests.helpers.clickElement(link);
+                            setTimeout(() => {
+                                expect(visualBuilder.linksElements.filter(selectionSelector)).not.toBeInDOM();
+                                done();
+                            }, DefaultWaitForRender);
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                });
+
+            });
         });
     });
 
@@ -132,16 +179,24 @@ module powerbitests.customVisuals {
             this.init();
         }
 
-        public get mainElement() {
+        public get mainElement(): JQuery {
             return this.element.children("svg.sankeyDiagram");
         }
 
-        public get nodesElement() {
+        public get nodesElement(): JQuery  {
             return this.mainElement.children("g").children("g.nodes");
         }
 
-        public get linksElement() {
+        public get nodesElements(): JQuery  {
+            return this.nodesElement.children("g.node");
+        }
+
+        public get linksElement(): JQuery  {
             return this.mainElement.children("g").children("g.links");
+        }
+
+        public get linksElements(): JQuery  {
+            return this.linksElement.children("path.link");
         }
 
         private build(): void {

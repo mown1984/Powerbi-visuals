@@ -46,8 +46,19 @@ module powerbi.data {
         getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         // Value functions
         hasValues(roleName: string): boolean;
-        getValues(roleName: string, seriesIndex?: number): any[];
+        /**
+         * Obtains the value for the given role name, category index, and series index.
+         *
+         * Note: in cases where have multiple values in a role where the multiple values
+         * are not being used to create a static series, the first is obtained.
+         */
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains all the values for the given role name, category index, and series index, drawing
+         * from each of the value columns at that intersection.  Used when you have multiple
+         * values in a role that are not conceptually a static series.
+         */
+        getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
          * Obtains the first non-null value for the given role name and category index.
          * It should mainly be used for values that are expected to be the same across
@@ -70,11 +81,21 @@ module powerbi.data {
         getSeriesDisplayName(): string;
     }
 
+    /**
+     * A mapping used to map indeces within a specific roleName to an index into the values
+     * of a grouped.  This is used so that you can iterate over values within a role without
+     * expensive filtering or extra traversal.
+     */ 
+    interface RoleIndexMapping {
+        [roleName: string]: number[];
+    }
+
     class DataViewCategoricalReader implements IDataViewCategoricalReader {
         private dataView: DataView;
         private categories: DataViewCategoryColumn[];
         private grouped: DataViewValueColumnGroup[];
         private dataHasDynamicSeries: boolean;
+        private valueRoleIndexMapping: RoleIndexMapping;
         
         // Validation variables
         private hasValidCategories: boolean;
@@ -101,9 +122,25 @@ module powerbi.data {
             this.hasAnyValidValues = false;
             if (values != null) {
                 let grouped = dataView.categorical.values.grouped();
+
                 if (grouped.length > 0) {
                     this.hasAnyValidValues = true;
                     this.grouped = grouped;
+
+                    // Iterate through the first group's values to populate the valueRoleIndexMapping
+                    let valueRoleIndexMapping: RoleIndexMapping = {};
+                    let firstGroupValues = grouped[0].values;
+                    for (let valueIndex = 0, valueCount = firstGroupValues.length; valueIndex < valueCount; valueIndex++) {
+                        let valueRoles = firstGroupValues[valueIndex].source.roles;
+                        for (let role in valueRoles) {
+                            if (valueRoles[role]) {
+                                if (!valueRoleIndexMapping[role])
+                                    valueRoleIndexMapping[role] = [];
+                                valueRoleIndexMapping[role].push(valueIndex);
+                            }
+                        }
+                    }
+                    this.valueRoleIndexMapping = valueRoleIndexMapping;
                 }
             }
 
@@ -192,41 +229,86 @@ module powerbi.data {
         // Value and measure methods
 
         public hasValues(roleName: string): boolean {
-            return this.getMeasureIndex(roleName) !== -1;
+            return this.valueRoleIndexMapping && !_.isEmpty(this.valueRoleIndexMapping[roleName]);
         }
 
-        public getValues(roleName: string, seriesIndex: number = 0): any[] {
-            let measureIndex = this.getMeasureIndex(roleName);
-            let grouped = this.grouped;
-            if (this.hasAnyValidValues && measureIndex !== -1) {
-                if (this.dataHasDynamicSeries || seriesIndex === 0) {
-                    // The case where seriesIndex === 0 covers the single series case, which uses the same group accessor as dynamic series.
-                    // Static series should fall through to the else, but at the moment, this works fine for static series when seriesIndex === 0.
-                    // There will be a follow up change to more correctly handle values by grouping them by group index and roleName
-                    return grouped[seriesIndex].values[measureIndex].values;
+        public getValue(roleName: string, categoryIndex: number, seriesIndex: number = 0): any {
+            if (this.hasValues(roleName)) {
+                if (this.dataHasDynamicSeries) {
+                    // For dynamic series, we only ever obtain the first value column from a role
+                    return this.getValueInternal(roleName, categoryIndex, seriesIndex, 0);
                 }
                 else {
-                    return grouped[0].values[seriesIndex].values;
+                    // For static series or single series, we obtain value columns from the first series
+                    //    and use the seriesIndex to index into the value columns within the role
+                    return this.getValueInternal(roleName, categoryIndex, 0, seriesIndex);
                 }
             }
         }
 
-        public getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any {
-            if (this.hasAnyValidValues) {
-                let values = this.getValues(roleName, seriesIndex);
-                return values ? values[categoryIndex] : undefined;
+        public getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex: number = 0): any[] {
+            if (this.hasValues(roleName)) {
+                let valuesInRole = [];
+                for (let roleValueIndex, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
+                    valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex));
+                }
+                return valuesInRole;
+            }
+        }
+
+        /**
+         * Obtains the value from grouped.
+         *
+         * Grouped:             [0] [1] [2] [3] (seriesIndex)
+         *                         /   \
+         * .values:       [T0] [V0] [V1] [T1] [V2] (valueColumnIndex)
+         *                    /    \ \  \           
+         * v.values:  [0, 1, 2, 3, 4] [5, 6, 7, 8, 9] (categoryIndex)
+         * 
+         *--------------------------------|
+         *                      |Category |
+         * Series|Value Columns |A B C D E|
+         *--------------------------------|
+         *      0|col0 (tooltip)|         |
+         *       |col1 (value)  |         |
+         *       |col2 (value)  |         |
+         *       |col3 (tooltip)|         |
+         *       |col4 (value)  |         |
+         *--------------------------------|
+         *      1|col0 (tooltip)|         |
+         *       |col1 (value)  |0 1 2 3 4|
+         *       |col2 (value)  |5 6 7 8 9|
+         *       |col3 (tooltip)|         |
+         *       |col4 (value)  |         |
+         *--------------------------------|
+         *      2|col0 (tooltip)|...      |
+         * 
+         * valueColumnIndexInRole is for indexing into the values for a single role
+         * valueColumnIndex is for indexing into the entire value array including
+         * all roles
+         * 
+         * The valueRoleIndexMapping converts roleValueIndex and role (value role
+         * with an index of 1) into groupedValueIndex (2)
+         *
+         * Example: getValueInternal(V, 3, 1, 1) returns 8: The second group,
+         * the second value column with role "value" (which is converted to a
+         * groupedValueIndex of 2) and the fourth value within that value column.
+         */
+        private getValueInternal(roleName: string, categoryIndex: number, groupIndex: number, valueColumnIndexInRole: number): any {
+            if (this.hasValues(roleName)) {
+                let valueColumnIndex = this.valueRoleIndexMapping[roleName][valueColumnIndexInRole];
+                return this.grouped[groupIndex].values[valueColumnIndex].values[categoryIndex];
             }
         }
 
         public getFirstNonNullValueForCategory(roleName: string, categoryIndex: number): any {
-            if (this.hasAnyValidValues) {
+            if (this.hasValues(roleName)) {
                 if (!this.dataHasDynamicSeries) {
                     debug.assert(this.grouped.length === 1, "getFirstNonNullValueForCategory shouldn't be called if you have a static series");
                     return this.getValue(roleName, categoryIndex);
                 }
                 for (let seriesIndex = 0, seriesCount = this.grouped.length; seriesIndex < seriesCount; seriesIndex++) {
-                    let values = this.getValues(roleName, seriesIndex);
-                    let value = !_.isEmpty(values) ? values[categoryIndex] : undefined;
+                    let value = this.getValue(roleName, categoryIndex, seriesIndex);
                     if (value != null) {
                         return value;
                     }
@@ -235,34 +317,27 @@ module powerbi.data {
         }
 
         public getMeasureQueryName(roleName: string): string {
-            let measureIndex = this.getMeasureIndex(roleName);
-            if (this.hasAnyValidValues && measureIndex !== -1)
-                return this.grouped[0].values[measureIndex].source.queryName;
+            if (this.hasValues(roleName))
+                return this.grouped[0].values[this.valueRoleIndexMapping[roleName][0]].source.queryName;
         }
 
         public getValueColumn(roleName: string, seriesIndex: number = 0): DataViewValueColumn {
-            let measureIndex = this.getMeasureIndex(roleName);
-            if (this.hasAnyValidValues && measureIndex !== -1)
-                return this.grouped[seriesIndex].values[measureIndex];
+            if (this.hasValues(roleName))
+                return this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][0]];
         }
 
         public getValueMetadataColumn(roleName: string, seriesIndex: number = 0): DataViewMetadataColumn {
-            let measureIndex = this.getMeasureIndex(roleName);
-            if (this.hasAnyValidValues && measureIndex !== -1)
-                return this.grouped[seriesIndex].values[measureIndex].source;
+            if (this.hasValues(roleName))
+                return this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][0]].source;
         }
 
         public getValueDisplayName(roleName: string, seriesIndex?: number): string {
-            if (this.hasAnyValidValues) {
+            if (this.hasValues(roleName)) {
                 let targetColumn = this.getValueColumn(roleName, seriesIndex);
                 if (targetColumn && targetColumn.source) {
                     return targetColumn.source.displayName;
                 }
             }
-        }
-
-        private getMeasureIndex(roleName: string): number {
-            return DataRoleHelper.getMeasureIndexOfRole(this.grouped, roleName);
         }
 
         // Series methods

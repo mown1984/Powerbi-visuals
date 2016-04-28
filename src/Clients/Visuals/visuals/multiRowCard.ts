@@ -167,6 +167,7 @@ module powerbi.visuals {
         private static TitleImageSelector: string = MultiRowCard.Title.selector + ' img';
         private static CaptionImageSelector: string = MultiRowCard.Caption.selector + ' img';
         private static KPITitle: ClassAndSelector = createClassAndSelector('kpiTitle');
+        private static ValuesRole: string = 'Values';
 
         /**
          * Cards have specific styling so defined inline styles and also to support theming and improve performance.
@@ -422,6 +423,26 @@ module powerbi.visuals {
                 dataLabelsSettings: dataLabelsSettings,
                 cardSettings: MultiRowCard.getCardSettings(dataView)
             };
+        }
+        
+        public static getSortableRoles(options: VisualSortableOptions): string[] {
+            
+            if (!options || !options.dataViewMappings || _.isEmpty(options.dataViewMappings)) {
+                return;
+            }
+
+            for (let dataViewMapping of options.dataViewMappings) {
+                if (dataViewMapping.table) {
+
+                    let rows = <powerbi.data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.table.rows;
+
+                    if (rows && rows.for && rows.for.in && rows.for.in.items) {
+                        return [MultiRowCard.ValuesRole];
+                    }
+                }
+            }
+
+            return;
         }
 
         private initializeCardRowSelection() {

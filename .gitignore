@@ -71,6 +71,13 @@ bld/
 # Visual Studio 2015 cache/options directory
 .vs/
 
+# CustomVisuals packages
+src/Clients/CustomVisuals/services/*.js
+src/Clients/CustomVisuals/visuals/*/release
+src/Clients/CustomVisuals/visuals/*/package/package.json
+src/Clients/CustomVisuals/visuals/**/*.js
+src/Clients/CustomVisuals/visuals/**/*.css
+
 # PowerBIVisualsPlayground
 src/Clients/PowerBIVisualsPlayground/**/*.css
 src/Clients/PowerBIVisualsPlayground/**/*.js

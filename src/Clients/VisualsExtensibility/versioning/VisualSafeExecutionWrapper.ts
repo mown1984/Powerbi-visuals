@@ -87,6 +87,10 @@ module powerbi.extensibility {
             let visual = <powerbi.IVisual & WrappedVisual>this.wrappedVisual;
             return visual.unwrap ? visual.unwrap() : visual;
         }
+        
+        public isCustomVisual(): boolean {
+            return this.visualInfo.custom;
+        }
 
         private executeSafely(callback: () => any): any {
             try {

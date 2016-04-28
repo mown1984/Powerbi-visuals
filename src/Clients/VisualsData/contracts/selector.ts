@@ -92,8 +92,11 @@ module powerbi.data {
                 if ((<DataViewScopeIdentity>selectorDataItem).expr) {
                     selectorDataExprs = ScopeIdentityExtractor.getKeys(<SQExpr>(<DataViewScopeIdentity>selectorDataItem).expr);
                 }
-                else {
+                else if ((<DataViewScopeWildcard>selectorDataItem).exprs) {
                     selectorDataExprs = <SQExpr[]>(<DataViewScopeWildcard>selectorDataItem).exprs;
+                } else { 
+                    // In case DataViewRoleWildcard
+                    return false;
                 }
 
                 if (!selectorDataExprs)
@@ -184,13 +187,32 @@ module powerbi.data {
             if (!dataItems)
                 return false;
 
-            for (let i = 0, len = dataItems.length; i < len; i++) {
-                let wildcard = <DataViewScopeWildcard>dataItems[i];
-                if (wildcard.exprs)
+            for (let dataItem of dataItems) {
+                let wildCard = <DataViewScopeWildcard & DataViewRoleWildcard>dataItem;
+                if (wildCard.exprs || wildCard.roles)
                     return true;
             }
 
             return false;
+        }
+
+        export function hasRoleWildcard(selector: Selector): boolean {
+            debug.assertValue(selector, 'selector');
+
+            let dataItems = selector.data;
+            if (_.isEmpty(dataItems))
+                return false;
+
+            for (let dataItem of dataItems) {
+                if (isRoleWildcard(dataItem))
+                    return true;
+            }
+
+            return false;
+        }
+
+        export function isRoleWildcard(dataItem: DataRepetitionSelector): dataItem is DataViewRoleWildcard {
+            return !_.isEmpty((<DataViewRoleWildcard>dataItem).roles);
         }
     }
 }

@@ -149,6 +149,17 @@ module powerbi.data {
                 };
             }
 
+            public visitScopedEval(expr: SQScopedEvalExpr): {} {
+                debug.assertValue(expr, 'expr');
+
+                return {
+                    scopedEval: {
+                        e: expr.expression.accept(this),
+                        s: serializeArray(expr.scope)
+                    }
+                };
+            }
+
             public visitDefault(expr: SQExpr): {} {
                 debug.assertFail('Unexpected expression type found in DataViewScopeIdentity.');
 

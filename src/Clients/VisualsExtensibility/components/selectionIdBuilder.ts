@@ -25,8 +25,6 @@
  */
 
 module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
-    
     /**
      * This class is designed to simplify the creation of SelectionId objects
      * It allows chaining to build up an object before calling 'create' to build a SelectionId

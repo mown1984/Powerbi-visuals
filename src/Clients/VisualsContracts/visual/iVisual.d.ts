@@ -289,6 +289,7 @@ declare module powerbi {
     export interface IGeocoder {
         geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
         geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
+        geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
     }
 
     export interface IGeocodeCoordinate {
@@ -300,6 +301,19 @@ declare module powerbi {
         latitude?: number;
         longitude?: number;
         locations?: IGeocodeBoundaryPolygon[]; // one location can have multiple boundary polygons
+    }
+
+    export interface IGeocodeResource extends IGeocodeCoordinate {
+        addressLine: string;
+        locality: string;
+        neighborhood: string;
+        adminDistrict: string;
+        adminDistrict2: string;
+        formattedAddress: string;
+        postalCode: string;
+        countryRegionIso2: string;
+        countryRegion: string;
+        landmark: string;
     }
 
     export interface IGeocodeBoundaryPolygon {

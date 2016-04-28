@@ -40,10 +40,10 @@ module powerbi.data {
         public static equals(x: SQExpr, y: SQExpr, ignoreCase?: boolean): boolean {
             return SQExprEqualityVisitor.run(x, y, ignoreCase);
         }
-      
+
         public validate(schema: FederatedConceptualSchema, aggrUtils: ISQAggregationOperations, errors?: SQExprValidationError[]): SQExprValidationError[] {
             let validator = new SQExprValidationVisitor(schema, aggrUtils, errors);
-           this.accept(validator);
+            this.accept(validator);
             return validator.errors;
         }
 
@@ -338,7 +338,7 @@ module powerbi.data {
 
             if (!entity)
                 return;
-            
+
             // We only support count and countnonnull for entity.
             if (field.entityAggr) {
                 switch (field.entityAggr.aggregate) {
@@ -382,6 +382,8 @@ module powerbi.data {
         Arithmetic,
         FillRule,
         ResourcePackageItem,
+        ScopedEval,
+        Scope,
     }
 
     export interface SQExprMetadata {
@@ -467,6 +469,24 @@ module powerbi.data {
 
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitArithmetic(this, arg);
+        }
+    }
+
+    export class SQScopedEvalExpr extends SQExpr {
+        public expression: SQExpr;
+        public scope: SQExpr[];
+
+        constructor(expression: SQExpr, scope: SQExpr[]) {
+            debug.assertValue(expression, 'expression');
+            debug.assertValue(scope, 'scope');
+
+            super(SQExprKind.ScopedEval);
+            this.expression = expression;
+            this.scope = scope;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitScopedEval(this, arg);
         }
     }
 
@@ -1084,8 +1104,12 @@ module powerbi.data {
             }
         }
 
-        export function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQExpr {
+        export function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQArithmeticExpr {
             return new SQArithmeticExpr(left, right, operator);
+        }
+
+        export function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr {
+            return new SQScopedEvalExpr(expression, scope);
         }
 
         export function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr {
@@ -1099,7 +1123,7 @@ module powerbi.data {
         export function removeEntityVariables(expr: SQExpr): SQExpr {
             return SQExprRemoveEntityVariablesRewriter.rewrite(expr);
         }
-        
+
         export function fillRule(expr: SQExpr, rule: FillRuleDefinition): SQFillRuleExpr {
             debug.assertValue(expr, 'expr');
             debug.assertValue(rule, 'rule');
@@ -1343,8 +1367,8 @@ module powerbi.data {
             debug.assertValue(stop2, 'stop2');
 
             if (!this.equals(stop1.color, stop2.color))
-            return false;
-            
+                return false;
+
             if (!stop1.value)
                 return stop1.value === stop2.value;
 
@@ -1356,6 +1380,12 @@ module powerbi.data {
                 expr.operator === (<SQArithmeticExpr>comparand).operator &&
                 this.equals(expr.left, (<SQArithmeticExpr>comparand).left) &&
                 this.equals(expr.right, (<SQArithmeticExpr>comparand).right);
+        }
+
+        public visitScopedEval(expr: SQScopedEvalExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQScopedEvalExpr &&
+                this.equals(expr.expression, comparand.expression) &&
+                this.equalsAll(expr.scope, comparand.scope);
         }
 
         private optionalEqual(x: string, y: string) {
@@ -1527,6 +1557,11 @@ module powerbi.data {
 
         public visitArithmetic(expr: SQArithmeticExpr): SQExpr {
             this.validateArithmeticTypes(expr.left, expr.right);
+            return expr;
+        }
+
+        public visitScopedEval(expr: SQScopedEvalExpr): SQExpr {
+            // No validation necessary
             return expr;
         }
 

@@ -37,7 +37,6 @@ declare module powerbi.visuals.telemetry {
     var VisualException: (visualType: string, isCustom: boolean, apiVersion: string, source: string, lineNumber: number, columnNumber: number, stack: string, message: string) => ITelemetryEventI<IPBIVisualException>;
 }
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
     import IPoint = visuals.IPoint;
     interface SelectionManagerOptions {
         hostServices: IVisualHostServices;
@@ -60,7 +59,6 @@ declare module powerbi.extensibility {
     }
 }
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
     /**
      * This class is designed to simplify the creation of SelectionId objects
      * It allows chaining to build up an object before calling 'create' to build a SelectionId
@@ -123,6 +121,7 @@ declare module powerbi.extensibility {
         canResizeTo(viewport: IViewport): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         unwrap(): powerbi.IVisual;
+        isCustomVisual(): boolean;
         private executeSafely(callback);
     }
 }

@@ -37,58 +37,32 @@ module powerbi.visuals {
         objects: {
             general: {
                 properties: {
-                    formatString: {
-                        type: { formatting: { formatString: true } },
-                    },
+                    formatString: StandardObjectProperties.formatString,
                 },
             },
             cardTitle: {
                 displayName: data.createDisplayNameGetter('Visual_CardTitle'),
                 description: data.createDisplayNameGetter('Visual_CardTitleDescription'),
                 properties: {
-                    color: {
-                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
-                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
-                    },
+                    color: StandardObjectProperties.dataColor,
+                    fontSize: StandardObjectProperties.fontSize,
                 }
             },
             dataLabels: {
                 displayName: data.createDisplayNameGetter('Visual_DataPointsLabels'),
                 description: data.createDisplayNameGetter('Visual_DataPointsLabelsDescription'),
                 properties: {
-                    color: {
-                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
-                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
-                    },
+                    color: StandardObjectProperties.dataColor,
+                    fontSize: StandardObjectProperties.fontSize,
                 }
             },
             categoryLabels: {
                 displayName: data.createDisplayNameGetter('Visual_CategoryLabels'),
                 description: data.createDisplayNameGetter('Visual_CategoryLabelsDescription'),
                 properties: {
-                    show: {
-                        displayName: data.createDisplayNameGetter('Visual_Show'),
-                        type: { bool: true }
-                    },
-                    color: {
-                        displayName: data.createDisplayNameGetter('Visual_LabelsFill'),
-                        description: data.createDisplayNameGetter('Visual_LabelsFillDescription'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    fontSize: {
-                        displayName: data.createDisplayNameGetter('Visual_TextSize'),
-                        type: { formatting: { fontSize: true } }
-                    },
+                    show: StandardObjectProperties.show,
+                    color: StandardObjectProperties.dataColor,
+                    fontSize: StandardObjectProperties.fontSize,
                 }
             },
             card: {
@@ -143,6 +117,9 @@ module powerbi.visuals {
                 rowCount: { preferred: { min: 1 } }
             },
         }],
+        sorting: {
+            default: {},
+        },
         suppressDefaultTitle: true,
         supportsSelection: false,
         disableVisualDetails: true,

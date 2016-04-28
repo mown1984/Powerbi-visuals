@@ -32,6 +32,7 @@ module powerbi.visuals.services {
         return {
             geocode: geocode,
             geocodeBoundary: geocodeBoundary,
+            geocodePoint: geocodePoint,
         };
     }
 
@@ -100,7 +101,7 @@ module powerbi.visuals.services {
         deferred: any;
     }
 
-    // Static variables for caching, maps, etc
+    // Static variables for caching, maps, etc.
     let geocodeQueue: IGeocodeQueueItem[];
     let activeRequests;
     let categoryToBingEntity: { [key: string]: string; };
@@ -147,7 +148,7 @@ module powerbi.visuals.services {
         }
 
         public getUrl(): string {
-            let url = Settings.BingUrl + "key=" + Settings.BingKey;
+            let url = Settings.BingUrl + "?key=" + Settings.BingKey;
             let entityType = this.getBingEntity();
             let queryAdded = false;
             if (entityType) {
@@ -188,6 +189,33 @@ module powerbi.visuals.services {
                 url += "&include=ciso2";
             }
 
+            return url;
+        }
+    }
+
+    export class GeocodePointQuery extends GeocodeQuery {
+        public latitude: number;
+        public longitude: number;
+       
+        constructor(latitude: number, longitude: number) {
+            super([latitude, longitude].join(), "Point");
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }           
+
+        public getUrl(): string {
+            let url = Settings.BingUrl + "/" +
+                [this.latitude, this.longitude].join() + "?" +
+                "key=" + Settings.BingKey +
+                "&includeEntityTypes=" + [
+                    BingEntities.Address,
+                    BingEntities.Neighborhood,
+                    BingEntities.PopulatedPlace,
+                    BingEntities.Postcode1,
+                    BingEntities.AdminDivision1,
+                    BingEntities.AdminDivision2,
+                    BingEntities.CountryRegion].join() +
+                "&include=ciso2";  
             return url;
         }
     }
@@ -268,6 +296,10 @@ module powerbi.visuals.services {
 
     export function geocodeBoundary(latitude: number, longitude: number, category: string = "", levelOfDetail: number = 2, maxGeoData: number = 3): any {
         return geocodeCore(new GeocodeBoundaryQuery(latitude, longitude, category, levelOfDetail, maxGeoData));
+    }
+
+    export function geocodePoint(latitude: number, longitude: number): any {
+        return geocodeCore(new GeocodePointQuery(latitude, longitude));
     }
 
     function dequeue(decrement: number = 0) {
@@ -352,6 +384,32 @@ module powerbi.visuals.services {
                             completeRequest(item, new Error("Geocode result is empty."));
                         }
                     }
+                    else if (item.query instanceof GeocodePointQuery){
+                        let resources = data.resourceSets[0].resources;
+                        if (Array.isArray(resources) && resources.length > 0) {
+                            let index = getBestResultIndex(resources, item.query);
+                            let pointData = resources[index].point.coordinates;
+                            let addressData = resources[index].address;
+                            let coordinates: IGeocodeResource = {
+                                latitude: parseFloat(pointData[0]),
+                                longitude: parseFloat(pointData[1]),
+                                addressLine: addressData.addressLine,
+                                locality: addressData.locality,
+                                neighborhood: addressData.neighborhood,
+                                adminDistrict: addressData.adminDistrict, 
+                                adminDistrict2: addressData.adminDistrict2, 
+                                formattedAddress: addressData.formattedAddress, 
+                                postalCode: addressData.postalCode,
+                                countryRegionIso2: addressData.countryRegionIso2, 
+                                countryRegion: addressData.countryRegion, 
+                                landmark: addressData.landmark,  
+                            };
+                            completeRequest(item, null, coordinates);
+                        }
+                        else {
+                            completeRequest(item, new Error("Geocode result is empty."));
+                        }
+                    }
                     else {
                         let resources = data.resourceSets[0].resources;
                         if (Array.isArray(resources) && resources.length > 0) {
@@ -386,7 +444,7 @@ module powerbi.visuals.services {
             item.deferred.reject(error);
         }
         else {
-            if (geocodingCache)
+            if (geocodingCache && !(item.query instanceof GeocodePointQuery))
                 geocodingCache.registerCoordinates(item.query, coordinate);
             item.deferred.resolve(coordinate);
         }

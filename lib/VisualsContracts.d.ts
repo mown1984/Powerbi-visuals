@@ -88,6 +88,7 @@ declare module powerbi {
 declare module jsCommon {
     export interface IStringResourceProvider {
         get(id: string): string;
+        getOptional(id: string): string;
     }
 }
 
@@ -1061,7 +1062,7 @@ declare module powerbi {
 
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
+    export interface ISelectionId { }
 
     export interface ISelectionIdBuilder {
         withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
@@ -1073,8 +1074,6 @@ declare module powerbi.extensibility {
 
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
-
     interface ISelectionManager {
         select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
         hasSelection(): boolean;
@@ -1906,6 +1905,7 @@ declare module powerbi {
     export interface IGeocoder {
         geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
         geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
+        geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
     }
 
     export interface IGeocodeCoordinate {
@@ -1917,6 +1917,19 @@ declare module powerbi {
         latitude?: number;
         longitude?: number;
         locations?: IGeocodeBoundaryPolygon[]; // one location can have multiple boundary polygons
+    }
+
+    export interface IGeocodeResource extends IGeocodeCoordinate {
+        addressLine: string;
+        locality: string;
+        neighborhood: string;
+        adminDistrict: string;
+        adminDistrict2: string;
+        formattedAddress: string;
+        postalCode: string;
+        countryRegionIso2: string;
+        countryRegion: string;
+        landmark: string;
     }
 
     export interface IGeocodeBoundaryPolygon {

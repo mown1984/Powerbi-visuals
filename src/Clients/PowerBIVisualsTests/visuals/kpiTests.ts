@@ -244,8 +244,17 @@ module powerbitests {
                     let decimalPlacesFound = goalText.indexOf('%') - goalText.indexOf('.') - 1;
                     expect(decimalPlacesFound).toBe(2);
                 });
+
+                it("Show only indicator vs goal when trend axis contains single value", () => {
+                    let visualUpdateOptions = buildUpdateOptions(viewport, kpiHelper.buildDataViewForRedTrendWithSingleCategory());
+                    kpi.update(visualUpdateOptions);
+
+                    let textContainer = $element.find('.textContainer');
+                    let trendLine = $element.find('.kpiVisual path');
+                    expect(textContainer.css('display')).toBe('block');
+                    expect(trendLine.css('visibility')).toBe('hidden');
+                });
             });
         });
     });
 }
-        

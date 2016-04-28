@@ -1869,6 +1869,9 @@ module powerbitests {
             { displayName: "col2", queryName: "col2", isMeasure: true, index: 1, groupName: "a", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
             { displayName: "col3", queryName: "col3", isMeasure: true, index: 2, groupName: "b", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
             { displayName: "col4", queryName: "col4", isMeasure: true, index: 3, groupName: "c", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col2", queryName: "col2", isMeasure: true, index: 4, groupName: "d", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col3", queryName: "col3", isMeasure: true, index: 5, groupName: "e", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
+            { displayName: "col4", queryName: "col4", isMeasure: true, index: 6, groupName: "f", type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } },
             { displayName: "col5", queryName: "col5", index: 4, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), roles: { Series: true } },
         ];
 

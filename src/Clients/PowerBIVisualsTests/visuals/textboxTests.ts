@@ -657,6 +657,17 @@ module powerbitests {
                             expect(anchors.eq(0).html()).toBe(microsoft);
                         });
 
+                        it('inserting link should save', () => {
+                            let microsoft = 'http://www.microsoft.com';
+                            linkInput.val(microsoft);
+
+                            let persistPropertiesSpy = spyOn(host, "persistProperties");
+
+                            done.mousedown();
+
+                            expect(persistPropertiesSpy).toHaveBeenCalled();
+                        });
+
                         it('enter key should insert input value into editor', () => {
                             let microsoft = 'http://www.microsoft.com';
                             linkInput.val(microsoft);

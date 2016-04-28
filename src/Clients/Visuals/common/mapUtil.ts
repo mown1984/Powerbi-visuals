@@ -45,7 +45,7 @@ module powerbi.visuals {
 
             // Bing Keys and URL
             BingKey: "insert your key",
-            BingUrl: "https://dev.virtualearth.net/REST/v1/Locations?",
+            BingUrl: "https://dev.virtualearth.net/REST/v1/Locations",
             BingUrlGeodata: "https://platform.bing.com/geo/spatial/v1/public/Geodata?",
 
             /** Switch the data result for geodata polygons to by double array instead locations array */

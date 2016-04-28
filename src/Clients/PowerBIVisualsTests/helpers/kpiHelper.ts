@@ -31,27 +31,36 @@ module powerbitests.kpiHelper {
     export function buildDataViewForRedTrend(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
 
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
+    }
+
+    export function buildDataViewForRedTrendWithSingleCategory(): powerbi.DataView {
+        let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrendWithSingleCategory();
+
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewForGreenTrendWithPercentages(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
+        let dataView: powerbi.DataView = buildDataView(dataViewMetadata, dataViewCategorical);
 
         dataView.metadata.objects = { indicator: { indicatorPrecision: 5 } };
         dataView.metadata.columns[1].objects = { general: { formatString: "0.00 %;-0.00 %;0.00 %" } };
         dataView.metadata.columns[2].objects = { general: { formatString: "0.00 %;-0.00 %;0.00 %" } };
         dataView.categorical.values[1].values = [0.102, 0.3256, 0.256, 0.51863, 0.78123456789]; // indicator
         dataView.categorical.values[2].values = [0.8, 0.2556, 0.386, 0.42863, 0.72123456789];   // goal
+
+        return dataView;
+    }
+
+    function buildDataView(dataViewMetaData: powerbi.DataViewMetadata, dataViewCategorical: powerbi.DataViewCategorical): powerbi.DataView {
+        let dataView: powerbi.DataView = {
+            metadata: dataViewMetaData,
+            categorical: dataViewCategorical
+        };
 
         return dataView;
     }
@@ -92,6 +101,32 @@ module powerbitests.kpiHelper {
         return dataViewCategorical;
     }
 
+    function buildDataViewCategoricalForRedTrendWithSingleCategory(): powerbi.DataViewCategorical {
+        let dataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical = {
+            categories: [{
+                source: dataViewMetadata.columns[0],
+                values: [1],
+                identity: [mocks.dataViewScopeIdentity(1)],
+            }],
+            values: DataViewTransform.createValueColumns([
+                {
+                    source: dataViewMetadata.columns[0],
+                    values: [1]
+                },
+                {
+                    source: dataViewMetadata.columns[1],
+                    values: [20]
+                },
+                {
+                    source: dataViewMetadata.columns[2],
+                    values: [17]
+                }])
+        };
+
+        return dataViewCategorical;
+    }
+
     export function buildDataViewForGreenTrend(): powerbi.DataView {
         let dataView = buildDataViewForRedTrend();
         dataView.categorical.values[1].values = [20, 10, 30, 15, 25];
@@ -105,23 +140,14 @@ module powerbitests.kpiHelper {
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(
             dataViewMetadata.columns[0], dataViewMetadata.columns[1], dataViewMetadata.columns[2], dataViewMetadata.columns[3]);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewForNoGoalTrend(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadataForNoGoal();
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForNoGoal();
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
 
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewWithMissingIndicator(): powerbi.DataView {
@@ -131,72 +157,42 @@ module powerbitests.kpiHelper {
         dataViewMetadata.columns.pop();
         dataViewCategorical.values.pop();
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
     
     export function buildDataViewWithMissingIndicatorWITHGoal(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadata(true, false, true, true);
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(dataViewMetadata.columns[0], null, dataViewMetadata.columns[1], dataViewMetadata.columns[2]);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewWithMissingTrendline(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadata(false, true, false, false);
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(null, dataViewMetadata.columns[0], null, null);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewWithMissingTrendlineWITHGoal(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadata(false, true, true, true);
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(null, dataViewMetadata.columns[0], dataViewMetadata.columns[1], dataViewMetadata.columns[2]);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewWithMissingTrendlineAndIndicator(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadata(false, false, false, false);
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(null, null, null, null);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     export function buildDataViewWithMissingTrendlineAndIndicatorBUTWithGoals(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadata(false, false, true, true);
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategorical(null, null, dataViewMetadata.columns[0], dataViewMetadata.columns[1]);
 
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     function buildDataViewMetadataForNoGoal(): powerbi.DataViewMetadata {
@@ -327,12 +323,8 @@ module powerbitests.kpiHelper {
     export function buildDataViewForGreenNoTrend(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDataViewMetadataForNoTrend();
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForGreenNoTrend();
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetadata,
-            categorical: dataViewCategorical
-        };
-
-        return dataView;
+        
+        return buildDataView(dataViewMetadata, dataViewCategorical);
     }
 
     function buildDataViewMetadataForNoTrend(): powerbi.DataViewMetadata {

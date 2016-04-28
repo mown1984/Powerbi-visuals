@@ -813,8 +813,21 @@ module powerbi.visuals.controls.internal {
          * Index within a dimension (row/column)
          */
         export class DimensionPosition {
+            /**
+            * Global index within all leaf nodes
+            */
             public index: number;
+            /**
+            * Index within siblings for same parent
+            */
+            public indexInSiblings: number;
+            /**
+            * Is last globally
+            */
             public isLast: boolean;
+            /**
+            * Is first globally
+            */
             public isFirst: boolean;
         }
         /**

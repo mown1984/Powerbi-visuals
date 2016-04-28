@@ -25,7 +25,7 @@
 */
 
 declare module powerbi.extensibility {
-    import ISelectionId = visuals.ISelectionId;
+    export interface ISelectionId { }
 
     export interface ISelectionIdBuilder {
         withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;

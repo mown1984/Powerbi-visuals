@@ -53,6 +53,7 @@ module powerbi.data {
         visitArithmetic(expr: SQArithmeticExpr, arg: TArg): T;
         visitFillRule(expr: SQFillRuleExpr, arg: TArg): T;
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
+        visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
     }
 
     export interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
@@ -157,6 +158,10 @@ module powerbi.data {
         }
 
         public visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T {
+            return this.visitDefault(expr, arg);
+        }
+
+        public visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T {
             return this.visitDefault(expr, arg);
         }
 
@@ -313,6 +318,13 @@ module powerbi.data {
 
         public visitResourcePackageItem(expr: SQResourcePackageItemExpr): void {
             this.visitDefault(expr);
+        }
+
+        public visitScopedEval(expr: SQScopedEvalExpr): void {
+            expr.expression.accept(this);
+            for (let scopeExpr of expr.scope) {
+                scopeExpr.accept(this);
+            }
         }
 
         public visitDefault(expr: SQExpr): void {

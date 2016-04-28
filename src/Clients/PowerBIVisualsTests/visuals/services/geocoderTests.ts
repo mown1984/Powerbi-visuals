@@ -29,6 +29,7 @@ module powerbitests {
     import services = powerbi.visuals.services;
     import GeocodeQuery = services.GeocodeQuery;
     import GeocodeBoundaryQuery = services.GeocodeBoundaryQuery;
+    import GeocodePointQuery = services.GeocodePointQuery;
     import BingEntities = services.BingEntities;
 
     describe("GeocodingManagerTests", () => {
@@ -172,6 +173,17 @@ module powerbitests {
         it("getUrl", () => {
             let query = new GeocodeBoundaryQuery(47, 122, "StateOrProvince", 1);
             expect(query.getUrl()).toBe("https://platform.bing.com/geo/spatial/v1/public/Geodata?key=testBingKey&$format=json&SpatialFilter=GetBoundary(47, 122, 1, \'AdminDivision1\', 1, 0, \'en-US\', \'US\')");
+        });
+    });
+
+    describe("GeocodePointQueryTests", () => {
+        beforeEach(() => {
+            MapUtil.Settings.BingKey = "testBingKey";
+        });
+
+        it("getUrl", () => {
+            let query = new GeocodePointQuery(47.12435, 122.67891);
+            expect(query.getUrl()).toBe("https://dev.virtualearth.net/REST/v1/Locations/47.12435,122.67891?key=testBingKey&includeEntityTypes=Address,Neighborhood,PopulatedPlace,Postcode1,AdminDivision1,AdminDivision2,CountryRegion&include=ciso2");
         });
     });
 } 

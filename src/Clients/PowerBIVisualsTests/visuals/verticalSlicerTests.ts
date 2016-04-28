@@ -300,8 +300,9 @@ module powerbitests {
                 helpers.fireOnDataChanged(builder.visual, dvOptionsFilter);
             }
             function scrollBy(itemCount: number): void {
-                // Get 'real' row height
-                let rowHeight = $('.row').eq(0).outerHeight(true);
+                // Get 'real' row height. Measure the parent and the child in case the child has a margin that outerHeight ignores when measuring the parent.
+                let row = $('.row').eq(0);
+                let rowHeight = Math.max(row.outerHeight(true), row.children().first().outerHeight(true));
                 // Scrolling
                 $(".slicerBody .scrollbar-inner.scroll-content").scrollTop(itemCount * rowHeight);
             }

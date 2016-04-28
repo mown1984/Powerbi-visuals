@@ -228,6 +228,24 @@ module powerbitests.mocks {
             deferred.resolve(result);
             return deferred;
         }
+
+        public geocodePoint(latitude: number, longitude: number): any {
+            let result = {
+                latitude: latitude,
+                longitude: longitude,
+                addressLine: "10952 109th Ave SE",
+                locality: "Bellevue",
+                adminDistrict: "WA",
+                adminDistrict2: "King Co.",
+                formattedAddress: "10952 109th Ave SE, Bellevue, WA 98004",
+                postalCode: "98004",
+                countryRegionIso2: "US",
+                countryRegion: "United States"
+            };
+            let deferred = $.Deferred();
+            deferred.resolve(result);
+            return deferred;
+        }
     }
 
     export class MockMapControl {

@@ -1,0 +1,30 @@
+{
+    "dateAdded": "2015-10-19T03:16:18.000Z",
+    "dateLastUpdated": "2016-02-24T20:54:49.000Z",
+    "package": {
+        "name": "AreaRangeChart",
+        "displayName": "AreaRangeChart",
+        "guid": "AreaRangeChart1444719959213",
+        "version": "0.1.0",
+        "build": "13.0.1100.210",
+        "author": {
+            "name": "Microsoft",
+            "email": "pbicvsupport@microsoft.com"
+        },
+        "licenseTerms": "http://go.microsoft.com/fwlink/?LinkID=627540",
+        "privacyTerms": "http://go.microsoft.com/fwlink/?LinkID=627541",
+        "supportUrl": "http://community.powerbi.com",
+        "gitHubUrl": "https://github.com/Microsoft/PowerBI-visuals",
+        "description": "Displays a range of data by plotting two Y values per data point, with each Y value being drawn as a line chart. Useful to graph data that contains minimum and maximum values for each category group",
+        "images": {
+            "icon": "icon.svg",
+            "screenshots": ["AreaRange.png"],
+            "thumbnail": "thumbnail.png"
+        },
+        "code": {
+            "typeScript": "AreaRangeChart.ts",
+            "javaScript": "AreaRangeChart.js",
+            "css": "AreaRangeChart.css"
+        }
+    }
+}

@@ -53,6 +53,6 @@ module.exports = projects.initProject(
             }
         },
         watch: {
-            includes: ["/**/*.less", '/**/*.ts']
+            includes: ["/**/styles/*.less", '/**/*.ts']
         }
     });

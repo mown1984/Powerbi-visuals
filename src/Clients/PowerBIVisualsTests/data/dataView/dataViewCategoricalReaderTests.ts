@@ -195,8 +195,8 @@ module powerbitests {
         
         // Value/measure methods
         reader.hasValues("");
-        reader.getValues("");
         reader.getValue("", 0);
+        reader.getAllValuesForRole("", 0);
         reader.getFirstNonNullValueForCategory("", 0);
         reader.getMeasureQueryName("");
         reader.getValueColumn("");

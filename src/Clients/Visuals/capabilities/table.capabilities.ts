@@ -35,9 +35,7 @@ module powerbi.visuals {
             general: {
                 displayName: data.createDisplayNameGetter('Visual_General'),
                 properties: {
-                    formatString: {
-                        type: { formatting: { formatString: true } },
-                    },
+                    formatString: StandardObjectProperties.formatString,
                     columnWidth: {
                         type: { numeric: true }
                     },
@@ -59,16 +57,8 @@ module powerbi.visuals {
             grid: {
                 displayName: data.createDisplayNameGetter('Visual_Grid'),
                 properties: {
-                    outlineColor: {
-                        displayName: data.createDisplayNameGetter('Visual_OutlineColor'),
-                        description: data.createDisplayNameGetter('Visual_OutlineColor_Desc'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    outlineWeight: {
-                        displayName: data.createDisplayNameGetter('Visual_OutlineWeight'),
-                        description: data.createDisplayNameGetter('Visual_OutlineWeight_Desc'),
-                        type: { numeric: true }
-                    },
+                    outlineColor: StandardObjectProperties.outlineColor,
+                    outlineWeight: StandardObjectProperties.outlineWeight,
                     gridVertical: {
                         displayName: data.createDisplayNameGetter('Visual_GridVertical'),
                         description: data.createDisplayNameGetter('Visual_GridVertical_Desc'),
@@ -115,30 +105,16 @@ module powerbi.visuals {
             columnHeaders: {
                 displayName: data.createDisplayNameGetter('Visual_Tablix_ColumnHeaders'),
                 properties: {
-                    outline: {
-                        displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { enumeration: outline.type }
-                    },
-                    fontColor: {
-                        displayName: data.createDisplayNameGetter('Visual_Tablix_FontColor'),
-                        description: data.createDisplayNameGetter('Visual_Tablix_FontColor_Desc'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    backColor: {
-                        displayName: data.createDisplayNameGetter('Visual_Tablix_BackColor'),
-                        description: data.createDisplayNameGetter('Visual_Tablix_BackColor_Desc'),
-                        type: { fill: { solid: { color: true } } }
-                    },
+                    outline: StandardObjectProperties.outline,
+                    fontColor: StandardObjectProperties.fontColor,
+                    backColor: StandardObjectProperties.backColor,
                 }
             },
 
             values: {
                 displayName: data.createDisplayNameGetter('Visual_Tablix_Values'),
                 properties: {
-                    outline: {
-                        displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { enumeration: outline.type }
-                    },
+                    outline: StandardObjectProperties.outline,
                     // TODO: VSTS 7167767: Remove temporary code for product demo.
                     backgroundColorConditional: {
                         displayName: 'Conditional Formatting',
@@ -175,20 +151,9 @@ module powerbi.visuals {
             total: {
                 displayName: data.createDisplayNameGetter('Visual_Tablix_TotalGrand'),
                 properties: {
-                    outline: {
-                        displayName: data.createDisplayNameGetter('Visual_Outline'),
-                        type: { enumeration: outline.type }
-                    },
-                    fontColor: {
-                        displayName: data.createDisplayNameGetter('Visual_Tablix_FontColor'),
-                        description: data.createDisplayNameGetter('Visual_Tablix_FontColor_Desc'),
-                        type: { fill: { solid: { color: true } } }
-                    },
-                    backColor: {
-                        displayName: data.createDisplayNameGetter('Visual_Tablix_BackColor'),
-                        description: data.createDisplayNameGetter('Visual_Tablix_BackColor_Desc'),
-                        type: { fill: { solid: { color: true } } }
-                    },
+                    outline: StandardObjectProperties.outline,
+                    fontColor: StandardObjectProperties.fontColor,
+                    backColor: StandardObjectProperties.backColor,
                 }
             },
         },

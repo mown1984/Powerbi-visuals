@@ -29,6 +29,7 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
     import DataViewTransform = powerbi.data.DataViewTransform;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
 
     export class ValuesByCountriesData {
 
@@ -68,17 +69,31 @@ module powerbitests.customVisuals.sampleDataViews {
                     }]
             };
 
+            let sourceDataFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table", name: "sourceData" } });
+            let destinationDataFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table", name: "destinationData" } });
+            let identities: powerbi.DataViewScopeIdentity[] = [];
+            for(let i = 0, length = Math.min(sourceData.length, destinationData.length); i< length; i++) {
+                let identity = powerbi.data.createDataViewScopeIdentity(
+                    SQExprBuilder.and(
+                        SQExprBuilder.equal(sourceDataFieldExpr, SQExprBuilder.text(sourceData[i])),
+                        SQExprBuilder.equal(destinationDataFieldExpr, SQExprBuilder.text(destinationData[i]))));
+
+                identities.push(identity);
+            }
+
             return {
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: [
                         {
                             source: dataViewMetadata.columns[0],
-                            values: sourceData
+                            values: sourceData,
+                            identity: identities
                         },
                         {
                             source: dataViewMetadata.columns[1],
-                            values: destinationData
+                            values: destinationData,
+                            identity: identities
                         }],
                     values: DataViewTransform.createValueColumns([
                         {

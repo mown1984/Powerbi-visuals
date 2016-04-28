@@ -111,6 +111,9 @@ module powerbi.data {
         // Client-only expressions
         FillRule?: QueryFillRuleExpression;
         ResourcePackageItem?: QueryResourcePackageItem;
+
+        // Evaluation Expressions
+        ScopedEval?: QueryScopedEvalExpression;
     }
 
     export interface QueryPropertyExpression {
@@ -253,6 +256,11 @@ module powerbi.data {
         ItemName: string;
     }
 
+    export interface QueryScopedEvalExpression {
+        Expression: QueryExpressionContainer;
+        Scope: QueryExpressionContainer[];
+    }
+
     export enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -332,6 +340,8 @@ module powerbi.data {
     export interface FilterMetadata {
         Restatement: string;
         Kind?: FilterKind;
+        /** The expression being filtered.  This is reflected in the filter card UI. */
+        expression?: QueryExpressionContainer;
     }
 
     export enum FilterKind {

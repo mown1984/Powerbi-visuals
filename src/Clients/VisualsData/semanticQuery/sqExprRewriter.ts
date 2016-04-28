@@ -276,6 +276,18 @@ module powerbi.data {
             return new SQArithmeticExpr(rewrittenLeft, rewrittenRight, orig.operator);
         }
 
+        public visitScopedEval(orig: SQScopedEvalExpr): SQExpr {
+            let origExpression = orig.expression,
+                rewrittenExpression = origExpression.accept(this),
+                origScope = orig.scope,
+                rewrittenScope = this.rewriteAll(origScope);
+
+            if (origExpression === rewrittenExpression && origScope === rewrittenScope)
+                return orig;
+
+            return new SQScopedEvalExpr(rewrittenExpression, rewrittenScope);
+        }
+
         public visitFillRule(orig: SQFillRuleExpr): SQExpr {
             let origInput = orig.input,
                 rewrittenInput = origInput.accept(this);

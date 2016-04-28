@@ -63,9 +63,7 @@ module powerbi.visuals {
         objects: {
             general: {
                 properties: {
-                    formatString: {
-                        type: { formatting: { formatString: true } },
-                    },
+                    formatString: StandardObjectProperties.formatString,
                 },
             },
             indicator: {
@@ -93,10 +91,7 @@ module powerbi.visuals {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_KPI_TrendLine'),
                 description: data.createDisplayNameGetter('Role_DisplayName_KPI_Trendline_Description'),
                 properties: {
-                    show: {
-                        displayName: data.createDisplayNameGetter('Visual_Show'),
-                        type: { bool: true }
-                    }
+                    show: StandardObjectProperties.show,
                 }
             },
             goals: {

@@ -25,7 +25,10 @@
  */
 
 module powerbitests.customVisuals {
+    import DataView = powerbi.DataView;
     import VisualClass = powerbi.visuals.samples.TornadoChart;
+    import TornadoChartDataView = powerbi.visuals.samples.TornadoChartDataView;
+    import TornadoChartSeries = powerbi.visuals.samples.TornadoChartSeries;
 
     powerbitests.mocks.setLocale();
 
@@ -44,7 +47,7 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: TornadoChartBuilder;
-            let dataViews: powerbi.DataView[];
+            let dataViews: DataView[];
 
             beforeEach(() => {
                 visualBuilder = new TornadoChartBuilder();
@@ -72,6 +75,43 @@ module powerbitests.customVisuals {
                 }, powerbitests.DefaultWaitForRender);
             });
         });
+
+        describe("Converter tests", () => {
+            let visualBuilder: TornadoChartBuilder,
+                dataView: DataView,
+                tornadoChartDataView: TornadoChartDataView;
+
+            beforeEach(() => {
+                visualBuilder = new TornadoChartBuilder();
+                dataView = new powerbitests.customVisuals.sampleDataViews.SalesByCountryData().getDataView();
+                tornadoChartDataView = visualBuilder.converter(dataView);
+            });
+
+            it("tornadoChartDataView is defined", () => {
+                expect(tornadoChartDataView).toBeDefined();
+                expect(tornadoChartDataView).not.toBeNull();
+            });
+
+            describe("Series", () => {
+                let series: TornadoChartSeries[];
+
+                beforeEach(() => {
+                    series = tornadoChartDataView.series;
+                });
+
+                it("Series are defined", () => {
+                    expect(series).toBeDefined();
+                    expect(series).not.toBeNull();
+                });
+
+                it("Identity is defined with key", () => {
+                    for (let tornadoChartSeries of series) {
+                        expect(tornadoChartSeries.selectionId).not.toBeNull();
+                        expect(tornadoChartSeries.selectionId.getKey()).toBeDefined();
+                    }
+                });
+            });
+        });
     });
 
     class TornadoChartBuilder extends VisualBuilderBase<VisualClass> {
@@ -87,6 +127,10 @@ module powerbitests.customVisuals {
 
         private build(): void {
             this.visual = new VisualClass();
+        }
+
+        public converter(dataView: DataView): TornadoChartDataView {
+            return this.visual.converter(dataView);
         }
     }
 }

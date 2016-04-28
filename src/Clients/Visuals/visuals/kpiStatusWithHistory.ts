@@ -152,7 +152,7 @@ module powerbi.visuals {
 
             this.setShowDataMissingWarning(!(kpiViewModel.indicatorExists && kpiViewModel.trendExists));
 
-            if (kpiViewModel.dataPoints.length === 0 || !kpiViewModel.historyExists || !kpiViewModel.indicatorExists || !kpiViewModel.trendExists) {
+            if (kpiViewModel.dataPoints.length === 0 || !kpiViewModel.indicatorExists || !kpiViewModel.trendExists) {
                 this.areaFill.attr("visibility", "hidden");
                 this.svg.attr("visibility", "hidden");
                 this.textContainer.attr("style", "display:none");
@@ -217,8 +217,8 @@ module powerbi.visuals {
             this.absoluteGoalDistanceText
                 .attr("text-anchor", "middle")
                 .text(shownGoalString + shownDistanceFromGoalString);
-            
-            if (kpiViewModel.showTrendLine) {
+
+            if (kpiViewModel.showTrendLine && kpiViewModel.historyExists) {
                 let area = d3.svg.area()
                     .x(function (d) { return d.x; })
                     .y0(viewport.height)

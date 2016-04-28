@@ -175,7 +175,7 @@ module powerbi.visuals.controls.internal {
         }
 
         public set owner(owner: TablixLayoutManager) {
-             this._owner = owner;
+            this._owner = owner;
         }
 
         public get realizationManager(): TablixDimensionRealizationManager {
@@ -335,8 +335,8 @@ module powerbi.visuals.controls.internal {
             this.updateScrollbar(gridContextualWidth);
 
             this._done = (filled || allRealized) &&
-            this.dimension.scrollbar.visible === originalScrollbarVisible &&
-            Double.equalWithPrecision(newScrollOffset, this.dimension.scrollOffset, DimensionLayoutManager._scrollOffsetPrecision);
+                this.dimension.scrollbar.visible === originalScrollbarVisible &&
+                Double.equalWithPrecision(newScrollOffset, this.dimension.scrollOffset, DimensionLayoutManager._scrollOffsetPrecision);
 
             this.dimension.scrollOffset = newScrollOffset;
             this._lastScrollOffset = this.dimension.scrollOffset;
@@ -889,9 +889,9 @@ module powerbi.visuals.controls.internal {
         private endResizing(): void {
             if (this._resizeState === null) // in case of FireFox we cannot cancel the animation frame request
                 return;
-         
+
             let newSize = this._resizeState.getNewSize();
-            this._resizeState.column.onResizeEnd(newSize);   
+            this._resizeState.column.onResizeEnd(newSize);
         }
 
         /**
@@ -1217,7 +1217,7 @@ module powerbi.visuals.controls.internal {
 
         public set columnWidthsToPersist(columnWidths: number[]) {
             this._columnWidthsToPersist = columnWidths;
-        }        
+        }
 
         public getTablixClassName(): string {
             debug.assertFail("PureVirtualMethod: TablixLayoutManager.getTablixClassName");
@@ -1232,43 +1232,45 @@ module powerbi.visuals.controls.internal {
         }
 
         public getOrCreateColumnHeader(item: any, items: any, rowIndex: number, columnIndex: number): ITablixCell {
+            let hierarchyNav = this.owner.hierarchyNavigator;
             let row: TablixRow = this._grid.getOrCreateRow(rowIndex);
             let column: TablixColumn = this._grid.getOrCreateColumn(columnIndex + this._columnLayoutManager._gridOffset);
-            let isLeaf = this.owner.hierarchyNavigator.isLeaf(item);
+            let isLeaf = hierarchyNav.isLeaf(item);
             let cell: TablixCell = row.getOrCreateColumnHeader(column, this._columnLayoutManager.isScrollableHeader(item, items, columnIndex), isLeaf);
 
-            let rowIdx = this.owner.hierarchyNavigator.getLevel(item);
-            cell.position.row.index = rowIdx;
+            let rowIdx = hierarchyNav.getLevel(item);
+            cell.position.row.index = cell.position.row.indexInSiblings = rowIdx;
             cell.position.row.isFirst = rowIdx === 0;
             cell.position.row.isLast = isLeaf;
 
-            let colIdx = this.owner.hierarchyNavigator.getIndex(item);
-            cell.position.column.index = colIdx;
-            cell.position.column.isFirst = this.owner.hierarchyNavigator.areAllParentsFirst(item, items);
-            cell.position.column.isLast = this.owner.hierarchyNavigator.areAllParentsLast(item, items);
+            let colIdx = hierarchyNav.getIndex(item);
+            cell.position.column.index = cell.position.row.indexInSiblings = colIdx;
+            cell.position.column.isFirst = hierarchyNav.areAllParentsFirst(item, items);
+            cell.position.column.isLast = hierarchyNav.areAllParentsLast(item, items);
 
             this.enableCellHorizontalResize(isLeaf, cell);
             return cell;
         }
 
         public getOrCreateRowHeader(item: any, items: any, rowIndex: number, columnIndex: number): ITablixCell {
+            let hierarchyNav = this.owner.hierarchyNavigator;
             let row: TablixRow = this._grid.getOrCreateRow(rowIndex + this._rowLayoutManager._gridOffset);
             let column: TablixColumn = this._grid.getOrCreateColumn(columnIndex);
-            let isLeaf = this.owner.hierarchyNavigator.isLeaf(item);
+            let isLeaf = hierarchyNav.isLeaf(item);
             let scrollable: boolean = this._rowLayoutManager.isScrollableHeader(item, items, rowIndex);
 
             if (row.getRealizedCellCount() === 0) {
                 this.alignRowHeaderCells(item, row);
             }
 
-            let cell: TablixCell = row.getOrCreateRowHeader(column, scrollable, this.owner.hierarchyNavigator.isLeaf(item));
-            let rowIdx = this.owner.hierarchyNavigator.getIndex(item);
-            cell.position.row.index = rowIdx;
-            cell.position.row.isFirst = this.owner.hierarchyNavigator.areAllParentsFirst(item, items);
-            cell.position.row.isLast = this.owner.hierarchyNavigator.areAllParentsLast(item, items);
+            let cell: TablixCell = row.getOrCreateRowHeader(column, scrollable, hierarchyNav.isLeaf(item));
+            let rowIdx = hierarchyNav.getIndex(item);
+            cell.position.row.index = cell.position.row.indexInSiblings = rowIdx;
+            cell.position.row.isFirst = hierarchyNav.areAllParentsFirst(item, items);
+            cell.position.row.isLast = hierarchyNav.areAllParentsLast(item, items);
 
-            let colIdx = this.owner.hierarchyNavigator.getLevel(item);
-            cell.position.column.index = colIdx;
+            let colIdx = hierarchyNav.getLevel(item);
+            cell.position.column.index = cell.position.column.indexInSiblings = colIdx;
             cell.position.column.isFirst = colIdx === 0;
             cell.position.column.isLast = isLeaf;
 
@@ -1285,12 +1287,12 @@ module powerbi.visuals.controls.internal {
 
             let cell: TablixCell = row.getOrCreateCornerCell(column);
             let rowIdx = columnLevel;
-            cell.position.row.index = rowIdx;
+            cell.position.row.index = cell.position.row.indexInSiblings = rowIdx;
             cell.position.row.isFirst = rowIdx === 0;
             cell.position.row.isLast = isLeaf;
 
             let colIdx = rowLevel;
-            cell.position.column.index = colIdx;
+            cell.position.column.index = cell.position.column.indexInSiblings = colIdx;
             cell.position.column.isFirst = colIdx === 0;
             cell.position.column.isLast = colIdx === this._rowLayoutManager.dimension.getDepth() - 1;
 
@@ -1565,15 +1567,15 @@ module powerbi.visuals.controls.internal {
             grid: TablixGrid,
             rowRealizationManager: RowRealizationManager,
             columnRealizationManager: ColumnRealizationManager) {
-                
+
             let dashboardColumnLayoutManager = new DashboardColumnLayoutManager(null, grid, columnRealizationManager);
             let dashboardRowLayoutManager = new DashboardRowLayoutManager(null, grid, rowRealizationManager);
-                 
+
             super(binder, grid, dashboardColumnLayoutManager, dashboardRowLayoutManager);
-            
+
             dashboardColumnLayoutManager.owner = this;
             dashboardRowLayoutManager.owner = this;
-            
+
             this._sizeComputationManager = sizeComputationManager;
         }
 
@@ -1669,14 +1671,14 @@ module powerbi.visuals.controls.internal {
             grid: TablixGrid,
             rowRealizationManager: RowRealizationManager,
             columnRealizationManager: ColumnRealizationManager) {
-                
+
             let canvasColumnLayoutManager = new CanvasColumnLayoutManager(null, grid, columnRealizationManager);
-            let canvasRowLayoutManager =  new CanvasRowLayoutManager(null, grid, rowRealizationManager);
-            
+            let canvasRowLayoutManager = new CanvasRowLayoutManager(null, grid, rowRealizationManager);
+
             super(binder, grid, canvasColumnLayoutManager, canvasRowLayoutManager);
-            
+
             canvasColumnLayoutManager.owner = this;
-            canvasRowLayoutManager.owner =  this;
+            canvasRowLayoutManager.owner = this;
         }
 
         public static createLayoutManager(binder: ITablixBinder, columnWidthManager: TablixColumnWidthManager): CanvasTablixLayoutManager {
