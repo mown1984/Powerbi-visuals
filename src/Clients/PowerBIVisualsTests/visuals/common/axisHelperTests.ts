@@ -31,6 +31,17 @@ module powerbitests {
     import PrimitiveType = powerbi.PrimitiveType;
     import valueFormatter = powerbi.visuals.valueFormatter;
     import AxisPropertiesBuilder = powerbitests.helpers.AxisPropertiesBuilder;
+    
+    it("powerOf10 test", ()=> {
+        let powersOf10: number[] = [-10000, 1000000000, 10, 100000000000];
+        let length: number = powersOf10.length;
+        let numbers: number[] = [2, 5, 2345, 12445067, 122334551, 90, 50, -50, 200, -1223333212, -122333442111];
+        let powers = _.filter(powersOf10, (value) => { return AxisHelper.powerOfTen(value); });
+        let notPowers = _.filter(numbers, (value) => { return AxisHelper.powerOfTen(value); });
+        
+        expect(powers.length).toBe(length);
+        expect(notPowers.length).toBe(0);
+    });
 
     describe("AxisHelper invertOrdinalScale tests", () => {
         var domain: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

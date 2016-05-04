@@ -25,6 +25,7 @@
  */
 
 module powerbitests {
+    import DOMConstants = jsCommon.DOMConstants;
     import Textbox = powerbi.visuals.Textbox;
     import textboxCapabilities = powerbi.visuals.textboxCapabilities;
     import RichText = powerbi.visuals.RichText;
@@ -384,6 +385,33 @@ module powerbitests {
                         $editor.trigger(event);
 
                         expect(keydown).toBeFalsy();
+                    }
+                });
+
+                it("arrow keys are prevented from bubbling", () => {
+                    let $editor = getEditor($element);
+
+                    let keydown = false;
+                    $element.on("keydown", () => {
+                        keydown = true;
+                    });
+
+                    // verify that prevented keys do not bubble.
+                    keydown = false;
+                    let arrowKeys = [
+                        DOMConstants.upArrowKeyCode,
+                        DOMConstants.downArrowKeyCode,
+                        DOMConstants.rightArrowKeyCode,
+                        DOMConstants.leftArrowKeyCode
+                    ];
+
+                    for (let key of arrowKeys) {
+                        let event = $.Event("keydown");
+                        event.which = key;
+
+                        $editor.trigger(event);
+
+                        expect(keydown).toBe(false);
                     }
                 });
 

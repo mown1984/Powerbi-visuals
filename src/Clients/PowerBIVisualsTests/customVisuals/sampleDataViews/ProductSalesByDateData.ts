@@ -44,7 +44,7 @@ module powerbitests.customVisuals.sampleDataViews {
 
         constructor() {
             this.sampleData = this.generateData(ProductSalesByDateData.seriesCount, ProductSalesByDateData.valuesCount);
-            this.dates = helpers.generateDates(ProductSalesByDateData.valuesCount, new Date(2014,0,1), new Date(2015,5,10));
+            this.dates = helpers.getRandomUniqueSortedDates(ProductSalesByDateData.valuesCount, new Date(2014,0,1), new Date(2015,5,10));
         }
 
         public getDataView(): DataView {
@@ -117,7 +117,7 @@ module powerbitests.customVisuals.sampleDataViews {
         private generateData(seriesCount: number, valuesCount: number): number[][] {
             let data: number[][] = [];
             for(let i=0; i<seriesCount; i++) {
-                data.push(helpers.generateNumbers(valuesCount));
+                data.push(helpers.getRandomNumbers(valuesCount));
             }
 
             return data;

@@ -1418,8 +1418,17 @@ module powerbi.visuals {
             return value;
         }
 
+        /**
+         * Indicates whether the number is power of 10.
+         */
         export function powerOfTen(d: any): boolean {
-            return d / Math.pow(10, Math.ceil(Math.log(d) / Math.LN10 - 1e-12)) === 1;
+            let value = Math.abs(d);
+            // formula log2(Y)/log2(10) = log10(Y)
+            // because double issues this won't return exact value
+            // we need to ceil it to nearest number.
+            let log10: number = Math.log(value) / Math.LN10;
+            log10 = Math.ceil(log10 - 1e-12);
+            return value / Math.pow(10, log10) === 1;
         }
     }
 }

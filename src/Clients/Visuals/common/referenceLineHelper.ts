@@ -210,6 +210,7 @@ module powerbi.visuals {
                 let formatterOptions = Prototype.inherit(axisFormatter.options);
                 formatterOptions.precision = decimalPoints;
                 formatterOptions.value = displayUnits;
+                formatterOptions.detectAxisPrecision = false;
                 formatterForReferenceLineDataLabel = valueFormatter.create(formatterOptions);
             }
 

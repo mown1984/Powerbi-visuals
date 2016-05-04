@@ -1022,7 +1022,8 @@ module powerbi.visuals {
 
         public init(options: VisualInitOptions) {
             debug.assertValue(options, 'options');
-            let element = this.element = options.element;
+            let element = this.element = $("<div>");
+            element.appendTo(options.element);
             this.pendingGeocodingRender = false;
             this.currentViewport = options.viewport;
             this.style = options.style;
@@ -1042,6 +1043,7 @@ module powerbi.visuals {
             this.resetBounds();
 
             this.mapControlFactory.ensureMap(this.locale, () => {
+                Map.removeHillShading();
                 Microsoft.Maps.loadModule('Microsoft.Maps.Overlays.Style', {
                     callback: () => {
                         this.initialize(element[0]);
@@ -1417,7 +1419,7 @@ module powerbi.visuals {
                     enumeration.pushInstance({
                         objectName: 'dataPoint',
                         displayName: dataPoint.label,
-                        selector: dataPoint.identity.getSelector(),
+                        selector: ColorHelper.normalizeSelector(dataPoint.identity.getSelector()),
                         properties: {
                             fill: { solid: { color: dataPoint.color } }
                         },
@@ -1445,7 +1447,7 @@ module powerbi.visuals {
                         enumeration.pushInstance({
                             objectName: 'dataPoint',
                             displayName: bubbleDataPoint.labeltext,
-                            selector: bubbleDataPoint.identity.getSelector(),
+                            selector: ColorHelper.normalizeSelector(bubbleDataPoint.identity.getSelector()),
                             properties: {
                                 fill: { solid: { color: Color.normalizeToHexString(bubbleDataPoint.fill) } }
                             },
@@ -1535,6 +1537,7 @@ module powerbi.visuals {
                 if (data != null) {
                     this.geocodingCategory = data.geocodingCategory;
                     this.mapControlFactory.ensureMap(this.locale, () => {
+                        Map.removeHillShading();
                         let params;
                         if (isFilledMap) {
                             params = MapShapeDataPointRenderer.getFilledMapParams(this.geocodingCategory, data.dataPoints.length);
@@ -1987,6 +1990,10 @@ module powerbi.visuals {
                 createMapControl: (element: HTMLElement, options: Microsoft.Maps.MapOptions) => new Microsoft.Maps.Map(element, options),
                 ensureMap: jsCommon.ensureMap,
             };
+        }
+
+        private static removeHillShading() {
+            Microsoft.Maps.Globals.roadUriFormat = Microsoft.Maps.Globals.roadUriFormat.replace('&shading=hill', '');
         }
     }
 }

@@ -114,6 +114,7 @@ module powerbi {
                 if (descriptor.misc.image) return ValueType.fromExtendedType(ExtendedType.Image);
                 if (descriptor.misc.imageUrl) return ValueType.fromExtendedType(ExtendedType.ImageUrl);
                 if (descriptor.misc.webUrl) return ValueType.fromExtendedType(ExtendedType.WebUrl);
+                if (descriptor.misc.barcode) return ValueType.fromExtendedType(ExtendedType.Barcode_Text);
             }
             if (descriptor.formatting) {
                 if (descriptor.formatting.color) return ValueType.fromExtendedType(ExtendedType.Color);
@@ -187,6 +188,15 @@ module powerbi {
                 otherPrimitiveType === PrimitiveType.Null)
                 return true;
             return false;
+        }
+
+        /**
+         * Determines if the instance ValueType is equal to the 'other' ValueType
+         * @param {ValueType} other the other ValueType to check equality against
+         * @returns True if the instance ValueType is equal to the 'other' ValueType
+         */
+        public equals(other: ValueType): boolean {
+            return _.isEqual(this, other);
         }
 
         /** Gets the exact primitive type of this ValueType. */
@@ -369,6 +379,9 @@ module powerbi {
         public get webUrl(): boolean {
             return matchesExtendedTypeWithAnyPrimitive(this.underlyingType, ExtendedType.WebUrl);
         }
+        public get barcode(): boolean {
+            return matchesExtendedTypeWithAnyPrimitive(this.underlyingType, ExtendedType.Barcode);
+        }
     }
 
     export class FormattingType implements FormattingTypeDescriptor {
@@ -482,6 +495,10 @@ module powerbi {
         Image = Binary | Miscellaneous | (200 << 16),
         ImageUrl = Text | Miscellaneous | (201 << 16),
         WebUrl = Text | Miscellaneous | (202 << 16),
+        Barcode =  Miscellaneous | (203 << 16),
+        Barcode_Text = Barcode | Text,
+        Barcode_Integer = Barcode | Integer,
+
         // Formatting
         Color = Text | Formatting | (300 << 16),
         FormatString = Text | Formatting | (301 << 16),

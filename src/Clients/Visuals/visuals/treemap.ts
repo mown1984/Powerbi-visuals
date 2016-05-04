@@ -725,7 +725,7 @@ module powerbi.visuals {
                 let treemapNode = <TreemapNode>rootChildren[y];
                 enumeration.pushInstance({
                     displayName: treemapNode.name,
-                    selector: treemapNode.identity.getSelector(),
+                    selector: ColorHelper.normalizeSelector(treemapNode.identity.getSelector()),
                     properties: {
                         fill: { solid: { color: treemapNode.color } }
                     },

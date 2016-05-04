@@ -249,16 +249,6 @@ module powerbi.visuals {
             };
         }
 
-        private static getMetaDataColumn(dataView: DataView): DataViewMetadataColumn {
-            if (dataView && dataView.metadata && dataView.metadata.columns) {
-                for (let column of dataView.metadata.columns) {
-                    if (column.isMeasure) {
-                        return column;
-                    }
-                }
-            }
-        }
-
         private static getFormatString(column: DataViewMetadataColumn): string {
             debug.assertAnyValue(column, 'column');
             return valueFormatter.getFormatString(column, AnimatedText.formatStringProp);
@@ -352,7 +342,8 @@ module powerbi.visuals {
         public static converter(dataView: DataView, viewPort: powerbi.IViewport, directionType: string): KPIStatusWithHistoryData {
             let dataPoints: KPIStatusWithHistoryDataPoint[] = [];
             let catDv: DataViewCategorical = dataView.categorical;
-            let metaDataColumn = KPIStatusWithHistory.getMetaDataColumn(dataView);
+            let indicatorMetadataColumn: DataViewMetadataColumn = null;
+            let goalMetadataColumn: DataViewMetadataColumn = null;
             let formattedGoalString = "";
             let formattedValue = "";
             let targetExists = false;
@@ -371,11 +362,18 @@ module powerbi.visuals {
             for (let column of columns) {
                 if (DataRoleHelper.hasRole(column, 'Indicator')) {
                     indicatorExists = true;
+                    indicatorMetadataColumn = column;
                 }
 
                 if (DataRoleHelper.hasRole(column, 'TrendLine')) {
                     trendExists = true;
                 }
+
+                if (DataRoleHelper.hasRole(column, 'Goal')) {
+                    targetExists = true;
+                    goalMetadataColumn = column;
+                }
+
             }
 
             if (!indicatorExists || !trendExists || !values || values.length === 0 || !values[0].values || !dataView.categorical.values) {
@@ -408,10 +406,6 @@ module powerbi.visuals {
             let indicatorColumns: DataViewValueColumn[] = KPIStatusWithHistory.getColumnsByRole(values, "Indicator");
 
             let goalColumns: DataViewValueColumn[] = KPIStatusWithHistory.getColumnsByRole(values, "Goal");
-
-            if (goalColumns.length > 0) {
-                targetExists = true;
-            }
 
             let actualValue;
 
@@ -463,9 +457,9 @@ module powerbi.visuals {
                 historyExists = false;
             }
 
-            formattedValue = KPIStatusWithHistory.getFormattedValue(metaDataColumn, actual, precision, displayUnits, DisplayUnitSystemType.DataLabels);
+            formattedValue = KPIStatusWithHistory.getFormattedValue(indicatorMetadataColumn, actual, precision, displayUnits, DisplayUnitSystemType.DataLabels);
 
-            formattedGoalString = KPIStatusWithHistory.getFormattedGoalString(metaDataColumn, goals, precision, displayUnits);
+            formattedGoalString = KPIStatusWithHistory.getFormattedGoalString(goalMetadataColumn, goals, precision, displayUnits);
 
             let showGoal = KPIStatusWithHistory.getProp_Show_KPIGoal(dataView);
 

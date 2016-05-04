@@ -39,6 +39,7 @@ module powerbitests {
     import SelectionIdBuilder = powerbi.visuals.SelectionIdBuilder;
     import IGeoTaggingAnalyzerService = powerbi.IGeoTaggingAnalyzerService;
     import MapData = powerbi.visuals.MapData;
+    import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
     powerbitests.mocks.setLocale();
 
@@ -404,6 +405,11 @@ module powerbitests {
             
             // ensure first object is 'fill' and not 'defaultColor'
             expect(enumeratedDataPoints.instances[0]['properties']['fill']).toBeDefined();
+
+            let series0Id = powerbi.visuals.SelectionIdBuilder.builder()
+                .withSeries(dataView.categorical.values, dataView.categorical.values[0])
+                .createSelectionId();
+            expect(enumeratedDataPoints.instances[0].selector).toEqual(series0Id.getSelector());
         });
 
         it('enumerateDataPoints correctly handles hasDynamicSeries=true', () => {
@@ -420,18 +426,46 @@ module powerbitests {
             expect((<powerbi.VisualObjectInstanceEnumerationObject>result).instances.length).toBe(1);
         });
 
-        it('enumerateDataPoints correctly handles hasDynamicSeries=false', () => {
-            let dataBuilder = new MapDataBuilder();
-            let dataView = dataBuilder.build(true, false);
-            let visualBuilder = new MapVisualBuilder();
-            let visual = visualBuilder.build(false, true);
+        describe('enumerateDataPoints with hasDynamicSeries=false', () => {
+            let dataView: DataView;
+            let visual: Map;
 
-            visual.onDataChanged({ dataViews: [dataView] });
+            beforeEach(() => {
+                let dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.build(true, false);
+                let visualBuilder = new MapVisualBuilder();
+                visual = visualBuilder.build(false, true);
 
-            let result = visual.enumerateObjectInstances({
-                objectName: 'legend',
+                visual.onDataChanged({ dataViews: [dataView] });
             });
-            expect(result).toBeUndefined();
+
+            it('no legend', () => {
+                let result = visual.enumerateObjectInstances({
+                    objectName: 'legend',
+                });
+                expect(result).toBeUndefined();
+            });
+
+            it('data points for categories', () => {
+                let enumeratedObjects = <VisualObjectInstanceEnumerationObject>visual.enumerateObjectInstances({
+                    objectName: 'dataPoint',
+                });
+
+                let categoryColumn = dataView.categorical.categories[0];
+                // +1 for default color and "show all"
+                expect(enumeratedObjects.instances.length).toBe(categoryColumn.values.length + 1);
+
+                for (let i = 0; i < categoryColumn.values.length; i++) {
+                    let instance = enumeratedObjects.instances[i + 1];
+                    expect(instance.displayName).toEqual(categoryColumn.values[i]);
+                    expect(instance.properties['fill']).toBeDefined();
+
+                    let id = powerbi.visuals.SelectionIdBuilder.builder()
+                        .withCategory(categoryColumn, i)
+                        .createSelectionId();
+                    expect(instance.selector).toEqual(id.getSelector());
+                }
+            });
         });
     });
 

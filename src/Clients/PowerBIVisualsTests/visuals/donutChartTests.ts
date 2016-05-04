@@ -155,7 +155,12 @@ module powerbitests {
 
             beforeEach(() => {
                 element = powerbitests.helpers.testDom('500', '650');
-                v = visualPluginFactory.createMinerva({}).getPlugin('donutChart').create();
+                v = new DonutChart({
+                    animator: new powerbi.visuals.WebDonutChartAnimator(),
+                    isScrollable: true,
+                    tooltipsEnabled: true,
+                    behavior: new powerbi.visuals.DonutChartWebBehavior(),
+                });
                 v.init({
                     element: element,
                     host: hostServices,
@@ -2747,8 +2752,15 @@ module powerbitests {
             element = powerbitests.helpers.testDom('500', '500');
             if (interactiveChart)
                 v = visualPluginFactory.createMobile().getPlugin('pieChart').create();
-            else
-                v = visualPluginFactory.createMinerva({}).getPlugin('pieChart').create();
+            else {
+                v = new DonutChart({
+                    sliceWidthRatio: 0,
+                    animator: new powerbi.visuals.WebDonutChartAnimator(),
+                    isScrollable: true,
+                    tooltipsEnabled: true,
+                    behavior: new powerbi.visuals.DonutChartWebBehavior(),
+                });
+            }
             v.init({
                 element: element,
                 host: hostServices,
@@ -4583,7 +4595,13 @@ module powerbitests {
         beforeEach(() => {
 
             element = powerbitests.helpers.testDom('500', '500');
-            v = visualPluginFactory.createMinerva({}).getPlugin('pieChart').create();
+            v = new DonutChart({
+                sliceWidthRatio: 0,
+                animator: new powerbi.visuals.WebDonutChartAnimator(),
+                isScrollable: true,
+                tooltipsEnabled: true,
+                behavior: new powerbi.visuals.DonutChartWebBehavior(),
+            });
             v.init({
                 element: element,
                 host: hostServices,

@@ -307,6 +307,10 @@ module powerbitests.mocks {
     // Mocks for Microsoft's Bing Maps API; implements select methods in the interface for test purposes
     // Declared separately from Microsoft.Maps to avoid collision with the declaration in Microsoft.Maps.d.ts
     export module MockMaps {
+        export module Globals {
+            export let roadUriFormat = "";
+        }
+
         export function loadModule(moduleKey: string, options?: { callback: () => void; }): void {
             if (options && options.callback)
                 options.callback();

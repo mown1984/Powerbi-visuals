@@ -389,8 +389,8 @@ module powerbi.visuals.samples {
                 dataPoints: SankeyDiagramDataPoint[] = [],
                 categories: any[] = dataView.categorical.categories[0].values,
                 secondCategories: any[] = dataView.categorical.categories[1].values,
-                valuesColumns: DataViewValueColumns = dataView.categorical.values,
-                values: number[] = [],
+                valuesColumn: DataViewValueColumn = dataView.categorical.values && dataView.categorical.values[0],
+                weightValues: number[] = valuesColumn && valuesColumn.values && valuesColumn.values.map(x=> x || 0) || [],
                 allCategories: any[],
                 valueFormatterForCategories: IValueFormatter,
                 formatOfWeigth: string = "g",
@@ -417,24 +417,17 @@ module powerbi.visuals.samples {
                 SankeyDiagram.DefaultSettings.colourOfLabels,
                 objects);
 
-            if (valuesColumns &&
-                    valuesColumns[0] &&
-                    valuesColumns[0].values &&
-                    valuesColumns[0].values.length > 0) {
-                values = valuesColumns[0].values;
-
+            if (valuesColumn && valuesColumn.source) {
                 formatOfWeigth = ValueFormatter.getFormatString(
-                    valuesColumns[0].source,
+                    valuesColumn.source,
                     SankeyDiagram.Properties["general"]["formatString"]);
             }
 
             dataPoints = categories.map((item: any, index: number) => {
-                var weigth: number = values[index] || 1;
-
                 return {
                     source: item,
                     destination: secondCategories[index],
-                    weigth: weigth
+                    weigth: valuesColumn ? Math.max(weightValues[index] || 0, 0) : 1
                 };
             });
 
@@ -450,8 +443,7 @@ module powerbi.visuals.samples {
 
             valuesFormatterForWeigth = ValueFormatter.create({
                 format: formatOfWeigth,
-                value: values[0] || 1,
-                value2: d3.max(values) || 1
+                value: Math.max(d3.max(weightValues) || 1, 1),
             });
 
             allCategories.forEach((item: any, index: number) => {
@@ -867,7 +859,7 @@ module powerbi.visuals.samples {
                 .select(SankeyDiagram.Nodes.selector)
                 .selectAll(SankeyDiagram.Node.selector);
 
-            nodesSelection = nodeElements.data(sankeyDiagramDataView.nodes);
+            nodesSelection = nodeElements.data(sankeyDiagramDataView.nodes.filter(x => x.height > 0));
 
             nodesEnterSelection = nodesSelection
                 .enter()
@@ -987,7 +979,7 @@ module powerbi.visuals.samples {
                 .select(SankeyDiagram.Links.selector)
                 .selectAll(SankeyDiagram.Link.selector);
 
-            linksSelection = linksElements.data(sankeyDiagramDataView.links);
+            linksSelection = linksElements.data(sankeyDiagramDataView.links.filter(x => x.height > 0));
 
             linksSelection
                 .enter()

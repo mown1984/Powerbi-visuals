@@ -820,10 +820,11 @@ module powerbitests {
             dataViewBuilder = new DataViewBuilder();
             
             visualBuilder = new VisualBuilder(
-                visualPluginFactory.createMinerva({
-                    dataDotChartEnabled: false
+                () => new powerbi.visuals.FunnelChart({
+                    animator: new powerbi.visuals.WebFunnelAnimator(),
+                    behavior: new powerbi.visuals.FunnelWebBehavior(),
+                    tooltipsEnabled: true,
                 }),
-                "funnel",
                 500,
                 500
             );
@@ -1229,8 +1230,7 @@ module powerbitests {
             dataViewBuilder.setMetadata(dataViewMetadata);
             
             visualBuilder = new VisualBuilder(
-                visualPluginFactory.create(),
-                "funnel",
+                powerbi.visuals.plugins.funnel.create,
                 500,
                 500
             );
@@ -2631,8 +2631,7 @@ module powerbitests {
 
         it("Category Labels with repeated items due to source formatting", (done) => {
             let visualBuilder: VisualBuilder = new VisualBuilder(
-                visualPluginFactory.create(),
-                "funnel",
+                powerbi.visuals.plugins.funnel.create,
                 500,
                 500
             );
@@ -2851,10 +2850,8 @@ module powerbitests {
                 "Mickey Mouse",
             ];
 
-            let visualPluginService = visualPluginFactory.create();
             let visualBuilder: VisualBuilder = new VisualBuilder(
-                visualPluginService,
-                "funnel",
+                powerbi.visuals.plugins.funnel.create,
                 80,
                 80
             );
@@ -2913,8 +2910,11 @@ module powerbitests {
             dataViewBuilder.setMetadata(dataViewMetadata);
             
             visualBuilder = new VisualBuilder(
-                visualPluginFactory.createMinerva({}),
-                "funnel",
+                () => new powerbi.visuals.FunnelChart({
+                    animator: new powerbi.visuals.WebFunnelAnimator(),
+                    behavior: new powerbi.visuals.FunnelWebBehavior(),
+                    tooltipsEnabled: true,
+                }),
                 500,
                 500
             );
@@ -3300,8 +3300,7 @@ module powerbitests {
             dataViewBuilder.setMetadata(dataViewMetadata);
             
             visualBuilder = new VisualBuilder(
-                visualPluginFactory.create(),
-                "funnel",
+                powerbi.visuals.plugins.funnel.create,
                 500,
                 500
             );
@@ -3723,12 +3722,11 @@ module powerbitests {
                 visualPluginService = visualPluginFactory.create();
             
             let visualBuilder: VisualBuilder = new VisualBuilder(
-                visualPluginService,
-                "funnel",
+                visualPluginService.getPlugin("funnel").create,
                 domSize,
                 domSize
             );
-            
+
             visualBuilder.build();
             
             let dataViewMetadata: DataViewMetadata = {

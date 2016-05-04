@@ -102,8 +102,23 @@ module powerbi.data {
             }
         }
 
+        /** Replaces the given oldQueryRef with newQueryRef in this QueryProjectionCollection. */
+        public replaceQueryRef(oldQueryRef: string, newQueryRef: string): void {
+            debug.assertValue(oldQueryRef, 'oldQueryRef');
+            debug.assertValue(newQueryRef, 'newQueryRef');
+            debug.assert(oldQueryRef !== newQueryRef, 'oldQueryRef !== newQueryRef');
+            debug.assert(_.isEmpty(this._activeProjectionRefs), 'replaceQueryRef(...) is not supported on the QueryProjectionCollection of a drillable role');
+
+            // Note: the same queryRef can get projected multiple times
+            for (let item of this.items) {
+                if (item.queryRef === oldQueryRef) {
+                    item.queryRef = newQueryRef;
+                }
+            }
+        }
+
         public clone(): QueryProjectionCollection {
-            return new QueryProjectionCollection(_.clone(this.items), _.clone(this._activeProjectionRefs), this._showAll);
+            return new QueryProjectionCollection(_.cloneDeep(this.items), _.clone(this._activeProjectionRefs), this._showAll);
         }
     }
 

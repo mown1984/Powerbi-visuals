@@ -360,6 +360,10 @@ module powerbi.visuals {
                 this.renderDelegate(data);
             }
         }
+
+        public isCurrentlyPlaying(): boolean {
+            return this.isPlaying;
+        }
     }
 
     class PlayControl {

@@ -1084,7 +1084,12 @@ module powerbitests {
 
         public build(minerva: boolean = false): powerbi.IVisual {
             if (minerva) {
-                this._visual = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin("waterfallChart").create();
+                this._visual = new powerbi.visuals.CartesianChart({
+                    chartType: powerbi.visuals.CartesianChartType.Waterfall,
+                    isScrollable: true,
+                    tooltipsEnabled: true,
+                    behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.WaterfallChartWebBehavior()])
+                });
             }
             else {
                 this._visual = powerbi.visuals.visualPluginFactory.create().getPlugin("waterfallChart").create();

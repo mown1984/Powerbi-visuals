@@ -1227,10 +1227,11 @@ declare module powerbi.extensibility {
 
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
+        
+        /** Indicates whether sorting is supported by the visual. This is useful for query generation */
+        sorting?: VisualSortingCapabilities;        
     }
-
 }
-
 ﻿
 
 declare module powerbi {   
@@ -1624,6 +1625,7 @@ declare module powerbi {
         image?: boolean;
         imageUrl?: boolean;
         webUrl?: boolean;
+        barcode?: boolean;
     }
 
     export interface FormattingTypeDescriptor {

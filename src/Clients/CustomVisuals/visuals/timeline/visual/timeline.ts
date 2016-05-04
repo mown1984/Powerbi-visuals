@@ -191,6 +191,11 @@ module powerbi.visuals.samples {
 		splitPeriod(index: number, newFraction: number, newDate: Date): void;
 	}
 
+	export interface TimelineCursorOverElement {
+		index: number;
+		datapoint: TimelineDatapoint;
+	}
+
 	export class TimelineGranularity {
 		private datePeriods: DatePeriod[] = [];
 		private extendedLabel: ExtendedLabel;
@@ -726,6 +731,7 @@ module powerbi.visuals.samples {
 	}
 
 	export interface CursorDatapoint {
+		x: number;
 		cursorIndex: number;
 		selectionIndex: number;
 	}
@@ -815,8 +821,6 @@ module powerbi.visuals.samples {
 		private periodSlicerRect: D3.Selection;
 		private selectedText: D3.Selection;
 		private selector = ['Y', 'Q', 'M', 'W', 'D'];
-		private currentlyMouseOverElement;
-		private currentlyMouseOverElementIndex: number;
 		private initialized: boolean;
 		private selectionManager: SelectionManager;
 		private clearCatcher: D3.Selection;
@@ -1040,7 +1044,10 @@ module powerbi.visuals.samples {
 			this.timelineDiv = this.body.append('div');
 			this.svg = this.timelineDiv.append('svg').attr('width', px(options.viewport.width)).classed(this.timelineSelectors.TimelineVisual.class, true);
 			this.clearCatcher = appendClearCatcher(this.svg);
-			this.clearCatcher.data([this]).on("click", (timeline: Timeline) => timeline.clear());
+
+			this.clearCatcher.data([this])
+				.on("click", (timeline: Timeline) => timeline.clear())
+				.on("touchstart", (timeline: Timeline) => timeline.clear());
 
 			this.rangeText = this.svg.append('g').classed(this.timelineSelectors.RangeTextArea.class, true).append('text');
 			this.mainGroupElement = this.svg.append('g').classed(this.timelineSelectors.MainArea.class, true);
@@ -1118,20 +1125,30 @@ module powerbi.visuals.samples {
 					x: px(startXpoint + 2 * elementWidth),
 					y: px(startYpoint + 17),
 				});
-			let selRects = this.selectorContainer.selectAll(this.timelineSelectors.PeriodSlicerSelectionRect.selector)
-				.data(selectorPeriods).enter().append('rect').classed(this.timelineSelectors.PeriodSlicerSelectionRect.class, true);
+
+			let selRects = this.selectorContainer
+				.selectAll(this.timelineSelectors.PeriodSlicerSelectionRect.selector)
+				.data(selectorPeriods)
+				.enter()
+				.append('rect')
+				.classed(this.timelineSelectors.PeriodSlicerSelectionRect.class, true);
+
+			let clickHandler: (d: any, index: number) => void = (d: any, index: number) => {
+				this.selectPeriod(index);
+				dragPeriodRectState = true;
+			};
+
 			selRects.attr({
-				x: (d, index) => px(startXpoint - elementWidth / 2 + index * elementWidth),
-				y: px(3),
-				width: px(elementWidth),
-				height: px(23)
-			})
-				.style({ 'cursor': 'pointer' })
-				.on('mousedown', (d, index) => {
-					this.selectPeriod(index);
-					dragPeriodRectState = true;
+					x: (d, index) => px(startXpoint - elementWidth / 2 + index * elementWidth),
+					y: px(3),
+					width: px(elementWidth),
+					height: px(23)
 				})
-				.on('mouseup', d => dragPeriodRectState = false)
+				.style({ 'cursor': 'pointer' })
+				.on('mousedown', clickHandler)
+				.on('touchstart', clickHandler)
+				.on('mouseup', () => dragPeriodRectState = false)
+				.on('touchend', () => dragPeriodRectState = false)
 				.on("mouseover", (d, index) => {
 					if (dragPeriodRectState) {
 						this.selectPeriod(index);
@@ -1219,8 +1236,22 @@ module powerbi.visuals.samples {
 			if (!(dataView.categorical.categories[0].source.type.dateTime ||
 				(dataView.categorical.categories[0].source.type.numeric && (this.valueType === 'Year' || this.valueType === 'Date'))))
 				return false;
-			this.values = this.dataView.categorical.categories[0].values;
+			this.values = this.prepareValues(this.dataView.categorical.categories[0].values);
 			return true;
+		}
+
+		//Public for testability.
+		public prepareValues(values) {
+			// remove null strings and rebuild string type date 
+			// (BUG #7266283 IN PBI-service)
+			values = values.filter(Boolean);
+			for (var i in values) { 
+				var item = values[i];
+				if(typeof(item) === 'String' && (String(new Date(item)) !== 'Invalid Date')){
+					return values[i] = new Date(item);
+				}
+			};
+			return values;
 		}
 
 		private createTimelineData() {
@@ -1312,8 +1343,8 @@ module powerbi.visuals.samples {
 		public static converter(timelineData: TimelineData, timelineProperties: TimelineProperties, defaultTimelineProperties: DefaultTimelineProperties, timelineGranularityData: TimelineGranularityData, dataView: DataView, initialized: boolean, granularityType: GranularityType, viewport: IViewport, timelineMargins: TimelineMargins): TimelineFormat {
 			let timelineFormat = Timeline.fillTimelineFormat(dataView.metadata.objects, defaultTimelineProperties);
 			if (!initialized) {
-				timelineData.cursorDataPoints.push({ selectionIndex: 0, cursorIndex: 0 });
-				timelineData.cursorDataPoints.push({ selectionIndex: 0, cursorIndex: 1 });
+				timelineData.cursorDataPoints.push({ x: 0, selectionIndex: 0, cursorIndex: 0 });
+				timelineData.cursorDataPoints.push({ x: 0, selectionIndex: 0, cursorIndex: 1 });
 			}
 			if (!initialized || Timeline.calendar.isChanged(timelineFormat.calendarFormat)) {
 				Timeline.calendar = new Calendar(timelineFormat.calendarFormat);
@@ -1474,19 +1505,6 @@ module powerbi.visuals.samples {
 			cellSelection.attr('fill', d => Utils.getCellColor(d, this.timelineData, cellFormat));
 		}
 
-		private cursorMouseOver(cursorDataPoint: CursorDatapoint, index: number): void {
-			let actualIndex = _.findIndex(this.timelineData.timelineDatapoints, (x) => cursorDataPoint.selectionIndex === x.index);
-			if (index === 0)
-				actualIndex--;
-			if (actualIndex >= 0 && actualIndex <= this.timelineData.timelineDatapoints.length - 1)
-				this.cellMouseOver(this.timelineData.timelineDatapoints[actualIndex], actualIndex);
-		}
-
-		public cellMouseOver(datapoint, index: number): void {
-			this.currentlyMouseOverElement = datapoint;
-			this.currentlyMouseOverElementIndex = index;
-		}
-
 		public renderCells(timelineData: TimelineData, timelineFormat: TimelineFormat, timelineProperties: TimelineProperties, suppressAnimations: any): void {
 			let allDataPoints = timelineData.timelineDatapoints;
 			let totalX = 0;
@@ -1505,7 +1523,7 @@ module powerbi.visuals.samples {
 					id: (d: TimelineDatapoint) => d.index
 				});
 
-			cellsSelection.on('click', (d: TimelineDatapoint, index: number) => {
+			let clickHandler: (d: TimelineDatapoint, index: number) => void = (d: TimelineDatapoint, index: number) => {
 				d3.event.preventDefault();
 				let cursorDataPoints = this.timelineData.cursorDataPoints;
 				let keyEvent: any = d3.event;
@@ -1529,21 +1547,24 @@ module powerbi.visuals.samples {
 				this.renderCursors(timelineData, timelineFormat, timelineProperties.cellHeight, timelineProperties.cellsYPosition);
 				this.renderTimeRangeText(timelineData, timelineFormat.rangeTextFormat);
 				this.setSelection(timelineData);
-			});
+			};
 
-			cellsSelection.on("mouseover", (d, index) => { this.cellMouseOver(d, index); });
+			cellsSelection
+				.on('click', clickHandler)
+				.on("touchstart", clickHandler);
+
 			this.fillCells(timelineFormat.cellFormat);
 			cellsSelection.exit().remove();
 		}
 
-		public dragstarted(d, that: Timeline): void {
-			that.timelineData.dragging = true;
+		public dragstarted(): void {
+			this.timelineData.dragging = true;
 		}
 
-		public dragged(d, that: Timeline): void {
-			if (that.timelineData.dragging === true) {
+		public dragged(currentCursor: CursorDatapoint): void {
+			if (this.timelineData.dragging === true) {
 				let xScale = 1;
-				let container = d3.select(that.timelineSelectors.TimelineVisual.selector);
+				let container = d3.select(this.timelineSelectors.TimelineVisual.selector);
 
 				if (container) {
 					let transform = container.style("transform");
@@ -1553,35 +1574,79 @@ module powerbi.visuals.samples {
 					}
 				}
 
-				let exactDataPoint: TimelineDatapoint = that.currentlyMouseOverElement;
+				let cursorOverElement: TimelineCursorOverElement = this.findCursorOverElement(d3.event.x);
 
-				if (d.cursorIndex === 0 && that.currentlyMouseOverElementIndex <= that.timelineData.selectionEndIndex) {
-					that.timelineData.selectionStartIndex = that.currentlyMouseOverElementIndex;
-					that.timelineData.cursorDataPoints[0].selectionIndex = exactDataPoint.datePeriod.index;
+				if (!cursorOverElement) {
+					return;
 				}
 
-				if (d.cursorIndex === 1 && that.currentlyMouseOverElementIndex >= that.timelineData.selectionStartIndex) {
-					that.timelineData.selectionEndIndex = that.currentlyMouseOverElementIndex;
-					that.timelineData.cursorDataPoints[1].selectionIndex = (exactDataPoint.datePeriod.index + exactDataPoint.datePeriod.fraction);
+				let currentlyMouseOverElement: TimelineDatapoint = cursorOverElement.datapoint,
+					currentlyMouseOverElementIndex: number = cursorOverElement.index;
+
+				if (currentCursor.cursorIndex === 0 && currentlyMouseOverElementIndex <= this.timelineData.selectionEndIndex) {
+					this.timelineData.selectionStartIndex = currentlyMouseOverElementIndex;
+					this.timelineData.cursorDataPoints[0].selectionIndex = currentlyMouseOverElement.datePeriod.index;
 				}
 
-				that.fillCells(that.timelineFormat.cellFormat);
-				that.renderCursors(that.timelineData, that.timelineFormat, that.timelineProperties.cellHeight, that.timelineProperties.cellsYPosition);
-				that.renderTimeRangeText(that.timelineData, that.timelineFormat.rangeTextFormat);
+				if (currentCursor.cursorIndex === 1 && currentlyMouseOverElementIndex >= this.timelineData.selectionStartIndex) {
+					this.timelineData.selectionEndIndex = currentlyMouseOverElementIndex;
+					this.timelineData.cursorDataPoints[1].selectionIndex = (currentlyMouseOverElement.datePeriod.index + currentlyMouseOverElement.datePeriod.fraction);
+				}
+
+				this.fillCells(this.timelineFormat.cellFormat);
+				this.renderCursors(this.timelineData, this.timelineFormat, this.timelineProperties.cellHeight, this.timelineProperties.cellsYPosition);
+				this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
 			}
 		}
 
-		public dragended(d, that): void {
-			this.setSelection(that.timelineData);
+		/**
+		 * Note: Public for testability.
+		 */
+		public findCursorOverElement(x: number): TimelineCursorOverElement {
+			let timelineDatapoints: TimelineDatapoint[] = this.timelineData.timelineDatapoints || [],
+				length: number = timelineDatapoints.length,
+				cellWidth: number = this.timelineProperties.cellWidth;
+
+			if (timelineDatapoints[0] && timelineDatapoints[1] && x <= timelineDatapoints[1].index * cellWidth) {
+				return {
+					index: 0,
+					datapoint: timelineDatapoints[0]
+				};
+			} else if (timelineDatapoints[length - 1] && x >= timelineDatapoints[length - 1].index * cellWidth) {
+				return {
+					index: length - 1,
+					datapoint: timelineDatapoints[length - 1]
+				};
+			}
+
+			for (let i = 1; i < length; i++) {
+				let left: number = timelineDatapoints[i].index * cellWidth,
+					right: number = timelineDatapoints[i + 1].index * cellWidth;
+
+				if (x >= left && x <= right) {
+					return {
+						index: i,
+						datapoint: timelineDatapoints[i]
+					};
+				}
+			}
+
+			return null;
+		}
+
+		public dragended(): void {
+			this.setSelection(this.timelineData);
 		}
 
 		private drag = d3.behavior.drag()
-			.origin(function (d) {
+			.origin((d: CursorDatapoint) => {
+				d.x = d.selectionIndex * this.timelineProperties.cellWidth;
+
 				return d;
 			})
-			.on("dragstart", (d) => { this.dragstarted(d, this); })
-			.on("drag", (d) => { this.dragged(d, this); })
-			.on("dragend", (d) => { this.dragended(d, this); });
+			.on("dragstart", () => { this.dragstarted(); })
+			.on("drag", (d: CursorDatapoint) => { this.dragged(d); })
+			.on("dragend", () => { this.dragended(); });
 
 		public renderCursors(timelineData: TimelineData, timelineFormat: TimelineFormat, cellHeight: number, cellsYPosition: number): D3.UpdateSelection {
 			let cursorSelection = this.cursorGroupElement.selectAll(this.timelineSelectors.SelectionCursor.selector).data(timelineData.cursorDataPoints);
@@ -1594,8 +1659,8 @@ module powerbi.visuals.samples {
 					.startAngle(d => d.cursorIndex * Math.PI + Math.PI)
 					.endAngle(d => d.cursorIndex * Math.PI + 2 * Math.PI)
 			})
-				.call(this.drag)
-				.on("mouseover", (d, index) => this.cursorMouseOver(d, index));
+				.call(this.drag);
+
 			cursorSelection.exit().remove();
 			return cursorSelection;
 		}
@@ -1612,12 +1677,13 @@ module powerbi.visuals.samples {
 				let actualText = dataLabelUtils.getLabelFormattedText(labelFormattedTextOptions);
 				this.rangeText.classed(this.timelineSelectors.SelectionRangeContainer.class, true);
 				this.rangeText.attr({
-					x: (GranularityNames.length + 2) * this.timelineProperties.elementWidth,
+					x: (GranularityNames.length) * (this.timelineProperties.elementWidth + this.timelineProperties.leftMargin),
 					y: 40,
 					fill: timeRangeFormat.colorProperty
 				})
 					.style({
-						'font-size': pt(timeRangeFormat.sizeProperty)
+						'font-size': pt(timeRangeFormat.sizeProperty),
+						'text-anchor': 'middle',
 					}).text(actualText)
 					.append('title').text(timeRangeText);;
 			}

@@ -35,6 +35,7 @@ module powerbitests.customVisuals.sampleDataViews {
 
     export class PulseChartData {
         static ValuesCount = 100;
+        static EventCount = 5;
 
         public getDataView(): DataView {
             let dataViewMetadata: DataViewMetadata = {
@@ -49,18 +50,38 @@ module powerbitests.customVisuals.sampleDataViews {
                         queryName: 'Value',
                         type: ValueType.fromDescriptor({ integer: true }),
                         roles: { Value: true }
+                    },
+                    {
+                        displayName: 'Event Title',
+                        queryName: 'EventTitle',
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { EventTitle: true }
+                    },
+                    {
+                        displayName: 'Event Description',
+                        queryName: 'EventDescription',
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { EventDescription: true }
                     }]
                 };
 
+            var events = this.generateEvents();
             let columns: DataViewValueColumn[] = [{
                     source: dataViewMetadata.columns[1],
-                    values: helpers.generateNumbers(PulseChartData.ValuesCount)
+                    values: helpers.getRandomNumbers(PulseChartData.ValuesCount)
+                },
+                {
+                    source: dataViewMetadata.columns[2],
+                    values: events.map(x => x && x.title)
+                },
+                {
+                    source: dataViewMetadata.columns[3],
+                    values: events.map(x => x && x.description)
                 }];
-
-            let categoryValues = helpers.generateDates(PulseChartData.ValuesCount, new Date(2014,0,1), new Date(2015,5,10));
-
             let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
+
             let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "table1", name: "names" } });
+            let categoryValues = helpers.getRandomUniqueSortedDates(PulseChartData.ValuesCount, new Date(2014,0,1), new Date(2015,5,10));
             let categoryIdentities = categoryValues.map((value) =>
                 powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.dateTime(value))));
 
@@ -75,6 +96,21 @@ module powerbitests.customVisuals.sampleDataViews {
                         values: dataValues
                     }
                };
+        }
+
+        private generateEvents(): powerbi.visuals.samples.PulseChartTooltipData[] {
+            let startIndex = PulseChartData.ValuesCount/PulseChartData.EventCount;
+            let eventIndexesSpace = (PulseChartData.ValuesCount - startIndex) / PulseChartData.EventCount;
+            let eventIndexes = d3.range(PulseChartData.EventCount).map(x => startIndex + x * eventIndexesSpace);
+            let events = d3.range(PulseChartData.ValuesCount).map(x =>
+                eventIndexes.some(index => index === x)
+                ? <powerbi.visuals.samples.PulseChartTooltipData> {
+                      title: helpers.getRandomWord(6, 12),
+                      description:  helpers.getRandomText(20, 4, 12)
+                  }
+                : null);
+
+            return events;
         }
     }
 }

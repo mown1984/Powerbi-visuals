@@ -40,7 +40,10 @@ module.exports = projects.initProject(
             require("../Visuals/gulpProject")
         ],
         tsc: {
-            outFileName: 'CustomVisuals'
+            outFileName: 'CustomVisuals',
+            tsLintExcludePaths: [
+                "visuals/*/package/**/*.ts"
+            ]
         },
         less: {
             sourcePaths: [

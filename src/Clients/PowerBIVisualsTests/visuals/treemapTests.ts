@@ -1274,48 +1274,58 @@ module powerbitests {
             });
         });
 
-        it('Check basic enumeration',(done) => {
-            let dataChangedOptions = {
-                dataViews: [{
-                    metadata: dataViewMetadataCategorySeriesColumns,
-                    categorical: {
-                        categories: [{
-                            source: dataViewMetadataCategorySeriesColumns.columns[0],
-                            values: ['The Nuthatches', 'Skylarks'],
-                            identity: [
-                                mocks.dataViewScopeIdentity('The Nuthatches'),
-                                mocks.dataViewScopeIdentity('Skylarks'),
-                            ],
-                            identityFields: [categoryColumnRef],
+        it('Check basic enumeration', (done) => {
+            let dataView = {
+                metadata: dataViewMetadataCategorySeriesColumns,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataCategorySeriesColumns.columns[0],
+                        values: ['The Nuthatches', 'Skylarks'],
+                        identity: [
+                            mocks.dataViewScopeIdentity('The Nuthatches'),
+                            mocks.dataViewScopeIdentity('Skylarks'),
+                        ],
+                        identityFields: [categoryColumnRef],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategorySeriesColumns.columns[2],
+                            values: [110, 120],
+                            identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201501')),
+                        }, {
+                            source: dataViewMetadataCategorySeriesColumns.columns[3],
+                            values: [210, 220],
+                            identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201502')),
+                        }, {
+                            source: dataViewMetadataCategorySeriesColumns.columns[4],
+                            values: [310, 320],
+                            identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201503')),
                         }],
-                        values: DataViewTransform.createValueColumns([
-                            {
-                                source: dataViewMetadataCategorySeriesColumns.columns[2],
-                                values: [110, 120],
-                                identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201501')),
-                            }, {
-                                source: dataViewMetadataCategorySeriesColumns.columns[3],
-                                values: [210, 220],
-                                identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201502')),
-                            }, {
-                                source: dataViewMetadataCategorySeriesColumns.columns[4],
-                                values: [310, 320],
-                                identity: data.createDataViewScopeIdentity(SQExprBuilder.text('201503')),
-                            }],
-                            undefined,
-                            dataViewMetadataCategorySeriesColumns.columns[1])
-                    }
-                }]
+                        undefined,
+                        dataViewMetadataCategorySeriesColumns.columns[1])
+                }
             };
-            v.onDataChanged(dataChangedOptions);
+
+            v.onDataChanged({
+                dataViews: [dataView]
+            });
 
             setTimeout(() => {
                 let points = <VisualObjectInstanceEnumerationObject>v.enumerateObjectInstances({ objectName: 'dataPoint' });
                 expect(points.instances.length).toBe(2);
-                expect(points.instances[0].displayName).toEqual('The Nuthatches');
-                expect(points.instances[0].properties['fill']).toBeDefined();
-                expect(points.instances[1].displayName).toEqual('Skylarks');
-                expect(points.instances[1].properties['fill']).toBeDefined();
+
+                let categoryColumn = dataView.categorical.categories[0];
+                for (let i = 0; i < categoryColumn.values.length; i++) {
+                    let instance = points.instances[i];
+                    expect(instance.displayName).toEqual(categoryColumn.values[i]);
+                    expect(instance.properties['fill']).toBeDefined();
+
+                    let id = powerbi.visuals.SelectionIdBuilder.builder()
+                        .withCategory(categoryColumn, i)
+                        .createSelectionId();
+                    expect(instance.selector).toEqual(id.getSelector());
+                }
+
                 done();
             }, DefaultWaitForRender);
         });
@@ -2117,7 +2127,12 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin('treemap').create();
+            v = new Treemap({
+                animator: new powerbi.visuals.WebTreemapAnimator,
+                isScrollable: true,
+                behavior: new powerbi.visuals.TreemapWebBehavior(),
+                tooltipsEnabled: true,
+            });
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -2409,7 +2424,12 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = mocks.createVisualHostServices();
-            v = powerbi.visuals.visualPluginFactory.createMinerva({ dataDotChartEnabled: false }).getPlugin('treemap').create();
+            v = new Treemap({
+                animator: new powerbi.visuals.WebTreemapAnimator,
+                isScrollable: true,
+                behavior: new powerbi.visuals.TreemapWebBehavior(),
+                tooltipsEnabled: true,
+            });
             v.init({
                 element: element,
                 host: hostServices,

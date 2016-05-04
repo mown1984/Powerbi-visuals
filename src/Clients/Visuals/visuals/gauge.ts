@@ -55,7 +55,7 @@ module powerbi.visuals {
 
     export interface GaugeTargetData extends GaugeTargetSettings {
         total: number;
-        tooltipItems: TooltipSeriesDataItem[];
+        tooltipItems: TooltipDataItem[];
     }
     
     export interface GaugeDataPointSettings {
@@ -502,7 +502,7 @@ module powerbi.visuals {
                         if (col.roles[gaugeRoleNames.y]) {
                             settings.total = value;
                             if (value)
-                                settings.tooltipItems.push({ value: value, metadata: values[i] });
+                                settings.tooltipItems.push({ displayName: values[i].source.displayName, value: converterHelper.formatFromMetadataColumn(value, values[i].source, Gauge.formatStringProp) });
                         } else if (col.roles[gaugeRoleNames.minValue]) {
                             settings.min = value;
                         } else if (col.roles[gaugeRoleNames.maxValue]) {
@@ -510,7 +510,7 @@ module powerbi.visuals {
                         } else if (col.roles[gaugeRoleNames.targetValue]) {
                             settings.target = value;
                             if (value)
-                                settings.tooltipItems.push({ value: value, metadata: values[i] });
+                                settings.tooltipItems.push({ displayName: values[i].source.displayName, value: converterHelper.formatFromMetadataColumn(value, values[i].source, Gauge.formatStringProp) });
                         }
                     }
                 }
@@ -519,6 +519,9 @@ module powerbi.visuals {
                 let gaugeObjectsSettings: GaugeTargetSettings = Gauge.getGaugeObjectsProperties(dataView);
                 if (gaugeObjectsSettings && !$.isEmptyObject(gaugeObjectsSettings))
                     Gauge.overrideGaugeSettings(settings, gaugeObjectsSettings);
+            }
+            else {
+                settings.tooltipItems = undefined;
             }
 
             return settings;
@@ -564,20 +567,8 @@ module powerbi.visuals {
 
             let tooltipInfo: TooltipDataItem[];
 
-            if (tooltipsEnabled && dataView) {
-                if (gaugeData.tooltipItems.length > 0) {
-                    tooltipInfo = TooltipBuilder.createTooltipInfo(Gauge.formatStringProp, null, null, null, null, gaugeData.tooltipItems);
-                }
-                else {
-                    let dataViewCat = dataView.categorical;
-
-                    if (dataViewCat && dataViewCat.values && dataViewCat.values.length > 0) {
-                        let categoryValue: DataViewValueColumn = dataViewCat.values[0];
-                        let value = categoryValue.values[0];
-
-                        tooltipInfo = TooltipBuilder.createTooltipInfo(Gauge.formatStringProp, dataViewCat, null, value);
-                    }
-                }
+            if (tooltipsEnabled && dataView && gaugeData.tooltipItems != null) {
+                tooltipInfo = gaugeData.tooltipItems;
             }
 
             return {

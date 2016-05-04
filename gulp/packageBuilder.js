@@ -1,4 +1,4 @@
- /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -25,16 +25,21 @@
  */
 
 "use strict";
-var fs = require('fs'),
+var gulp = require("gulp"),
+    pathModule = require("path"),
+    gulpLess = require("gulp-less"),
+    insert = require('gulp-insert'),
+    fs = require('fs'),
     path = require('path'),
     zip = require('gulp-zip'),
+    runSequence = require("run-sequence").use(gulp),
+    gulpRename = require("gulp-rename"),
+    ts = require("gulp-typescript"),
     replace = require('gulp-replace');
-
-var gulp = require("gulp");
-var ts = require("gulp-typescript");
 
 var PACKAGE_BUNDLE_NAME = "bundle.json";
 var CUSTOM_VISUALS_PATH = "src/Clients/CustomVisuals/visuals";
+var CUSTOM_VISUALS_PACKAGES_PATH = "lib/packages";
 var PACKAGE_EXTENSION = ".pbiviz";
 
 var excludeVisuals = ["sunburst"];
@@ -66,24 +71,97 @@ PackageBuilder.prototype.parseBundleConfig = function () {
     }
 }
 
-PackageBuilder.prototype.buildCSS = function () {
 
-    var lessResult = srcResult
-        .pipe(gulpLess({
-            paths: paths || [],
-            relativeUrls: true,
-            modifyVars: options.modifyVars
-        }).on('error', function (err) {
-        }));
+PackageBuilder.prototype.createTasks = function () { 
+    var visualPath = pathModule.join("src/Clients/CustomVisuals/visuals", this._packageName);
+    var packageResourcesPath = pathModule.join(visualPath, "package/resources");
+    var packageName = this._config.package.name;
 
-    lessResult.pipe(gulp.dest(options.destinationPath, gulpOptions));
+    var guid = this._config.package.guid;
+    var regexString = new RegExp(this._config.package.name + "[0-9]+", "g");
+    var regexSamples = new RegExp("samples", "g");
+    var regexSampleNames = new RegExp("sampleName", "g");
+
+    var jsFileName = this._config.package.code.javaScript;
+    gulp.task("customVisuals:buildTS", function() {    
+        var tsResult = gulp.src(["src/Clients/Visuals/obj/Visuals.d.ts",
+                                 "src/Clients/VisualsCommon/obj/VisualsCommon.d.ts",
+                                 "src/Clients/VisualsContracts/obj/VisualsContracts.d.ts",
+                                 "src/Clients/VisualsData/obj/VisualsData.d.ts",
+                                 pathModule.join(visualPath, "visual/*.ts")])
+                            .pipe(ts({
+                                typescript: require('typescript'),
+                                module: "amd",
+                                sortOutput: false,
+                                target: "ES5",
+                                noEmitOnError: false,
+                                suppressExcessPropertyErrors: true
+                            }, undefined, ts.reporter.longReporter()))
+                            .pipe(gulpRename({
+                                basename: jsFileName,
+                                extname: "",
+                            }))
+                            .pipe(insert.append(PackageBuilder.portalExports))
+                            .pipe(replace(regexString, guid))
+                            .pipe(replace(regexSamples, guid))
+                            .pipe(replace(regexSampleNames, packageName))
+                            .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
+        return tsResult;
+    });
+
+    gulp.task("customVisuals:copyTS", function() {    
+        var tsResult = gulp.src([pathModule.join(visualPath, "visual/*.ts"),
+                                 pathModule.join(visualPath, "visual/**/*.ts")])
+                            .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
+        return tsResult;
+    });
+
+    var cssFileName = this._config.package.code.css;
+
+    gulp.task("customVisuals:buildCSS", function() {
+        var lessResult = gulp.src([pathModule.join(visualPath, "visual/**/*.less")])
+            .pipe(gulpLess({
+               // paths: paths || [],
+                relativeUrls: true,
+               // modifyVars: options.modifyVars
+            }))
+            .pipe(gulpRename({
+                dirname: "./",
+                basename: cssFileName,
+                extname: "",
+            }))
+            .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
+
+        return lessResult;
+    });
+
+
+    var packageConfig = JSON.stringify(this.getPackageConfig(), null, '\t');
+    var packagePath = this.resolvePath("package/package.json");
+
+    gulp.task("customVisuals:savePackageConfig", function(cb) {
+        fs.writeFile(packagePath, packageConfig, cb);
+    });
+
+
+    var resourcesPath = this.resolvePath("package/**");
+    var packagFileName = this.getPackageName();
+
+    gulp.task("customVisuals:generatePackage", function() {
+        return gulp.src(resourcesPath)
+            .pipe(zip(packagFileName))
+            .pipe(gulp.dest(pathModule.join(visualPath, "release")));
+    });
 }
 
-PackageBuilder.prototype.build = function() {
-    this.replaceGUID();
-    //this.incrementVersion();
-    this.savePackageConfig();
-    this.generatePackage();
+PackageBuilder.prototype.build = function(callback) {
+    this.createTasks();
+    runSequence("customVisuals:copyTS",
+                "customVisuals:buildTS",
+                "customVisuals:buildCSS",
+                "customVisuals:savePackageConfig",
+                "customVisuals:generatePackage",
+                callback);
 }
 
 PackageBuilder.prototype.resolvePath = function(filepath) {
@@ -102,16 +180,6 @@ PackageBuilder.prototype.getPackageName = function() {
     return this._packageName + "-" + version + PACKAGE_EXTENSION;
 }
 
-PackageBuilder.prototype.generatePackage = function() {
-    var resourcesPath = this.resolvePath("package/**");
-    var destPath = this.resolvePath("release");
-    var fileName = this.getPackageName();
-
-    return gulp.src(resourcesPath)
-        .pipe(zip(fileName))
-        .pipe(gulp.dest(destPath));
-}
-
 PackageBuilder.prototype.getVersion = function() {
     if (!this._config.package ||
         !this._config.package.version) {
@@ -119,6 +187,7 @@ PackageBuilder.prototype.getVersion = function() {
        }
     return this._config.package.version;
 }
+
 
 PackageBuilder.prototype.setVersion = function(version) {
     this._config.package.version = version;
@@ -131,28 +200,6 @@ PackageBuilder.prototype.setVersion = function(version) {
         .pipe(gulp.dest(this._path));
 }
 
-PackageBuilder.prototype.replaceGUID = function() {
-    var guid = this._config.package.guid;
-    var regexString = new RegExp(this._config.package.name + "[0-9]+", "g");
-    var regexSamples = new RegExp("samples", "g");
-    var regexSampleNames = new RegExp("sampleName", "g");
-    var resourcesPath = this.resolvePath("package/resources");
-    var jsFile = this.resolvePath("package/resources/" + this._config.package.code.javaScript);
-    var cssFile = this.resolvePath("package/resources/" + this._config.package.code.css);
-
-    gulp.src([jsFile, cssFile])
-        .pipe(replace(regexString, guid))
-        .pipe(replace(regexSamples, guid))
-        .pipe(replace(regexSampleNames, this._config.package.name))
-        .pipe(gulp.dest(resourcesPath));
-}
-
-PackageBuilder.prototype.savePackageConfig = function() {
-    var packageConfig = this.getPackageConfig();
-
-    fs.writeFileSync(this.resolvePath("package/package.json"),
-        JSON.stringify(packageConfig, null, '\t'));
-}
 
 PackageBuilder.prototype.getPackageConfig = function() {
     var config = {
@@ -258,14 +305,32 @@ function getFolders(dir) {
       });
 }
 
-PackageBuilder.buildAllPackages = function() {
+PackageBuilder.buildAllPackages = function(callback) {
     console.log('Building all custom packages...');
     var customVisuals = getFolders(CUSTOM_VISUALS_PATH);
 
     var tasks = customVisuals.map(function(packageName) {
-        var pb = new PackageBuilder(packageName);
-        return pb.build();
+        var taskName = "package:customVisuals:" + packageName;
+
+        gulp.task(taskName, function(cb) {
+            var pb = new PackageBuilder(packageName);
+            pb.build(cb);
+        })
+        return taskName;
    });
+
+   tasks.push(callback);
+   runSequence.apply(null, tasks);
+}
+
+PackageBuilder.copyPackagesToDrop = function(callback) {
+    gulp.src(path.join(CUSTOM_VISUALS_PATH, "*/release/*.pbiviz"))
+        .pipe(gulpRename({
+            dirname: "./",
+        }))
+        .pipe(gulp.dest(CUSTOM_VISUALS_PACKAGES_PATH));
+
+    callback && callback();
 }
 
 PackageBuilder.portalExports = "var powerbi;\n\
@@ -284,7 +349,6 @@ PackageBuilder.portalExports = "var powerbi;\n\
         })(plugins = visuals.plugins || (visuals.plugins = {}));\n\
     })(visuals = powerbi.visuals || (powerbi.visuals = {}));\n\
 })(powerbi || (powerbi = {}));\n\
-"
+";
 
 module.exports = PackageBuilder;
-

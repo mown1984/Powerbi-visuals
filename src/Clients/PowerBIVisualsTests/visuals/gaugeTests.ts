@@ -809,6 +809,88 @@ module powerbitests {
             expect(data).toEqual(expectedValues);
         });
 
+        it("Gauge_noValue_tooltip_work", () => {
+            gaugeDataBuilder.singleValue = 500;
+            gaugeDataBuilder.values = [[null], [0], [500], [200]];
+            gaugeDataBuilder.onDataChanged();
+
+            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let expectedValues = {
+                percent: 0,
+                adjustedTotal: 0,
+                total: 0,
+                metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
+                targetSettings: {
+                    min: 0,
+                    max: 500,
+                    target: 200
+                },
+                tooltipInfo: [{ displayName: "col4", value: "$200" }],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, dataPointSettings: {
+                    fillColor: DefaultFillColor,
+                    targetColor: DefaultTargetColor
+                }
+            };
+            expect(data).toEqual(expectedValues);
+        });
+
+        it("Gauge_noTarget_tooltip_work", () => {
+            gaugeDataBuilder.singleValue = 500;
+            gaugeDataBuilder.values = [[10], [0], [500], [null]];
+            gaugeDataBuilder.onDataChanged();
+
+            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let expectedValues = {
+                percent: 0.02,
+                adjustedTotal: 10,
+                total: 10,
+                metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
+                targetSettings: {
+                    min: 0,
+                    max: 500,
+                    target: 0
+                },
+                tooltipInfo: [{ displayName: "col1", value: "$10" }],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, dataPointSettings: {
+                    fillColor: DefaultFillColor,
+                    targetColor: DefaultTargetColor
+                }
+            };
+            expect(data).toEqual(expectedValues);
+        });
+
         it("Gauge_Nulls_Tooltip_Data", () => {
             gaugeDataBuilder.singleValue = null;
             gaugeDataBuilder.values = [[null], [null], [null], [null]];
@@ -822,6 +904,44 @@ module powerbitests {
                 total: 0,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
                 targetSettings: { min: 0, max: 0, target: 0 },
+                tooltipInfo: [],
+                dataLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, calloutValueLabelsSettings: {
+                    show: true,
+                    displayUnits: 0,
+                    precision: undefined,
+                    labelColor: null,
+                    position: null,
+                    fontSize: 8,
+                    formatterOptions: null
+                }, dataPointSettings: {
+                    fillColor: DefaultFillColor,
+                    targetColor: DefaultTargetColor
+                }
+            };
+            expect(data).toEqual(expectedValues);
+        });
+
+        it("Gauge_onlyMin&Max_Tooltip_Data", () => {
+            gaugeDataBuilder.singleValue = null;
+            gaugeDataBuilder.values = [[null], [100], [300], [null]];
+
+            gaugeDataBuilder.onDataChanged();
+
+            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let expectedValues = {
+                percent: 0,
+                adjustedTotal: 100,
+                total: 0,
+                metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
+                targetSettings: { min: 100, max: 300, target: 0 },
                 tooltipInfo: [],
                 dataLabelsSettings: {
                     show: true,

@@ -93,7 +93,6 @@ module powerbitests {
     let measureSourceAscending: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } }, sort: SortDirection.Ascending };
     let measureSourceDescending: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } }, sort: SortDirection.Descending };
 
-    let webPluginService = new powerbi.visuals.visualPluginFactory.MinervaVisualPluginService({});
     let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({}, { tooltipsEnabled: true });
 
     let tableTotals: powerbi.DataViewObjects = {
@@ -422,7 +421,7 @@ module powerbitests {
 
     describe("Table", () => {
         it("Table registered capabilities", () => {
-            expect(webPluginService.getPlugin("table").capabilities).toEqual(tableCapabilities);
+            expect(powerbi.visuals.plugins.table.capabilities).toEqual(tableCapabilities);
         });
 
         it("Capabilities should include dataViewMappings", () => {
@@ -910,7 +909,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return true; };
-            v = webPluginService.getPlugin("table").create();
+            v = new Table({});
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -1494,7 +1493,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return true; };
-            v = webPluginService.getPlugin("table").create();
+            v = new Table({});
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),

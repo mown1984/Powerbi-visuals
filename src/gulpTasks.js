@@ -1,12 +1,9 @@
 "use strict";
 
-var gulp = require('gulp-help')(require('gulp')),
+var gulp = require("gulp"),
     runSequence = require("run-sequence").use(gulp),
     ts = require("gulp-typescript"),
-    gulpRename = require("gulp-rename"),
-    pathModule = require("path"),
-    filter = require('gulp-filter'),
-    insert = require('gulp-insert');
+    pathModule = require("path");
 
 var projects = require("../gulp/projects.js"),
     cliParser = require("../gulp/cliParser.js"),
@@ -59,11 +56,9 @@ gulp.task("watch", function (cb) {
 gulp.task("tslint", "Check the source files for TypeScript Lint errors", function (callback) {
 
     var tasks = [];
-
     var allProjects = projects.get();
 
     for (var projectName in allProjects) {
-
         var project = allProjects[projectName];
 
         if (project.params.tsc) {
@@ -77,47 +72,24 @@ gulp.task("tslint", "Check the source files for TypeScript Lint errors", functio
 });
 
 
+gulp.task("package", function(callback) {
 
-gulp.task("build:customVisuals:separate", function(callback) {
-    var customVisualsProjectPath = "src/Clients/CustomVisuals",
-        packageResourcesPath = "package/resources";
-    var customVisualsFilter = filter(['**/visual/**/*.ts',
-                                      '**/visual/**/*.js'], {restore: true});
-    
-    var tsProject = ts.createProject(pathModule.join(customVisualsProjectPath, "tsconfig.json"), {
-        typescript: require('typescript'),
-        module: "amd",
-        sortOutput: false,
-        target: "ES5",
-        // declarationFiles: me.params.tsc.declarationFiles !== undefined ? me.params.tsc.declarationFiles : true, //TODO: refactor this - use lodash
-        noEmitOnError: false,
-        //removeComments:true,
-        // projectName: me.projName, // custom property
-        // outFileName: me.params.tsc.outFileName, // custom property
-        // out: me.params.tsc.outFileName ? path.join(me.projFolder, JS_OUT_FOLDER_NAME, me.params.tsc.outFileName + ".js") : undefined
+    gulp.task("package:all", function(callback) {
+        packageBuilder.buildAllPackages(callback);
     });
 
-    return tsProject.src()
-        .pipe(ts(tsProject, undefined, ts.reporter.longReporter()))
-        .pipe(customVisualsFilter)
-        .pipe(insert.append(packageBuilder.portalExports))
-        .pipe(gulpRename(function (path) {
-            path.dirname = pathModule.join(path.dirname, "..", packageResourcesPath);
-        }))
-        .pipe(gulp.dest(customVisualsProjectPath));
-});
+    gulp.task("package:all:addToDrop", function(callback) {
+        packageBuilder.copyPackagesToDrop(callback);
+    });
 
-gulp.task("package:all", function(callback) {
-    return packageBuilder.buildAllPackages(callback);
-});
-
-gulp.task("package", function(callback) {
-    var packageName = cliParser.visual;
-    var isAll = cliParser.all;
+    var packageName = cliParser.visual,
+        addToDrop = cliParser.addToDrop;
     if (packageName) {
         var pb = new packageBuilder(packageName);
-        return pb.build();
-    } else if (isAll) {
-        runSequence("build:customVisuals:separate", "package:all", callback);
+        pb.build(callback);
+    } else if (addToDrop) {
+        runSequence("package:all", "package:all:addToDrop", callback);
+    } else {
+        runSequence("package:all", callback);
     }
 });

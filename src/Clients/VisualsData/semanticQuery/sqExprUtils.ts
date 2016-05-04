@@ -403,6 +403,14 @@ module powerbi.data {
                 return QueryAggregateFunction[expr.func] + '(' + expr.arg.accept(this) + ')';
             }
 
+            public visitPercentile(expr: SQPercentileExpr, fallback: string): string {
+                let func = expr.exclusive
+                    ? 'Percentile.Exc('
+                    : 'Percentile.Inc(';
+
+                return func + expr.arg.accept(this) + ', ' + expr.k + ')';
+            }
+
             public visitArithmetic(expr: SQArithmeticExpr, fallback: string): string {
                 return powerbi.data.getArithmeticOperatorName(expr.operator) + '(' + expr.left.accept(this) + ', ' + expr.right.accept(this) + ')';
             }

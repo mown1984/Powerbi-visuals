@@ -775,6 +775,32 @@ interface ErrorDetails {
     helpLink?: string;
     errorType?: ErrorType;
 }
+declare module powerbi.visuals {
+    module shapes {
+        interface IPolygon {
+            absoluteCentroid: IPoint;
+            polygonPoints: IPoint[];
+        }
+        interface IPoint {
+            x: number;
+            y: number;
+        }
+        interface ISize {
+            width: number;
+            height: number;
+        }
+        interface IVector {
+            x: number;
+            y: number;
+        }
+        interface IThickness {
+            top: number;
+            left: number;
+            right: number;
+            bottom: number;
+        }
+    }
+}
 declare module jsCommon {
     module Formatting {
         /**
@@ -966,6 +992,11 @@ declare module powerbi {
          * @param linePadding - (optional) padding to add to line height
          */
         function wordBreakOverflowingText(textElement: any, maxWidth: number, maxHeight: number, linePadding?: number): void;
+    }
+}
+declare module jsCommon {
+    module KeyUtils {
+        function isArrowKey(keyCode: number): boolean;
     }
 }
 declare module jsCommon {
@@ -1303,6 +1334,7 @@ declare module jsCommon {
          * Verifies image data url of images.
          */
         static isValidImageDataUrl(url: string): boolean;
+        static isLocalUrl(url: string): boolean;
         /**
          * Downloads a content string as a file.
          * @param content Content stream.
@@ -1527,6 +1559,14 @@ declare module jsCommon {
          * @param start - index within value to start regex
          */
         function run(regex: RegExp, value: string, start?: number): RegExpExecArray;
+    }
+}
+declare module powerbi.visuals.utility {
+    import IThickness = powerbi.visuals.shapes.IThickness;
+    module StyleUtils {
+        function getRotateAngleFromElement(element: JQuery): number;
+        function getTranslateTransformFromElement(element: JQuery): IPoint;
+        function getPadding(element: JQuery): IThickness;
     }
 }
 declare module jsCommon {

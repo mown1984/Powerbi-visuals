@@ -54,7 +54,9 @@ module powerbitests.slicerHelper {
     export function initSlicer(element: JQuery, options: RenderSlicerOptions, field: SQExpr): powerbi.IVisual {
         let viewport = options.viewport ? options.viewport : { height: element.height(), width: element.width() };
         let dataView = options.dataView ? options.dataView : buildDefaultDataView(field);
-        let visual = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin(SlicerVisual).create();
+        let visual = new powerbi.visuals.Slicer({
+            behavior: new powerbi.visuals.SlicerWebBehavior()
+        });
 
         visual.init({
             element: element,

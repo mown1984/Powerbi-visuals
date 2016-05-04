@@ -47,7 +47,7 @@ module powerbitests {
 
             element = powerbitests.helpers.testDom('500', '500');
             hostServices = powerbitests.mocks.createVisualHostServices();
-            
+
             // Allow multiselect
             hostServices.canSelect = () => true;
             interactivityService = powerbi.visuals.createInteractivityService(hostServices);
@@ -144,7 +144,22 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('legend dom validation incremental build', (done) => {    
+        it('legend dom validation three legend items but two share same identity but are on different layers', (done) => {
+            let legendData: powerbi.visuals.LegendDataPoint[] = [
+                { label: 'ACCESS_VIOLA...', color: '#ff0000', icon: LegendIcon.Line, identity: createSelectionIdentity(1), selected: false, layerNumber: 0 },
+                { label: 'ACCESS_VIOLA...', color: '#ff0000', icon: LegendIcon.Line, identity: createSelectionIdentity(1), selected: false, layerNumber: 1 },
+                { label: 'BREAKPOINT', color: '#00ff00', icon: LegendIcon.Line, identity: createSelectionIdentity(3), selected: false, layerNumber: 0 }
+            ];
+            legend.drawLegend({ dataPoints: legendData }, viewport);
+            setTimeout(() => {
+                expect($('.legendItem').length).toBe(3);
+                expect($('.legendText').length).toBe(3);
+                expect($('.legendIcon').length).toBe(3);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('legend dom validation incremental build', (done) => {
             // Draw the legend once with the 3 states
             legend.drawLegend({ dataPoints: legendData }, viewport);
             setTimeout(() => {
@@ -322,7 +337,7 @@ module powerbitests {
             legend.changeOrientation(LegendPosition.Right);
             legend.drawLegend({ dataPoints: legendData, title: 'This is a super long title and should be truncated by now' }, viewport);
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
-            
+
             // 2 different possible values
             // 'This is a super long ti… in Windows
             // 'This is a super long ti … in Mac OS
@@ -698,7 +713,7 @@ module powerbitests {
                 legend.drawLegend({ dataPoints: legendData }, viewport);
                 setTimeout(() => {
                     expect($('.interactive-legend .title').text()).toBe(legendData[0].category);
-                    
+
                     // last item is actually the second item since values should be placed in a two-row table.
                     expect($('.interactive-legend .item').last().find('.itemName').text().trim()).toBe('California');
                     expect($('.interactive-legend .item').last().find('.itemMeasure').text().trim()).toBe('5');
@@ -741,7 +756,7 @@ module powerbitests {
                 expect(legend.getMargins().height).toBe(defaultLegendHeight);
             });
 
-            it('legend dom validation incremental build', (done) => {    
+            it('legend dom validation incremental build', (done) => {
                 // Draw the legend once with the 3 states
                 let initialData: powerbi.visuals.LegendDataPoint[] = legendData;
 

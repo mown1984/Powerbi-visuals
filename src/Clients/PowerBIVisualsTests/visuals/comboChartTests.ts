@@ -178,7 +178,14 @@ module powerbitests {
 
         beforeEach((done) => {
             element = powerbitests.helpers.testDom('500', '500');
-            visualBuilder = new VisualBuilder("lineClusteredColumnComboChart");
+            visualBuilder = new VisualBuilder(() => new powerbi.visuals.CartesianChart({
+                chartType: powerbi.visuals.CartesianChartType.LineClusteredColumnCombo,
+                isScrollable: true,
+                tooltipsEnabled: true,
+                animator: new powerbi.visuals.WebColumnChartAnimator(),
+                behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.ColumnChartWebBehavior(), new powerbi.visuals.LineChartWebBehavior()]),
+                trendLinesEnabled: true
+            }));
 
             done();
         });
@@ -404,7 +411,7 @@ module powerbitests {
                         let catCountFinal = $(".lineChart").find(".cat").length;
                         expect(catCountFinal).toBe(3);
                         let y2tickCountFinal = $($(".y.axis")[1]).find(".tick").length;
-                        
+
                         // y2 axis (line value axis) should be shifted to y1 in this case
                         expect(y2tickCountFinal).toEqual(0);
 
@@ -614,7 +621,14 @@ module powerbitests {
         });
 
         it("Ensure scrollbar is shown at smaller viewport dimensions", (done) => {
-            visualBuilder = new VisualBuilder("lineClusteredColumnComboChart", "100", "100");
+            visualBuilder = new VisualBuilder(() => new powerbi.visuals.CartesianChart({
+                chartType: powerbi.visuals.CartesianChartType.LineClusteredColumnCombo,
+                isScrollable: true,
+                tooltipsEnabled: true,
+                animator: new powerbi.visuals.WebColumnChartAnimator(),
+                behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.ColumnChartWebBehavior(), new powerbi.visuals.LineChartWebBehavior()]),
+                trendLinesEnabled: true
+            }), "100", "100");
 
             visualBuilder.onDataChanged({
                 dataViews: [
@@ -1010,7 +1024,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let axisLabels = $(".axisGraphicsContext .y.axis").last().find(".tick").find("text");
-                
+
                 //Verify begin&end axis labels
                 expect(helpers.findElementText($(axisLabels).first())).toBe("-7K");
                 expect(helpers.findElementText($(axisLabels).last())).toBe("-2K");
@@ -1041,7 +1055,7 @@ module powerbitests {
 
             setTimeout(() => {
                 let textSelector: string = ".yAxisLabel";
-                let lineAxisLabel:number = $(textSelector).length;
+                let lineAxisLabel: number = $(textSelector).length;
 
                 expect(lineAxisLabel).toBe(2);
                 expect(helpers.findElementText($(textSelector).first())).toBe("col2, col3 and col4");
@@ -1347,7 +1361,7 @@ module powerbitests {
 
                     let [layer1, regression1] = new helpers.TrendLineBuilder({ combineSeries: true, dynamicSeries: true }).withObjects(objects).buildDataViews();
                     let [layer2, regression2] = new helpers.TrendLineBuilder({ combineSeries: true, dynamicSeries: false }).withObjects(objects).buildDataViews();
-                    
+
                     visualBuilder.onDataChanged({
                         dataViews: [layer1, layer2, regression1, regression2],
                     });
@@ -1416,6 +1430,28 @@ module powerbitests {
                         done();
                     }, DefaultWaitForRender);
                 });
+            });
+        });
+
+        describe('Legend', () => {
+            it('Items with duplicate identities on different layers each have a legend item', (done) => {
+                visualBuilder.initVisual();
+                
+                let dataView1 = dataViewFactory.buildDataViewCustom(undefined, [[100, 200, 700], [1000, 2000, 7000]], ["a", "b"]);
+
+                let dataView2 = dataViewFactory.buildDataViewCustom(undefined, [[100, 200, 700]], ["a"]);
+
+                // Both layers have static series
+                visualBuilder.onDataChanged({ dataViews: [dataView1, dataView2] });
+
+                setTimeout(() => {
+                    let legend = visualBuilder.element.find('.legend');
+                    let legendItems = legend.find('.legendItem');
+
+                    expect(legendItems.length).toBe(3);
+
+                    done();
+                }, DefaultWaitForRender);
             });
         });
     });
@@ -1674,8 +1710,8 @@ module powerbitests {
             this.init();
         }
 
-        constructor(pluginName: string, width: string = "400", height: string = "400") {
-            this._visual = powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin(pluginName).create();
+        constructor(visualCreateFn: () => powerbi.IVisual, width: string = "400", height: string = "400") {
+            this._visual = visualCreateFn();
 
             this.setSize(width, height);
         }

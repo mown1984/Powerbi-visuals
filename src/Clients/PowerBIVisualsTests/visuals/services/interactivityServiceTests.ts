@@ -293,6 +293,31 @@ module powerbitests {
             expect(behavior.verifySelectionState([false, false, false, false, false, true])).toBeTruthy();
         });
 
+        it('Multiselect cannot mix measure-only with non-measure-only selections', () => {
+            let mixedSelectableDataPoints = [
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("0"), mocks.dataViewScopeIdentity("a"), "queryName") },
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("0"), mocks.dataViewScopeIdentity("b"), "queryName") },
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("1"), mocks.dataViewScopeIdentity("a"), "queryName") },
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("1"), mocks.dataViewScopeIdentity("b"), "queryName") },
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("2"), mocks.dataViewScopeIdentity("a"), "queryName") },
+                { selected: false, identity: SelectionId.createWithIdsAndMeasure(mocks.dataViewScopeIdentity("2"), mocks.dataViewScopeIdentity("b"), "queryName") },
+                { selected: false, identity: SelectionId.createWithMeasure("queryName2") },
+                { selected: false, identity: SelectionId.createWithMeasure("queryName3") },
+            ];
+            let mixedBehavior = new MockBehavior(mixedSelectableDataPoints, filterPropertyId);
+            interactivityService.bind(mixedSelectableDataPoints, mixedBehavior, null);
+            mixedBehavior.selectIndex(1, true);
+            expect(mixedBehavior.verifySelectionState([false, true, false, false, false, false, false, false])).toBeTruthy();
+            mixedBehavior.selectIndex(2, true);
+            expect(mixedBehavior.verifySelectionState([false, true, true, false, false, false, false, false])).toBeTruthy();
+            mixedBehavior.selectIndex(6, true);
+            expect(mixedBehavior.verifySelectionState([false, false, false, false, false, false, true, false])).toBeTruthy();
+            mixedBehavior.selectIndex(7, true);
+            expect(mixedBehavior.verifySelectionState([false, false, false, false, false, false, true, true])).toBeTruthy();
+            mixedBehavior.selectIndex(1, true);
+            expect(mixedBehavior.verifySelectionState([false, true, false, false, false, false, false, false])).toBeTruthy();
+        });
+
         describe('overrideSelectionFromData', () => {
             it('with', () => {
                 selectableDataPoints[5].selected = true;

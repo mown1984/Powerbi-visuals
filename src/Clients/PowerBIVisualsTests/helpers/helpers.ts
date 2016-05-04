@@ -33,6 +33,7 @@ declare interface JQuery {
     d3Click(x: number, y: number, eventType?: powerbitests.helpers.ClickEventType): void;
     d3TouchStart(): void;
     d3ContextMenu(x: number, y: number): void;
+    d3MouseDown(x: number, y: number): void;
 }
 
 module powerbitests.helpers {
@@ -127,13 +128,17 @@ module powerbitests.helpers {
         MetaKey = 8,
     }
 
-    // Defining a simulated click event (see http://stackoverflow.com/questions/9063383/how-to-invoke-click-event-programmaticaly-in-d3)
+    export enum MouseEventType {
+        click,
+        mousedown
+    }
+
     jQuery.fn.d3Click = function (x: number, y: number, eventType?: ClickEventType): void {
-        let type = eventType || ClickEventType.Default;
-        this.each(function (i, e) {
-            let evt = createMouseClickEvent(type, x, y);
-            e.dispatchEvent(evt);
-        });
+        mouseEvent.call(this, MouseEventType.click, x, y, eventType);
+    };
+
+    jQuery.fn.d3MouseDown = function (x: number, y: number, eventType?: ClickEventType): void {
+        mouseEvent.call(this, MouseEventType.mousedown, x, y, eventType);
     };
 
     jQuery.fn.d3TouchStart = function (): void {
@@ -146,6 +151,15 @@ module powerbitests.helpers {
     jQuery.fn.d3ContextMenu = function (x: number, y: number): void {
         this.each(function (i, e) {
             let evt = createContextMenuEvent(x, y);
+            e.dispatchEvent(evt);
+        });
+    };
+
+    // Defining a simulated click event (see http://stackoverflow.com/questions/9063383/how-to-invoke-click-event-programmaticaly-in-d3)
+    function mouseEvent (mouseEventType: MouseEventType, x: number, y: number, eventType?: ClickEventType): void {
+        let type = eventType || ClickEventType.Default;
+        this.each(function (i, e) {
+            let evt = createMouseClickEvent(mouseEventType, type, x, y);
             e.dispatchEvent(evt);
         });
     };
@@ -166,6 +180,18 @@ module powerbitests.helpers {
         }
         finally {
             window.requestAnimationFrame = requestAnimationFrame;
+        }
+    }
+
+    export function runWithExpectedAssertFailures(func: () => void): void {
+        let assertFail = debug.assertFail;
+        try {
+            let assertFailSpy = spyOn(debug, 'assertFail');
+            func();
+            expect(assertFailSpy).toHaveBeenCalled();
+        }
+        finally {
+            debug.assertFail = assertFail;
         }
     }
 
@@ -253,11 +279,11 @@ module powerbitests.helpers {
         return mouseEvt;
     }
 
-    export function createMouseClickEvent(eventType: ClickEventType, x: number, y: number): MouseEvent {
+    export function createMouseClickEvent(mouseEventType: MouseEventType, eventType: ClickEventType, x: number, y: number): MouseEvent {
         let type = eventType || ClickEventType.Default;
         let evt = document.createEvent("MouseEvents");
         evt.initMouseEvent(
-            "click", // type
+            MouseEventType[mouseEventType], // type
             true,   // canBubble
             true,   // cancelable
             window, // view
@@ -581,14 +607,6 @@ module powerbitests.helpers {
     }
 
     export class VisualBuilder {
-        private height: number;
-
-        private width: number;
-
-        private pluginType: string;
-
-        private visualPluginService: powerbi.visuals.IVisualPluginService;
-
         private visualHostService: powerbi.IVisualHostServices;
 
         public get host(): powerbi.IVisualHostServices {
@@ -614,16 +632,10 @@ module powerbitests.helpers {
         public interactivitySelection: boolean = false;
 
         constructor(
-            visualPluginService: powerbi.visuals.IVisualPluginService,
-            pluginType: string,
-            height: number = 500,
-            width: number = 500
-        ) {
-            this.visualPluginService = visualPluginService;
-            this.pluginType = pluginType;
-            this.height = height;
-            this.width = width;
-        }
+            private visualCreateFn: () => powerbi.IVisual,
+            private height: number = 500,
+            private width: number = 500
+        ) { }
 
         private init(): void {
             this.createElement();
@@ -649,9 +661,9 @@ module powerbitests.helpers {
         }
 
         private createVisual(): void {
-            if (this.visualPluginService)
-                this.visualPlugin =
-                    this.visualPluginService.getPlugin(this.pluginType).create();
+            if (this.visualCreateFn) {
+                this.visualPlugin = this.visualCreateFn();
+            }
         }
 
         private initVisual(): void {

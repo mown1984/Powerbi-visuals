@@ -1159,8 +1159,10 @@ module powerbitests {
         }
 
         private buildMinervaCard(): void {
-            this.cardVisual =
-            <Card>powerbi.visuals.visualPluginFactory.createMinerva({}).getPlugin("card").create();
+            this.cardVisual = new Card({
+                isScrollable: true,
+                animator: new powerbi.visuals.BaseAnimator()
+            });
         }
 
         private buildPlainCard(): void {

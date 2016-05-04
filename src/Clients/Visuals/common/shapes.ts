@@ -30,11 +30,6 @@ module powerbi.visuals {
     export module shapes {
         import Utility = jsCommon.Utility;
 
-        export interface IPolygon {
-            absoluteCentroid: IPoint;
-            polygonPoints: IPoint[];
-        }
-
         export class Polygon {
 
             private _absoluteCentroid: IPoint;
@@ -283,11 +278,6 @@ module powerbi.visuals {
                 return pointsRes;
             }
         }
-        
-        export interface IPoint {
-            x: number;
-            y: number;
-        }
 
         export module Point {
 
@@ -349,11 +339,6 @@ module powerbi.visuals {
                     }
                 }
             }
-        }
-
-        export interface ISize {
-            width: number;
-            height: number;
         }
 
         export module Size {
@@ -646,13 +631,6 @@ module powerbi.visuals {
                 }
             }
         }
-        
-        export interface IThickness {
-            top: number;
-            left: number;
-            right: number;
-            bottom: number;
-        }
 
         export module Thickness {
 
@@ -741,11 +719,6 @@ module powerbi.visuals {
                     }
                 }
             }
-        }
-
-        export interface IVector {
-            x: number;
-            y: number;
         }
 
         export module Vector {

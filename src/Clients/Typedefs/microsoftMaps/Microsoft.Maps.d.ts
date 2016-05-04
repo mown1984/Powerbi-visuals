@@ -3,6 +3,9 @@
     /*
         Global functions
     */
+    export module Globals {
+        export var roadUriFormat: any;
+    }
 
     /*
         Loads the specified registered module, making its functionality available. An optional function can be specified that is called when the module is loaded.

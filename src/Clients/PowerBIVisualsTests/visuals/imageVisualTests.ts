@@ -77,6 +77,14 @@ module powerbitests {
             expect(imageVisualDataBuilder.imageBackgroundElement.css("background-image")).toBe("url(" + imageBase64value + ")");
         });
 
+        it("Image from blob", () => {
+            let blobUrl = window.URL.createObjectURL(new Blob());
+            imageVisualDataBuilder.imageUrl = blobUrl;
+            imageVisualDataBuilder.update();
+
+            expect(imageVisualDataBuilder.imageBackgroundElement.css("background-image")).toBe("url(" + blobUrl + ")");
+        });
+
         it("Image DOM Verification", () => {
             imageVisualDataBuilder.imageUrl = imageBase64value;
             imageVisualDataBuilder.update();

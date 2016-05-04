@@ -458,37 +458,68 @@ module powerbi.visuals {
                         color = colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIdx], measureSource);
                     }
 
-                    let category = categories && categories.length > 0 ? categories[0] : null;
+                    let category = !_.isEmpty(categories) ? categories[0] : null;
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, categoryIdx)
                         .withSeries(dataValues, grouping)
                         .createSelectionId();
 
-                    let seriesData: TooltipSeriesDataItem[] = [];
-                    if (dataValueSource) {
-                        // Dynamic series
-                        seriesData.push({ value: grouping.name, metadata: { source: dataValueSource, values: [] } });
-                    }
-                    if (measureX) {
-                        seriesData.push({ value: xVal, metadata: measureX });
-                    }
-                    if (measureY) {
-                        seriesData.push({ value: yVal, metadata: measureY });
-                    }
-                    if (measureSize && measureSize.values && measureSize.values.length > 0) {
-                        seriesData.push({ value: measureSize.values[categoryIdx], metadata: measureSize });
-                    }
-                    if (playFrameInfo) {
-                        seriesData.push({ value: playFrameInfo.label, metadata: { source: playFrameInfo.column, values: [] } });
-                    }
-
-                    // check for gradient tooltip data
-                    let gradientToolTipData = TooltipBuilder.createGradientToolTipData(gradientValueColumn, categoryIdx);
-                    if (gradientToolTipData != null)
-                        seriesData.push(gradientToolTipData);
                     let tooltipInfo: TooltipDataItem[];
+
                     if (tooltipsEnabled) {
-                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, null, categoryValue, null, categories, seriesData);
+                        tooltipInfo = [];
+
+                        if (category) {
+                            tooltipInfo.push({
+                                displayName: category.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(categoryValue, category.source, formatStringProp),
+                            });
+                        }
+
+                        if (hasDynamicSeries) {
+                            // Dynamic series
+                            if ( !category || category.source !== dataValueSource) {
+                                tooltipInfo.push({
+                                    displayName: dataValueSource.displayName,
+                                    value: converterHelper.formatFromMetadataColumn(grouping.name, dataValueSource, formatStringProp),
+                                });
+                            }
+                        }
+
+                        if (measureX && xVal != null) {
+                            tooltipInfo.push({
+                                displayName: measureX.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(xVal, measureX.source, formatStringProp),
+                            });
+                        }
+
+                        if (measureY && yVal != null) {
+                            tooltipInfo.push({
+                                displayName: measureY.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(yVal, measureY.source, formatStringProp),
+                            });
+                        }
+
+                        if (measureSize && measureSize.values[categoryIdx] != null) {
+                            tooltipInfo.push({
+                                displayName: measureSize.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(measureSize.values[categoryIdx], measureSize.source, formatStringProp),
+                            });
+                        }
+
+                        if (gradientValueColumn && gradientValueColumn.values[categoryIdx] != null) {
+                            tooltipInfo.push({
+                                displayName: gradientValueColumn.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[categoryIdx], gradientValueColumn.source, formatStringProp),
+                            });
+                        }
+
+                        if (playFrameInfo) {
+                            tooltipInfo.push({
+                                displayName: playFrameInfo.column.displayName,
+                                value: converterHelper.formatFromMetadataColumn(playFrameInfo.label, playFrameInfo.column, formatStringProp),
+                            });
+                        }
                     }
 
                     let dataPoint: ScatterChartDataPoint = {
@@ -970,7 +1001,7 @@ module powerbi.visuals {
             };
 
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
-            if (this.playAxis && (this.isMobileChart || duration > 0)) {
+            if (this.playAxis && this.playAxis.isCurrentlyPlaying() && (this.isMobileChart || duration > 0)) {
                 duration = PlayChart.FrameAnimationDuration;
             }
 

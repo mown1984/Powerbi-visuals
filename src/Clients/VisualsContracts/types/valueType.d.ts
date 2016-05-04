@@ -73,6 +73,7 @@ declare module powerbi {
         image?: boolean;
         imageUrl?: boolean;
         webUrl?: boolean;
+        barcode?: boolean;
     }
 
     export interface FormattingTypeDescriptor {

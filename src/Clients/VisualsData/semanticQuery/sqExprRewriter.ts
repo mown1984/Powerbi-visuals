@@ -59,6 +59,16 @@ module powerbi.data {
             return new SQAggregationExpr(rewrittenArg, expr.func);
         }
 
+        public visitPercentile(expr: SQPercentileExpr): SQExpr {
+            let origArg = expr.arg,
+                rewrittenArg = origArg.accept(this);
+
+            if (origArg === rewrittenArg)
+                return expr;
+
+            return new SQPercentileExpr(rewrittenArg, expr.k, expr.exclusive);
+        }
+
         public visitHierarchy(expr: SQHierarchyExpr): SQExpr {
             let origArg = expr.arg,
                 rewrittenArg = origArg.accept(this);

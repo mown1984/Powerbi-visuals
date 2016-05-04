@@ -25,15 +25,43 @@
 */
 
 module powerbitests.customVisuals {
-	import GranularityType = powerbi.visuals.samples.GranularityType;
+    import GranularityType = powerbi.visuals.samples.GranularityType;
     import VisualClass = powerbi.visuals.samples.Timeline;
-    powerbitests.mocks.setLocale();
     import colorAssert = powerbitests.helpers.assertColorsMatch;
     import TimeLineData = powerbi.visuals.samples.TimelineData;
+    import TimelineCursorOverElement = powerbi.visuals.samples.TimelineCursorOverElement;
+
+    powerbitests.mocks.setLocale();
 
     describe("Timeline", () => {
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
+        });
+
+        describe("converter", () => {
+            let visualBuilder: TimelineBuilder;
+
+            beforeEach(() => {
+                visualBuilder = new TimelineBuilder();
+            });
+
+            it("prepareValues", () => {
+                let prepareValuesResults: Date[],
+                    values: any;
+
+                values = [
+                    new Date("2001-01-01"),
+                    null,
+                    undefined,
+                    NaN
+                ];
+
+                prepareValuesResults = visualBuilder.visualObject.prepareValues(values);
+
+                expect(prepareValuesResults).toBeDefined();
+                expect(prepareValuesResults.length).toEqual(1);
+                expect(prepareValuesResults[0].getTime()).toEqual(new Date("2001-01-01").getTime());
+            });
         });
 
         describe("DOM tests", () => {
@@ -69,6 +97,22 @@ module powerbitests.customVisuals {
 					expect(cellHeight).toBeLessThan(60.1);
 					expect(cellHeight).toBeGreaterThan(29.9);
                     done();
+                }, DefaultWaitForRender);
+            });
+
+            it("apply blank row data", (done) => {
+                visualBuilder.update(dataViews);
+                visualBuilder.currentPeriod = GranularityType.day;
+
+                setTimeout(() => {
+                    dataViews[0].categorical.categories[0].values.push(null);
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(() => {
+                        let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
+                        expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length-1);
+                        done();
+                    }, DefaultWaitForRender);
                 }, DefaultWaitForRender);
             });
 
@@ -161,6 +205,114 @@ module powerbitests.customVisuals {
                     }, DefaultWaitForRender);
                 }, DefaultWaitForRender);
             });
+
+            describe("clearCatcher", () => {
+                let clearCatcherElement: JQuery;
+
+                beforeEach((done) => {
+                    visualBuilder.update(dataViews);
+                    visualBuilder.currentPeriod = GranularityType.day;
+
+                    spyOn(visualBuilder.visualObject, "clear");
+
+                    setTimeout(() => {
+                        clearCatcherElement = visualBuilder.element.find(".clearCatcher");
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("click - event", () => {
+                    clearCatcherElement.d3Click(0, 0);
+
+                    expectToCallMethodClear();
+                });
+
+                it("touchstart - event", () => {
+                    clearCatcherElement.d3TouchStart();
+
+                    expectToCallMethodClear();
+                });
+
+                function expectToCallMethodClear(): void {
+                    expect(visualBuilder.visualObject["clear"]).toHaveBeenCalled();
+                }
+            });
+
+            describe("granularity", () => {
+                let periodSlicerSelectionRectElements: JQuery;
+
+                beforeEach((done) => {
+                    visualBuilder.update(dataViews);
+                    visualBuilder.currentPeriod = GranularityType.month;
+
+                    spyOn(visualBuilder.visualObject, "redrawPeriod");
+
+                    setTimeout(() => {
+                        periodSlicerSelectionRectElements = visualBuilder.element.find(".periodSlicerSelectionRect");
+
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("mousedown - event", () => {
+                    $(periodSlicerSelectionRectElements[0]).d3MouseDown(0, 0);
+
+                    expectToCallRedrawPeriod(GranularityType.year);
+                });
+
+                it("touchstart - event", () => {
+                    $(periodSlicerSelectionRectElements[4]).d3TouchStart();
+
+                    expectToCallRedrawPeriod(GranularityType.day);
+                });
+
+                function expectToCallRedrawPeriod(granularity: GranularityType): void {
+                    expect(visualBuilder.visualObject.redrawPeriod).toHaveBeenCalledWith(granularity);
+                }
+            });
+        });
+
+        describe("methods", () => {
+            let visualBuilder: TimelineBuilder,
+                dataViews: powerbi.DataView[];
+
+            beforeEach((done) => {
+                visualBuilder = new TimelineBuilder();
+                dataViews = [new customVisuals.sampleDataViews.TimelineData().getDataView()];
+
+                visualBuilder.update(dataViews);
+                visualBuilder.currentPeriod = GranularityType.day;
+
+                setTimeout(done, DefaultWaitForRender);
+            });
+
+            describe("findCursorOverElement", () => {
+                it("-9999", () => {
+                    expectToCallFindCursorOverElement(-9999, 0);
+                });
+
+                it("9999", () => {
+                    expectToCallFindCursorOverElement(9999, 9);
+                });
+
+                it("120", () => {
+                    expectToCallFindCursorOverElement(120, 2);
+                });
+
+                it("220", () => {
+                    expectToCallFindCursorOverElement(220, 4);
+                });
+
+                function expectToCallFindCursorOverElement(x: number, expectedIndex: number): void {
+                    let cursorOverElement: TimelineCursorOverElement = visualBuilder.visualObject.findCursorOverElement(x);
+
+                    expect(cursorOverElement).not.toBeNull();
+                    expect(cursorOverElement.index).toEqual(expectedIndex);
+                    expect(cursorOverElement.datapoint).not.toBeNull();
+                    expect(cursorOverElement.datapoint).not.toBeUndefined();
+                }
+            });
         });
     });
 
@@ -169,6 +321,10 @@ module powerbitests.customVisuals {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
+        }
+
+        public get visualObject(): VisualClass {
+            return this.visual;
         }
 
         public get mainElement() {

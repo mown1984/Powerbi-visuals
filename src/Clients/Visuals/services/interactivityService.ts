@@ -326,6 +326,12 @@ module powerbi.visuals {
                 if (selected) {
                     d.selected = true;
                     this.selectedIds.push(id);
+                    if (id.hasIdentity()) {
+                        this.removeSelectionIdsWithOnlyMeasures();
+                    }
+                    else {
+                        this.removeSelectionIdsExceptOnlyMeasures();
+                    }
                 }
                 else {
                     d.selected = false;
@@ -352,10 +358,18 @@ module powerbi.visuals {
             // the current datapoint state has to be inverted
             d.selected = !wasSelected;
 
-            if (wasSelected)
+            if (wasSelected) {
                 this.removeId(id);
-            else              
+            }
+            else {
                 this.selectedIds.push(id);
+                if (id.hasIdentity()) {
+                    this.removeSelectionIdsWithOnlyMeasures();
+                }
+                else {
+                    this.removeSelectionIdsExceptOnlyMeasures();
+                }
+            }
 
             this.syncSelectionStateInverted();
         }
@@ -577,6 +591,14 @@ module powerbi.visuals {
 
         private static checkDatapointAgainstSelectedIds(datapoint: SelectableDataPoint, selectedIds: SelectionId[]): boolean {
             return selectedIds.some((value: SelectionId) => value.includes(datapoint.identity));
+        }
+
+        private removeSelectionIdsWithOnlyMeasures() {
+            this.selectedIds = _.filter(this.selectedIds, (identity) => identity.hasIdentity());
+        }
+
+        private removeSelectionIdsExceptOnlyMeasures() {
+            this.selectedIds = _.filter(this.selectedIds, (identity) => !identity.hasIdentity());
         }
     };
 }

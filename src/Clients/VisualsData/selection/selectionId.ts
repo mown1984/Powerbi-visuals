@@ -93,9 +93,6 @@ module powerbi.visuals {
             return this.keyWithoutHighlight;
         }
         
-        /**
-         * Temporary workaround since a few things currently rely on this, but won't need to.
-         */
         public hasIdentity(): boolean {
             return (this.selector && !!this.selector.data);
         }

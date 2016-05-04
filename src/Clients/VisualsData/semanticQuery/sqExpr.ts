@@ -120,6 +120,9 @@ module powerbi.data {
             if (field.columnHierarchyLevelVariation)
                 return this.getMetadataForVariation(field, federatedSchema);
 
+            if (field.percentOfGrandTotal)
+                return this.getMetadataForPercentOfGrandTotal();
+
             return SQExpr.getMetadataForEntity(field, federatedSchema);
         }
 
@@ -286,6 +289,14 @@ module powerbi.data {
             return this.getPropertyMetadata(field, property);
         }
 
+        private getMetadataForPercentOfGrandTotal(): SQExprMetadata {
+            return {
+                kind: FieldKind.Measure,
+                format: '#,##0.##%',
+                type: ValueType.fromExtendedType(ExtendedType.Double)
+            };
+        }
+
         private getPropertyMetadata(field: FieldExprPattern, property: ConceptualProperty): SQExprMetadata {
             let format = property.format;
             let type = property.type;
@@ -384,6 +395,7 @@ module powerbi.data {
         ResourcePackageItem,
         ScopedEval,
         Scope,
+        Percentile,
     }
 
     export interface SQExprMetadata {
@@ -488,6 +500,10 @@ module powerbi.data {
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitScopedEval(this, arg);
         }
+        
+        public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
+            return this.expression.getMetadata(federatedSchema);
+        }
     }
 
     export abstract class SQPropRefExpr extends SQExpr {
@@ -540,6 +556,40 @@ module powerbi.data {
 
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitAggr(this, arg);
+        }
+    }
+
+    export class SQPercentileExpr extends SQExpr {
+        public arg: SQExpr;
+        public k: number;
+        public exclusive: boolean;
+
+        constructor(arg: SQExpr, k: number, exclusive: boolean) {
+            debug.assertValue(arg, 'arg');
+            debug.assertValue(k, 'k');
+            debug.assert(0 <= k && k <= 1, '0 <= k && k <= 1');
+            debug.assertValue(exclusive, 'exclusive');
+
+            super(SQExprKind.Percentile);
+            this.arg = arg;
+            this.k = k;
+            this.exclusive = exclusive;
+        }
+
+        public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
+            debug.assertValue(federatedSchema, 'federatedSchema');
+
+            let argMetadata = this.arg.getMetadata(federatedSchema);
+            if (argMetadata) {
+                return {
+                    kind: FieldKind.Measure,
+                    type: argMetadata.type,
+                };
+            }
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitPercentile(this, arg);
         }
     }
 
@@ -923,6 +973,18 @@ module powerbi.data {
             return new SQAggregationExpr(source, aggregate);
         }
 
+        export function percentile(source: SQExpr, k: number, exclusive: boolean): SQPercentileExpr {
+            return new SQPercentileExpr(source, k, exclusive);
+        }
+
+        export function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQArithmeticExpr {
+            return new SQArithmeticExpr(left, right, operator);
+        }
+
+        export function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr {
+            return new SQScopedEvalExpr(expression, scope);
+        }
+
         export function hierarchy(source: SQExpr, hierarchy: string): SQHierarchyExpr {
             return new SQHierarchyExpr(source, hierarchy);
         }
@@ -1104,20 +1166,20 @@ module powerbi.data {
             }
         }
 
-        export function arithmetic(left: SQExpr, right: SQExpr, operator: ArithmeticOperatorKind): SQArithmeticExpr {
-            return new SQArithmeticExpr(left, right, operator);
-        }
-
-        export function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr {
-            return new SQScopedEvalExpr(expression, scope);
-        }
-
         export function setAggregate(expr: SQExpr, aggregate: QueryAggregateFunction): SQExpr {
-            return SQExprChangeAggregateRewriter.rewrite(expr, aggregate);
+            return FieldExprChangeAggregateRewriter.rewrite(expr, aggregate);
         }
 
         export function removeAggregate(expr: SQExpr): SQExpr {
             return SQExprRemoveAggregateRewriter.rewrite(expr);
+        }
+
+        export function setPercentOfGrandTotal(expr: SQExpr): SQExpr {
+            return SQExprSetPercentOfGrandTotalRewriter.rewrite(expr);
+        }
+
+        export function removePercentOfGrandTotal(expr: SQExpr): SQExpr {
+            return SQExprRemovePercentOfGrandTotalRewriter.rewrite(expr);
         }
 
         export function removeEntityVariables(expr: SQExpr): SQExpr {
@@ -1187,6 +1249,13 @@ module powerbi.data {
             return comparand instanceof SQAggregationExpr &&
                 expr.func === (<SQAggregationExpr>comparand).func &&
                 this.equals(expr.arg, (<SQAggregationExpr>comparand).arg);
+        }
+
+        public visitPercentile(expr: SQPercentileExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQPercentileExpr &&
+                expr.exclusive === comparand.exclusive &&
+                expr.k === comparand.k &&
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitHierarchy(expr: SQHierarchyExpr, comparand: SQHierarchyExpr): boolean {
@@ -1432,6 +1501,7 @@ module powerbi.data {
         invalidLeftOperandType,
         invalidRightOperandType,
         invalidValueType,
+        invalidPercentileArgument,
     }
 
     export class SQExprValidationVisitor extends SQExprRewriter {
@@ -1537,6 +1607,21 @@ module powerbi.data {
                     this.register(SQExprValidationError.invalidHierarchyLevelReference);
                 }
             }
+            return expr;
+        }
+
+        public visitPercentile(expr: SQPercentileExpr): SQExpr {
+            expr.arg.accept(this);
+
+            if (_.isEmpty(this.errors)) {
+                let argMetadata = expr.arg.getMetadata(this.schema);
+                if (!argMetadata ||
+                    argMetadata.kind !== FieldKind.Column ||
+                    !(argMetadata.type && (argMetadata.type.integer || argMetadata.type.numeric))) {
+                    this.register(SQExprValidationError.invalidPercentileArgument);
+                }
+            }
+
             return expr;
         }
 
@@ -1823,6 +1908,72 @@ module powerbi.data {
         }
     }
 
+    class FieldExprChangeAggregateRewriter implements IFieldExprPatternVisitor<SQExpr> {
+        private sqExpr: SQExpr;
+        private aggregate: QueryAggregateFunction;
+
+        constructor(sqExpr: SQExpr, aggregate: QueryAggregateFunction) {
+            this.sqExpr = sqExpr;
+            this.aggregate = aggregate;
+        }
+
+        public static rewrite(sqExpr: SQExpr, aggregate: QueryAggregateFunction): SQExpr {
+            return FieldExprPattern.visit(sqExpr, new FieldExprChangeAggregateRewriter(sqExpr, aggregate));
+        }
+
+        public visitPercentOfGrandTotal(pattern: FieldExprPercentOfGrandTotalPattern): SQExpr {
+            pattern.baseExpr = SQExprConverter.asFieldPattern(
+                SQExprChangeAggregateRewriter.rewrite(
+                    SQExprBuilder.fieldExpr(pattern.baseExpr),
+                    this.aggregate));
+            return SQExprBuilder.fieldExpr({ percentOfGrandTotal: pattern });
+        }
+
+        public visitColumn(column: FieldExprColumnPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitEntity(entity: FieldExprEntityPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchy(hierarchy: FieldExprHierarchyPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitMeasure(measure: FieldExprMeasurePattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitPercentile(percentile: FieldExprPercentilePattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        private defaultRewrite(): SQExpr {
+            return SQExprChangeAggregateRewriter.rewrite(this.sqExpr, this.aggregate);
+        }
+    }
+
     class SQExprRemoveAggregateRewriter extends SQExprRootRewriter {
         private static instance: SQExprRemoveAggregateRewriter = new SQExprRemoveAggregateRewriter();
 
@@ -1851,6 +2002,40 @@ module powerbi.data {
             debug.assertValue(expr, 'expr');
 
             return expr.accept(SQExprRemoveEntityVariablesRewriter.instance);
+        }
+    }
+
+    class SQExprRemovePercentOfGrandTotalRewriter extends SQExprRootRewriter {
+        private static instance: SQExprRemovePercentOfGrandTotalRewriter = new SQExprRemovePercentOfGrandTotalRewriter();
+
+        public static rewrite(expr: SQExpr): SQExpr {
+            debug.assertValue(expr, 'expr');
+            return expr.accept(SQExprRemovePercentOfGrandTotalRewriter.instance);
+        }
+
+        public visitDefault(expr: SQExpr): SQExpr {
+            let fieldExpr = SQExprConverter.asFieldPattern(expr);
+            if (fieldExpr && fieldExpr.percentOfGrandTotal)
+                expr = SQExprBuilder.fieldExpr(fieldExpr.percentOfGrandTotal.baseExpr);
+
+            return expr;
+        }
+    }
+
+    class SQExprSetPercentOfGrandTotalRewriter extends SQExprRootRewriter {
+        private static instance: SQExprSetPercentOfGrandTotalRewriter = new SQExprSetPercentOfGrandTotalRewriter();
+
+        public static rewrite(expr: SQExpr): SQExpr {
+            debug.assertValue(expr, 'expr');
+            return expr.accept(SQExprSetPercentOfGrandTotalRewriter.instance);
+        }
+
+        public visitDefault(expr: SQExpr): SQExpr {
+            let fieldExpr = SQExprConverter.asFieldPattern(expr);
+            if (fieldExpr && !fieldExpr.percentOfGrandTotal)
+                expr = SQExprBuilder.fieldExpr({ percentOfGrandTotal: { baseExpr: SQExprConverter.asFieldPattern(expr) } });
+
+            return expr;
         }
     }
 }

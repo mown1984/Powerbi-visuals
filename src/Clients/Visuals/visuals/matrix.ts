@@ -1131,7 +1131,6 @@ module powerbi.visuals {
             }
             else if (item.isSubtotal) {
                 // Matrices with column groups support sorting only on the column grand total.
-
                 if (isMultiMeasure) {
                     // In the multi-measure case we need to check if the parent's level is 0 in order
                     // to determine whether this is the column grand total.  The cells are layed out such

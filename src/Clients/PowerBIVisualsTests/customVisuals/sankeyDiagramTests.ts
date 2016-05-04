@@ -27,6 +27,7 @@
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.SankeyDiagram;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
+    import SankeyDiagramData = powerbitests.customVisuals.sampleDataViews.SankeyDiagramData;
 
     describe("SankeyDiagram", () => {
         describe('capabilities', () => {
@@ -35,31 +36,31 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: SankeyDiagramBuilder;
+            let sankeyDiagramData: SankeyDiagramData;
             let dataViews: powerbi.DataView[];
 
             beforeEach(() => {
                 visualBuilder = new SankeyDiagramBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ValuesByCountriesData().getDataView()];
+                sankeyDiagramData = new SankeyDiagramData();
+                dataViews = [sankeyDiagramData.getDataView()];
             });
 
             it("main element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-
+                 visualBuilder.updateRenderTimeout(dataViews, () => {
                     expect(visualBuilder.linksElement).toBeInDOM();
-                    expect(visualBuilder.linksElement.children("path.link").length)
+                    expect(visualBuilder.linksElements.length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
 
                     let allCountries: string[] = dataViews[0].categorical.categories[0].values.concat(dataViews[0].categorical.categories[1].values);
                     let uniqueCountries = allCountries.sort().filter((value, index, array) => !index || value !== array[index - 1]);
 
                     expect(visualBuilder.nodesElement).toBeInDOM();
-                    expect(visualBuilder.nodesElement.children("g.node").length)
+                    expect(visualBuilder.nodesElements.length)
                         .toEqual(uniqueCountries.length);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels on", done => {
@@ -69,12 +70,10 @@ module powerbitests.customVisuals {
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataViews, () => {
                     expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('block');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels off", done => {
@@ -84,12 +83,10 @@ module powerbitests.customVisuals {
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataViews, () => {
                     expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('none');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels change color", done => {
@@ -99,12 +96,10 @@ module powerbitests.customVisuals {
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataViews, () => {
                     colorAssert(visualBuilder.nodesElement.find('text').first().css('fill'), "#123123");
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("link change color", done => {
@@ -115,15 +110,13 @@ module powerbitests.customVisuals {
                     }
                 });
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataViews, () => {
                     colorAssert(visualBuilder.linksElement.find('.link').first().css('stroke'), "#E0F600");
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
-            describe("Selection and deselection", () => {
+            describe("selection and deselection", () => {
                 const selectionSelector = ".selected";
 
                 it("nodes", done => {
@@ -167,7 +160,23 @@ module powerbitests.customVisuals {
                         }, DefaultWaitForRender);
                     }, DefaultWaitForRender);
                 });
+            });
 
+            describe("data rendering", () => {
+                it("negative and zero values", done => {
+                    let groupLength = Math.floor(sankeyDiagramData.dataLength/3) - 2;
+                    let negativeValues = helpers.getRandomNumbers(groupLength, -100, 0);
+                    let zeroValues = _.range(0, groupLength, 0);
+                    let positiveValues = helpers.getRandomNumbers(
+                        sankeyDiagramData.dataLength - negativeValues.length - zeroValues.length, 1, 100);
+
+                    sankeyDiagramData.valuesData = negativeValues.concat(zeroValues).concat(positiveValues);
+
+                    visualBuilder.updateRenderTimeout([sankeyDiagramData.getDataView()], () => {
+                        expect(visualBuilder.linksElements.length).toBe(positiveValues.length);
+                        done();
+                    });
+                });
             });
         });
     });

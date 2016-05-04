@@ -28,6 +28,15 @@ module powerbitests.kpiHelper {
     import ValueType = powerbi.ValueType;
     import DataViewTransform = powerbi.data.DataViewTransform;
 
+    function buildDataView(dataViewMetaData: powerbi.DataViewMetadata, dataViewCategorical: powerbi.DataViewCategorical): powerbi.DataView {
+        let dataView: powerbi.DataView = {
+            metadata: dataViewMetaData,
+            categorical: dataViewCategorical
+        };
+
+        return dataView;
+    }
+
     export function buildDataViewForRedTrend(): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
         let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
@@ -56,11 +65,26 @@ module powerbitests.kpiHelper {
         return dataView;
     }
 
-    function buildDataView(dataViewMetaData: powerbi.DataViewMetadata, dataViewCategorical: powerbi.DataViewCategorical): powerbi.DataView {
-        let dataView: powerbi.DataView = {
-            metadata: dataViewMetaData,
-            categorical: dataViewCategorical
-        };
+    export function buildDataViewForPercentagesIndicator(): powerbi.DataView {
+        let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
+        let dataView: powerbi.DataView = buildDataView(dataViewMetadata, dataViewCategorical);
+
+        dataView.metadata.columns[1].objects = { general: { formatString: "0.00%" } };
+        dataView.categorical.values[1].values = [0.102, 0.3256, 0.256, 0.51863, 0.78123456789]; // indicator
+
+        dataView.metadata.columns[2].type = ValueType.fromDescriptor({ numeric: true }); // goal
+
+        return dataView;
+    }
+
+    export function buildDataViewForPercentagesGoal(): powerbi.DataView {
+        let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical: powerbi.DataViewCategorical = buildDataViewCategoricalForRedTrend();
+        let dataView: powerbi.DataView = buildDataView(dataViewMetadata, dataViewCategorical);
+
+        dataView.metadata.columns[2].objects = { general: { formatString: "0.00%" } };
+        dataView.categorical.values[2].values = [0.8, 0.2556, 0.386, 0.42863, 0.72123456789];   // goal
 
         return dataView;
     }

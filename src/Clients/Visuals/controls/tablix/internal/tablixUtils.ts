@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -79,7 +79,7 @@ module powerbi.visuals.controls {
 
             return scale;
         }
-        
+
         /**
          * Get scale of element, return 1 when not scaled.
          */
@@ -461,10 +461,6 @@ module powerbi.visuals.controls.internal {
                 urlIcon: TablixObjects.PropValuesUrlIconProp.getValue<boolean>(objects),
             };
 
-            if (isConditionalFormattingEnabled) {
-                formattingProperties.values.conditionalFormatting = TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(objects);
-            }
-
             formattingProperties.total = {
                 fontColor: TablixObjects.PropTotalFontColor.getValue<string>(objects),
                 backColor: TablixObjects.PropTotalBackColor.getValue<string>(objects),
@@ -472,11 +468,6 @@ module powerbi.visuals.controls.internal {
             };
 
             return formattingProperties;
-        }
-
-        // TODO: VSTS 7167767: Remove temporary code for product demo.
-        export function getTableObjectConditionalFormatEnabled(dataView: DataView) {
-            return TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(getMetadadataObjects(dataView));
         }
 
         export function getMatrixObjects(dataView: DataView): TablixFormattingPropertiesMatrix {

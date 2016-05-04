@@ -213,6 +213,13 @@ module powerbi.data {
             dataRoles: VisualDataRole[],
             selectsToInclude?: INumberDictionary<boolean>): DataView {
             debug.assertValue(prototype, 'prototype');
+            debug.assertValue(transforms, 'transforms');
+            debug.assert(!selectsToInclude ||
+                _.filter(
+                    Object.keys(selectsToInclude),
+                    (selectIndex) => selectsToInclude[selectIndex] && (!transforms.selects || !transforms.selects[selectIndex]))
+                    .length === 0, // asserts that the number of select indices in selectsToInclude without a corresponding Select Transform === 0
+                'If selectsToInclude is specified, every Select Index in it must have a corresponding Select Transform.');
 
             let targetKinds = getTargetKinds(roleMappings);
             let transformed = inherit(prototype);
@@ -429,6 +436,11 @@ module powerbi.data {
                 for (let i = 0, ilen = values.length; i < ilen; i++) {
                     let currentValue = values[i];
                     if (!group || (currentValue.identity !== group.identity)) {
+                        debug.assert(!_.isUndefined(grouped[currentGroupIndex]) && currentValue.identity === grouped[currentGroupIndex].identity,
+                            'The input Categorical has at least one values column whose identity does not belong to any of the Series groups. ' + 
+                            'This query DataView Categorical is most likely containing the data across multiple splits, and the caller code is expected to ' +
+                            'specify the select indices for one of the splits in the parameter selectsToInclude.  ' +
+                            'Actual selectsToInclude=' + JSON.stringify(selectsToInclude));
                         group = inherit(grouped[currentGroupIndex]);
                         grouped[currentGroupIndex] = group;
                         group.values = [];

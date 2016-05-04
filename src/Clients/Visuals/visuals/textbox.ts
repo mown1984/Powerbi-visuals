@@ -26,6 +26,7 @@
 
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import KeyUtils = jsCommon.KeyUtils;
     import StringExtensions = jsCommon.StringExtensions;
     import UrlUtils = jsCommon.UrlUtils;
 
@@ -697,6 +698,9 @@ module powerbi.visuals {
                 // Quill will also capture and prevent bubbling of some keyboard shortcuts, such as ctrl+c, ctrl+b, etc.
                 this.$container.keydown((e) => {
                     if (e.ctrlKey && _.contains(QuillWrapper.preventDefaultKeys, e.which))
+                        e.stopPropagation();
+
+                    if (KeyUtils.isArrowKey(e.which))
                         e.stopPropagation();
                 });
 

@@ -66,7 +66,7 @@ module powerbi.visuals {
             }, {
                 name: 'Play',
                 kind: VisualDataRoleKind.Grouping,
-                displayName: 'Play Axis' //TODO: data.createDisplayNameGetter('Role_DisplayName_Play'),
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Play'),
             }
         ],
         objects: {

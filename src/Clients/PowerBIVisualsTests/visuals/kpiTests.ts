@@ -55,6 +55,12 @@ module powerbitests {
             };
         };
 
+        function getGoalFromGoalText(goal: string) {
+            let startIndex = goal.indexOf(": ") + 2;
+            let endIndex = goal.indexOf(" (");
+            return goal.slice(startIndex, endIndex); 
+        }
+
         describe("", () => {
             let host: IVisualHostServices;
             let $element: JQuery;
@@ -243,6 +249,30 @@ module powerbitests {
                     let goalText = $element.find('.goalText').text();
                     let decimalPlacesFound = goalText.indexOf('%') - goalText.indexOf('.') - 1;
                     expect(decimalPlacesFound).toBe(2);
+                });
+
+                it("Formats indicator as percentage but goal as decimal", () => {
+                    let visualUpdateOptions = buildUpdateOptions(viewport, kpiHelper.buildDataViewForPercentagesIndicator());
+                    kpi.update(visualUpdateOptions);
+
+                    let indicatorText = $element.find('#indicatorText').text();
+                    expect(indicatorText).toBe("78.12%");
+
+                    let goalText = $element.find('.goalText').text();
+                    goalText = getGoalFromGoalText(goalText);
+                    expect(goalText).toBe("20.00");
+                });
+
+                it("Formats indicator as decimal but goal as percentage", () => {
+                    let visualUpdateOptions = buildUpdateOptions(viewport, kpiHelper.buildDataViewForPercentagesGoal());
+                    kpi.update(visualUpdateOptions);
+
+                    let indicatorText = $element.find('#indicatorText').text();
+                    expect(indicatorText).toBe("12.00");
+
+                    let goalText = $element.find('.goalText').text();
+                    goalText = getGoalFromGoalText(goalText);
+                    expect(goalText).toBe("72.12%");
                 });
 
                 it("Show only indicator vs goal when trend axis contains single value", () => {

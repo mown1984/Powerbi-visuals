@@ -65,5 +65,10 @@ module powerbitests.customVisuals {
                 viewport: this.viewport
             });
         }
+
+        public updateRenderTimeout(dataViews: powerbi.DataView[], fn: Function): number {
+            this.update(dataViews);
+            return helpers.renderTimeout(fn);
+        }
     }
 }

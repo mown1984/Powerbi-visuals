@@ -83,6 +83,8 @@ module powerbi.extensibility {
         }
 
         public init(options: powerbi.VisualInitOptions) {
+            debug.assertValue(options.element, "options.element");
+            debug.assertValue(options.host, "options.host");
 
             options.element.empty();
 

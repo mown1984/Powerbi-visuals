@@ -32,6 +32,7 @@ module powerbi.data {
         visitColumnRef(expr: SQColumnRefExpr, arg: TArg): T;
         visitMeasureRef(expr: SQMeasureRefExpr, arg: TArg): T;
         visitAggr(expr: SQAggregationExpr, arg: TArg): T;
+        visitPercentile(expr: SQPercentileExpr, arg: TArg): T;
         visitHierarchy(expr: SQHierarchyExpr, arg: TArg): T;
         visitHierarchyLevel(expr: SQHierarchyLevelExpr, arg: TArg): T;
         visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr, arg: TArg): T;
@@ -74,6 +75,10 @@ module powerbi.data {
         }
 
         public visitAggr(expr: SQAggregationExpr, arg: TArg): T {
+            return this.visitDefault(expr, arg);
+        }
+
+        public visitPercentile(expr: SQPercentileExpr, arg: TArg): T {
             return this.visitDefault(expr, arg);
         }
 
@@ -191,6 +196,10 @@ module powerbi.data {
         public visitAggr(expr: SQAggregationExpr): void {
             expr.arg.accept(this);
         } 
+
+        public visitPercentile(expr: SQPercentileExpr): void {
+            expr.arg.accept(this);
+        }
 
         public visitHierarchy(expr: SQHierarchyExpr): void {
             expr.arg.accept(this);
@@ -322,6 +331,7 @@ module powerbi.data {
 
         public visitScopedEval(expr: SQScopedEvalExpr): void {
             expr.expression.accept(this);
+
             for (let scopeExpr of expr.scope) {
                 scopeExpr.accept(this);
             }

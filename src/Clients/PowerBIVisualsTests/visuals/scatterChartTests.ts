@@ -5029,17 +5029,17 @@ module powerbitests {
             let legendColors = legendItems.map(l => l.color);
             expect(legendColors).toEqual(ArrayExtensions.distinct(legendColors));
 
-            // Show no tooltip item for null series
+            // Show tooltip item for null series
             // TODO: this is likely a bug
             expect(dataPoints.length).toBe(6);
 
             let actualTooltips = _.map(dataPoints, d => JSON.stringify(d.tooltipInfo));
             let expectTooltips = _.map([
-                [{ displayName: 'category', value: '2012' }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }],
+                [{ displayName: 'category', value: '2012' }, { displayName: "series", value: "(Blank)" }, { displayName: 'x', value: '150.00' }, { displayName: 'y', value: '30' }, { displayName: 'size', value: '100' }],
                 [{ displayName: 'category', value: '2012' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '100.00' }, { displayName: 'y', value: '300' }, { displayName: 'size', value: '150' }],
-                [{ displayName: 'category', value: '2011' }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }],
+                [{ displayName: 'category', value: '2011' }, { displayName: "series", value: "(Blank)" }, { displayName: 'x', value: '177.00' }, { displayName: 'y', value: '25' }, { displayName: 'size', value: '200' }],
                 [{ displayName: 'category', value: '2011' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '149.00' }, { displayName: 'y', value: '250' }, { displayName: 'size', value: '250' }],
-                [{ displayName: 'category', value: '2010' }, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }],
+                [{ displayName: 'category', value: '2010' }, {displayName: "series", value:"(Blank)"}, { displayName: 'x', value: '157.00' }, { displayName: 'y', value: '28' }, { displayName: 'size', value: '300' }],
                 [{ displayName: 'category', value: '2010' }, { displayName: 'series', value: 'Canada' }, { displayName: 'x', value: '144.00' }, { displayName: 'y', value: '280' }, { displayName: 'size', value: '350' }],
             ], d => JSON.stringify(d));
 
@@ -5145,7 +5145,7 @@ module powerbitests {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             expect(scatterChartData.dataPoints[0].formattedCategory.getValue()).toBe("(Blank)");
-            expect(scatterChartData.dataPoints[0].tooltipInfo).toEqual([{ displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }]);
+            expect(scatterChartData.dataPoints[0].tooltipInfo).toEqual([{ displayName: 'series', value: '(Blank)' }, { displayName: 'x', value: '110' }, { displayName: 'y', value: '210' }]);
         });
 
         it('scatter chart dataView with min/max', () => {

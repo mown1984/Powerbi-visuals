@@ -63,7 +63,11 @@ module powerbitests.customVisuals {
                 visualBuilder.update(dataViews);
 
                 setTimeout(() => {
-                    expect(visualBuilder.visibleGroup.children("div.row").children('.cell').first().find('span').css('font-size')).toBe('21px');
+                    let fontUnit = 'px',
+                        fontSize = visualBuilder.visibleGroup.children("div.row").children('.cell').first().find('span').css('font-size'),
+                        fontSizeVal = Math.round(Number((fontSize.split(fontUnit))[0]))+fontUnit;
+
+                    expect(fontSizeVal).toBe('21px');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -279,6 +283,64 @@ module powerbitests.customVisuals {
                 }, DefaultWaitForRender);
             });
 
+            describe('selection', function () {
+                let selectionId = [{
+                    "selectior":{"data":[]}
+                }];
+
+                it("chiclet selection is loaded", function (done) {
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(function () {
+                        let selectedItems = visualBuilder
+                            .visibleGroup
+                            .find('.slicerItemContainer')
+                            .last().click();
+                        visualBuilder.update(dataViews);
+
+                        setTimeout(function () {
+                            let savedSelectedItems = visualBuilder.getSelectedPoints();
+                            expect(savedSelectedItems.length).toBe(selectedItems.length);
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                    return true;
+                });
+
+                it("saved chiclet selection is received", function (done) {
+                    dataViews[0].metadata.objects = {
+                        general: {
+                            selection: JSON.stringify( selectionId )
+                        }
+                    };
+                    visualBuilder.update(dataViews);
+
+                    setTimeout(function () {
+                        let selection = visualBuilder.getSavedSelection();
+                        expect(selection).toBeDefined();
+                        expect(selection).toEqual( selectionId );
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it("chiclet selection is saved", function (done) {
+                    visualBuilder.update(dataViews);
+                    setTimeout(function () {
+                        visualBuilder.saveSelection(selectionId);
+                        visualBuilder.update(dataViews);
+
+                        setTimeout(function () {
+                            let selection =  visualBuilder.getSelectionState().items;
+                            let stateSelection = visualBuilder.getSelectionState().state;
+                            expect(selection).toBeDefined();
+                            expect(stateSelection).toBeDefined();
+                            expect(stateSelection).toBe(true);
+                            done();
+                        }, DefaultWaitForRender);
+                    }, DefaultWaitForRender);
+                });
+            });
+
         });
     });
 
@@ -288,20 +350,35 @@ module powerbitests.customVisuals {
             this.build();
             this.init();
         }
-
+        private build(): void {
+            this.visual = new VisualClass();
+        }
         public get mainElement() {
             return this.element.children("div.chicletSlicer");
         }
-
         public get visibleGroup() {
             return this.mainElement
                 .children("div.slicerBody")
                 .children("div.scrollRegion")
                 .children("div.visibleGroup");
         }
-
-        private build(): void {
-            this.visual = new VisualClass();
+        public saveSelection(selectionIds): void {
+            return this.visual['settings']['general'].setSavedSelection(selectionIds);
+        }
+        public getSelectedPoints() {
+            return this.visual['behavior']
+                .dataPoints
+                .map( (item) => { if(item.selected) return item; })
+                .filter(Boolean);
+        }
+        public getSavedSelection(): string[] {
+            return this.visual['settings']['general'].getSavedSelection();
+        }
+        public getSelectionState() {
+            return {
+                items : this.visual['settings']['general']['selection'],
+                state : this.visual['isSelectionSaved'],
+            };
         }
     }
 }

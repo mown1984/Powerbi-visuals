@@ -159,7 +159,9 @@ module powerbi.visuals {
         export function formatFromMetadataColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string {
             debug.assertValue(column, 'column should exist');
             let formatString: string = valueFormatter.getFormatString(column, formatStringProp, true);
-            formatString = formatString || column ? column.format : undefined;
+            if (!formatString && column) {
+                formatString = column.format;
+            }
             return valueFormatter.format(value, formatString);
         }
     }

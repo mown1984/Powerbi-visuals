@@ -160,32 +160,35 @@ function runTestVisuals(callback) {
         "./helpers/tableDataViewHelper.js",
         "./helpers/tablixHelper.js",
         "./helpers/trendLineHelper.js",
+        "./jasmineMatchers/toEqualDeep.js",
+        "./jasmineMatchers/toEqualSQExpr.js",
         "./utils/bingSocial/NewsDataFactory.js",
         "./utils/bingSocial/TweetFactory.js",
 
         "CustomVisuals.css",
         "CustomVisuals.js",
 
-        "./customVisuals/helpers/dataViewHelper.js",
+        "./customVisuals/helpers/dataViewHelpers.js",
+        "./customVisuals/helpers/visualTestHelpers.js",
         "./customVisuals/sampleDataViews/SalesByCountryData.js",
-        "./customVisuals/sampleDataViews/ValuesByCountriesData.js",
+        "./customVisuals/sampleDataViews/SankeyDiagramData.js",
         "./customVisuals/sampleDataViews/MekkoChartData.js",
         "./customVisuals/sampleDataViews/BulletChartData.js",
-        "./customVisuals/sampleDataViews/CarLogosData.js",
         "./customVisuals/sampleDataViews/CountriesData.js",
+        "./customVisuals/sampleDataViews/CarLogosData.js",
         "./customVisuals/sampleDataViews/chordChartData.js",
-        "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
         "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
-        "./customVisuals/sampleDataViews/valueByAgeData.js",
-        "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
-
         "./customVisuals/sampleDataViews/AreaRangeChartData.js",
         "./customVisuals/sampleDataViews/DotPlotData.js",
         "./customVisuals/sampleDataViews/forceGraphData.js",
         "./customVisuals/sampleDataViews/GanttData.js",
         "./customVisuals/sampleDataViews/TimelineData.js",
+        "./customVisuals/sampleDataViews/valueByAgeData.js",
+        "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
+        "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
         "./customVisuals/sampleDataViews/PulseChartData.js",
-
+        "./customVisuals/VisualBuilderBase.js",
+		
         "./customVisuals/VisualBuilderBase.js"
 
     ].concat(tests),

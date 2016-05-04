@@ -60,6 +60,7 @@ module powerbi.visuals {
         measure?: any;
         iconOnlyOnLabel?: boolean;
         tooltip?: string;
+        layerNumber?: number;
     }
 
     export interface LegendData {
@@ -157,6 +158,14 @@ module powerbi.visuals {
         numberOfItems: number;
         title: TitleLayout;
         navigationArrows: NavigationArrow[];
+    }
+    
+    interface LegendItem {
+        dataPoint: LegendDataPoint;
+        textProperties: TextProperties;
+        width: number;
+        desiredWidth: number;
+        desiredOverMaxWidth: boolean;
     }
 
     export class SVGLegend implements ILegend {
@@ -379,7 +388,7 @@ module powerbi.visuals {
 
             let legendItems = group
                 .selectAll(SVGLegend.LegendItem.selector)
-                .data(virtualizedDataPoints, (d: LegendDataPoint) => d.identity.getKey());
+                .data(virtualizedDataPoints, (d: LegendDataPoint) => d.identity.getKey() + (d.layerNumber != null ? d.layerNumber : ''));
 
             let itemsEnter = legendItems.enter()
                 .append('g')
@@ -474,6 +483,7 @@ module powerbi.visuals {
                     let fontSizeMargin = this.legendFontSizeMarginValue > SVGLegend.DefaultTextMargin ? SVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : SVGLegend.TextAndIconPadding;
                     let fixedHorizontalIconShift = SVGLegend.TextAndIconPadding + SVGLegend.LegendIconRadius;
                     let fixedHorizontalTextShift = SVGLegend.LegendIconRadius + fontSizeMargin + fixedHorizontalIconShift;
+                    // TODO This can be negative for narrow viewports. May need to rework this logic.
                     maxMeasureLength = this.parentViewport.width * SVGLegend.LegendMaxWidthFactor - fixedHorizontalTextShift - SVGLegend.LegendEdgeMariginWidth;
                 }
                 else {
@@ -487,7 +497,10 @@ module powerbi.visuals {
 
                 if (width > maxMeasureLength) {
                     text = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxMeasureLength);
-                    width = maxMeasureLength;
+                    textProperties.text = text;
+                    
+                    // Remeasure the text since its measurement may be different than the max (ex. when the max is negative, the text will be ellipsis, and not have a negative width)
+                    width = TextMeasurementService.measureSvgTextWidth(textProperties);
                 };
 
                 if (isHorizontal)
@@ -545,7 +558,7 @@ module powerbi.visuals {
             };
         }
 
-        private updateNavigationArrowLayout(navigationArrows: NavigationArrow[], remainingDataLength, visibleDataLength) {
+        private updateNavigationArrowLayout(navigationArrows: NavigationArrow[], remainingDataLength: number, visibleDataLength: number): void {
             if (this.legendDataStartIndex === 0) {
                 navigationArrows.shift();
             }
@@ -617,6 +630,107 @@ module powerbi.visuals {
 
             return data;
         }
+        
+        /**
+         * Calculates the widths for each horizontal legend item.
+         */
+        private static calculateHorizontalLegendItemsWidths(dataPoints: LegendDataPoint[], availableWidth: number, iconPadding: number, fontSize: number): LegendItem[] {
+
+            let dataPointsLength = dataPoints.length;
+
+            // Set the maximum amount of space available to each item. They can use less, but can't go over this number.
+            let maxItemWidth = dataPointsLength > 0 ? availableWidth / dataPointsLength | 0 : 0;
+            let maxItemTextWidth = maxItemWidth - iconPadding;
+
+            // Makes sure the amount of space available to each item is at least SVGLegend.MaxTextLength wide.
+            // If you had many items and/or a narrow amount of available width, the availableTextWidthPerItem would be small, essentially making everything ellipsis.
+            // This prevents that from happening by giving each item at least SVGLegend.MaxTextLength of space.
+            if (maxItemTextWidth < SVGLegend.MaxTextLength) {
+                maxItemTextWidth = SVGLegend.MaxTextLength;
+                maxItemWidth = maxItemTextWidth + iconPadding;
+            }
+
+            // Make sure the availableWidthPerItem is less than the availableWidth. This lets the long text properly add ellipsis when we're displaying one item at a time.
+            if (maxItemWidth > availableWidth) {
+                maxItemWidth = availableWidth;
+                maxItemTextWidth = maxItemWidth - iconPadding;
+            }
+
+            let occupiedWidth = 0;
+            let legendItems: LegendItem[] = [];
+
+            // Add legend items until we can't fit any more (the last one doesn't fit) or we've added all of them
+            for (let dataPoint of dataPoints) {
+
+                let textProperties = SVGLegend.getTextProperties(false, dataPoint.label, fontSize);
+                let itemTextWidth = TextMeasurementService.measureSvgTextWidth(textProperties);
+                let desiredWidth = itemTextWidth + iconPadding;
+                let overMaxWidth = desiredWidth > maxItemWidth;
+                let actualWidth = overMaxWidth ? maxItemWidth : desiredWidth;
+                occupiedWidth += actualWidth;
+
+                if (occupiedWidth >= availableWidth) {
+                     
+                    // Always add at least 1 element
+                    if (legendItems.length === 0) {
+
+                        legendItems.push({
+                            dataPoint: dataPoint,
+                            textProperties: textProperties,
+                            desiredWidth: desiredWidth,
+                            desiredOverMaxWidth: true,
+                            width: desiredWidth
+                        });
+                        
+                        // Set the width to the amount of space we actually have
+                        occupiedWidth = availableWidth;
+                    } else {
+                        // Subtract the width from what was just added since it won't fit
+                        occupiedWidth -= actualWidth;
+                    }
+                    break;
+                }
+
+                legendItems.push({
+                    dataPoint: dataPoint,
+                    textProperties: textProperties,
+                    desiredWidth: desiredWidth,
+                    desiredOverMaxWidth: overMaxWidth,
+                    width: desiredWidth
+                });
+            }
+
+            // If there are items at max width, evenly redistribute the extra space to them
+            let itemsOverMax = _.filter(legendItems, (li) => li.desiredOverMaxWidth);
+            let numItemsOverMax = itemsOverMax.length;
+
+            if (numItemsOverMax > 0) {
+                let extraWidth = availableWidth - occupiedWidth;
+
+                for (let item of itemsOverMax) {
+                    // Divvy up the extra space and add it to the max
+                    // We need to do this calculation in every loop since the remainingWidth may not be changed by the same amount every time
+                    let extraWidthPerItem = extraWidth / numItemsOverMax;
+                    let newMaxItemWidth = maxItemWidth + extraWidthPerItem;
+
+                    let usedExtraWidth: number;
+                    if (item.desiredWidth <= newMaxItemWidth) {
+                        // If the item doesn't need all the extra space, it's not at max anymore
+                        item.desiredOverMaxWidth = false;
+                        usedExtraWidth = item.desiredWidth - maxItemWidth;
+                    } else {
+                        // Otherwise the item is taking up all the extra space so update the actual width to indicate that
+                        item.width = newMaxItemWidth;
+                        usedExtraWidth = newMaxItemWidth - maxItemWidth;
+                    }
+                    
+                    extraWidth -= usedExtraWidth;
+                    numItemsOverMax--;
+                }
+            }
+
+            return legendItems;
+        }
 
         private calculateHorizontalLayout(dataPoints: LegendDataPoint[], title: TitleLayout, navigationArrows: NavigationArrow[]): number {
             debug.assertValue(navigationArrows, 'navigationArrows');
@@ -626,7 +740,7 @@ module powerbi.visuals {
             let fontSizeBiggerThanDefault = this.legendFontSizeMarginDifference > 0;
             let fontSizeMargin = fontSizeBiggerThanDefault ? SVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : SVGLegend.TextAndIconPadding;
             let fixedTextShift = (fontSizeMargin / (SVGLegend.LegendIconRadiusFactor / 2)) + HorizontalTextShift;
-            let totalSpaceOccupiedThusFar = 0;
+            let occupiedWidth = 0;
             // calculate the size of the space for both sides of the radius
             let iconTotalItemPadding = SVGLegend.LegendIconRadius * 2 + fontSizeMargin * 1.5;
             let numberOfItems: number = dataPoints.length;
@@ -637,64 +751,56 @@ module powerbi.visuals {
                 - TextMeasurementService.estimateSvgTextBaselineDelta(defaultTextProperties);
 
             if (title) {
-                totalSpaceOccupiedThusFar += title.width;
+                occupiedWidth += title.width;
                 // get the Y coordinate which is the middle of the container + the middle of the text height - the delta of the text 
                 title.y = verticalCenter + title.height / 2 - TextMeasurementService.estimateSvgTextBaselineDelta(SVGLegend.getTextProperties(true, title.text, this.data.fontSize));
             }
 
             // if an arrow should be added, we add space for it
             if (this.legendDataStartIndex > 0) {
-                totalSpaceOccupiedThusFar += SVGLegend.LegendArrowOffset;
+                occupiedWidth += SVGLegend.LegendArrowOffset;
             }
 
-            // This bit expands the max lengh if there are only a few items
-            // so longer labels can potentially get more space, and not be
-            // ellipsed. 
+            // Calculate the width for each of the legend items
             let dataPointsLength = dataPoints.length;
-            let parentWidth = this.parentViewport.width;
-            let maxTextLength = dataPointsLength > 0
-                ? (((parentWidth - totalSpaceOccupiedThusFar) - (iconTotalItemPadding * dataPointsLength)) / dataPointsLength) | 0
-                : 0;
-            maxTextLength = maxTextLength > SVGLegend.MaxTextLength ? maxTextLength : SVGLegend.MaxTextLength;
+            let availableWidth = this.parentViewport.width - occupiedWidth;
+            let legendItems = SVGLegend.calculateHorizontalLegendItemsWidths(dataPoints, availableWidth, iconTotalItemPadding, this.data.fontSize);
+            numberOfItems = legendItems.length;
 
-            for (let i = 0; i < dataPointsLength; i++) {
-                let dp = dataPoints[i];
-                let textProperties = SVGLegend.getTextProperties(false, dp.label, this.data.fontSize);
+            // If we can't show all the legend items, subtract the "next" arrow space from the available space and re-run the width calculations 
+            if (numberOfItems !== dataPointsLength) {
+                availableWidth -= SVGLegend.LegendArrowOffset;
+                legendItems = SVGLegend.calculateHorizontalLegendItemsWidths(dataPoints, availableWidth, iconTotalItemPadding, this.data.fontSize);
+                numberOfItems = legendItems.length;
+            }
 
-                dp.glyphPosition = {
+            for (let legendItem of legendItems) {
+
+                let dataPoint = legendItem.dataPoint;
+
+                dataPoint.glyphPosition = {
                     // the space taken so far + the radius + the margin / radiusFactor to prevent huge spaces
-                    x: totalSpaceOccupiedThusFar + SVGLegend.LegendIconRadius + (this.legendFontSizeMarginDifference / SVGLegend.LegendIconRadiusFactor),
+                    x: occupiedWidth + SVGLegend.LegendIconRadius + (this.legendFontSizeMarginDifference / SVGLegend.LegendIconRadiusFactor),
                     // The middle of the container but a bit lower due to text not being in the middle (qP for example making middle between q and P)
                     y: (this.viewport.height * SVGLegend.LegendIconYRatio),
                 };
 
-                dp.textPosition = {
-                    x: totalSpaceOccupiedThusFar + fixedTextShift,
+                dataPoint.textPosition = {
+                    x: occupiedWidth + fixedTextShift,
                     y: textYCoordinate,
                 };
 
-                let width = TextMeasurementService.measureSvgTextWidth(textProperties);
-                let spaceTakenByItem = 0;
-                if (width < maxTextLength) {
-                    spaceTakenByItem = iconTotalItemPadding + width;
-                } else {
-                    let text = TextMeasurementService.getTailoredTextOrDefault(
-                        textProperties,
-                        maxTextLength);
-                    dp.label = text;
-                    spaceTakenByItem = iconTotalItemPadding + maxTextLength;
+                // If we're over the max width, process it so it fits
+                if (legendItem.desiredOverMaxWidth) {
+                    let textWidth = legendItem.width - iconTotalItemPadding;
+                    let text = TextMeasurementService.getTailoredTextOrDefault(legendItem.textProperties, textWidth);
+                    dataPoint.label = text;
                 }
 
-                totalSpaceOccupiedThusFar += spaceTakenByItem;
-
-                if (totalSpaceOccupiedThusFar > parentWidth) {
-                    numberOfItems = i;
-                    break;
-                }
+                occupiedWidth += legendItem.width;
             }
 
-            this.visibleLegendWidth = totalSpaceOccupiedThusFar;
-
+            this.visibleLegendWidth = occupiedWidth;
             this.updateNavigationArrowLayout(navigationArrows, dataPointsLength, numberOfItems);
 
             return numberOfItems;

@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -58,7 +58,7 @@ module powerbi.visuals {
             this.tableDataView = tableDataView;
             this.formatter = formatter;
         }
-        
+
         /**
         * Returns the depth of the Columnm hierarchy.
         */
@@ -72,28 +72,28 @@ module powerbi.visuals {
         public getRowHierarchyDepth(): number {
             return 1;
         }
-        
+
         /**
          * Returns the leaf count of a hierarchy.
          */
         public getLeafCount(hierarchy: any): number {
             return hierarchy.length;
         }
-        
+
         /**
          * Returns the leaf member of a hierarchy at a specified index.
          */
         public getLeafAt(hierarchy: any, index: number): any {
             return hierarchy[index];
         }
-        
+
         /**
          * Returns the specified hierarchy member parent.
          */
         public getParent(item: any): any {
             return null;
         }
-        
+
         /**
          * Returns the index of the hierarchy member relative to its parent.
          */
@@ -118,7 +118,7 @@ module powerbi.visuals {
         private getColumnIndex(item: any): number {
             return TableHierarchyNavigator.getIndex(this.tableDataView.columns, item);
         }
-        
+
         /**
          * Checks whether a hierarchy member is a leaf.
          */
@@ -166,28 +166,28 @@ module powerbi.visuals {
         public getChildrenLevelDifference(item: any) {
             return Infinity;
         }
-        
+
         /**
          * Gets the members count in a specified collection.
          */
         public getCount(items: any): number {
             return items.length;
         }
-        
+
         /**
          * Gets the member at the specified index.
          */
         public getAt(items: any, index: number): any {
             return items[index];
         }
-        
+
         /**
          * Gets the hierarchy member level.
          */
         public getLevel(item: any): number {
             return 0;
         }
-        
+
         /**
          * Returns the intersection between a row and a column item.
          */
@@ -232,9 +232,9 @@ module powerbi.visuals {
 
             return cellItem;
         }
-        
+
         /**
-         * Returns the corner cell between a row and a column level. 
+         * Returns the corner cell between a row and a column level.
          */
         public getCorner(rowLevel: number, columnLevel: number): TablixUtils.TablixVisualCell {
             return null;
@@ -244,7 +244,7 @@ module powerbi.visuals {
             if (item1 === item2)
                 return true;
 
-            // Typechecking does not work with interfaces nor at runtime. We need to explicitly check for 
+            // Typechecking does not work with interfaces nor at runtime. We need to explicitly check for
             // properties of DataViewMetadataColumn to determine if we can use the column equivalency check.
             // We expect this method to handle either VisualTableRows or DataViewMetadataColumns so checking
             // for displayName should be sufficient.
@@ -298,7 +298,7 @@ module powerbi.visuals {
         onColumnHeaderClick?(queryName: string, sortDirection: SortDirection): void;
         layoutKind?: controls.TablixLayoutKind;
     }
-    
+
     /**
      * Note: Public for testability.
      */
@@ -344,7 +344,7 @@ module powerbi.visuals {
 
         public onEndRenderingSession(): void {
         }
-        
+
         /**
          * Row Header.
          */
@@ -361,7 +361,7 @@ module powerbi.visuals {
         public unbindRowHeader(item: any, cell: controls.ITablixCell): void {
 
         }
-        
+
         /**
          * Column Header.
          */
@@ -449,7 +449,7 @@ module powerbi.visuals {
                 cell.extension.unregisterClickHandler();
             }
         }
-        
+
         /**
          * Body Cell.
          */
@@ -532,7 +532,7 @@ module powerbi.visuals {
             }
 
             style.borders.left = new TablixUtils.EdgeSettings();
-            if (cell.position.column.isFirst) { // First Column 
+            if (cell.position.column.isFirst) { // First Column
                 style.borders.left.applyParams(outline.showLeft(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
                 // If we dont have left border, but Footer or Header has, we need to apply extra padding
@@ -554,7 +554,7 @@ module powerbi.visuals {
 
             style.fontColor = cell.position.row.index % 2 === 0 ? props.fontColorPrimary : props.fontColorSecondary;
             // TODO: VSTS 7167767: Remove temporary code for product demo.
-            if (this.formattingProperties.isConditionalFormattingEnabled && this.formattingProperties.values.conditionalFormatting && item.backColorCustomFormatting)
+            if (this.formattingProperties.isConditionalFormattingEnabled && item.backColorCustomFormatting)
                 style.backColor = item.backColorCustomFormatting;
             else
                 style.backColor = cell.position.row.index % 2 === 0 ? props.backColorPrimary : props.backColorSecondary;
@@ -575,7 +575,7 @@ module powerbi.visuals {
             style.borders.bottom.applyParams(outline.showBottom(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
             style.borders.left = new TablixUtils.EdgeSettings();
-            if (cell.position.column.isFirst) { // First Column 
+            if (cell.position.column.isFirst) { // First Column
                 style.borders.left.applyParams(outline.showLeft(props.outline), propsGrid.outlineWeight, propsGrid.outlineColor);
 
                 // If we dont have left border, but values or column headers have, we need to apply padding
@@ -606,7 +606,7 @@ module powerbi.visuals {
             TablixUtils.clearCellStyle(cell);
             TablixUtils.clearCellTextAndTooltip(cell);
         }
-        
+
         /**
          * Corner Cell.
          */
@@ -631,7 +631,7 @@ module powerbi.visuals {
         public unbindEmptySpaceFooterCell(cell: controls.ITablixCell): void {
             // Not needed for Table
         }
-        
+
         /**
          * Measurement Helper.
          */
@@ -719,7 +719,7 @@ module powerbi.visuals {
             this.lastAllowHeaderResize = true;
             this.waitingForSort = false;
         }
-        
+
         /**
          * Note: Public for testability.
          */
@@ -953,7 +953,7 @@ module powerbi.visuals {
             this.waitingForSort = true;
             this.hostServices.onCustomSort(TablixUtils.getCustomSortEventArgs(queryName, sortDirection));
         }
-        
+
         /**
          * Note: Public for testability.
          */

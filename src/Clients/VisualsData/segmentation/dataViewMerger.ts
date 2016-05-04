@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -27,9 +27,9 @@
 module powerbi.data.segmentation {
 
     export interface DataViewTableSegment extends DataViewTable {
-        /** 
+        /**
          * Index of the last item that had a merge flag in the underlying data.
-         * We assume merge flags are not random but adjacent to each other. 
+         * We assume merge flags are not random but adjacent to each other.
          */
         lastMergeIndex?: number;
     }
@@ -40,9 +40,9 @@ module powerbi.data.segmentation {
     }
 
     export interface DataViewCategoricalSegment extends DataViewCategorical {
-        /** 
+        /**
          * Index of the last item that had a merge flag in the underlying data.
-         * We assume merge flags are not random but adjacent to each other. 
+         * We assume merge flags are not random but adjacent to each other.
          */
         lastMergeIndex?: number;
     }
@@ -50,7 +50,7 @@ module powerbi.data.segmentation {
     export interface DataViewMatrixSegmentNode extends DataViewMatrixNode {
         /**
          * Index of the last item that had a merge flag in the underlying data.
-         * We assume merge flags are not random but adjacent to each other. 
+         * We assume merge flags are not random but adjacent to each other.
          */
         isMerge?: boolean;
     }
@@ -88,16 +88,21 @@ module powerbi.data.segmentation {
             debug.assertValue(source, 'source');
             debug.assertValue(segment, 'segment');
 
-            if (segment.rows.length === 0)
+            if (_.isEmpty(segment.rows))
                 return;
 
-            merge(source.rows, segment.rows, segment.lastMergeIndex + 1);
+            let mergeIndex = segment.lastMergeIndex + 1;
+            merge(source.rows, segment.rows, mergeIndex);
+
+            debug.assert(!source.identity === !segment.identity, 'The existence of identity in the new segment is different than the source');
+            if (segment.identity)
+                merge(source.identity, segment.identity, mergeIndex);
         }
 
         /**
          * Merge categories values and identities
-         * 
-         * Note: Public for testability 
+         *
+         * Note: Public for testability
          */
         export function mergeCategorical(source: DataViewCategorical, segment: DataViewCategoricalSegment): void {
             debug.assertValue(source, 'source');
@@ -113,22 +118,15 @@ module powerbi.data.segmentation {
                     let sourceCategory = source.categories[categoryIndex];
 
                     debug.assert(DataViewAnalysis.areMetadataColumnsEquivalent(sourceCategory.source, segmentCategory.source), "Source and segment category have different sources.");
+                    debug.assert(_.isUndefined(sourceCategory.values) ? _.isUndefined(sourceCategory.identity) : true, 'Source category is missing values but has identities.');
 
-                    if (!sourceCategory.values && segmentCategory.values) {
-                        sourceCategory.values = [];
-                        debug.assert(!sourceCategory.identity, "Source category is missing values but has identities.");
-                    }
-
+                    let mergeIndex = segment.lastMergeIndex + 1;
                     if (segmentCategory.values) {
-                        merge(sourceCategory.values, segmentCategory.values, segment.lastMergeIndex + 1);
-                    }
-
-                    if (!sourceCategory.identity && segmentCategory.identity) {
-                        sourceCategory.identity = [];
+                        merge(sourceCategory.values, segmentCategory.values, mergeIndex);
                     }
 
                     if (segmentCategory.identity) {
-                        merge(sourceCategory.identity, segmentCategory.identity, segment.lastMergeIndex + 1);
+                        merge(sourceCategory.identity, segmentCategory.identity, mergeIndex);
                     }
                 }
             }
@@ -148,19 +146,20 @@ module powerbi.data.segmentation {
                         sourceValue.values = [];
                     }
 
+                    let mergeIndex = segment.lastMergeIndex + 1;
                     if (segmentValue.values) {
-                        merge(sourceValue.values, segmentValue.values, segment.lastMergeIndex + 1);
+                        merge(sourceValue.values, segmentValue.values, mergeIndex);
                     }
 
                     if (segmentValue.highlights) {
-                        merge(sourceValue.highlights, segmentValue.highlights, segment.lastMergeIndex + 1);
+                        merge(sourceValue.highlights, segmentValue.highlights, mergeIndex);
                     }
                 }
             }
         }
 
         /**
-         * Merges the segment array starting at the specified index into the source array 
+         * Merges the segment array starting at the specified index into the source array
          * and returns the segment slice that wasn't merged.
          * The segment array is spliced up to specified index in the process.
          */
@@ -215,4 +214,4 @@ module powerbi.data.segmentation {
             return i;
         }
     }
-} 
+}

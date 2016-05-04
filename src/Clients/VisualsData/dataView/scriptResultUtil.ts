@@ -38,6 +38,8 @@ module powerbi {
     import FieldExprHierarchyLevelAggrPattern = powerbi.data.FieldExprHierarchyLevelAggrPattern;
     import FieldExprMeasurePattern = powerbi.data.FieldExprMeasurePattern;
     import FieldExprPattern = powerbi.data.FieldExprPattern;
+    import FieldExprPercentilePattern = powerbi.data.FieldExprPercentilePattern;
+    import FieldExprPercentOfGrandTotalPattern = powerbi.data.FieldExprPercentOfGrandTotalPattern;
     import IFieldExprPatternVisitor = powerbi.data.IFieldExprPatternVisitor;
     import QueryProjectionsByRole = data.QueryProjectionsByRole;
 
@@ -169,6 +171,14 @@ module powerbi {
 
             public visitMeasure(measure: FieldExprMeasurePattern): string {
                 return ScriptInputColumnNameVisitor.getNameForProperty(measure, this.federatedSchema);
+            }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): string {
+                return FieldExprPattern.visit(percentile.arg, this);
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): string {
+                return FieldExprPattern.visit(percentOfGrandTotal.baseExpr, this);
             }
 
             private static getNameForHierarchy(pattern: FieldExprHierarchyPattern, federatedScheam: FederatedConceptualSchema): string {

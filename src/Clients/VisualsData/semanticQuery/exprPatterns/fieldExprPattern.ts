@@ -36,6 +36,8 @@ module powerbi.data {
         hierarchyLevel?: FieldExprHierarchyLevelPattern;
         hierarchyLevelAggr?: FieldExprHierarchyLevelAggrPattern;
         measure?: FieldExprMeasurePattern;
+        percentile?: FieldExprPercentilePattern;
+        percentOfGrandTotal?: FieldExprPercentOfGrandTotalPattern;
     }
 
     /** By design there is no default, no-op visitor. Components concerned with patterns need to be aware of all patterns as they are added. */
@@ -49,6 +51,8 @@ module powerbi.data {
         visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): T;
         visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): T;
         visitMeasure(measure: FieldExprMeasurePattern): T;
+        visitPercentile(percentile: FieldExprPercentilePattern): T;
+        visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): T;
     }
 
     export interface FieldExprEntityPattern {
@@ -93,51 +97,61 @@ module powerbi.data {
         variationName: string;
     }
 
+    export interface FieldExprPercentilePattern {
+        arg: FieldExprPattern;
+        k: number;
+        exclusive: boolean;
+    }
+
+    export interface FieldExprPercentOfGrandTotalPattern {
+        baseExpr: FieldExprPattern;
+    }
+
     export module SQExprBuilder {
         export function fieldExpr(fieldExpr: FieldExprPattern): SQExpr {
             let sqExpr = FieldExprPattern.visit<SQExpr>(fieldExpr, FieldExprToSQExprVisitor.instance);
             debug.assertValue(sqExpr, 'Failed to convert FieldExprPattern into SQExpr');
             return sqExpr;
         }
-        
+
         export function fromColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQAggregationExpr {
             return aggregate(fromColumn(columnAggr), columnAggr.aggregate);
         }
-        
+
         export function fromColumn(column: FieldExprColumnPattern): SQColumnRefExpr {
             return columnRef(fromEntity(column), column.name);
         }
-        
+
         export function fromEntity(entityPattern: FieldExprEntityPattern): SQEntityExpr {
             return entity(entityPattern.schema, entityPattern.entity, entityPattern.entityVar);
         }
-        
+
         export function fromEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQAggregationExpr {
             return aggregate(fromEntity(entityAggr), entityAggr.aggregate);
         }
-        
+
         export function fromHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQAggregationExpr {
             return aggregate(fromHierarchyLevel(hierarchyLevelAggr), hierarchyLevelAggr.aggregate);
         }
-        
+
         export function fromHierarchyLevel(hierarchyLevelPattern: FieldExprHierarchyLevelPattern): SQHierarchyLevelExpr {
             return hierarchyLevel(fromHierarchy(hierarchyLevelPattern), hierarchyLevelPattern.level);
         }
-        
+
         export function fromHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr {
-             return hierarchy(fromEntity(hierarchyPattern), hierarchyPattern.name);
+            return hierarchy(fromEntity(hierarchyPattern), hierarchyPattern.name);
         }
 
         class FieldExprToSQExprVisitor implements IFieldExprPatternVisitor<SQExpr> {
             public static instance: FieldExprToSQExprVisitor = new FieldExprToSQExprVisitor();
 
             public visitColumn(column: FieldExprColumnPattern): SQColumnRefExpr {
-                return fromColumn(column);   
+                return fromColumn(column);
             }
 
             public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQAggregationExpr {
                 return fromColumnAggr(columnAggr);
-            } 
+            }
 
             public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariationPattern: FieldExprColumnHierarchyLevelVariationPattern): SQPropertyVariationSourceExpr {
                 return propertyVariationSource(
@@ -151,7 +165,7 @@ module powerbi.data {
             }
 
             public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQAggregationExpr {
-                return fromEntityAggr(entityAggr);   
+                return fromEntityAggr(entityAggr);
             }
 
             public visitHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr {
@@ -168,6 +182,19 @@ module powerbi.data {
 
             public visitMeasure(measure: FieldExprMeasurePattern): SQMeasureRefExpr {
                 return measureRef(this.visitEntity(measure), measure.name);
+            }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): SQPercentileExpr {
+                let arg = SQExprBuilder.fieldExpr(percentile.arg);
+                return SQExprBuilder.percentile(arg, percentile.k, percentile.exclusive);
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): SQArithmeticExpr {
+                let baseSQExpr = SQExprBuilder.fieldExpr(percentOfGrandTotal.baseExpr);
+                return arithmetic(
+                    baseSQExpr,
+                    SQExprBuilder.scopedEval(baseSQExpr, []),
+                    ArithmeticOperatorKind.Divide);
             }
         }
     }
@@ -261,6 +288,16 @@ module powerbi.data {
             }
         }
 
+        public visitPercentile(expr: SQPercentileExpr): FieldExprPattern {
+            return {
+                percentile: {
+                    arg: expr.arg.accept(this),
+                    k: expr.k,
+                    exclusive: expr.exclusive,
+                }
+            };
+        }
+
         public visitHierarchy(expr: SQHierarchyExpr): FieldExprPattern {
             let sourcePattern = expr.arg.accept(SourceExprPatternBuilder.instance);
 
@@ -301,6 +338,18 @@ module powerbi.data {
             }
 
             return { hierarchyLevel: hierarchyLevel };
+        }
+
+        public visitArithmetic(expr: SQArithmeticExpr): FieldExprPattern {
+            let percentOfGrandTotalPattern: FieldExprPattern = {
+                percentOfGrandTotal: {
+                    baseExpr: expr.left.accept(this)
+                }
+            };
+
+            if (SQExpr.equals(expr, SQExprBuilder.fieldExpr(percentOfGrandTotalPattern))) {
+                return percentOfGrandTotalPattern;
+            }
         }
     }
 
@@ -398,7 +447,11 @@ module powerbi.data {
                 return visitHierarchyLevelAggr(fieldExprPattern.hierarchyLevelAggr, visitor);
             if (fieldExprPattern.measure)
                 return visitMeasure(fieldExprPattern.measure, visitor);
-                
+            if (fieldExprPattern.percentile)
+                return visitPercentile(fieldExprPattern.percentile, visitor);
+            if (fieldExprPattern.percentOfGrandTotal)
+                return visitPercentOfGrandTotal(fieldExprPattern.percentOfGrandTotal, visitor);
+
             debug.assertFail('failed to visit a fieldExprPattern.');
             return;
         }
@@ -410,7 +463,7 @@ module powerbi.data {
             return visitor.visitColumn(column);
         }
 
-        function visitColumnAggr<T>(columnAggr: FieldExprColumnAggrPattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitColumnAggr<T>(columnAggr: FieldExprColumnAggrPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(columnAggr, 'columnAggr');
             debug.assertValue(visitor, 'visitor');
 
@@ -419,7 +472,7 @@ module powerbi.data {
 
         function visitColumnHierarchyLevelVariation<T>(
             columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern,
-            visitor: IFieldExprPatternVisitor<T>): T{
+            visitor: IFieldExprPatternVisitor<T>): T {
 
             debug.assertValue(columnHierarchyLevelVariation, 'columnHierarchyLevelVariation');
             debug.assertValue(visitor, 'visitor');
@@ -427,46 +480,60 @@ module powerbi.data {
             return visitor.visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation);
         }
 
-        function visitEntity<T>(entity: FieldExprEntityPattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitEntity<T>(entity: FieldExprEntityPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(entity, 'entity');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitEntity(entity);
         }
-        
-        function visitEntityAggr<T>(entityAggr: FieldExprEntityAggrPattern, visitor: IFieldExprPatternVisitor<T>): T{
+
+        function visitEntityAggr<T>(entityAggr: FieldExprEntityAggrPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(entityAggr, 'entityAggr');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitEntityAggr(entityAggr);
         }
 
-        function visitHierarchy<T>(hierarchy: FieldExprHierarchyPattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitHierarchy<T>(hierarchy: FieldExprHierarchyPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(hierarchy, 'hierarchy');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitHierarchy(hierarchy);
         }
 
-        function visitHierarchyLevel<T>(hierarchyLevel: FieldExprHierarchyLevelPattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitHierarchyLevel<T>(hierarchyLevel: FieldExprHierarchyLevelPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(hierarchyLevel, 'hierarchyLevel');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitHierarchyLevel(hierarchyLevel);
         }
 
-        function visitHierarchyLevelAggr<T>(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitHierarchyLevelAggr<T>(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(hierarchyLevelAggr, 'hierarchyLevelAggr');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitHierarchyLevelAggr(hierarchyLevelAggr);
         }
 
-        function visitMeasure<T>(measure: FieldExprMeasurePattern, visitor: IFieldExprPatternVisitor<T>): T{
+        function visitMeasure<T>(measure: FieldExprMeasurePattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(measure, 'measure');
             debug.assertValue(visitor, 'visitor');
 
             return visitor.visitMeasure(measure);
+        }
+
+        function visitPercentile<T>(percentile: FieldExprPercentilePattern, visitor: IFieldExprPatternVisitor<T>): T {
+            debug.assertValue(percentile, 'percentile');
+            debug.assertValue(visitor, 'visitor');
+
+            return visitor.visitPercentile(percentile);
+        }
+
+        function visitPercentOfGrandTotal<T>(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern, visitor: IFieldExprPatternVisitor<T>): T {
+            debug.assertValue(percentOfGrandTotal, 'percentOfGrandTotal');
+            debug.assertValue(visitor, 'visitor');
+
+            return visitor.visitPercentOfGrandTotal(percentOfGrandTotal);
         }
 
         export function toColumnRefSQExpr(columnPattern: FieldExprColumnPattern): SQColumnRefExpr {
@@ -477,8 +544,14 @@ module powerbi.data {
 
         export function getAggregate(fieldExpr: FieldExprPattern): QueryAggregateFunction {
             debug.assertValue(fieldExpr, 'fieldExpr');
-       
+
             return visit(fieldExpr, FieldExprPatternAggregateVisitor.instance);
+        }
+
+        export function isAggregation(fieldExpr: FieldExprPattern): boolean {
+            debug.assertValue(fieldExpr, 'fieldExpr');
+
+            return visit(fieldExpr, FieldExprPatternIsAggregationVisitor.instance);
         }
 
         export function hasFieldExprName(fieldExpr: FieldExprPattern): boolean {
@@ -565,6 +638,65 @@ module powerbi.data {
             public visitMeasure(measure: FieldExprMeasurePattern): QueryAggregateFunction {
                 return;
             }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): QueryAggregateFunction {
+                // NOTE: Percentile behaves like an aggregate (i.e., can be performed over numeric columns like a SUM), but
+                // this function can't really convey that because percentile (intentionally) isn't in QueryAggregateFunction enum.
+                // This should be revisited when we have UI support for the Percentile aggregate.
+                return;
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): QueryAggregateFunction {
+                return SQExprInfo.getAggregate(SQExprBuilder.fieldExpr(percentOfGrandTotal.baseExpr));
+            }
+        }
+
+        class FieldExprPatternIsAggregationVisitor implements IFieldExprPatternVisitor<boolean> {
+            public static instance: FieldExprPatternIsAggregationVisitor = new FieldExprPatternIsAggregationVisitor();
+
+            public visitColumn(column: FieldExprColumnPattern): boolean {
+                return false;
+            }
+
+            public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): boolean {
+                return true;
+            }
+
+            public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): boolean {
+                return false;
+            }
+
+            public visitEntity(entity: FieldExprEntityPattern): boolean {
+                return false;
+            }
+
+            public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): boolean {
+                return true;
+            }
+
+            public visitHierarchy(hierarchy: FieldExprHierarchyPattern): boolean {
+                return false;
+            }
+
+            public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): boolean {
+                return false;
+            }
+
+            public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): boolean {
+                return true;
+            }
+
+            public visitMeasure(measure: FieldExprMeasurePattern): boolean {
+                return true;
+            }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): boolean {
+                return true;
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): boolean {
+                return true;
+            }
         }
 
         class FieldExprToEntityExprPatternBuilder implements IFieldExprPatternVisitor<FieldExprEntityItemPattern> {
@@ -604,6 +736,14 @@ module powerbi.data {
 
             public visitMeasure(measure: FieldExprMeasurePattern): FieldExprEntityItemPattern {
                 return FieldExprToEntityExprPatternBuilder.toEntityItemExprPattern(measure);
+            }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): FieldExprEntityItemPattern {
+                return FieldExprPattern.visit(percentile.arg, this);
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): FieldExprEntityItemPattern {
+                return FieldExprPattern.visit(percentOfGrandTotal.baseExpr, this);
             }
 
             private static toEntityItemExprPattern(exprPattern: FieldExprEntityItemPattern): FieldExprEntityItemPattern {

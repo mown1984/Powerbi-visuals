@@ -157,6 +157,7 @@ module powerbi.visuals {
         private dragHandle: D3.Selection;
         private hoverLine: D3.Selection;
         private lastInteractiveSelectedColumnIndex: number;
+        private scaleDetector: SVGScaleDetector;
 
         private interactivityService: IInteractivityService;
         private animator: IGenericAnimator;
@@ -323,9 +324,36 @@ module powerbi.visuals {
 
                     let categorical: DataViewCategorical = dataView.categorical;
                     let tooltipInfo: TooltipDataItem[];
+
                     if (tooltipsEnabled) {
-                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, categoryValue, value, null, null, seriesIndex);
+                        // This tooltip is using in combo chart and mobile tooltip.
+                        tooltipInfo = [];
+
+                        if (category.source) {
+                            tooltipInfo.push({
+                                displayName: category.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(categoryValue, category.source, formatStringProp),
+                            });
+                        }
+
+                        // This dynamicSeries tooltip is only using in mobile tooltip.
+                        if (hasDynamicSeries) {
+                            if (!category.source || category.source !== categorical.values.source) {
+                                // Category/series on the same column -- don't repeat its value in the tooltip.
+                                tooltipInfo.push({
+                                    displayName: categorical.values.source.displayName,
+                                    value: converterHelper.formatFromMetadataColumn(grouped[seriesIndex].name, categorical.values.source, formatStringProp),
+                                });
+                            }
+                        }
+                        if (value != null) {
+                            tooltipInfo.push({
+                                displayName: valuesMetadata.displayName,
+                                value: converterHelper.formatFromMetadataColumn(value, valuesMetadata, formatStringProp),
+                            });
+                        }
                     }
+
                     let categoryKey = category && !_.isEmpty(category.identity) && category.identity[categoryIndex] ? category.identity[categoryIndex].key : categoryIndex;
 
                     let dataPoint: LineChartDataPoint = {
@@ -465,6 +493,7 @@ module powerbi.visuals {
             this.colors = options.style.colorPalette.dataColors;
             this.isInteractiveChart = options.interactivity && options.interactivity.isInteractiveLegend;
             this.cartesianVisualHost = options.cartesianHost;
+            this.scaleDetector = new SVGScaleDetector(this.cartesainSVG);
 
             let chartType = options.chartType;
             this.isComboChart = chartType === CartesianChartType.ComboChart || chartType === CartesianChartType.LineClusteredColumnCombo || chartType === CartesianChartType.LineStackedColumnCombo;
@@ -642,7 +671,7 @@ module powerbi.visuals {
             let metaDataColumn = this.data ? this.data.categoryMetadata : undefined;
             let categoryDataType: ValueTypeDescriptor = AxisHelper.getCategoryValueType(metaDataColumn);
             let xDomain = AxisHelper.createDomain(data.series, categoryDataType, this.data.isScalar, options.forcedXDomain, options.ensureXDomain);
-            let hasZeroValueInXDomain = options.valueAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(xDomain);
+            let hasZeroValueInXDomain = options.categoryAxisScaleType === axisScale.log && !AxisHelper.isLogScalePossible(xDomain);
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: preferredPlotArea.width,
                 dataDomain: xDomain,
@@ -1500,21 +1529,21 @@ module powerbi.visuals {
          */
         private findIndex(pointX: number, offsetX?: number): number {
             // we are using mouse coordinates that do not know about any potential CSS transform scale
-            let svgNode = <SVGSVGElement>(this.mainGraphicsSVG.node());
-            let ratios = SVGUtil.getTransformScaleRatios(svgNode);
-            if (!Double.equalWithPrecision(ratios.x, 1.0, 0.00001)) {
-                pointX = pointX / ratios.x;
+            let xScale = this.scaleDetector.getScale().x;
+            if (!Double.equalWithPrecision(xScale, 1.0, 0.00001)) {
+                pointX = pointX / xScale;
             }
             if (offsetX) {
                 pointX += offsetX;
             }
 
-            let scaleX = powerbi.visuals.AxisHelper.invertScale(this.xAxisProperties.scale, pointX);
+            let index = powerbi.visuals.AxisHelper.invertScale(this.xAxisProperties.scale, pointX);
             if (this.data.isScalar) {
-                scaleX = AxisHelper.findClosestXAxisIndex(scaleX, this.data.categoryData);
+                // When we have scalar data the inverted scale produces a category value, so we need to search for the closest index.
+                index = AxisHelper.findClosestXAxisIndex(index, this.data.categoryData);
             }
 
-            return scaleX;
+            return index;
         }
 
         private getPosition(x: number, pathElement: D3.D3Element): SVGPoint {
@@ -1801,10 +1830,9 @@ module powerbi.visuals {
          */
         private adjustPathXCoordinate(x: number): number {
             if (this.shouldAdjustMouseCoordsOnPathsForStroke) {
-                let svgNode = <SVGSVGElement>(this.mainGraphicsSVG.node());
-                let ratios = SVGUtil.getTransformScaleRatios(svgNode);
-                if (!Double.equalWithPrecision(ratios.x, 1.0, 0.00001)) {
-                    x -= LineChart.pathXAdjustment * ratios.x;
+                let xScale = this.scaleDetector.getScale().x;
+                if (!Double.equalWithPrecision(xScale, 1.0, 0.00001)) {
+                    x -= LineChart.pathXAdjustment * xScale;
                 }
                 else {
                     x -= LineChart.pathXAdjustment;

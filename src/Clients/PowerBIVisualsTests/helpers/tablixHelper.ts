@@ -78,10 +78,6 @@ module powerbitests.tablixHelper {
         element.css(CssConstants.maxWidthProperty, viewport.width);
         element.css(CssConstants.positionProperty, CssConstants.absoluteValue);
 
-        var featureSwitches: powerbi.visuals.MinervaVisualFeatureSwitches = {
-            scrollableVisuals: true,
-        };
-        var visualPluginService = powerbi.visuals.visualPluginFactory.createMinerva(featureSwitches);
         var sortCallback = options.onCustomSortCallback ? options.onCustomSortCallback : (args: powerbi.CustomSortEventArgs) => { };
         var hostService: powerbi.IVisualHostServices = <any>{
             getLocalizedString: (stringId: string) => stringId,
@@ -93,7 +89,11 @@ module powerbitests.tablixHelper {
         if (options.formatCallback)
             spyOn(powerbi.visuals.valueFormatter, 'formatValueColumn').and.callFake(options.formatCallback);
 
-        var v: powerbi.IVisual = visualPluginService.getPlugin(options.visualType).create();
+        var v: powerbi.IVisual;
+        switch (options.visualType) {
+            case powerbi.visuals.plugins.matrix.name: v = new powerbi.visuals.Matrix({}); break;
+            case powerbi.visuals.plugins.table.name: v = new powerbi.visuals.Table({}); break;
+        }
         v.init({
             element: element,
             host: hostService,

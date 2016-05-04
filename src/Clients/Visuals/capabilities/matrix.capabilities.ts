@@ -59,15 +59,18 @@ module powerbi.visuals {
                     },
                     rowSubtotals: {
                         type: { bool: true },
-                        displayName: data.createDisplayNameGetter('Visual_TotalRow')
+                        displayName: data.createDisplayNameGetter('Visual_TotalRow'),
+                        suppressFormatPainterCopy: true,
                     },
                     columnSubtotals: {
                         type: { bool: true },
-                        displayName: data.createDisplayNameGetter('Visual_TotalColumn')
+                        displayName: data.createDisplayNameGetter('Visual_TotalColumn'),
+                        suppressFormatPainterCopy: true,
                     },
                     autoSizeColumnWidth: {
                         type: { bool: true },
-                        displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width')
+                        displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width'),
+                        suppressFormatPainterCopy: true,
                     },
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),

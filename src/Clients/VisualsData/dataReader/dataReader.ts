@@ -101,8 +101,30 @@ module powerbi.data {
     export interface QueryGeneratorResult {
         command: DataReaderQueryCommand;
         splits?: DataViewSplitTransform[];
+
+        /** If the query generator needs to rewrite the input query, this property will contain information about the important changes. */
+        queryRewrites?: QueryRewriteRecordContainer[];
     }
 
+    /** In each instance of QueryRewriteRecordContainer, exactly one of the optional properties will be populated with change record. */
+    export interface QueryRewriteRecordContainer {
+        selectExprAdded?: QueryRewriteSelectExprAddedRecord;
+        projectionQueryRefChanged?: QueryRewriteProjectionQueryRefChangedRecord;
+    }
+
+    /** Indicates a new SQExpr got added at a particular index. */
+    export interface QueryRewriteSelectExprAddedRecord {
+        selectIndex: number;
+        namedSQExpr: NamedSQExpr;
+    }
+
+    /** Indicates a queryRef in a particular role got changed. */
+    export interface QueryRewriteProjectionQueryRefChangedRecord {
+        role: string;
+        oldQueryRef: string;
+        newQueryRef: string;
+    }
+    
     export interface DataReaderTransformResult {
         dataView?: DataView;
         restartToken?: RestartToken;

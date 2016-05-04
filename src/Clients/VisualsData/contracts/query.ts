@@ -71,6 +71,7 @@ module powerbi.data {
         Column?: QueryColumnExpression;
         Measure?: QueryMeasureExpression;
         Aggregation?: QueryAggregationExpression;
+        Percentile?: QueryPercentileExpression;
         Hierarchy?: QueryHierarchyExpression;
         HierarchyLevel?: QueryHierarchyLevelExpression;
         PropertyVariationSource?: QueryPropertyVariationSourceExpression;
@@ -134,6 +135,12 @@ module powerbi.data {
     export interface QueryAggregationExpression {
         Function: QueryAggregateFunction;
         Expression: QueryExpressionContainer;
+    }
+
+    export interface QueryPercentileExpression {
+        Expression: QueryExpressionContainer;
+        K: number;
+        Exclusive?: boolean;
     }
 
     export interface QueryHierarchyExpression {

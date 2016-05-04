@@ -41,11 +41,13 @@ module powerbi.visuals {
                     },
                     totals: {
                         type: { bool: true },
-                        displayName: data.createDisplayNameGetter('Visual_Totals')
+                        displayName: data.createDisplayNameGetter('Visual_Totals'),
+                        suppressFormatPainterCopy: true,
                     },
                     autoSizeColumnWidth: {
                         type: { bool: true },
-                        displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width')
+                        displayName: data.createDisplayNameGetter('Visual_Adjust_Column_Width'),
+                        suppressFormatPainterCopy: true,
                     },
                     textSize: {
                         displayName: data.createDisplayNameGetter('Visual_TextSize'),

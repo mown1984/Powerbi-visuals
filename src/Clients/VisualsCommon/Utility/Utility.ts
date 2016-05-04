@@ -737,6 +737,10 @@ module jsCommon {
             return regex.test(url);
         }
         
+        public static isLocalUrl(url: string): boolean {
+            return _.startsWith(url, "data:") || _.startsWith(url, "blob:");
+        }
+
         /**
          * Downloads a content string as a file.
          * @param content Content stream.
