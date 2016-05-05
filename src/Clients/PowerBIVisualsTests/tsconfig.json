@@ -132,7 +132,6 @@
     "customVisuals/sampleDataViews/TimelineData.ts",
     "customVisuals/sampleDataViews/valueByAgeData.ts",
     "customVisuals/sampleDataViews/ProductSalesByDateData.ts",
-    "customVisuals/sampleDataViews/PulseChartData.ts",
 
     "customVisuals/VisualBuilderBase.ts",
     "customVisuals/asterPlotTests.ts",
@@ -151,7 +150,6 @@
     "customVisuals/timelineTests.ts",
     "customVisuals/ganttTests.ts",
     "customVisuals/chicletSlicerTests.ts",
-    "customVisuals/streamGraphTests.ts",
-    "customVisuals/pulseChartTests.ts"
+    "customVisuals/streamGraphTests.ts"
   ]
 }

@@ -58,8 +58,7 @@ module powerbi.visuals {
             "gantt",
             "sunburstCustom",
             "timeline",
-            "owlGauge",
-            "pulseChart"
+            "owlGauge"
         ];
 
         private static mobileInteractiveVisuals: string[] = [

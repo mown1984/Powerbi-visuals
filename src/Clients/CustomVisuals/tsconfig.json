@@ -29,7 +29,6 @@
         "visuals/gantt/visual/gantt.ts",
         "visuals/timeline/visual/timeline.ts",
         "visuals/streamGraph/visual/streamGraph.ts",
-        "visuals/pulseChart/visual/pulseChart.ts",
         "visuals/sunburst/visual/sunburst.ts",
         "plugins.ts",
         "services/customVisualPluginService.ts"
