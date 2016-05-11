@@ -441,9 +441,25 @@ declare module powerbi {
 
         /** Indicates that aggregates should not be computed across groups with different values of this column. */
         discourageAggregationAcrossGroups?: boolean;
+
+        /** The aggregates computed for this column, if any. */
+        aggregates?: DataViewColumnAggregates;
     }
 
     export interface DataViewSegmentMetadata {
+    }
+
+    export interface DataViewColumnAggregates {
+        subtotal?: PrimitiveValue;
+        max?: PrimitiveValue;
+        min?: PrimitiveValue;
+        count?: number;
+
+        /** Client-computed maximum value for a column. */
+        maxLocal?: PrimitiveValue;
+
+        /** Client-computed maximum value for a column. */
+        minLocal?: PrimitiveValue;
     }
 
     export interface DataViewCategorical {
@@ -480,17 +496,13 @@ declare module powerbi {
     }
 
     export interface DataViewValueColumn extends DataViewCategoricalColumn {
-        subtotal?: any;
-        max?: any;
-        min?: any;
         highlights?: any[];
         identity?: DataViewScopeIdentity;
+    }
 
-        /** Client-computed maximum value for a column. */
-        maxLocal?: any;
-
-        /** Client-computed maximum value for a column. */
-        minLocal?: any;
+    // NOTE: The following is needed for backwards compatibility and should be deprecated.  Callers should use
+    // DataViewMetadataColumn.aggregates instead.
+    export interface DataViewValueColumn extends DataViewColumnAggregates {
     }
 
     export interface DataViewCategoryColumn extends DataViewCategoricalColumn {
@@ -553,17 +565,8 @@ declare module powerbi {
         value?: any;
     }
 
-    export interface DataViewTreeNodeMeasureValue extends DataViewTreeNodeValue {
-        subtotal?: any;
-        max?: any;
-        min?: any;
+    export interface DataViewTreeNodeMeasureValue extends DataViewTreeNodeValue, DataViewColumnAggregates {
         highlight?: any;
-
-        /** Client-computed maximum value for a column. */
-        maxLocal?: any;
-
-        /** Client-computed maximum value for a column. */
-        minLocal?: any;
     }
 
     export interface DataViewTreeNodeGroupValue extends DataViewTreeNodeValue {
@@ -1085,6 +1088,14 @@ declare module powerbi.extensibility {
 
 declare module powerbi.extensibility {
 
+    export interface IVisualPluginOptions {
+        capabilities: VisualCapabilities;
+    }
+
+    export interface IVisualConstructor {
+        __capabilities__: VisualCapabilities;
+    }
+
     // These are the base interfaces. These should remain empty
     // All visual versions should extend these for type compatability
 
@@ -1095,6 +1106,7 @@ declare module powerbi.extensibility {
     export interface VisualUpdateOptions { }
 
     export interface VisualConstructorOptions { }
+  
 }
 
 
@@ -1667,12 +1679,12 @@ declare module powerbi {
         /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
         destroy?(): void;
 
-        /** 
-         * Notifies the IVisual of an update (data, viewmode, size change). 
+        /**
+         * Notifies the IVisual of an update (data, viewmode, size change).
          */
         update?(options: VisualUpdateOptions): void;
 
-        /** 
+        /**
          * Notifies the IVisual to resize.
          *
          * @param finalViewport This is the viewport that the visual will eventually be resized to.
@@ -1680,9 +1692,9 @@ declare module powerbi {
          */
         onResizing?(finalViewport: IViewport, resizeMode?: ResizeMode): void;
 
-        /** 
+        /**
          * Notifies the IVisual of new data being provided.
-         * This is an optional method that can be omitted if the visual is in charge of providing its own data. 
+         * This is an optional method that can be omitted if the visual is in charge of providing its own data.
          */
         onDataChanged?(options: VisualDataChangedOptions): void;
 
@@ -1697,11 +1709,14 @@ declare module powerbi {
 
         /** Gets the set of objects that the visual is currently displaying. */
         enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+
+        /** Gets the set of object repetitions that the visual can display. */
+        enumerateObjectRepetition?(): VisualObjectRepetition[];
     }
 
     /** Parameters available to a CustomizeQueryMethod */
     export interface CustomizeQueryOptions {
-        /** 
+        /**
          * The data view mapping for this visual with some additional information. CustomizeQueryMethod implementations
          * are expected to edit this in-place.
          */
@@ -1732,7 +1747,7 @@ declare module powerbi {
 
     /**
      * Defines the visual filtering capabilities for various filter kinds.
-     * By default all visuals support attribute filters and measure filters in their innermost scope. 
+     * By default all visuals support attribute filters and measure filters in their innermost scope.
      */
     export interface VisualFilterMappings {
         measureFilter?: VisualFilterMapping;
@@ -1751,7 +1766,7 @@ declare module powerbi {
 
         /** Defines how filters are understood by the visual. This is used by query generation */
         filterMappings?: VisualFilterMappings;
-        
+
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
 
@@ -1806,7 +1821,7 @@ declare module powerbi {
     export interface VisualImplicitSortingClause {
         role: string;
         direction: SortDirection;
-    }    
+    }
 
     /** Defines the capabilities of an IVisual. */
     export interface VisualInitOptions {
@@ -1908,6 +1923,10 @@ declare module powerbi {
         geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
         geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
         geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
+
+        /** returns data immediately if it is locally available (e.g. in cache), null if not in cache */
+        tryGeocodeImmediate(query: string, category?: string): IGeocodeCoordinate;
+        tryGeocodeBoundaryImmediate(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IGeocodeBoundaryCoordinate;
     }
 
     export interface IGeocodeCoordinate {
@@ -1936,7 +1955,7 @@ declare module powerbi {
 
     export interface IGeocodeBoundaryPolygon {
         nativeBing: string;
-        
+
         /** array of lat/long pairs as [lat1, long1, lat2, long2,...] */
         geographic?: Float64Array;
 
@@ -2006,7 +2025,6 @@ declare module powerbi {
         /** The filter after analyzed. It will be the default filter if it has defaultValue and the pre-analyzed filter is undefined. */
         filter: ISemanticFilter;
     }
-    
 
     /** Defines behavior for IVisual interaction with the host environment. */
     export interface IVisualHostServices {
@@ -2288,5 +2306,26 @@ declare module powerbi {
     
     export interface EnumerateVisualObjectInstancesOptions {
         objectName: string;
+    }
+}
+
+
+
+declare module powerbi {
+    import Selector = powerbi.data.Selector;
+
+    export interface VisualObjectRepetition {
+        /** The selector that identifies the objects. */
+        selector: Selector;
+
+        /** The set of repetition descriptors for this object. */
+        objects: {
+            [objectName: string]: DataViewRepetitionObjectDescriptor;
+        };
+    }
+
+    export interface DataViewRepetitionObjectDescriptor {
+        /** Properties used for formatting (e.g., Conditional Formatting). */
+        formattingProperties?: string[];
     }
 }

@@ -25,31 +25,31 @@
  */
 
 module powerbitests.customVisuals {
-	import VisualClass = powerbi.visuals.samples.DotPlot;
+    import VisualClass = powerbi.visuals.samples.DotPlot;
 
-	describe("DotPlot", () => {
-		describe('capabilities', () => {
-			it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
-		});
+    describe("DotPlot", () => {
+        describe('capabilities', () => {
+            it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
+        });
 
-		describe("DOM tests", () => {
-			let visualBuilder: DotPlotBuilder;
-			let dataViews: powerbi.DataView[];
+        describe("DOM tests", () => {
+            let visualBuilder: DotPlotBuilder;
+            let dataViews: powerbi.DataView[];
 
-			beforeEach(() => {
-				visualBuilder = new DotPlotBuilder();
-				dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
-			});
+            beforeEach(() => {
+                visualBuilder = new DotPlotBuilder();
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
+            });
 
-			it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
-			it("update", (done) => {
-				visualBuilder.update(dataViews);
-				setTimeout(() => {
-					expect(visualBuilder.mainElement.children(".dotplotSelector").children(".dotplotGroup").length)
-						.toBeGreaterThan(0);
-					expect(visualBuilder.mainElement.children('.axisGraphicsContext').children(".x.axis").children(".tick").length)
-						.toBe(dataViews[0].categorical.categories[0].values.length);
+            it("update", (done) => {
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.children(".dotplotSelector").children(".dotplotGroup").length)
+                        .toBeGreaterThan(0);
+                    expect(visualBuilder.mainElement.children('.axisGraphicsContext').children(".x.axis").children(".tick").length)
+                        .toBe(dataViews[0].categorical.categories[0].values.length);
 					visualBuilder.mainElement.children(".labels").children(".data-labels").each((i, x) => {
 						let fill = x.getAttribute("style").replace("fill: ", "").replace(";", "");
 						let hexFill = fill;
@@ -60,25 +60,94 @@ module powerbitests.customVisuals {
 						expect(hexFill).toBe("rgb(18, 52, 86)");
 						expect(window.getComputedStyle(x).fontSize).toBe("12px");
 					});
-					done();
-				}, powerbitests.DefaultWaitForRender);
-			});
-		});
-	});
+                    done();
+                }, powerbitests.DefaultWaitForRender);
+            });
+        });
 
-	class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
-		constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-			super(height, width, isMinervaVisualPlugin);
-			this.build();
-			this.init();
-		}
+        describe("xAxis tests", () => {
+            let visualBuilder: DotPlotBuilder;
+            let dataViews: powerbi.DataView[];
+            
+            beforeEach(() => {
+                visualBuilder = new DotPlotBuilder();
+                dataViews = [new powerbitests.customVisuals.sampleDataViews.DotPlotData().getDataView()];
 
-		public get mainElement() {
-			return this.element.children('svg');
-		}
+                dataViews[0].metadata.objects = {
+                    categoryAxis: {
+                        show: true,
+                        showAxisTitle: true
+                    }
+                };
+            });
 
-		private build(): void {
-			this.visual = new VisualClass();
-		}
-	}
+            it("check show xAxis", () => {
+                visualBuilder.update(dataViews);
+
+                let lines = $('line');
+                expect(lines.length).toEqual(7);
+            });
+
+            it("check hide xAxis", () => {
+                dataViews[0].metadata.objects["categoryAxis"]["show"] = false;
+                visualBuilder.update(dataViews);
+
+                let lines = $('line');
+                for (var index = 0; index < lines.length; index++)
+                    expect(lines[index].style.opacity).toEqual('0');
+            });
+
+            it("check hide xAxis label", (done) => {
+                dataViews[0].metadata.objects["categoryAxis"]["show"] = false;
+                dataViews[0].metadata.objects["categoryAxis"]["showAxisTitle"] = false;
+                visualBuilder.update(dataViews);
+                setTimeout(function() {
+
+                    let lines = $('.xAxisLabel');
+                    expect(lines.length).toEqual(0);
+                    done();
+                }, powerbitests.DefaultWaitForRender);
+            });
+
+            it("check show xAxis label", () => {
+                dataViews[0].metadata.objects["categoryAxis"]["showAxisTitle"] = true;
+                visualBuilder.update(dataViews);
+
+                let lines = $('.xAxisLabel');
+                expect(lines.length).toEqual(1);
+            });
+
+            it("check label color", (done) => {
+                let customColor = '#ff0000';
+                dataViews[0].metadata.objects["categoryAxis"]["labelColor"] = { solid: { color: customColor } };
+                dataViews[0].metadata.objects["categoryAxis"]["show"] = true;
+                visualBuilder.update(dataViews);
+                setTimeout(() => {
+                    let title = $('.xAxisLabel');
+                    expect(title.css('fill')).toEqual(customColor);
+                    let texts = d3.selectAll('g.tick text');
+                    for (let i = 0; i < texts.length; i++)
+                        for (let j = 0; j < texts[i].length; j++)
+                            expect(texts[i][j].style.fill).toEqual(customColor);
+                    done();
+                }, powerbitests.DefaultWaitForRender);
+            });
+        });
+    });
+
+    class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
+        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+            super(height, width, isMinervaVisualPlugin);
+            this.build();
+            this.init();
+        }
+
+        public get mainElement() {
+            return this.element.children('svg');
+        }
+
+        private build(): void {
+            this.visual = new VisualClass();
+        }
+    }
 }

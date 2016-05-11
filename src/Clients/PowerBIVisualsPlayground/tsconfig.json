@@ -20,7 +20,6 @@
         "sampleDataViews/SalesByCountryData.ts",
         "sampleDataViews/SalesByDayOfWeekData.ts",
         "sampleDataViews/ServicesByUsers.ts",
-        "sampleDataViews/SimpleAreaRangeData.ts",
         "sampleDataViews/SimpleDotPlotData.ts",
         "sampleDataViews/SimpleTimelineData.ts",
         "sampleDataViews/SimpleFunnelData.ts",

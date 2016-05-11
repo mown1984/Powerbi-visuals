@@ -1446,7 +1446,7 @@ module powerbi.visuals {
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
             // we are resilient here when we do not have data view.
             if (this.dataView) {
-                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, false, controls.TablixType.Matrix);
+                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, controls.TablixType.Matrix);
             }
 
             return enumeration.complete();

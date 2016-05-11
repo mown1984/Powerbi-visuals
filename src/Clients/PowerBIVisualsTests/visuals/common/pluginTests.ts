@@ -46,7 +46,8 @@ module powerbitests {
                     displayName: "col2",
                     queryName: "col2",
                     isMeasure: true,
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                    roles: { Y: true, Values: true, }
                 }
             ],
         };

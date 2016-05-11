@@ -211,19 +211,37 @@ module powerbitests.mocks {
             return deferred;
         }
 
-        public geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): any {   
-            // Only the absoluteString is actually used for drawing, but a few other aspects of the geoshape result are checked for simple things like existence and length
-            var result = {
-                locations: [{
-                    absoluteString: "84387.1,182914 84397.3,182914 84401.3,182914 84400.9,182898 84417.4,182898 84421.3,182885 84417.4,182877 84418.2,182865 84387.2,182865 84387.1,182914", // A valid map string taken from a piece of Redmond's path
-                    absolute: [84387.1, 182914, 84397.3, 182914, 84401.3, 182914, 84400.9, 182898, 84417.4, 182898, 84421.3, 182885, 84417.4, 182877, 84418.2, 182865, 84387.2, 182865, 84387.1, 182914],
-                    geographic: [undefined, undefined, undefined], // This needs to be an array with length > 2 for checks in map; contents aren't used.
-                    absoluteBounds: {
-                        width: 34.2,
-                        height: 49,
-                    },
-                }]
+        public tryGeocodeImmediate(query: string, category?: string): powerbi.IGeocodeCoordinate {
+            if (3 === this.callNumber++ % 5)
+                return null;
+            var resultIndex = this.callNumber % this.resultList.length;
+            return this.resultList[resultIndex];
+        }
+
+        private makeGeocodeBoundary(): powerbi.IGeocodeBoundaryCoordinate {
+            // this is colorado
+            return {
+                latitude: 38.998542785645,
+                longitude: -105.54781341553,
+                locations: [
+                    {
+                        nativeBing: "80s-rx-z-K8zo6-6sJ4i2k81wcln3wwopE6_i5qOr8-z1mZuy71-hzc",
+                        geographic: new Float64Array([36.9929, -102.04222, 41.00232, -102.05168, 41.00066, -109.04998, 38.2964, -109.06039, 38.15945, -109.04225, 36.99902, -109.04517, 36.9929, -102.04222]),
+                        absolute: new Float64Array([113534.74600178, 204082.10164961, 113520.96887822, 196565.23845887, 103328.95579378, 196568.44181674, 103313.79513244, 201684.50661498, 103340.21342222, 201938.40086642, 103335.960864, 204070.94208762, 113534.74600178, 204082.10164961]),
+                        absoluteString: "113534.74600177776 204082.10164960928 113520.96887822222 196565.23845886585 103328.95579377777 196568.44181673933 103313.79513244443 201684.5066149847 103340.21342222221 201938.4008664172 103335.96086399998 204070.9420876242 113534.74600177776 204082.10164960928 ",
+                        absoluteBounds: {
+                            left: 103313.79513244,
+                            top: 196565.23845887,
+                            width: 10220.950869333,
+                            height: 7516.8631907434
+                        }
+                    }
+                ]
             };
+        }
+
+        public geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): any {   
+            var result = this.makeGeocodeBoundary();
             var deferred = $.Deferred();
             deferred.resolve(result);
             return deferred;
@@ -245,6 +263,12 @@ module powerbitests.mocks {
             let deferred = $.Deferred();
             deferred.resolve(result);
             return deferred;
+        }
+
+        public tryGeocodeBoundaryImmediate(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): powerbi.IGeocodeBoundaryCoordinate {
+            if (2 === this.callNumber++ % 5)
+                return null;
+            return this.makeGeocodeBoundary();
         }
     }
 

@@ -633,10 +633,10 @@ module powerbi.visuals {
             let layers = layerIndex == null ? this.layers : [this.layers[layerIndex]];
 
             return _.all(layers, (layer, index) => {
-                    if (!layerDataViews[index])
-                        return true;
-                    return layer.supportsTrendLine && layer.supportsTrendLine();
-                });
+                if (!layerDataViews[index])
+                    return true;
+                return layer.supportsTrendLine && layer.supportsTrendLine();
+            });
         }
 
         private shouldShowLegendCard(): boolean {
@@ -882,7 +882,7 @@ module powerbi.visuals {
                     if (!_.isEmpty(this.layerLegendData.dataPoints)) {
                         this.layerLegendData.dataPoints.forEach((dataPoint) => dataPoint.layerNumber = i);
                     }
-                    
+
                     legendData.dataPoints = legendData.dataPoints.concat(this.layerLegendData.dataPoints || []);
                     legendData.fontSize = this.layerLegendData.fontSize || SVGLegend.DefaultFontSizeInPt;
                     if (this.layerLegendData.grouped) {
@@ -1088,10 +1088,14 @@ module powerbi.visuals {
             let plotArea = axesLayout.plotArea;
             let plotAreaRect = this.getPlotAreaRect(axesLayout, legendMargins);
             let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations);
+            let easing = this.animator && this.animator.getEasing();
 
             this.renderBackgroundImage(plotAreaRect);
 
-            this.svgAxes.renderAxes(axesLayout, duration);
+            if (!_.isEmpty(easing))  
+                this.svgAxes.renderAxes(axesLayout, duration, easing);
+            else
+                this.svgAxes.renderAxes(axesLayout, duration);
 
             this.renderReferenceLines(axesLayout);
 
@@ -1229,10 +1233,16 @@ module powerbi.visuals {
                 }
 
                 let svgLabels: D3.UpdateSelection;
-                if (this.animator && !suppressAnimations) {
+                let animator = this.animator;
+                if (animator && !suppressAnimations) {
                     let isPlayAxis = this.isPlayAxis();
-                    let duration = isPlayAxis ? PlayChart.FrameAnimationDuration : this.animator.getDuration();
-                    svgLabels = NewDataLabelUtils.animateDefaultLabels(labelRegion, dataLabels, duration, labelsAreNumeric, isPlayAxis ? 'linear' : undefined);
+                    let duration = isPlayAxis ? PlayChart.FrameAnimationDuration : animator.getDuration();
+                    svgLabels = NewDataLabelUtils.animateDefaultLabels(
+                        labelRegion,
+                        dataLabels,
+                        duration,
+                        labelsAreNumeric,
+                        isPlayAxis ? 'linear' : animator.getEasing());
                 }
                 else {
                     svgLabels = NewDataLabelUtils.drawDefaultLabels(labelRegion, dataLabels, labelsAreNumeric);
@@ -1671,12 +1681,12 @@ module powerbi.visuals {
             debug.assertNonEmpty(extent, 'updateExtentPosition, extent');
             let newStartPos = extent[0];
             let halfScrollBarLen = scrollBarLength / 2;
-            
+
             if (extent[0] === extent[1]) {
                 // user clicked on the brush background, width will be zero, offset x by half width
                 newStartPos = newStartPos - halfScrollBarLen;
             }
-            
+
             if (extent[1] - extent[0] > scrollBarLength) {
                 // user is dragging one edge after mousedown in the background, figure out which side is moving
                 // also, center up on the new extent center
@@ -1686,7 +1696,7 @@ module powerbi.visuals {
                 else
                     newStartPos = extent[1] - halfDragLength - halfScrollBarLen;
             }
-            
+
             if (this.isHorizontal)
                 this.brushGraphicsContext.select(".extent").attr('x', newStartPos);
             else
@@ -1698,7 +1708,7 @@ module powerbi.visuals {
                 this.brushGraphicsContext.select(".extent").attr("width", extentLength);
             else
                 this.brushGraphicsContext.select(".extent").attr("height", extentLength);
-    }
+        }
     }
 
     class ScrollableAxes {
@@ -2052,7 +2062,7 @@ module powerbi.visuals {
             axisSelection.selectAll('text').append('title').text((d, i) => values[i]);
         }
 
-        public renderAxes(axesLayout: CartesianAxesLayout, duration: number): void {
+        public renderAxes(axesLayout: CartesianAxesLayout, duration: number, easing: string = 'cubic-in-out'): void {
             let marginLimits = axesLayout.marginLimits;
             let plotArea = axesLayout.plotArea;
             let viewport = axesLayout.viewport;
@@ -2081,10 +2091,11 @@ module powerbi.visuals {
                 let xAxisGraphicsElement = this.xAxisGraphicsContext;
                 if (duration) {
                     xAxisGraphicsElement
-                        .transition()
-                        .duration(duration)
-                        .call(axes.x.axis)
-                        .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.x.values);
+                              .transition()
+                              .duration(duration)
+                              .ease(easing)
+                              .call(axes.x.axis)
+                              .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.x.values);
                 }
                 else {
                     xAxisGraphicsElement
@@ -2138,6 +2149,7 @@ module powerbi.visuals {
                     y1AxisGraphicsElement
                         .transition()
                         .duration(duration)
+                        .ease(easing)
                         .call(axes.y1.axis)
                         .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.y1.values);
                 }
@@ -2176,6 +2188,7 @@ module powerbi.visuals {
                         y2AxisGraphicsElement
                             .transition()
                             .duration(duration)
+                            .ease(easing)
                             .call(axes.y2.axis)
                             .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.y2.values);
                     }
@@ -2455,10 +2468,10 @@ module powerbi.visuals {
 
         public setAxisLinesVisibility(axisLinesVisibility: AxisLinesVisibility): void {
             this.showLinesOnX = EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnBothAxis) ||
-            EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnXAxis);
+                EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnXAxis);
 
             this.showLinesOnY = EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnBothAxis) ||
-            EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnYAxis);
+                EnumExtensions.hasFlag(axisLinesVisibility, AxisLinesVisibility.ShowLinesOnYAxis);
         }
 
         public setMaxMarginFactor(factor: number): void {

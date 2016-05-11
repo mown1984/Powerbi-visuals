@@ -12,7 +12,7 @@
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
  *   
- *  The above copyright notice and this permission notice shall be included in 
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
  *   
  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
@@ -145,6 +145,8 @@ module powerbi.visuals {
             tooltipsEnabled: boolean = true): WaterfallChartData {
             debug.assertValue(palette, 'palette');
 
+            let reader = data.createIDataViewCategoricalReader(dataView);
+
             let formatStringProp = WaterfallChart.formatStringProp;
             let categories = dataView.categorical.categories || [];
 
@@ -186,15 +188,13 @@ module powerbi.visuals {
             let dataPoints: WaterfallChartDataPoint[] = [];
             let categoryValues: any[] = [];
             let categoryMetadata: DataViewMetadataColumn;
-            let values = dataView.categorical.values;
             let valuesMetadata: DataViewMetadataColumn = undefined;
-            if (!_.isEmpty(values)) {
-                let column = values[0];
-                valuesMetadata = column.source;
+            if (reader.hasValues("Y")) {
+                valuesMetadata = reader.getValueMetadataColumn("Y");
                 let labelFormatString = valuesMetadata.format;
                 if (_.isEmpty(categories)) {
                     // We have values but no category, just show the total bar.
-                    pos = posMax = column.values[0];
+                    pos = posMax = reader.getValue("Y", 0);
                     posMin = 0;
                 }
                 else {
@@ -203,17 +203,30 @@ module powerbi.visuals {
                     categoryValues = categoryColumn.values.slice();
                     categoryValues.push(totalLabel);
 
-                    for (var categoryIndex = 0, catLen = column.values.length; categoryIndex < catLen; categoryIndex++) {
+                    for (var categoryIndex = 0, catLen = reader.getCategoryCount(); categoryIndex < catLen; categoryIndex++) {
                         let category = categoryValues[categoryIndex];
-                        let value = column.values[categoryIndex] || 0;
+                        let value = reader.getValue("Y", categoryIndex) || 0;
                         let identity = SelectionIdBuilder.builder()
                             .withCategory(categoryColumn, categoryIndex)
                             .withMeasure(valuesMetadata.queryName)
                             .createSelectionId();
 
                         let tooltipInfo: TooltipDataItem[];
+
                         if (tooltipsEnabled) {
-                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, category, value);
+                            tooltipInfo = [];
+
+                            tooltipInfo.push({
+                                displayName: categoryMetadata.displayName,
+                                value: converterHelper.formatFromMetadataColumn(category, categoryMetadata, formatStringProp),
+                            });
+
+                            if (value != null) {
+                                tooltipInfo.push({
+                                    displayName: valuesMetadata.displayName,
+                                    value: converterHelper.formatFromMetadataColumn(value, valuesMetadata, formatStringProp),
+                                });
+                            }
                         }
                         let color = value > 0 ? increaseColor : decreaseColor;
 
@@ -242,8 +255,21 @@ module powerbi.visuals {
                 }
 
                 let tooltipInfo: TooltipDataItem[];
+
                 if (tooltipsEnabled) {
-                    tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataView.categorical, totalLabel, pos);
+                    tooltipInfo = [];
+                    if (categoryMetadata) {
+                        tooltipInfo.push({
+                            displayName: categoryMetadata.displayName,
+                            value: totalLabel,
+                        });
+                    }
+                    if (pos != null) {
+                        tooltipInfo.push({
+                            displayName: valuesMetadata.displayName,
+                            value: converterHelper.formatFromMetadataColumn(pos, valuesMetadata, formatStringProp),
+                        });
+                    }
                 }
                 let totalIdentity = SelectionId.createNull();
                 dataPoints.push({
@@ -308,22 +334,22 @@ module powerbi.visuals {
                 axesLabels: { x: null, y: null },
             };
 
-                if (dataView) {
-                    if (dataView.metadata && dataView.metadata.objects) {
-                        let objects = dataView.metadata.objects;
+            if (dataView) {
+                if (dataView.metadata && dataView.metadata.objects) {
+                    let objects = dataView.metadata.objects;
 
-                        let labelsObj = <DataLabelObject>objects['labels'];
-                        if (labelsObj) {
-                            dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, this.data.dataLabelsSettings);
-                        }
-                        sentimentColors = this.getSentimentColorsFromObjects(objects);
+                    let labelsObj = <DataLabelObject>objects['labels'];
+                    if (labelsObj) {
+                        dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, this.data.dataLabelsSettings);
                     }
+                    sentimentColors = this.getSentimentColorsFromObjects(objects);
+                }
 
-                    if (dataView.categorical) {
-                        this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService, this.tooltipsEnabled);
-                    }
+                if (dataView.categorical) {
+                    this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService, this.tooltipsEnabled);
                 }
             }
+        }
 
         public enumerateObjectInstances(enumeration: ObjectEnumerationBuilder, options: EnumerateVisualObjectInstancesOptions): void {
             switch (options.objectName) {
@@ -389,7 +415,7 @@ module powerbi.visuals {
             let data = this.clippedData = this.data;
             let categoryCount = data.categories.length;
             let preferredPlotArea = this.getPreferredPlotArea(false, categoryCount, CartesianChart.MinOrdinalRectThickness);
-            
+
             let cartesianLayout = CartesianChart.getLayout(
                 null,
                 {
@@ -574,7 +600,7 @@ module powerbi.visuals {
             let bars = this.createRects(dataPoints);
             let connectors = this.createConnectors(dataPoints);
 
-            if (this.tooltipsEnabled) 
+            if (this.tooltipsEnabled)
                 TooltipManager.addTooltip(bars, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
 
             let hasSelection = this.interactivityService && this.interactivityService.hasSelection();

@@ -32,6 +32,7 @@ module powerbitests.customVisuals {
     import DataColorPalette = powerbi.visuals.DataColorPalette;
     import ColumnChartType = powerbi.visuals.ColumnChartType;
     import ColumnChartSeries = powerbi.visuals.ColumnChartSeries;
+    import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     powerbitests.mocks.setLocale();
 
@@ -131,36 +132,77 @@ module powerbitests.customVisuals {
                         });
                     });
                 });
+
+                describe("MekkoColumnChartData", () => {
+                    describe("converter", () => {
+                        let visualBuilder: MekkoChartBuilder,
+                            dataViews: powerbi.DataView[];
+
+                        beforeEach(() => {
+                            visualBuilder = new MekkoChartBuilder();
+                            dataViews = [new MekkoChartData().getDataView()];
+                        });
+
+                       it("mekko columnBorder on", done => {
+                            dataViews[0].metadata.objects = {
+                                columnBorder: {
+                                    show: true
+                                }
+                            };
+                            visualBuilder.updateRenderTimeout(dataViews, () => {
+                                expect(visualBuilder.mainElement.find('.mekkoborder').first().attr('width')).toBeGreaterThan(0);
+                                done();
+                            });
+                        });
+
+                        it("nodes border change color", done => {
+                            dataViews[0].metadata.objects = {
+                                columnBorder: {
+                                    color: { solid: { color: "#123123" } }
+                                }
+                            };
+
+                            visualBuilder.updateRenderTimeout(dataViews, () => {
+                                colorAssert(visualBuilder.mainElement.find('rect.mekkoborder').first().css('fill'), "#123123");
+                                done();
+                            });
+
+                        });
+                    });
+
+                });
             });
         });
+
     });
 
-    class MekkoChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
-        }
+        class MekkoChartBuilder extends VisualBuilderBase<VisualClass> {
+            constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+                super(height, width, isMinervaVisualPlugin);
+                this.build();
+                this.init();
+            }
 
-        public get mainElement() {
-            return this.element
-                        .children("svg")
-                        .children("g.axisGraphicsContext")
-                        .parent();
-        }
+            public get mainElement() {
+                return this.element
+                    .children("svg")
+                    .children("g.axisGraphicsContext")
+                    .parent();
+            }
 
-        public get categoriesAxis() {
-            return this.mainElement
-                        .children("g.axisGraphicsContext")
-                        .children("g.x.axis.showLinesOnAxis");
-        }
+            public get categoriesAxis() {
+                return this.mainElement
+                    .children("g.axisGraphicsContext")
+                    .children("g.x.axis.showLinesOnAxis");
+            }
 
-        public get columnElement() {
-            return this.mainElement.find("svg.svgScrollable g.axisGraphicsContext .columnChartMainGraphicsContext");
-        }
+            public get columnElement() {
+                return this.mainElement.find("svg.svgScrollable g.axisGraphicsContext .columnChartMainGraphicsContext");
+            }
 
-        private build(): void {
-            this.visual = new VisualClass(null);
+            private build(): void {
+                this.visual = new VisualClass(null);
+            }
         }
     }
-}
+        

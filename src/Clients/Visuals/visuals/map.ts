@@ -124,7 +124,7 @@ module powerbi.visuals {
     /**
      * Used because data points used in D3 pie layouts are placed within a container with pie information.
      */
-    interface MapSliceContainer {
+    export interface MapSliceContainer {
         data: MapSlice;
     }
 
@@ -406,7 +406,7 @@ module powerbi.visuals {
             bubbles.exit().remove();
 
             if (this.tooltipsEnabled) {
-                TooltipManager.addTooltip(bubbles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                TooltipManager.addTooltip(this.bubbleGraphicsContext, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
                 bubbles.style("pointer-events", "all");
             }
 
@@ -446,7 +446,7 @@ module powerbi.visuals {
             this.updateInternalDataLabels(viewport, redrawDataLabels);
 
             if (this.tooltipsEnabled) {
-                TooltipManager.addTooltip(slices, (tooltipEvent: TooltipEvent) => tooltipEvent.data.data.tooltipInfo);
+                TooltipManager.addTooltip(this.sliceGraphicsContext, (tooltipEvent: TooltipEvent) => tooltipEvent.data.data.tooltipInfo);
                 slices.style("pointer-events", "all");
             }
 
@@ -456,8 +456,10 @@ module powerbi.visuals {
             }
 
             let behaviorOptions: MapBehaviorOptions = {
+                bubbleEventGroup: this.bubbleGraphicsContext,
+                sliceEventGroup: this.sliceGraphicsContext,
                 bubbles: bubbles,
-                slices: this.sliceGraphicsContext.selectAll("path"),
+                slices: slices,
                 clearCatcher: this.clearCatcher,
                 dataPoints: allData,
             };
@@ -783,11 +785,12 @@ module powerbi.visuals {
             this.updateInternalDataLabels(viewport, redrawDataLabels);
 
             if (this.tooltipsEnabled) {
-                TooltipManager.addTooltip(shapes, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                TooltipManager.addTooltip(this.shapeGraphicsContext, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
                 shapes.style("pointer-events", "all");
             }
 
             let behaviorOptions: MapBehaviorOptions = {
+                shapeEventGroup: this.shapeGraphicsContext,
                 shapes: shapes,
                 clearCatcher: this.clearCatcher,
                 dataPoints: data.shapeData,
@@ -1103,43 +1106,69 @@ module powerbi.visuals {
         }
 
         private enqueueGeoCode(dataPoint: MapDataPoint): void {
-            let geocodingContext = this.geocodingContext;
-            this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
-                if (location && geocodingContext === this.geocodingContext) {
-                    dataPoint.location = location;
-                    this.addDataPoint(dataPoint);
-                }
-            });
+            let location = this.geocoder.tryGeocodeImmediate(dataPoint.geocodingQuery, this.geocodingCategory);
+            if (location)
+                this.completeGeoCode(dataPoint, location);
+            else {
+                let geocodingContext = this.geocodingContext;
+                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
+                    if (location && geocodingContext === this.geocodingContext) {
+                        this.completeGeoCode(dataPoint, location);
+                    }
+                });
+            }
+        }
+
+        private completeGeoCode(dataPoint: MapDataPoint, location: IGeocodeCoordinate): void {
+            dataPoint.location = location;
+            this.addDataPoint(dataPoint);
         }
 
         private enqueueGeoCodeAndGeoShape(dataPoint: MapDataPoint, params: FilledMapParams): void {
-            let geocodingContext = this.geocodingContext;
-            this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
-                if (location && geocodingContext === this.geocodingContext) {
-                    dataPoint.location = location;
-                    this.enqueueGeoShape(dataPoint, params);
-                }
-            });
+            let location = this.geocoder.tryGeocodeImmediate(dataPoint.geocodingQuery, this.geocodingCategory);
+            if (location)
+                this.completeGeoCodeAndGeoShape(dataPoint, params, location);
+            else {
+                let geocodingContext = this.geocodingContext;
+                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory).then((location) => {
+                    if (location && geocodingContext === this.geocodingContext) {
+                        this.completeGeoCodeAndGeoShape(dataPoint, params, location);
+                    }
+                });
+            }
+        }
+
+        private completeGeoCodeAndGeoShape(dataPoint: MapDataPoint, params: FilledMapParams, location: IGeocodeCoordinate): void {
+            dataPoint.location = location;
+            this.enqueueGeoShape(dataPoint, params);
         }
 
         private enqueueGeoShape(dataPoint: MapDataPoint, params: FilledMapParams): void {
             debug.assertValue(dataPoint.location, "cachedLocation");
-            let geocodingContext = this.geocodingContext;
-            this.geocoder.geocodeBoundary(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons)
-                .then((result: IGeocodeBoundaryCoordinate) => {
-                    if (geocodingContext === this.geocodingContext) {
-                        let paths;
-                        if (result.locations.length === 0 || result.locations[0].geographic) {
-                            paths = MapShapeDataPointRenderer.buildPaths(result.locations);
-                        }
-                        else {
-                            MapUtil.calcGeoData(result);
-                            paths = MapShapeDataPointRenderer.buildPaths(result.locations);
-                        }
-                        dataPoint.paths = paths;
-                        this.addDataPoint(dataPoint);
-                    }
-                });
+            let result = this.geocoder.tryGeocodeBoundaryImmediate(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons);
+            if (result)
+                this.completeGeoShape(dataPoint, params, result);
+            else {
+                let geocodingContext = this.geocodingContext;
+                this.geocoder.geocodeBoundary(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons)
+                    .then((result: IGeocodeBoundaryCoordinate) => {
+                        if (geocodingContext === this.geocodingContext)
+                            this.completeGeoShape(dataPoint, params, result);
+                    });
+            }
+        }
+
+        private completeGeoShape(dataPoint: MapDataPoint, params: FilledMapParams, result: IGeocodeBoundaryCoordinate): void {
+            let paths;
+            if (result.locations.length === 0 || result.locations[0].geographic) {
+                paths = MapShapeDataPointRenderer.buildPaths(result.locations);
+            }
+            else {
+                MapUtil.calcGeoData(result);
+                paths = MapShapeDataPointRenderer.buildPaths(result.locations);
+            }
+            dataPoint.paths = paths;
+            this.addDataPoint(dataPoint);
         }
 
         private getOptimumLevelOfDetail(width: number, height: number): number {
@@ -1164,7 +1193,6 @@ module powerbi.visuals {
 
             return MapUtil.MinLevelOfDetail;
         }
-
         private getViewCenter(levelOfDetail: number): Microsoft.Maps.Location {
             let minXmaxY = MapUtil.latLongToPixelXY(this.minLatitude, this.minLongitude, levelOfDetail);
             let maxXminY = MapUtil.latLongToPixelXY(this.maxLatitude, this.maxLongitude, levelOfDetail);

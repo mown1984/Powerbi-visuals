@@ -57,9 +57,9 @@ module powerbi.visuals {
         total: number;
         tooltipItems: TooltipDataItem[];
     }
-    
+
     export interface GaugeDataPointSettings {
-        fillColor:  string;
+        fillColor: string;
         targetColor: string;
     }
 
@@ -303,7 +303,7 @@ module powerbi.visuals {
                 properties: properties
             });
         }
-        
+
         private static getGaugeObjectsProperties(dataView: DataView): GaugeTargetSettings {
             let properties: any = {};
             let objects: GaugeDataViewObjects = <GaugeDataViewObjects>dataView.metadata.objects;
@@ -400,9 +400,9 @@ module powerbi.visuals {
             //   3. We're showing label text for side numbers
             //   4. Data label settings specify to show
             this.showTargetLabel = this.targetSettings.target != null
-            && (this.currentViewport.width > Gauge.MinWidthForTargetLabel || !this.showMinMaxLabelsOnBottom())
-            && this.showSideNumbersLabelText()
-            && this.data.dataLabelsSettings.show;
+                && (this.currentViewport.width > Gauge.MinWidthForTargetLabel || !this.showMinMaxLabelsOnBottom())
+                && this.showSideNumbersLabelText()
+                && this.data.dataLabelsSettings.show;
 
             this.setMargins();
 
@@ -598,13 +598,13 @@ module powerbi.visuals {
 
             return dataLabelsSettings;
         }
-        
+
         private static convertDataPointSettings(dataView: DataView, targetSettings: GaugeTargetSettings): GaugeDataPointSettings {
             
             // Default the fill color the the default fill color. Default the target to undefined as it's only used if there's a target.
             let fillColor = Gauge.DefaultDataPointSettings.fillColor;
             let targetColor: string;
-            
+
             if (dataView && dataView.metadata && dataView.metadata.objects) {
                 // If there is saved metadata, use it for the colors
                 let objects = dataView.metadata.objects;
@@ -614,12 +614,12 @@ module powerbi.visuals {
                 if (targetSettings && (targetSettings.target != null)) {
                     targetColor = DataViewObjects.getFillColor(objects, gaugeProps.dataPoint.target, Gauge.DefaultDataPointSettings.targetColor);
                 }
-            } 
+            }
             else if (targetSettings && (targetSettings.target != null)) {
                 // If there isn't metadata, but a target is set, default to the default target color
                 targetColor = Gauge.DefaultDataPointSettings.targetColor;
             }
-            
+
             return {
                 fillColor: fillColor,
                 targetColor: targetColor

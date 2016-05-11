@@ -34,6 +34,10 @@ module powerbitests {
     import ScatterChart = powerbi.visuals.ScatterChart;
     import SQExpr = powerbi.data.SQExpr;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import CartesianConstructorOptions = powerbi.visuals.CartesianConstructorOptions;
+    import Animator = powerbi.visuals.BaseAnimator;
+    import ChartType = powerbi.visuals.CartesianChartType;
+    import helpers = powerbitests.helpers;
 
     powerbitests.mocks.setLocale();
 
@@ -65,6 +69,10 @@ module powerbitests {
         play: {
             Jan: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.play, 'Jan'),
             Feb: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.play, 'Feb'),
+        },
+        series: {
+            Series1: mocks.dataViewScopeIdentity("Series1"),
+            Series2: mocks.dataViewScopeIdentity("Series2"),
         },
         category1: {
             USA: mocks.dataViewScopeIdentityWithEquality(metadataIdentityFields.category1, 'USA'),
@@ -153,28 +161,28 @@ module powerbitests {
         rows: {
             root: {
                 children: [{
-                            value: 'Jan',
-                            level: 0,
-                            values: {
-                                0: { value: 100 },
-                                1: { value: 200, valueSourceIndex: 1 },
-                                2: { value: 300, valueSourceIndex: 2 },
-                                3: { value: 50 },
-                                4: { value: 75, valueSourceIndex: 1 },
-                                5: { value: 100, valueSourceIndex: 2 },
-                            },
-                        }, {
-                            value: 'Feb',
-                            level: 0,
-                            values: {
-                                0: { value: 400 },
-                                1: { value: 500, valueSourceIndex: 1 },
-                                2: { value: 600, valueSourceIndex: 2 },
-                                3: { value: 125 },
-                                4: { value: 150, valueSourceIndex: 1 },
-                                5: { value: 175, valueSourceIndex: 2 },
-                            },
-                        }]
+                    value: 'Jan',
+                    level: 0,
+                    values: {
+                        0: { value: 100 },
+                        1: { value: 200, valueSourceIndex: 1 },
+                        2: { value: 300, valueSourceIndex: 2 },
+                        3: { value: 50 },
+                        4: { value: 75, valueSourceIndex: 1 },
+                        5: { value: 100, valueSourceIndex: 2 },
+                    },
+                }, {
+                        value: 'Feb',
+                        level: 0,
+                        values: {
+                            0: { value: 400 },
+                            1: { value: 500, valueSourceIndex: 1 },
+                            2: { value: 600, valueSourceIndex: 2 },
+                            3: { value: 125 },
+                            4: { value: 150, valueSourceIndex: 1 },
+                            5: { value: 175, valueSourceIndex: 2 },
+                        },
+                    }]
             },
             levels: [{ sources: [playSource] }]
         },
@@ -184,6 +192,7 @@ module powerbitests {
                     {
                         level: 0,
                         value: "Series1",
+                        identity: metadataIdentities.series.Series1,
                         children: [
                             { level: 1 },
                             { level: 1, levelSourceIndex: 1 },
@@ -193,6 +202,7 @@ module powerbitests {
                     {
                         level: 0,
                         value: "Series2",
+                        identity: metadataIdentities.series.Series2,
                         children: [
                             { level: 1 },
                             { level: 1, levelSourceIndex: 1 },
@@ -464,122 +474,122 @@ module powerbitests {
             root: {
                 childIdentityFields: [metadataIdentityFields.play],
                 children: [
-                {
-                    level: 0,
-                    value: 'Jan',
-                    identity: metadataIdentities.play.Jan,
-                    childIdentityFields: [metadataIdentityFields.category1],
-                    children: [
-                        {
-                            level: 1,
-                            value: 'USA',
-                            identity: metadataIdentities.category1.USA,
-                            childIdentityFields: [metadataIdentityFields.category2],
-                            children: [
-                                {
-                                    level: 2,
-                                    value: 'OR',
-                                    identity: metadataIdentities.category2.OR,
-                                    values: {
-                                        0: { value: 100 },
-                                        1: { value: 200, valueSourceIndex: 1 },
-                                        2: { value: 300, valueSourceIndex: 2 },
-                                    }
-                                }, {
-                                    level: 2,
-                                    value: 'WA',
-                                    identity: metadataIdentities.category2.WA,
-                                    values: {
-                                        0: { value: 550 },
-                                        1: { value: 155, valueSourceIndex: 1 },
-                                        2: { value: 51, valueSourceIndex: 2 },
-                                    }
-                                }]
-                        }, {
-                            level: 1,
-                            value: 'Canada',
-                            identity: metadataIdentities.category1.Canada,
-                            childIdentityFields: [metadataIdentityFields.category2],
-                            children: [
-                                {
-                                    level: 2,
-                                    value: 'AB',
-                                    identity: metadataIdentities.category2.AB,
-                                    values: {
-                                        0: { value: 330 },
-                                        1: { value: 133, valueSourceIndex: 1 },
-                                        2: { value: 31, valueSourceIndex: 2 },
-                                    }
-                                }, {
-                                    level: 2,
-                                    value: 'BC',
-                                    identity: metadataIdentities.category2.BC,
-                                    values: {
-                                        0: { value: 335 },
-                                        1: { value: 135, valueSourceIndex: 1 },
-                                        2: { value: 35, valueSourceIndex: 2 },
-                                    }
-                                }]
-                        }]
-                },
-                {
-                    level: 0,
-                    value: 'Feb',
-                    identity: metadataIdentities.play.Feb,
-                    childIdentityFields: [metadataIdentityFields.category1],
-                    children: [
-                        {
-                            level: 1,
-                            value: 'USA',
-                            identity: metadataIdentities.category1.USA,
-                            childIdentityFields: [metadataIdentityFields.category2],
-                            children: [
-                                {
-                                    level: 2,
-                                    value: 'OR',
-                                    identity: metadataIdentities.category2.OR,
-                                    values: {
-                                        0: { value: 40 },
-                                        1: { value: 50, valueSourceIndex: 1 },
-                                        2: { value: 60, valueSourceIndex: 2 },
-                                    }
-                                }, {
-                                    level: 2,
-                                    value: 'WA',
-                                    identity: metadataIdentities.category2.WA,
-                                    values: {
-                                        0: { value: 770 },
-                                        1: { value: 177, valueSourceIndex: 1 },
-                                        2: { value: 71, valueSourceIndex: 2 },
-                                    }
-                                }]
-                        }, {
-                            level: 1,
-                            value: 'Canada',
-                            identity: metadataIdentities.category1.Canada,
-                            childIdentityFields: [metadataIdentityFields.category2],
-                            children: [
-                                {
-                                    level: 2,
-                                    value: 'AB',
-                                    identity: metadataIdentities.category2.AB,
-                                    values: {
-                                        0: { value: 440 },
-                                        1: { value: 144, valueSourceIndex: 1 },
-                                        2: { value: 41, valueSourceIndex: 2 },
-                                    }
-                                }, {
-                                    level: 2,
-                                    value: 'BC',
-                                    identity: metadataIdentities.category2.BC,
-                                    values: {
-                                        0: { value: 445 },
-                                        1: { value: 145, valueSourceIndex: 1 },
-                                        2: { value: 45, valueSourceIndex: 2 },
-                                    }
-                                }]
-                        }]
-                }]
+                    {
+                        level: 0,
+                        value: 'Jan',
+                        identity: metadataIdentities.play.Jan,
+                        childIdentityFields: [metadataIdentityFields.category1],
+                        children: [
+                            {
+                                level: 1,
+                                value: 'USA',
+                                identity: metadataIdentities.category1.USA,
+                                childIdentityFields: [metadataIdentityFields.category2],
+                                children: [
+                                    {
+                                        level: 2,
+                                        value: 'OR',
+                                        identity: metadataIdentities.category2.OR,
+                                        values: {
+                                            0: { value: 100 },
+                                            1: { value: 200, valueSourceIndex: 1 },
+                                            2: { value: 300, valueSourceIndex: 2 },
+                                        }
+                                    }, {
+                                        level: 2,
+                                        value: 'WA',
+                                        identity: metadataIdentities.category2.WA,
+                                        values: {
+                                            0: { value: 550 },
+                                            1: { value: 155, valueSourceIndex: 1 },
+                                            2: { value: 51, valueSourceIndex: 2 },
+                                        }
+                                    }]
+                            }, {
+                                level: 1,
+                                value: 'Canada',
+                                identity: metadataIdentities.category1.Canada,
+                                childIdentityFields: [metadataIdentityFields.category2],
+                                children: [
+                                    {
+                                        level: 2,
+                                        value: 'AB',
+                                        identity: metadataIdentities.category2.AB,
+                                        values: {
+                                            0: { value: 330 },
+                                            1: { value: 133, valueSourceIndex: 1 },
+                                            2: { value: 31, valueSourceIndex: 2 },
+                                        }
+                                    }, {
+                                        level: 2,
+                                        value: 'BC',
+                                        identity: metadataIdentities.category2.BC,
+                                        values: {
+                                            0: { value: 335 },
+                                            1: { value: 135, valueSourceIndex: 1 },
+                                            2: { value: 35, valueSourceIndex: 2 },
+                                        }
+                                    }]
+                            }]
+                    },
+                    {
+                        level: 0,
+                        value: 'Feb',
+                        identity: metadataIdentities.play.Feb,
+                        childIdentityFields: [metadataIdentityFields.category1],
+                        children: [
+                            {
+                                level: 1,
+                                value: 'USA',
+                                identity: metadataIdentities.category1.USA,
+                                childIdentityFields: [metadataIdentityFields.category2],
+                                children: [
+                                    {
+                                        level: 2,
+                                        value: 'OR',
+                                        identity: metadataIdentities.category2.OR,
+                                        values: {
+                                            0: { value: 40 },
+                                            1: { value: 50, valueSourceIndex: 1 },
+                                            2: { value: 60, valueSourceIndex: 2 },
+                                        }
+                                    }, {
+                                        level: 2,
+                                        value: 'WA',
+                                        identity: metadataIdentities.category2.WA,
+                                        values: {
+                                            0: { value: 770 },
+                                            1: { value: 177, valueSourceIndex: 1 },
+                                            2: { value: 71, valueSourceIndex: 2 },
+                                        }
+                                    }]
+                            }, {
+                                level: 1,
+                                value: 'Canada',
+                                identity: metadataIdentities.category1.Canada,
+                                childIdentityFields: [metadataIdentityFields.category2],
+                                children: [
+                                    {
+                                        level: 2,
+                                        value: 'AB',
+                                        identity: metadataIdentities.category2.AB,
+                                        values: {
+                                            0: { value: 440 },
+                                            1: { value: 144, valueSourceIndex: 1 },
+                                            2: { value: 41, valueSourceIndex: 2 },
+                                        }
+                                    }, {
+                                        level: 2,
+                                        value: 'BC',
+                                        identity: metadataIdentities.category2.BC,
+                                        values: {
+                                            0: { value: 445 },
+                                            1: { value: 145, valueSourceIndex: 1 },
+                                            2: { value: 45, valueSourceIndex: 2 },
+                                        }
+                                    }]
+                            }]
+                    }]
             },
             levels: [{ sources: [playSource] }, { sources: [categorySource1] }, { sources: [categorySource2] }]
         },
@@ -675,7 +685,7 @@ module powerbitests {
             expect(categoricalA.categorical.categories.length).toBe(1);
             expect(categoricalA.categorical.categories[0].source.queryName).toBe('RowGroup3');
             expect(categoricalA.categorical.categories[0].values).toEqual(['OR USA', 'WA USA', 'AB Canada', 'BC Canada']);
-            
+
             let expectedCategoryIdentitiesSQExpr: SQExpr[] = [
                 SQExprBuilder.and(<SQExpr>metadataIdentities.category1.USA.expr, <SQExpr>metadataIdentities.category2.OR.expr),
                 SQExprBuilder.and(<SQExpr>metadataIdentities.category1.USA.expr, <SQExpr>metadataIdentities.category2.WA.expr),
@@ -683,7 +693,7 @@ module powerbitests {
                 SQExprBuilder.and(<SQExpr>metadataIdentities.category1.Canada.expr, <SQExpr>metadataIdentities.category2.BC.expr),
             ];
             expect(categoricalA.categorical.categories[0].identity.length).toEqual(expectedCategoryIdentitiesSQExpr.length);
-            
+
             for (let i = 0, ilen = expectedCategoryIdentitiesSQExpr.length; i < ilen; i++) {
                 // Note: this test code is in the Visuals project, thus it cannot use the jasmine matcher toEqualSQExpr() until we move or copy it over
                 expect(SQExpr.equals(<SQExpr>categoricalA.categorical.categories[0].identity[i].expr, expectedCategoryIdentitiesSQExpr[i])).toBe(true);
@@ -734,4 +744,238 @@ module powerbitests {
             hasSize: true,
         });
     });
+
+    /**
+     * Runs visual validation on playChart.
+     */
+    function playChartDomValidation() {
+        interface Frame {
+            element: JQuery;
+            name: string;
+            index: number;
+        }
+
+        const defaultTopOffset: number = 10;
+        const frameLabelClass: string = ".play-callout";
+        const sliderHandleClass: string = ".noUi-origin";
+        const sliderValueClass: string = ".noUi-value";
+        const playButtonClass: string = ".play";
+        const pauseButtonClass: string = ".pause";
+        const legendClass: string = ".legendItem";
+        const traceLineClass: string = ".traceLine";
+
+        let tracePointRegex: RegExp = /[M|L]/g;
+        let scatterChart: powerbi.IVisual;
+        let element: JQuery;
+        let hostServices: powerbi.IVisualHostServices;
+        let frameAnimationSpeed: number = PlayChart.FrameStepDuration;
+        
+       /**
+        * Builds scatter chart visual.
+        */
+        function buildScatterChart(): powerbi.IVisual {
+            let options: CartesianConstructorOptions;
+            options = {
+                chartType: ChartType.Scatter,
+                trendLinesEnabled: true
+            };
+            options.animator = new Animator();
+            options.isScrollable = true;
+            options.behavior = new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.ScatterChartWebBehavior()]);
+            var chart = new powerbi.visuals.CartesianChart(options);
+            return chart;
+        }
+
+        /**
+         * @returns {string} Returns the label text for active frame. 
+         */
+        function getFrameLabel(): string {
+            return element.find(frameLabelClass).text();
+        }
+
+        /**
+         * Returns selected frame.
+         */
+        function getActiveFrame(): Frame {
+            let handlePosition: number = parseFloat($(sliderHandleClass).css("left"));
+            let valueElements: JQuery = $(sliderValueClass);
+            for (let index = 0; index < valueElements.length; index++) {
+                let valueElement: JQuery = $(valueElements[index]);
+                let position: number = parseFloat(valueElement.css("left"));
+                if (position === handlePosition) {
+
+                    return { index: index, name: valueElement.text(), element: valueElement };
+                }
+            }
+        }
+
+        /**
+         * Counts visible frame names for the slider.
+         */
+        function getVisibleFramesCount(): number {
+            return $(sliderValueClass).length;
+        }
+
+        /**
+         * Sets active frame by index. Expects all the frame names to be visible in order to work properly.
+         * @param index The index of the frame.     
+         */
+        function setActiveFrame(index: number) {
+            let frameElement: JQuery = $($(sliderValueClass)[index]);
+            let left: number = $(frameElement).offset().left;
+            let slider: JQuery = $(sliderHandleClass);
+            let top: number = slider.offset().top + defaultTopOffset;
+            let mouseEvent: MouseEvent = helpers.createMouseEvent(helpers.MouseEventType.mousedown, helpers.ClickEventType.Default, left, top);
+            slider.get(0).dispatchEvent(mouseEvent);
+        }
+
+        beforeEach(() => {
+            (<any>PlayChart)["FrameAnimationDuration"] = 10;
+            hostServices = powerbitests.mocks.createVisualHostServices();
+            element = powerbitests.helpers.testDom('500', '500');
+            scatterChart = buildScatterChart();
+            scatterChart.init({
+                element: element,
+                host: hostServices,
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+                interactivity: { isInteractiveLegend: false },
+            });
+        });
+
+        xit("check that slider contains all the required elements", () => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            // Get play chart properties
+            let frame = getActiveFrame();
+            let frameLabel = getFrameLabel();
+            let framesCount = getVisibleFramesCount();
+
+            // Validate
+            expect(frame.name).toBe("Feb");
+
+            // Be default the last frame is selected.
+            expect(frame.index).toBe(framesCount - 1);
+            expect(frameLabel).toBe(frame.name);
+            expect(framesCount).toBe(2);
+        });
+
+        xit("check the frame switch interactions", (done) => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            setActiveFrame(0); // sets first frame to be active.
+            setTimeout(() => {
+                let frame = getActiveFrame();
+                let frameLabel = getFrameLabel();
+
+                expect(frame.index).toBe(0);
+                expect(frameLabel).toBe("Jan");
+                done();
+            }, frameAnimationSpeed);
+        });
+
+        xit("play pause tests", (done) => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            let frameCount: number = getVisibleFramesCount();
+            let $playButton = $(playButtonClass);
+            $playButton.click();
+
+            let index = 0;
+            let $pauseButton = $(pauseButtonClass);
+            expect($pauseButton.length).toBe(1);
+
+            // check that all the frames are shown. 
+            let intervalId: number = window.setInterval(() => {
+                let frame = getActiveFrame();
+                if (index < frameCount) {
+                    expect(frame.index).toBe(index);
+                    index += 1;
+                } else {
+                    $playButton = $(playButtonClass);
+                    expect(frame.index).toBe(frameCount - 1);
+                    expect($playButton.length).toBe(1);
+                    clearInterval(intervalId);
+                    done();
+                }
+
+            }, frameAnimationSpeed);
+        });
+
+        xit("interrupt play test", function (done) {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            let $playButton: JQuery = $(playButtonClass);
+            $playButton.click();
+            let $pauseButton = $(pauseButtonClass);
+            expect($pauseButton.length).toBe(1);
+
+            var chain: JQueryDeferred<void> = $.Deferred<void>();
+
+            // checks that on play break the play button is shown 
+            // and first frame is visbile.
+            chain.done(() => {
+                setTimeout(() => {
+                    let frame: Frame = getActiveFrame();
+                    $playButton = $(playButtonClass);
+                    expect($playButton.length).toBe(1);
+                    expect(frame.index).toBe(0);
+                    done();
+                }, frameAnimationSpeed);
+            });
+
+            // breakes the play.
+            setTimeout(() => {
+                setActiveFrame(0);
+                chain.resolve();
+            }, frameAnimationSpeed / 2);
+        });
+
+        it("test trace lines", (done) => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            let frameCount = getVisibleFramesCount();
+            let $label: JQuery = $(legendClass).first();
+            helpers.clickElement($label);
+
+            // validate the number of segments on the trace line.
+            setTimeout(() => {
+                let $traceLine: JQuery = $(traceLineClass);
+                expect($traceLine.length).toBe(1);
+                let points = $traceLine.attr("d");
+                var matches = points.match(tracePointRegex);
+                expect(matches.length).toBe(frameCount);
+                done();
+            }, frameAnimationSpeed);
+        });
+    }
+    
+    describe("playChart dom validation", ()=> {
+       playChartDomValidation(); 
+    });
+    
 }

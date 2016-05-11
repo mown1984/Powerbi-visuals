@@ -116,11 +116,6 @@ module powerbi.visuals.visualPluginFactory {
                 animator: new BaseAnimator()
             }));
 
-            // Area Range Chart
-            createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.areaRangeChart, () => new samples.AreaRangeChart({
-                animator: new BaseAnimator()
-            }));
-
             // Force Graph
             createPlugin(this.customVisualPlugins, powerbi.visuals.plugins.forceGraph, () => new samples.ForceGraph());
 

@@ -242,7 +242,7 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 0,
-                        tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }],
+                        tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: "#FF0000",
                         labelFill: labelColor,
                     }, {
@@ -253,7 +253,7 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 1,
-                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "300.00 %" }],
+                        tooltipInfo: [{ displayName: "col3", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "300%" }],
                         color: "#00FF00",
                         labelFill: labelColor,
                     }],
@@ -317,7 +317,7 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 0,
-                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }],
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     }, {
@@ -328,7 +328,7 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 1,
-                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }],
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     }, {
@@ -339,7 +339,7 @@ module powerbitests {
                         key: selectionIds[2].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 2,
-                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }, { displayName: "Percent of first", value: "700.00 %" }, { displayName: "Percent of previous", value: "350.00 %" }],
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }, { displayName: "Percent of first", value: "700%" }, { displayName: "Percent of previous", value: "350%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     }],
@@ -356,7 +356,7 @@ module powerbitests {
             expect(actualData).toEqual(expectedData);
         });
 
-        it("Validate highlighted tooltip", () => {
+        it("Validate highlighted (null) tooltip", () => {
             let categoryValues: any[] = [
                 "John Domo",
                 "Delta Force",
@@ -384,7 +384,7 @@ module powerbitests {
                 .newValueBuilder()
                     .setSource(dataViewMetadataOneMeasure.columns[1])
                     .setValues([100, 200, 700])
-                    .setHighlights([0, 140, 420])
+                    .setHighlights([null, 140, 420])
                     .buildNewValue()
                 .buildValueColumns();
             
@@ -394,15 +394,60 @@ module powerbitests {
 
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, true);
            
-            //first tooltip is regular because highlighted value is 0
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }]);
+            //first highlight tooltip won't show because highlighted value is null
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }]);
             
-            //tooltips with highlighted value
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
-            expect(actualData.slices[3].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }]);
-            expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "420" }, { displayName: "Percent of first", value: "700.00 %" }, { displayName: "Percent of previous", value: "350.00 %" }]);
-            expect(actualData.slices[5].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "420" }, { displayName: "Percent of previous (highlight)", value: "300.00 %" }]);
+            //tooltips with highlighted value. Since first value highlighted value is 0, there is no 'percent of first' value
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
+            expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
+            expect(actualData.slices[2].tooltipInfo).toBe(actualData.slices[3].tooltipInfo);
+        });
+
+        it("Validate highlighted (0) tooltip", () => {
+            let categoryValues: any[] = [
+                "John Domo",
+                "Delta Force",
+                "Jean Tablau"
+            ];
+
+            let objects: DataViewObjects[] = [
+                { dataPoint: { fill: { solid: { color: "#FF0000" } } } },
+                { dataPoint: { fill: { solid: { color: "#00FF00" } } } },
+                { dataPoint: { fill: { solid: { color: "#0000FF" } } } }
+            ];
+
+            dataViewBuilder.setMetadata(dataViewMetadataOneMeasure);
+
+            dataViewBuilder.categoryBuilder()
+                .setSource(dataViewMetadataOneMeasure.columns[0])
+                .setValues(categoryValues)
+                .setIdentity(categoryValues.map((value: any) => {
+                    return mocks.dataViewScopeIdentity(value);
+                }))
+                .setObjects(objects)
+                .buildCategory();
+
+            dataViewBuilder.valueColumnsBuilder()
+                .newValueBuilder()
+                .setSource(dataViewMetadataOneMeasure.columns[1])
+                .setValues([100, 200, 700])
+                .setHighlights([0, 140, 420])
+                .buildNewValue()
+                .buildValueColumns();
+
+            let dataView: DataView = dataViewBuilder.build();
+
+            let defaultDataPointColor: string = "#00FF00";
+
+            let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, true);
+           
+            //first highlight tooltip is regular because the hilight value is 0
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: 'Highlighted', value: '0' }]);
+            
+            //tooltips with highlighted value. Since first value highlighted value is 0, there is no 'percent of first' value
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
+            expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
+            expect(actualData.slices[0].tooltipInfo).toBe(actualData.slices[1].tooltipInfo);
         });
 
         it("validate tooltip info not being created when tooltips are disabled", () => {
@@ -490,7 +535,7 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 0,
-                        tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }],
+                        tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     }, {
@@ -501,7 +546,7 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         selected: false,
                         categoryOrMeasureIndex: 1,
-                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "300.00 %" }],
+                        tooltipInfo: [{ displayName: "col3", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "300%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     }],
@@ -557,7 +602,7 @@ module powerbitests {
                         identity: selectionIds[0],
                         selected: false,
                         key: selectionIds[0].getKey(),
-                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: 'Highlighted', value: '15' }, { displayName: "Percent of first", value: "100.00 %" }],
+                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: 'Highlighted', value: '15' }, { displayName: "Percent of first (highlighted)", value: "100%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                         },
@@ -569,7 +614,7 @@ module powerbitests {
                         identity: SelectionId.createWithHighlight(selectionIds[0]),
                         selected: false,
                         key: SelectionId.createWithHighlight(selectionIds[0]).getKey(),
-                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: 'Highlighted', value: '15' }, { displayName: "Percent of first (highlight)", value: "100.00 %" }],
+                        tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: 'Highlighted', value: '15' }, { displayName: "Percent of first (highlighted)", value: "100%" }],
                         color: sliceColor,
                         highlight: true,
                         originalHighlightValue: 15,
@@ -583,7 +628,7 @@ module powerbitests {
                         identity: selectionIds[1],
                         selected: false,
                         key: selectionIds[1].getKey(),
-                        tooltipInfo: [{ displayName: "col2", value: "900" }, { displayName: 'Highlighted', value: '250' }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "300.00 %" }],
+                        tooltipInfo: [{ displayName: "col3", value: "900" }, { displayName: 'Highlighted', value: '250' }, { displayName: "Percent of first (highlighted)", value: "1,666.67%" }, { displayName: "Percent of previous (highlighted)", value: "1,666.67%" }],
                         color: sliceColor,
                         labelFill: labelColor,
                     },
@@ -595,7 +640,7 @@ module powerbitests {
                         identity: SelectionId.createWithHighlight(selectionIds[1]),
                         selected: false,
                         key: SelectionId.createWithHighlight(selectionIds[1]).getKey(),
-                        tooltipInfo: [{ displayName: "col2", value: "900" }, { displayName: 'Highlighted', value: '250' }, { displayName: "Percent of first (highlight)", value: "1666.67 %" }, { displayName: "Percent of previous (highlight)", value: "1666.67 %" }],
+                        tooltipInfo: [{ displayName: "col3", value: "900" }, { displayName: 'Highlighted', value: '250' }, { displayName: "Percent of first (highlighted)", value: "1,666.67%" }, { displayName: "Percent of previous (highlighted)", value: "1,666.67%" }],
                         color: sliceColor,
                         highlight: true,
                         originalHighlightValue: 250,
@@ -718,9 +763,9 @@ module powerbitests {
             
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "a", value: "1" }, { displayName: "Percent of first", value: "100.00 %" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "b", value: "2" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "c", value: "3" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "150.00 %" }]);
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "a", value: "1" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "b", value: "2" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "c", value: "3" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
     });
 
@@ -873,10 +918,10 @@ module powerbitests {
                 let interactors: JQuery = $(FunnelChart.Selectors.funnel.interactors.selector);
 
                 expect(interactors.length).toBe(1);
-                expect(interactors.eq(0).attr("x")).toBe(bars.eq(0).attr("x"));
+                expect(interactors.eq(0).attr("y")).toBe(bars.eq(0).attr("y"));
 
-                let firstInteractorHeight: number = parseInt(interactors.eq(0).attr("height"), 10);
-                expect(firstInteractorHeight).toBe(FunnelChart.MinimumInteractorSize);
+                let interactorWidth: number = parseInt(interactors.eq(0).attr("width"), 10);
+                expect(interactorWidth).toBe(FunnelChart.MinimumInteractorSize);
                 done();
             }, DefaultWaitForRender);
         });
@@ -1211,8 +1256,6 @@ module powerbitests {
         let dataViewBuilder: DataViewBuilder;
         
         let visualBuilder: VisualBuilder;
-        
-        let translate: number = 62;
         let dataViewMetadata: DataViewMetadata = {
             columns: [
                 { displayName: "col1", queryName: "select0" },
@@ -1312,14 +1355,14 @@ module powerbitests {
                 expect($(".funnelBar").length).toBe(6);
                 expect($(".highlight").length).toBe(3);
 
-                expect(+$(".highlight").eq(0).attr("height"))
-                    .toBeLessThan(+$(".funnelBar").eq(0).attr("height"));
-                expect(+$(".highlight").eq(0).attr("y"))
-                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("y"));
+                expect(+$(".highlight").eq(0).attr("width"))
+                    .toBeLessThan(+$(".funnelBar").eq(0).attr("width"));
+                expect(+$(".highlight").eq(0).attr("x"))
+                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("x"));
 
                 expect($(".funnelChart .axis").find("text").length).toBe(3);
 
-                expect(+$(".funnelBar:not(.highlight)").eq(2).attr("y")).toBe(0);
+                expect(+$(".funnelBar:not(.highlight)").eq(2).attr("x")).toBe(0);
 
                 done();
             }, DefaultWaitForRender);
@@ -1360,15 +1403,15 @@ module powerbitests {
                 expect($(".funnelBar").length).toBe(6);
                 expect($(".highlight").length).toBe(3);
 
-                expect(+$(".highlight").eq(0).attr("height"))
-                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("height"));
-                expect(+$(".highlight").eq(0).attr("y"))
-                    .toBeLessThan(+$(".funnelBar").eq(0).attr("y"));
+                expect(+$(".highlight").eq(0).attr("width"))
+                    .toBeGreaterThan(+$(".funnelBar").eq(0).attr("width"));
+                expect(+$(".highlight").eq(0).attr("x"))
+                    .toBeLessThan(+$(".funnelBar").eq(0).attr("x"));
 
                 expect($(".funnelChart .axis").find("text").length).toBe(3);
 
                 // The largest highlight should start at the farthest left point
-                expect(+$(".highlight").eq(2).attr("y")).toBe(0);
+                expect(+$(".highlight").eq(2).attr("x")).toBe(0);
 
                 done();
             }, DefaultWaitForRender);
@@ -1401,7 +1444,7 @@ module powerbitests {
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
                 let rect: JQuery = $(".funnelChart").find(".funnelBar").first();
-                expect(+rect.attr("width")).toBeLessThan(40);
+                expect(+rect.attr("height")).toBeLessThan(40);
                 done();
             }, DefaultWaitForRender);
         });
@@ -1438,16 +1481,13 @@ module powerbitests {
             let dataView: DataView = dataViewBuilder.build();
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
-            setTimeout(() => {    
-                // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
-                // to what we would think of as the position and size along the x-axis.
-                // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
-
+            setTimeout(() => {
+                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();    
                 let labels: JQuery = $(".funnelChart .labels text");
-                let firstBarHeight: number = +$(".funnelChart").find(".funnelBar").first().attr("height");
-                let firstBarY: number = +$(".funnelChart").find(".funnelBar").first().attr("y");
-                let lastBarHeight: number = +$(".funnelChart").find(".funnelBar").last().attr("height");
-                let lastBarY: number = +$(".funnelChart").find(".funnelBar").last().attr("y");
+                let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
+                let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
+                let lastBarWidth: number = +$(".funnelChart").find(".funnelBar").last().attr("width");
+                let lastBarX: number = +$(".funnelChart").find(".funnelBar").last().attr("x");
 
                 expect(labels.length).toBe(3);
                 expect($(labels[0]).attr("x")).toEqual($(labels[1]).attr("x"));
@@ -1455,12 +1495,12 @@ module powerbitests {
 
                 // Check that the first label is inside and white
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarY + translate);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarY + firstBarHeight + translate);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
 
                 // Check that the last label is outside and equal to fill color
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarY + lastBarHeight + translate);
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
 
                 done();
             }, DefaultWaitForRender);
@@ -1984,16 +2024,13 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-                // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
-                // to what we would think of as the position and size along the x-axis.
-                // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
-                // Format supplied without precision
 
+                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
                 let labels: JQuery = $(".funnelChart .labels text");
-                let firstBarY: number = +$(".funnelChart").find(".funnelBar").first().attr("y");
-                let firstBarHeight: number = +$(".funnelChart").find(".funnelBar").first().attr("height");
-                let lastBarY: number = +$(".funnelChart").find(".funnelBar").last().attr("y");
-                let lastBarHeight: number = +$(".funnelChart").find(".funnelBar").last().attr("height");
+                let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
+                let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
+                let lastBarX: number = +$(".funnelChart").find(".funnelBar").last().attr("x");
+                let lastBarWidth: number = +$(".funnelChart").find(".funnelBar").last().attr("width");
 
                 expect(labels.length).toBe(3);
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
@@ -2005,11 +2042,11 @@ module powerbitests {
                 expect($(labels[0]).text()).toEqual("$1K");
 
                 // Check that the first label is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarY + translate);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarY + firstBarHeight + translate);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
 
                 // Check that the last label is outside
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarY + lastBarHeight);
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
 
                 done();
             }, DefaultWaitForRender);
@@ -2136,28 +2173,25 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-                // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
-                // to what we would think of as the position and size along the x-axis.
-                // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
-
+                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
                 let labels: JQuery = $(".funnelChart .labels text");
-                let firstBarY: number = +$(".funnelChart").find(".funnelBar").first().attr("y");
-                let firstBarHeight: number = +$(".funnelChart").find(".funnelBar").first().attr("height");
+                let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
+                let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
 
                 // The first label should be white and should be inside the bar.
                 expect($(labels[0]).text()).toEqual("$2K");
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarY + translate);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarY + firstBarHeight + translate);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
 
                 // The third label should be the same as the fill color and should be outside the bar.
-                let thirdBarY: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("y");
-                let thirdBarHeight: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("height");
+                let thirdBarX: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("x");
+                let thirdBarWidth: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("width");
                 
                 //Data labels precision = 0
                 expect($(labels[2]).text()).toEqual("$0K");
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
-                expect($(labels[2]).attr("x")).toBeGreaterThan(thirdBarY + thirdBarHeight + translate);
+                expect($(labels[2]).attr("x")).toBeGreaterThan(thirdBarX + thirdBarWidth + transformX);
 
                 done();
             }, DefaultWaitForRender);
@@ -2196,11 +2230,11 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
+                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
                 let labels: JQuery = $(".funnelChart .labels .data-labels");
                 let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
-                let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("height");
-                let firstBarTranslated: number = firstBarX - translate;
-                let firstBar: number = firstBarTranslated + firstBarWidth;
+                let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
+                let firstBar: number = firstBarX + firstBarWidth;
 
                 expect(labels.length).toBe(3);
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
@@ -2208,8 +2242,8 @@ module powerbitests {
                 helpers.assertColorsMatch($(labels[2]).css("fill"), defaultInsideLabelColor);
                 
                 //Check that the labels position is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarTranslated);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBar);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBar + transformX);
                 done();
             }, DefaultWaitForRender);
         });
@@ -2599,15 +2633,12 @@ module powerbitests {
             dataView.categorical.values[0].source["objects"]["general"]["formatString"] = "$0.00";
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-                // The funnel bars are rotated 90 degrees, so for the bars, "y" and "height" correspond
-                // to what we would think of as the position and size along the x-axis.
-                // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
-
+                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
                 let labels = $(".funnelChart .labels text");
-                let firstBarY = +$(".funnelChart").find(".funnelBar").first().attr("y");
-                let firstBarHeight = +$(".funnelChart").find(".funnelBar").first().attr("height");
-                let lastBarY = +$(".funnelChart").find(".funnelBar").last().attr("y");
-                let lastBarHeight = +$(".funnelChart").find(".funnelBar").last().attr("height");
+                let firstBarX = +$(".funnelChart").find(".funnelBar").first().attr("x");
+                let firstBarWidth = +$(".funnelChart").find(".funnelBar").first().attr("width");
+                let lastBarX = +$(".funnelChart").find(".funnelBar").last().attr("x");
+                let lastBarWidth = +$(".funnelChart").find(".funnelBar").last().attr("width");
 
                 expect(labels.length).toBe(3);
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
@@ -2619,11 +2650,11 @@ module powerbitests {
                 expect($(labels[0]).text()).toEqual("$0.56K");
 
                 // Check that the first label is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarY + translate);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarY + firstBarHeight + translate);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
 
                 // Check that the last label is outside
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarY + lastBarHeight);
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
 
                 done();
             }, DefaultWaitForRender);
@@ -3459,20 +3490,21 @@ module powerbitests {
             let defaultDataPointColor: string = "#00FF00";
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "col3", value: "200" }, { displayName: "Percent of first", value: "100.00 %" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "col3", value: "400" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }, { displayName: "col3", value: "600" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "150.00 %" }]);
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "col3", value: "200" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "col3", value: "400" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }, { displayName: "col3", value: "600" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
 
         it("Gradient and Y have the index - validate tool tip", () => {
             let dataColors: IDataColorPalette = visualStyles.create().colorPalette.dataColors;
-            let colors: string[] = ["#d9f2fb", "#ff557f", "#b1eab7"];
-            let objectDefinitions: DataViewObjects[] = [
-                { dataPoint: { fill: { solid: { color: colors[0] } } } },
-                { dataPoint: { fill: { solid: { color: colors[1] } } } },
-                { dataPoint: { fill: { solid: { color: colors[2] } } } }
-            ];
-            
+            let dataViewGradientMetadata: DataViewMetadata = {
+                columns: [
+                    { displayName: "col1", queryName: "col1" },
+                    { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Gradient": true } },
+                    { displayName: "col3", queryName: "col3", isMeasure: true, roles: { "Y": true } },
+                ]
+            };
+
             let categoryValues: any[] = [
                 "a",
                 "b",
@@ -3484,17 +3516,16 @@ module powerbitests {
             dataViewBuilder.categoryBuilder()
                 .setSource(dataViewGradientAndYMetadata.columns[0])
                 .setValues(categoryValues)
-                .setObjects(objectDefinitions)
                 .buildCategory();
             
             dataViewBuilder.valueColumnsBuilder()
                 .newValueBuilder()
-                    .setSource(dataViewGradientAndYMetadata.columns[1])
+                    .setSource(dataViewGradientMetadata.columns[1])
                     .setValues([100, 200, 300, 400, 500])
                     .setSubtotal([1500])
                     .buildNewValue()
                 .newValueBuilder()
-                    .setSource(dataViewGradientAndYMetadata.columns[2])
+                    .setSource(dataViewGradientMetadata.columns[2])
                     .setValues([200, 400, 600, 800, 1000])
                     .setSubtotal([3000])
                     .buildNewValue()
@@ -3505,9 +3536,9 @@ module powerbitests {
             let defaultDataPointColor: string = "#00FF00";
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "100" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100.00 %" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "200" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200.00 %" }, { displayName: "Percent of previous", value: "200.00 %" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "300" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300.00 %" }, { displayName: "Percent of previous", value: "150.00 %" }]);
+            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "200" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "400" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "600" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
 
         it("converter does filter Gradient role", () => {
@@ -3813,6 +3844,17 @@ module powerbitests {
             let translate = SVGUtil.parseTranslateTransform(percentBarsTransform);
             let translateX = +translate.x;
             return translateX;
+        }
+
+        export function getFunnelBarXTransform(): number {
+            var el: JQuery = <any>$(".funnelBar").parent();
+            var transform: string = el.attr("transform");
+            if (_.isEmpty(transform)) {
+                return 0;
+            }
+
+            var matrix: string[] = transform.replace(/[^0-9\-.,]/g, '').split(',');
+            return parseInt(matrix[0], null);
         }
 
         /**

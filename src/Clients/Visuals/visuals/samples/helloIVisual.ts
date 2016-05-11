@@ -37,6 +37,7 @@ module powerbi.visuals.samples {
     export class HelloIVisual implements IVisual {
         public static capabilities: VisualCapabilities = {
             dataRoles: [{
+                displayName: 'Values',
                 name: 'Values',
                 kind: VisualDataRoleKind.GroupingOrMeasure
             }],

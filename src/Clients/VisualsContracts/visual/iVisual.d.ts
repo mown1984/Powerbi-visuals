@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -49,12 +49,12 @@ declare module powerbi {
         /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
         destroy?(): void;
 
-        /** 
-         * Notifies the IVisual of an update (data, viewmode, size change). 
+        /**
+         * Notifies the IVisual of an update (data, viewmode, size change).
          */
         update?(options: VisualUpdateOptions): void;
 
-        /** 
+        /**
          * Notifies the IVisual to resize.
          *
          * @param finalViewport This is the viewport that the visual will eventually be resized to.
@@ -62,9 +62,9 @@ declare module powerbi {
          */
         onResizing?(finalViewport: IViewport, resizeMode?: ResizeMode): void;
 
-        /** 
+        /**
          * Notifies the IVisual of new data being provided.
-         * This is an optional method that can be omitted if the visual is in charge of providing its own data. 
+         * This is an optional method that can be omitted if the visual is in charge of providing its own data.
          */
         onDataChanged?(options: VisualDataChangedOptions): void;
 
@@ -79,11 +79,14 @@ declare module powerbi {
 
         /** Gets the set of objects that the visual is currently displaying. */
         enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+
+        /** Gets the set of object repetitions that the visual can display. */
+        enumerateObjectRepetition?(): VisualObjectRepetition[];
     }
 
     /** Parameters available to a CustomizeQueryMethod */
     export interface CustomizeQueryOptions {
-        /** 
+        /**
          * The data view mapping for this visual with some additional information. CustomizeQueryMethod implementations
          * are expected to edit this in-place.
          */
@@ -114,7 +117,7 @@ declare module powerbi {
 
     /**
      * Defines the visual filtering capabilities for various filter kinds.
-     * By default all visuals support attribute filters and measure filters in their innermost scope. 
+     * By default all visuals support attribute filters and measure filters in their innermost scope.
      */
     export interface VisualFilterMappings {
         measureFilter?: VisualFilterMapping;
@@ -133,7 +136,7 @@ declare module powerbi {
 
         /** Defines how filters are understood by the visual. This is used by query generation */
         filterMappings?: VisualFilterMappings;
-        
+
         /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
         supportsHighlight?: boolean;
 
@@ -188,7 +191,7 @@ declare module powerbi {
     export interface VisualImplicitSortingClause {
         role: string;
         direction: SortDirection;
-    }    
+    }
 
     /** Defines the capabilities of an IVisual. */
     export interface VisualInitOptions {
@@ -290,6 +293,10 @@ declare module powerbi {
         geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
         geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
         geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
+
+        /** returns data immediately if it is locally available (e.g. in cache), null if not in cache */
+        tryGeocodeImmediate(query: string, category?: string): IGeocodeCoordinate;
+        tryGeocodeBoundaryImmediate(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IGeocodeBoundaryCoordinate;
     }
 
     export interface IGeocodeCoordinate {
@@ -318,7 +325,7 @@ declare module powerbi {
 
     export interface IGeocodeBoundaryPolygon {
         nativeBing: string;
-        
+
         /** array of lat/long pairs as [lat1, long1, lat2, long2,...] */
         geographic?: Float64Array;
 
@@ -388,7 +395,6 @@ declare module powerbi {
         /** The filter after analyzed. It will be the default filter if it has defaultValue and the pre-analyzed filter is undefined. */
         filter: ISemanticFilter;
     }
-    
 
     /** Defines behavior for IVisual interaction with the host environment. */
     export interface IVisualHostServices {

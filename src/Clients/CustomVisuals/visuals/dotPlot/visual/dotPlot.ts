@@ -25,741 +25,841 @@
  */
 
 module powerbi.visuals.samples {
-	import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
-	import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
-	import CreateClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
-	import AxisScale = powerbi.visuals.axisScale;
-	import PixelConverter = jsCommon.PixelConverter;
+    import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
+    import CreateClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import AxisScale = powerbi.visuals.axisScale;
+    import PixelConverter = jsCommon.PixelConverter;
 
-	const MaxXAxisHeight: number = 40;
-	const LabelMargin: number = 15;
-	const DefaultRadius: number = 5;
-	const DefaultStrokeWidth: number = 1;
-	const DefaultDataPointColor = "#00B8AA";
-	const MinPrecision: number = 0;
-	const MaxPrecision: number = 17;
+    const MaxXAxisHeight: number = 40;
+    const LabelMargin: number = 15;
+    const DefaultRadius: number = 5;
+    const DefaultStrokeWidth: number = 1;
+    const DefaultDataPointColor = "#00B8AA";
+    const MinPrecision: number = 0;
+    const MaxPrecision: number = 17;
 
-	export const DotPlotProperties: any = {
-		general: {
-			formatString: <DataViewObjectPropertyIdentifier>{
-				objectName: "general",
-				propertyName: "formatString"
-			}
-		},
-		labels: {
-			show: <DataViewObjectPropertyIdentifier>{
-				objectName: "labels",
-				propertyName: "show"
-			},
-			fontSize: <DataViewObjectPropertyIdentifier>{
-				objectName: "labels",
-				propertyName: "fontSize"
-			},
-			labelPrecision: <DataViewObjectPropertyIdentifier>{
-				objectName: "labels",
-				propertyName: "labelPrecision"
-			},
-			labelDisplayUnits: <DataViewObjectPropertyIdentifier>{
-				objectName: "labels",
-				propertyName: "labelDisplayUnits"
-			},
-			labelColor: <DataViewObjectPropertyIdentifier>{
-				objectName: "labels",
-				propertyName: "color"
-			}
-		},
-		dataPoint: {
-			fill: <DataViewObjectPropertyIdentifier>{
-				objectName: "dataPoint",
-				propertyName: "fill"
-			}
-		},
-		categories: {
-			show: <DataViewObjectPropertyIdentifier>{
-				objectName: "categories",
-				propertyName: "show"
-			},
-			fontColor: <DataViewObjectPropertyIdentifier>{
-				objectName: "categories",
-				propertyName: "fontColor"
-			},
-			fontSize: <DataViewObjectPropertyIdentifier>{
-				objectName: "categories",
-				propertyName: "fontSize"
-			}
-		}
-	};
+    export const DotPlotProperties: any = {
+        general: {
+            formatString: <DataViewObjectPropertyIdentifier>{
+                objectName: "general",
+                propertyName: "formatString"
+            }
+        },
+        labels: {
+            show: <DataViewObjectPropertyIdentifier>{
+                objectName: "labels",
+                propertyName: "show"
+            },
+            fontSize: <DataViewObjectPropertyIdentifier>{
+                objectName: "labels",
+                propertyName: "fontSize"
+            },
+            labelPrecision: <DataViewObjectPropertyIdentifier>{
+                objectName: "labels",
+                propertyName: "labelPrecision"
+            },
+            labelDisplayUnits: <DataViewObjectPropertyIdentifier>{
+                objectName: "labels",
+                propertyName: "labelDisplayUnits"
+            },
+            labelColor: <DataViewObjectPropertyIdentifier>{
+                objectName: "labels",
+                propertyName: "color"
+            }
+        },
+        dataPoint: {
+            fill: <DataViewObjectPropertyIdentifier>{
+                objectName: "dataPoint",
+                propertyName: "fill"
+            }
+        },
+        categories: {
+            show: <DataViewObjectPropertyIdentifier>{
+                objectName: "categories",
+                propertyName: "show"
+            },
+            fontColor: <DataViewObjectPropertyIdentifier>{
+                objectName: "categories",
+                propertyName: "fontColor"
+            },
+            fontSize: <DataViewObjectPropertyIdentifier>{
+                objectName: "categories",
+                propertyName: "fontSize"
+            }
+        },
+        categoryAxis: {
+            show: <DataViewObjectPropertyIdentifier>{
+                objectName: "categoryAxis",
+                propertyName: "show"
+            },
+            showAxisTitle: <DataViewObjectPropertyIdentifier>{
+                objectName: "categoryAxis",
+                propertyName: "showAxisTitle"
+            },
+            labelColor: <DataViewObjectPropertyIdentifier>{
+                objectName: "categoryAxis",
+                propertyName: "labelColor"
+            }
+        }
+    };
 
-	export interface DotPlotSelectors {
-		svgPlotSelector: ClassAndSelector;
-		plotSelector: ClassAndSelector;
-		plotGroupSelector: ClassAndSelector;
-		axisSelector: ClassAndSelector;
-		xAxisSelector: ClassAndSelector;
-		circleSeletor: ClassAndSelector;
-	}
+    export interface DotPlotSelectors {
+        svgPlotSelector: ClassAndSelector;
+        plotSelector: ClassAndSelector;
+        plotGroupSelector: ClassAndSelector;
+        axisSelector: ClassAndSelector;
+        xAxisSelector: ClassAndSelector;
+        circleSeletor: ClassAndSelector;
+    }
 
-	export interface DotPlotChartCategory {
-		value: string;
-		selectionId: SelectionId;
-	}
+    export interface DotPlotChartCategory {
+        value: string;
+        selectionId: SelectionId;
+    }
 
-	export interface DotPlotConstructorOptions {
-		animator?: IGenericAnimator;
-		svg?: D3.Selection;
-		margin?: IMargin;
-		radius?: number;
-		strokeWidth?: number;
-	}
+    export interface DotPlotConstructorOptions {
+        animator?: IGenericAnimator;
+        svg?: D3.Selection;
+        margin?: IMargin;
+        radius?: number;
+        strokeWidth?: number;
+    }
 
-	export interface DotPlotDataPoint {
-		x: number;
-		y: number;
-		tooltipInfo: TooltipDataItem[];
-	}
+    export interface DotPlotDataPoint {
+        x: number;
+        y: number;
+        tooltipInfo: TooltipDataItem[];
+    }
 
-	export interface DotPlotSettings {
-		labelSettings?: VisualDataLabelsSettings;
-		formatter?: IValueFormatter;
-		tooltipFormatter?: IValueFormatter;
-		categorySettings?: DotPlotCategorySettings;
-		defaultDataPointColor?: string;
-	}
+    export interface DotPlotSettings {
+        labelSettings?: VisualDataLabelsSettings;
+        formatter?: IValueFormatter;
+        tooltipFormatter?: IValueFormatter;
+        categorySettings?: DotPlotCategorySettings;
+        defaultDataPointColor?: string;
+        categoryAxisSettings?: DotPlotCategoryAxisSettings;
+    }
 
-	export interface DotPlotCategorySettings {
-		show?: boolean;
-		fontColor?: string;
-		fontSize?: number;
-	}
+    export interface DotPlotCategoryAxisSettings {
+        show?: boolean;
+        showAxisTitle?: boolean;
+        labelColor?: Fill;
+    }
 
-	export interface DotPlotDataGroup extends SelectableDataPoint {
-		label?: string;
-		value?: number;
-		color?: string;
-		tooltipInfo?: TooltipDataItem[];
-		dataPoints: DotPlotDataPoint[];
-		labelFontSize: string;
-		highlight?: boolean;
-	}
+    export interface DotPlotCategorySettings {
+        show?: boolean;
+        fontColor?: string;
+        fontSize?: number;
+    }
 
-	export interface DotPlotDataView {
-		displayName: string;
-		dataPoints: DotPlotDataGroup[];
-		values: any[];
-		settings: DotPlotSettings;
-		categories: DotPlotChartCategory[];
-	}
+    export interface DotPlotDataGroup extends SelectableDataPoint {
+        label?: string;
+        value?: number;
+        color?: string;
+        tooltipInfo?: TooltipDataItem[];
+        dataPoints: DotPlotDataPoint[];
+        labelFontSize: string;
+        highlight?: boolean;
+    }
 
-	export class DotPlot implements IVisual {
-		public static capabilities: VisualCapabilities = {
-			dataRoles: [{
-				name: 'Category',
-				kind: powerbi.VisualDataRoleKind.Grouping,
-				displayName: 'Category'
-			},
-				{
-					name: "Values",
-					kind: VisualDataRoleKind.Measure,
-					displayName: 'Values'
-				}],
-			dataViewMappings: [{
-				conditions: [
-					{ 'Category': { max: 1 }, 'Values': { max: 1 } },
-				],
-				categorical: {
-					categories: {
-						for: { in: 'Category' },
-						dataReductionAlgorithm: { top: {} }
-					},
-					values: {
-						group: {
-							by: "Series",
-							select: [{ for: { in: "Values" } }],
-							dataReductionAlgorithm: { top: {} }
-						}
-					}
-				},
-			}],
-			objects: {
-				general: {
-					displayName: 'General',
-					properties: {
-						formatString: {
-							type: { formatting: { formatString: true } },
-						},
-					},
-				},
-				dataPoint: {
-					displayName: 'Data colors',
-					properties: {
-						fill: {
-							displayName: 'Fill',
-							type: { fill: { solid: { color: true } } }
-						}
-					}
-				},
-				labels: {
-					displayName: "Data labels",
-					description: 'Display data label options',
-					properties: {
-						show: {
-							displayName: 'Show',
-							type: { bool: true }
-						},
-						showSeries: {
-							displayName: 'Show',
-							type: { bool: true }
-						},
-						color: {
-							displayName: 'Color',
-							description: 'Select color for data labels',
-							type: { fill: { solid: { color: true } } }
-						},
-						labelDisplayUnits: {
-							displayName: 'Display units',
-							description: 'Select the units (millions, billions, etc.)',
-							type: { formatting: { labelDisplayUnits: true } },
-							suppressFormatPainterCopy: true
-						},
-						labelPrecision: {
-							displayName: 'Decimal places',
-							description: 'Select the number of decimal places to display',
-							placeHolderText: 'Auto',
-							type: { numeric: true },
-							suppressFormatPainterCopy: true
-						},
-						showAll: {
-							displayName: 'Customize series',
-							type: { bool: true }
-						},
-						fontSize: {
-							displayName: 'Text Size',
-							type: { formatting: { fontSize: true } }
-						},
-					}
-				}
-			}
-		};
+    export interface DotPlotDataView {
+        displayName: string;
+        dataPoints: DotPlotDataGroup[];
+        values: any[];
+        settings: DotPlotSettings;
+        categories: DotPlotChartCategory[];
+    }
 
-		private DefaultMargin: IMargin = {
-			top: 10,
-			bottom: 10,
-			right: 20,
-			left: 20
-		};
+    export class DotPlot implements IVisual {
+        private viewportIn: IViewport;
 
-		private svg: D3.Selection;
-		private xAxis: D3.Selection;
-		private dotPlot: D3.Selection;
-		private clearCatcher: D3.Selection;
-		private behavior: IInteractiveBehavior;
+        public static capabilities: VisualCapabilities = {
+            dataRoles: [{
+                name: 'Category',
+                kind: powerbi.VisualDataRoleKind.Grouping,
+                displayName: 'Category'
+            },
+                {
+                    name: "Values",
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: 'Values'
+                }],
+            dataViewMappings: [{
+                conditions: [
+                    { 'Category': { max: 1 }, 'Values': { max: 1 } },
+                ],
+                categorical: {
+                    categories: {
+                        for: { in: 'Category' },
+                        dataReductionAlgorithm: { top: {} }
+                    },
+                    values: {
+                        group: {
+                            by: "Series",
+                            select: [{ for: { in: "Values" } }],
+                            dataReductionAlgorithm: { top: {} }
+                        }
+                    }
+                },
+            }],
+            objects: {
+                general: {
+                    displayName: 'General',
+                    properties: {
+                        formatString: {
+                            type: { formatting: { formatString: true } },
+                        },
+                    },
+                },
+                categoryAxis: {
+                    displayName: 'X-Axis',
+                    properties: {
+                        show: {
+                            displayName: 'Show',
+                            type: { bool: true },
+                        },
+                        showAxisTitle: {
+                            displayName: 'Title',
+                            description: 'Title options',
+                            type: { bool: true }
+                    },
+                        labelColor: {
+                            displayName: 'Label color',
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
+                dataPoint: {
+                    displayName: 'Data colors',
+                    properties: {
+                        fill: {
+                            displayName: 'Fill',
+                            type: { fill: { solid: { color: true } } }
+                        }
+                    }
+                },
+                labels: {
+                    displayName: "Data labels",
+                    description: 'Display data label options',
+                    properties: {
+                        show: {
+                            displayName: 'Show',
+                            type: { bool: true }
+                        },
+                        showSeries: {
+                            displayName: 'Show',
+                            type: { bool: true }
+                        },
+                        color: {
+                            displayName: 'Color',
+                            description: 'Select color for data labels',
+                            type: { fill: { solid: { color: true } } }
+                        },
+                        labelDisplayUnits: {
+                            displayName: 'Display units',
+                            description: 'Select the units (millions, billions, etc.)',
+                            type: { formatting: { labelDisplayUnits: true } },
+                            suppressFormatPainterCopy: true
+                        },
+                        labelPrecision: {
+                            displayName: 'Decimal places',
+                            description: 'Select the number of decimal places to display',
+                            placeHolderText: 'Auto',
+                            type: { numeric: true },
+                            suppressFormatPainterCopy: true
+                        },
+                        showAll: {
+                            displayName: 'Customize series',
+                            type: { bool: true }
+                        },
+                        fontSize: {
+                            displayName: 'Text Size',
+                            type: { formatting: { fontSize: true } }
+                        },
+                    }
+                }
+            }
+        };
 
-		private colors: IDataColorPalette;
-		private dataView: DataView;
-		private animator: IGenericAnimator;
-		private durationAnimations: number = 200;
-		private dotPlotDataView: DotPlotDataView;
+        private DefaultMargin: IMargin = {
+            top: 10,
+            bottom: 10,
+            right: 20,
+            left: 20
+        };
 
-		private radius: number;
-		private strokeWidth: number;
-		private interactivityService: IInteractivityService;
-		private scaleType: string = AxisScale.linear;
-		private textProperties: TextProperties = {
-			fontFamily: 'wf_segoe-ui_normal',
-			fontSize: jsCommon.PixelConverter.toString(9),
-		};
+        private svg: D3.Selection;
+        private xAxis: D3.Selection;
+        private dotPlot: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private behavior: IInteractiveBehavior;
 
-		private dotPlotSelectors: DotPlotSelectors =
-		{
-			svgPlotSelector: CreateClassAndSelector('dotplot'),
-			plotSelector: CreateClassAndSelector('dotplotSelector'),
-			plotGroupSelector: CreateClassAndSelector('dotplotGroup'),
-			axisSelector: CreateClassAndSelector('axisGraphicsContext'),
-			xAxisSelector: CreateClassAndSelector('x axis'),
-			circleSeletor: CreateClassAndSelector('circleSelector'),
-		};
+        private colors: IDataColorPalette;
+        private dataView: DataView;
+        private animator: IGenericAnimator;
+        private durationAnimations: number = 200;
+        private dotPlotDataView: DotPlotDataView;
 
-		private DefaultDotPlotSettings: DotPlotSettings = {
-			labelSettings: {
-				show: true,
-				precision: 2,
-				fontSize: dataLabelUtils.DefaultFontSizeInPt,
-				displayUnits: 0,
-				labelColor: dataLabelUtils.defaultLabelColor,
-			},
-			categorySettings: {
-				show: true,
-				fontColor: LegendData.DefaultLegendLabelFillColor
-			},
-			defaultDataPointColor: DefaultDataPointColor
-		};
+        private radius: number;
+        private strokeWidth: number;
+        private interactivityService: IInteractivityService;
+        private scaleType: string = AxisScale.linear;
+        private textProperties: TextProperties = {
+            fontFamily: 'wf_segoe-ui_normal',
+            fontSize: jsCommon.PixelConverter.toString(9),
+        };
 
-		private static getTooltipData(value: number): TooltipDataItem[] {
-			return [{
-				displayName: "Value",
-				value: value.toString()
-			}];
-		}
+        private dotPlotSelectors: DotPlotSelectors =
+        {
+            svgPlotSelector: CreateClassAndSelector('dotplot'),
+            plotSelector: CreateClassAndSelector('dotplotSelector'),
+            plotGroupSelector: CreateClassAndSelector('dotplotGroup'),
+            axisSelector: CreateClassAndSelector('axisGraphicsContext'),
+            xAxisSelector: CreateClassAndSelector('x axis'),
+            circleSeletor: CreateClassAndSelector('circleSelector'),
+        };
 
-		public static converter(dataView: DataView, scale: D3.Scale.OrdinalScale, defaultMargin: IMargin, defaultSetting: DotPlotSettings, colors: IDataColorPalette, viewport: IViewport, radius: number): DotPlotDataView {
-			let values: DataViewValueColumns = dataView.categorical.values,
-				dataPointsGroup: DotPlotDataGroup[] = [],
-				displayName: string = dataView.categorical.categories[0].source.displayName,
-				objects: DataViewObjects = this.getObjectsFromDataView(dataView),
-				settings: DotPlotSettings,
-				defaultColor = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, colors.getColorByIndex(0).value);
+        private DefaultDotPlotSettings: DotPlotSettings = {
+            labelSettings: {
+                show: true,
+                precision: 2,
+                fontSize: dataLabelUtils.DefaultFontSizeInPt,
+                displayUnits: 0,
+                labelColor: dataLabelUtils.defaultLabelColor,
+            },
+            categorySettings: {
+                show: true,
+                fontColor: LegendData.DefaultLegendLabelFillColor
+            },
+            defaultDataPointColor: DefaultDataPointColor,
+            categoryAxisSettings: {
+                show: true,
+                showAxisTitle: true,
+                labelColor: { solid: { color: dataLabelUtils.defaultLabelColor } }
+            }
+        };
 
-			let categories: DotPlotChartCategory[] = dataView.categorical.categories[0].values.map((x, i) => <DotPlotChartCategory>{
-				value: x,
-				selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[i])
-			});
+        private static getTooltipData(value: number): TooltipDataItem[] {
+            return [{
+                displayName: "Value",
+                value: value.toString()
+            }];
+        }
 
-			settings = {
-				categorySettings: this.getCategorySettings(objects, defaultSetting),
-				defaultDataPointColor: defaultColor,
-				labelSettings: this.parseSettings(objects, defaultSetting)
-			};
+        public static converter(dataView: DataView, objects: DataViewObjects, scale: D3.Scale.OrdinalScale, defaultMargin: IMargin, defaultSetting: DotPlotSettings, colors: IDataColorPalette, viewport: IViewport, radius: number): DotPlotDataView {
+            let values: DataViewValueColumns = dataView.categorical.values,
+                dataPointsGroup: DotPlotDataGroup[] = [],
+                displayName: string = dataView.categorical.categories[0].source.displayName,
+                settings: DotPlotSettings,
+                defaultColor = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, colors.getColorByIndex(0).value);
 
-			let categoryColumn = dataView.categorical.categories[0];
-			let diameter: number = 2 * radius + 1;
-			let dotsTotalHeight: number = viewport.height - radius - MaxXAxisHeight;
-			let maxDots: number = Math.floor((dotsTotalHeight - defaultMargin.top) / diameter) - 1;
-			let fontSizeInPx: string = PixelConverter.fromPoint(settings.labelSettings.fontSize);
+            let categories: DotPlotChartCategory[] = dataView.categorical.categories[0].values.map((x, i) => <DotPlotChartCategory>{
+                value: x,
+                selectionId: SelectionId.createWithId(dataView.categorical.categories[0].identity[i])
+            });
 
-			let yScale: D3.Scale.LinearScale = d3.scale.linear()
-				.domain([0, maxDots])
-				.range([dotsTotalHeight - defaultMargin.bottom, defaultMargin.top + defaultMargin.bottom]);
+            settings = {
+                categorySettings: this.getCategorySettings(objects, defaultSetting),
+                defaultDataPointColor: defaultColor,
+                labelSettings: this.parseSettings(objects, defaultSetting),
+                categoryAxisSettings: this.parseCategoryAxisSettings(objects, defaultSetting)
+            };
 
-			for (let value of values) {
-				let min = _.min(value.values);
-				let max = _.max(value.values);
+            let categoryColumn = dataView.categorical.categories[0];
+            let diameter: number = 2 * radius + 1;
+            let dotsTotalHeight: number = viewport.height - radius - MaxXAxisHeight;
+            let maxDots: number = Math.floor((dotsTotalHeight - defaultMargin.top) / diameter) - 1;
+            let fontSizeInPx: string = PixelConverter.fromPoint(settings.labelSettings.fontSize);
 
-				let color = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, colors.getColorByIndex(0).value);
-				let length = value.values.length;
-				let minDots = min / (max / maxDots);
-				let dotsScale = d3.scale.log().domain([min, max]).range([minDots === 0 ? 1 : minDots, maxDots]).clamp(true);
+            let yScale: D3.Scale.LinearScale = d3.scale.linear()
+                .domain([0, maxDots])
+                .range([dotsTotalHeight - defaultMargin.bottom, defaultMargin.top + defaultMargin.bottom]);
 
-				for (let k = 0; k < length; k++) {
-					let y = dotsScale(value.values[k]);
-					let dataPoints: DotPlotDataPoint[] = [];
+            for (let value of values) {
+                let min = _.min(value.values);
+                let max = _.max(value.values);
 
-					for (let level = 0; level < y; level++) {
-						dataPoints.push({
-							x: scale(categories[k].value) + scale.rangeBand() / 2,
-							y: yScale(level),
-							tooltipInfo: DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision))
-						});
-					}
+                let color = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, colors.getColorByIndex(0).value);
+                let length = value && value.values ? value.values.length : 0;
+                let minDots = min / (max / maxDots);
+                let dotsScale = d3.scale.log().domain([min, max]).range([minDots === 0 ? 1 : minDots, maxDots]).clamp(true);
 
-					let categorySelectionId = SelectionIdBuilder.builder().withCategory(categoryColumn, k).createSelectionId();
-					let tooltipInfo = DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision));
+                for (let k = 0; k < length; k++) {
+                    let y = dotsScale(value.values[k]);
+                    let dataPoints: DotPlotDataPoint[] = [];
 
-					dataPointsGroup.push({
-						selected: false,
-						value: value.values[k],
-						label: value.values[k],
-						color: color,
-						identity: categorySelectionId,
-						tooltipInfo: tooltipInfo,
-						dataPoints: dataPoints,
-						labelFontSize: fontSizeInPx,
-						contentPosition: ContentPositions.MiddleLeft
-					});
-				}
-			}
+                    for (let level = 0; level < y; level++) {
+                        dataPoints.push({
+                            x: scale(categories[k].value) + scale.rangeBand() / 2,
+                            y: yScale(level),
+                            tooltipInfo: DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision))
+                        });
+                    }
 
-			return {
-				dataPoints: dataPointsGroup,
-				values: dataView.categorical.categories[0].values,
-				displayName: displayName,
-				categories: categories,
-				settings: settings
-			};
-		}
+                    let categorySelectionId = SelectionIdBuilder.builder().withCategory(categoryColumn, k).createSelectionId();
+                    let tooltipInfo = DotPlot.getTooltipData(value.values[k].toFixed(settings.labelSettings.precision));
 
-		public constructor(options?: DotPlotConstructorOptions) {
-			if (options) {
-				if (options.svg) {
-					this.svg = options.svg;
-				}
-				if (options.animator) {
-					this.animator = options.animator;
-				}
+                    dataPointsGroup.push({
+                        selected: false,
+                        value: value.values[k],
+                        label: value.values[k],
+                        color: color,
+                        identity: categorySelectionId,
+                        tooltipInfo: tooltipInfo,
+                        dataPoints: dataPoints,
+                        labelFontSize: fontSizeInPx,
+                        contentPosition: ContentPositions.MiddleLeft
+                    });
+                }
+            }
 
-				this.radius = options.radius || DefaultRadius;
-				this.strokeWidth = options.strokeWidth || DefaultStrokeWidth;
-			}
-		}
+            return {
+                dataPoints: dataPointsGroup,
+                values: dataView.categorical.categories[0].values,
+                displayName: displayName,
+                categories: categories,
+                settings: settings
+            };
+        }
 
-		public init(options: VisualInitOptions): void {
-			let element = options.element;
-			this.behavior = new DotplotBehavior();
+        public constructor(options?: DotPlotConstructorOptions) {
+            if (options) {
+                if (options.svg) {
+                    this.svg = options.svg;
+                }
+                if (options.animator) {
+                    this.animator = options.animator;
+                }
 
-			this.interactivityService = createInteractivityService(options.host);
-			this.radius = DefaultRadius;
-			this.strokeWidth = DefaultStrokeWidth;
-			this.colors = options.style.colorPalette.dataColors;
+                this.radius = options.radius || DefaultRadius;
+                this.strokeWidth = options.strokeWidth || DefaultStrokeWidth;
+            }
+        }
 
-			this.svg = d3.select(element.get(0)).append('svg').classed(this.dotPlotSelectors.svgPlotSelector.class, true).style('position', 'absolute');
-			this.clearCatcher = appendClearCatcher(this.svg);
+        public init(options: VisualInitOptions): void {
+            let element = options.element;
+            this.behavior = new DotplotBehavior();
 
-			let axisGraphicsContext = this.svg.append('g').classed(this.dotPlotSelectors.axisSelector.class, true);
-			this.dotPlot = this.svg.append('g').classed(this.dotPlotSelectors.plotSelector.class, true);
-			this.xAxis = axisGraphicsContext.append("g").classed(this.dotPlotSelectors.xAxisSelector.class, true);
-		}
+            this.interactivityService = createInteractivityService(options.host);
+            this.radius = DefaultRadius;
+            this.strokeWidth = DefaultStrokeWidth;
+            this.colors = options.style.colorPalette.dataColors;
 
-		public update(options: VisualUpdateOptions): void {
-			if (!options.dataViews || !options.dataViews[0]) return;
+            this.svg = d3.select(element.get(0)).append('svg').classed(this.dotPlotSelectors.svgPlotSelector.class, true).style('position', 'absolute');
+            this.clearCatcher = appendClearCatcher(this.svg);
 
-			this.durationAnimations = getAnimationDuration(this.animator, options.suppressAnimations);
-			let dataView = this.dataView = options.dataViews[0];
-			let viewport = options.viewport;
+            let axisGraphicsContext = this.svg.append('g').classed(this.dotPlotSelectors.axisSelector.class, true);
+            this.dotPlot = this.svg.append('g').classed(this.dotPlotSelectors.plotSelector.class, true);
+            this.xAxis = axisGraphicsContext.append("g").classed(this.dotPlotSelectors.xAxisSelector.class, true);
+        }
 
-			if (!dataView ||
-				!dataView.categorical ||
-				!dataView.categorical.values ||
-				dataView.categorical.values.length < 1 ||
-				!dataView.categorical ||
-				!dataView.categorical.categories ||
-				!dataView.categorical.categories[0]) {
-				this.clearData();
-				return;
-			}
+        public update(options: VisualUpdateOptions): void {
+            if (!options.dataViews || !options.dataViews[0]) return;
 
-			let viewportIn: IViewport =
-				{
-					height: (viewport.height - this.DefaultMargin.top),
-					width: (viewport.width - this.DefaultMargin.left)
-				};
+            this.durationAnimations = getAnimationDuration(this.animator, options.suppressAnimations);
+            let dataView = this.dataView = options.dataViews[0];
+            let viewport = options.viewport;
 
-			this.svg.style({
-				height: PixelConverter.toString(viewport.height),
-				width: PixelConverter.toString(viewport.width)
-			});
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                dataView.categorical.values.length < 1 ||
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                !dataView.categorical.categories[0]) {
+                this.clearData();
+                return;
+            }
 
-			let xAxisProperties = this.calculateAxes(viewportIn, this.textProperties, false);
-			let data = DotPlot.converter(dataView, <D3.Scale.OrdinalScale>xAxisProperties.scale, this.DefaultMargin, this.DefaultDotPlotSettings, this.colors, viewport, this.radius);
+            let viewportIn: IViewport =
+                {
+                    height: (viewport.height - this.DefaultMargin.top),
+                    width: (viewport.width - this.DefaultMargin.left)
+                };
+            this.viewportIn = viewportIn;
 
-			this.dotPlotDataView = data;
-			let dataPoints = data.dataPoints;
+            this.svg.style({
+                height: PixelConverter.toString(viewport.height),
+                width: PixelConverter.toString(viewport.width)
+            });
 
-			if (this.interactivityService)
-				this.interactivityService.applySelectionStateToData(dataPoints);
+            let objects = DotPlot.getObjectsFromDataView(dataView);
+            let categoryAxisSettings = DotPlot.parseCategoryAxisSettings(objects, this.DefaultDotPlotSettings);
 
-			this.renderAxis(viewportIn.height - MaxXAxisHeight, xAxisProperties, data, this.durationAnimations);
-			this.drawDotPlot(dataPoints, data.settings);
+            let xAxisProperties = this.calculateAxes(viewportIn, categoryAxisSettings, this.textProperties, objects, false);
+            let data = DotPlot.converter(dataView, objects, <D3.Scale.OrdinalScale>xAxisProperties.scale, this.DefaultMargin, this.DefaultDotPlotSettings, this.colors, viewport, this.radius);
 
-			let dataLabelsSettings = data.settings.labelSettings;
-			if (dataLabelsSettings.show) {
-				let layout = this.getEnhanchedDotplotLayout(dataLabelsSettings, viewportIn);
+            this.dotPlotDataView = data;
+            let dataPoints = data.dataPoints;
+
+            if (this.interactivityService)
+                this.interactivityService.applySelectionStateToData(dataPoints);
+
+            this.renderAxis(viewportIn.height - MaxXAxisHeight, viewportIn, xAxisProperties, categoryAxisSettings, data, this.durationAnimations);
+            this.drawDotPlot(dataPoints, data.settings);
+
+            let dataLabelsSettings = data.settings.labelSettings;
+            if (dataLabelsSettings.show) {
+                let layout = this.getEnhanchedDotplotLayout(dataLabelsSettings, viewportIn);
 				let labels: D3.UpdateSelection = dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPoints, this.svg, layout, viewportIn, !options.suppressAnimations, this.durationAnimations);
 				if (labels)
 					labels.attr('transform', (d) => SVGUtil.translate(5 + d.size.width / 2, 5 + d.size.height / 2));
-			}
-			else {
-				dataLabelUtils.cleanDataLabels(this.svg);
-			}
-		}
+            }
+            else {
+                dataLabelUtils.cleanDataLabels(this.svg);
+            }
+        }
 
-		public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-			let enumeration = new ObjectEnumerationBuilder();
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+            let enumeration = new ObjectEnumerationBuilder();
 
-			switch (options.objectName) {
-				case 'dataPoint':
-					this.enumerateDataPoints(enumeration, this.dataView);
-					break;
-				case 'labels':
-					this.enumerateDataLabels(enumeration, this.dataView);
-					break;
-				case 'categories':
-					this.enumerateCategories(enumeration, this.dataView);
-					break;
-			}
+            switch (options.objectName) {
+                case 'dataPoint':
+                    this.enumerateDataPoints(enumeration, this.dataView);
+                    break;
+                case 'labels':
+                    this.enumerateDataLabels(enumeration, this.dataView);
+                    break;
+                case 'categories':
+                    this.enumerateCategories(enumeration, this.dataView);
+                    break;
+                case 'categoryAxis':
+                    this.enumerateCategoryAxisValues(enumeration, this.dataView);
+                    break;
+            }
 
-			return enumeration.complete();
-		}
+            return enumeration.complete();
+        }
 
-		private static getObjectsFromDataView(dataView: DataView): DataViewObjects {
-			if (!dataView ||
-				!dataView.metadata ||
-				!dataView.metadata.columns ||
-				!dataView.metadata.objects) {
-				return null;
-			}
+        private enumerateCategoryAxisValues(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
+            let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
+            enumeration.pushInstance({
+                objectName: "categoryAxis",
+                displayName: "Category Axis",
+                selector: null,
+                properties: {
+                    show: DataViewObjects.getValue<boolean>(objects, DotPlotProperties.categoryAxis.show, this.DefaultDotPlotSettings.categoryAxisSettings.show),
+                    showAxisTitle: DataViewObjects.getValue<boolean>(objects, DotPlotProperties.categoryAxis.showAxisTitle, this.DefaultDotPlotSettings.categoryAxisSettings.showAxisTitle),
+                    labelColor: objects && objects['categoryAxis'] && objects['categoryAxis']['labelColor'] ?
+                        objects['categoryAxis']['labelColor'] :
+                        this.DefaultDotPlotSettings.categoryAxisSettings.labelColor
+                }
+            });
+        }
 
-			return dataView.metadata.objects;
-		}
+        private static getObjectsFromDataView(dataView: DataView): DataViewObjects {
+            if (!dataView ||
+                !dataView.metadata ||
+                !dataView.metadata.columns ||
+                !dataView.metadata.objects) {
+                return null;
+            }
 
-		private static parseSettings(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): VisualDataLabelsSettings {
-			let precision = this.getPrecision(objects, defaultDotPlotSettings);
+            return dataView.metadata.objects;
+        }
 
-			return {
-				show: DataViewObjects.getValue(objects, DotPlotProperties.labels.show, defaultDotPlotSettings.labelSettings.show),
-				precision: precision,
-				fontSize: DataViewObjects.getValue(objects, DotPlotProperties.labels.fontSize, defaultDotPlotSettings.labelSettings.fontSize),
-				displayUnits: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelDisplayUnits, defaultDotPlotSettings.labelSettings.displayUnits),
-				labelColor: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, defaultDotPlotSettings.labelSettings.labelColor),
-			};
-		}
+        private static parseSettings(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): VisualDataLabelsSettings {
+            let precision = this.getPrecision(objects, defaultDotPlotSettings);
 
-		private static getCategorySettings(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): DotPlotCategorySettings {
-			return {
-				show: DataViewObject.getValue<boolean>(objects, DotPlotProperties.categories.show, defaultDotPlotSettings.categorySettings.show),
-				fontColor: DataViewObjects.getFillColor(objects, DotPlotProperties.categories.fontColor, defaultDotPlotSettings.categorySettings.fontColor)
-			};
-		}
+            return {
+                show: DataViewObjects.getValue(objects, DotPlotProperties.labels.show, defaultDotPlotSettings.labelSettings.show),
+                precision: precision,
+                fontSize: DataViewObjects.getValue(objects, DotPlotProperties.labels.fontSize, defaultDotPlotSettings.labelSettings.fontSize),
+                displayUnits: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelDisplayUnits, defaultDotPlotSettings.labelSettings.displayUnits),
+                labelColor: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, defaultDotPlotSettings.labelSettings.labelColor),
+            };
+        }
 
-		private static getPrecision(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): number {
-			let precision: number = DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelPrecision, defaultDotPlotSettings.labelSettings.precision);
+        private static parseCategoryAxisSettings(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): DotPlotCategoryAxisSettings {
+            return {
+                show: DataViewObjects.getValue(objects, DotPlotProperties.categoryAxis.show, defaultDotPlotSettings.categoryAxisSettings.show),
+                showAxisTitle: DataViewObjects.getValue(objects, DotPlotProperties.categoryAxis.showAxisTitle, defaultDotPlotSettings.categoryAxisSettings.showAxisTitle),
+                labelColor: objects && objects['categoryAxis'] && objects['categoryAxis']['labelColor'] ?
+                        objects['categoryAxis']['labelColor'] :
+                        defaultDotPlotSettings.categoryAxisSettings.labelColor
+            };
+        }
 
-			if (precision <= MinPrecision)
-				return MinPrecision;
+        private static getCategorySettings(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): DotPlotCategorySettings {
+            return {
+                show: DataViewObject.getValue<boolean>(objects, DotPlotProperties.categories.show, defaultDotPlotSettings.categorySettings.show),
+                fontColor: DataViewObjects.getFillColor(objects, DotPlotProperties.categories.fontColor, defaultDotPlotSettings.categorySettings.fontColor)
+            };
+        }
 
-			if (precision >= MaxPrecision)
-				return MaxPrecision;
+        private static getPrecision(objects: DataViewObjects, defaultDotPlotSettings: DotPlotSettings): number {
+            let precision: number = DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelPrecision, defaultDotPlotSettings.labelSettings.precision);
 
-			return precision;
-		}
+            if (precision <= MinPrecision)
+                return MinPrecision;
 
-		private drawDotPlot(data: DotPlotDataGroup[], setting: DotPlotSettings): void {
-			let selection: D3.UpdateSelection = this.dotPlot.selectAll(this.dotPlotSelectors.plotGroupSelector.selector).data(data);
-			let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
+            if (precision >= MaxPrecision)
+                return MaxPrecision;
 
-			selection
-				.enter()
-				.append('g')
-				.attr(
-				{
-					stroke: "black",
-					"stroke-width": this.strokeWidth
-				}).
-				style("fill-opacity", (item: DotPlotDataGroup) => ColumnUtil.getFillOpacity(item.selected, item.highlight, hasSelection, false)).
-				classed(this.dotPlotSelectors.plotGroupSelector.class, true);
+            return precision;
+        }
 
-			let circleSelection = selection.selectAll(this.dotPlotSelectors.circleSeletor.selector).data((d: DotPlotDataGroup) => { return d.dataPoints; });
-			circleSelection.enter().append('circle')
-				.classed(this.dotPlotSelectors.circleSeletor.class, true);
+        private drawDotPlot(data: DotPlotDataGroup[], setting: DotPlotSettings): void {
+            let selection: D3.UpdateSelection = this.dotPlot.selectAll(this.dotPlotSelectors.plotGroupSelector.selector).data(data);
+            let hasSelection = this.interactivityService && this.interactivityService.hasSelection();
 
-			circleSelection.attr(
-				{
-					cx: (point: DotPlotDataPoint) => { return point.x; },
-					cy: (point: DotPlotDataPoint) => { return point.y; },
-					r: this.radius,
-					fill: setting.defaultDataPointColor
-				});
+            selection
+                .enter()
+                .append('g')
+                .attr(
+                {
+                    stroke: "black",
+                    "stroke-width": this.strokeWidth
+                }).
+                style("fill-opacity", (item: DotPlotDataGroup) => ColumnUtil.getFillOpacity(item.selected, item.highlight, hasSelection, false)).
+                classed(this.dotPlotSelectors.plotGroupSelector.class, true);
 
-			this.renderTooltip(selection);
-			circleSelection.exit().remove();
-			selection.exit().remove();
+            let circleSelection = selection.selectAll(this.dotPlotSelectors.circleSeletor.selector).data((d: DotPlotDataGroup) => { return d.dataPoints; });
+            circleSelection.enter().append('circle')
+                .classed(this.dotPlotSelectors.circleSeletor.class, true);
 
-			let interactivityService = this.interactivityService;
-			if (interactivityService) {
-				interactivityService.applySelectionStateToData(data);
+            circleSelection.attr(
+                {
+                    cx: (point: DotPlotDataPoint) => { return point.x; },
+                    cy: (point: DotPlotDataPoint) => { return point.y; },
+                    r: this.radius,
+                    fill: setting.defaultDataPointColor
+                });
 
-				let behaviorOptions: DotplotBehaviorOptions = {
-					columns: selection,
-					clearCatcher: this.clearCatcher,
-					interactivityService: this.interactivityService,
-				};
-				interactivityService.bind(data, this.behavior, behaviorOptions);
-			}
-		}
+            this.renderTooltip(selection);
+            circleSelection.exit().remove();
+            selection.exit().remove();
 
-		private getEnhanchedDotplotLayout(labelSettings: VisualDataLabelsSettings, viewport: IViewport): ILabelLayout {
-			let fontSizeInPx = jsCommon.PixelConverter.fromPoint(labelSettings.fontSize);
+            let interactivityService = this.interactivityService;
+            if (interactivityService) {
+                interactivityService.applySelectionStateToData(data);
 
-			let formatter: IValueFormatter = valueFormatter.create({
-				format: valueFormatter.getFormatString(this.dataView.categorical.categories[0].source, DotPlotProperties.general.formatString),
-				precision: labelSettings.precision,
-				value: labelSettings.displayUnits
-			});
+                let behaviorOptions: DotplotBehaviorOptions = {
+                    columns: selection,
+                    clearCatcher: this.clearCatcher,
+                    interactivityService: this.interactivityService,
+                };
+                interactivityService.bind(data, this.behavior, behaviorOptions);
+            }
+        }
 
-			return {
-				labelText: function (d) {
-					return dataLabelUtils.getLabelFormattedText({
-						label: formatter.format(d.label),
-						fontSize: labelSettings.fontSize,
-						maxWidth: viewport.width,
-					});
-				},
-				labelLayout: {
+        private getEnhanchedDotplotLayout(labelSettings: VisualDataLabelsSettings, viewport: IViewport): ILabelLayout {
+            let fontSizeInPx = jsCommon.PixelConverter.fromPoint(labelSettings.fontSize);
+
+            let formatter: IValueFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatString(this.dataView.categorical.categories[0].source, DotPlotProperties.general.formatString),
+                precision: labelSettings.precision,
+                value: labelSettings.displayUnits
+            });
+
+            return {
+                labelText: function(d) {
+                    return dataLabelUtils.getLabelFormattedText({
+                        label: formatter.format(d.label),
+                        fontSize: labelSettings.fontSize,
+                        maxWidth: viewport.width,
+                    });
+                },
+                labelLayout: {
 					x: (d: DotPlotDataGroup) => d.dataPoints[d.dataPoints.length - 1].x - 5,
 					y: (d: DotPlotDataGroup) => d.dataPoints[d.dataPoints.length - 1].y - LabelMargin - 5
-				},
+                },
 				filter: function (d) {
 					return (d && d.dataPoints && d.dataPoints[d.dataPoints.length - 1]);
-				},
-				style: {
-					'fill': labelSettings.labelColor,
+                },
+                style: {
+                    'fill': labelSettings.labelColor,
 					'font-size': fontSizeInPx
-				},
-			};
-		}
+                },
+            };
+        }
 
-		private enumerateDataLabels(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
-			let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
-			enumeration.pushInstance({
-				objectName: "labels",
-				displayName: "Labels",
-				selector: null,
-				properties: {
-					show: DataViewObjects.getValue<boolean>(objects, DotPlotProperties.labels.show, this.DefaultDotPlotSettings.labelSettings.show),
-					fontSize: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.fontSize, this.DefaultDotPlotSettings.labelSettings.fontSize),
-					labelPrecision: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelPrecision, this.DefaultDotPlotSettings.labelSettings.precision),
-					labelDisplayUnits: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelDisplayUnits, this.DefaultDotPlotSettings.labelSettings.displayUnits),
-					color: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, this.DefaultDotPlotSettings.labelSettings.labelColor)
-				}
-			});
-		}
+        private enumerateDataLabels(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
+            let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
+            enumeration.pushInstance({
+                objectName: "labels",
+                displayName: "Labels",
+                selector: null,
+                properties: {
+                    show: DataViewObjects.getValue<boolean>(objects, DotPlotProperties.labels.show, this.DefaultDotPlotSettings.labelSettings.show),
+                    fontSize: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.fontSize, this.DefaultDotPlotSettings.labelSettings.fontSize),
+                    labelPrecision: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelPrecision, this.DefaultDotPlotSettings.labelSettings.precision),
+                    labelDisplayUnits: DataViewObjects.getValue<number>(objects, DotPlotProperties.labels.labelDisplayUnits, this.DefaultDotPlotSettings.labelSettings.displayUnits),
+                    color: DataViewObjects.getFillColor(objects, DotPlotProperties.labels.labelColor, this.DefaultDotPlotSettings.labelSettings.labelColor)
+                }
+            });
+        }
 
-		private enumerateDataPoints(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
-			let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
-			let dataPointColor = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, this.DefaultDotPlotSettings.defaultDataPointColor);
-			enumeration.pushInstance({
-				objectName: "dataPoint",
-				displayName: "Data Points",
-				selector: null,
-				properties: {
-					fill: { solid: { color: dataPointColor } }
-				}
-			});
-		}
+        private enumerateDataPoints(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
+            let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
+            let dataPointColor = DataViewObjects.getFillColor(objects, DotPlotProperties.dataPoint.fill, this.DefaultDotPlotSettings.defaultDataPointColor);
+            enumeration.pushInstance({
+                objectName: "dataPoint",
+                displayName: "Data Points",
+                selector: null,
+                properties: {
+                    fill: { solid: { color: dataPointColor } }
+                }
+            });
+        }
 
-		private enumerateCategories(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
-			let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
-			let categoriesSettings = DotPlot.getCategorySettings(objects, this.DefaultDotPlotSettings);
-			enumeration.pushInstance({
-				objectName: "categories",
-				displayName: "Categories",
-				selector: null,
-				properties: {
-					show: categoriesSettings.show,
-					fontSize: categoriesSettings.fontSize,
-					fontColor: categoriesSettings.fontColor
-				}
-			});
-		}
+        private enumerateCategories(enumeration: ObjectEnumerationBuilder, dataView: DataView): void {
+            let objects = dataView && dataView.metadata ? dataView.metadata.objects : undefined;
+            let categoriesSettings = DotPlot.getCategorySettings(objects, this.DefaultDotPlotSettings);
+            enumeration.pushInstance({
+                objectName: "categories",
+                displayName: "Categories",
+                selector: null,
+                properties: {
+                    show: categoriesSettings.show,
+                    fontSize: categoriesSettings.fontSize,
+                    fontColor: categoriesSettings.fontColor
+                }
+            });
+        }
 
-		private clearData(): void {
-			this.dotPlot.selectAll("*").remove();
-			this.xAxis.selectAll("*").remove();
-			dataLabelUtils.cleanDataLabels(this.svg);
-		}
+        private clearData(): void {
+            this.dotPlot.selectAll("*").remove();
+            this.xAxis.selectAll("*").remove();
+            dataLabelUtils.cleanDataLabels(this.svg);
+        }
 
-		private renderTooltip(selection: D3.UpdateSelection): void {
-			TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) =>
-				(<DotPlotDataGroup>tooltipEvent.data).tooltipInfo);
-		}
+        private renderTooltip(selection: D3.UpdateSelection): void {
+            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) =>
+                (<DotPlotDataGroup>tooltipEvent.data).tooltipInfo);
+        }
 
-		private calculateAxes(
-			viewportIn: IViewport,
-			textProperties: TextProperties,
-			scrollbarVisible: boolean): IAxisProperties {
+        private calculateAxes(
+            viewportIn: IViewport,
+            categoryAxisSettings: DotPlotCategoryAxisSettings,
+            textProperties: TextProperties,
+            objects: DataViewObjects,
+            scrollbarVisible: boolean): IAxisProperties {
 
-			let category = this.dataView.categorical.categories && this.dataView.categorical.categories.length > 0
-				? this.dataView.categorical.categories[0]
-				: {
-					source: undefined,
-					values: [valueFormatter.format(null)],
-					identity: undefined,
-				};
+            let category = this.dataView.categorical.categories && this.dataView.categorical.categories.length > 0
+                ? this.dataView.categorical.categories[0]
+                : {
+                    source: undefined,
+                    values: [valueFormatter.format(null)],
+                    identity: undefined,
+                };
 
-			let visualOptions: CalculateScaleAndDomainOptions = {
-				viewport: viewportIn,
-				margin: this.DefaultMargin,
-				forcedXDomain: this.dataView.categorical.categories[0].values,
-				forceMerge: false,
-				showCategoryAxisLabel: false,
-				showValueAxisLabel: false,
-				categoryAxisScaleType: this.scaleType,
-				valueAxisScaleType: null,
-				valueAxisDisplayUnits: 0,
-				categoryAxisDisplayUnits: 0,
-				trimOrdinalDataOnOverflow: false,
-			};
+            let visualOptions: CalculateScaleAndDomainOptions = {
+                viewport: viewportIn,
+                margin: this.DefaultMargin,
+                forcedXDomain: this.dataView.categorical.categories[0].values,
+                forceMerge: false,
+                showCategoryAxisLabel: false,
+                showValueAxisLabel: false,
+                categoryAxisScaleType: this.scaleType,
+                valueAxisScaleType: null,
+                valueAxisDisplayUnits: 0,
+                categoryAxisDisplayUnits: 0,
+                trimOrdinalDataOnOverflow: false,
+            };
 
-			let width = viewportIn.width;
-			let axes = this.calculateAxesProperties(viewportIn, visualOptions, category.source);
-			axes.willLabelsFit = AxisHelper.LabelLayoutStrategy.willLabelsFit(
-				axes,
-				width,
-				TextMeasurementService.measureSvgTextWidth,
-				textProperties);
+            let width = viewportIn.width;
+            let axes = this.calculateAxesProperties(viewportIn, categoryAxisSettings, visualOptions, category.source, objects);
+            axes.willLabelsFit = AxisHelper.LabelLayoutStrategy.willLabelsFit(
+                axes,
+                width,
+                TextMeasurementService.measureSvgTextWidth,
+                textProperties);
 
-			// If labels do not fit and we are not scrolling, try word breaking
-			axes.willLabelsWordBreak = (!axes.willLabelsFit && !scrollbarVisible) && AxisHelper.LabelLayoutStrategy.willLabelsWordBreak(
-				axes, this.DefaultMargin, width, TextMeasurementService.measureSvgTextWidth,
-				TextMeasurementService.estimateSvgTextHeight, TextMeasurementService.getTailoredTextOrDefault,
-				textProperties);
+            // If labels do not fit and we are not scrolling, try word breaking
+            axes.willLabelsWordBreak = (!axes.willLabelsFit && !scrollbarVisible) && AxisHelper.LabelLayoutStrategy.willLabelsWordBreak(
+                axes, this.DefaultMargin, width, TextMeasurementService.measureSvgTextWidth,
+                TextMeasurementService.estimateSvgTextHeight, TextMeasurementService.getTailoredTextOrDefault,
+                textProperties);
 
-			return axes;
-		}
+            return axes;
+        }
 
-		private calculateAxesProperties(viewportIn: IViewport, options: CalculateScaleAndDomainOptions, metaDataColumn: DataViewMetadataColumn): IAxisProperties {
-			let xAxisProperties = AxisHelper.createAxis({
-				pixelSpan: viewportIn.width,
-				dataDomain: options.forcedXDomain,
-				metaDataColumn: metaDataColumn,
-				formatString: valueFormatter.getFormatString(metaDataColumn, DotPlotProperties.general.formatString),
-				outerPadding: 0,
-				isScalar: false,
-				isVertical: false,
-				forcedTickCount: options.forcedTickCount,
-				useTickIntervalForDisplayUnits: true,
-				isCategoryAxis: true,
-				getValueFn: (index, type) => index,
-				scaleType: options.categoryAxisScaleType,
-				axisDisplayUnits: options.categoryAxisDisplayUnits
-			});
+        private calculateAxesProperties(viewportIn: IViewport, categoryAxisSettings: DotPlotCategoryAxisSettings, options: CalculateScaleAndDomainOptions, metaDataColumn: DataViewMetadataColumn, objects: DataViewObjects): IAxisProperties {
+            let xAxisProperties = AxisHelper.createAxis({
+                pixelSpan: viewportIn.width,
+                dataDomain: options.forcedXDomain,
+                metaDataColumn: metaDataColumn,
+                formatString: valueFormatter.getFormatString(metaDataColumn, DotPlotProperties.general.formatString),
+                outerPadding: 0,
+                isScalar: false,
+                isVertical: false,
+                forcedTickCount: options.forcedTickCount,
+                useTickIntervalForDisplayUnits: true,
+                isCategoryAxis: true,
+                getValueFn: (index, type) => categoryAxisSettings.show ? index : '',
+                scaleType: options.categoryAxisScaleType,
+                axisDisplayUnits: options.categoryAxisDisplayUnits,
+            });
 
-			xAxisProperties.axisLabel = "New Label";
-			return xAxisProperties;
-		}
+            if (categoryAxisSettings.show)
+                // Should handle the label, units of the label and the axis style
+                xAxisProperties.axisLabel = AxisHelper.createAxisLabel(objects, '', ''); //axes.x.axisLabel);
+            return xAxisProperties;
+        }
 
-		private renderAxis(height: number, xAxisProperties: IAxisProperties, data: DotPlotDataView, duration: number): void {
-			this.xAxis.attr(
-				{
-					transform: SVGUtil.translate(0, height)
-				});
+        private renderAxis(height: number, viewportIn: IViewport, xAxisProperties: IAxisProperties, categoryAxisSettings: DotPlotCategoryAxisSettings, data: DotPlotDataView, duration: number): void {
+            this.xAxis.attr(
+                {
+                    transform: SVGUtil.translate(0, height)
+                });
 
-			let xAxis = xAxisProperties.axis;
-			xAxis.orient('bottom');
+            let xAxis = xAxisProperties.axis;
+            xAxis.orient('bottom');
 
-			this.xAxis
-				.transition()
-				.duration(duration)
-				.call(xAxis);
-		}
-	}
+            this.xAxis
+                .transition()
+                .duration(duration)
+                .call(xAxis)
+                .call(DotPlot.setAxisLabelColor, categoryAxisSettings.labelColor);
 
-	export interface DotplotBehaviorOptions {
-		columns: D3.Selection;
-		clearCatcher: D3.Selection;
-		interactivityService: IInteractivityService;
-	}
+            this.xAxis.selectAll('line').style('opacity', data.settings.categoryAxisSettings.show ? 1 : 0);
 
-	export class DotplotBehavior implements IInteractiveBehavior {
-		private columns: D3.Selection;
-		private clearCatcher: D3.Selection;
-		private interactivityService: IInteractivityService;
+            this.xAxis.selectAll('.xAxisLabel').remove();
+            if (data.settings.categoryAxisSettings.showAxisTitle) {
+                this.xAxis.append("text")
+                    .text(this.dataView.categorical.categories[0].source.displayName)
+                    .style("text-anchor", "middle")
+                    .attr('class', 'xAxisLabel')
+                    .style('fill', categoryAxisSettings.labelColor.solid.color)
+                    .attr('transform', 'translate(' + (viewportIn.width / 2) + ',40)');
+            }
+        }
 
-		public bindEvents(options: DotplotBehaviorOptions, selectionHandler: ISelectionHandler): void {
-			this.columns = options.columns;
-			this.clearCatcher = options.clearCatcher;
-			this.interactivityService = options.interactivityService;
+        private static setAxisLabelColor(g: D3.Selection, fill: Fill): void {
+            g.selectAll('g.tick text').style('fill', fill && fill.solid ? fill.solid.color : null);
+        }
+    }
 
-			this.columns.on('click', (d: SelectableDataPoint, i: number) => {
-				selectionHandler.handleSelection(d, d3.event.ctrlKey);
-			});
+    export interface DotplotBehaviorOptions {
+        columns: D3.Selection;
+        clearCatcher: D3.Selection;
+        interactivityService: IInteractivityService;
+    }
 
-			options.clearCatcher.on('click', () => {
-				selectionHandler.handleClearSelection();
-			});
-		}
+    export class DotplotBehavior implements IInteractiveBehavior {
+        private columns: D3.Selection;
+        private clearCatcher: D3.Selection;
+        private interactivityService: IInteractivityService;
 
-		public renderSelection(hasSelection: boolean) {
-			let hasHighlights = this.interactivityService.hasSelection();
-			this.columns.style("fill-opacity", (d: DotPlotDataGroup) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights));
-		}
-	}
+        public bindEvents(options: DotplotBehaviorOptions, selectionHandler: ISelectionHandler): void {
+            this.columns = options.columns;
+            this.clearCatcher = options.clearCatcher;
+            this.interactivityService = options.interactivityService;
+
+            this.columns.on('click', (d: SelectableDataPoint, i: number) => {
+                selectionHandler.handleSelection(d, d3.event.ctrlKey);
+            });
+
+            options.clearCatcher.on('click', () => {
+                selectionHandler.handleClearSelection();
+            });
+        }
+
+        public renderSelection(hasSelection: boolean) {
+            let hasHighlights = this.interactivityService.hasSelection();
+            this.columns.style("fill-opacity", (d: DotPlotDataGroup) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights));
+        }
+    }
 }

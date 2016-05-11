@@ -737,14 +737,13 @@ module powerbi.visuals {
             labelSettings: VisualDataLabelsSettings,
             currentViewport: IViewport): ILabelLayout {
 
-            let yScale = axisOptions.yScale;
-            let xScale = axisOptions.xScale;
+            let categoryScale = axisOptions.categoryScale;
+            let valueScale = axisOptions.valueScale;
             let marginLeft = axisOptions.margin.left;
             let innerTextHeightRate = 0.7;
-            let rangeBand = axisOptions.xScale.rangeBand();
-
-            //the bars are tranform, verticalRange mean horizontal range, xScale is y, yscale is x
-            let pixelSpan = axisOptions.verticalRange / 2;
+            let rangeBand = axisOptions.categoryScale.rangeBand();
+            
+            let pixelSpan = axisOptions.maxWidth / 2;
             let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], funnelChartProps.general.formatString);
             let textMeasurer: ITextAsSVGMeasurer = TextMeasurementService.measureSvgTextWidth;
 
@@ -759,8 +758,8 @@ module powerbi.visuals {
 
             return {
                 labelText: (d: FunnelSlice) => {
-                    let barWidth = Math.abs(yScale(d.value) - yScale(0));
-                    let insideAvailableSpace = Math.abs(yScale(d.value) - yScale(0)) - (textMinimumPadding * 2);
+                    let barWidth = Math.abs(categoryScale(d.value) - categoryScale(0));
+                    let insideAvailableSpace = Math.abs(categoryScale(d.value) - categoryScale(0)) - (textMinimumPadding * 2);
                     let outsideAvailableSpace = pixelSpan - (barWidth / 2) - textMinimumPadding;
                     let labelFormatString = (formatString != null) ? formatString : d.labelFormatString;
 
@@ -783,11 +782,11 @@ module powerbi.visuals {
                         };
                         //in order to make it center aligned we should 'correct' the height to not calculate text margin
                         let labelHeight = TextMeasurementService.estimateSvgTextHeight(properties);
-                        return xScale(i) + (rangeBand / 2) + (labelHeight / 2);
+                        return categoryScale(d.categoryOrMeasureIndex) + (rangeBand / 2) + (labelHeight / 2);
                     },
                     x: (d: FunnelSlice) => {
-                        let barWidth = Math.abs(yScale(d.value) - yScale(0));
-                        let insideAvailableSpace = Math.abs(yScale(d.value) - yScale(0)) - (textMinimumPadding * 2);
+                        let barWidth = Math.abs(valueScale(d.value) - valueScale(0));
+                        let insideAvailableSpace = Math.abs(valueScale(d.value) - valueScale(0)) - (textMinimumPadding * 2);
                         let outsideAvailableSpace = pixelSpan - (barWidth / 2) - textMinimumPadding;
                         let maximumTextSize = Math.max(insideAvailableSpace, outsideAvailableSpace);
                         let labelFormatString = (formatString != null) ? formatString : d.labelFormatString;

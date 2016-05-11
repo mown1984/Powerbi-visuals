@@ -36,6 +36,7 @@ module powerbi.data {
         visitHierarchy(expr: SQHierarchyExpr, arg: TArg): T;
         visitHierarchyLevel(expr: SQHierarchyLevelExpr, arg: TArg): T;
         visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr, arg: TArg): T;
+        visitSelectRef(expr: SQSelectRefExpr, arg: TArg): T;
         visitAnd(expr: SQAndExpr, arg: TArg): T;
         visitBetween(expr: SQBetweenExpr, arg: TArg): T;
         visitIn(expr: SQInExpr, arg: TArg): T;
@@ -91,6 +92,10 @@ module powerbi.data {
         }
 
         public visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr, arg: TArg): T {
+            return this.visitDefault(expr, arg);
+        }
+
+        public visitSelectRef(expr: SQSelectRefExpr, arg: TArg): T {
             return this.visitDefault(expr, arg);
         }
 
@@ -211,6 +216,10 @@ module powerbi.data {
 
         public visitPropertyVariationSource(expr: SQPropertyVariationSourceExpr): void {
             expr.arg.accept(this);
+        }
+
+        public visitSelectRef(expr: SQSelectRefExpr): void {
+            this.visitDefault(expr);
         }
 
         public visitBetween(expr: SQBetweenExpr): void {

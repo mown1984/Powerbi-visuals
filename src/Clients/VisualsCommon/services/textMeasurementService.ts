@@ -43,6 +43,7 @@ module powerbi {
         fontSize: string;
         fontWeight?: string;
         fontStyle?: string;
+        fontVariant?: string;
         whiteSpace?: string;
     }
 
@@ -62,6 +63,7 @@ module powerbi {
         let spanElement: JQuery;
         let svgTextElement: D3.Selection;
         let canvasCtx: CanvasContext;
+        let fallbackFontFamily: string;
 
         /**
          * Idempotent function for adding the elements to the DOM. 
@@ -82,8 +84,9 @@ module powerbi {
                 })
                 .append('text');
             canvasCtx = (<CanvasElement>$('<canvas/>').get(0)).getContext("2d");
+            fallbackFontFamily = window.getComputedStyle(svgTextElement.node()).fontFamily;
         }
-        
+
         /**
          * Removes spanElement from DOM.
          */
@@ -105,7 +108,13 @@ module powerbi {
 
             ensureDOM();
 
-            canvasCtx.font = textProperties.fontSize + ' ' + textProperties.fontFamily;
+            canvasCtx.font =
+                    (textProperties.fontStyle || "") + " " +
+                    (textProperties.fontVariant || "") + " " +
+                    (textProperties.fontWeight || "") + " " +
+                    textProperties.fontSize + " " +
+                    (textProperties.fontFamily || fallbackFontFamily);
+
             return canvasCtx.measureText(textProperties.text).width;
         }
 
@@ -124,7 +133,8 @@ module powerbi {
                 .text(textProperties.text)
                 .attr({
                     'visibility': 'hidden',
-                    'font-family': textProperties.fontFamily,
+                    'font-family': textProperties.fontFamily || fallbackFontFamily,
+                    'font-variant': textProperties.fontVariant,
                     'font-size': textProperties.fontSize,
                     'font-weight': textProperties.fontWeight,
                     'font-style': textProperties.fontStyle,
@@ -221,6 +231,7 @@ module powerbi {
                 fontSize: element.css('font-size'),
                 fontWeight: element.css('font-weight'),
                 fontStyle: element.css('font-style'),
+                fontVariant: element.css('font-variant'),
                 whiteSpace: element.css('white-space')
             };
         }
@@ -239,6 +250,7 @@ module powerbi {
                 fontSize: style.fontSize,
                 fontWeight: style.fontWeight,
                 fontStyle: style.fontStyle,
+                fontVariant: style.fontVariant,
                 whiteSpace: style.whiteSpace
             };
         }
@@ -345,7 +357,7 @@ module powerbi {
             let height = estimateSvgTextHeight(properties) + linePadding;
             let maxNumLines = Math.max(1, Math.floor(maxHeight / height));
             let node = d3.select(textElement);
-            
+
             // Save y of parent textElement to apply as first tspan dy
             let firstDY = node.attr('y');
 
@@ -382,7 +394,7 @@ module powerbi {
             let properties = getSvgMeasurementProperties(<SVGTextElement>textElement);
             let height = estimateSvgTextHeight(properties) + linePadding;
             let maxNumLines = Math.max(1, Math.floor(maxHeight / height));
-            
+
             // Store and clear text content
             let labelText = textElement.textContent;
             textElement.textContent = null;

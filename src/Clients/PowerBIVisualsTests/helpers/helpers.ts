@@ -61,6 +61,7 @@ module powerbitests.helpers {
             .attr('id', 'item')
             .css('width', width)
             .css('height', height)
+            .css("position", "relative")
             .addClass('visual');
         setFixtures(element[0].outerHTML);
 
@@ -159,7 +160,7 @@ module powerbitests.helpers {
     function mouseEvent (mouseEventType: MouseEventType, x: number, y: number, eventType?: ClickEventType): void {
         let type = eventType || ClickEventType.Default;
         this.each(function (i, e) {
-            let evt = createMouseClickEvent(mouseEventType, type, x, y);
+            let evt = createMouseEvent(mouseEventType, type, x, y);
             e.dispatchEvent(evt);
         });
     };
@@ -279,7 +280,14 @@ module powerbitests.helpers {
         return mouseEvt;
     }
 
-    export function createMouseClickEvent(mouseEventType: MouseEventType, eventType: ClickEventType, x: number, y: number): MouseEvent {
+    /**
+     * Creates mouse event 
+     * @param eventType {ClickEventType}.
+     * @param x clientX.
+     * @param y clientY.
+     * @param eventName {string} Event name e.g click, mousedown ... 
+     */
+    export function createMouseEvent(mouseEventType: MouseEventType, eventType: ClickEventType, x: number, y: number): MouseEvent {
         let type = eventType || ClickEventType.Default;
         let evt = document.createEvent("MouseEvents");
         evt.initMouseEvent(

@@ -395,7 +395,7 @@ module powerbitests {
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col2', isMeasure: true, roles: { 'Values': true } },
                     { displayName: 'col3', isMeasure: true, roles: { 'Gradient': true } }
                 ],
                 objects: {
@@ -446,7 +446,7 @@ module powerbitests {
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col2', isMeasure: true, roles: { 'Values': true } },
                     { displayName: 'col3', isMeasure: true, roles: { 'Gradient': true } }
                 ],
                 objects: {
@@ -496,7 +496,7 @@ module powerbitests {
             let dataViewGradientMetadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'col1' },
-                    { displayName: 'col2', isMeasure: true },
+                    { displayName: 'col2', isMeasure: true, roles: { 'Values': true } },
                     { displayName: 'col3', isMeasure: true, roles: { 'Gradient': true } }
                 ],
                 objects: {
@@ -1185,7 +1185,7 @@ module powerbitests {
                         }],
                         values: DataViewTransform.createValueColumns([
                             {
-                                source: dataViewMetadataCategorySeriesColumns.columns[1],
+                                source: dataViewMetadataCategorySeriesColumns.columns[2],
                                 values: [110, 120, 130],
                                 highlights: [60, 80, 20]
                             }])
@@ -1253,6 +1253,45 @@ module powerbitests {
 
                 done();
             }, DefaultWaitForRender);
+        });
+        it("labels content mutil-measure", (done) => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'a', queryName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'b', queryName: 'b', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'c', queryName: 'c', isMeasure: true, roles: { 'Values': true } }
+                ]
+            };
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata.columns[0],
+                            values: [1],
+                        },
+                        {
+                            source: dataViewMetadata.columns[1],
+                            values: [2],
+                        },
+                        {
+                            source: dataViewMetadata.columns[2],
+                            values: [3],
+                        }
+                    ])
+                }
+            };
+
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                expect($('.treemap .labels .majorLabel').length).toEqual(3);
+                expect($('.treemap .labels .majorLabel').first().text()).toBe('a');
+                expect($('.treemap .labels .majorLabel').last().text()).toBe('c');
+                done();
+            }, DefaultWaitForRender);
+
         });
     });
 
@@ -3548,14 +3587,13 @@ module powerbitests {
             }
         });
 
-        it('treemap dataView multi category/series with null values',() => {
+        it('treemap dataView category static series with null values',() => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
                     { displayName: 'Continent', queryName: 'select1', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                    { displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Sales', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Profit', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Revenue', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3564,11 +3602,6 @@ module powerbitests {
                 mocks.dataViewScopeIdentity('c'),
                 mocks.dataViewScopeIdentity('d'),
                 mocks.dataViewScopeIdentity('e'),
-            ];
-            let seriesIdentities = [
-                mocks.dataViewScopeIdentity(2004),
-                mocks.dataViewScopeIdentity(2008),
-                mocks.dataViewScopeIdentity(2012),
             ];
 
             let dataView: DataView = {
@@ -3582,17 +3615,14 @@ module powerbitests {
                     }],
                     values: DataViewTransform.createValueColumns([
                         {
-                            source: metadata.columns[2],
+                            source: metadata.columns[1],
                             values: [null, 120, 130, 140, null],
-                            identity: seriesIdentities[0],
+                        }, {
+                            source: metadata.columns[2],
+                            values: [210, 220, null, 240, null],
                         }, {
                             source: metadata.columns[3],
-                            values: [210, 220, null, 240, null],
-                            identity: seriesIdentities[1],
-                        }, {
-                            source: metadata.columns[4],
                             values: [null, 320, 330, 340, null],
-                            identity: seriesIdentities[2],
                         }])
                 }
             };
@@ -3617,16 +3647,25 @@ module powerbitests {
             expect(treeMapData.legendData.title).toBe('Continent');
             expect(treeMapData.legendData.dataPoints[0].label).toBe('(Blank)');
             expect(treeMapData.legendData.dataPoints[1].label).toBe('Asia');
+
+            // Tooltips
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node11: TreemapNode = <TreemapNode>rootNode.children[0].children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+            expect(node1.tooltipInfo).toEqual([{ displayName: "Continent", value: "(Blank)" }]);
+            expect(node11.tooltipInfo).toEqual([{ displayName: "Continent", value: "(Blank)" }, { displayName: "Profit", value: "210" }]);
+            expect(node1.children.length).toBe(1);
+            expect(node2.children.length).toBe(3);
         });
 
-        it('treemap dataView multi category/series with null values tooltip data test',() => {
+        it('treemap dataView category and dynamic series with null values', () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'Continent', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Continent', queryName: 'select1', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
                     { displayName: 'Year', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2004', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2008', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                    { displayName: null, groupName: '2012', isMeasure: true, roles: { 'Values': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                    { displayName: 'Sales', groupName: null, isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Sales', groupName: '2008', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Sales', groupName: '2012', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
                 ]
             };
             let categoryIdentities = [
@@ -3637,7 +3676,7 @@ module powerbitests {
                 mocks.dataViewScopeIdentity('e'),
             ];
             let seriesIdentities = [
-                mocks.dataViewScopeIdentity(2004),
+                mocks.dataViewScopeIdentity(null),
                 mocks.dataViewScopeIdentity(2008),
                 mocks.dataViewScopeIdentity(2012),
             ];
@@ -3664,27 +3703,106 @@ module powerbitests {
                             source: metadata.columns[4],
                             values: [null, 320, 330, 340, null],
                             identity: seriesIdentities[2],
-                        }])
+                        }],
+                        [seriesColumnRef],
+                        metadata.columns[1])
                 }
             };
 
             let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let treeMapData = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport);
+            let rootNode = treeMapData.root;
 
+            let nodes = rootNode.children;
+            expect(nodes.length).toBe(4);
+            expect(nodes[0].name).toBe('(Blank)');
+            expect(nodes[0].size).toBe(210);
+            expect(nodes[0].children).toBeDefined();
+            expect(nodes[0].children.length).toBe(1);
+            expect((<TreemapNode>nodes[0]).key).toBe(JSON.stringify({ nodeKey: SelectionId.createWithId(categoryIdentities[0]).getKey(), depth: 1 }));
+
+            let shapeColors = nodes.map(n => (<TreemapNode>n).color);
+            expect(shapeColors).toEqual(ArrayExtensions.distinct(shapeColors));
+
+            // Legend
+            expect(treeMapData.legendData.title).toBe('Continent');
+            expect(treeMapData.legendData.dataPoints[0].label).toBe('(Blank)');
+            expect(treeMapData.legendData.dataPoints[1].label).toBe('Asia');
+
+            // Tooltips
             let node1: TreemapNode = <TreemapNode>rootNode.children[0];
             let node11: TreemapNode = <TreemapNode>rootNode.children[0].children[0];
             let node2: TreemapNode = <TreemapNode>rootNode.children[1];
-            let node3: TreemapNode = <TreemapNode>rootNode.children[2];
-            let node4: TreemapNode = <TreemapNode>rootNode.children[3];
+            let node21: TreemapNode = <TreemapNode>rootNode.children[1].children[0];
+            let node22: TreemapNode = <TreemapNode>rootNode.children[1].children[1];
 
             expect(node1.tooltipInfo).toEqual([{ displayName: "Continent", value: "(Blank)" }]);
-            expect(node11.tooltipInfo).toEqual([{ displayName: "Continent", value: "(Blank)" }, { displayName: null, value: "210" }]);
+            expect(node11.tooltipInfo).toEqual([{ displayName: "Continent", value: "(Blank)" }, { displayName: "Year", value: "2008" }, { displayName: "Sales", value: "210" }]);
+            expect(node21.tooltipInfo).toEqual([{ displayName: "Continent", value: "Asia" }, { displayName: "Year", value: "(Blank)" }, { displayName: "Sales", value: "120" }]);
+            expect(node22.tooltipInfo).toEqual([{ displayName: "Continent", value: "Asia" }, { displayName: "Year", value: "2008" }, { displayName: "Sales", value: "220" }]);
 
-            expect(node2.tooltipInfo).toEqual([{ displayName: "Continent", value: "Asia" }, { displayName: null, value: "120" }]);
+            expect(node1.children.length).toBe(1);
+            expect(node2.children.length).toBe(3);
+        });
 
-            expect(node3.tooltipInfo).toEqual([{ displayName: "Continent", value: "Australia" }, { displayName: null, value: "130" }]);
-            expect(node4.tooltipInfo).toEqual([{ displayName: "Continent", value: "Europe" }, { displayName: null, value: "140" }]);
+        it('treemap dataView category/series on the same column', () => {
+            let metadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'Continent', queryName: 'select1', roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Continent', queryName: 'select1', roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                    { displayName: 'Sales', groupName: 'a', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Sales', groupName: 'b', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                    { displayName: 'Sales', groupName: 'c', isMeasure: true, roles: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) }
+                ]
+            };
+            let categoryIdentities = [
+                mocks.dataViewScopeIdentity('a'),
+                mocks.dataViewScopeIdentity('b'),
+                mocks.dataViewScopeIdentity('c'),
+            ];
+
+            let dataView: DataView = {
+                metadata: metadata,
+                categorical: {
+                    categories: [{
+                        source: metadata.columns[0],
+                        values: ['Asia', 'Australia', 'Europe'],
+                        identity: categoryIdentities,
+                        identityFields: [categoryColumnRef],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: metadata.columns[2],
+                            values: [null, 120, 130],
+                            identity: categoryIdentities[0],
+                        }, {
+                            source: metadata.columns[3],
+                            values: [210, 220, null],
+                            identity: categoryIdentities[1],
+                        }, {
+                            source: metadata.columns[4],
+                            values: [null, 320, 330],
+                            identity: categoryIdentities[2],
+                        }],
+                        [seriesColumnRef],
+                        metadata.columns[0])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let treeMapData = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport);
+            let rootNode = treeMapData.root;
+
+            // Tooltips
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node11: TreemapNode = <TreemapNode>rootNode.children[0].children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+            expect(node1.tooltipInfo).toEqual([{ displayName: "Continent", value: 'Asia' }]);
+            expect(node11.tooltipInfo).toEqual([{ displayName: "Continent", value: 'Asia' },{ displayName: "Sales", value: "210" }]);
+            expect(node1.children.length).toBe(1);
+            expect(node2.children.length).toBe(3);
         });
 
         it('treemap non-categorical multi-measure tooltip values test',() => {
@@ -3865,6 +3983,36 @@ module powerbitests {
             expect(treeMapData.legendData.dataPoints[0].label).toBe('EventCount');
         });
 
+        it("treemap mutil-measures with highlights tooltip data test", () => {
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [110],
+                            highlights: [60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [210],
+                            highlights: [140]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "BugsFiled", value: "110" }, { displayName: 'Highlighted', value: '60' }]);
+
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
+            expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "210" }, { displayName: 'Highlighted', value: '140' }]);
+        });
+
         it("treemap categories and measures with highlights tooltip data test", () => {
             let dataView: DataView = {
                 metadata: dataViewMetadataCategoryAndMeasures,
@@ -3899,16 +4047,16 @@ module powerbitests {
             let node3: TreemapNode = <TreemapNode>rootNode.children[1].children[0];
             let node4: TreemapNode = <TreemapNode>rootNode.children[1].children[1];
 
-            expect(node1.tooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFiled", value: "110" }]);
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
             expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFiled", value: "110" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "60" }]);
 
-            expect(node2.tooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFixed", value: "210" }]);
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
             expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFixed", value: "210" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "140" }]);
 
-            expect(node3.tooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFiled", value: "120" }]);
+            expect(node3.tooltipInfo).toEqual(node3.highlightedTooltipInfo);
             expect(node3.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFiled", value: "120" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "60" }]);
 
-            expect(node4.tooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFixed", value: "220" }]);
+            expect(node4.tooltipInfo).toEqual(node4.highlightedTooltipInfo);
             expect(node4.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFixed", value: "220" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "200" }]);
         });
 
@@ -3963,7 +4111,7 @@ module powerbitests {
             helpers.assertColorsMatch(node2.color, dataPointColors[1]);
         });
 
-        it("treemap gradient color test - validate tool tip", () => {
+        it("treemap gradient color test - validate tooltip", () => {
             let dataPointColors = ["#d9f2fb", "#ff557f", "#b1eab7"];
             let objectDefinitions: powerbi.DataViewObjects[] = [
                 { dataPoint: { fill: { solid: { color: dataPointColors[0] } } } },
@@ -4012,7 +4160,7 @@ module powerbitests {
             expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col2', value: '120' }, { displayName: 'col3', value: '220' }]);
         });
 
-        it("treemap Gradient and Y have the index - validate tool tip", () => {
+        it("treemap Gradient and Y have the index - validate tooltip", () => {
             let dataPointColors = ["#d9f2fb", "#ff557f", "#b1eab7"];
             let objectDefinitions: powerbi.DataViewObjects[] = [
                 { dataPoint: { fill: { solid: { color: dataPointColors[0] } } } },
@@ -4061,21 +4209,16 @@ module powerbitests {
 
             helpers.assertColorsMatch(node1.color, dataPointColors[0]);
             helpers.assertColorsMatch(node2.color, dataPointColors[1]);
-            expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col3', value: '210' }, { displayName: 'col2', value: '110' }]);
-            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col3', value: '220' }, { displayName: 'col2', value: '120' }]);
+            expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Front end' }, { displayName: 'col3', value: '210' }, { displayName: 'Highlighted', value: '140' }, { displayName: 'col2', value: '110' }]);
+            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'Back end' }, { displayName: 'col3', value: '220' }, { displayName: 'Highlighted', value: '200' }, { displayName: 'col2', value: '120' }]);
         });
 
-        it('treemap non-categorical series, formatted color', () => {
+        it('treemap non-categorical series, formatted color and tooltips', () => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
-                    { displayName: 'col1', queryName: 'col1', roles: { 'Values': true }},
-                    { displayName: 'col2', queryName: 'col2', isMeasure: true }]
-            };
-
-            let dataViewMetadata3Measure: powerbi.DataViewMetadata = {
-                columns: [
-                    { displayName: 'col1', queryName: 'col1', isMeasure: true, roles: { 'Values': true } },
-                    { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { 'Values': true } }
+                    { displayName: 'col1', queryName: 'col1', roles: { 'Series': true } },
+                    { displayName: 'col2', queryName: 'col2', groupName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'col2', queryName: 'col2', groupName: 'b', isMeasure: true, roles: { 'Values': true } },
                 ]
             };
 
@@ -4083,21 +4226,21 @@ module powerbitests {
                 categorical: {
                     values: DataViewTransform.createValueColumns([
                         {
-                            source: dataViewMetadata3Measure.columns[0],
+                            source: dataViewMetadata.columns[1],
                             values: [200],
-                            identity: mocks.dataViewScopeIdentity('col1'),
+                            identity: mocks.dataViewScopeIdentity('a'),
                         }, {
-                            source: dataViewMetadata3Measure.columns[1],
+                            source: dataViewMetadata.columns[2],
                             values: [300],
-                            identity: mocks.dataViewScopeIdentity('col2'),
+                            identity: mocks.dataViewScopeIdentity('b'),
                         }
                     ],
-                        [categoryColumnRef],
-                        dataViewMetadata.columns[1])
+                        [seriesColumnRef],
+                        dataViewMetadata.columns[0])
                 },
                 metadata: dataViewMetadata,
             };
-            
+
             let groupedValues = dataView.categorical.values.grouped();
             groupedValues[0].objects = { dataPoint: { fill: { solid: { color: '#00FF00' } } } };
             groupedValues[1].objects = { dataPoint: { fill: { solid: { color: '#FF0000' } } } };
@@ -4110,9 +4253,11 @@ module powerbitests {
             let node2: TreemapNode = <TreemapNode>rootNode.children[1];
 
             helpers.assertColorsMatch(node1.color, '#00FF00');
-            helpers.assertColorsMatch(node2.color, '#FF0000' );
+            helpers.assertColorsMatch(node2.color, '#FF0000');
+            expect(node1.tooltipInfo).toEqual([{ displayName: 'col1', value: 'a' }, { displayName: 'col2', value: '200' }]);
+            expect(node2.tooltipInfo).toEqual([{ displayName: 'col1', value: 'b' }, { displayName: 'col2', value: '300' }]);
         });
-        
+
         describe("Field used a gradient and value", () => {
             let dataBuilder: TreemapDataBuilder;
 
@@ -4260,12 +4405,12 @@ module powerbitests {
                     let gradientColumn = valueDataArray[0];
                     gradientColumn.source.roles['Gradient'] = true;
                 } else {
-                    dataViewMetadata.columns.push(this.gradientColumn);
-                    valueDataArray.push({
-                        source: this.gradientColumn,
-                        values: this.gradientValues
-                    });
-                }
+                dataViewMetadata.columns.push(this.gradientColumn);
+                valueDataArray.push({
+                    source: this.gradientColumn,
+                    values: this.gradientValues
+                });
+            }
             }
             
             let categories: powerbi.DataViewCategoryColumn[] = this.buildCategories(dataViewMetadata);

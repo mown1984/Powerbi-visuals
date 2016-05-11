@@ -1356,7 +1356,9 @@ module powerbi.visuals.samples {
 			}
 			timelineData.categorySourceName = dataView.categorical.categories[0].source.displayName;
 			timelineData.columnIdentity = <powerbi.data.SQColumnRefExpr>dataView.categorical.categories[0].identityFields[0];
-			timelineData.columnIdentity.ref = "Date";
+			if (dataView.categorical.categories[0].source.type.numeric) {
+				timelineData.columnIdentity.ref = "Date";
+			}
 			if (this.isDataNotMatch(dataView))
 				return;
 			let timelineElements: DatePeriod[] = timelineData.currentGranularity.getDatePeriods();

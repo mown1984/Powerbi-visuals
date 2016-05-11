@@ -28,10 +28,11 @@ module powerbitests {
     powerbitests.mocks.setLocale();
 
     describe("Capbalities Validation", () => {
-        xit("VisualFactory.getVisuals - categorical - various dataViews", () => {
+        it("VisualFactory.getVisuals - categorical - various dataViews", () => {
             let visualPluginService = powerbi.visuals.visualPluginFactory.create();
             visualPluginService.removeAnyCustomVisuals();
             let allVisualPlugins = visualPluginService.getVisuals();
+            let failures = 0;
 
             for (let i = 0; i < allVisualPlugins.length; i++) {
                 let visualPlugin: powerbi.IVisualPlugin = allVisualPlugins[i];
@@ -41,11 +42,13 @@ module powerbitests {
                     for (let i = 0, ilen = roles.length; i < ilen; i++) {
                         let role = roles[i];
                         if (!role.displayName) {
-                            debug.assertFail(visualPlugin.name + " should have a displayName getter");
+                            debug.assertFail(visualPlugin.name + " should have a displayName");
+                            failures++;
                         }
                     }
                 }
             }
+            expect(failures).toBe(0);
         });
     });
 }

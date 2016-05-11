@@ -39,6 +39,7 @@ module powerbi {
     import FieldExprMeasurePattern = powerbi.data.FieldExprMeasurePattern;
     import FieldExprPattern = powerbi.data.FieldExprPattern;
     import FieldExprPercentilePattern = powerbi.data.FieldExprPercentilePattern;
+    import FieldExprSelectRefPattern = powerbi.data.FieldExprSelectRefPattern;
     import FieldExprPercentOfGrandTotalPattern = powerbi.data.FieldExprPercentOfGrandTotalPattern;
     import IFieldExprPatternVisitor = powerbi.data.IFieldExprPatternVisitor;
     import QueryProjectionsByRole = data.QueryProjectionsByRole;
@@ -171,6 +172,10 @@ module powerbi {
 
             public visitMeasure(measure: FieldExprMeasurePattern): string {
                 return ScriptInputColumnNameVisitor.getNameForProperty(measure, this.federatedSchema);
+            }
+
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): string {
+                return FieldExprPattern.visit(selectRef, this);
             }
 
             public visitPercentile(percentile: FieldExprPercentilePattern): string {

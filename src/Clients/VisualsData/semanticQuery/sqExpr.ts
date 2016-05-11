@@ -98,6 +98,12 @@ module powerbi.data {
             return expr.kind === SQExprKind.MeasureRef;
         }
 
+        public static isSelectRef(expr: SQExpr): expr is SQSelectRefExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.SelectRef;
+        }
+
         public static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr {
             debug.assertValue(expr, 'expr');
 
@@ -396,6 +402,7 @@ module powerbi.data {
         ScopedEval,
         Scope,
         Percentile,
+        SelectRef,
     }
 
     export interface SQExprMetadata {
@@ -500,7 +507,7 @@ module powerbi.data {
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitScopedEval(this, arg);
         }
-        
+
         public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
             return this.expression.getMetadata(federatedSchema);
         }
@@ -647,6 +654,21 @@ module powerbi.data {
 
         public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
             return visitor.visitHierarchyLevel(this, arg);
+        }
+    }
+
+    export class SQSelectRefExpr extends SQExpr {
+        public expressionName: string;
+
+        constructor(expressionName: string) {
+            debug.assertValue(expressionName, 'arg');
+
+            super(SQExprKind.SelectRef);
+            this.expressionName = expressionName;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitSelectRef(this, arg);
         }
     }
 
@@ -973,6 +995,10 @@ module powerbi.data {
             return new SQAggregationExpr(source, aggregate);
         }
 
+        export function selectRef(expressionName: string): SQSelectRefExpr {
+            return new SQSelectRefExpr(expressionName);
+        }
+
         export function percentile(source: SQExpr, k: number, exclusive: boolean): SQPercentileExpr {
             return new SQPercentileExpr(source, k, exclusive);
         }
@@ -1171,7 +1197,7 @@ module powerbi.data {
         }
 
         export function removeAggregate(expr: SQExpr): SQExpr {
-            return SQExprRemoveAggregateRewriter.rewrite(expr);
+            return FieldExprRemoveAggregateRewriter.rewrite(expr);
         }
 
         export function setPercentOfGrandTotal(expr: SQExpr): SQExpr {
@@ -1275,6 +1301,11 @@ module powerbi.data {
                 expr.name === comparand.name &&
                 expr.property === comparand.property &&
                 this.equals(expr.arg, comparand.arg);
+        }
+
+        public visitSelectRef(expr: SQSelectRefExpr, comparand: SQSelectRefExpr): boolean {
+            return comparand instanceof SQSelectRefExpr &&
+                expr.expressionName === comparand.expressionName;
         }
 
         public visitBetween(expr: SQBetweenExpr, comparand: SQExpr): boolean {
@@ -1941,6 +1972,10 @@ module powerbi.data {
             return this.defaultRewrite();
         }
 
+        public visitSelectRef(selectRef: FieldExprSelectRefPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
         public visitEntity(entity: FieldExprEntityPattern): SQExpr {
             return this.defaultRewrite();
         }
@@ -1971,6 +2006,68 @@ module powerbi.data {
 
         private defaultRewrite(): SQExpr {
             return SQExprChangeAggregateRewriter.rewrite(this.sqExpr, this.aggregate);
+        }
+    }
+
+    class FieldExprRemoveAggregateRewriter implements IFieldExprPatternVisitor<SQExpr> {
+
+        constructor(private sqExpr: SQExpr) {
+        }
+
+        public static rewrite(sqExpr: SQExpr): SQExpr {
+            return FieldExprPattern.visit(sqExpr, new FieldExprRemoveAggregateRewriter(sqExpr));
+        }
+
+        public visitPercentOfGrandTotal(pattern: FieldExprPercentOfGrandTotalPattern): SQExpr {
+            return FieldExprRemoveAggregateRewriter.rewrite(SQExprBuilder.fieldExpr(pattern.baseExpr));
+        }
+
+        public visitColumn(column: FieldExprColumnPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitSelectRef(selectRef: FieldExprSelectRefPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitEntity(entity: FieldExprEntityPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchy(hierarchy: FieldExprHierarchyPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitMeasure(measure: FieldExprMeasurePattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        public visitPercentile(percentile: FieldExprPercentilePattern): SQExpr {
+            return this.defaultRewrite();
+        }
+
+        private defaultRewrite(): SQExpr {
+            return SQExprRemoveAggregateRewriter.rewrite(this.sqExpr);
         }
     }
 

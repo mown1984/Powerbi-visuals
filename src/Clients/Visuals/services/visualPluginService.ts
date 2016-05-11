@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -51,18 +51,18 @@ module powerbi.visuals {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
-        
+
         sandboxVisualsEnabled?: boolean;
 
         /**
-        * R visual is enabled for consumption. 
+        * R visual is enabled for consumption.
         * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
         * When turned off, R script will not be executed and the visual is treated as a static image visual.
         */
         scriptVisualEnabled?: boolean;
 
         /**
-        * R visual is enabled for authoring. 
+        * R visual is enabled for authoring.
         * When turned on, R visual will appear in the visual gallery.
         */
         scriptVisualAuthoringEnabled?: boolean;
@@ -74,13 +74,15 @@ module powerbi.visuals {
         filledMapDataLabelsEnabled?: boolean;
 
         lineChartLabelDensityEnabled?: boolean;
-        
+
         /**
          * Enables button to center map to the current location
          */
         mapCurrentLocationEnabled?: boolean;
 
-        // TODO: VSTS 7167767: Remove temporary code for product demo.
+        /**
+         * Enables conditional formatting of the background color of cells for table visuals.
+         */
         conditionalFormattingEnabled?: boolean;
     }
 
@@ -150,7 +152,7 @@ module powerbi.visuals {
 
             public isCustomVisual(visual: string): boolean {
                 if (visual) {
-                    
+
                     if (this.plugins[visual]) {
                         return this.plugins[visual].custom === true;
                     }
@@ -528,7 +530,7 @@ module powerbi.visuals {
             // Slicer
             createPlugin(plugins, powerbi.visuals.plugins.slicer, () => new Slicer({
                 behavior: new SlicerWebBehavior(),
-            }));           
+            }));
             // Matrix
             createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix({
             }));
@@ -659,7 +661,7 @@ module powerbi.visuals {
                     animator: new WebColumnChartAnimator(),
                     tooltipsEnabled: true
                 }));
-                
+
                 // Line Chart
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.lineChart, () => new CartesianChart({
                     chartType: CartesianChartType.Line,
@@ -739,7 +741,7 @@ module powerbi.visuals {
 
                 // Disable tooltips for mobile
                 TooltipManager.ShowTooltips = false;
-                
+
                 // Don't trim overflow data on mobile
                 let trimOrdinalDataOnOverflow = false;
 
@@ -942,7 +944,7 @@ module powerbi.visuals {
                     default:
                         return false;
                 }
-            } 
+            }
         }
 
         // this function is called by tests

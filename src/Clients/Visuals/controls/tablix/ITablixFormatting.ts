@@ -188,8 +188,6 @@ module powerbi.visuals.controls {
      * Formatting Properties for Table Visual
     */
     export interface TablixFormattingPropertiesTable {
-        // TODO: VSTS 7167767: Remove temporary code for product demo.
-        isConditionalFormattingEnabled: boolean;
         general?: TablixFormattingPropertiesGeneralTable;
         grid?: TablixFormattingPropertiesGrid;
         columnHeaders?: TablixFormattingPropertiesRegion;

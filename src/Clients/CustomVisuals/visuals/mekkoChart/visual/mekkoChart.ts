@@ -3727,8 +3727,8 @@ module powerbi.visuals.samples {
                         var label = converterHelper.getFormattedLegendLabel(source, allValues, formatStringProp);
 
                         var color = hasDynamicSeries
-                            ? colorHelper.getColorForSeriesValue(valueGroupObjects || source.objects, allValues.identityFields, source.groupName)
-                            : colorHelper.getColorForMeasure(valueGroupObjects || source.objects, source.queryName);
+                            ? colorHelper.getColorForSeriesValue(valueGroupObjects, allValues.identityFields, source.groupName)
+                            : colorHelper.getColorForMeasure(source.objects, source.queryName);
 
                         legend.push({
                             icon: LegendIcon.Box,

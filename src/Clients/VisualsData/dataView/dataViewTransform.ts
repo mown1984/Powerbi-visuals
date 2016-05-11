@@ -227,7 +227,7 @@ module powerbi.data {
 
             let projectionOrdering = transforms.roles && transforms.roles.ordering;
             let projectionActiveItems = transforms.roles && transforms.roles.activeItems;
-            transformed = transformSelects(transformed, roleMappings, transforms.selects, projectionOrdering, selectsToInclude);
+            transformed = transformSelects(transformed, targetKinds, roleMappings, transforms.selects, projectionOrdering, selectsToInclude);
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
 
             // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
@@ -266,6 +266,7 @@ module powerbi.data {
 
         function transformSelects(
             dataView: DataView,
+            targetDataViewKinds: StandardDataViewKinds,
             roleMappings: DataViewMapping[],
             selectTransforms: DataViewSelectTransform[],
             projectionOrdering?: DataViewProjectionOrdering,
@@ -280,7 +281,8 @@ module powerbi.data {
             }
 
             // NOTE: no rewrites necessary for Tree (it doesn't reference the columns)
-            if (dataView.categorical) {
+
+            if (dataView.categorical && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Categorical)) {
                 dataView.categorical = applyRewritesToCategorical(dataView.categorical, columnRewrites, selectsToInclude);
 
                 // TODO VSTS 7024199: separate out structural transformations from dataViewTransform.transformSelects(...)
@@ -288,7 +290,9 @@ module powerbi.data {
                 dataView = pivotIfNecessary(dataView, roleMappings);
             }
 
-            if (dataView.matrix) {
+            // Don't perform this potentially expensive transform unless we actually have a matrix.
+            // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
+            if (dataView.matrix && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Matrix)) {
                 let matrixTransformationContext: MatrixTransformationContext = {
                     rowHierarchyRewritten: false,
                     columnHierarchyRewritten: false,
@@ -301,8 +305,11 @@ module powerbi.data {
                     DataViewPivotMatrix.apply(dataView.matrix, matrixTransformationContext);
             }
 
-            if (dataView.table)
-                dataView.table = applyRewritesToTable(dataView.table, columnRewrites, roleMappings, projectionOrdering);
+            // Don't perform this potentially expensive transform unless we actually have a table.
+            // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
+            if (dataView.table && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Table)) {
+                dataView.table = applyRewritesToTable(dataView.table, columnRewrites, projectionOrdering);
+            }
 
             return dataView;
         }
@@ -383,74 +390,67 @@ module powerbi.data {
                 categorical.categories = categories;
 
             let valuesOverride = Prototype.overrideArray(prototype.values, override);
-            let values = valuesOverride || prototype.values;
+            let valueColumns = valuesOverride || prototype.values;
 
-            if (values) {
-                let grouped = inherit(values.grouped());
-                for (let i = 0, ilen = grouped.length; i < ilen; i++) {
-                    grouped[i] = inherit(grouped[i]);
+            if (valueColumns) {
+                if (valueColumns.source) {
+                    if (selectsToInclude && !selectsToInclude[valueColumns.source.index]) {
+                        // if processing a split and this is the split without series...
+                        valueColumns.source = undefined;
+                    }
+                    else {
+                        let rewrittenValuesSource = findOverride(valueColumns.source, columnRewrites);
+                        if (rewrittenValuesSource)
+                            valueColumns.source = rewrittenValuesSource;
+                    }
                 }
+
                 if (selectsToInclude) {
                     // Apply selectsToInclude to values by removing value columns not included
-                    for (let i = values.length - 1; i >= 0; i--) {
-                        if (!selectsToInclude[values[i].source.index]) {
-                            values.splice(i, 1);
+                    for (let i = valueColumns.length - 1; i >= 0; i--) {
+                        if (!selectsToInclude[valueColumns[i].source.index]) {
+                            valueColumns.splice(i, 1);
                         }
                     }
+                }
 
-                    // Apply selectsToInclude to grouped()
-                    if (values.length > 0 && values[0].identity) {
-                        // We have a dynamic series, so we should remove any value columns not included in the split from each
-                        //    valueColumnGroup
-                        for (let i = 0, ilen = grouped.length ; i < ilen; i++) {
-                            let currentGroupValues = grouped[i].values;
-                            for (let j = currentGroupValues.length - 1; j >= 0; j--) {
-                                if (!selectsToInclude[currentGroupValues[j].source.index])
-                                    currentGroupValues.splice(i, 1);
-                            }
+                let isDynamicSeries = !!valueColumns.source;
+
+                debug.assert(_.every(valueColumns, (valueColumn) => isDynamicSeries === !!valueColumn.identity),
+                    'After applying selectsToInclude, all remaining DataViewValueColumn objects should have a consistent scope type (static vs. dynamic) with the parent DataViewValueColumns object.');
+                    
+                // Dynamic or not, always update the return values of grouped() to have the rewritten 'source' property
+                let seriesGroups: DataViewValueColumnGroup[];
+                if (isDynamicSeries) {
+                    // We have a dynamic series, so update the return value of grouped() to have the DataViewValueColumn objects with rewritten 'source'.
+                    // Also, exclude any column that belongs to a static series.
+                    seriesGroups = inherit(valueColumns.grouped());
+
+                    // The following assert is not a rule that's set in stone.  If it becomes false someday, update the code below to remove static series from seriesGroups.
+                    debug.assert(_.every(seriesGroups, (group) => !!group.identity), 'If the categorical has a dynamic series, query DataView is expected to have a grouped() function that returns only dynamic series groups, even when there is any column that belongs to a static group (in the case of combo chart and splits).  If this assertion becomes false someday, update the code below to remove static series from seriesGroups.');
+
+                    let nextSeriesGroupIndex = 0;
+                    let currentSeriesGroup: DataViewValueColumnGroup;
+                    for (let i = 0, ilen = valueColumns.length; i < ilen; i++) {
+                        let currentValueColumn = valueColumns[i];
+                        if (!currentSeriesGroup || (currentValueColumn.identity !== currentSeriesGroup.identity)) {
+                            currentSeriesGroup = inherit(seriesGroups[nextSeriesGroupIndex]);
+                            seriesGroups[nextSeriesGroupIndex] = currentSeriesGroup;
+                            currentSeriesGroup.values = [];
+                            nextSeriesGroupIndex++;
+                            debug.assert(currentValueColumn.identity === currentSeriesGroup.identity, 'expecting the value columns are sequenced by series groups');
                         }
-                    }
-                    else {
-                        // We are in a static series, so we should throw away the grouped and recreate it using the static values
-                        //   which have already been filtered
-                        grouped = [];
-                        grouped[0] = {
-                            values: values,
-                        };
+                        currentSeriesGroup.values.push(currentValueColumn);
                     }
                 }
-
-                if (values.source) {
-                    if (selectsToInclude && !selectsToInclude[values.source.index]) {
-                        values.source = undefined;
-                    }
-                    else {
-                        let rewrittenValuesSource = findOverride(values.source, columnRewrites);
-                        if (rewrittenValuesSource)
-                            values.source = rewrittenValuesSource;
-                    }
+                else {
+                    // We are in a static series, so we should throw away the grouped and recreate it using the static values
+                    //   which have already been filtered
+                    seriesGroups = [{ values: valueColumns }];
                 }
 
-                let currentGroupIndex = 0;
-                let group: DataViewValueColumnGroup;
-                for (let i = 0, ilen = values.length; i < ilen; i++) {
-                    let currentValue = values[i];
-                    if (!group || (currentValue.identity !== group.identity)) {
-                        debug.assert(!_.isUndefined(grouped[currentGroupIndex]) && currentValue.identity === grouped[currentGroupIndex].identity,
-                            'The input Categorical has at least one values column whose identity does not belong to any of the Series groups. ' + 
-                            'This query DataView Categorical is most likely containing the data across multiple splits, and the caller code is expected to ' +
-                            'specify the select indices for one of the splits in the parameter selectsToInclude.  ' +
-                            'Actual selectsToInclude=' + JSON.stringify(selectsToInclude));
-                        group = inherit(grouped[currentGroupIndex]);
-                        grouped[currentGroupIndex] = group;
-                        group.values = [];
-                        currentGroupIndex++;
-                    }
-                    group.values.push(currentValue);
-                }
-
-                categorical.values = values;
-                setGrouped(values, grouped);
+                valueColumns.grouped = () => seriesGroups;
+                categorical.values = valueColumns;
             }
 
             return categorical;
@@ -459,15 +459,9 @@ module powerbi.data {
         function applyRewritesToTable(
             prototype: DataViewTable,
             columnRewrites: ValueRewrite<DataViewMetadataColumn>[],
-            roleMappings: DataViewMapping[],
             projectionOrdering: DataViewProjectionOrdering): DataViewTable {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
-
-            // Don't perform this potentially expensive transform unless we actually have a table.
-            // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
-            if (!roleMappings || roleMappings.length !== 1 || !roleMappings[0].table)
-                return prototype;
 
             let table = inherit(prototype);
 
@@ -541,13 +535,12 @@ module powerbi.data {
             context: MatrixTransformationContext): DataViewMatrix {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
+            debug.assertValue(roleMappings, 'roleMappings');
+            
+            let firstRoleMappingWithMatrix = _.find(roleMappings, (roleMapping) => !!roleMapping.matrix);
+            debug.assertValue(firstRoleMappingWithMatrix, 'roleMappings - at least one role mapping is expected to target DataViewMatrix');
 
-            // Don't perform this potentially expensive transform unless we actually have a matrix.
-            // When we switch to lazy per-visual DataView creation, we'll be able to remove this check.
-            if (!roleMappings || roleMappings.length < 1 || !(roleMappings[0].matrix || (roleMappings[1] && roleMappings[1].matrix)))
-                return prototype;
-
-            let matrixMapping = roleMappings[0].matrix || roleMappings[1].matrix;
+            let matrixMapping = firstRoleMappingWithMatrix.matrix;
             let matrix = inherit(prototype);
 
             function override(metadata: DataViewMetadataColumn) {
@@ -1885,6 +1878,9 @@ module powerbi.data {
             debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(expr, 'expr');
 
+            if (SQExpr.isSelectRef(expr))
+                return expr.expressionName;
+
             if (!selectTransforms)
                 return;
 
@@ -1905,22 +1901,13 @@ module powerbi.data {
             debug.assertValue(identifier, 'identifier');
             debug.assertValue(identifierKind, 'identifierKind');
 
-            // NOTE: This implementation currently only supports categorical DataView, becuase that's the
-            // only scenario that has custom colors, as of this writing.  This would be rewritten to be more generic
-            // as required, when needed.
-            let dataViewCategorical = dataView.categorical;
-            if (!dataViewCategorical)
-                return;
+            let columns = dataView.metadata.columns;
 
-            let values = dataViewCategorical.values;
-            if (!values)
-                return;
-
-            for (let i = 0, len = values.length; i < len; i++) {
-                let valueCol = values[i];
+            for (let i = 0, len = columns.length; i < len; i++) {
+                let column = columns[i];
 
                 if (identifierKind === ColumnIdentifierKind.Role) {
-                    let valueColRoles = valueCol.source.roles;
+                    let valueColRoles = column.roles;
 
                     if (!valueColRoles || !valueColRoles[identifier])
                         continue;
@@ -1928,19 +1915,23 @@ module powerbi.data {
                 else {
                     debug.assert(identifierKind === ColumnIdentifierKind.QueryName, 'identifierKind === ColumnIdentifierKind.QueryName');
 
-                    if (valueCol.source.queryName !== identifier)
+                    if (column.queryName !== identifier)
                         continue;
                 }
 
-                let min = valueCol.min;
+                let aggregates = column.aggregates;
+                if (!aggregates)
+                    continue;
+
+                let min = <number>aggregates.min;
                 if (min === undefined)
-                    min = valueCol.minLocal;
+                    min = <number>aggregates.minLocal;
                 if (min === undefined)
                     continue;
 
-                let max = valueCol.max;
+                let max = <number>aggregates.max;
                 if (max === undefined)
-                    max = valueCol.maxLocal;
+                    max = <number>aggregates.maxLocal;
                 if (max === undefined)
                     continue;
 

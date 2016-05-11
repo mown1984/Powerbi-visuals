@@ -81,10 +81,12 @@ module powerbi.data {
         if (_.isEmpty(rows) || rows.length <= rowIdx)
             return;
 
+        let targetExpr = getTargetExpr(expr, selectTransforms);
         let cols = table.columns;
         for (let selectIdx = 0, selectLen = selectTransforms.length; selectIdx < selectLen; selectIdx++) {
             let selectTransform = selectTransforms[selectIdx];
-            if (!SQExpr.equals(selectTransform.expr, expr) || !selectTransform.queryName)
+
+            if (!SQExpr.equals(selectTransform.expr, targetExpr) || !selectTransform.queryName)
                 continue;
 
             for (let colIdx = 0, colLen = cols.length; colIdx < colLen; colIdx++) {
@@ -94,6 +96,17 @@ module powerbi.data {
                 return rows[rowIdx][colIdx];
             }
         }
+    }
 
+    function getTargetExpr(expr: SQExpr, selectTransforms: DataViewSelectTransform[]): SQExpr {
+        if (SQExpr.isSelectRef(expr)) {
+            for (let selectTransform of selectTransforms) {
+                if (selectTransform.queryName === expr.expressionName) {
+                    return selectTransform.expr;
+                }
+            }
+        }
+
+        return expr;
     }
 }

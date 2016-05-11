@@ -237,6 +237,8 @@ module powerbi.visuals {
             shouldCalculateStacked?: boolean,
             isComboChart?: boolean,
             tooltipsEnabled: boolean = true): LineChartData {
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
+            let valueRoleName = isComboChart ? "Y2" : "Y";
             let categorical = dataView.categorical;
             let category = categorical.categories && categorical.categories.length > 0
                 ? categorical.categories[0]
@@ -298,7 +300,7 @@ module powerbi.visuals {
 
                 if (!hasDynamicSeries) {
                     let labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null;
-                    let labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject> labelsSeriesGroup.source.objects['labels'] : null;
+                    let labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject>labelsSeriesGroup.source.objects['labels'] : null;
                     if (labelObjects) {
                         seriesLabelSettings = Prototype.inherit(defaultLabelSettings);
                         dataLabelUtils.updateLineChartLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings);
@@ -308,11 +310,11 @@ module powerbi.visuals {
                 let dataPointLabelSettings = (seriesLabelSettings) ? seriesLabelSettings : defaultLabelSettings;
 
                 let useHighlightValues = column.highlights && column.highlights.length > 0;
+                let categoryCount = reader.hasCategories() ? reader.getCategoryCount() : 1;
                 // NOTE: line capabilities don't allow highlights, but comboChart does - so only use highlight values if we are in "combo" mode
-                let valuesArray = useHighlightValues ? column.highlights : column.values;
-                for (let categoryIndex = 0, len = valuesArray.length; categoryIndex < len; categoryIndex++) {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     let categoryValue = categoryValues[categoryIndex];
-                    let value = AxisHelper.normalizeNonFiniteNumber(valuesArray[categoryIndex]);
+                    let value = AxisHelper.normalizeNonFiniteNumber(useHighlightValues ? reader.getHighlight(valueRoleName, categoryIndex, seriesIndex) : reader.getValue(valueRoleName, categoryIndex, seriesIndex));
 
                     // When Scalar, skip null categories and null values so we draw connected lines and never draw isolated dots.
                     if (isScalar && (categoryValue == null || value == null))
@@ -554,9 +556,9 @@ module powerbi.visuals {
                     .origin(Object)
                     .on("drag", dragMove);
                 d3.select(rootSvg)
-                 .style('touch-action', 'none')
-                 .call(drag)
-                 .on('click', dragMove);
+                    .style('touch-action', 'none')
+                    .call(drag)
+                    .on('click', dragMove);
             }
 
             // Internet Explorer and Edge use the stroke edge, not the path edge for the mouse coordinate's origin.
@@ -972,7 +974,7 @@ module powerbi.visuals {
                     .duration(duration)
                     .attr({
                         cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
-                    cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
+                        cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
                         r: LineChart.PointRadius
                     });
                 explicitDots.exit()
@@ -1819,7 +1821,7 @@ module powerbi.visuals {
          *
          * Internet explorer places the origin for the coordinate system of
          * mouse events based on the stroke, so that the very edge of the stroke
-         * is zoro.  Chrome places the 0 on the edge of the path so that the
+         * is zero.  Chrome places the 0 on the edge of the path so that the
          * edge of the stroke is -(strokeWidth / 2).  We adjust coordinates
          * to match Chrome.
          *

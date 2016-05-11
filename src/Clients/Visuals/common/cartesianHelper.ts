@@ -48,6 +48,7 @@ module powerbi.visuals {
                         labelColor: categoryAxisObject['labelColor'],
                         labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],
                         labelPrecision: categoryAxisObject['labelPrecision'],
+                        duration: categoryAxisObject['duration'],
                     };
                 }
             }

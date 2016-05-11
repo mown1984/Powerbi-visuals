@@ -44,6 +44,7 @@
         "visual/iVisualStyle.d.ts",
         "visual/iVisual.d.ts",
         "visual/VisualObjectInstance.d.ts",
+        "visual/VisualObjectRepetition.d.ts",
         "visual/iVisualPlugin.d.ts",
         "extensibility/VisualCapabilities.d.ts",
         "extensibility/iVisual.d.ts",

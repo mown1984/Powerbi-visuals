@@ -50,15 +50,30 @@ module powerbi.data {
          * Obtains the value for the given role name, category index, and series index.
          *
          * Note: in cases where have multiple values in a role where the multiple values
-         * are not being used to create a static series, the first is obtained.
+         * are not being used to create a static series, the first is obtained. (this is
+         * a rare case)
          */
         getValue(roleName: string, categoryIndex: number, seriesIndex?: number): any;
+        /**
+         * Obtains the highlighted value for the given role name, category index, and series index.
+         *
+         * Note: in cases where have multiple values in a role where the multiple values
+         * are not being used to create a static series, the first is obtained. (this is
+         * a rare case)
+         */
+        getHighlight(roleName: string, categoryIndex: number, seriesIndex?: number): any;
         /**
          * Obtains all the values for the given role name, category index, and series index, drawing
          * from each of the value columns at that intersection.  Used when you have multiple
          * values in a role that are not conceptually a static series.
          */
         getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
+        /**
+         * Obtains all the highlight values for the given role name, category index, and series index, drawing
+         * from each of the value columns at that intersection.  Used when you have multiple
+         * values in a role that are not conceptually a static series.
+         */
+        getAllHighlightsForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
          * Obtains the first non-null value for the given role name and category index.
          * It should mainly be used for values that are expected to be the same across
@@ -71,7 +86,14 @@ module powerbi.data {
         getValueDisplayName(roleName: string, seriesIndex?: number): string;
         // Series Methods
         hasDynamicSeries(): boolean;
-        getSeriesCount(): number;
+        /**
+         * Get the series count.  This requires a value role name for cases where you may
+         * have a static series, but is not required if the only series you expect are dynamic
+         * or single series. 
+         * 
+         * @param valueRoleName The role of the value for which a static series may exist
+         */
+        getSeriesCount(valueRoleName?: string): number;
         getSeriesObjects(seriesIndex: number): DataViewObjects;
         getSeriesValueColumns(): DataViewValueColumns;
         getSeriesValueColumnGroup(seriesIndex: number): DataViewValueColumnGroup;
@@ -236,12 +258,26 @@ module powerbi.data {
             if (this.hasValues(roleName)) {
                 if (this.dataHasDynamicSeries) {
                     // For dynamic series, we only ever obtain the first value column from a role
-                    return this.getValueInternal(roleName, categoryIndex, seriesIndex, 0);
+                    return this.getValueInternal(roleName, categoryIndex, seriesIndex, 0, false /* getHighlight */);
                 }
                 else {
                     // For static series or single series, we obtain value columns from the first series
                     //    and use the seriesIndex to index into the value columns within the role
-                    return this.getValueInternal(roleName, categoryIndex, 0, seriesIndex);
+                    return this.getValueInternal(roleName, categoryIndex, 0, seriesIndex, false /* getHighlight */);
+                }
+            }
+        }
+
+        public getHighlight(roleName: string, categoryIndex: number, seriesIndex: number = 0): any {
+            if (this.hasValues(roleName)) {
+                if (this.dataHasDynamicSeries) {
+                    // For dynamic series, we only ever obtain the first value column from a role
+                    return this.getValueInternal(roleName, categoryIndex, seriesIndex, 0, true /* getHighlight */);
+                }
+                else {
+                    // For static series or single series, we obtain value columns from the first series
+                    //    and use the seriesIndex to index into the value columns within the role
+                    return this.getValueInternal(roleName, categoryIndex, 0, seriesIndex, true /* getHighlight */);
                 }
             }
         }
@@ -250,7 +286,17 @@ module powerbi.data {
             if (this.hasValues(roleName)) {
                 let valuesInRole = [];
                 for (let roleValueIndex, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
-                    valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex));
+                    valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex, false /* getHighlight */));
+                }
+                return valuesInRole;
+            }
+        }
+
+        public getAllHighlightsForRole(roleName: string, categoryIndex: number, seriesIndex: number = 0): any[] {
+            if (this.hasValues(roleName)) {
+                let valuesInRole = [];
+                for (let roleValueIndex, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
+                    valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex, true /* getHighlight */));
                 }
                 return valuesInRole;
             }
@@ -294,10 +340,11 @@ module powerbi.data {
          * the second value column with role "value" (which is converted to a
          * groupedValueIndex of 2) and the fourth value within that value column.
          */
-        private getValueInternal(roleName: string, categoryIndex: number, groupIndex: number, valueColumnIndexInRole: number): any {
+        private getValueInternal(roleName: string, categoryIndex: number, groupIndex: number, valueColumnIndexInRole: number, getHighlight: boolean): any {
             if (this.hasValues(roleName)) {
                 let valueColumnIndex = this.valueRoleIndexMapping[roleName][valueColumnIndexInRole];
-                return this.grouped[groupIndex].values[valueColumnIndex].values[categoryIndex];
+                let groupedValues = this.grouped[groupIndex].values[valueColumnIndex];
+                return getHighlight ? groupedValues.highlights[categoryIndex] : groupedValues.values[categoryIndex];
             }
         }
 
@@ -322,13 +369,21 @@ module powerbi.data {
         }
 
         public getValueColumn(roleName: string, seriesIndex: number = 0): DataViewValueColumn {
-            if (this.hasValues(roleName))
-                return this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][0]];
+            if (this.hasValues(roleName)) {
+                if (this.dataHasDynamicSeries) {
+                    return this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][0]];
+                }
+                else {
+                    return this.grouped[0].values[this.valueRoleIndexMapping[roleName][seriesIndex]];
+                }
+            }
         }
 
         public getValueMetadataColumn(roleName: string, seriesIndex: number = 0): DataViewMetadataColumn {
-            if (this.hasValues(roleName))
-                return this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][0]].source;
+            let valueColumn = this.getValueColumn(roleName, seriesIndex);
+            if (valueColumn) {
+                return valueColumn.source;
+            }
         }
 
         public getValueDisplayName(roleName: string, seriesIndex?: number): string {
@@ -346,9 +401,18 @@ module powerbi.data {
             return this.dataHasDynamicSeries;
         }
 
-        public getSeriesCount(): number {
-            if (this.hasAnyValidValues)
-                return this.grouped.length;
+        public getSeriesCount(valueRoleName?: string): number {
+            if (this.hasAnyValidValues) {
+                if (this.dataHasDynamicSeries) {
+                    return this.grouped.length;
+                }
+                else if (valueRoleName) {
+                    return this.valueRoleIndexMapping[valueRoleName].length;
+                }
+                else {
+                    return 1;
+                }
+            }
         }
 
         public getSeriesObjects(seriesIndex: number): DataViewObjects {

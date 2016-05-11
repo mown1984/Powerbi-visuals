@@ -170,6 +170,7 @@ module powerbitests {
                     "font-size": "11px",
                     "font-weight": "bold",
                     "font-style": "italic",
+                    "font-variant": "normal",
                     "white-space": "nowrap",
                 });
             attachToDom(element);
@@ -181,6 +182,7 @@ module powerbitests {
                 fontWeight: "bold",
                 fontStyle: "italic",
                 whiteSpace: "nowrap",
+                fontVariant: "normal",
                 text: "PowerBI rocks!",
             };
 
@@ -197,6 +199,7 @@ module powerbitests {
                         "font-size": "11px",
                         "font-weight": "bold",
                         "font-style": "italic",
+                        "font-variant": "normal",
                         "white-space": "nowrap",
                     });
                 svg.append(element);
@@ -209,6 +212,7 @@ module powerbitests {
                     fontWeight: "bold",
                     fontStyle: "italic",
                     whiteSpace: "nowrap",
+                    fontVariant: "normal",
                     text: "PowerBI rocks!",
                 };
 
@@ -224,6 +228,7 @@ module powerbitests {
                     fontWeight: "bold",
                     fontStyle: "italic",
                     whiteSpace: "nowrap",
+                    fontVariant: "normal",
                     text: "PowerBI rocks!",
                 };
 
@@ -242,6 +247,7 @@ module powerbitests {
                     fontWeight: "bold",
                     fontStyle: "italic",
                     whiteSpace: "nowrap",
+                    fontVariant: "normal",
                     text: "PowerBI rocks!",
                 };
 

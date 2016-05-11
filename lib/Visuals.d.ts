@@ -305,6 +305,7 @@ declare module powerbi.visuals {
     }
     interface IAnimator<T extends IAnimatorOptions, U extends IAnimationOptions, V extends IAnimationResult> {
         getDuration(): number;
+        getEasing(): string;
         animate(options: U): V;
     }
     type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>;
@@ -317,6 +318,7 @@ declare module powerbi.visuals {
         constructor(options?: T);
         getDuration(): number;
         animate(options: U): V;
+        getEasing(): string;
     }
 }
 declare module powerbi.visuals {
@@ -1226,6 +1228,9 @@ declare module powerbi.visuals {
         slices?: D3.Selection;
         shapes?: D3.Selection;
         clearCatcher: D3.Selection;
+        bubbleEventGroup?: D3.Selection;
+        sliceEventGroup?: D3.Selection;
+        shapeEventGroup?: D3.Selection;
     }
     class MapBehavior implements IInteractiveBehavior {
         private bubbles;
@@ -2530,6 +2535,8 @@ declare module powerbi.visuals {
         function getGradientSettings(baseFillRule: FillRuleDefinition): GradientSettings;
         function getFillRule(objectDefinitions: data.DataViewObjectDefinitions): FillRuleDefinition;
         function getGradientSettingsFromRule(fillRule: FillRuleDefinition): GradientSettings;
+        /** Returns a string representing the gradient to be used for the GradientBar directive. */
+        function getGradientBarColors(gradientSettings: GradientSettings): string;
     }
 }
 declare module powerbi.visuals {
@@ -2643,6 +2650,12 @@ declare module powerbi.visuals {
             Elements with visibility: hidden or opacity: 0 are considered visible, since they still consume space in the layout.
         */
         function partiallyVisible(element: JQuery): boolean;
+    }
+}
+declare module powerbi {
+    module VisualObjectRepetition {
+        /** Determines whether two repetitions are equal. */
+        function equals(x: VisualObjectRepetition, y: VisualObjectRepetition): boolean;
     }
 }
 declare module powerbi.visuals {
@@ -3518,10 +3531,7 @@ declare module powerbi.visuals.services {
         query: string;
         category: string;
         key: string;
-        private cacheHits;
         constructor(query: string, category: string);
-        incrementCacheHit(): void;
-        getCacheHits(): number;
         getBingEntity(): string;
         getUrl(): string;
     }
@@ -3548,11 +3558,11 @@ declare module powerbi.visuals.services {
 }
 declare module powerbi.visuals.services {
     interface IGeocodingCache {
-        getCoordinates(query: GeocodeQuery): IGeocodeCoordinate;
-        registerCoordinates(query: GeocodeQuery, coordinate: IGeocodeCoordinate): void;
-        registerCoordinates(query: GeocodeQuery, coordinate: IGeocodeBoundaryCoordinate): void;
+        getCoordinates(key: string): IGeocodeCoordinate;
+        registerCoordinates(key: string, coordinate: IGeocodeCoordinate): void;
+        registerCoordinates(key: string, coordinate: IGeocodeBoundaryCoordinate): void;
     }
-    function createGeocodingCache(maxCacheSize: number, maxCacheSizeOverflow: number): IGeocodingCache;
+    function createGeocodingCache(maxCacheSize: number, maxCacheSizeOverflow: number, localStorageService?: IStorageService): IGeocodingCache;
 }
 declare module powerbi.visuals.services {
     function createGeolocation(): IGeolocation;
@@ -3599,6 +3609,9 @@ declare module powerbi.visuals {
          * Enables button to center map to the current location
          */
         mapCurrentLocationEnabled?: boolean;
+        /**
+         * Enables conditional formatting of the background color of cells for table visuals.
+         */
         conditionalFormattingEnabled?: boolean;
     }
     interface SmallViewPortProperties {
@@ -4685,7 +4698,7 @@ declare module powerbi.visuals.controls.internal {
         const PropRowsFontColor: TablixProperty;
         const PropRowsBackColor: TablixProperty;
         const PropRowsOutline: TablixProperty;
-        const PropValuesBackColorConditionalFormatting: TablixProperty;
+        const PropValuesBackColor: TablixProperty;
         const PropValuesFontColorPrimary: TablixProperty;
         const PropValuesBackColorPrimary: TablixProperty;
         const PropValuesFontColorSecondary: TablixProperty;
@@ -4704,16 +4717,16 @@ declare module powerbi.visuals.controls.internal {
          * @returns DataViewObjects (dataView.metadata.objects)
          */
         function getMetadadataObjects(dataview: DataView): DataViewObjects;
-        function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isConditionalFormattingEnabled: boolean, tablixType: TablixType): void;
+        function enumerateObjectRepetition(enumeration: VisualObjectRepetition[], dataView: DataView, tablixType: TablixType): void;
+        function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, tablixType: TablixType): void;
         function enumerateGeneralOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, tablixType: TablixType, dataView: DataView): void;
         function enumerateGridOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, tablixType: TablixType): void;
         function enumerateColumnHeadersOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateRowHeadersOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateValuesOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects, tablixType: TablixType): void;
-        function enumerateValuesOptionConditionalFormat(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateTotalOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
         function enumerateSubTotalsOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void;
-        function getTableObjects(dataView: DataView, isConditionalFormattingEnabled: boolean): TablixFormattingPropertiesTable;
+        function getTableObjects(dataView: DataView): TablixFormattingPropertiesTable;
         function getMatrixObjects(dataView: DataView): TablixFormattingPropertiesMatrix;
         /**
          * Generate default objects for the Table/Matrix to set default styling
@@ -4843,8 +4856,8 @@ declare module powerbi.visuals.controls.internal {
             position: TablixUtils.CellPosition;
             columnMetadata: DataViewMetadataColumn;
             isTotal: boolean;
+            backColor: string;
             private formatter;
-            backColorCustomFormatting: string;
             constructor(dataPoint: any, isTotal: boolean, columnMetadata: DataViewMetadataColumn, formatter: ICustomValueColumnFormatter);
             textContent: string;
             domContent: JQuery;
@@ -5780,7 +5793,6 @@ declare module powerbi.visuals.controls {
      * Formatting Properties for Table Visual
     */
     interface TablixFormattingPropertiesTable {
-        isConditionalFormattingEnabled: boolean;
         general?: TablixFormattingPropertiesGeneralTable;
         grid?: TablixFormattingPropertiesGrid;
         columnHeaders?: TablixFormattingPropertiesRegion;
@@ -6421,7 +6433,7 @@ declare module powerbi.visuals {
         init(svg: D3.Selection): void;
         private static updateAnimatedTickTooltips(axisSelection, values);
         private static updateTickTooltips(axisSelection, values);
-        renderAxes(axesLayout: CartesianAxesLayout, duration: number): void;
+        renderAxes(axesLayout: CartesianAxesLayout, duration: number, easing?: string): void;
         private renderAxesLabels(options);
         private translateAxes(viewport, margin);
         /**
@@ -7056,9 +7068,9 @@ declare module powerbi.visuals {
     }
     interface FunnelAxisOptions {
         maxScore: number;
-        xScale: D3.Scale.OrdinalScale;
-        yScale: D3.Scale.LinearScale;
-        verticalRange: number;
+        valueScale: D3.Scale.LinearScale;
+        categoryScale: D3.Scale.OrdinalScale;
+        maxWidth: number;
         margin: IMargin;
         rangeStart: number;
         rangeEnd: number;
@@ -7148,7 +7160,7 @@ declare module powerbi.visuals {
         private static VisualClassName;
         private static DefaultFontFamily;
         private static BarToSpaceRatio;
-        private static MaxBarWidth;
+        private static MaxBarHeight;
         private static MinBarThickness;
         private static LabelFunnelPadding;
         private static InnerTextMinimumPadding;
@@ -7204,7 +7216,7 @@ declare module powerbi.visuals {
         private static drawPercentBarComponents(graphicsContext, data, layout, percentLabelSettings);
         static drawPercentBars(data: FunnelData, graphicsContext: D3.Selection, layout: IFunnelLayout, isHidingPercentBars: boolean): void;
         private showCategoryLabels();
-        private static addFunnelPercentsToTooltip(tooltipInfo, hostServices, percentOfFirst?, percentOfPrevious?, highlight?);
+        private static addFunnelPercentsToTooltip(pctFormatString, tooltipInfo, hostServices, percentOfFirst?, percentOfPrevious?, highlight?);
         private static getTextProperties(fontSize?);
     }
 }
@@ -7676,7 +7688,7 @@ declare module powerbi.visuals {
          *
          * Internet explorer places the origin for the coordinate system of
          * mouse events based on the stroke, so that the very edge of the stroke
-         * is zoro.  Chrome places the 0 on the edge of the path so that the
+         * is zero.  Chrome places the 0 on the edge of the path so that the
          * edge of the stroke is -(strokeWidth / 2).  We adjust coordinates
          * to match Chrome.
          *
@@ -7770,6 +7782,12 @@ declare module powerbi.visuals {
         displayLabel: boolean;
         catagoryLabeltext?: string;
         labelFormatString: string;
+    }
+    /**
+     * Used because data points used in D3 pie layouts are placed within a container with pie information.
+     */
+    interface MapSliceContainer {
+        data: MapSlice;
     }
     /** Note: public for UnitTest */
     interface IMapDataPointRenderer {
@@ -7919,8 +7937,11 @@ declare module powerbi.visuals {
         private addDataPoint(dataPoint);
         private scheduleRedraw();
         private enqueueGeoCode(dataPoint);
+        private completeGeoCode(dataPoint, location);
         private enqueueGeoCodeAndGeoShape(dataPoint, params);
+        private completeGeoCodeAndGeoShape(dataPoint, params, location);
         private enqueueGeoShape(dataPoint, params);
+        private completeGeoShape(dataPoint, params, result);
         private getOptimumLevelOfDetail(width, height);
         private getViewCenter(levelOfDetail);
         private resetBounds();
@@ -8315,7 +8336,7 @@ declare module powerbi.visuals {
         private static getObjectProperties(dataView, dataLabelsSettings?);
         static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled?: boolean): ScatterChartData;
         private static getSizeRangeForGroups(dataViewValueGroups, sizeColumnIndex);
-        private static createDataPointSeries(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, gradientValueColumn, defaultDataPointColor, categoryQueryName, colorByCategory, playFrameInfo, tooltipsEnabled);
+        private static createDataPointSeries(reader, dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, viewport, hasDynamicSeries, labelSettings, gradientValueColumn, defaultDataPointColor, categoryQueryName, colorByCategory, playFrameInfo, tooltipsEnabled);
         static createLazyFormattedCategory(formatter: IValueFormatter, value: string): jsCommon.Lazy<string>;
         private static createSeriesLegend(dataValues, colorPalette, categorical, formatString, defaultDataPointColor);
         static getBubbleRadius(radiusData: RadiusData, sizeRange: NumberRange, viewport: IViewport): number;
@@ -8361,11 +8382,15 @@ declare module powerbi.visuals {
         frameIndex?: number;
     }
     interface PlayChartData<T extends PlayableChartData> {
-        frameKeys: string[];
+        frameData: PlayChartFrameData[];
         allViewModels: T[];
         currentViewModel: T;
         currentFrameIndex: number;
         labelData: PlayAxisTickLabelData;
+    }
+    interface PlayChartFrameData {
+        escapedText: string;
+        text: string;
     }
     interface PlayChartViewModel<TData extends PlayableChartData, TViewModel> {
         data: PlayChartData<TData>;
@@ -8439,7 +8464,6 @@ declare module powerbi.visuals {
         function converter<T extends PlayableChartData>(dataView: DataView, visualConverter: VisualDataConverterDelegate<T>): PlayChartData<T>;
         function getDefaultPlayData<T extends PlayableChartData>(): PlayChartData<T>;
         function getMinMaxForAllFrames<T extends PlayableChartData>(playData: PlayChartData<T>, getExtents: (T) => CartesianExtents): CartesianExtents;
-        function createPipsFilterFn<T extends PlayableChartData>(playData: PlayChartData<T>, sliderWidth: number, labelData: PlayAxisTickLabelData): (index: any, type: any) => number;
         function isDataViewPlayable(dataView: DataView, playRole?: string): boolean;
         /** Render trace-lines for selected data points. */
         function renderTraceLines(allDataPoints: SelectableDataPoint[], traceLineRenderer: ITraceLineRenderer, shouldAnimate: boolean): void;
@@ -8796,7 +8820,7 @@ declare module powerbi.visuals {
         /**
          * Note: Public for testability.
          */
-        static converter(dataView: DataView, isConditionalFormattingEnabled: boolean): DataViewVisualTable;
+        static converter(dataView: DataView): DataViewVisualTable;
         onResizing(finalViewport: IViewport): void;
         getColumnWidthManager(): controls.TablixColumnWidthManager;
         onDataChanged(options: VisualDataChangedOptions): void;
@@ -8818,6 +8842,7 @@ declare module powerbi.visuals {
          */
         needsMoreData(item: any): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+        enumerateObjectRepetition(): VisualObjectRepetition[];
         private shouldAllowHeaderResize();
         onViewModeChanged(viewMode: ViewMode): void;
         private verifyHeaderResize();

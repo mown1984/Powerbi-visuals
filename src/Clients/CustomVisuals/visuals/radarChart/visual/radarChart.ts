@@ -99,10 +99,12 @@ module powerbi.visuals.samples {
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
+                    displayName: 'Category',
                     name: 'Category',
                     kind: powerbi.VisualDataRoleKind.Grouping,
                 },
                 {
+                    displayName: 'Y Axis',
                     name: 'Y',
                     kind: powerbi.VisualDataRoleKind.Measure,
                 },

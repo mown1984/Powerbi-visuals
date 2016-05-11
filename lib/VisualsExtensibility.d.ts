@@ -37,6 +37,9 @@ declare module powerbi.visuals.telemetry {
     var VisualException: (visualType: string, isCustom: boolean, apiVersion: string, source: string, lineNumber: number, columnNumber: number, stack: string, message: string) => ITelemetryEventI<IPBIVisualException>;
 }
 declare module powerbi.extensibility {
+    function VisualPlugin(options: IVisualPluginOptions): ClassDecorator;
+}
+declare module powerbi.extensibility {
     import IPoint = visuals.IPoint;
     interface SelectionManagerOptions {
         hostServices: IVisualHostServices;
@@ -88,6 +91,7 @@ declare module powerbi.extensibility {
         update(options: powerbi.VisualUpdateOptions): void;
         destroy(): void;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+        enumerateObjectRepetition(): VisualObjectRepetition[];
         onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void;
         onDataChanged(options: VisualDataChangedOptions): void;
         onViewModeChanged(viewMode: ViewMode): void;
@@ -120,6 +124,7 @@ declare module powerbi.extensibility {
         onClearSelection(): void;
         canResizeTo(viewport: IViewport): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+        enumerateObjectRepetition(): VisualObjectRepetition[];
         unwrap(): powerbi.IVisual;
         isCustomVisual(): boolean;
         private executeSafely(callback);

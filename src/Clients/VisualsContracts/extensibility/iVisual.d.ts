@@ -26,6 +26,14 @@
 
 declare module powerbi.extensibility {
 
+    export interface IVisualPluginOptions {
+        capabilities: VisualCapabilities;
+    }
+
+    export interface IVisualConstructor {
+        __capabilities__: VisualCapabilities;
+    }
+
     // These are the base interfaces. These should remain empty
     // All visual versions should extend these for type compatability
 
@@ -36,4 +44,5 @@ declare module powerbi.extensibility {
     export interface VisualUpdateOptions { }
 
     export interface VisualConstructorOptions { }
+  
 }

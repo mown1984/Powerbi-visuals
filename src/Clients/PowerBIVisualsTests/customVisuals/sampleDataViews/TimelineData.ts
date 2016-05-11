@@ -53,18 +53,18 @@ module powerbitests.customVisuals.sampleDataViews {
             let dataViewMetadata: DataViewMetadata = {
                 columns: [
                     {
-                        displayName: 'Date',
-                        queryName: 'Date',
+                        displayName: 'Order Date',
+                        queryName: 'Order Date',
                         type: powerbi.ValueType.fromDescriptor({ dateTime: true })
                     }
                 ]
             };
-            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'series' } });
+            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'Order Date' } });
 			let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime);
             let groupSource1: DataViewMetadataColumn = { displayName: 'group1', type: dataTypeString, index: 0 };
 			let tree: powerbi.DataViewTree = {
 				root: {
-					childIdentityFields: [{ ref: "Date" }]
+					childIdentityFields: [{ ref: "Order Date" }]
 				}
 			};
             return {

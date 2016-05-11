@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -77,9 +77,9 @@ module powerbi.visuals {
         originalPosition: number;
         originalValueAbsolute: number;
 
-        /** 
+        /**
          * True if this data point is a highlighted portion and overflows (whether due to the highlight
-         * being greater than original or of a different sign), so it needs to be thinner to accomodate. 
+         * being greater than original or of a different sign), so it needs to be thinner to accomodate.
          */
         drawThinner?: boolean;
         key: string;
@@ -245,7 +245,7 @@ module powerbi.visuals {
                 return;
 
             dataViewMapping.categorical.dataVolume = 4;
-            
+
             if (CartesianChart.detectScalarMapping(dataViewMapping)) {
                 let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
                 dataViewCategories.dataReductionAlgorithm = { sample: {} };
@@ -460,9 +460,7 @@ module powerbi.visuals {
                 return { series: columnSeries, hasHighlights: false, hasDynamicSeries: false, isMultiMeasure: false };
 
             let dvCategories = dataViewCat.categories;
-            categoryMetadata = (dvCategories && dvCategories.length > 0)
-                ? dvCategories[0].source
-                : null;
+            categoryMetadata = !_.isEmpty(dvCategories) ? dvCategories[0].source : null;
             let categoryType = AxisHelper.getCategoryValueType(categoryMetadata);
             let isDateTime = AxisHelper.isDateTime(categoryType);
             let baseValuesPos = [], baseValuesNeg = [];
@@ -511,7 +509,7 @@ module powerbi.visuals {
                     seriesLabelSettings: VisualDataLabelsSettings;
 
                 if (!hasDynamicSeries) {
-                    let labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null;
+                    let labelsSeriesGroup = !_.isEmpty(grouped) && grouped[0].values ? grouped[0].values[seriesIndex] : null;
                     let labelObjects = (labelsSeriesGroup && labelsSeriesGroup.source && labelsSeriesGroup.source.objects) ? <DataLabelObject>labelsSeriesGroup.source.objects['labels'] : null;
                     if (labelObjects) {
                         seriesLabelSettings = Prototype.inherit(defaultLabelSettings);
@@ -531,11 +529,10 @@ module powerbi.visuals {
 
                 if (seriesCount > 1)
                     dataPointObjects = seriesObjectsList[seriesIndex];
-                let metadata = dataViewCat.values[seriesIndex].source;
+                let valueColumnMetadata = dataViewCat.values[seriesIndex].source;
                 let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(dataViewCat);
                 let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(dataViewCat);
                 let valueMeasureIndex: number = DataRoleHelper.getMeasureIndexOfRole(grouped, "Y");
-                let formatString = valueFormatter.getFormatString(metadata, formatStringProp);
                 let pctFormatString = valueFormatter.getLocalizedString('Percentage');
 
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
@@ -594,7 +591,7 @@ module powerbi.visuals {
                     }
 
                     let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[valueMeasureIndex] : null;
-                    let category = dataViewCat.categories && dataViewCat.categories.length > 0 ? dataViewCat.categories[0] : null;
+                    let category = !_.isEmpty(dataViewCat.categories) ? dataViewCat.categories[0] : null;
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, categoryIndex)
                         .withSeries(dataViewCat.values, seriesGroup)
@@ -606,19 +603,50 @@ module powerbi.visuals {
                     let gradientColumnForTooltip = gradientMeasureIndex === 0 ? null : gradientValueColumn;
 
                     let tooltipInfo: TooltipDataItem[];
+
                     if (tooltipsEnabled) {
-                        if (is100PercentStacked) {
-                            let originalValueAndPct: string;
-                            if (valueAbsolute != null && originalValue != null) {
-                                let originalPct: string = valueFormatter.format(valueAbsolute, pctFormatString);
-                                originalValueAndPct = valueFormatter.format(originalValue, formatString) + ' (' + originalPct + ')';
-                            }
-                            tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValueAndPct, null, null, seriesIndex, categoryIndex, null, gradientColumnForTooltip);
+                        tooltipInfo = [];
+                        if (category) {
+                            tooltipInfo.push({
+                                displayName: category.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(rawCategoryValue, category.source, formatStringProp),
+                            });
                         }
-                        else {
-                        tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex, null, gradientColumnForTooltip);
+
+                        if (hasDynamicSeries) {
+                            if (!category || category.source !== dataViewCat.values.source) {
+                                // Category/series on the same column -- don't repeat its value in the tooltip.
+                                tooltipInfo.push({
+                                    displayName: dataViewCat.values.source.displayName,
+                                    value: converterHelper.formatFromMetadataColumn(grouped[seriesIndex].name, dataViewCat.values.source, formatStringProp),
+                                });
+                            }
+                        }
+
+                        if (originalValue != null) {
+                            let valueString: string;
+                            let formattedOriginalValue = converterHelper.formatFromMetadataColumn(originalValue, valueColumnMetadata, formatStringProp);
+                            if (is100PercentStacked) {
+                                let originalPct: string = valueFormatter.format(valueAbsolute, pctFormatString);
+                                valueString = formattedOriginalValue + ' (' + originalPct + ')';
+                            }
+                            else {
+                                valueString = formattedOriginalValue;
+                            }
+                            tooltipInfo.push({
+                                displayName: valueColumnMetadata.displayName,
+                                value: valueString,
+                            });
+                        }
+
+                        if (gradientColumnForTooltip && gradientColumnForTooltip.values[categoryIndex] != null) {
+                            tooltipInfo.push({
+                                displayName: gradientColumnForTooltip.source.displayName,
+                                value: converterHelper.formatFromMetadataColumn(gradientColumnForTooltip.values[categoryIndex], gradientColumnForTooltip.source, formatStringProp),
+                            });
+                        }
                     }
-                    }
+
                     let series = columnSeries[seriesIndex];
                     let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : defaultLabelSettings;
                     let labelColor = dataPointLabelSettings.labelColor;
@@ -647,7 +675,7 @@ module powerbi.visuals {
                         key: identity.getKey(),
                         tooltipInfo: tooltipInfo,
                         labelFill: labelColor,
-                        labelFormatString: metadata.format,
+                        labelFormatString: valueColumnMetadata.format,
                         lastSeries: lastValue,
                         chartType: chartType
                     };
@@ -678,26 +706,28 @@ module powerbi.visuals {
                         }
 
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
-                        let rawCategoryValue = categories[categoryIndex];
 
                         let highlightedValueAndPct: string;
-                        if (highlightedTooltip && unadjustedValueHighlight != null) {
+                        let highlightedValueFormat: string;
+                        if (highlightedTooltip && unadjustedValueHighlight != null && valueHighlight != null) {
                             let highlightedPct: string = valueFormatter.format(valueHighlight, pctFormatString);
-                            highlightedValueAndPct = valueFormatter.format(unadjustedValueHighlight, formatString) + ' (' + highlightedPct + ')';
+                            highlightedValueFormat = converterHelper.formatFromMetadataColumn(unadjustedValueHighlight, valueColumnMetadata, formatStringProp);
+                            highlightedValueAndPct = highlightedValueFormat + ' (' + highlightedPct + ')';
                         }
 
-                        let tooltipInfo: TooltipDataItem[];
                         if (tooltipsEnabled) {
+                            let highlightValue: string;
                             if (is100PercentStacked) {
-                                let originalValueAndPct: string;
-                                if (valueAbsolute != null && originalValue != null) {
-                                    let originalPct: string = valueFormatter.format(valueAbsolute, pctFormatString);
-                                    originalValueAndPct = valueFormatter.format(originalValue, formatString) + ' (' + originalPct + ')';
-                                }
-                                tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValueAndPct, null, null, seriesIndex, categoryIndex, highlightedValueAndPct, gradientColumnForTooltip);
+                                highlightValue = highlightedValueAndPct;
                             }
                             else {
-                                tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, dataViewCat, rawCategoryValue, originalValue, null, null, seriesIndex, categoryIndex, unadjustedValueHighlight, gradientColumnForTooltip);
+                                highlightValue = highlightedValueFormat;
+                            }
+                            if (highlightValue != null) {
+                                tooltipInfo.push({
+                                    displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
+                                    value: highlightValue,
+                                });
                             }
                         }
 
@@ -725,7 +755,7 @@ module powerbi.visuals {
                             identity: highlightIdentity,
                             key: highlightIdentity.getKey(),
                             tooltipInfo: tooltipInfo,
-                            labelFormatString: metadata.format,
+                            labelFormatString: valueColumnMetadata.format,
                             labelFill: labelColor,
                             lastSeries: lastValue,
                             chartType: chartType
@@ -869,7 +899,7 @@ module powerbi.visuals {
         }
 
         public calculateLegend(): LegendData {
-            // if we're in interactive mode, return the interactive legend 
+            // if we're in interactive mode, return the interactive legend
             if (this.interactivity && this.interactivity.isInteractiveLegend) {
                 return this.createInteractiveLegendDataPoints(0);
             }
@@ -972,28 +1002,28 @@ module powerbi.visuals {
                         defaultColor: { solid: { color: data.defaultDataPointColor || this.colors.getColorByIndex(0).value } }
                     }
                 }).pushInstance({
-                        objectName: 'dataPoint',
-                        selector: null,
-                        properties: {
-                            showAllDataPoints: !!data.showAllDataPoints
-                        }
-                    });
-
+                    objectName: 'dataPoint',
+                    selector: null,
+                    properties: {
+                        showAllDataPoints: !!data.showAllDataPoints
+                    }
+                });
+                    
                 if (data.showAllDataPoints) {
-                for (let i = 0; i < singleSeriesData.length; i++) {
-                    let singleSeriesDataPoints = singleSeriesData[i],
-                        categoryValue: any = data.categories[i];
-                    enumeration.pushInstance({
-                        objectName: 'dataPoint',
-                        displayName: categoryFormatter ? categoryFormatter.format(categoryValue) : categoryValue,
-                        selector: ColorHelper.normalizeSelector(singleSeriesDataPoints.identity.getSelector(), /*isSingleSeries*/true),
-                        properties: {
-                            fill: { solid: { color: singleSeriesDataPoints.color } }
-                        },
-                    });
-                }
+                    for (let i = 0; i < singleSeriesData.length; i++) {
+                        let singleSeriesDataPoints = singleSeriesData[i],
+                            categoryValue: any = data.categories[i];
+                        enumeration.pushInstance({
+                            objectName: 'dataPoint',
+                            displayName: categoryFormatter ? categoryFormatter.format(categoryValue) : categoryValue,
+                            selector: ColorHelper.normalizeSelector(singleSeriesDataPoints.identity.getSelector(), /*isSingleSeries*/true),
+                            properties: {
+                                fill: { solid: { color: singleSeriesDataPoints.color } }
+                            },
+                        });
+                    }
+                }    
             }
-        }
         }
 
         public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] {
@@ -1058,7 +1088,7 @@ module powerbi.visuals {
             }
             else {
                 ensureYDomain = options.ensureYDomain;
-            }                
+            }
 
             this.xAxisProperties = this.columnChart.setXScale(
                 is100Pct,
@@ -1221,11 +1251,11 @@ module powerbi.visuals {
 
             this.mainGraphicsContext
                 .attr('height', height)
-                .attr('width', width);                
+                .attr('width', width);
 
             if (this.tooltipsEnabled)
                 TooltipManager.addTooltip(columnChartDrawInfo.eventGroup, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
-                
+
             let allDataPoints: ColumnChartDataPoint[] = [];
             let behaviorOptions: ColumnBehaviorOptions = undefined;
             if (this.interactivityService) {
@@ -1360,8 +1390,8 @@ module powerbi.visuals {
                         let label = converterHelper.getFormattedLegendLabel(source, allValues, formatStringProp);
 
                         let color = hasDynamicSeries
-                            ? colorHelper.getColorForSeriesValue(valueGroupObjects || source.objects, allValues.identityFields, source.groupName)
-                            : colorHelper.getColorForMeasure(valueGroupObjects || source.objects, source.queryName);
+                            ? colorHelper.getColorForSeriesValue(valueGroupObjects, allValues.identityFields, source.groupName)
+                            : colorHelper.getColorForMeasure(source.objects, source.queryName);
 
                         legend.push({
                             icon: LegendIcon.Box,

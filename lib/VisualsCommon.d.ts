@@ -910,6 +910,7 @@ declare module powerbi {
         fontSize: string;
         fontWeight?: string;
         fontStyle?: string;
+        fontVariant?: string;
         whiteSpace?: string;
     }
     module TextMeasurementService {

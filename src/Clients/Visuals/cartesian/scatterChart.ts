@@ -30,6 +30,7 @@ module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
+    import IDataViewCategoricalReader = powerbi.data.IDataViewCategoricalReader;
 
     export interface ScatterChartConstructorOptions extends CartesianVisualConstructorOptions {
     }
@@ -255,6 +256,7 @@ module powerbi.visuals {
         }
 
         public static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled: boolean = true): ScatterChartData {
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let categoryValues: any[],
                 categoryFormatter: IValueFormatter,
                 categoryObjects: DataViewObjects[],
@@ -295,6 +297,7 @@ module powerbi.visuals {
             let objProps = ScatterChart.getObjectProperties(dataView, dataLabelsSettings);
 
             let dataPointSeries = ScatterChart.createDataPointSeries(
+                reader,
                 dataValues,
                 scatterMetadata,
                 categories,
@@ -375,6 +378,7 @@ module powerbi.visuals {
         }
 
         private static createDataPointSeries(
+            reader: IDataViewCategoricalReader,
             dataValues: DataViewValueColumns,
             metadata: ScatterChartMeasureMetadata,
             categories: DataViewCategoryColumn[],
@@ -393,6 +397,13 @@ module powerbi.visuals {
             playFrameInfo: PlayFrameInfo,
             tooltipsEnabled: boolean): ScatterChartDataPointSeries[] {
 
+            let hasX = reader.hasValues("X");
+            let hasY = reader.hasValues("Y");
+
+            if (!hasX && !hasY) {
+                return [];
+            }
+
             let dataPointSeries: ScatterChartDataPointSeries[] = [],
                 indicies = metadata.idx,
                 formatStringProp = scatterChartProps.general.formatString,
@@ -401,8 +412,8 @@ module powerbi.visuals {
 
             let colorHelper = new ColorHelper(colorPalette, scatterChartProps.dataPoint.fill, defaultDataPointColor);
 
-            for (let seriesIdx = 0, len = grouped.length; seriesIdx < len; seriesIdx++) {
-                let grouping = grouped[seriesIdx];
+            for (let seriesIndex = 0, len = grouped.length; seriesIndex < len; seriesIndex++) {
+                let grouping = grouped[seriesIndex];
                 let seriesValues = grouping.values;
                 let measureX = ScatterChart.getMeasureValue(indicies.x, seriesValues);
                 let measureY = ScatterChart.getMeasureValue(indicies.y, seriesValues);
@@ -430,16 +441,17 @@ module powerbi.visuals {
 
                 dataPointSeries.push(series);
 
-                for (let categoryIdx = 0, ilen = categoryValues.length; categoryIdx < ilen; categoryIdx++) {
-                    let categoryValue = categoryValues[categoryIdx];
+                for (let categoryIndex = 0, ilen = categoryValues.length; categoryIndex < ilen; categoryIndex++) {
+                    let categoryValue = categoryValues[categoryIndex];
 
-                    let xVal = AxisHelper.normalizeNonFiniteNumber(measureX && measureX.values ? measureX.values[categoryIdx] : null);
-                    let yVal = AxisHelper.normalizeNonFiniteNumber(measureY && measureY.values ? measureY.values[categoryIdx] : 0);
-                    let size = AxisHelper.normalizeNonFiniteNumber(measureSize && measureSize.values ? measureSize.values[categoryIdx] : null);
+                    // Zero out X and Y if the role doesn't exist, so you still get a set of vertical/horizontal dots
+                    let xVal = hasX ? AxisHelper.normalizeNonFiniteNumber(reader.getValue("X", categoryIndex, seriesIndex)) : 0;
+                    let yVal = hasY ? AxisHelper.normalizeNonFiniteNumber(reader.getValue("Y", categoryIndex, seriesIndex)) : 0;
+                    // Undefined size is handled later if we don't have a size role, so this is fine to just be undefined
+                    let size = AxisHelper.normalizeNonFiniteNumber(reader.getValue("Size", categoryIndex, seriesIndex));
 
-                    let hasNullValue = (xVal == null) || (yVal == null);
-
-                    if (hasNullValue)
+                    // Do not render a dot if X or Y are null
+                    if (xVal == null || yVal == null)
                         continue;
 
                     let color: string;
@@ -447,7 +459,7 @@ module powerbi.visuals {
                         color = colorHelper.getColorForSeriesValue(grouping.objects, dataValues.identityFields, grouping.name);
                     }
                     else if (colorByCategory) {
-                        color = colorHelper.getColorForSeriesValue(categoryObjects && categoryObjects[categoryIdx], dataValues.identityFields, categoryValue);
+                        color = colorHelper.getColorForSeriesValue(categoryObjects && categoryObjects[categoryIndex], dataValues.identityFields, categoryValue);
                     }
                     else {
                         // If we have no Size measure then use a blank query name
@@ -455,12 +467,12 @@ module powerbi.visuals {
                             ? measureSize.source.queryName
                             : '';
 
-                        color = colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIdx], measureSource);
+                        color = colorHelper.getColorForMeasure(categoryObjects && categoryObjects[categoryIndex], measureSource);
                     }
 
                     let category = !_.isEmpty(categories) ? categories[0] : null;
                     let identity = SelectionIdBuilder.builder()
-                        .withCategory(category, categoryIdx)
+                        .withCategory(category, categoryIndex)
                         .withSeries(dataValues, grouping)
                         .createSelectionId();
 
@@ -477,13 +489,13 @@ module powerbi.visuals {
                         }
 
                         if (hasDynamicSeries) {
-                            // Dynamic series
+                        // Dynamic series
                             if ( !category || category.source !== dataValueSource) {
                                 tooltipInfo.push({
                                     displayName: dataValueSource.displayName,
                                     value: converterHelper.formatFromMetadataColumn(grouping.name, dataValueSource, formatStringProp),
                                 });
-                            }
+                    }
                         }
 
                         if (measureX && xVal != null) {
@@ -498,35 +510,35 @@ module powerbi.visuals {
                                 displayName: measureY.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(yVal, measureY.source, formatStringProp),
                             });
-                        }
+                    }
 
-                        if (measureSize && measureSize.values[categoryIdx] != null) {
+                        if (measureSize && measureSize.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: measureSize.source.displayName,
-                                value: converterHelper.formatFromMetadataColumn(measureSize.values[categoryIdx], measureSize.source, formatStringProp),
+                                value: converterHelper.formatFromMetadataColumn(measureSize.values[categoryIndex], measureSize.source, formatStringProp),
                             });
-                        }
+                    }
 
-                        if (gradientValueColumn && gradientValueColumn.values[categoryIdx] != null) {
+                        if (gradientValueColumn && gradientValueColumn.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: gradientValueColumn.source.displayName,
-                                value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[categoryIdx], gradientValueColumn.source, formatStringProp),
+                                value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[categoryIndex], gradientValueColumn.source, formatStringProp),
                             });
-                        }
+                    }
 
-                        if (playFrameInfo) {
+                    if (playFrameInfo) {
                             tooltipInfo.push({
                                 displayName: playFrameInfo.column.displayName,
                                 value: converterHelper.formatFromMetadataColumn(playFrameInfo.label, playFrameInfo.column, formatStringProp),
                             });
-                        }
+                    }
                     }
 
                     let dataPoint: ScatterChartDataPoint = {
                         x: xVal,
                         y: yVal,
                         size: size,
-                        radius: { sizeMeasure: measureSize, index: categoryIdx },
+                        radius: { sizeMeasure: measureSize, index: categoryIndex },
                         fill: color,
                         formattedCategory: ScatterChart.createLazyFormattedCategory(categoryFormatter, categories != null ? categoryValue : grouping.name),
                         selected: false,
@@ -1780,7 +1792,7 @@ module powerbi.visuals {
                     .remove();
 
                 if (this.tooltipsEnabled) {
-                TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
+                    TooltipManager.addTooltip(circles, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
                 }
 
                 // sort the z-order, smallest size on top

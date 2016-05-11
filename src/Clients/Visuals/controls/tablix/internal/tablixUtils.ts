@@ -103,6 +103,7 @@ module powerbi.visuals.controls {
 module powerbi.visuals.controls.internal {
     import DomFactory = InJs.DomFactory;
     import DataViewObjectDefinitions = powerbi.data.DataViewObjectDefinitions;
+    import DataViewRoleWildCard = data.DataViewRoleWildcard;
 
     export module TablixObjects {
         export const ObjectGeneral: string = "general";
@@ -194,8 +195,7 @@ module powerbi.visuals.controls.internal {
         export const PropRowsOutline = new TablixProperty(ObjectRowHeaders, 'outline', "RightOnly", DataViewObjects.getValue);
 
         // Values
-        // VSTS 7167767: Remove temporary code for product demo.
-        export const PropValuesBackColorConditionalFormatting = new TablixProperty(ObjectValues, 'backgroundColorConditional', false, DataViewObjects.getValue);
+        export const PropValuesBackColor = new TablixProperty(ObjectValues, 'backColor', undefined, DataViewObjects.getFillColor);
         export const PropValuesFontColorPrimary = new TablixProperty(ObjectValues, 'fontColorPrimary', "#333", DataViewObjects.getFillColor);
         export const PropValuesBackColorPrimary = new TablixProperty(ObjectValues, 'backColorPrimary', undefined, DataViewObjects.getFillColor);
         export const PropValuesFontColorSecondary = new TablixProperty(ObjectValues, 'fontColorSecondary', "#333", DataViewObjects.getFillColor);
@@ -225,7 +225,33 @@ module powerbi.visuals.controls.internal {
             return null;
         }
 
-        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, isConditionalFormattingEnabled: boolean, tablixType: TablixType): void {
+        export function enumerateObjectRepetition(enumeration: VisualObjectRepetition[], dataView: DataView, tablixType: TablixType): void {
+            debug.assertValue(enumeration, 'enumeration should be defined');
+            debug.assertValue(dataView, "dataView can't be undefined");
+
+            // We currently only support Table
+            if (tablixType !== TablixType.Table)
+                return;
+
+            let columns = getTableColumnMetadata(dataView);
+            for (let column of columns) {
+                let repetition: VisualObjectRepetition = {
+                    selector: {
+                        data: [DataViewRoleWildCard.fromRoles(['Values'])],
+                        metadata: column.queryName,
+                    },
+                    objects: {
+                        [TablixObjects.ObjectValues]: {
+                            formattingProperties: [TablixObjects.PropValuesBackColor.propertyName]
+                        },
+                    }
+                };
+
+                enumeration.push(repetition);
+            }
+        }
+
+        export function enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, enumeration: ObjectEnumerationBuilder, dataView: DataView, tablixType: TablixType): void {
             debug.assertValue(dataView, "dataView can't be undefined");
 
             let objects = getMetadadataObjects(dataView);
@@ -256,9 +282,6 @@ module powerbi.visuals.controls.internal {
                     break;
                 case TablixObjects.ObjectValues:
                     enumerateValuesOptions(enumeration, objects, tablixType);
-
-                    if (tablixType === TablixType.Table && isConditionalFormattingEnabled)
-                        enumerateValuesOptionConditionalFormat(enumeration, objects);
                     break;
                 case TablixObjects.ObjectTotal:
                     if (totalsShown)
@@ -383,19 +406,6 @@ module powerbi.visuals.controls.internal {
             enumeration.pushInstance(instance);
         }
 
-        // TODO: VSTS 7167767: Remove temporary code for product demo.
-        export function enumerateValuesOptionConditionalFormat(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void {
-            let instance: VisualObjectInstance = {
-                selector: null,
-                objectName: TablixObjects.ObjectValues,
-                properties: {
-                    backgroundColorConditional: TablixObjects.PropValuesBackColorConditionalFormatting.getValue<boolean>(objects),
-                }
-            };
-
-            enumeration.pushInstance(instance);
-        }
-
         export function enumerateTotalOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects): void {
             enumeration.pushInstance({
                 selector: null,
@@ -419,12 +429,10 @@ module powerbi.visuals.controls.internal {
             });
         }
 
-        export function getTableObjects(dataView: DataView, isConditionalFormattingEnabled: boolean): TablixFormattingPropertiesTable {
+        export function getTableObjects(dataView: DataView): TablixFormattingPropertiesTable {
             let objects = getMetadadataObjects(dataView);
 
             let formattingProperties: TablixFormattingPropertiesTable = {
-                // TODO: VSTS 7167767: Remove temporary code for product demo.
-                isConditionalFormattingEnabled: isConditionalFormattingEnabled,
 
                 general: {
                     autoSizeColumnWidth: TablixObjects.PropGeneralAutoSizeColumns.getValue<boolean>(objects),
@@ -557,6 +565,13 @@ module powerbi.visuals.controls.internal {
             }
 
             return true;
+        }
+
+        function getTableColumnMetadata(dataView: DataView): DataViewMetadataColumn[] {
+            if (!dataView || !dataView.table || _.isEmpty(dataView.table.columns))
+                return;
+
+            return dataView.table.columns;
         }
 
         export function shouldShowRowSubtotals(objects: DataViewObjects): boolean {
@@ -844,16 +859,14 @@ module powerbi.visuals.controls.internal {
             public position: TablixUtils.CellPosition;
             public columnMetadata: DataViewMetadataColumn;
             public isTotal: boolean;
+            public backColor: string;
             private formatter: ICustomValueColumnFormatter;
-            // VSTS 7167767: Remove temporary code for product demo.
-            public backColorCustomFormatting: string;
 
             constructor(dataPoint: any, isTotal: boolean, columnMetadata: DataViewMetadataColumn, formatter: ICustomValueColumnFormatter) {
                 this.dataPoint = dataPoint;
                 this.columnMetadata = columnMetadata;
                 this.formatter = formatter;
                 this.isTotal = isTotal;
-                this.backColorCustomFormatting = undefined;
 
                 this.position = new TablixUtils.CellPosition();
             }
@@ -893,7 +906,7 @@ module powerbi.visuals.controls.internal {
             };
 
             public isMatch(item: TablixVisualCell) {
-                return this.position.isMatch(item.position);
+                return this.position.isMatch(item.position) && this.backColor === item.backColor;
             }
         }
 

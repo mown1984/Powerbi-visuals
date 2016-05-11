@@ -50,6 +50,8 @@ module powerbi.visuals {
 
     export interface IAnimator<T extends IAnimatorOptions, U extends IAnimationOptions, V extends IAnimationResult> {
         getDuration(): number;
+        getEasing(): string;
+
         animate(options: U): V;
     }
 
@@ -76,6 +78,10 @@ module powerbi.visuals {
 
         public animate(options: U): V {
             return null;
+        }
+
+        public getEasing(): string {
+            return 'cubic-in-out';
         }
     }
 }

@@ -121,53 +121,93 @@ module powerbi.data {
 
             let result: CategoryColumnsByRole;
 
-            // For now, just handle the case where roleMappings.length === 1.
-            // In the future, if there is more than 1, we might want to proceed if, 
-            // for example, all role mappings map category to the same role name and they all have { max: 1 } conditions.
             let roleKinds: RoleKindByQueryRef = DataViewSelectTransform.createRoleKindFromMetadata(selects, metadata);
             let projections = DataViewSelectTransform.projectionsFromSelects(selects, projectionActiveItems);
-            let roleMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
+            let supportedRoleMappings = DataViewAnalysis.chooseDataViewMappings(projections, dataViewMappings, roleKinds).supportedMappings;
 
-            let roleMappingForCategorical: DataViewMapping = (roleMappings && roleMappings.length === 1 && !!roleMappings[0].categorical) ? roleMappings[0] : undefined;
-            if (roleMappingForCategorical) {
-                let roleNamesForCategory: string[] = getAllRolesInCategories(roleMappingForCategorical.categorical);
+            // The following code will choose a role name only if all supportedRoleMappings share the same role for Categorical Category.
+            // Handling multiple supportedRoleMappings is necessary for TransformActions with splits, which can happen in scenarios such as:
+            // 1. combo chart with a field for both Line and Column values, and
+            // 2. chart with regression line enabled.
+            // In case 1, you can pretty much get exactly the one from supportedRoleMappings for which this code is currently processing for,
+            // by looking at the index of the current split in DataViewTransformActions.splits.
+            // In case 2, however, supportedRoleMappings.length will be different than DataViewTransformActions.splits.length, hence it is
+            // not straight forward to figure out for which one in supportedRoleMappings is this code currently processing.
+            // SO... This code will just choose the category role name if it is consistent across all supportedRoleMappings.
 
-                // With "list" in role mapping, is it possible to have multiple role names for category.
-                // For now, proceed to concatenate category columns only when categories are bound to 1 Role.
-                // We can change this if we want to support independent (sibling) group hierarchies in categorical.
-                if (roleNamesForCategory && roleNamesForCategory.length === 1) {
-                    let targetRoleName = roleNamesForCategory[0];
+            let isEveryRoleMappingForCategorical = !_.isEmpty(supportedRoleMappings) &&
+                _.every(supportedRoleMappings, (roleMapping) => !!roleMapping.categorical);
 
-                    let isVisualExpectingMaxOneCategoryColumn: boolean =
-                        !_.isEmpty(roleMappingForCategorical.conditions) &&
-                        _.every(roleMappingForCategorical.conditions, condition => condition[targetRoleName] && condition[targetRoleName].max === 1);
+            if (isEveryRoleMappingForCategorical) {
+                let targetRoleName = getSingleCategoryRoleNameInEveryRoleMapping(supportedRoleMappings);
+                if (targetRoleName &&
+                    isVisualExpectingMaxOneCategoryColumn(targetRoleName, supportedRoleMappings)) {
 
-                    if (isVisualExpectingMaxOneCategoryColumn) {
-                        let categoriesForTargetRole: DataViewCategoryColumn[] = _.filter(
-                            dataViewCategorical.categories,
-                            (categoryColumn: DataViewCategoryColumn) => categoryColumn.source.roles && !!categoryColumn.source.roles[targetRoleName]);
+                    let categoryColumnsForTargetRole: DataViewCategoryColumn[] = _.filter(
+                        dataViewCategorical.categories,
+                        (categoryColumn: DataViewCategoryColumn) => categoryColumn.source.roles && !!categoryColumn.source.roles[targetRoleName]);
 
+                    // There is no need to concatenate columns unless there is actually more than one column
+                    if (categoryColumnsForTargetRole.length >= 2) {
                         // At least for now, we expect all category columns for the same role to have the same number of value entries.
                         // If that's not the case, we won't run the concatenate logic for that role at all...
                         let areValuesCountsEqual: boolean = _.every(
-                            categoriesForTargetRole,
-                            (categoryColumn: DataViewCategoryColumn) => categoryColumn.values.length === categoriesForTargetRole[0].values.length);
-
-                        // Also, there is no need to concatenate columns unless there is actually more than one column
-                        if (areValuesCountsEqual &&
-                            categoriesForTargetRole.length >= 2) {
+                            categoryColumnsForTargetRole,
+                            (categoryColumn: DataViewCategoryColumn) => categoryColumn.values.length === categoryColumnsForTargetRole[0].values.length);
+                        
+                        if (areValuesCountsEqual) {
                             result = {
                                 roleName: targetRoleName,
-                                categories: categoriesForTargetRole
+                                categories: categoryColumnsForTargetRole,
                             };
                         }
                     }
                 }
             }
+            return result;
+        }
+
+        /** If all mappings in the specified roleMappings have the same single role name for their categorical category roles, return that role name, else returns undefined. */
+        function getSingleCategoryRoleNameInEveryRoleMapping(categoricalRoleMappings: DataViewMapping[]): string {
+            debug.assertNonEmpty(categoricalRoleMappings, 'categoricalRoleMappings');
+            debug.assert(_.every(categoricalRoleMappings, (roleMapping) => !!roleMapping.categorical), 'All mappings in categoricalRoleMappings must contain a DataViewCategoricalMapping');
+
+            let result: string;
+
+            // With "list" in role mapping, it is possible to have multiple role names for category.
+            // For now, proceed to concatenate category columns only when categories are bound to 1 Role.
+            // We can change this if we want to support independent (sibling) group hierarchies in categorical.
+            let uniqueCategoryRoles: string[] = _.chain(categoricalRoleMappings)
+                .map((roleMapping) => {
+                    let categoryRoles = getAllRolesInCategories(roleMapping.categorical);
+                    return categoryRoles.length === 1 ? categoryRoles[0] : undefined;
+                })
+                .uniq() // Note: _.uniq() does not treat two arrays with same elements as equal
+                .value();
+            
+
+            let isSameCategoryRoleNameInAllRoleMappings = uniqueCategoryRoles.length === 1 && !_.isUndefined(uniqueCategoryRoles[0]);
+            if (isSameCategoryRoleNameInAllRoleMappings) {
+                result = uniqueCategoryRoles[0];
+            }
 
             return result;
         }
-        
+
+        function isVisualExpectingMaxOneCategoryColumn(categoricalRoleName: string, roleMappings: DataViewMapping[]): boolean {
+            debug.assertValue(categoricalRoleName, 'categoricalRoleName');
+            debug.assertNonEmpty(roleMappings, 'roleMappings');
+
+            let isVisualExpectingMaxOneCategoryColumn = _.every(
+                roleMappings,
+                (roleMapping) => {
+                    return !_.isEmpty(roleMapping.conditions) &&
+                        _.every(roleMapping.conditions, condition => condition[categoricalRoleName] && condition[categoricalRoleName].max === 1);
+                });
+
+            return isVisualExpectingMaxOneCategoryColumn;
+        }
+
         /**
          * Returns the array of role names that are mapped to categorical categories.
          * Returns an empty array if none exists.

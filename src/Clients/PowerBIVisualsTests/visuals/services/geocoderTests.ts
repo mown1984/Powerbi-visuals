@@ -90,16 +90,6 @@ module powerbitests {
             expect(nullQuery.query).toBe("");
             expect(nullQuery.category).toBe("");
         });
-        
-        it("cache hits", () => {
-            let query = new GeocodeQuery("Redmond", "City");
-            expect(query.getCacheHits()).toBe(0);
-            query.incrementCacheHit();
-            expect(query.getCacheHits()).toBe(1);
-            query.incrementCacheHit();
-            query.incrementCacheHit();
-            expect(query.getCacheHits()).toBe(3);
-        });
 
         it("getBingEntity", () => {
             let addressQuery = new GeocodeQuery("One Microsoft Way", "Address");

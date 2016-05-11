@@ -105,6 +105,7 @@ module powerbi.data {
         normalizedFiveStateKpiRange: boolean;
         supportsMedian: boolean;
         supportsPercentile: boolean;
+        supportsScopedEval: boolean;
     }
 
     export interface ConceptualPropertyItemContainer {

@@ -43,12 +43,17 @@ module powerbi.visuals {
     };
 
     export interface PlayChartData<T extends PlayableChartData> {
-        frameKeys: string[];
+        frameData: PlayChartFrameData[];
         allViewModels: T[];
         currentViewModel: T;
         currentFrameIndex: number;
         labelData: PlayAxisTickLabelData;
     }
+    
+    export interface PlayChartFrameData {
+        escapedText: string;
+        text: string;
+    } 
 
     export interface PlayChartViewModel<TData extends PlayableChartData, TViewModel> {
         data: PlayChartData<TData>;
@@ -98,6 +103,16 @@ module powerbi.visuals {
     export interface ITraceLineRenderer {
         render(selectedPoints: SelectableDataPoint[], shouldAnimate: boolean): void;
         remove(): void;
+    }
+    
+    interface SliderSize {
+        width: number;
+        marginLeft: number;       
+    };
+    
+    interface SliderPipFilter {
+        skipStep: number;
+        filter: (index: any, type: any) => number;
     }
 
     export class PlayAxis<T extends PlayableChartData> {
@@ -218,7 +233,7 @@ module powerbi.visuals {
 
         private updateCallout(viewport: IViewport, margin: IMargin): void {
             let playData = this.playData;
-            let frameKeys = playData.frameKeys;
+            let frameData = playData.frameData;
             let currentFrameIndex = playData.currentFrameIndex;
             let height = viewport.height;
             let plotAreaHeight = height - margin.top - margin.bottom;
@@ -230,13 +245,13 @@ module powerbi.visuals {
             fontSize = Math.min(fontSize, 70);
             let textProperties = {
                 fontSize: jsCommon.PixelConverter.toString(fontSize),
-                text: frameKeys[currentFrameIndex] || "",
+                text: frameData[currentFrameIndex].text || "",
                 fontFamily: "wf_segoe-ui_normal",
             };
             let textHeight = TextMeasurementService.estimateSvgTextHeight(textProperties) - TextMeasurementService.estimateSvgTextBaselineDelta(textProperties);
 
             let calloutData: string[] = [];
-            if (currentFrameIndex < frameKeys.length && currentFrameIndex >= 0 && textHeight < plotAreaHeight) {
+            if (currentFrameIndex < frameData.length && currentFrameIndex >= 0 && textHeight < plotAreaHeight) {
                 let maxTextWidth = plotAreaWidth - (2 * PlayAxis.calloutOffsetMultiplier * textHeight);
                 let calloutText = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxTextWidth);
                 calloutData = [calloutText];
@@ -379,7 +394,7 @@ module powerbi.visuals {
         private static SliderMarginRight = 20;
         private static SliderMaxMargin = 100;
         private static PlayControlHeight = 80; //tuned for two rows of label text to be perfectly clipped before the third row. Dependent on current font sizes in noui-pips.css
-    
+        
         constructor(element: JQuery, renderDelegate: (index: number) => void, isMobileChart: boolean) {
             this.isMobileChart = isMobileChart;
             this.createSliderDOM(element);
@@ -413,20 +428,131 @@ module powerbi.visuals {
             this.playButtonCircle.on('click', handler);
         }
 
-        private static calculateSliderWidth(labelData: PlayAxisTickLabelData, viewportWidth: number): number {
-            let leftMargin = 0, rightMargin = 0;
-            if (!_.isEmpty(labelData.labelInfo)) {
-                leftMargin = _.first(labelData.labelInfo).labelWidth / 2;
-                rightMargin = _.last(labelData.labelInfo).labelWidth / 2;
+        public setFrame(frameIndex: number): void {
+            this.noUiSlider.set([frameIndex]);
+        };
+
+        public rebuild<T extends PlayableChartData>(playData: PlayChartData<T>, viewport: IViewport): void {
+            let slider = this.slider;
+
+            // re-create the slider
+            if (this.noUiSlider)
+                this.noUiSlider.destroy();
+
+            let labelData = playData.labelData;
+            let sliderSize: SliderSize = PlayControl.calucalateSliderSize(labelData, viewport.width);
+            var container = this.getContainer();
+            if(sliderSize.marginLeft > PlayControl.SliderMarginLeft) {
+                container.css("padding-left", sliderSize.marginLeft - PlayControl.SliderMarginLeft + "px");
+                container.css("box-sizing", "border-box");    
+            }
+            let skipStep: number = this.updateSliderControl(playData, sliderSize.width);
+            let width: number = PlayControl.adjustWidthRegardingLastItem(labelData, skipStep, sliderSize.width);
+            this.slider.css('width', width + 'px');
+
+            this.noUiSlider.on('slide', () => {
+                let indexToShow = this.getCurrentIndex();
+                this.renderDelegate(indexToShow);
+            });
+             
+             let nextLabelIndex = 0;
+             // update the width and margin-left to center up each label
+            $('.noUi-value', slider).each((idx, elem) => {
+                let actualWidth = labelData.labelInfo[nextLabelIndex].labelWidth;
+                $(elem).width(actualWidth);
+                $(elem).css('margin-left', -actualWidth / 2 + 'px');
+                nextLabelIndex += skipStep;
+            });
+        }
+
+        /**
+         * Updates slider control regarding new data.
+         * @param playData {PlayChartData<T>} Data for the slider.
+         * @param sliderWidth {number} Slider width. 
+         * @returns {number} skip mode for the slider.
+         */
+        private updateSliderControl<T extends PlayableChartData>(playData: PlayChartData<T>, sliderWidth: number): number {
+            let labelData = playData.labelData;
+            let sliderElement: HTMLElement = this.slider.get(0);
+            let numFrames = playData.frameData.length;
+            let options: noUiSlider.Options = {
+                start: numFrames === 0 ? 0 : playData.currentFrameIndex,
+                step: 1,
+                range: {
+                    min: 0,
+                    max: numFrames === 0 ? 0 : numFrames - 1
+                }
+            };
+            let pipOptions: noUiSlider.PipsOptions = null;
+            let skipMode: number = 0;
+            
+            if (numFrames > 0) {
+                let filterPipLabels = PlayControl.createPipsFilterFn(playData, sliderWidth, labelData);
+                skipMode = filterPipLabels.skipStep;
+                pipOptions = {
+                    mode: 'steps',
+                    density: Math.ceil(100 / numFrames), //only draw ticks where we have labels
+                    format: {
+                        to: (index) => playData.frameData[index].escapedText,
+                        from: (value) => playData.frameData.indexOf(value),
+                    },
+                    filter: filterPipLabels.filter,
+                };
+            }
+            options.pips = pipOptions;
+            noUiSlider.create(sliderElement, options);
+            this.noUiSlider = (<noUiSlider.Instance>sliderElement).noUiSlider;
+
+            return skipMode;
+        }
+        
+        private static createPipsFilterFn<T extends PlayableChartData>(playData: PlayChartData<T>, sliderWidth: number, labelData: PlayAxisTickLabelData):  SliderPipFilter  {
+            let maxLabelWidth = _.max(_.map(labelData.labelInfo, (l) => l.labelWidth));
+
+            let pipSize = 1; //0=hide, 1=large, 2=small
+            let skipMode = 1;
+            let maxAllowedLabelWidth = playData.frameData.length > 1 ? sliderWidth / (playData.frameData.length - 1) : sliderWidth;
+            let widthRatio = maxLabelWidth / maxAllowedLabelWidth;
+
+            if (widthRatio > 1.25) {
+                skipMode = Math.ceil(widthRatio);
+                pipSize = 2;
+            }
+            else if (widthRatio > 1.0 || labelData.anyWordBreaks) {
+                // wordbreak line wrapping is automatic, and we don't reserve enough space to show two lines of text with the larger font
+                pipSize = 2;
             }
 
-            let sliderLeftMargin = Math.max(leftMargin, PlayControl.SliderMarginLeft);
-            let sliderRightMargin = Math.max(rightMargin, PlayControl.SliderMarginRight);
+            let filterPipLabels = (index: any, type: any) => {
+                // noUiSlider will word break / wrap to new lines, so max width is the max word length
+                if (index % skipMode === 0) {
+                    return pipSize;
+                }
+                return 0; //hide
+            };
             
-            sliderLeftMargin = Math.min(PlayControl.SliderMaxMargin, sliderLeftMargin);
-            sliderRightMargin = Math.min(PlayControl.SliderMaxMargin, sliderRightMargin);
-            
-            let sliderWidth = Math.max((viewportWidth - sliderLeftMargin - sliderRightMargin), 1);
+
+            return { filter: filterPipLabels, skipStep: skipMode };
+        }
+
+        /**
+         * Adjusts width regarding the last visible label size.
+         * @param labelData label data for chart.
+         * @param skipMode skip factor.
+         * @param sliderWidth current width of slider.
+         */
+        private static adjustWidthRegardingLastItem(labelData: PlayAxisTickLabelData, skipMode: number, sliderWidth): number {
+            let labelLenth: number = labelData.labelInfo.length;
+            let lastVisibleItemIndex: number = Math.floor((labelLenth - 1) / skipMode) * skipMode;
+            let distanceToEnd = sliderWidth + PlayControl.SliderMarginRight - (sliderWidth / labelLenth * (lastVisibleItemIndex + 1));
+            let lastItemWidth = labelData.labelInfo[lastVisibleItemIndex].labelWidth;
+            let requiredWidth = lastItemWidth / 2 - distanceToEnd;
+            if (requiredWidth > 0) {
+                let maxMargin = PlayControl.SliderMaxMargin - PlayControl.SliderMarginRight;
+                requiredWidth = requiredWidth > maxMargin ? maxMargin : requiredWidth;
+                return sliderWidth - requiredWidth;
+            }
+
             return sliderWidth;
         }
 
@@ -449,80 +575,18 @@ module powerbi.visuals {
                 .appendTo(this.playAxisContainer);
         }
 
-        public rebuild<T extends PlayableChartData>(playData: PlayChartData<T>, viewport: IViewport): void {
-            let slider = this.slider;
-
-            // re-create the slider
-            if (this.noUiSlider)
-                this.noUiSlider.destroy();
-
-            let sliderElement = <noUiSlider.Instance>this.slider.get(0);
-
-            let labelData = playData.labelData;
-            let sliderWidth = PlayControl.calculateSliderWidth(labelData, viewport.width);
-            this.slider.css('width', sliderWidth + 'px');
-
-            let numFrames = playData.frameKeys.length;
-            if (numFrames > 0) {
-                let filterPipLabels = PlayChart.createPipsFilterFn(playData, sliderWidth, labelData);
-                let lastIndex = numFrames - 1;
-                noUiSlider.create(
-                    sliderElement,
-                    {
-                        step: 1,
-                        start: [playData.currentFrameIndex],
-                        range: {
-                            min: [0],
-                            max: [lastIndex],
-                        },
-                        pips: {
-                            mode: 'steps',
-                            density: Math.round(100 / numFrames), //only draw ticks where we have labels
-                            format: {
-                                to: (index) => playData.frameKeys[index],
-                                from: (value) => playData.frameKeys.indexOf(value),
-                            },
-                            filter: filterPipLabels,
-                        },
-                    }
-                );
-            }
-            else {
-                noUiSlider.create(
-                    sliderElement,
-                    {
-                        step: 1,
-                        start: [0],
-                        range: {
-                            min: [0],
-                            max: [0],
-                        },
-                    });
+        private static calucalateSliderSize(labelData: PlayAxisTickLabelData, viewportWidth: number): SliderSize {
+            let leftMargin = 0;
+            if (!_.isEmpty(labelData.labelInfo)) {
+                leftMargin = _.first(labelData.labelInfo).labelWidth / 2;
             }
 
-            this.noUiSlider = sliderElement.noUiSlider;
+            let sliderLeftMargin = Math.max(leftMargin, PlayControl.SliderMarginLeft);
+            sliderLeftMargin = Math.min(PlayControl.SliderMaxMargin, sliderLeftMargin);
+            let sliderWidth = Math.max((viewportWidth - sliderLeftMargin - PlayControl.SliderMarginRight), 1);
 
-            this.noUiSlider.on('slide', () => {
-                let indexToShow = this.getCurrentIndex();
-                this.renderDelegate(indexToShow);
-            });
-
-            // update the width and margin-left to center up each label
-            $('.noUi-value', slider).each((idx, elem) => {
-                // TODO: better way to get the label info for an element?
-                let actualWidth = labelData.labelInfo.filter(l => l.label === $(elem).text())[0].labelWidth;
-                $(elem).width(actualWidth);
-                $(elem).css('margin-left', -actualWidth / 2 + 'px');
-            });
-
-            if (this.isMobileChart) {
-                $('.noUi-handle').addClass('mobile-noUi-handle');
-            }
+            return { width: sliderWidth, marginLeft: sliderLeftMargin };
         }
-
-        public setFrame(frameIndex: number): void {
-            this.noUiSlider.set([frameIndex]);
-        };
     }
 
     export module PlayChart {
@@ -759,7 +823,7 @@ module powerbi.visuals {
             let objectProperties = getObjectProperties(dataViewMetadata, dataLabelsSettings);
 
             let allViewModels: T[] = [];
-            let frameKeys: string[] = [];
+            let frameKeys: PlayChartFrameData[] = [];
             let convertedData: T = undefined;
             let matrixRows = dataView.matrix.rows;
             let rowChildrenLength = matrixRows.root.children ? matrixRows.root.children.length : 0;
@@ -784,11 +848,13 @@ module powerbi.visuals {
 
                 for (let i = 0, len = rowChildrenLength; i < len; i++) {
                     let key = matrixRows.root.children[i];
-                    let frameLabel = keyFormatter.format(key.value);
-                    frameKeys.push(frameLabel);
+                    let frameLabelText = keyFormatter.format(key.value);
+                    // escaped html
+                    let frameLabelHtml = $("<div/>").text(frameLabelText).html();
+                    frameKeys.push({ escapedText: frameLabelHtml, text: frameLabelText });
                     
                     let dataViewCategorical = convertMatrixToCategorical(dataView, i);
-                    let frameInfo = { label: frameLabel, column: keySourceColumn };
+                    let frameInfo = { label: frameLabelHtml, column: keySourceColumn };
                     convertedData = visualConverter(dataViewCategorical, frameInfo);
                     allViewModels.push(convertedData);
                 }
@@ -805,7 +871,7 @@ module powerbi.visuals {
             return {
                 allViewModels: allViewModels,
                 currentViewModel: convertedData,
-                frameKeys: frameKeys,
+                frameData: frameKeys,
                 currentFrameIndex: objectProperties.currentFrameIndex,
                 labelData: getLabelData(frameKeys, keySourceColumn),
             };
@@ -813,7 +879,7 @@ module powerbi.visuals {
 
         export function getDefaultPlayData<T extends PlayableChartData>(): PlayChartData<T> {
             let defaultData: PlayChartData<T> = {
-                frameKeys: [],
+                frameData: [],
                 allViewModels: [],
                 currentFrameIndex: 0,
                 currentViewModel: undefined,
@@ -853,7 +919,7 @@ module powerbi.visuals {
             return extents;
         }
 
-        function getLabelData(keys: string[], keyColumn?: DataViewMetadataColumn): PlayAxisTickLabelData {
+        function getLabelData(keys: PlayChartFrameData[], keyColumn?: DataViewMetadataColumn): PlayAxisTickLabelData {
             let textProperties: TextProperties = {
                 fontFamily: 'wf_segoe-ui_normal',
                 fontSize: jsCommon.PixelConverter.toString(14),
@@ -862,9 +928,10 @@ module powerbi.visuals {
             let labelInfo: PlayAxisTickLabelInfo[] = [];
             let anyWordBreaks = false;
             for (let key of keys) {
-                let labelWidth = jsCommon.WordBreaker.getMaxWordWidth(key, TextMeasurementService.measureSvgTextWidth, textProperties);
-                anyWordBreaks = anyWordBreaks || jsCommon.WordBreaker.hasBreakers(key) || (key).indexOf('-') > -1;  // TODO: Why isn't this last part included in hasBreakers()?
-                labelInfo.push({ label: key, labelWidth });
+                let labelWidth = jsCommon.WordBreaker.getMaxWordWidth(key.escapedText, TextMeasurementService.measureSvgTextWidth, textProperties);
+                // TODO: Why isn't this last part included in hasBreakers()?
+                anyWordBreaks = anyWordBreaks || jsCommon.WordBreaker.hasBreakers(key.escapedText) || (key.escapedText).indexOf('-') > -1;  
+                labelInfo.push({ label: key.escapedText, labelWidth });
             }
 
             return {
@@ -872,34 +939,6 @@ module powerbi.visuals {
                 anyWordBreaks: anyWordBreaks,
                 labelFieldName: keyColumn && keyColumn.displayName,
             };
-        }
-
-        export function createPipsFilterFn<T extends PlayableChartData>(playData: PlayChartData<T>, sliderWidth: number, labelData: PlayAxisTickLabelData): (index: any, type: any) => number {
-            let maxLabelWidth = _.max(_.map(labelData.labelInfo, (l) => l.labelWidth));
-
-            let pipSize = 1; //0=hide, 1=large, 2=small
-            let skipMod = 1;
-            let maxAllowedLabelWidth = playData.frameKeys.length > 1 ? sliderWidth / (playData.frameKeys.length - 1) : sliderWidth;
-            let widthRatio = maxLabelWidth / maxAllowedLabelWidth;
-
-            if (widthRatio > 1.25) {
-                skipMod = Math.ceil(widthRatio);
-                pipSize = 2;
-            }
-            else if (widthRatio > 1.0 || labelData.anyWordBreaks) {
-                // wordbreak line wrapping is automatic, and we don't reserve enough space to show two lines of text with the larger font
-                pipSize = 2;
-            }
-
-            let filterPipLabels = (index: any, type: any) => {
-                // noUiSlider will word break / wrap to new lines, so max width is the max word length
-                if (index % skipMod === 0) {
-                    return pipSize;
-                }
-                return 0; //hide
-            };
-
-            return filterPipLabels;
         }
 
         export function isDataViewPlayable(dataView: DataView, playRole: string = 'Play'): boolean {

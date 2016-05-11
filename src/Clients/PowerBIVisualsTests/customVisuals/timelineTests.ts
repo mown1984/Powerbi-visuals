@@ -40,9 +40,11 @@ module powerbitests.customVisuals {
 
         describe("converter", () => {
             let visualBuilder: TimelineBuilder;
+            let dataViews: powerbi.DataView[];
 
             beforeEach(() => {
                 visualBuilder = new TimelineBuilder();
+                dataViews = [new customVisuals.sampleDataViews.TimelineData().getDataView()];
             });
 
             it("prepareValues", () => {
@@ -61,6 +63,13 @@ module powerbitests.customVisuals {
                 expect(prepareValuesResults).toBeDefined();
                 expect(prepareValuesResults.length).toEqual(1);
                 expect(prepareValuesResults[0].getTime()).toEqual(new Date("2001-01-01").getTime());
+            });
+
+            it("identity column name is not changed for non-hierarchical source", () => {
+                visualBuilder.update(dataViews);
+
+                let column = <powerbi.data.SQColumnRefExpr>dataViews[0].categorical.categories[0].identityFields[0];
+                expect(column.ref).toEqual("Order Date");
             });
         });
 

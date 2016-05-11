@@ -38,6 +38,7 @@ module powerbi.data {
         measure?: FieldExprMeasurePattern;
         percentile?: FieldExprPercentilePattern;
         percentOfGrandTotal?: FieldExprPercentOfGrandTotalPattern;
+        selectRef?: FieldExprSelectRefPattern;
     }
 
     /** By design there is no default, no-op visitor. Components concerned with patterns need to be aware of all patterns as they are added. */
@@ -53,6 +54,7 @@ module powerbi.data {
         visitMeasure(measure: FieldExprMeasurePattern): T;
         visitPercentile(percentile: FieldExprPercentilePattern): T;
         visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): T;
+        visitSelectRef(selectRef: FieldExprSelectRefPattern): T;
     }
 
     export interface FieldExprEntityPattern {
@@ -105,6 +107,10 @@ module powerbi.data {
 
     export interface FieldExprPercentOfGrandTotalPattern {
         baseExpr: FieldExprPattern;
+    }
+
+    export interface FieldExprSelectRefPattern {
+        expressionName: string;
     }
 
     export module SQExprBuilder {
@@ -195,6 +201,10 @@ module powerbi.data {
                     baseSQExpr,
                     SQExprBuilder.scopedEval(baseSQExpr, []),
                     ArithmeticOperatorKind.Divide);
+            }
+
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): SQSelectRefExpr {
+                return SQExprBuilder.selectRef(selectRef.expressionName);
             }
         }
     }
@@ -351,6 +361,14 @@ module powerbi.data {
                 return percentOfGrandTotalPattern;
             }
         }
+
+        public visitSelectRef(expr: SQSelectRefExpr): FieldExprPattern {
+            return {
+                selectRef: {
+                    expressionName: expr.expressionName,
+                }
+            };
+        }
     }
 
     class SourceExprPatternBuilder extends DefaultSQExprVisitor<SourceExprPattern> {
@@ -451,6 +469,8 @@ module powerbi.data {
                 return visitPercentile(fieldExprPattern.percentile, visitor);
             if (fieldExprPattern.percentOfGrandTotal)
                 return visitPercentOfGrandTotal(fieldExprPattern.percentOfGrandTotal, visitor);
+            if (fieldExprPattern.selectRef)
+                return visitSelectRef(fieldExprPattern.selectRef, visitor);
 
             debug.assertFail('failed to visit a fieldExprPattern.');
             return;
@@ -522,6 +542,13 @@ module powerbi.data {
             return visitor.visitMeasure(measure);
         }
 
+        function visitSelectRef<T>(selectRef: FieldExprSelectRefPattern, visitor: IFieldExprPatternVisitor<T>): T {
+            debug.assertValue(selectRef, 'selectRef');
+            debug.assertValue(visitor, 'visitor');
+
+            return visitor.visitSelectRef(selectRef);
+        }
+
         function visitPercentile<T>(percentile: FieldExprPercentilePattern, visitor: IFieldExprPatternVisitor<T>): T {
             debug.assertValue(percentile, 'percentile');
             debug.assertValue(visitor, 'visitor');
@@ -561,12 +588,7 @@ module powerbi.data {
         }
 
         export function getPropertyName(fieldExpr: FieldExprPattern): string {
-            let column = (fieldExpr.column ||
-                fieldExpr.columnAggr ||
-                fieldExpr.measure);
-
-            if (column)
-                return column.name;
+            return FieldExprPattern.visit(fieldExpr, FieldExprPropertyNameVisitor.instance);
         }
 
         export function getHierarchyName(fieldExpr: FieldExprPattern): string {
@@ -590,6 +612,15 @@ module powerbi.data {
 
             // In case it is an entity
             return toFieldExprEntityPattern(fieldExpr).entity;
+        }
+        
+        export function getSchema(fieldExpr: FieldExprPattern): string {
+            debug.assertValue(fieldExpr, 'fieldExpr');
+            
+            let item = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
+            debug.assertAnyValue(item, 'expected fieldExpr to be an entity item');
+            
+            return item.schema;
         }
 
         export function toFieldExprEntityPattern(fieldExpr: FieldExprPattern): FieldExprEntityPattern {
@@ -636,6 +667,10 @@ module powerbi.data {
             }
 
             public visitMeasure(measure: FieldExprMeasurePattern): QueryAggregateFunction {
+                return;
+            }
+
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): QueryAggregateFunction {
                 return;
             }
 
@@ -690,6 +725,10 @@ module powerbi.data {
                 return true;
             }
 
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): boolean {
+                return false;
+            }
+
             public visitPercentile(percentile: FieldExprPercentilePattern): boolean {
                 return true;
             }
@@ -738,6 +777,10 @@ module powerbi.data {
                 return FieldExprToEntityExprPatternBuilder.toEntityItemExprPattern(measure);
             }
 
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): FieldExprEntityItemPattern {
+                return;
+            }
+
             public visitPercentile(percentile: FieldExprPercentilePattern): FieldExprEntityItemPattern {
                 return FieldExprPattern.visit(percentile.arg, this);
             }
@@ -756,6 +799,58 @@ module powerbi.data {
                 }
 
                 return pattern;
+            }
+        }
+        
+        class FieldExprPropertyNameVisitor implements IFieldExprPatternVisitor<string> {
+            public static instance: FieldExprPropertyNameVisitor = new FieldExprPropertyNameVisitor();
+
+            public visitColumn(column: FieldExprColumnPattern): string {
+                return column.name;
+            }
+
+            public visitColumnAggr(columnAggr: FieldExprColumnAggrPattern): string {
+                return columnAggr.name;
+            }
+
+            public visitColumnHierarchyLevelVariation(columnHierarchyLevelVariation: FieldExprColumnHierarchyLevelVariationPattern): string {
+                return;
+            }
+
+            public visitEntity(entity: FieldExprEntityPattern): string {
+                return;
+            }
+
+            public visitEntityAggr(entityAggr: FieldExprEntityAggrPattern): string {
+                return;
+            }
+
+            public visitHierarchy(hierarchy: FieldExprHierarchyPattern): string {
+                return;
+            }
+
+            public visitHierarchyLevel(hierarchyLevel: FieldExprHierarchyLevelPattern): string {
+                return;
+            }
+
+            public visitHierarchyLevelAggr(hierarchyLevelAggr: FieldExprHierarchyLevelAggrPattern): string {
+                return;
+            }
+
+            public visitMeasure(measure: FieldExprMeasurePattern): string {
+                return measure.name;
+            }
+
+            public visitSelectRef(selectRef: FieldExprSelectRefPattern): string {
+                return;
+            }
+
+            public visitPercentile(percentile: FieldExprPercentilePattern): string {
+                return FieldExprPattern.visit(percentile.arg, this);
+            }
+
+            public visitPercentOfGrandTotal(percentOfGrandTotal: FieldExprPercentOfGrandTotalPattern): string {
+                return FieldExprPattern.visit(percentOfGrandTotal.baseExpr, this);
             }
         }
     }

@@ -25,8 +25,12 @@
  */
 
 module powerbitests.customVisuals {
+    import DataView = powerbi.DataView;
+    import IDataColorPalette = powerbi.IDataColorPalette;
     import LegendData = powerbi.visuals.LegendData;
+    import SVGUtil = powerbi.visuals.SVGUtil;
     import VisualClass = powerbi.visuals.samples.AsterPlot;
+    import AsterData = powerbi.visuals.samples.AsterData;
     import PixelConverter = jsCommon.PixelConverter;
     import Helpers = powerbitests.helpers;
 
@@ -48,7 +52,7 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: AsterPlotBuilder;
-            let dataViews: powerbi.DataView[];
+            let dataViews: DataView[];
 
             beforeEach(() => {
                 visualBuilder = new AsterPlotBuilder(300, 500);
@@ -57,31 +61,26 @@ module powerbitests.customVisuals {
 
             it("Should create svg element", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
-            it("Should draw right amount of slices", (done) => {
+            it("Should draw right amount of slices", () => {
                 visualBuilder.update(dataViews);
-                setTimeout(() => {
+                SVGUtil.flushAllD3Transitions();
                     expect(visualBuilder.mainElement.find('.asterSlice').length)
                         .toBe(dataViews[0].categorical.categories[0].values.length);
-                    done();
-                }, DefaultWaitForRender);
+
             });
 
-            it("Should add center label", (done) => {
+            it("Should add center label", () => {
                 visualBuilder.update(dataViews);
-                setTimeout(() => {
+                SVGUtil.flushAllD3Transitions();
                     let centerText: JQuery = $(".asterPlot .centerLabel");
                     expect(centerText).toBeInDOM();
-                    done();
-                }, DefaultWaitForRender);
             });
 
-            it("Should not add center label to DOM when there is no data", (done) => {
+            it("Should not add center label to DOM when there is no data", () => {
                 visualBuilder.update([]);
-                setTimeout(() => {
+                SVGUtil.flushAllD3Transitions();
                     let centerText: JQuery = $(".asterPlot .centerLabel");
                     expect(centerText.length).toBe(0);
-                    done();
-                }, DefaultWaitForRender);
             });
 
             describe("Data Labels", () => {
@@ -93,9 +92,9 @@ module powerbitests.customVisuals {
                     };
                 });
                 
-                it("Default Data Labels", (done) => {
+                it("Default Data Labels", () => {
                     visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    SVGUtil.flushAllD3Transitions();
                         let numOfLabels = dataViews[0].categorical.values[0].values.length;
                         let labels: JQuery = $(".asterPlot .labels .data-labels");
                         expect(labels.length).toBe(numOfLabels);
@@ -103,13 +102,11 @@ module powerbitests.customVisuals {
                         expect(lines.length).toBe(numOfLabels);
                         let slices: JQuery = $(".asterPlot .asterSlice");
                         expect(slices.length).toBe(numOfLabels);
-                        done();
-                    }, DefaultWaitForRender);
                 });
 
-                it("Data Labels have conflict with viewport", (done) => {
+                it("Data Labels have conflict with viewport", () => {
                     visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    SVGUtil.flushAllD3Transitions();
                         let numOfLabels = dataViews[0].categorical.values[0].values.length;
                         let labels: JQuery = $(".asterPlot .labels .data-labels");
                         let lines: JQuery = $(".asterPlot .lines .line-label");
@@ -137,12 +134,9 @@ module powerbitests.customVisuals {
                         // TODO: uncomment and fix
                         //expect(lastLabelX).toBeGreaterThan(parseFloat(lastResizeLabelX));
                         expect(lastLabelY).toBeLessThan(parseFloat(lastResizeLabelY));
-
-                        done();
-                    }, DefaultWaitForRender);
                 });
 
-                it("Data Labels - Decimal value for Labels should have a limit to 17", (done) => {
+                it("Data Labels - Decimal value for Labels should have a limit to 17", () => {
                     dataViews[0].metadata.objects = {
                         labels: {
                             show: true,
@@ -151,17 +145,15 @@ module powerbitests.customVisuals {
                     };
 
                     visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    SVGUtil.flushAllD3Transitions();
                         let labels: JQuery = $(".asterPlot .labels .data-labels");
                         let dataLabels = $(labels).first().text();
                         let maxPrecision: number = 17;
                         expect(dataLabels).toBe("0.86618686000000000M");
                         expect(dataLabels.length - 3).toBe(maxPrecision);
-                        done();
-                    }, DefaultWaitForRender);
                 });
 
-                it("Data Labels - Change font size", (done) => {
+                it("Data Labels - Change font size", () => {
                     let fontSize: number = 15;
                     dataViews[0].metadata.objects = {
                         labels: {
@@ -171,14 +163,12 @@ module powerbitests.customVisuals {
                     };
 
                     visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    SVGUtil.flushAllD3Transitions();
                         let labels: JQuery = $(".asterPlot .labels .data-labels");
                         expect(labels.first().css('font-size')).toBe(fontSize * 4 / 3 + 'px');
-                        done();
-                    }, DefaultWaitForRender);
                 });
 
-                it("Data Labels should be clear when removing data", (done) => {
+                it("Data Labels should be clear when removing data", () => {
                     dataViews[0].metadata.objects = {
                         labels: {
                             show: true
@@ -186,19 +176,64 @@ module powerbitests.customVisuals {
                     };
 
                     visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    SVGUtil.flushAllD3Transitions();
                         let labels: JQuery = $(".asterPlot .labels .data-labels");
                         expect(labels.length).toBeGreaterThan(0);
 
                         // Manually remove categories
                         dataViews[0].categorical.categories = undefined;
                         visualBuilder.update(dataViews);
+                    SVGUtil.flushAllD3Transitions();
 
                         // Check that the labels were removed
                         labels = $(".asterPlot .labels .data-labels");
                         expect(labels.length).toBe(0);
-                        done();
-                    }, DefaultWaitForRender);
+                });
+
+                it("Data Labels should be displayed correctly when using dates as category values", () => {
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true
+                        }
+                    };
+
+                    // Manually change the category format to be a date format
+                    dataViews[0].categorical.categories[0].source.format = 'dddd\, MMMM %d\, yyyy';
+
+                    visualBuilder.update(dataViews);
+                    SVGUtil.flushAllD3Transitions();
+
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    expect(labels.length).toBeGreaterThan(0);
+
+                    // Verify label text is formatted correctly
+                    expect($(labels[0]).text()).toBe("0.87M");
+                    expect($(labels[3]).text()).toBe("0.31M");
+                    expect($(labels[5]).text()).toBe("1.26M");
+                });
+
+                it("Data Labels should not display lines for null and zero labels", () => {
+                    dataViews[0].metadata.objects = {
+                        labels: {
+                            show: true
+                        }
+                    };
+
+                    visualBuilder.update(dataViews);
+                    SVGUtil.flushAllD3Transitions();
+                    let originalLines: number = $(".asterPlot .lines .line-label").length;
+
+                    // Manually set a label to null and zero
+                    dataViews[0].categorical.values[0].values[0] = null;
+                    dataViews[0].categorical.values[1].values[0] = null;
+                    dataViews[0].categorical.values[0].values[3] = 0;
+                    dataViews[0].categorical.values[1].values[3] = 0;
+                    visualBuilder.update(dataViews);
+                    SVGUtil.flushAllD3Transitions();
+                    let newLines: number = $(".asterPlot .lines .line-label").length;
+
+                    // Verify label lines are not generated for null and zero
+                    expect(newLines).toBeLessThan(originalLines);
                 });
             });
 
@@ -313,6 +348,33 @@ module powerbitests.customVisuals {
                     expect(firstLegendItemText.css('font-size')).toBe(labelFonSizeInPixels);
                 });
             });
+
+            describe("Converter", () => {
+                let visualBuilder: AsterPlotBuilder;
+                let dataView: DataView;
+                let asterData: AsterData;
+
+                beforeEach(() => {
+                    visualBuilder = new AsterPlotBuilder(300, 500);
+                    dataView = new powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData().getDataView();
+                });
+
+                it("Should convert all data when there is a limit to colors", () => {
+
+                    // Manually create a small amount of colors
+                    let palette: IDataColorPalette = new powerbi.visuals.DataColorPalette([
+                        { value: "#000000" },
+                        { value: "#000001" },
+                        { value: "#000002" },
+                        { value: "#000003" }
+                    ]);
+                    let colors: IDataColorPalette = powerbi.visuals.visualStyles.create(palette).colorPalette.dataColors;
+                    asterData = visualBuilder.converter(dataView, colors);
+
+                    // Verify that all data was created even with the color limitation
+                    expect(asterData.dataPoints.length).toBe(dataView.categorical.categories[0].values.length);
+                });
+            });
         });
     });
 
@@ -341,9 +403,13 @@ module powerbitests.customVisuals {
             } else {
                 this.visual = new VisualClass();
             }
+        }
+
+        public converter(dataView: DataView, colors: IDataColorPalette): AsterData {
+            return this.visual.converter(dataView, colors);
             }
 
-            public updateWithViewport(dataViews: powerbi.DataView[], viewport: powerbi.IViewport ): void {
+        public updateWithViewport(dataViews: DataView[], viewport: powerbi.IViewport): void {
                 this.visual.update(<powerbi.VisualUpdateOptions>{
                     dataViews: dataViews,
                     viewport: viewport

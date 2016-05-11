@@ -26,6 +26,8 @@
 
 module powerbitests {
     import converterHelper = powerbi.visuals.converterHelper;
+    import ValueType = powerbi.ValueType;
+    import PrimitiveType = powerbi.PrimitiveType;
 
     describe("converterHelper tests", () => {
         let dataViewBuilder: DataViewBuilder;
@@ -107,6 +109,24 @@ module powerbitests {
         function formatStringProp(): powerbi.DataViewObjectPropertyIdentifier {
             return { objectName: "general", propertyName: "formatString" };
         }
+
+        it('formatFromMetadataColumn', () => {
+            function formatStringProp(): powerbi.DataViewObjectPropertyIdentifier {
+                return { objectName: "general", propertyName: "formatString" };
+            }
+            let value = -200.32;
+            let measure1Column: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer), objects: { general: { formatString: "\$#,0.##;(\$#,0.##);\$#,0.##" } }, roles: { Y: true } };
+            let measure2Column: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), format: '$0', roles: { Y: true } };
+            let measure3Column: powerbi.DataViewMetadataColumn = { displayName: 'number', queryName: 'selectNum', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: "#,0" } }, roles: { Y: true } };
+
+            let formated1 = converterHelper.formatFromMetadataColumn(value, measure1Column, formatStringProp());
+            let formated2 = converterHelper.formatFromMetadataColumn(value, measure2Column, formatStringProp());
+            let formated3 = converterHelper.formatFromMetadataColumn(value, measure3Column, formatStringProp());
+
+            expect(formated1).toBe("($200.32)");
+            expect(formated2).toBe("-$200");
+            expect(formated3).toBe("-200");
+        });
     });
 
     class DataViewBuilder {

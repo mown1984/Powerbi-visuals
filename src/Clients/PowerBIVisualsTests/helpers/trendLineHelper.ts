@@ -70,6 +70,7 @@ module powerbitests.helpers {
         dynamicSeries?: boolean;
         highlights?: boolean;
         multipleSeries?: boolean;
+        yRole?: string;
     }
 
     let defaultOptions: TrendLineBuilderOptions = {
@@ -78,6 +79,7 @@ module powerbitests.helpers {
         highlights: false,
         multipleSeries: true,
         xIsMeasure: false,
+        yRole: 'Y',
     };
 
     export class TrendLineBuilder {
@@ -183,7 +185,7 @@ module powerbitests.helpers {
 
                 valueSource = this.sourceData;
             }
-
+            
             valueColumns.push({
                 source: {
                     displayName: 'col3',
@@ -192,7 +194,7 @@ module powerbitests.helpers {
                     isMeasure: true,
                     type: ValueType.fromDescriptor({ numeric: true }),
                     roles: {
-                        'Y': true
+                        [this.options.yRole]: true
                     },
                 }
             });
@@ -241,7 +243,7 @@ module powerbitests.helpers {
                             isMeasure: true,
                             type: ValueType.fromDescriptor({ numeric: true }),
                             roles: {
-                                'Y': true
+                                [this.options.yRole]: true
                             },
                         }
                     });

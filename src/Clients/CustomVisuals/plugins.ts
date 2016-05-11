@@ -107,12 +107,6 @@ module powerbi.visuals.plugins {
         create: () => new samples.Histogram()
     };
 
-	export var areaRangeChart: IVisualPlugin = {
-        name: 'areaRangeChart',
-        capabilities: samples.AreaRangeChart.capabilities,
-        create: () => new samples.AreaRangeChart()
-    };
-
 	export var timeline: IVisualPlugin = {
         name: 'timeline',
         capabilities: samples.Timeline.capabilities,

@@ -281,6 +281,10 @@ module powerbi.data {
                     }
                 }
             }
+
+            public visitSelectRef(expr: SQSelectRefExpr, evalContext: IEvalContext): PrimitiveValue {
+                return evalContext.getExprValue(expr);
+            }
         }
     }
 } 

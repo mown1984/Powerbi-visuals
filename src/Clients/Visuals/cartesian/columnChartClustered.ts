@@ -215,6 +215,12 @@ module powerbi.visuals {
             let columnCenters = this.getColumnsCenters();
             let x = columnCenters[selectedColumnIndex];
 
+            let hoverLine = d3.select('.interactive-hover-line');
+            if (!hoverLine.empty() && !this.columnSelectionLineHandle) {
+
+                this.columnSelectionLineHandle = d3.select(hoverLine.node().parentNode);
+            }
+
             if (!this.columnSelectionLineHandle) {
                 let handle = this.columnSelectionLineHandle = this.graphicsContext.unclippedGraphicsContext.append('g');
                 handle.append('line')
@@ -533,6 +539,12 @@ module powerbi.visuals {
         private moveHandle(selectedColumnIndex: number) {
             let barCenters = this.getBarsCenters();
             let y = barCenters[selectedColumnIndex];
+
+            let hoverLine = d3.select('.interactive-hover-line');
+            if (!hoverLine.empty() && !this.columnSelectionLineHandle) {
+
+                this.columnSelectionLineHandle = d3.select(hoverLine.node().parentNode);
+            }
 
             if (!this.columnSelectionLineHandle) {
                 let handle = this.columnSelectionLineHandle = this.graphicsContext.unclippedGraphicsContext.append('g');

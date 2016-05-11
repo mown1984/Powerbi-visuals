@@ -109,12 +109,13 @@ module powerbi.data {
 
         Arithmetic?: QueryArithmeticExpression;
 
+        // Evaluation Expressions
+        ScopedEval?: QueryScopedEvalExpression;
+
         // Client-only expressions
         FillRule?: QueryFillRuleExpression;
         ResourcePackageItem?: QueryResourcePackageItem;
-
-        // Evaluation Expressions
-        ScopedEval?: QueryScopedEvalExpression;
+        SelectRef?: QuerySelectRefExpression;
     }
 
     export interface QueryPropertyExpression {
@@ -130,6 +131,10 @@ module powerbi.data {
 
     export interface QuerySourceRefExpression {
         Source: string;
+    }
+
+    export interface QuerySelectRefExpression {
+        ExpressionName: string;
     }
 
     export interface QueryAggregationExpression {

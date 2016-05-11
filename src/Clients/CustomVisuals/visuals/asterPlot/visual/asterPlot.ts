@@ -68,7 +68,7 @@ module powerbi.visuals.samples {
         color: string;
         sliceHeight: number;
         sliceWidth: number;
-        categoryLabel: string;
+        label: string;
         highlight?: boolean;
         tooltipInfo: TooltipDataItem[];
     }
@@ -137,10 +137,12 @@ module powerbi.visuals.samples {
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
+                    displayName: 'Category',
                     name: 'Category',
                     kind: powerbi.VisualDataRoleKind.Grouping,
                 },
                 {
+                    displayName: 'Y Axis',
                     name: 'Y',
                     kind: powerbi.VisualDataRoleKind.Measure,
                 },
@@ -257,6 +259,9 @@ module powerbi.visuals.samples {
             general: {
                 formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
             },
+            dataPoint: {
+                fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
+            },
             legend: {
                 show: <DataViewObjectPropertyIdentifier>{ objectName: AsterPlotLegendObjectName, propertyName: 'show' },
                 position: <DataViewObjectPropertyIdentifier>{ objectName: AsterPlotLegendObjectName, propertyName: 'position' },
@@ -353,6 +358,8 @@ module powerbi.visuals.samples {
             let catSource = cat.source;
             let catValues = cat.values;
             let values = catDv.values;
+            let catObjects: DataViewObjects[] = cat.objects;
+            let colorHelper: ColorHelper = new ColorHelper(colors, AsterPlot.Properties.dataPoint.fill);
 
             let hasHighlights: boolean = this.hasHighlights = !!(values && values.length > 0 && values[0].highlights);
 
@@ -372,14 +379,14 @@ module powerbi.visuals.samples {
             let maxValue: number = Math.max(d3.min(values[0].values));
             let minValue: number = Math.min(0, d3.min(values[0].values));
             let labelFormatter: IValueFormatter = ValueFormatter.create({
-                format: ValueFormatter.getFormatString(catSource, AsterPlot.Properties.general.formatString),
-                precision: Math.min(MaxPrecision, labelSettings.precision),
+                format: ValueFormatter.getFormatString(values[0].source, formatStringProp),
+                precision: labelSettings.precision,
                 value: (labelSettings.displayUnits === 0) && (maxValue != null) ? maxValue : labelSettings.displayUnits,
             });
             let categorySourceFormatString = valueFormatter.getFormatString(catSource, formatStringProp);
             let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
 
-            for (let i = 0, length = Math.min(colors.getAllColors().length, catValues.length); i < length; i++) {
+            for (let i = 0; i < catValues.length; i++) {
                 let formattedCategoryValue = valueFormatter.format(catValues[i], categorySourceFormatString);
                 let currentValue = values[0].values[i];
 
@@ -407,20 +414,20 @@ module powerbi.visuals.samples {
                     currentValue += values[1].values[i];
                 }
 
-                let color: string = colors.getColorByIndex(i).value;
-                let selector: SelectionId = SelectionId.createWithId(cat.identity[i]);
+                let identity: DataViewScopeIdentity = cat.identity[i];
+                let color: string = colorHelper.getColorForMeasure(catObjects && catObjects[i], identity.key);
+                let selector: SelectionId = SelectionId.createWithId(identity);
                 let sliceWidth: number = Math.max(0, values.length > 1 ? values[1].values[i] : 1);
 
                 asterDataResult.dataPoints.push({
                     sliceHeight: values[0].values[i] - minValue,
                     sliceWidth: sliceWidth,
-                    categoryLabel: catValues[i],
+                    label: labelFormatter.format(currentValue),
                     color: color,
                     identity: selector,
                     selected: false,
                     tooltipInfo: tooltipInfo,
                     labelFontSize: fontSizeInPx,
-                    value: labelFormatter.format(currentValue),
                     highlight: false,
                 });
                 
@@ -463,16 +470,16 @@ module powerbi.visuals.samples {
 
                         currentValue += values[1].highlights[i] !== null ? values[1].highlights[i] : 0;
                     }
+
                     asterDataResult.highlightedDataPoints.push({
                         sliceHeight: notNull ? values[0].highlights[i] - minValue : null,
                         sliceWidth: Math.max(0, (values.length > 1 && values[1].highlights[i] !== null) ? values[1].highlights[i] : sliceWidth),
-                        categoryLabel: catValues[i],
+                        label: labelFormatter.format(currentValue),
                         color: color,
                         identity: highlightIdentity,
                         selected: false,
                         tooltipInfo: tooltipInfo,
                         labelFontSize: fontSizeInPx,
-                        value: labelFormatter.format(currentValue),
                         highlight: true,
                     });
                 }
@@ -491,9 +498,9 @@ module powerbi.visuals.samples {
 
         private getLabelSettings(objects: DataViewObjects, labelSettings: VisualDataLabelsSettings): VisualDataLabelsSettings {
             let asterPlotLabelsProperties = AsterPlot.Properties;
-            let precision = Math.min(DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelPrecision, labelSettings.precision), MaxPrecision);
+            let precision = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelPrecision, labelSettings.precision);
+            labelSettings.precision = precision === undefined ? precision : Math.min(precision, MaxPrecision);
             labelSettings.show = DataViewObjects.getValue<boolean>(objects, asterPlotLabelsProperties.labels.show, labelSettings.show);
-            labelSettings.precision = precision;
             labelSettings.fontSize = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.fontSize, labelSettings.fontSize);
             labelSettings.displayUnits = DataViewObjects.getValue<number>(objects, asterPlotLabelsProperties.labels.labelDisplayUnits, labelSettings.displayUnits);
             let colorHelper: ColorHelper = new ColorHelper(this.colors, asterPlotLabelsProperties.labels.color, labelSettings.labelColor);
@@ -578,7 +585,7 @@ module powerbi.visuals.samples {
             this.mainGroupElement.selectAll(AsterPlot.AsterHighlightedSlice.selector).remove();
             dataLabelUtils.cleanDataLabels(this.mainLabelsElement, true);
 
-            let dataPoints = this.validateData(dataView, convertedData.dataPoints);
+            let dataPoints = convertedData.dataPoints;
             if (!dataPoints || dataPoints.length === 0)
                 return;
 
@@ -606,7 +613,7 @@ module powerbi.visuals.samples {
             let width: number = this.currentViewport.width - margin.left - margin.right;
             let height: number = this.currentViewport.height - margin.top - margin.bottom;
             let radius: number = Math.min(width, height) / 2;
-            let innerRadius: number = labelSettings.show ? 0.3 * radius * AsterRadiusRatio : 0.3 * radius;
+            let innerRadius: number = 0.3 * (labelSettings.show ? radius * AsterRadiusRatio : radius);
             let maxScore: number = d3.max(dataPoints, d => d.sliceHeight);
             let totalWeight: number = d3.sum(dataPoints, d => d.sliceWidth);
             let hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
@@ -619,9 +626,9 @@ module powerbi.visuals.samples {
             let arc: D3.Svg.Arc = d3.svg.arc()
                 .innerRadius(innerRadius)
                 .outerRadius(d => {
-                    let height: number = (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius + 1;
+                    let height: number = (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore;
                     //The chart should shrink if data labels are on
-                    let heightIsLabelsOn = labelSettings.show ? height * AsterRadiusRatio : height;
+                    let heightIsLabelsOn = innerRadius + (labelSettings.show ? height * AsterRadiusRatio : height);
                     // Prevent from data to be inside the inner radius
                     return Math.max(heightIsLabelsOn, innerRadius);
                 });
@@ -660,13 +667,22 @@ module powerbi.visuals.samples {
             
             // Draw data labels only if they are on and there are no highlights or there are highlights and this is the highlighted data labels
             if (labelSettings.show && (!hasHighlights || (hasHighlights && isHighlight))) {
+                let labelRadCalc = (d: AsterDataPoint) => {
+                    let height: number = radius * (d && !isNaN(d.sliceHeight) ? d.sliceHeight : 1) / maxScore + innerRadius;
+                    return Math.max(height, innerRadius);
+                };
                 let labelArc = d3.svg.arc()
-                    .innerRadius(d => radius * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius)
-                    .outerRadius(d => radius * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius);
+                    .innerRadius(d => labelRadCalc(d.data))
+                    .outerRadius(d => labelRadCalc(d.data));
 
+                let lineRadCalc = (d: AsterDataPoint) => {
+                    let height: number = (radius - innerRadius) * (d && !isNaN(d.sliceHeight) ? d.sliceHeight : 1) / maxScore;
+                    height = innerRadius + height * AsterRadiusRatio;
+                    return Math.max(height, innerRadius);
+                };
                 let outlineArc = d3.svg.arc()
-                    .innerRadius(d => (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius)
-                    .outerRadius(d => (radius - innerRadius) * (d && d.data && !isNaN(d.data.sliceHeight) ? d.data.sliceHeight : 1) / maxScore + innerRadius);
+                    .innerRadius(d => lineRadCalc(d.data))
+                    .outerRadius(d => lineRadCalc(d.data));
 
                 let layout = this.getLabelLayout(labelSettings, labelArc, this.currentViewport);
                 this.drawLabels(arcDescriptorDataPoints, this.mainLabelsElement, layout, this.currentViewport, outlineArc, labelArc);
@@ -692,41 +708,41 @@ module powerbi.visuals.samples {
             };
             let isLabelsHasConflict = function (d: AsterArcDescriptor) {
                 let pos = arc.centroid(d);
-                textProperties.text = d.data.value;
+                textProperties.text = d.data.label;
                 let textWidth = TextMeasurementService.measureSvgTextWidth(textProperties);
-                let horizontalSpaceAvaliableForLabels = viewport.width / 2 - Math.abs(pos[0] * AsterRadiusRatio);
-                let textHeight = TextMeasurementService.measureSvgTextHeight(textProperties);
-                let verticalSpaceAvaliableForLabels = viewport.height / 2 - Math.abs(pos[1] * AsterRadiusRatio);
+                let horizontalSpaceAvaliableForLabels = viewport.width / 2 - Math.abs(pos[0]);
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(textProperties);
+                let verticalSpaceAvaliableForLabels = viewport.height / 2 - Math.abs(pos[1]);
                 d.isLabelHasConflict = textWidth > horizontalSpaceAvaliableForLabels || textHeight > verticalSpaceAvaliableForLabels;
-                return textWidth > horizontalSpaceAvaliableForLabels || textHeight > verticalSpaceAvaliableForLabels;
+                return d.isLabelHasConflict;
             };
 
             return {
-                labelText: (d: ArcDescriptor) => {
-                    textProperties.text = d.data.value;
+                labelText: (d: AsterArcDescriptor) => {
+                    textProperties.text = d.data.label;
                     let pos = arc.centroid(d);
                     let xPos = isLabelsHasConflict(d) ? pos[0] * AsterConflictRatio : pos[0];
-                    let spaceAvaliableForLabels = viewport.width / 2 - Math.abs(xPos * AsterRadiusRatio);
+                    let spaceAvaliableForLabels = viewport.width / 2 - Math.abs(xPos);
                     return TextMeasurementService.getTailoredTextOrDefault(textProperties, spaceAvaliableForLabels);
                 },
                 labelLayout: {
-                    x: (d: ArcDescriptor) => {
+                    x: (d: AsterArcDescriptor) => {
                         let pos = arc.centroid(d);
-                        textProperties.text = d.data.value;
-                        let xPos = isLabelsHasConflict(d) ? pos[0] * AsterConflictRatio : pos[0];
-                        return xPos * AsterRadiusRatio;
+                        textProperties.text = d.data.label;
+                        let xPos = d.isLabelHasConflict ? pos[0] * AsterConflictRatio : pos[0];
+                        return xPos;
                     },
-                    y: (d: ArcDescriptor) => {
+                    y: (d: AsterArcDescriptor) => {
                         let pos = arc.centroid(d);
-                        let yPos = isLabelsHasConflict(d) ? pos[1] * AsterConflictRatio : pos[1];
-                        return yPos * AsterRadiusRatio;
+                        let yPos = d.isLabelHasConflict ? pos[1] * AsterConflictRatio : pos[1];
+                        return yPos;
                     },
                 },
-                filter: (d: ArcDescriptor) => (d != null && !_.isEmpty(d.data.value)),
+                filter: (d: AsterArcDescriptor) => (d != null && !_.isEmpty(d.data.label)),
                 style: {
                     'fill': labelSettings.labelColor,
                     'font-size': textProperties.fontSize,
-                    'text-anchor': (d: ArcDescriptor) => midAngle(d) < Math.PI ? 'start' : 'end',
+                    'text-anchor': (d: AsterArcDescriptor) => midAngle(d) < Math.PI ? 'start' : 'end',
                 },
             };
         }
@@ -772,6 +788,9 @@ module powerbi.visuals.samples {
             // Draw lines
             if (context.select(AsterPlot.linesGraphicsContextClass.selector).empty())
                 context.append('g').classed(AsterPlot.linesGraphicsContextClass.class, true);
+				
+            // Remove lines for null and zero values
+            filteredData = _.filter(filteredData, (d: ArcDescriptor) => d.data.sliceHeight !== null && d.data.sliceHeight !== 0);
 
             let lines = context.select(AsterPlot.linesGraphicsContextClass.selector).selectAll('polyline')
                 .data(filteredData, (d: ArcDescriptor) => d.data.identity.getKey());
@@ -786,14 +805,12 @@ module powerbi.visuals.samples {
                 .classed('line-label', true);
 
             lines
-                .attr('points', function (d: AsterArcDescriptor) {
-                    let textPoint = labelArc.centroid(d);
-                let currentAsterRadiusRatio = d.isLabelHasConflict ? AsterRadiusRatio * AsterConflictRatio : AsterRadiusRatio;
-                textPoint[0] = (textPoint[0] + (midAngle(d) < Math.PI ? -1 : 1 * labelLinePadding)) * currentAsterRadiusRatio;
-                textPoint[1] *= currentAsterRadiusRatio;
+                .attr('points', function (d) {
+                    let textPoint = [d.labelX, d.labelY];
+                    textPoint[0] = textPoint[0] + ((midAngle(d) < Math.PI ? -1 : 1) * labelLinePadding);
                     let chartPoint = outlineArc.centroid(d);
-                    chartPoint[0] *= chartLinePadding * AsterRadiusRatio;
-                    chartPoint[1] *= chartLinePadding * AsterRadiusRatio;
+                    chartPoint[0] *= chartLinePadding;
+                    chartPoint[1] *= chartLinePadding;
                     return [chartPoint, textPoint];
                 }).
                 style({
@@ -854,20 +871,6 @@ module powerbi.visuals.samples {
                 default:
                     break;
             }
-        }
-
-        public validateData(dataView: DataView, dataPoints: AsterDataPoint[]): AsterDataPoint[] {
-            let maxCategories = this.colors.getAllColors().length;
-
-            if (this.dataViewContainsCategory(dataView) &&
-                dataView.categorical.categories[0].values.length > maxCategories) {
-                this.hostService.setWarnings(
-                    [new AsterPlotWarning((<any>powerbi).localization.defaultLocalizedStrings.DsrLimitWarning_TooMuchDataMessage)]);
-                let minSliceWidth: number = dataPoints.sort((a, b) => b.sliceWidth - a.sliceWidth)[maxCategories - 1].sliceWidth;
-                return dataPoints.filter(x => x.sliceWidth >= minSliceWidth).slice(0, maxCategories);
-            }
-
-            return dataPoints;
         }
 
         private drawOuterLine(innerRadius: number, radius: number, data: ArcDescriptor[]): void {

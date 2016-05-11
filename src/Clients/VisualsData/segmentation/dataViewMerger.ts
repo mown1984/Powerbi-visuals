@@ -140,7 +140,7 @@ module powerbi.data.segmentation {
                     let segmentValue = segment.values[valueIndex];
                     let sourceValue = source.values[valueIndex];
 
-                    debug.assert(jsCommon.JsonComparer.equals(sourceValue.source, segmentValue.source), "Source and segment value have different sources.");
+                    debug.assert(DataViewAnalysis.areMetadataColumnsEquivalent(sourceValue.source, segmentValue.source), "Source and segment value have different sources.");
 
                     if (!sourceValue.values && segmentValue.values) {
                         sourceValue.values = [];

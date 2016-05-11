@@ -35,6 +35,7 @@ module powerbitests.mocks {
         public onClearSelection(): void { }
         public canResizeTo(viewport: powerbi.IViewport): boolean { return true; }
         public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions): powerbi.VisualObjectInstanceEnumeration { return; }
+        public enumerateObjectRepetition(): powerbi.VisualObjectRepetition[] { return; }
     }
 
     export class MockVisualDeprecated implements powerbi.IVisual {

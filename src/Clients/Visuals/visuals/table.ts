@@ -218,18 +218,16 @@ module powerbi.visuals {
             let cellItem = new TablixUtils.TablixVisualCell(value, isTotal, columnItem, this.formatter);
             cellItem.position = position;
 
-            // VSTS 7167767: Remove temporary code for product demo.
             let tableRow = <DataViewVisualTableRow>rowItem;
             if (tableRow && tableRow.values) {
                 let rowObjects = tableRow.values.objects;
                 if (rowObjects) {
                     let cellObject = rowObjects[columnIndex];
                     if (cellObject) {
-                        cellItem.backColorCustomFormatting = TablixObjects.PropValuesBackColorPrimary.getValue<string>(cellObject);
+                        cellItem.backColor = TablixObjects.PropValuesBackColor.getValue<string>(cellObject);
                     }
                 }
             }
-
             return cellItem;
         }
 
@@ -553,9 +551,10 @@ module powerbi.visuals {
             }
 
             style.fontColor = cell.position.row.index % 2 === 0 ? props.fontColorPrimary : props.fontColorSecondary;
-            // TODO: VSTS 7167767: Remove temporary code for product demo.
-            if (this.formattingProperties.isConditionalFormattingEnabled && item.backColorCustomFormatting)
-                style.backColor = item.backColorCustomFormatting;
+
+            // Conditional formatting on the cell overrides primary/secondary background colors.
+            if (item.backColor)
+                style.backColor = item.backColor;
             else
                 style.backColor = cell.position.row.index % 2 === 0 ? props.backColorPrimary : props.backColorSecondary;
 
@@ -685,7 +684,6 @@ module powerbi.visuals {
 
         constructor(options?: TableConstructorOptions) {
             if (options) {
-                // TODO: VSTS 7167767: Remove temporary code for product demo.
                 this.isConditionalFormattingEnabled = options.isConditionalFormattingEnabled;
                 this.isTouchEnabled = options.isTouchEnabled;
             }
@@ -723,8 +721,7 @@ module powerbi.visuals {
         /**
          * Note: Public for testability.
          */
-        // TODO: VSTS 7167767: Remove temporary code for product demo.
-        public static converter(dataView: DataView, isConditionalFormattingEnabled: boolean): DataViewVisualTable {
+        public static converter(dataView: DataView): DataViewVisualTable {
             let table = dataView.table;
             debug.assertValue(table, 'table');
             debug.assertValue(table.rows, 'table.rows');
@@ -739,8 +736,7 @@ module powerbi.visuals {
                 };
                 visualTable.visualRows.push(visualRow);
             }
-            // TODO: VSTS 7167767: Remove temporary code for product demo.
-            visualTable.formattingProperties = TablixObjects.getTableObjects(dataView, isConditionalFormattingEnabled);
+            visualTable.formattingProperties = TablixObjects.getTableObjects(dataView);
 
             return visualTable;
         }
@@ -772,8 +768,8 @@ module powerbi.visuals {
                     this.persistingObjects = false;
                     return;
                 }
-                // TODO: VSTS 7167767: Remove temporary code for product demo.
-                let visualTable = Table.converter(this.dataView, this.isConditionalFormattingEnabled);
+
+                let visualTable = Table.converter(this.dataView);
                 let textSize = visualTable.formattingProperties.general.textSize;
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
@@ -973,10 +969,22 @@ module powerbi.visuals {
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
             // we are resilient here when we do not have data view.
             if (this.dataView) {
-                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, this.isConditionalFormattingEnabled, controls.TablixType.Table);
+                TablixObjects.enumerateObjectInstances(options, enumeration, this.dataView, controls.TablixType.Table);
             }
 
             return enumeration.complete();
+        }
+
+        public enumerateObjectRepetition(): VisualObjectRepetition[] {
+            let enumeration: VisualObjectRepetition[] = [];
+
+            // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
+            // we are resilient here when we do not have data view.
+            if (this.isConditionalFormattingEnabled && this.dataView) {
+                TablixObjects.enumerateObjectRepetition(enumeration, this.dataView, controls.TablixType.Table);
+            }
+
+            return enumeration;
         }
 
         private shouldAllowHeaderResize(): boolean {

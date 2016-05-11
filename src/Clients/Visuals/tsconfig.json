@@ -106,6 +106,7 @@
     "common/transform.ts",
     "common/trendLineHelper.ts",
     "common/visibilityUtil.ts",
+    "common/visualObjectRepetition.ts",
     "converter/slicer.converter.ts",
     "formatting/dataLabelManager.ts",
     "formatting/labelLayout.ts",

@@ -289,22 +289,9 @@ module powerbi {
             return result;
         }
 
-        private static fromNumericSequence(date: Date, sequence: NumericSequence, unit: DateTimeUnit) { 
-            let result = new DateTimeSequence(unit);
-            for (let i = 0; i < sequence.sequence.length; i++) { 
-                let x: number = sequence.sequence[i];
-                let d: Date = DateTimeSequence.addInterval(date, x, unit);
-                result.add(d);
-            }
-            result.interval = sequence.interval;
-            result.intervalOffset = sequence.intervalOffset;
-            return result;
-        }
-
-        private static addInterval(value: Date, interval: number, unit: DateTimeUnit): Date {
+        public static addInterval(value: Date, interval: number, unit: DateTimeUnit): Date {
             interval = Math.round(interval);
-            switch (unit)
-            {
+            switch (unit) {
                 case DateTimeUnit.Year:
                     return DateUtils.addYears(value, interval);
                 case DateTimeUnit.Month:
@@ -322,6 +309,18 @@ module powerbi {
                 case DateTimeUnit.Millisecond:
                     return DateUtils.addMilliseconds(value, interval);
             }
+        }
+
+        private static fromNumericSequence(date: Date, sequence: NumericSequence, unit: DateTimeUnit) { 
+            let result = new DateTimeSequence(unit);
+            for (let i = 0; i < sequence.sequence.length; i++) { 
+                let x: number = sequence.sequence[i];
+                let d: Date = DateTimeSequence.addInterval(date, x, unit);
+                result.add(d);
+            }
+            result.interval = sequence.interval;
+            result.intervalOffset = sequence.intervalOffset;
+            return result;
         }
 
         private static getDelta(min: Date, max: Date, unit: DateTimeUnit): number {

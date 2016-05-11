@@ -31,6 +31,7 @@ module powerbitests {
     import DataView = powerbi.DataView;
     import DataViewTable = powerbi.DataViewTable;
     import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+    import DataViewRoleWildcard = powerbi.data.DataViewRoleWildcard;
     import Table = powerbi.visuals.Table;
     import tableCapabilities = powerbi.visuals.tableCapabilities;
     import TableHierarchyNavigator = powerbi.visuals.TableHierarchyNavigator;
@@ -752,7 +753,7 @@ module powerbitests {
         describe("getIntersection", () => {
             it("returns values in the intersection", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
@@ -772,7 +773,7 @@ module powerbitests {
 
             it("returns weburl values", () => {
                 let dataView = tableWebUrl;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
@@ -788,7 +789,7 @@ module powerbitests {
 
             it("returns Kpi Markup", () => {
                 let dataView = tableKpi;
-                let visualTable = powerbi.visuals.Table.converter(dataView, false);
+                let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
                 let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
@@ -882,7 +883,7 @@ module powerbitests {
 
             it("returns true if the two items are the same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let dataViewVisualTable = Table.converter(dataView, false);
+                let dataViewVisualTable = Table.converter(dataView);
                 let navigator = createNavigator(dataViewVisualTable);
                 let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
                 let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[3]);
@@ -892,7 +893,7 @@ module powerbitests {
 
             it("returns false if the two items are not same", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
-                let dataViewVisualTable = Table.converter(dataView, false);
+                let dataViewVisualTable = Table.converter(dataView);
                 let navigator = createNavigator(dataViewVisualTable);
                 let cell1 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[1]);
                 let cell2 = navigator.getIntersection(dataViewVisualTable.visualRows[0], dataView.table.columns[2]);
@@ -1184,6 +1185,54 @@ module powerbitests {
             });
         });
 
+        it("enumerateObjectRepetition - conditional formatting feature switch off", () => {
+            v.onDataChanged({ dataViews: [tableOneMeasureOneGroupColumnWidthTrue] });
+
+            expect(v.enumerateObjectRepetition()).toEqual([]);
+        });
+
+        it("enumerateObjectRepetition - conditional formatting", () => {
+            v = new Table({ isConditionalFormattingEnabled: true });
+            v.init({
+                element: element,
+                host: powerbitests.mocks.createVisualHostServices(),
+                style: powerbi.visuals.visualStyles.create(),
+                viewport: {
+                    height: element.height(),
+                    width: element.width()
+                },
+                animation: { transitionImmediate: true },
+                interactivity: {
+                    selection: true
+                }
+            });
+            v.onDataChanged({ dataViews: [tableOneMeasureOneGroupColumnWidthTrue] });
+
+            expect(v.enumerateObjectRepetition()).toEqualDeep(
+                [{
+                    selector: {
+                        data: [DataViewRoleWildcard.fromRoles(['Values'])],
+                        metadata: 'measure1',
+                    },
+                    objects: {
+                        values: {
+                            formattingProperties: ['backColor']
+                        }
+                    },
+                }, {
+                    selector: {
+                        data: [DataViewRoleWildcard.fromRoles(['Values'])],
+                        metadata: 'group1',
+                    },
+                    objects: {
+                        values: {
+                            formattingProperties: ['backColor']
+                        }
+                    },
+                }]
+            );
+        });
+
         it("RefreshControl invisible parent", () => {
             let control = { refresh() { } };
             let controlSpy = spyOn(control, "refresh");
@@ -1362,7 +1411,7 @@ module powerbitests {
             setTimeout(() => {
                 let tableVisual = <Table>v;
                 let colWidthManager = tableVisual.getColumnWidthManager();
-                    
+
                 //Initially, autoSizeColumnWidth is OFF, not persisting
                 expect(tableVisual.persistingObjects).toBe(false);
 
@@ -1506,8 +1555,8 @@ module powerbitests {
                 interactivity: {
                     selection: true
                 }
-            });
         });
+    });
 
         function validateSortIcons(expectedValues: string[]): void {
             tablixHelper.validateSortIconClassNames(expectedValues, ".tablixCanvas tr");
@@ -1544,7 +1593,7 @@ module powerbitests {
                 expect(rowCells.eq(1).width()).toEqual(65);
                 expect(rowCells.eq(2).width()).toEqual(73);
                 expect(rowCells.eq(3).width()).toEqual(65);
-                
+
                 // Mock Resize
                 let newMeasureSource2: DataViewMetadataColumn = { displayName: "measure2", queryName: "measure2", type: dataTypeNumber, isMeasure: true, index: 4, objects: { general: { formatString: "#.00", columnWidth: 45 } } };
                 let dataView2: DataView = {
@@ -1593,7 +1642,7 @@ module powerbitests {
                     table: dataViewTableThreeMeasures
                 };
                 let tableVisual = <Table>v;
-                
+
                 // Overriding suppress notification. For test purposes the call needs to go through
                 // Normally, calling onDataChanged first time with autoSizeColumns OFF triggers a persistAllColumnWidths which triggers another onDataViewChanged
                 tableVisual.persistingObjects = false;
@@ -1626,7 +1675,7 @@ module powerbitests {
                 },
                 table: dataViewTableThreeMeasures
             };
-            
+
             // AutoSize property off
             v.onDataChanged({ dataViews: [dataView0] });
             setTimeout(() => {
@@ -2385,8 +2434,8 @@ module powerbitests {
                 for (let i = 0; i < dataView.table.rows.length - 1; i++) {
                     tablixHelper.validateTableRowTooltip(SelectorBodyCell, dataView, i);
                 }
-               
-                //Validate last row and title 
+
+                //Validate last row and title
                 tablixHelper.validateTableRowTooltip(SelectorBodyCellLast, dataView, dataView.table.rows.length - 1);
 
                 //Validate row footer tooltip

@@ -1711,8 +1711,15 @@ body {
   /* Animated Text (and card) Styles */
   /* Kept around for funnel labels; can be removed once it's moved to the new system */
 }
-.visual a {
-  color: #000000;
+.visual a:link {
+  color: #0000EE;
+  text-decoration: underline;
+}
+.visual a:visited {
+  color: #551A8B;
+}
+.visual a:active {
+  color: #F2C811;
 }
 .visual .powervisuals-glyph {
   font-size: inherit;
@@ -2352,7 +2359,6 @@ body {
 }
 .visual .tablixContainer .tablixCanvas .tablixValueUrlIcon .tablixUrlIconGlyph {
   text-decoration: none;
-  color: inherit;
 }
 .visual .tablixContainer .tablixCanvas .scroll-bar-div {
   background: #F1F1F1;
@@ -2440,7 +2446,6 @@ body {
 }
 .visual .tablixContainer .tablixDashboard .tablixValueUrlIcon .tablixUrlIconGlyph {
   text-decoration: none;
-  color: inherit;
 }
 .visual .imageBackground {
   background-size: contain;
@@ -2549,9 +2554,6 @@ body {
 .visual .textbox .ql-editor {
   line-height: normal;
   word-wrap: break-word;
-}
-.visual .textbox a {
-  text-decoration: underline;
 }
 .visual div.ql-paste-manager {
   display: none;

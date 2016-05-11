@@ -951,7 +951,7 @@ module powerbitests {
     });
 
     class WaterfallDataBuilder {
-        private _categoryColumn: powerbi.DataViewMetadataColumn = { displayName: "year", type: ValueType.fromDescriptor({ text: true }), queryName: "Year.Year" };
+        private _categoryColumn: powerbi.DataViewMetadataColumn = { displayName: "year", type: ValueType.fromDescriptor({ text: true }), queryName: "Year.Year", roles: { Category: true } };
         public get categoryColumn(): powerbi.DataViewMetadataColumn { return this._categoryColumn; }
 
         private _categoryValues: any[] = [2015, 2016, 2017, 2018, 2019, 2020];
@@ -960,8 +960,7 @@ module powerbitests {
         private _categoryIdentities: powerbi.DataViewScopeIdentity[] = this.categoryValues.map((v) => mocks.dataViewScopeIdentity(v));
         public get categoryIdentities(): powerbi.DataViewScopeIdentity[] { return this._categoryIdentities; }
 
-        private _measureColumn: powerbi.DataViewMetadataColumn = { displayName: "sales", isMeasure: true, type: ValueType.fromDescriptor({ integer: true }), queryName: 'Sales.Sales', objects: { general: { formatString: "$0" } }
-};
+        private _measureColumn: powerbi.DataViewMetadataColumn = { displayName: "sales", isMeasure: true, type: ValueType.fromDescriptor({ integer: true }), queryName: 'Sales.Sales', objects: { general: { formatString: "$0" } }, roles: { Y: true } };
         public get measureColumn(): powerbi.DataViewMetadataColumn { return this._measureColumn; }
 
         private _measureValues: any[] = [100, -200, 0, 300, null, NaN];

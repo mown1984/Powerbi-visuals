@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "ES5",
         "suppressExcessPropertyErrors": true
     },
     "filesGlob": [
@@ -14,6 +14,8 @@
         
         "telemetry/generateGuid.ts",
         "telemetry/events.ts",
+        
+        "decorators/VisualPlugin.ts",
         
         "components/selectionManager.ts",
         "components/selectionIdBuilder.ts",

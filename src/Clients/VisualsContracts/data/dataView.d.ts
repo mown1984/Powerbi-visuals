@@ -82,9 +82,25 @@ declare module powerbi {
 
         /** Indicates that aggregates should not be computed across groups with different values of this column. */
         discourageAggregationAcrossGroups?: boolean;
+
+        /** The aggregates computed for this column, if any. */
+        aggregates?: DataViewColumnAggregates;
     }
 
     export interface DataViewSegmentMetadata {
+    }
+
+    export interface DataViewColumnAggregates {
+        subtotal?: PrimitiveValue;
+        max?: PrimitiveValue;
+        min?: PrimitiveValue;
+        count?: number;
+
+        /** Client-computed maximum value for a column. */
+        maxLocal?: PrimitiveValue;
+
+        /** Client-computed maximum value for a column. */
+        minLocal?: PrimitiveValue;
     }
 
     export interface DataViewCategorical {
@@ -121,17 +137,13 @@ declare module powerbi {
     }
 
     export interface DataViewValueColumn extends DataViewCategoricalColumn {
-        subtotal?: any;
-        max?: any;
-        min?: any;
         highlights?: any[];
         identity?: DataViewScopeIdentity;
+    }
 
-        /** Client-computed maximum value for a column. */
-        maxLocal?: any;
-
-        /** Client-computed maximum value for a column. */
-        minLocal?: any;
+    // NOTE: The following is needed for backwards compatibility and should be deprecated.  Callers should use
+    // DataViewMetadataColumn.aggregates instead.
+    export interface DataViewValueColumn extends DataViewColumnAggregates {
     }
 
     export interface DataViewCategoryColumn extends DataViewCategoricalColumn {
@@ -194,17 +206,8 @@ declare module powerbi {
         value?: any;
     }
 
-    export interface DataViewTreeNodeMeasureValue extends DataViewTreeNodeValue {
-        subtotal?: any;
-        max?: any;
-        min?: any;
+    export interface DataViewTreeNodeMeasureValue extends DataViewTreeNodeValue, DataViewColumnAggregates {
         highlight?: any;
-
-        /** Client-computed maximum value for a column. */
-        maxLocal?: any;
-
-        /** Client-computed maximum value for a column. */
-        minLocal?: any;
     }
 
     export interface DataViewTreeNodeGroupValue extends DataViewTreeNodeValue {

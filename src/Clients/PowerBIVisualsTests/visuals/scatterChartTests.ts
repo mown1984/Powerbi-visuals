@@ -85,7 +85,8 @@ module powerbitests {
                 {
                     displayName: 'category',
                     format: 'yyyy',
-                    type: ValueType.fromDescriptor({ dateTime: true })
+                    type: ValueType.fromDescriptor({ dateTime: true }),
+                    roles: { Category: true },
                 }, {
                     displayName: 'series'
                 }, {
@@ -3404,7 +3405,7 @@ module powerbitests {
 
             it('enumerateObjectInstances: fill point default depends on gradient role', () => {
                 // Fill point is not shown when we have a 'Size' role, so remove it
-                dataViewMetadataFourColumn.columns = _.remove(dataViewMetadataFourColumn.columns, (column) => column.roles['Size'] === true);
+                _.remove(dataViewMetadataFourColumn.columns, (column) => column.roles['Size'] === true);
 
                 // Without Gradient role
                 let dataViewWithoutGradient: powerbi.DataView = {
@@ -4655,6 +4656,7 @@ module powerbitests {
                             }])
                     }
                 };
+                dataView.categorical.values.source = metadata.columns[0];
                 let dataChangedOptions = {
                     dataViews: [dataView]
                 };
@@ -5727,7 +5729,7 @@ module powerbitests {
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
             let scatterChartData = ScatterChart.converter(dataView, createConverterOptions(viewport, colors));
             let scatterChartDataPoints = scatterChartData.dataPoints;
-            expect(scatterChartDataPoints.length).toBe(0);
+            expect(scatterChartDataPoints.length).toBe(5);
         });
 
         it('scatter chart null Y measure', () => {

@@ -536,7 +536,7 @@ module powerbitests {
                             originalValueAbsolute: 0.375,
                             identity: selectionIds[2],
                             key: selectionIds[2].getKey(),
-                            tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "60.00 (37.5%)" }],
+                            tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "60 (37.5%)" }],
                             lastSeries: undefined,
                             chartType: undefined,
                             labelSettings: defaultLabelSettings,
@@ -557,7 +557,7 @@ module powerbitests {
                             originalValueAbsolute: 0.2,
                             identity: selectionIds[3],
                             key: selectionIds[3].getKey(),
-                            tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "50.00 (20%)" }],
+                            tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "50 (20%)" }],
                             lastSeries: undefined,
                             chartType: undefined,
                             labelSettings: defaultLabelSettings,
@@ -2027,7 +2027,7 @@ module powerbitests {
                                 originalValueAbsolute: 0.75,
                                 identity: selectionIds[4],
                                 key: selectionIds[4].getKey(),
-                                tooltipInfo: [{ displayName: "year", value: "2010" }, { displayName: "tax", value: "90.00 (75%)" }],
+                                tooltipInfo: [{ displayName: "year", value: "2010" }, { displayName: "tax", value: "90 (75%)" }],
                                 lastSeries: undefined,
                                 chartType: undefined,
                                 labelSettings: defaultLabelSettings,
@@ -2048,7 +2048,7 @@ module powerbitests {
                                 originalValueAbsolute: 0.7142857142857143,
                                 identity: selectionIds[5],
                                 key: selectionIds[5].getKey(),
-                                tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "50.00 (71.43%)" }],
+                                tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "tax", value: "50 (71.43%)" }],
                                 lastSeries: undefined,
                                 chartType: undefined,
                                 labelSettings: defaultLabelSettings,
@@ -2069,7 +2069,7 @@ module powerbitests {
                                 originalValueAbsolute: 0.5,
                                 identity: selectionIds[6],
                                 key: selectionIds[6].getKey(),
-                                tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "-100.00 (50%)" }],
+                                tooltipInfo: [{ displayName: "year", value: "2012" }, { displayName: "tax", value: "-100 (50%)" }],
                                 lastSeries: undefined,
                                 chartType: undefined,
                                 labelSettings: defaultLabelSettings,
@@ -2090,7 +2090,7 @@ module powerbitests {
                                 originalValueAbsolute: 0.25,
                                 identity: selectionIds[7],
                                 key: selectionIds[7].getKey(),
-                                tooltipInfo: [{ displayName: "year", value: "2013" }, { displayName: "tax", value: "-100.00 (25%)" }],
+                                tooltipInfo: [{ displayName: "year", value: "2013" }, { displayName: "tax", value: "-100 (25%)" }],
                                 lastSeries: undefined,
                                 chartType: undefined,
                                 labelSettings: defaultLabelSettings,
@@ -2785,7 +2785,7 @@ module powerbitests {
                     }],
                     values: DataViewTransform.createValueColumns([{
                         source: measureColumn,
-                        values: [100, Number.NaN]
+                        values: [0, Number.NaN]
                     }])
                 }
             };
@@ -2805,22 +2805,22 @@ module powerbitests {
                     key: 'series0', index: 0, displayName: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), color: legendItems[0].color, labelSettings: data.series[0].labelSettings, data: [
                         {
                             categoryValue: 2011,
-                            value: 100,
-                            position: 100,
-                            valueAbsolute: 100,
-                            valueOriginal: 100,
+                            value: 0,
+                            position: 0,
+                            valueAbsolute: 0,
+                            valueOriginal: 0,
                             seriesIndex: 0,
                             labelFill: undefined,
                             labelFormatString: undefined,
                             categoryIndex: 0,
                             color: legendItems[0].color,
                             selected: false,
-                            originalValue: 100,
-                            originalPosition: 100,
-                            originalValueAbsolute: 100,
+                            originalValue: 0,
+                            originalPosition: 0,
+                            originalValueAbsolute: 0,
                             identity: selectionIds[0],
                             key: selectionIds[0].getKey(),
-                            tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$100" }],
+                            tooltipInfo: [{ displayName: "year", value: "2011" }, { displayName: "sales", value: "$0" }],
                             lastSeries: undefined,
                             chartType: undefined,
                             labelSettings: defaultLabelSettings,
@@ -2851,7 +2851,7 @@ module powerbitests {
                 }]);
             expect(StackedUtil.calcValueDomain(data.series, /*is100Pct*/ false)).toEqual({
                 min: 0,
-                max: 100
+                max: 0
             });
             expect(legendItems).toEqual([
                 { icon: LegendIcon.Box, color: legendItems[0].color, label: measureColumn.displayName, identity: SelectionId.createWithMeasure("selectSales"), selected: false }

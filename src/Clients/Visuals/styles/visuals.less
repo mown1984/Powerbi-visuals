@@ -40,8 +40,17 @@
 @defaultShapeRendering: crispEdges;
 
 .visual {
-    a {
-        color: @linkColor;
+    a:link {
+        color: @defaultLinkColor;
+        text-decoration: underline;
+    }
+
+    a:visited {
+        color: @defaultVisitedLinkColor;
+    }
+
+    a:active {
+        color: @themePrimaryColor;
     }
 
     .powervisuals-glyph {
@@ -859,8 +868,6 @@
                 .tablixUrlIconGlyph {
                     // Remove underline
                     text-decoration: none;
-                    // Set to normal font color
-                    color: inherit;
                 }
             }
  
@@ -972,8 +979,6 @@
                 .tablixUrlIconGlyph {
                     // Remove underline
                     text-decoration: none;
-                    // Set to normal font color
-                    color: inherit;
                 }
             }
          }
@@ -1113,10 +1118,6 @@
         .ql-editor {
             line-height: normal;
             word-wrap: break-word;
-        }
-
-        a {
-            text-decoration: underline;
         }
     }
 

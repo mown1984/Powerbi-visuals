@@ -25,12 +25,17 @@
  */
 
 module powerbi.visuals {
+    import MapSliceContainer = powerbi.visuals.MapSliceContainer;
+
     export interface MapBehaviorOptions {
         dataPoints: SelectableDataPoint[];
         bubbles?: D3.Selection;
         slices?: D3.Selection;
         shapes?: D3.Selection;
         clearCatcher: D3.Selection;
+        bubbleEventGroup?: D3.Selection;
+        sliceEventGroup?: D3.Selection;
+        shapeEventGroup?: D3.Selection;
     }
 
     export class MapBehavior implements IInteractiveBehavior {
@@ -48,7 +53,10 @@ module powerbi.visuals {
             let shapes = this.shapes = options.shapes;
             let clearCatcher = options.clearCatcher;
 
-            let clickHandler = (d: SelectableDataPoint) => {
+            let clickHandler = () => {
+                let target = d3.event.target;
+                let d = <SelectableDataPoint>d3.select(target).datum();
+
                 if (bubbles)
                     bubbles.style("pointer-events", "all");
                 if (shapes)
@@ -66,8 +74,8 @@ module powerbi.visuals {
             }
 
             if (bubbles) {
-                bubbles.on('click', clickHandler);
-                bubbles.on('mousewheel', () => {
+                options.bubbleEventGroup.on('click', clickHandler);
+                options.bubbleEventGroup.on('mousewheel', () => {
                     if (!this.mapPointerEventsDisabled)
                         bubbles.style("pointer-events", "none");
                     this.mapPointerEventsDisabled = true;
@@ -82,16 +90,19 @@ module powerbi.visuals {
                     }
                 });
 
-                InteractivityUtils.registerStandardContextMenuHandler(bubbles, selectionHandler);
+                InteractivityUtils.registerGroupContextMenuHandler(options.bubbleEventGroup, selectionHandler);
             }
 
             if (slices) {
-                slices.on('click', (d) => {
+                options.sliceEventGroup.on('click', () => {
                     slices.style("pointer-events", "all");
                     this.mapPointerEventsDisabled = false;
+
+                    let target = d3.event.target;
+                    let d = <MapSliceContainer>d3.select(target).datum();
                     selectionHandler.handleSelection(d.data, d3.event.ctrlKey);
                 });
-                slices.on('mousewheel', () => {
+                options.sliceEventGroup.on('mousewheel', () => {
                     if (!this.mapPointerEventsDisabled)
                         slices.style("pointer-events", "none");
                     this.mapPointerEventsDisabled = true;
@@ -106,20 +117,22 @@ module powerbi.visuals {
                     }
                 });
 
-                slices.on('contextmenu', (slice: D3.Layout.ArcDescriptor) => {
+                options.sliceEventGroup.on('contextmenu', () => {
                     if (d3.event.ctrlKey)
                         return;
 
                     d3.event.preventDefault();
                     let position = InteractivityUtils.getPositionOfLastInputEvent();
 
-                    selectionHandler.handleContextMenu(slice.data, position);
+                    let target = d3.event.target;
+                    let d = <MapSliceContainer>d3.select(target).datum();
+                    selectionHandler.handleContextMenu(d.data, position);
                 });
             }
 
             if (shapes) {
-                shapes.on('click', clickHandler);
-                shapes.on('mousewheel', () => {
+                options.shapeEventGroup.on('click', clickHandler);
+                options.shapeEventGroup.on('mousewheel', () => {
                     if (!this.mapPointerEventsDisabled) {
                         shapes.style("pointer-events", "none");
                     }
@@ -135,7 +148,7 @@ module powerbi.visuals {
                     }
                 });
 
-                InteractivityUtils.registerStandardContextMenuHandler(shapes, selectionHandler);
+                InteractivityUtils.registerGroupContextMenuHandler(options.shapeEventGroup, selectionHandler);
             }
 
             clearCatcher.on('mouseup', () => {

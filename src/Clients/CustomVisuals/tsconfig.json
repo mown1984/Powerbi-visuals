@@ -22,7 +22,6 @@
         "visuals/enhancedScatterChart/visual/enhancedScatterChart.ts",
         "visuals/globeMap/visual/globeMap.ts",
         "visuals/radarChart/visual/radarChart.ts",
-        "visuals/areaRangeChart/visual/areaRangeChart.ts",
         "visuals/histogram/visual/histogram.ts",
         "visuals/dotPlot/visual/dotPlot.ts",
         "visuals/forceGraph/visual/forceGraph.ts",
