@@ -55,6 +55,7 @@ declare module D3 {
         keyCode: number;
         altKey: any;
         ctrlKey: any;
+        shiftKey: any;
         type: string;
     }
 
