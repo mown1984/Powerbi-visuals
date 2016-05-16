@@ -4743,8 +4743,8 @@ module powerbitests {
 
                 setTimeout(() => {
                     expect($(".labelGraphicsContext")).toBeInDOM();
-                    expect($(".labelGraphicsContext .label").length).toBe(18);
-                    expect($(".labelGraphicsContext .line-label").length).toBe(10);
+                    expect(helpers.isInRange($(".labelGraphicsContext .label").length, 17, 18)).toBeTruthy();
+                    expect(helpers.isInRange($(".labelGraphicsContext .line-label").length, 9, 10)).toBeTruthy();
 
                     done();
                 }, DefaultWaitForRender);
