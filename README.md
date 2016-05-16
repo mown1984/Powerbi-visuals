@@ -58,9 +58,11 @@ To run sample app:
 
 2. Right click on the project root folder(PowerBIVisualsPlayground) then select 'Property Pages'. In the window opened select 'Build' and then in 'Before running startup page' select 'No Build'.
 
-3. Run "build" task from "Task Runner Explorer" window.
+3. Right click on PowerBIVisualsPlayground and 'Set as Startup Project'
 
-4. Ctrl + F5 to launch the Playground.
+4. Run "build" task from "Task Runner Explorer" window.
+
+5. Ctrl + F5 to launch the Playground.
  
 ### Running PlayGround without Visual Studio
  
