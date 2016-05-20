@@ -294,13 +294,13 @@ module powerbitests {
             afterEach(() => builder.destroy());
 
             it('Show hide header test', () => {
-                expect($(".slicerHeader").css('display')).toBe('block');
+                expect($(".titleHeader").css('display')).toBe('block');
 
                 let dataView = builder.dataView;
                 dataView.metadata.objects["header"] = { show: false };
                 helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
 
-                expect($(".slicerHeader").css('display')).toBe('none');
+                expect($(".titleHeader").css('display')).toBe('none');
             });
 
             it('Header outline color test', () => {

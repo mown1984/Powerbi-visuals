@@ -35,6 +35,7 @@ module powerbi.visuals {
         value: string;
         color?: string;
         header?: string;
+        opacity?: string;
     }
 
     export interface TooltipOptions {
@@ -192,8 +193,8 @@ module powerbi.visuals {
             }
             let tooltipRow: D3.UpdateSelection = contentContainer.selectAll(rowsSelector).data(tooltipData);
             let newRow: D3.Selection = tooltipRow.enter().append("div").attr("class", TooltipRowClassName.class);
-            if (tooltipData[0].color) {
-                let newColorCell: D3.Selection = newRow.append("div").attr("class", TooltipColorCellClassName.class);
+            if (_.any(tooltipData, (tooltipItem) => tooltipItem.color)) {
+                let newColorCell: D3.Selection = newRow.filter((d) => d.color).append("div").attr("class", TooltipColorCellClassName.class);
 
                 newColorCell
                     .append('svg')
@@ -208,7 +209,8 @@ module powerbi.visuals {
                         'r': '5'
                     })
                     .style({
-                        'fill': (d: TooltipDataItem) => d.color
+                        'fill': (d: TooltipDataItem) => d.color,
+                        'fill-opacity': (d: TooltipDataItem) => d.opacity != null ? d.opacity : 1,
                     });
             }
             let newTitleCell: D3.Selection = newRow.append("div").attr("class", TooltipTitleCellClassName.class);

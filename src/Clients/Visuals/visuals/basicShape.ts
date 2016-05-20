@@ -84,7 +84,7 @@ module powerbi.visuals {
 
         /**property for the shape line color */
         get shapeType(): string {
-            return this.data ? this.data.shapeType : BasicShapeVisual.DefaultShape;
+            return this.data.shapeType;
         }
         set shapeType(shapeType: string) {
             this.data.shapeType = shapeType;
@@ -167,10 +167,9 @@ module powerbi.visuals {
                 if (dataView.metadata && dataView.metadata.objects) {
                     let dataViewObject = <BasicShapeDataViewObjects>options.dataViews[0].metadata.objects;
                     this.data = this.getDataFromDataView(dataViewObject);
+                    this.render();
                 }
             }
-
-            this.render();
         }
 
         private getDataFromDataView(dataViewObject: BasicShapeDataViewObjects): BasicShapeData {
@@ -206,6 +205,9 @@ module powerbi.visuals {
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
             let objectInstances: VisualObjectInstance[] = [];
+            if (!this.data) {
+                return objectInstances;
+            }
 
             switch (options.objectName) {
                 case 'line':
@@ -218,7 +220,7 @@ module powerbi.visuals {
                         },
                         objectName: options.objectName
                     };
-                    if (this.data.shapeType === basicShapeType.rectangle) {
+                    if (this.shapeType === basicShapeType.rectangle) {
                         instance.properties['roundEdge'] = this.roundEdge;
                     }
 

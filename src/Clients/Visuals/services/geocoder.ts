@@ -100,7 +100,8 @@ module powerbi.visuals.services {
 
     interface IGeocodeQueueItem {
         query: GeocodeQuery;
-        deferred: any;
+        deferred: JQueryDeferred<any>;
+        isResolved: boolean;
     }
 
     // Static variables for caching, maps, etc.
@@ -279,29 +280,40 @@ module powerbi.visuals.services {
         return <IGeocodeBoundaryCoordinate>result;
     }
 
-    export function geocodeCore(geocodeQuery: GeocodeQuery): any {
+    export function geocodeCore(geocodeQuery: GeocodeQuery, options?: GeocodeOptions): any {
         let result = geocodingCache ? geocodingCache.getCoordinates(geocodeQuery.key) : undefined;
         let deferred = $.Deferred();
 
         if (result) {
             deferred.resolve(result);
         } else {
-            geocodeQueue.push({ query: geocodeQuery, deferred: deferred });
+            let item: IGeocodeQueueItem = { query: geocodeQuery, deferred: deferred, isResolved: false };
+
+            if (options && options.timeout) {
+                options.timeout.finally(() => {
+                    if (!item.isResolved) {
+                        item.deferred.reject();
+                        item.isResolved = true;
+                    }
+                });
+            }
+
+            geocodeQueue.push(item);
             dequeue();
         }
         return deferred;
     }
 
-    export function geocode(query: string, category: string = ""): any {
-        return geocodeCore(new GeocodeQuery(query, category));
+    export function geocode(query: string, category: string = "", options?: GeocodeOptions): any {
+        return geocodeCore(new GeocodeQuery(query, category), options);
     }
 
-    export function geocodeBoundary(latitude: number, longitude: number, category: string = "", levelOfDetail: number = 2, maxGeoData: number = 3): any {
-        return geocodeCore(new GeocodeBoundaryQuery(latitude, longitude, category, levelOfDetail, maxGeoData));
+    export function geocodeBoundary(latitude: number, longitude: number, category: string = "", levelOfDetail: number = 2, maxGeoData: number = 3, options?: GeocodeOptions): any {
+        return geocodeCore(new GeocodeBoundaryQuery(latitude, longitude, category, levelOfDetail, maxGeoData), options);
     }
 
-    export function geocodePoint(latitude: number, longitude: number): any {
-        return geocodeCore(new GeocodePointQuery(latitude, longitude));
+    export function geocodePoint(latitude: number, longitude: number, options?: GeocodeOptions): any {
+        return geocodeCore(new GeocodePointQuery(latitude, longitude), options);
     }
 
     function dequeue(decrement: number = 0) {
@@ -318,12 +330,16 @@ module powerbi.visuals.services {
     }
 
     function makeRequest(item: IGeocodeQueueItem) {
+        if (!item.isResolved) {
+            let result = geocodingCache ? geocodingCache.getCoordinates(item.query.key) : undefined;
+            if (result) {
+                item.deferred.resolve(result);
+                item.isResolved = true;
+            }
+        }
 
-        // Check again if we already got the coordinate;
-        let result = geocodingCache ? geocodingCache.getCoordinates(item.query.key) : undefined;
-        if (result) {
+        if (item.isResolved) {
             setTimeout(() => dequeue(1));
-            item.deferred.resolve(result);
             return;
         }
 
@@ -440,16 +456,20 @@ module powerbi.visuals.services {
     let dequeueTimeoutId;
 
     function completeRequest(item: IGeocodeQueueItem, error: Error, coordinate: IGeocodeCoordinate | IGeocodeBoundaryCoordinate = null) {
-        dequeueTimeoutId = setTimeout(() => dequeue(1), Settings.UseDoubleArrayGeodataResult ? Settings.UseDoubleArrayDequeueTimeout : 0);
+        if (!item.isResolved) {
+            if (error) {
+                item.deferred.reject(error);
+            }
+            else {
+                if (geocodingCache && !(item.query instanceof GeocodePointQuery))
+                    geocodingCache.registerCoordinates(item.query.key, coordinate);
+                item.deferred.resolve(coordinate);
+            }
 
-        if (error) {
-            item.deferred.reject(error);
+            item.isResolved = true;
         }
-        else {
-            if (geocodingCache && !(item.query instanceof GeocodePointQuery))
-                geocodingCache.registerCoordinates(item.query.key, coordinate);
-            item.deferred.resolve(coordinate);
-        }
+
+        dequeueTimeoutId = setTimeout(() => dequeue(1), Settings.UseDoubleArrayGeodataResult ? Settings.UseDoubleArrayDequeueTimeout : 0);
     }
 
     function getBestResultIndex(resources: any[], query: GeocodeQuery) {
@@ -474,12 +494,14 @@ module powerbi.visuals.services {
         return 0;
     }
 
-    export function reset(): void {
+    export function resetStaticGeocoderState(cache?: IGeocodingCache): void {
+        if (cache !== undefined)
+            geocodingCache = cache;
         geocodeQueue = [];
         activeRequests = 0;
         categoryToBingEntity = null;
         clearTimeout(dequeueTimeoutId);
     }
 
-    reset();
+    resetStaticGeocoderState();
 }

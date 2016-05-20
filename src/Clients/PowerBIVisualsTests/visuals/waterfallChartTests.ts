@@ -232,7 +232,7 @@ module powerbitests {
                 dataBuilder = new WaterfallDataBuilder();
                 let dataView = dataBuilder.build();
 
-                data = WaterfallChart.converter(dataView, colors, visualBuilder.host, dataBuilder.dataLabelSettings, dataBuilder.sentimentColors, /* interactivityService */ null);
+                data = WaterfallChart.converter(dataView, colors, visualBuilder.host, dataBuilder.dataLabelSettings, dataBuilder.sentimentColors, /* interactivityService */ null, /* tooltipsEnabled */true, /* tooltipBucketEnabled */true);
                 dataPoints = data.series[0].data;
             });
 
@@ -276,13 +276,13 @@ module powerbitests {
             it("should have tooltip data", () => {
                 // categoryValues: [2015, 2016, 2017, 2018, 2019, 2020]
                 // measureValues: [100, -200, 0, 300, null, NaN];
-                expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: "year", value: "2015" }, { displayName: "sales", value: "$100" }]);
-                expect(dataPoints[1].tooltipInfo).toEqual([{ displayName: "year", value: "2016" }, { displayName: "sales", value: "-$200" }]);
-                expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: "year", value: "2017" }, { displayName: "sales", value: "$0" }]);
-                expect(dataPoints[3].tooltipInfo).toEqual([{ displayName: "year", value: "2018" }, { displayName: "sales", value: "$300" }]);
+                expect(dataPoints[0].tooltipInfo).toEqual([{ displayName: "year", value: "2015" }, { displayName: "sales", value: "$100" }, { displayName: 'tooltips', value: '$10' }]);
+                expect(dataPoints[1].tooltipInfo).toEqual([{ displayName: "year", value: "2016" }, { displayName: "sales", value: "-$200" }, { displayName: 'tooltips', value: '-$20' }]);
+                expect(dataPoints[2].tooltipInfo).toEqual([{ displayName: "year", value: "2017" }, { displayName: "sales", value: "$0" }, { displayName: 'tooltips', value: '$30' }]);
+                expect(dataPoints[3].tooltipInfo).toEqual([{ displayName: "year", value: "2018" }, { displayName: "sales", value: "$300" }, { displayName: 'tooltips', value: '$40' }]);
                 expect(dataPoints[4].tooltipInfo).toEqual([{ displayName: "year", value: "2019" }, { displayName: "sales", value: "$0" }]);
-                expect(dataPoints[5].tooltipInfo).toEqual([{ displayName: "year", value: "2020" }, { displayName: "sales", value: "$0" }]);
-                expect(dataPoints[6].tooltipInfo).toEqual([{ displayName: "year", value: "Total" }, { displayName: "sales", value: "$200" }]);
+                expect(dataPoints[5].tooltipInfo).toEqual([{ displayName: "year", value: "2020" }, { displayName: "sales", value: "$0" }, { displayName: 'tooltips', value: '$0' }]);
+                expect(dataPoints[6].tooltipInfo).toEqual([{ displayName: "year", value: "Total" }, { displayName: "sales", value: "$200" }, { displayName: 'tooltips', value: '$60' }]);
 
             });
 
@@ -966,6 +966,12 @@ module powerbitests {
         private _measureValues: any[] = [100, -200, 0, 300, null, NaN];
         public get measureValues(): any[] { return this._measureValues; }
 
+        private _tooltipColumn: powerbi.DataViewMetadataColumn = { displayName: "tooltips", isMeasure: true, type: ValueType.fromDescriptor({ integer: true }), queryName: 'Tooltips.Tooltips', objects: { general: { formatString: "$0" } }, roles: { Tooltips: true } };
+        public get tooltipColumn(): powerbi.DataViewMetadataColumn { return this._tooltipColumn; }
+
+        private _tooltipValues: any[] = [10, -20, 30, 40, null, 0];
+        public get tooltipValues(): any[] { return this._tooltipValues; }
+
         private _posMax = 200;
         public get positionMax(): number { return this._posMax; }
 
@@ -1006,9 +1012,13 @@ module powerbitests {
                         values: this._categoryValues,
                         identity: this._categoryIdentities
                     }],
-                    values: DataViewTransform.createValueColumns([{
+                    values: DataViewTransform.createValueColumns([
+                    {
                         source: this._measureColumn,
                         values: this._measureValues
+                    },{
+                        source: this._tooltipColumn,
+                        values: this._tooltipValues
                     }])
                 }
             };

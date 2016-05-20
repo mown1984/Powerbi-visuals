@@ -94,6 +94,7 @@ module powerbi.visuals {
         private element: JQuery;
         private isScrollable: boolean;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
 
         /**
          * Note: If we overflowed horizontally then this holds the subset of data we should render.
@@ -112,6 +113,7 @@ module powerbi.visuals {
         constructor(options: WaterfallChartConstructorOptions) {
             this.isScrollable = options.isScrollable;
             this.tooltipsEnabled = options.tooltipsEnabled;
+            this.tooltipBucketEnabled = options.tooltipBucketEnabled;
             this.interactivityService = options.interactivityService;
         }
 
@@ -142,7 +144,8 @@ module powerbi.visuals {
             dataLabelSettings: VisualDataLabelsSettings,
             sentimentColors: WaterfallChartSentimentColors,
             interactivityService: IInteractivityService,
-            tooltipsEnabled: boolean = true): WaterfallChartData {
+            tooltipsEnabled: boolean = true,
+            tooltipBucketEnabled?: boolean): WaterfallChartData {
             debug.assertValue(palette, 'palette');
 
             let reader = data.createIDataViewCategoricalReader(dataView);
@@ -189,6 +192,14 @@ module powerbi.visuals {
             let categoryValues: any[] = [];
             let categoryMetadata: DataViewMetadataColumn;
             let valuesMetadata: DataViewMetadataColumn = undefined;
+
+            let totalTooltips: number[];
+            let tooltipsCount: number;
+            let tooltipMetadataColumns: DataViewMetadataColumn[];
+            if (reader.hasValues("Tooltips")) {
+                tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", undefined);
+            }
+
             if (reader.hasValues("Y")) {
                 valuesMetadata = reader.getValueMetadataColumn("Y");
                 let labelFormatString = valuesMetadata.format;
@@ -203,6 +214,10 @@ module powerbi.visuals {
                     categoryValues = categoryColumn.values.slice();
                     categoryValues.push(totalLabel);
 
+                    if (reader.hasValues("Tooltips")) {
+                        tooltipsCount = reader.getSeriesCount("Tooltips");
+                        totalTooltips = _.map(new Array(tooltipsCount), () => 0);
+                    }
                     for (var categoryIndex = 0, catLen = reader.getCategoryCount(); categoryIndex < catLen; categoryIndex++) {
                         let category = categoryValues[categoryIndex];
                         let value = reader.getValue("Y", categoryIndex) || 0;
@@ -226,6 +241,22 @@ module powerbi.visuals {
                                     displayName: valuesMetadata.displayName,
                                     value: converterHelper.formatFromMetadataColumn(value, valuesMetadata, formatStringProp),
                                 });
+                            }
+                            if (tooltipBucketEnabled) {
+                                let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, undefined);
+                                if (tooltipValues && tooltipMetadataColumns) {
+                                    for (let i = 0; i < tooltipValues.length; i++) {
+                                        totalTooltips[i] += tooltipValues[i];
+                                    }
+                                    for (let j = 0; j < tooltipValues.length; j++) {
+                                        if (tooltipValues[j] != null && tooltipMetadataColumns[j]) {
+                                            tooltipInfo.push({
+                                                displayName: tooltipMetadataColumns[j].displayName,
+                                                value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                            });
+                                        }
+                                    }
+                                }
                             }
                         }
                         let color = value > 0 ? increaseColor : decreaseColor;
@@ -269,6 +300,21 @@ module powerbi.visuals {
                             displayName: valuesMetadata.displayName,
                             value: converterHelper.formatFromMetadataColumn(pos, valuesMetadata, formatStringProp),
                         });
+                    }
+
+                    if (tooltipBucketEnabled) {
+                        let tooltipValues = reader.getAllValuesForRole("Tooltips", 0, undefined);
+                        totalTooltips = totalTooltips ? totalTooltips : tooltipValues;
+                        if (tooltipValues && tooltipMetadataColumns) {
+                            for (let j = 0; j < totalTooltips.length; j++) {
+                                if (totalTooltips[j] != null) {
+                                    tooltipInfo.push({
+                                        displayName: tooltipMetadataColumns[j].displayName,
+                                        value: converterHelper.formatFromMetadataColumn(totalTooltips[j], tooltipMetadataColumns[j], formatStringProp),
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
                 let totalIdentity = SelectionId.createNull();
@@ -346,7 +392,7 @@ module powerbi.visuals {
                 }
 
                 if (dataView.categorical) {
-                    this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService, this.tooltipsEnabled);
+                    this.data = WaterfallChart.converter(dataView, this.colors, this.hostServices, this.data.dataLabelsSettings, sentimentColors, this.interactivityService, this.tooltipsEnabled, this.tooltipBucketEnabled); 
                 }
             }
         }

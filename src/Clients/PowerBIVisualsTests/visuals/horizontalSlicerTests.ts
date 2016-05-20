@@ -234,7 +234,7 @@ module powerbitests {
                 let slicerBody = $(".slicerBody").get(0);
 
                 // Right Navigation
-                slicerBody.dispatchEvent(helpers.createMouseWheelEvent("mousewheel", -100));
+                slicerBody.dispatchEvent(helpers.createMouseWheelEvent("mousewheel", 0, -100, 0));
                 jasmine.clock().tick(0);
                 slicerText = getSlicerTextContainer();
                 expect($(".horizontalSlicerContainer.canScrollLeft")).toBeInDOM();
@@ -246,7 +246,7 @@ module powerbitests {
                 expect(slicerText.last().attr('title')).toBe("Banana");
 
                 // Left Navigation
-                slicerBody.dispatchEvent(helpers.createMouseWheelEvent("mousewheel", 100));
+                slicerBody.dispatchEvent(helpers.createMouseWheelEvent("mousewheel", 0, 100, 0));
                 jasmine.clock().tick(0);
                 slicerText = getSlicerTextContainer();
                 expect($(".horizontalSlicerContainer.canScrollLeft")).not.toBeInDOM();

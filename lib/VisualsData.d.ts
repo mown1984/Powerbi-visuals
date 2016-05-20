@@ -1078,7 +1078,7 @@ declare module powerbi.visuals {
         (value: any, format?: string): string;
     }
     interface ICustomValueColumnFormatter {
-        (value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
+        (value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier, nullsAreBlank?: boolean): string;
     }
     interface ValueFormatterOptions {
         /** The format string to use. */
@@ -1134,7 +1134,16 @@ declare module powerbi.visuals {
         /** Creates an IValueFormatter to be used for a range of values. */
         function create(options: ValueFormatterOptions): IValueFormatter;
         function format(value: any, format?: string, allowFormatBeautification?: boolean): string;
-        function formatValueColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
+        /**
+         * Value formatting function to handle variant measures.
+         * For a Date/Time value within a non-date/time field, it's formatted with the default date/time formatString instead of as a number
+         * @param {any} value Value to be formatted
+         * @param {DataViewMetadataColumn} column Field which the value belongs to
+         * @param {DataViewObjectPropertyIdentifier} formatStringProp formatString Property ID
+         * @param {boolean} nullsAreBlank? Whether to show "(Blank)" instead of empty string for null values
+         * @returns Formatted value
+         */
+        function formatVariantMeasureValue(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier, nullsAreBlank?: boolean): string;
         function getFormatString(column: DataViewMetadataColumn, formatStringProperty: DataViewObjectPropertyIdentifier, suppressTypeFallback?: boolean): string;
         /** The returned string will look like 'A, B, ..., and C'  */
         function formatListAnd(strings: string[]): string;
@@ -1185,6 +1194,7 @@ declare module powerbi.data {
         hasCategoryWithRole(roleName: string): boolean;
         getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         hasValues(roleName: string): boolean;
+        hasHighlights(roleName: string): boolean;
         /**
          * Obtains the value for the given role name, category index, and series index.
          *
@@ -1208,6 +1218,12 @@ declare module powerbi.data {
          */
         getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
+        * Obtains all meta data for the given role name, category index, and series index, drawing
+        * from each of the value columns at that intersection.  Used when you have multiple
+        * values in a role that are not conceptually a static series.
+        */
+        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
+        /**
          * Obtains all the highlight values for the given role name, category index, and series index, drawing
          * from each of the value columns at that intersection.  Used when you have multiple
          * values in a role that are not conceptually a static series.
@@ -1222,6 +1238,7 @@ declare module powerbi.data {
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         getValueMetadataColumn(roleName: string, seriesIndex?: number): DataViewMetadataColumn;
+        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
         getValueDisplayName(roleName: string, seriesIndex?: number): string;
         hasDynamicSeries(): boolean;
         /**

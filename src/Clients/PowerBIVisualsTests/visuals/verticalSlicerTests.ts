@@ -239,7 +239,7 @@ module powerbitests {
                 expect(slicerData).toEqual(expectedSlicerData);
             });
             
-            xit("Resize", () => {
+            it("Resize", () => {
                 let viewport = {
                     height: 200,
                     width: 300
@@ -261,6 +261,15 @@ module powerbitests {
 
                 expect($(".slicerContainer .slicerBody").first().css("height")).toBe("131px");
                 expect($(".slicerContainer .slicerBody").first().css("width")).toBe("150px");
+            });
+
+            it("DOM Validation - SearchHeader visible", () => {
+                expect($('.searchHeader').length).toBe(1);
+                expect($(".searchHeader").css('display')).toBe('none');
+                let dataView: powerbi.DataView = slicerHelper.buildDataViewWithSelfFilter(SlicerOrientation.Vertical, builder.field);
+                helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
+                expect($('.searchHeader').length).toBe(1);
+                expect($(".searchHeader").css('display')).not.toBe('none');
             });
         });
 

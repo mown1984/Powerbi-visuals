@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES5",
     "suppressExcessPropertyErrors": true
   },
   "filesGlob": [
@@ -11,6 +11,7 @@
     "../VisualsContracts/obj/VisualsContracts.d.ts",
     "../VisualsCommon/obj/VisualsCommon.d.ts",
     "../VisualsData/obj/VisualsData.d.ts",
+    "../VisualsExtensibility/obj/VisualsExtensibility.d.ts",
     "common/point.ts",
     "common/rect.ts",
     "legend.ts",
@@ -170,6 +171,7 @@
     "styles/visualStyles.ts",
     "visuals/donutChart.ts",
     "visuals/scriptVisual.ts",
+    "visuals/system/debugVisual.ts",
     "plugins.ts",
     "common/canvasBackgroundHelper.ts"
   ]

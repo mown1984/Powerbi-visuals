@@ -28,15 +28,16 @@ module powerbitests.customVisuals.helpers {
     const EnglishAlphabetLowerCase = "abcdefghijklmnopqrstuwxyz";
     const EnglishAlphabetUpperCase = "ABCDEFGHIJKLMNOPQRSTUWXYZ";
 
-    export function setMetadataObjects(
-        dataView: powerbi.DataView|powerbi.DataView[],
-        objects: powerbi.DataViewObjects): void {
-        let metadata: powerbi.DataViewMetadata = dataView 
-            && ((dataView[0] && dataView[0].metadata)
-            || (<powerbi.DataView>dataView).metadata);
-        if(metadata) {
-           metadata.objects = objects;
-        }
+    export function addIdentityToDataViewBuilderCategoryColumnOptions(
+        options: { source: powerbi.DataViewMetadataColumn, values: any[] }): powerbi.data.DataViewBuilderCategoryColumnOptions {
+        debug.assertValue(options && options.source && options.source.queryName, "source.queryName is not defined");
+        let categoryField = powerbi.data.SQExprBuilder.entity('schema', 'table', options.source.queryName);
+        return <powerbi.data.DataViewBuilderCategoryColumnOptions>_.merge(options, { 
+                identityFrom : { 
+                        fields: [categoryField],
+                        identities: options.values.map(mocks.dataViewScopeIdentity)
+                    }
+            });
     }
 
     export function getTableDataValues(categoryValues: any[], columns: any[]): any[] {

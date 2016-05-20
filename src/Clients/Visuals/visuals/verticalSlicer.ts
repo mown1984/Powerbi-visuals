@@ -230,7 +230,7 @@ module powerbi.visuals {
                     let slicerItemLabels = body.selectAll(SlicerUtil.Selectors.LabelText.selector);
                     let slicerItemInputs = body.selectAll(Selectors.Input.selector);
                     let slicerClear = this.header.select(SlicerUtil.Selectors.Clear.selector);
-
+                    let searchInput = this.header.select('input');
                     let behaviorOptions: VerticalSlicerBehaviorOptions = {
                         dataPoints: data.slicerDataPoints,
                         slicerContainer: this.container,
@@ -240,6 +240,7 @@ module powerbi.visuals {
                         clear: slicerClear,
                         interactivityService: interactivityService,
                         settings: data.slicerSettings,
+                        searchInput: searchInput,
                     };
 
                     let orientationBehaviorOptions: SlicerOrientationBehaviorOptions = {

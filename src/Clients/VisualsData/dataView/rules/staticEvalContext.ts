@@ -62,7 +62,18 @@ module powerbi.data {
         public getExprValue(expr: SQExpr): PrimitiveValue {
             let dataView = this.dataView,
                 selectTransforms = this.selectTransforms;
-            if (dataView && dataView.table && selectTransforms)
+
+            if (!dataView || !selectTransforms)
+                return;
+
+            if (SQExpr.isAggregation(expr)) {
+                let columnAggregate = findAggregateValue(expr, selectTransforms, dataView.metadata.columns);
+                if (columnAggregate !== undefined) {
+                    return columnAggregate;
+                }
+            }
+
+            if (dataView.table)
                 return getExprValueFromTable(expr, selectTransforms, dataView.table, /*rowIdx*/ 0);
         }
 
@@ -81,32 +92,88 @@ module powerbi.data {
         if (_.isEmpty(rows) || rows.length <= rowIdx)
             return;
 
-        let targetExpr = getTargetExpr(expr, selectTransforms);
         let cols = table.columns;
-        for (let selectIdx = 0, selectLen = selectTransforms.length; selectIdx < selectLen; selectIdx++) {
-            let selectTransform = selectTransforms[selectIdx];
 
-            if (!SQExpr.equals(selectTransform.expr, targetExpr) || !selectTransform.queryName)
+        let selectIdx = findSelectIndex(expr, selectTransforms);
+        if (selectIdx < 0)
+            return;
+
+        for (let colIdx = 0, colLen = cols.length; colIdx < colLen; colIdx++) {
+            if (selectIdx !== cols[colIdx].index)
                 continue;
 
-            for (let colIdx = 0, colLen = cols.length; colIdx < colLen; colIdx++) {
-                if (selectIdx !== cols[colIdx].index)
-                    continue;
-
-                return rows[rowIdx][colIdx];
-            }
+            return rows[rowIdx][colIdx];
         }
     }
 
-    function getTargetExpr(expr: SQExpr, selectTransforms: DataViewSelectTransform[]): SQExpr {
-        if (SQExpr.isSelectRef(expr)) {
-            for (let selectTransform of selectTransforms) {
-                if (selectTransform.queryName === expr.expressionName) {
-                    return selectTransform.expr;
-                }
+    function findAggregateValue(expr: SQAggregationExpr, selectTransforms: DataViewSelectTransform[], columns: DataViewMetadataColumn[]): PrimitiveValue {
+        debug.assertValue(expr, 'expr');
+        debug.assertValue(selectTransforms, 'selectTransforms');
+        debug.assertValue(columns, 'columns');
+
+        let selectIdx = findSelectIndex(expr.arg, selectTransforms);
+        if (selectIdx < 0)
+            return;
+
+        for (let colIdx = 0, colLen = columns.length; colIdx < colLen; colIdx++) {
+            let column = columns[colIdx],
+                columnAggr = column.aggregates;
+
+            if (selectIdx !== column.index || !columnAggr)
+                continue;
+
+            let aggregateValue = findAggregates(columnAggr, expr.func);
+            if (aggregateValue !== undefined)
+                return aggregateValue;
+        }
+    }
+
+    function findSelectIndex(expr: SQExpr, selectTransforms: DataViewSelectTransform[]): number {
+        debug.assertValue(expr, 'expr');
+        debug.assertValue(selectTransforms, 'selectTransforms');
+
+        let queryName: string;
+        if (SQExpr.isSelectRef(expr))
+            queryName = expr.expressionName;
+
+        for (let selectIdx = 0, selectLen = selectTransforms.length; selectIdx < selectLen; selectIdx++) {
+            let selectTransform = selectTransforms[selectIdx];
+
+            if (!selectTransform || !selectTransform.queryName)
+                continue;
+
+            if (queryName) {
+                if (selectTransform.queryName === queryName)
+                    return selectIdx;
+            }
+            else {
+                if (SQExpr.equals(selectTransform.expr, expr))
+                    return selectIdx;
             }
         }
 
-        return expr;
+        return -1;
+    }
+
+    function findAggregates(aggregates: DataViewColumnAggregates, func: QueryAggregateFunction): PrimitiveValue {
+        debug.assertValue(aggregates, 'aggregates');
+        debug.assertValue(func, 'func');
+
+        switch (func) {
+            case QueryAggregateFunction.Min:
+                return getOptional(aggregates.min, aggregates.minLocal);
+            case QueryAggregateFunction.Max:
+                return getOptional(aggregates.max, aggregates.maxLocal);
+        }
+    }
+
+    function getOptional(value1: PrimitiveValue, value2: PrimitiveValue): PrimitiveValue {
+        debug.assertAnyValue(value1, 'value1');
+        debug.assertAnyValue(value2, 'value2');
+
+        if (value1 !== undefined)
+            return value1;
+
+        return value2;
     }
 }

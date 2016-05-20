@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "suppressExcessPropertyErrors": true
+    "target": "ES5",
+    "suppressExcessPropertyErrors": true,
+    "experimentalDecorators":  true
   },
   "filesGlob": [
     "**/*.ts"
@@ -106,6 +107,7 @@
     "visuals/verticalSlicerTests.ts",
     "visuals/visualFactoryTests.ts",
     "visuals/waterfallChartTests.ts",
+    "visuals/system/debugVisualTests.ts",
     "extensibility/extensibilityMocks.ts",
     "extensibility/extensibilityHelpers.ts",
     "extensibility/VisualAdapterTests.ts",

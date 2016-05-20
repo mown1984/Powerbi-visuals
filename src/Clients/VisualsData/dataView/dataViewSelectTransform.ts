@@ -50,6 +50,9 @@ module powerbi.data {
 
             let projections: QueryProjectionsByRole = {};
             for (let select of selects) {
+                if (!select)
+                    continue;
+
                 let roles = select.roles;
                 if (!roles)
                     continue;

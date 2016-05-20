@@ -223,6 +223,7 @@ module powerbi.visuals {
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
         private element: JQuery;
         private isComboChart: boolean;
 
@@ -236,6 +237,7 @@ module powerbi.visuals {
             this.animator = options.animator;
             this.isScrollable = options.isScrollable;
             this.tooltipsEnabled = options.tooltipsEnabled;
+            this.tooltipBucketEnabled = options.tooltipBucketEnabled;
             this.interactivityService = options.interactivityService;
         }
 
@@ -249,6 +251,9 @@ module powerbi.visuals {
             if (CartesianChart.detectScalarMapping(dataViewMapping)) {
                 let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>dataViewMapping.categorical.categories;
                 dataViewCategories.dataReductionAlgorithm = { sample: {} };
+            }
+            else {
+                CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, dataViewMapping);
             }
         }
 
@@ -333,7 +338,8 @@ module powerbi.visuals {
             dataViewMetadata: DataViewMetadata = null,
             chartType?: ColumnChartType,
             interactivityService?: IInteractivityService,
-            tooltipsEnabled: boolean = true): ColumnChartData {
+            tooltipsEnabled: boolean = true,
+            tooltipBucketEnabled?: boolean): ColumnChartData {
             debug.assertValue(dataView, 'dataView');
             debug.assertValue(colors, 'colors');
 
@@ -386,7 +392,8 @@ module powerbi.visuals {
                 defaultDataPointColor,
                 chartType,
                 categoryMetadata,
-                tooltipsEnabled);
+                tooltipsEnabled,
+                tooltipBucketEnabled);
             let columnSeries: ColumnChartSeries[] = result.series;
 
             let valuesMetadata: DataViewMetadataColumn[] = [];
@@ -448,12 +455,14 @@ module powerbi.visuals {
             defaultDataPointColor?: string,
             chartType?: ColumnChartType,
             categoryMetadata?: DataViewMetadataColumn,
-            tooltipsEnabled?: boolean): { series: ColumnChartSeries[]; hasHighlights: boolean; hasDynamicSeries: boolean; isMultiMeasure: boolean } {
+            tooltipsEnabled?: boolean,
+            tooltipBucketEnabled?: boolean): { series: ColumnChartSeries[]; hasHighlights: boolean; hasDynamicSeries: boolean; isMultiMeasure: boolean } {
             let dataViewCat = dataView.categorical;
 
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let grouped = dataViewCat && dataViewCat.values ? dataViewCat.values.grouped() : undefined;
             let categoryCount = categories.length;
-            let seriesCount = legend.length;
+            let seriesCount = reader.hasValues('Y') ? reader.getSeriesCount('Y') : undefined;
             let columnSeries: ColumnChartSeries[] = [];
 
             if (seriesCount < 1 || categoryCount < 1)
@@ -529,7 +538,7 @@ module powerbi.visuals {
 
                 if (seriesCount > 1)
                     dataPointObjects = seriesObjectsList[seriesIndex];
-                let valueColumnMetadata = dataViewCat.values[seriesIndex].source;
+                let valueColumnMetadata = reader.getValueMetadataColumn('Y', seriesIndex);
                 let gradientMeasureIndex: number = GradientUtils.getGradientMeasureIndex(dataViewCat);
                 let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(dataViewCat);
                 let valueMeasureIndex: number = DataRoleHelper.getMeasureIndexOfRole(grouped, "Y");
@@ -598,9 +607,55 @@ module powerbi.visuals {
                         .withMeasure(converterStrategy.getMeasureNameByIndex(seriesIndex))
                         .createSelectionId();
 
-                    let rawCategoryValue = categories[categoryIndex];
+                    let rawCategoryValue = reader.getCategoryValue('Category', categoryIndex);
                     let color = ColumnChart.getDataPointColor(legendItem, categoryIndex, dataPointObjects);
                     let gradientColumnForTooltip = gradientMeasureIndex === 0 ? null : gradientValueColumn;
+
+                    let valueHighlight: any;
+                    let unadjustedValueHighlight: any;
+                    let absoluteValueHighlight: number;
+                    let highlightValue: string;
+                    let highlightPosition: number;
+                    let highlightIdentity: SelectionId;
+                    if (hasHighlights) {
+                        valueHighlight = reader.getHighlight('Y', categoryIndex, seriesIndex);
+                        unadjustedValueHighlight = valueHighlight;
+
+                        let highlightedTooltip: boolean = true;
+                        if (valueHighlight === null) {
+                            valueHighlight = 0;
+                            highlightedTooltip = false;
+                        }
+
+                        if (is100PercentStacked) {
+                            valueHighlight *= multipliers.pos;
+                        }
+                        absoluteValueHighlight = Math.abs(valueHighlight);
+                        highlightPosition = position;
+
+                        if (valueHighlight > 0) {
+                            highlightPosition -= valueAbsolute - absoluteValueHighlight;
+                        }
+                        else if (valueHighlight === 0 && value > 0) {
+                            highlightPosition -= valueAbsolute;
+                        }
+
+                        highlightIdentity = SelectionId.createWithHighlight(identity);
+
+                        let highlightedValueAndPct: string;
+                        let highlightedValueFormat: string;
+                        if (highlightedTooltip && unadjustedValueHighlight != null && valueHighlight != null) {
+                            let highlightedPct: string = valueFormatter.format(valueHighlight, pctFormatString);
+                            highlightedValueFormat = converterHelper.formatFromMetadataColumn(unadjustedValueHighlight, valueColumnMetadata, formatStringProp);
+                            highlightedValueAndPct = highlightedValueFormat + ' (' + highlightedPct + ')';
+                        }
+                        if (is100PercentStacked) {
+                            highlightValue = highlightedValueAndPct;
+                        }
+                        else {
+                            highlightValue = highlightedValueFormat;
+                        }
+                    }
 
                     let tooltipInfo: TooltipDataItem[];
 
@@ -608,7 +663,7 @@ module powerbi.visuals {
                         tooltipInfo = [];
                         if (category) {
                             tooltipInfo.push({
-                                displayName: category.source.displayName,
+                                displayName: reader.getCategoryDisplayName('Category'),
                                 value: converterHelper.formatFromMetadataColumn(rawCategoryValue, category.source, formatStringProp),
                             });
                         }
@@ -639,11 +694,34 @@ module powerbi.visuals {
                             });
                         }
 
+                        if (highlightValue != null) {
+                            tooltipInfo.push({
+                                displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
+                                value: highlightValue,
+                            });
+                        }
+
                         if (gradientColumnForTooltip && gradientColumnForTooltip.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: gradientColumnForTooltip.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(gradientColumnForTooltip.values[categoryIndex], gradientColumnForTooltip.source, formatStringProp),
                             });
+                        }
+
+                        if (tooltipBucketEnabled) {
+                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, hasDynamicSeries ? seriesIndex : undefined);
+                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", hasDynamicSeries ? seriesIndex : undefined);
+
+                            if (tooltipValues && tooltipMetadataColumns) {
+                                for (let j = 0; j < tooltipValues.length; j++) {
+                                    if (tooltipValues[j] != null) {
+                                        tooltipInfo.push({
+                                            displayName: tooltipMetadataColumns[j].displayName,
+                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                        });
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -683,59 +761,6 @@ module powerbi.visuals {
                     seriesDataPoints.push(dataPoint);
 
                     if (hasHighlights) {
-                        let valueHighlight = rawHighlightValues[seriesIndex][categoryIndex];
-                        let unadjustedValueHighlight = valueHighlight;
-
-                        let highlightedTooltip: boolean = true;
-                        if (valueHighlight === null) {
-                            valueHighlight = 0;
-                            highlightedTooltip = false;
-                        }
-
-                        if (is100PercentStacked) {
-                            valueHighlight *= multipliers.pos;
-                        }
-                        let absoluteValueHighlight = Math.abs(valueHighlight);
-                        let highlightPosition = position;
-
-                        if (valueHighlight > 0) {
-                            highlightPosition -= valueAbsolute - absoluteValueHighlight;
-                        }
-                        else if (valueHighlight === 0 && value > 0) {
-                            highlightPosition -= valueAbsolute;
-                        }
-
-                        let highlightIdentity = SelectionId.createWithHighlight(identity);
-
-                        let highlightedValueAndPct: string;
-                        let highlightedValueFormat: string;
-                        if (highlightedTooltip && unadjustedValueHighlight != null && valueHighlight != null) {
-                            let highlightedPct: string = valueFormatter.format(valueHighlight, pctFormatString);
-                            highlightedValueFormat = converterHelper.formatFromMetadataColumn(unadjustedValueHighlight, valueColumnMetadata, formatStringProp);
-                            highlightedValueAndPct = highlightedValueFormat + ' (' + highlightedPct + ')';
-                        }
-
-                        if (tooltipsEnabled) {
-                            let highlightValue: string;
-                            if (is100PercentStacked) {
-                                highlightValue = highlightedValueAndPct;
-                            }
-                            else {
-                                highlightValue = highlightedValueFormat;
-                            }
-                            if (highlightValue != null) {
-                                tooltipInfo.push({
-                                    displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
-                                    value: highlightValue,
-                                });
-                            }
-                        }
-
-                        if (highlightedTooltip) {
-                            // Override non highlighted data point
-                            dataPoint.tooltipInfo = tooltipInfo;
-                        }
-
                         let highlightDataPoint: ColumnChartDataPoint = {
                             categoryValue: categoryValue,
                             value: valueHighlight,
@@ -859,7 +884,8 @@ module powerbi.visuals {
                         dataView.metadata,
                         this.chartType,
                         this.interactivityService,
-                        this.tooltipsEnabled);
+                        this.tooltipsEnabled,
+                        this.tooltipBucketEnabled);
                 }
             }
 
@@ -1008,7 +1034,7 @@ module powerbi.visuals {
                         showAllDataPoints: !!data.showAllDataPoints
                     }
                 });
-                    
+
                 if (data.showAllDataPoints) {
                     for (let i = 0; i < singleSeriesData.length; i++) {
                         let singleSeriesDataPoints = singleSeriesData[i],
@@ -1022,7 +1048,7 @@ module powerbi.visuals {
                             },
                         });
                     }
-                }    
+                }
             }
         }
 
@@ -1376,8 +1402,8 @@ module powerbi.visuals {
                     for (let valueIndex = 0, valuesLen = values.length; valueIndex < valuesLen; valueIndex++) {
                         let series = values[valueIndex];
                         let source = series.source;
-                        // Gradient measures do not create series.
-                        if (DataRoleHelper.hasRole(source, 'Gradient') && !DataRoleHelper.hasRole(source, 'Y'))
+                        // Gradient and tooltips measures do not create series.
+                        if ((DataRoleHelper.hasRole(source, 'Gradient') || DataRoleHelper.hasRole(source, 'Tooltips')) && !DataRoleHelper.hasRole(source, 'Y'))
                             continue;
 
                         seriesSources.push(source);
@@ -1426,12 +1452,6 @@ module powerbi.visuals {
         }
 
         public getValueBySeriesAndCategory(series: number, category: number): number {
-            if (this.reader.hasDynamicSeries()) {
-                // Combo chart dynamic series is broken when line and column have the same measure, so for now,
-                //   work around this by using the grouped directly instead of relying on the reader and roles
-                let grouped = this.dataView.values.grouped();
-                return grouped[series].values[0].values[category];
-            }
             return this.reader.getValue('Y', category, series);
         }
 

@@ -377,7 +377,14 @@ module powerbitests {
 
                     // verify that prevented keys do not bubble.
                     keydown = false;
-                    for (let key of powerbi.visuals.RichText.QuillWrapper.preventDefaultKeys) {
+
+                    let keys: number[] = [
+                        DOMConstants.aKeyCode,
+                        DOMConstants.cKeyCode,
+                        DOMConstants.xKeyCode,
+                        DOMConstants.vKeyCode
+                    ];
+                    for (let key of keys) {
                         let event = $.Event("keydown");
                         event.ctrlKey = true;
                         event.which = key;

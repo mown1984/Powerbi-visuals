@@ -206,7 +206,7 @@ module powerbi.data {
         function unpivotMatrix(oldMatrix: DataViewMatrix): DataViewMatrix {
             let oldRows = oldMatrix.rows;
             let oldRoot = oldRows.root;
-            let oldChildren = <DataViewMatrixNode[]>oldRoot.children;
+            let oldChildren = oldRoot.children;
 
             // series are the outer grouping
             let series: DataViewMatrixNode[] = [];
@@ -246,7 +246,7 @@ module powerbi.data {
                 for (let seriesNode of oldChildren) {
                     series.push(seriesNode);
 
-                    for (let categoryNode of <DataViewMatrixNode[]>seriesNode.children) {
+                    for (let categoryNode of seriesNode.children) {
                         addCategory(categoryNode);
                     }
                 }

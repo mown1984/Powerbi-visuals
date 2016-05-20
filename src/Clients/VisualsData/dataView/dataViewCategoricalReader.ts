@@ -46,6 +46,7 @@ module powerbi.data {
         getCategoryObjects(roleName: string, categoryIndex: number): DataViewObjects;
         // Value functions
         hasValues(roleName: string): boolean;
+        hasHighlights(roleName: string): boolean;
         /**
          * Obtains the value for the given role name, category index, and series index.
          *
@@ -69,6 +70,12 @@ module powerbi.data {
          */
         getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex?: number): any[];
         /**
+        * Obtains all meta data for the given role name, category index, and series index, drawing
+        * from each of the value columns at that intersection.  Used when you have multiple
+        * values in a role that are not conceptually a static series.
+        */
+        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
+        /**
          * Obtains all the highlight values for the given role name, category index, and series index, drawing
          * from each of the value columns at that intersection.  Used when you have multiple
          * values in a role that are not conceptually a static series.
@@ -83,6 +90,7 @@ module powerbi.data {
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         getValueMetadataColumn(roleName: string, seriesIndex?: number): DataViewMetadataColumn;
+        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
         getValueDisplayName(roleName: string, seriesIndex?: number): string;
         // Series Methods
         hasDynamicSeries(): boolean;
@@ -254,6 +262,13 @@ module powerbi.data {
             return this.valueRoleIndexMapping && !_.isEmpty(this.valueRoleIndexMapping[roleName]);
         }
 
+        public hasHighlights(roleName: string): boolean {
+            if (this.hasValues(roleName)) {
+                return !_.isEmpty(this.grouped[0].values[this.valueRoleIndexMapping[roleName][0]].highlights);
+            }
+            return false;
+        }
+
         public getValue(roleName: string, categoryIndex: number, seriesIndex: number = 0): any {
             if (this.hasValues(roleName)) {
                 if (this.dataHasDynamicSeries) {
@@ -285,7 +300,7 @@ module powerbi.data {
         public getAllValuesForRole(roleName: string, categoryIndex: number, seriesIndex: number = 0): any[] {
             if (this.hasValues(roleName)) {
                 let valuesInRole = [];
-                for (let roleValueIndex, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
+                for (let roleValueIndex = 0, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
                     valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex, false /* getHighlight */));
                 }
                 return valuesInRole;
@@ -295,7 +310,7 @@ module powerbi.data {
         public getAllHighlightsForRole(roleName: string, categoryIndex: number, seriesIndex: number = 0): any[] {
             if (this.hasValues(roleName)) {
                 let valuesInRole = [];
-                for (let roleValueIndex, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
+                for (let roleValueIndex = 0, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
                     valuesInRole.push(this.getValueInternal(roleName, categoryIndex, seriesIndex, roleValueIndex, true /* getHighlight */));
                 }
                 return valuesInRole;
@@ -378,11 +393,22 @@ module powerbi.data {
                 }
             }
         }
-
+        
         public getValueMetadataColumn(roleName: string, seriesIndex: number = 0): DataViewMetadataColumn {
             let valueColumn = this.getValueColumn(roleName, seriesIndex);
             if (valueColumn) {
                 return valueColumn.source;
+            }
+        }
+
+        public getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number = 0): DataViewMetadataColumn[] {
+            if (this.hasValues(roleName)) {
+                let metadata = [];
+                for (let roleValueIndex = 0, roleValueCount = this.valueRoleIndexMapping[roleName].length; roleValueIndex < roleValueCount; roleValueIndex++) {
+                    let column = this.grouped[seriesIndex].values[this.valueRoleIndexMapping[roleName][roleValueIndex]].source;
+                    metadata.push(column);
+                }
+                return metadata;
             }
         }
 
@@ -402,16 +428,19 @@ module powerbi.data {
         }
 
         public getSeriesCount(valueRoleName?: string): number {
-            if (this.hasAnyValidValues) {
-                if (this.dataHasDynamicSeries) {
-                    return this.grouped.length;
-                }
-                else if (valueRoleName) {
-                    return this.valueRoleIndexMapping[valueRoleName].length;
-                }
-                else {
-                    return 1;
-                }
+            if (!this.hasAnyValidValues)
+                return;
+
+            if (this.dataHasDynamicSeries) {
+                return this.grouped.length;
+            }
+            else {
+                let roleIndexMap = valueRoleName && this.valueRoleIndexMapping[valueRoleName];
+
+                if (roleIndexMap)
+                    return roleIndexMap.length;
+
+                return 1;
             }
         }
 

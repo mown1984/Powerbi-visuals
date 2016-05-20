@@ -25,6 +25,14 @@
  */
 
 module powerbi.visuals {
+    
+    export const treemapRoles = {
+        group: 'Group',
+        details: 'Details',
+        values: 'Values',
+        gradient: 'Gradient'
+    };
+    
     export const treemapCapabilities: VisualCapabilities = {
         dataRoles: [
             {

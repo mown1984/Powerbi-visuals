@@ -137,7 +137,7 @@ declare module powerbi {
     class PowerBIErrorDetailHelper {
         private static serverErrorPrefix;
         static addAdditionalInfo(errorDetails: ErrorDetails, pbiErrorDetails: PowerBIErrorDetail[], localize: IStringResourceProvider): ErrorDetails;
-        static addMessageAndStackTrace(errorDetails: ErrorDetails, message: string, stackTrace: string, localize: IStringResourceProvider): ErrorDetails;
+        static addDebugErrorInfo(errorDetails: ErrorDetails, errorCode: string, message: string, stackTrace: string): ErrorDetails;
         static GetDetailsFromTransformError(localize: IStringResourceProvider, serviceError: ServiceError): ErrorDetails;
         static GetDetailsFromServerErrorStatusCode(localize: IStringResourceProvider, statusCode: number): ErrorDetails;
     }
@@ -252,6 +252,18 @@ declare module powerbi {
     interface IClientWarning extends ILocalizableError {
         code: string;
         columnNameFromIndex: (index: number) => string;
+    }
+    /**
+     * Unlocalized strings to be used for error reporting.
+     */
+    module ClientErrorStrings {
+        const ClientErrorCode: string;
+        const ErrorCode: string;
+        const ErrorDetails: string;
+        const HttpRequestId: string;
+        const JobId: string;
+        const ODataErrorMessage: string;
+        const StackTrace: string;
     }
     /**
      this base class should be derived to give a generic error message but with a unique error code.
@@ -755,25 +767,32 @@ declare module powerbi {
         function overrideArray<T, TArray>(prototype: TArray, override: (T) => T): TArray;
     }
 }
-interface ScriptErrorInfo {
-    message: string;
-    sourceUrl: string;
-    lineNumber: number;
-    columnNumber: number;
-    stack: string;
-}
-interface ErrorInfoKeyValuePair {
-    errorInfoKey: string;
-    errorInfoValue: string;
-}
-declare const enum ErrorType {
-    VisualNotSupported = 1,
-}
-interface ErrorDetails {
-    message: string;
-    additionalErrorInfo: ErrorInfoKeyValuePair[];
-    helpLink?: string;
-    errorType?: ErrorType;
+declare module powerbi {
+    interface ScriptErrorInfo {
+        message: string;
+        sourceUrl: string;
+        lineNumber: number;
+        columnNumber: number;
+        stack: string;
+    }
+    interface ErrorInfoKeyValuePair {
+        errorInfoKey: string;
+        errorInfoValue: string;
+    }
+    const enum ErrorType {
+        VisualNotSupported = 1,
+    }
+    interface ErrorDetails {
+        message: string;
+        displayableErrorInfo: ErrorInfoKeyValuePair[];
+        /**
+         * This is a collection of unlocalized properties that could be used for error reporting.
+         * These should not be displayed to the user.
+         */
+        debugErrorInfo?: ErrorInfoKeyValuePair[];
+        helpLink?: string;
+        errorType?: ErrorType;
+    }
 }
 declare module powerbi.visuals {
     module shapes {
@@ -998,6 +1017,7 @@ declare module powerbi {
 declare module jsCommon {
     module KeyUtils {
         function isArrowKey(keyCode: number): boolean;
+        function isCtrlDefaultKey(keyCode: number): boolean;
     }
 }
 declare module jsCommon {

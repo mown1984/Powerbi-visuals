@@ -87,7 +87,7 @@ module powerbitests.tablixHelper {
         };
 
         if (options.formatCallback)
-            spyOn(powerbi.visuals.valueFormatter, 'formatValueColumn').and.callFake(options.formatCallback);
+            spyOn(powerbi.visuals.valueFormatter, 'formatVariantMeasureValue').and.callFake(options.formatCallback);
 
         var v: powerbi.IVisual;
         switch (options.visualType) {
@@ -435,7 +435,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i] ? values[i].toString() : '';
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixObjects.PropColumnFormatString);
+                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, true);
                 }
 
                 expect(tableItems[i - 1].textContent).toBe(formattedValue);
@@ -454,7 +454,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i].toString();
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatValueColumn(values[i], columnFormat, TablixObjects.PropColumnFormatString);
+                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, true);
                 }
 
                 expect(tableItems[i].textContent).toBe(formattedValue);

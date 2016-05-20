@@ -183,25 +183,29 @@ module powerbitests {
                 });
             });
 
-            describe("formatValueColumn", () => {
+            describe("formatVariantMeasureValue", () => {
                 let columnIntObjFormat: powerbi.DataViewMetadataColumn = { displayName: "col", objects: { fmtObj: { fmtProp: "R" } } };
                 let columnIntObjFormatIdentitifer: powerbi.DataViewObjectPropertyIdentifier = { objectName: "fmtObj", propertyName: "fmtProp" };
-                let formatter = (value: any) => valueFormatter.formatValueColumn(value, columnIntObjFormat, columnIntObjFormatIdentitifer);
+                let formatter = (value: any, nullsAreBlank: boolean) => valueFormatter.formatVariantMeasureValue(value, columnIntObjFormat, columnIntObjFormatIdentitifer, nullsAreBlank);
 
                 it("format null", () => {
-                    expect(formatter(null)).toBe("");
+                    expect(formatter(null, false)).toBe("");
+                    expect(formatter(null, true)).toBe("(Blank)");
                 });
 
                 it("format empty", () => {
-                    expect(formatter("")).toBe("");
+                    expect(formatter("", false)).toBe("");
+                    expect(formatter("", true)).toBe("");
                 });
 
                 it("format non-null value", () => {
-                    expect(formatter(2010)).not.toBeNull();
+                    expect(formatter(2010, false)).not.toBeNull();
+                    expect(formatter(2010, true)).not.toBeNull();
                 });
 
                 it("format datetime value", () => {
-                    expect(formatter(new Date(599914800000))).toBe('1/4/1989');
+                    expect(formatter(new Date(599914800000), false)).toBe('1/4/1989');
+                    expect(formatter(new Date(599914800000), true)).toBe('1/4/1989');
                 });
             });
         });

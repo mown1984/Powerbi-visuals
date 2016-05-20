@@ -515,13 +515,6 @@ module powerbi.visuals {
             private host: IVisualHostServices;
             private static textChangeThrottle = 200; // ms
 
-            public static preventDefaultKeys: number[] = [
-                jsCommon.DOMConstants.aKeyCode,  // A
-                jsCommon.DOMConstants.cKeyCode,  // C
-                jsCommon.DOMConstants.xKeyCode,  // X
-                jsCommon.DOMConstants.vKeyCode,  // V
-            ];
-
             public static loadQuillResources: boolean = true;
 
             // TODO: How to choose between minified/unminified?
@@ -697,7 +690,7 @@ module powerbi.visuals {
                 // Prevent parent elements from handling keyboard shortcuts (e.g. ctrl+a) that have special meaning for textboxes.
                 // Quill will also capture and prevent bubbling of some keyboard shortcuts, such as ctrl+c, ctrl+b, etc.
                 this.$container.keydown((e) => {
-                    if (e.ctrlKey && _.contains(QuillWrapper.preventDefaultKeys, e.which))
+                    if (e.ctrlKey && KeyUtils.isCtrlDefaultKey(e.which))
                         e.stopPropagation();
 
                     if (KeyUtils.isArrowKey(e.which))

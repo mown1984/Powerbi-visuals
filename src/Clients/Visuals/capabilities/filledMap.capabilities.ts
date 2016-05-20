@@ -49,20 +49,20 @@ module powerbi.visuals {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Legend'),
                 description: data.createDisplayNameGetter('Role_DisplayName_LegendDescription')
             }, {
-                name: 'X',
-                kind: VisualDataRoleKind.Measure,
-                displayName: data.createDisplayNameGetter('Role_DisplayName_Longitude'),
-                description: data.createDisplayNameGetter('Role_DisplayName_LongitudeFilledMapDescription'),
-                preferredTypes: [
-                    { geography: { longitude: true } }
-                ],
-            }, {
                 name: 'Y',
                 kind: VisualDataRoleKind.Measure,
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Latitude'),
                 description: data.createDisplayNameGetter('Role_DisplayName_LatitudeFilledMapDescription'),
                 preferredTypes: [
                     { geography: { latitude: true } }
+                ],
+            }, {
+                name: 'X',
+                kind: VisualDataRoleKind.Measure,
+                displayName: data.createDisplayNameGetter('Role_DisplayName_Longitude'),
+                description: data.createDisplayNameGetter('Role_DisplayName_LongitudeFilledMapDescription'),
+                preferredTypes: [
+                    { geography: { longitude: true } }
                 ],
             }, {
                 name: 'Size',
@@ -154,6 +154,9 @@ module powerbi.visuals {
         }],
         sorting: {
             custom: {},
+            implicit: {
+                clauses: [{ role: 'Size', direction: SortDirection.Descending }]
+            },
         },
         drilldown: {
             roles: ['Category']

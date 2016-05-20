@@ -111,7 +111,9 @@ module powerbi.visuals {
         behavior?: IInteractiveBehavior;
         isLabelInteractivityEnabled?: boolean;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
+        cartesianLoadMoreEnabled?: boolean;
         trimOrdinalDataOnOverflow?: boolean;
     }
 
@@ -138,6 +140,8 @@ module powerbi.visuals {
         animator?: IGenericAnimator;
         isLabelInteractivityEnabled?: boolean;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
+        cartesianLoadMoreEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
     }
 
@@ -233,6 +237,11 @@ module powerbi.visuals {
         isHorizontal: boolean;
         key: string;
     }
+    
+    export interface ViewportDataRange {
+        startIndex: number;
+        endIndex: number;
+    }
 
     type RenderPlotAreaDelegate = (
         layers: ICartesianVisual[],
@@ -248,6 +257,7 @@ module powerbi.visuals {
         public static OuterPaddingRatio = 0.4;
         public static InnerPaddingRatio = 0.2;
         public static TickLabelPadding = 2; // between text labels, used by AxisHelper
+        public static LoadMoreThreshold = 1; // Load more data 1 item before the last (so 2nd to last) item is shown
 
         private static ClassName = 'cartesianChart';
         private static PlayAxisBottomMargin = 80; //do not change unless we add dynamic label measurements for play slider
@@ -281,7 +291,9 @@ module powerbi.visuals {
         private sharedColorPalette: SharedColorPalette;
         private isLabelInteractivityEnabled: boolean;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
         private lineChartLabelDensityEnabled: boolean;
+        private cartesianLoadMoreEnabled: boolean;
         private trimOrdinalDataOnOverflow: boolean;
         private isMobileChart: boolean;
 
@@ -302,6 +314,8 @@ module powerbi.visuals {
         private dataViews: DataView[];
         private currentViewport: IViewport;
         private background: VisualBackground;
+        
+        private loadMoreDataHandler: CartesianLoadMoreDataHandler;
 
         private static getAxisVisibility(type: CartesianChartType): AxisLinesVisibility {
             switch (type) {
@@ -321,6 +335,8 @@ module powerbi.visuals {
             this.trimOrdinalDataOnOverflow = true;
             if (options) {
                 this.tooltipsEnabled = options.tooltipsEnabled;
+                this.tooltipBucketEnabled = options.tooltipBucketEnabled;
+                this.cartesianLoadMoreEnabled = options.cartesianLoadMoreEnabled;
                 this.type = options.chartType;
                 this.isLabelInteractivityEnabled = options.isLabelInteractivityEnabled;
                 this.lineChartLabelDensityEnabled = options.lineChartLabelDensityEnabled;
@@ -463,10 +479,10 @@ module powerbi.visuals {
             }
         }
 
-        private updateInternal(options: VisualUpdateOptions, dataChanged: boolean): void {
+        private updateInternal(options: VisualUpdateOptions, operationKind?: VisualDataChangeOperationKind): void {
             let dataViews = this.dataViews = options.dataViews;
             this.currentViewport = options.viewport;
-
+            
             if (!dataViews) return;
 
             if (this.layers.length === 0) {
@@ -478,7 +494,7 @@ module powerbi.visuals {
             }
             let layers = this.layers;
 
-            if (dataChanged) {
+            if (operationKind != null) {
                 if (!_.isEmpty(dataViews)) {
                     this.populateObjectProperties(dataViews);
                     this.axes.update(dataViews);
@@ -490,6 +506,24 @@ module powerbi.visuals {
                             image: DataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image),
                             transparency: DataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()),
                         };
+                        
+                        if (this.cartesianLoadMoreEnabled) {
+                            let isScalar = true;
+                            let categoryColumn = dataView && dataView.categorical && _.first(dataView.categorical.categories);
+
+                            if (categoryColumn && categoryColumn.source) {
+                                isScalar = visuals.CartesianChart.getIsScalar(dataView.metadata.objects, visuals.columnChartProps.categoryAxis.axisType, categoryColumn.source.type);
+                            }
+
+                            // Clear the load more handler if we're scalar and there's an existing handler. 
+                            // Setup a handler if we're categorical and don't have one.
+                            if (isScalar && this.loadMoreDataHandler) {
+                                this.loadMoreDataHandler = null;
+                            }
+                            else if (!isScalar && !this.loadMoreDataHandler) {
+                                this.loadMoreDataHandler = new CartesianLoadMoreDataHandler(null, this.hostServices.loadMoreData, CartesianChart.LoadMoreThreshold);
+                            }
+                        }
                     }
                 }
 
@@ -515,8 +549,14 @@ module powerbi.visuals {
                         this.sharedColorPalette.rotateScale();
                 }
             }
+            
+            // If the data changed (there's an operationKind), say we're done loading data so logic 
+            // during the render phase can request more data if there is not enough.
+            if (this.loadMoreDataHandler && operationKind != null) {
+                this.loadMoreDataHandler.onLoadMoreDataCompleted();
+            }
 
-            this.render(!this.hasSetData || options.suppressAnimations, options.resizeMode);
+            this.render(!this.hasSetData || options.suppressAnimations, options.resizeMode, operationKind);
 
             this.hasSetData = this.hasSetData || (dataViews && dataViews.length > 0);
 
@@ -540,7 +580,7 @@ module powerbi.visuals {
                 dataViews: options.dataViews,
                 suppressAnimations: options.suppressAnimations,
                 viewport: this.currentViewport
-            }, true);
+            }, options.operationKind != null ? options.operationKind : VisualDataChangeOperationKind.Create);
         }
 
         // TODO: Remove onDataChanged & onResizing once we have a flag to distinguish between resize and data changed events.
@@ -550,7 +590,7 @@ module powerbi.visuals {
                 suppressAnimations: true,
                 viewport: viewport,
                 resizeMode: resizeMode,
-            }, false);
+            });
         }
 
         public scrollTo(position: number): void {
@@ -847,7 +887,9 @@ module powerbi.visuals {
                 this.animator,
                 this.axes.isScrollable,
                 this.tooltipsEnabled,
-                this.lineChartLabelDensityEnabled);
+                this.tooltipBucketEnabled,
+                this.lineChartLabelDensityEnabled,
+                this.cartesianLoadMoreEnabled);
 
             // Initialize the layers
             let cartesianOptions = <CartesianVisualInitOptions>Prototype.inherit(this.visualInitOptions);
@@ -920,7 +962,7 @@ module powerbi.visuals {
             return false;
         }
 
-        private render(suppressAnimations: boolean, resizeMode?: ResizeMode): void {
+        private render(suppressAnimations: boolean, resizeMode?: ResizeMode, operationKind?: VisualDataChangeOperationKind): void {
             // Note: interactive legend shouldn't be rendered explicitly here
             // The interactive legend is being rendered in the render method of ICartesianVisual
             if (!(this.visualInitOptions.interactivity && this.visualInitOptions.interactivity.isInteractiveLegend)) {
@@ -968,6 +1010,12 @@ module powerbi.visuals {
                 interactivityRightMargin,
                 ensureXDomain,
                 ensureYDomain);
+                
+            let categoryAxis = axesLayout.axes.x.isCategoryAxis ? axesLayout.axes.x : axesLayout.axes.y1;
+            
+            if (this.loadMoreDataHandler) {
+                this.loadMoreDataHandler.setScale(categoryAxis.scale);
+            }
 
             // Even if the caller thinks animations are ok, now that we've laid out the axes and legend we should disable animations
             // if the plot area changed. Animations for property changes like legend on/off are not desired.
@@ -981,7 +1029,9 @@ module powerbi.visuals {
                 axesLayout,
                 this.layers,
                 suppressAnimations,
-                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins, resizeMode));
+                (layers, axesLayout, suppressAnimations) => this.renderPlotArea(layers, axesLayout, suppressAnimations, legendMargins, resizeMode),
+                this.loadMoreDataHandler,
+                operationKind === VisualDataChangeOperationKind.Append /* preserveScrollbar */);
 
             // attach scroll event
             this.chartAreaSvg.on('wheel', () => {
@@ -1092,7 +1142,7 @@ module powerbi.visuals {
 
             this.renderBackgroundImage(plotAreaRect);
 
-            if (!_.isEmpty(easing))  
+            if (!_.isEmpty(easing))
                 this.svgAxes.renderAxes(axesLayout, duration, easing);
             else
                 this.svgAxes.renderAxes(axesLayout, duration);
@@ -1473,6 +1523,39 @@ module powerbi.visuals {
             }
             return minInterval;
         }
+        
+        /**
+         * Makes the necessary changes to the mapping if load more data is enabled for cartesian charts. Usually called during `customizeQuery`.
+         */
+        public static applyLoadMoreEnabledToMapping(cartesianLoadMoreEnabled: boolean, mapping: powerbi.data.CompiledDataViewMapping): void {
+            const CartesianLoadMoreCategoryWindowCount: number = 100;
+            const CartesianLoadMoreValueTopCount: number = 60;
+
+            if (!cartesianLoadMoreEnabled) {
+                return;
+            }
+
+            let categorical = mapping.categorical;
+
+            if (!categorical) {
+                return;
+            }
+
+            let categories = <data.CompiledDataViewRoleForMappingWithReduction>categorical.categories;
+            let values = <data.CompiledDataViewGroupedRoleMapping>categorical.values;
+
+            if (categories) {
+                categories.dataReductionAlgorithm = {
+                    window: { count: CartesianLoadMoreCategoryWindowCount }
+                };
+            }
+
+            if (values && values.group) {
+                values.group.dataReductionAlgorithm = {
+                    top: { count: CartesianLoadMoreValueTopCount }
+                };
+            }
+        }
     }
 
     function getLayerDataViews(dataViews: DataView[]): DataView[] {
@@ -1640,7 +1723,7 @@ module powerbi.visuals {
             }
 
             this.scrollCallback = scrollCallback;
-
+            
             // events
             this.brush
                 .on("brushstart", () => this.brushStartExtent = this.brush.extent())
@@ -1732,57 +1815,66 @@ module powerbi.visuals {
             axes: CartesianAxisProperties,
             scrollScale: D3.Scale.OrdinalScale,
             extent: number[],
-            visibleCategoryCount: number): void {
+            visibleCategoryCount: number): ViewportDataRange {
 
-            if (scrollScale) {
-                let selected: number[];
-                let data: CartesianData[] = [];
-
-                // NOTE: using start + numVisibleCategories to make sure we don't have issues with exactness related to extent start/end
-                //      (don't use extent[1])
-                /*
-                 When extent[0] and extent[1] are very close to the boundary of a new index, due to floating point err,
-                 the "start" might move to the next index but the "end" might not change until you slide one more pixel.
-                 It makes things really jittery during scrolling, sometimes you see N columns and sometimes you briefly see N+1.
-                */
-                let startIndex = AxisHelper.lookupOrdinalIndex(scrollScale, extent[0]);
-                var endIndex = startIndex + visibleCategoryCount; // NOTE: intentionally 1 past end index
-
-                let domain = scrollScale.domain();
-                selected = domain.slice(startIndex, endIndex); // NOTE: Up to but not including 'end'
-                if (selected && selected.length > 0) {
-                    for (let i = 0; i < layers.length; i++) {
-                        data[i] = layers[i].setFilteredData(selected[0], selected[selected.length - 1] + 1);
-                    }
-                    mainAxisScale.domain(selected);
-
-                    let axisPropsToUpdate: IAxisProperties;
-                    if (this.axes.isXScrollBarVisible) {
-                        axisPropsToUpdate = axes.x;
-                    }
-                    else {
-                        axisPropsToUpdate = axes.y1;
-                    }
-
-                    axisPropsToUpdate.axis.scale(mainAxisScale);
-                    axisPropsToUpdate.scale(mainAxisScale);
-
-                    // tick values are indices for ordinal axes
-                    axisPropsToUpdate.axis.ticks(selected.length);
-                    axisPropsToUpdate.axis.tickValues(selected); 
-
-                    // use the original tick format to format the tick values
-                    let tickFormat = axisPropsToUpdate.axis.tickFormat();
-                    axisPropsToUpdate.values = _.map(selected, (d) => tickFormat(d));
-                }
+            if (!scrollScale) {
+                return;
             }
+
+            let selected: number[];
+            let data: CartesianData[] = [];
+
+            // NOTE: using start + numVisibleCategories to make sure we don't have issues with exactness related to extent start/end
+            //      (don't use extent[1])
+            /*
+             When extent[0] and extent[1] are very close to the boundary of a new index, due to floating point err,
+             the "start" might move to the next index but the "end" might not change until you slide one more pixel.
+             It makes things really jittery during scrolling, sometimes you see N columns and sometimes you briefly see N+1.
+            */
+            let startIndex = AxisHelper.lookupOrdinalIndex(scrollScale, extent[0]);
+            let endIndex = startIndex + visibleCategoryCount; // NOTE: intentionally 1 past end index
+
+            let domain = scrollScale.domain();
+            selected = domain.slice(startIndex, endIndex); // NOTE: Up to but not including 'end'
+            if (selected && selected.length > 0) {
+                for (let i = 0; i < layers.length; i++) {
+                    data[i] = layers[i].setFilteredData(selected[0], selected[selected.length - 1] + 1);
+                }
+                mainAxisScale.domain(selected);
+
+                let axisPropsToUpdate: IAxisProperties;
+                if (this.axes.isXScrollBarVisible) {
+                    axisPropsToUpdate = axes.x;
+                }
+                else {
+                    axisPropsToUpdate = axes.y1;
+                }
+
+                axisPropsToUpdate.axis.scale(mainAxisScale);
+                axisPropsToUpdate.scale(mainAxisScale);
+
+                // tick values are indices for ordinal axes
+                axisPropsToUpdate.axis.ticks(selected.length);
+                axisPropsToUpdate.axis.tickValues(selected);
+
+                // use the original tick format to format the tick values
+                let tickFormat = axisPropsToUpdate.axis.tickFormat();
+                axisPropsToUpdate.values = _.map(selected, (d) => tickFormat(d));
+            }
+
+            return {
+                startIndex: startIndex,
+                endIndex: endIndex - 1 // Subtract 1 since it's actually 1 past the end index
+            };
         }
 
         public render(
             axesLayout: CartesianAxesLayout,
             layers: ICartesianVisual[],
             suppressAnimations: boolean,
-            renderDelegate: RenderPlotAreaDelegate): void {
+            renderDelegate: RenderPlotAreaDelegate,
+            loadMoreDataHandler?: CartesianLoadMoreDataHandler,
+            preserveScrollPosition?: boolean): void {
 
             let plotArea = axesLayout.plotArea;
 
@@ -1796,36 +1888,57 @@ module powerbi.visuals {
             let numVisibleCategories: number;
             let categoryThickness: number;
             let newAxisLength: number;
-            if (this.axes.isXScrollBarVisible) {
-                this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.x.scale;
-                brushX = axesLayout.margin.left;
-                brushY = axesLayout.viewport.height;
-                categoryThickness = axesLayout.axes.x.categoryThickness;
-                let outerPadding = axesLayout.axes.x.outerPadding;
-                numVisibleCategories = Double.floorWithPrecision((plotArea.width - outerPadding * 2) / categoryThickness);
-                scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
-                newAxisLength = plotArea.width;
+
+            let showingScrollBar = this.axes.isXScrollBarVisible || this.axes.isYScrollBarVisible;
+
+            // If the scrollbars are visible, calculate values.
+            // We also need to calculate values if we have a loadMoreData handler since they're used to make sure we have enough 
+            // data to fill the viewport (even if there aren't any scrollbars).
+            if (loadMoreDataHandler || showingScrollBar) {
+                if (!this.axes.isYAxisCategorical()) {
+                    this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.x.scale;
+                    brushX = axesLayout.margin.left;
+                    brushY = axesLayout.viewport.height;
+                    categoryThickness = axesLayout.axes.x.categoryThickness;
+                    let outerPadding = axesLayout.axes.x.outerPadding;
+                    numVisibleCategories = Double.floorWithPrecision((plotArea.width - outerPadding * 2) / categoryThickness);
+                    scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
+                    newAxisLength = plotArea.width;
+                }
+                else {
+                    this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.y1.scale;
+                    brushX = axesLayout.viewport.width;
+                    brushY = axesLayout.margin.top;
+                    categoryThickness = axesLayout.axes.y1.categoryThickness;
+                    let outerPadding = axesLayout.axes.y1.outerPadding;
+                    numVisibleCategories = Double.floorWithPrecision((plotArea.height - outerPadding * 2) / categoryThickness);
+                    scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
+                    newAxisLength = plotArea.height;
+                }
             }
-            else if (this.axes.isYScrollBarVisible) {
-                this.axisScale = <D3.Scale.OrdinalScale>axesLayout.axes.y1.scale;
-                brushX = axesLayout.viewport.width;
-                brushY = axesLayout.margin.top;
-                categoryThickness = axesLayout.axes.y1.categoryThickness;
-                let outerPadding = axesLayout.axes.y1.outerPadding;
-                numVisibleCategories = Double.floorWithPrecision((plotArea.height - outerPadding * 2) / categoryThickness);
-                scrollbarLength = (numVisibleCategories + 1) * categoryThickness;
-                newAxisLength = plotArea.height;
-            }
-            else {
-                // No scrollbars, render the chart normally.
+
+            // No scrollbars, render the chart normally.
+            if (!showingScrollBar) {
+
+                // Load more data if we don't have enough.
+                // The window size should be big enough so we don't hit this code, but it's here as a backup.
+                if (loadMoreDataHandler) {
+                    loadMoreDataHandler.viewportDataRange = { startIndex: 0, endIndex: numVisibleCategories };
+
+                    if (loadMoreDataHandler.shouldLoadMoreData()) {
+                        loadMoreDataHandler.loadMoreData();
+                    }
+                }
+
                 this.brush.remove();
                 renderDelegate(layers, axesLayout, suppressAnimations);
                 return;
             }
 
             // viewport is REALLY small
-            if (numVisibleCategories < 1)
+            if (numVisibleCategories < 1) {
                 return; // don't do anything
+            }
 
             this.scrollScale = this.axisScale.copy();
             this.scrollScale.rangeBands([0, scrollbarLength]); //no inner/outer padding, keep the math simple
@@ -1847,14 +1960,35 @@ module powerbi.visuals {
 
             // This function will be called whenever we scroll.
             let renderOnScroll = (extent: number[], suppressAnimations: boolean) => {
-                this.filterDataToViewport(this.axisScale, layers, axesLayout.axes, this.scrollScale, extent, numVisibleCategories);
+                let dataRange = this.filterDataToViewport(this.axisScale, layers, axesLayout.axes, this.scrollScale, extent, numVisibleCategories);
+                
+                if (loadMoreDataHandler) {
+                    loadMoreDataHandler.viewportDataRange = dataRange;
+                
+                    if (loadMoreDataHandler.shouldLoadMoreData()) {
+                        loadMoreDataHandler.loadMoreData();
+                    }
+                }
+
                 renderDelegate(layers, axesLayout, suppressAnimations);
             };
 
             let scrollCallback = () => this.onBrushed(scrollbarLength, renderOnScroll);
             this.brush.renderBrush(this.brushMinExtent, brushX, brushY, scrollCallback);
 
-            renderOnScroll(this.brush.getExtent(), suppressAnimations);
+            // Either scroll to the specified location or simply render the visual.
+            if (preserveScrollPosition && loadMoreDataHandler) {
+                let startIndex = loadMoreDataHandler.viewportDataRange ? loadMoreDataHandler.viewportDataRange.startIndex : 0;
+
+                // Clamp 1st to update the size of the extent, then scroll to the new index
+                ScrollableAxes.clampBrushExtent(this.brush, scrollbarLength, this.brushMinExtent);
+
+                // ScrollTo takes care of the rendering
+                this.scrollTo(startIndex);
+            }
+            else {
+                renderOnScroll(this.brush.getExtent(), suppressAnimations);
+            }
         }
 
         public scrollDelta(delta): void {
@@ -2091,11 +2225,11 @@ module powerbi.visuals {
                 let xAxisGraphicsElement = this.xAxisGraphicsContext;
                 if (duration) {
                     xAxisGraphicsElement
-                              .transition()
-                              .duration(duration)
-                              .ease(easing)
-                              .call(axes.x.axis)
-                              .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.x.values);
+                        .transition()
+                        .duration(duration)
+                        .ease(easing)
+                        .call(axes.x.axis)
+                        .call(SvgCartesianAxes.updateAnimatedTickTooltips, axes.x.values);
                 }
                 else {
                     xAxisGraphicsElement
@@ -3019,7 +3153,9 @@ module powerbi.visuals {
             animator?: any,
             isScrollable: boolean = false,
             tooltipsEnabled?: boolean,
-            lineChartLabelDensityEnabled?: boolean): ICartesianVisual[] {
+            tooltipBucketEnabled?: boolean,
+            lineChartLabelDensityEnabled?: boolean,
+            cartesianLoadMoreEnabled?: boolean): ICartesianVisual[] {
 
             let layers: ICartesianVisual[] = [];
 
@@ -3028,7 +3164,9 @@ module powerbi.visuals {
                 animator: animator,
                 interactivityService: interactivityService,
                 tooltipsEnabled: tooltipsEnabled,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             };
 
             switch (type) {
@@ -3103,8 +3241,10 @@ module powerbi.visuals {
                 interactivityService: defaultOptions.interactivityService,
                 isScrollable: defaultOptions.isScrollable,
                 tooltipsEnabled: !isTrendLayer && defaultOptions.tooltipsEnabled,
+                tooltipBucketEnabled: defaultOptions.tooltipBucketEnabled,
                 chartType: type,
                 lineChartLabelDensityEnabled: defaultOptions.lineChartLabelDensityEnabled,
+                cartesianLoadMoreEnabled: defaultOptions.cartesianLoadMoreEnabled,
                 isTrendLayer: isTrendLayer,
             };
 
@@ -3134,6 +3274,8 @@ module powerbi.visuals {
                 interactivityService: defaultOptions.interactivityService,
                 isScrollable: defaultOptions.isScrollable,
                 tooltipsEnabled: defaultOptions.tooltipsEnabled,
+                tooltipBucketEnabled: defaultOptions.tooltipBucketEnabled,
+                cartesianLoadMoreEnabled: defaultOptions.cartesianLoadMoreEnabled,
                 chartType: type
             };
             return new ColumnChart(options);
@@ -3217,6 +3359,69 @@ module powerbi.visuals {
                 // The first layer to express a preference sets the preferred scale.
                 this.preferredScale = this.palette.getColorScaleByKey(scaleKey);
             }
+        }
+    }
+    
+    export class CartesianLoadMoreDataHandler {
+
+        public viewportDataRange: ViewportDataRange;
+        
+        private loadMoreThresholdIndex: number;
+        private loadingMoreData: boolean;
+        private loadMoreThreshold: number;
+        private loadMoreCallback: () => void;
+
+        /**
+         * Constructs the handler.
+         * @param scale - The scale for the loaded data.
+         * @param loadMoreCallback - The callback to execute to load more data.
+         * @param loadMoreThreshold - How many indexes before the last index loading more data will be triggered.
+         * Ex: loadMoreThreshold = 2, dataLength = 10 (last index = 9) will trigger a load when item with index 9 - 2 = 7 or greater is displayed.
+         */
+        constructor(scale: D3.Scale.GenericScale<any>, loadMoreCallback: () => void, loadMoreThreshold: number = 0) {
+            debug.assertValue(loadMoreCallback, 'loadMoreCallback');
+            debug.assert(loadMoreThreshold >= 0, 'loadMoreThreshold must be greater than or equal to 0');
+            this.loadMoreThreshold = loadMoreThreshold;
+            this.loadMoreCallback = loadMoreCallback;
+            this.setScale(scale);
+        }
+
+        public setScale(scale: D3.Scale.GenericScale<any>): void {
+            if (!scale) {
+                return;
+            }
+
+            // Length of the scale is the amount of data we have loaded. Subtract 1 to get the index.
+            // Subtract the threshold to calculate the index at which we need to load more data.
+            this.loadMoreThresholdIndex = scale.domain().length - 1 - this.loadMoreThreshold;
+        }
+
+        public isLoadingMoreData(): boolean {
+            return this.loadingMoreData;
+        }
+
+        public onLoadMoreDataCompleted(): void {
+            this.loadingMoreData = false;
+        }
+
+        public shouldLoadMoreData(): boolean {
+            let viewportDataRange = this.viewportDataRange;
+            
+            if (!viewportDataRange || this.isLoadingMoreData()) {
+                return false;
+            }
+
+            // If the index of the data we're displaying is more than the threshold, return true.
+            return viewportDataRange.endIndex >= this.loadMoreThresholdIndex;
+        }
+
+        public loadMoreData(): void {
+            if (this.isLoadingMoreData()) {
+                return;
+            }
+
+            this.loadingMoreData = true;
+            this.loadMoreCallback();
         }
     }
 }

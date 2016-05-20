@@ -645,25 +645,30 @@ module powerbi.visuals.controls.internal {
             left?: T;
         }
 
+        export enum EdgeType { Outline, Gridline };
+
         export class EdgeSettings {
             /**
              * Weight in pixels. 0 to remove border. Undefined to fall back to CSS
             */
             public weight: number;
             public color: string;
+            public type: EdgeType;
 
             constructor(weight?: number, color?: string) {
                 this.applyParams(true, weight, color);
             }
 
-            public applyParams(shown: boolean, weight: number, color?: string) {
+            public applyParams(shown: boolean, weight: number, color?: string, type?: EdgeType) {
                 if (shown) {
                     this.weight = weight == null ? 0 : weight;
                     this.color = color == null ? 'black' : color;
+                    this.type = type == null ? EdgeType.Gridline : type;
                 }
                 else {
                     this.weight = 0;
                     this.color = 'black';
+                    this.type = EdgeType.Gridline;
                 }
             }
 
@@ -679,6 +684,47 @@ module powerbi.visuals.controls.internal {
                 }
 
                 return css.join(' ');
+            }
+
+            /**
+             * Returns the priority of the current edge.
+             * H. Grid = 0
+             * V. Grid = 1
+             * H. Outline = 2
+             * V. Outline = 3
+             * Uknown = -1
+             * @param {Surround<EdgeSettings>} edges Edges. Used to determine the side of the current edge
+             */
+            public getPriority(edges: Surround<EdgeSettings>): number {
+                if (this === edges.top || this === edges.bottom)
+                    if (this.type === EdgeType.Outline) return 2;
+                    else return 0;
+
+                if (this === edges.right || this === edges.left)
+                    if (this.type === EdgeType.Outline) return 3;
+                    else return 1;
+
+                return -1;
+            }
+
+            public getShadowCss(edges: Surround<EdgeSettings>): string {
+                let output = "inset ";
+
+                if (this === edges.left)
+                    output += this.weight + UnitOfMeasurement + " 0";
+
+                else if (this === edges.right)
+                    output += "-" + this.weight + UnitOfMeasurement + " 0";
+
+                else if (this === edges.top)
+                    output += "0 " + this.weight + UnitOfMeasurement;
+
+                else if (this === edges.bottom)
+                    output += "0 -" + this.weight + UnitOfMeasurement;
+                else
+                    return "";
+
+                return output + " 0 0 " + this.color;
             }
         }
 
@@ -738,31 +784,22 @@ module powerbi.visuals.controls.internal {
                 style.color = this.fontColor;
                 style.backgroundColor = this.backColor;
 
-                /**
+                let edges = [this.borders.top, this.borders.right, this.borders.bottom, this.borders.left];
+
+                // Sorting edges by priority Descending
+                edges = _.sortBy(edges, (e) => {
+                    return e ? e.getPriority(this.borders) : -1;
+                }).reverse();
+
+                 /**
                  * We are setting the borders as inset shadow
                  * This way we can control how intersecting borders would look like when they have different colors
                  */
-                let borderShadow: string[] = [];
+                style.boxShadow = _.map(edges, (e) => {
+                    if (e) return e.getShadowCss(this.borders);
+                }).join(', ');
 
                 style.border = "none";
-
-                if (this.borders.left) {
-                    borderShadow.push("inset " + this.borders.left.weight + UnitOfMeasurement + " 0 0 0 " + this.borders.left.color);
-                }
-
-                if (this.borders.right) {
-                    borderShadow.push("inset -" + this.borders.right.weight + UnitOfMeasurement + " 0 0 0 " + this.borders.right.color);
-                }
-
-                if (this.borders.top) {
-                    borderShadow.push("inset 0 " + this.borders.top.weight + UnitOfMeasurement + " 0 0 " + this.borders.top.color);
-                }
-
-                if (this.borders.bottom) {
-                    borderShadow.push("inset 0 -" + this.borders.bottom.weight + UnitOfMeasurement + " 0 0 " + this.borders.bottom.color);
-                }
-
-                style.boxShadow = borderShadow.join(', ');
 
                 style.paddingTop = ((this.paddings.top == null ? 0 : this.paddings.top) + (this.borders.top == null ? 0 : this.borders.top.weight)) + UnitOfMeasurement;
                 style.paddingRight = ((this.paddings.right == null ? CellPaddingRight : this.paddings.right) + (this.borders.right == null ? 0 : this.borders.right.weight)) + UnitOfMeasurement;
@@ -861,27 +898,28 @@ module powerbi.visuals.controls.internal {
             public isTotal: boolean;
             public backColor: string;
             private formatter: ICustomValueColumnFormatter;
+            private nullsAreBlank: boolean;
 
-            constructor(dataPoint: any, isTotal: boolean, columnMetadata: DataViewMetadataColumn, formatter: ICustomValueColumnFormatter) {
+            constructor(dataPoint: any, isTotal: boolean, columnMetadata: DataViewMetadataColumn, formatter: ICustomValueColumnFormatter, nullsAreBlank: boolean) {
                 this.dataPoint = dataPoint;
                 this.columnMetadata = columnMetadata;
                 this.formatter = formatter;
                 this.isTotal = isTotal;
+                this.nullsAreBlank = nullsAreBlank;
 
                 this.position = new TablixUtils.CellPosition();
             }
 
             public get textContent(): string {
-                if (this.dataPoint == null)
-                    return '';
-
                 if (this.formatter)
-                    return this.formatter(this.dataPoint, this.columnMetadata, TablixObjects.PropColumnFormatString.getPropertyID());
-                else
+                    return this.formatter(this.dataPoint, this.columnMetadata, TablixObjects.PropColumnFormatString.getPropertyID(), this.nullsAreBlank);
+                else if (this.dataPoint != null)
                     return this.dataPoint;
+                else
+                    return '';
             };
 
-            public get domContent(): JQuery {
+            public get kpiContent(): JQuery {
                 if (this.columnMetadata && isValidStatusGraphic(this.columnMetadata.kpi, this.textContent))
                     return createKpiDom(this.columnMetadata.kpi, this.textContent);
             };
@@ -945,10 +983,16 @@ module powerbi.visuals.controls.internal {
             HTMLElementUtils.clearChildren(cell.extension.contentHost);
         }
 
-        export function setCellTextAndTooltip(cell: controls.ITablixCell, text: string): void {
+        /**
+         * Sets text and tooltip for cell
+         * @param {string} text Text to set
+         * @param {HTMLElement} elementText Element to set text to
+         * @param {HTMLElement} elementTooltip? Element to set tootltip to, if undefined, elementText will be used
+         */
+        export function setCellTextAndTooltip(text: string, elementText: HTMLElement, elementTooltip?: HTMLElement): void {
             let val = TextUtil.replaceSpaceWithNBSP(text);
-            cell.extension.contentHost.textContent = val;
-            cell.extension.contentHost.title = val;
+            elementText.textContent = val;
+            (elementTooltip || elementText).title = val;
         }
 
         export function isValidSortClick(e: MouseEvent) {
@@ -957,15 +1001,14 @@ module powerbi.visuals.controls.internal {
             return x >= 0 && x < colHeader.offsetWidth - TablixResizer.resizeHandleSize;
         }
 
-        export function appendATagToBodyCell(value: string, cell: controls.ITablixCell, urlIcon?: boolean): void {
-            let element = <HTMLElement>cell.extension.contentHost;
+        export function appendATagToBodyCell(value: string, cellElement: HTMLElement, urlIcon?: boolean): void {
             let atag: HTMLAnchorElement = null;
-            if (element.childElementCount === 0) {
+            if (cellElement.childElementCount === 0) {
                 atag = document.createElement('a');
-                element.appendChild(atag);
+                cellElement.appendChild(atag);
             }
             else {
-                atag = <HTMLAnchorElement>element.children[0];
+                atag = <HTMLAnchorElement>cellElement.children[0];
             }
 
             atag.href = value;
@@ -974,15 +1017,14 @@ module powerbi.visuals.controls.internal {
 
             if (urlIcon === true) {
                 atag.className = CssClassValueURLIcon;
-                element.className = CssClassValueURLIconContainer;
+                cellElement.className = CssClassValueURLIconContainer;
             }
             else {
                 atag.innerText = value;
             }
         }
 
-        export function appendImgTagToBodyCell(value: string, cell: controls.ITablixCell, imageHeight: number): void {
-            let element = <HTMLElement>cell.extension.contentHost;
+        export function appendImgTagToBodyCell(value: string, cellElement: HTMLElement, imageHeight: number): void {
             let imgContainer: HTMLDivElement = TablixUtils.createDiv();
             let imgTag: HTMLImageElement = document.createElement('img');
 
@@ -993,7 +1035,8 @@ module powerbi.visuals.controls.internal {
             imgTag.style.maxHeight = "100%";
             imgTag.style.maxWidth = "100%";
             imgContainer.appendChild(imgTag);
-            element.appendChild(imgContainer);
+            cellElement.appendChild(imgContainer);
+            cellElement.title = value;
         }
 
         export function createKpiDom(kpi: DataViewKpiColumnMetadata, kpiValue: string): JQuery {
@@ -1029,11 +1072,15 @@ module powerbi.visuals.controls.internal {
             return sortDirection === SortDirection.Descending ? SortDirection.Ascending : SortDirection.Descending;
         }
 
-        export function createColumnHeaderWithSortIcon(item: DataViewMetadataColumn, cell: controls.ITablixCell): void {
+        /**
+         * Add sort icon to a table cell and return the element that should contain the contents
+         * @param {SortDirection} itemSort SortDirection
+         * @param {HTMLElement} cellDiv The inner DIV of the cell
+         */
+        export function addSortIconToColumnHeader(itemSort: SortDirection, cellDiv: HTMLElement): HTMLElement {
             let colHeaderContainer: HTMLDivElement = TablixUtils.createDiv();
 
-            if (item.sort) {
-                let itemSort = item.sort;
+            if (itemSort) {
                 colHeaderContainer.appendChild(createSortIcon(itemSort, true));
                 colHeaderContainer.appendChild(createSortIcon(reverseSort(itemSort), false));
             }
@@ -1042,12 +1089,10 @@ module powerbi.visuals.controls.internal {
             }
 
             let colHeaderTitle: HTMLDivElement = TablixUtils.createDiv();
-            // Preserving trailing and leading spaces
-            let title = item ? TextUtil.replaceSpaceWithNBSP(item.displayName) : '';
-            colHeaderTitle.textContent = title;
             colHeaderContainer.appendChild(colHeaderTitle);
-            cell.extension.contentHost.title = title;
-            cell.extension.contentHost.appendChild(colHeaderContainer);
+            cellDiv.appendChild(colHeaderContainer);
+
+            return colHeaderTitle;
         }
 
         function createSortIcon(sort: SortDirection, isSorted: boolean): HTMLElement {

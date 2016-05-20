@@ -84,6 +84,13 @@ module powerbi.visuals {
          * Enables conditional formatting of the background color of cells for table visuals.
          */
         conditionalFormattingEnabled?: boolean;
+
+        tooltipBucketEnabled?: boolean;
+        
+        /**
+         * Load more data for Cartesian charts (column, bar, line, and combo). 
+         */
+        cartesianLoadMoreEnabled?: boolean;
     }
 
     export interface SmallViewPortProperties {
@@ -99,6 +106,7 @@ module powerbi.visuals {
 
     export module visualPluginFactory {
         export class VisualPluginService implements IVisualPluginService {
+            
             private plugins: jsCommon.IStringDictionary<IVisualPlugin>;
             protected featureSwitches: MinervaVisualFeatureSwitches;
 
@@ -209,26 +217,41 @@ module powerbi.visuals {
         function createDashboardPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, options: CreateDashboardOptions, featureSwitches?: MinervaVisualFeatureSwitches) {
             let tooltipsOnDashboard: boolean = options.tooltipsEnabled;
             let lineChartLabelDensityEnabled: boolean = featureSwitches && featureSwitches.lineChartLabelDensityEnabled;
+            let tooltipBucketEnabled = featureSwitches && featureSwitches.tooltipBucketEnabled;
+            let conditionalFormattingEnabled = featureSwitches ? featureSwitches.conditionalFormattingEnabled : false;
+            let cartesianLoadMoreEnabled: boolean = featureSwitches && featureSwitches.cartesianLoadMoreEnabled;
 
             // Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.barChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.barChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.StackedBar,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                animator: new WebColumnChartAnimator(),
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Clustered Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.clusteredBarChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.clusteredBarChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.ClusteredBar,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                animator: new WebColumnChartAnimator(),
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Clustered Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.clusteredColumnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.clusteredColumnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.ClusteredColumn,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                animator: new WebColumnChartAnimator(),
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.columnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.columnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.StackedColumn,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                animator: new WebColumnChartAnimator(),
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Data Dot Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotClusteredColumnComboChart, () => new CartesianChart({
@@ -241,94 +264,116 @@ module powerbi.visuals {
                 tooltipsEnabled: tooltipsOnDashboard,
             }));
             // Donut Chart
-            createPlugin(plugins, powerbi.visuals.plugins.donutChart, () => new DonutChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.donutChart, tooltipBucketEnabled), () => new DonutChart({
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
+
             // Funnel Chart
-            createPlugin(plugins, powerbi.visuals.plugins.funnel, () => new FunnelChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.funnel, tooltipBucketEnabled), () => new FunnelChart({
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Gauge
             createPlugin(plugins, powerbi.visuals.plugins.gauge, () => new Gauge({
                 tooltipsEnabled: tooltipsOnDashboard,
             }));
             // Hundred Percent Stacked Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedBarChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.hundredPercentStackedBarChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.HundredPercentStackedBar,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Hundred Percent Stacked Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedColumnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.hundredPercentStackedColumnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.HundredPercentStackedColumn,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Line Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Line,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipsOnDashboard && tooltipBucketEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Area Chart
-            createPlugin(plugins, powerbi.visuals.plugins.areaChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.areaChart, tooltipBucketEnabled),() => new CartesianChart({
                 chartType: CartesianChartType.Area,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipsOnDashboard && tooltipBucketEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
             }));
             // Stacked Area Chart
-            createPlugin(plugins, powerbi.visuals.plugins.stackedAreaChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.stackedAreaChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.StackedArea,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipsOnDashboard && tooltipBucketEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
             }));
             // Line Clustered Combo Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineClusteredColumnComboChart, tooltipBucketEnabled, true), () => new CartesianChart({
                 chartType: CartesianChartType.LineClusteredColumnCombo,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Line Stacked Combo Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineStackedColumnComboChart, tooltipBucketEnabled, true), () => new CartesianChart({
                 chartType: CartesianChartType.LineStackedColumnCombo,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Pie Chart
-            createPlugin(plugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.pieChart, tooltipBucketEnabled), () => new DonutChart({
                 sliceWidthRatio: 0,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Scatter Chart
-            createPlugin(plugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.scatterChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Scatter,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Treemap
-            createPlugin(plugins, powerbi.visuals.plugins.treemap, () => new Treemap({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.treemap, tooltipBucketEnabled), () => new Treemap({
                 isScrollable: false,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Waterfall Chart
-            createPlugin(plugins, powerbi.visuals.plugins.waterfallChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.waterfallChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Waterfall,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Map
-            createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.map, tooltipBucketEnabled), () => new Map({
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 disableZooming: true,
                 disablePanning: true,
             }));
             // Filled Map
-            createPlugin(plugins, powerbi.visuals.plugins.filledMap, () => new Map({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.filledMap, tooltipBucketEnabled), () => new Map({
                 filledMap: true,
                 tooltipsEnabled: tooltipsOnDashboard,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 disableZooming: true,
                 disablePanning: true,
             }));
+
             // Matrix
             createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix({
             }));
             // Table
             createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table({
-                isConditionalFormattingEnabled: false,
+                isConditionalFormattingEnabled: conditionalFormattingEnabled,
             }));
         }
 
@@ -339,14 +384,18 @@ module powerbi.visuals {
             let conditionalFormattingEnabled = featureSwitches ? featureSwitches.conditionalFormattingEnabled : false;
             let fillMapDataLabelsEnabled: boolean = featureSwitches ? featureSwitches.filledMapDataLabelsEnabled : false;
             let lineChartLabelDensityEnabled: boolean = featureSwitches ? featureSwitches.lineChartLabelDensityEnabled : false;
+            let tooltipBucketEnabled = featureSwitches ? featureSwitches.tooltipBucketEnabled : false;
+            let cartesianLoadMoreEnabled: boolean = featureSwitches && featureSwitches.cartesianLoadMoreEnabled;
 
             // Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.barChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.barChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.StackedBar,
                 isScrollable: true, animator: new WebColumnChartAnimator(),
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Card
             createPlugin(plugins, powerbi.visuals.plugins.card, () => new Card({
@@ -354,31 +403,37 @@ module powerbi.visuals {
                 animator: new BaseAnimator(),
             }));
             // Clustered Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.clusteredBarChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.clusteredBarChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.ClusteredBar,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Clustered Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.clusteredColumnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.clusteredColumnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.ClusteredColumn,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.columnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.columnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.StackedColumn,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Data Dot Clustered Combo Chart
             createPlugin(plugins, powerbi.visuals.plugins.dataDotClusteredColumnComboChart, () => new CartesianChart({
@@ -399,17 +454,19 @@ module powerbi.visuals {
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
             }));
             // Donut Chart
-            createPlugin(plugins, powerbi.visuals.plugins.donutChart, () => new DonutChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.donutChart, tooltipBucketEnabled), () => new DonutChart({
                 animator: new WebDonutChartAnimator(),
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 behavior: new DonutChartWebBehavior(),
             }));
             // Funnel Chart
-            createPlugin(plugins, powerbi.visuals.plugins.funnel, () => new FunnelChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.funnel, tooltipBucketEnabled), () => new FunnelChart({
                 animator: new WebFunnelAnimator(),
                 behavior: new FunnelWebBehavior(),
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Gauge
             createPlugin(plugins, powerbi.visuals.plugins.gauge, () => new Gauge({
@@ -417,38 +474,45 @@ module powerbi.visuals {
                 tooltipsEnabled: true,
             }));
             // Hundred Percent Stacked Bar Chart
-            createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedBarChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.hundredPercentStackedBarChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.HundredPercentStackedBar,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Hundred Percent Stacked Column Chart
-            createPlugin(plugins, powerbi.visuals.plugins.hundredPercentStackedColumnChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.hundredPercentStackedColumnChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.HundredPercentStackedColumn,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Line Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Line,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Area Chart
             createPlugin(plugins, powerbi.visuals.plugins.areaChart, () => new CartesianChart({
                 chartType: CartesianChartType.Area,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
@@ -459,71 +523,82 @@ module powerbi.visuals {
                 chartType: CartesianChartType.StackedArea,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new LineChartWebBehavior()]),
                 lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
             }));
             // Line Clustered Combo Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineClusteredColumnComboChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineClusteredColumnComboChart, tooltipBucketEnabled, true), () => new CartesianChart({
                 chartType: CartesianChartType.LineClusteredColumnCombo,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Line Stacked Combo Chart
-            createPlugin(plugins, powerbi.visuals.plugins.lineStackedColumnComboChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.lineStackedColumnComboChart, tooltipBucketEnabled, true), () => new CartesianChart({
                 chartType: CartesianChartType.LineStackedColumnCombo,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new WebColumnChartAnimator(),
                 behavior: new CartesianChartBehavior([new ColumnChartWebBehavior(), new LineChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
+                cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             }));
             // Pie Chart
-            createPlugin(plugins, powerbi.visuals.plugins.pieChart, () => new DonutChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.pieChart, tooltipBucketEnabled), () => new DonutChart({
                 sliceWidthRatio: 0,
                 animator: new WebDonutChartAnimator(),
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 behavior: new DonutChartWebBehavior(),
             }));
             // Scatter Chart
-            createPlugin(plugins, powerbi.visuals.plugins.scatterChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.scatterChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Scatter,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 animator: new BaseAnimator(),
                 behavior: new CartesianChartBehavior([new ScatterChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
             }));
             // Treemap
-            createPlugin(plugins, powerbi.visuals.plugins.treemap, () => new Treemap({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.treemap, tooltipBucketEnabled), () => new Treemap({
                 animator: new WebTreemapAnimator,
                 isScrollable: true,
                 behavior: new TreemapWebBehavior(),
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
             }));
             // Waterfall Chart
-            createPlugin(plugins, powerbi.visuals.plugins.waterfallChart, () => new CartesianChart({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.waterfallChart, tooltipBucketEnabled), () => new CartesianChart({
                 chartType: CartesianChartType.Waterfall,
                 isScrollable: true,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 behavior: new CartesianChartBehavior([new WaterfallChartWebBehavior()]),
                 isLabelInteractivityEnabled: isLabelInteractivityEnabled,
             }));
             // Map
-            createPlugin(plugins, powerbi.visuals.plugins.map, () => new Map({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.map, tooltipBucketEnabled), () => new Map({
                 behavior: new MapBehavior(),
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 isLegendScrollable: true,
             }));
             // Filled Map
-            createPlugin(plugins, powerbi.visuals.plugins.filledMap, () => new Map({
+            createPlugin(plugins, enableTooltipBucket(powerbi.visuals.plugins.filledMap, tooltipBucketEnabled), () => new Map({
                 filledMap: true,
                 behavior: new MapBehavior,
                 tooltipsEnabled: true,
+                tooltipBucketEnabled: tooltipBucketEnabled,
                 filledMapDataLabelsEnabled: fillMapDataLabelsEnabled,
                 isLegendScrollable: true,
             }));
@@ -546,6 +621,61 @@ module powerbi.visuals {
                     powerbi.visuals.plugins.scriptVisual,
                     () => new ScriptVisual({ canRefresh: true }));
             }
+        }
+        
+        export function enableTooltipBucket(pluginOld: IVisualPlugin, tooltipBucketEnabled?: boolean, isCombo: boolean = false): IVisualPlugin {
+            if (!tooltipBucketEnabled)
+                return pluginOld;
+
+            let pluginNew: IVisualPlugin = _.clone(pluginOld);
+
+            pluginNew.capabilities = _.clone(pluginOld.capabilities);
+
+            pluginNew.capabilities.dataRoles = _.clone(pluginOld.capabilities.dataRoles);
+
+            pluginNew.capabilities.dataRoles.push(
+                {
+                    name: 'Tooltips',
+                    kind: VisualDataRoleKind.Measure,
+                    displayName: data.createDisplayNameGetter('Role_DisplayName_Tooltips'),
+                    joinPredicate: JoinPredicateBehavior.None,
+                    //TODO: description: data.createDisplayNameGetter('Role_DisplayName_TooltipsDescription'),
+                    //TODO: requiredTypes: [{ numeric: true }, { integer: true }],
+                }
+            );
+
+            pluginNew.capabilities.dataViewMappings = _.clone(pluginOld.capabilities.dataViewMappings);
+            for (let i = 0; i < pluginOld.capabilities.dataViewMappings.length; i++) {
+                let categorical: DataViewCategoricalMapping = pluginOld.capabilities.dataViewMappings[i].categorical;
+                let matrix: DataViewCategoricalMapping = pluginOld.capabilities.dataViewMappings[i].matrix;
+                let mapping = categorical ? categorical : matrix;
+
+                if (!mapping)
+                    continue;
+
+                let values = mapping.values;
+                if (!values)
+                    continue;
+
+                pluginNew.capabilities.dataViewMappings[i] = _.cloneDeep(pluginOld.capabilities.dataViewMappings[i]);
+
+                if (categorical) {
+                    values = pluginNew.capabilities.dataViewMappings[i].categorical.values;
+                }
+                if (matrix) {
+                    values = pluginNew.capabilities.dataViewMappings[i].matrix.values;
+                }
+
+                let group = (<DataViewGroupedRoleMapping>values).group;
+                if (group)
+                    group.select.push({ for: { in: 'Tooltips' } });
+
+                let select = (<DataViewListRoleMapping>values).select;
+                if (select && !isCombo)
+                    select.push({ for: { in: 'Tooltips' } });
+
+            }
+            return pluginNew;
         }
 
         export class PlaygroundVisualPluginService extends VisualPluginService {
@@ -739,6 +869,8 @@ module powerbi.visuals {
                     },
                 };
 
+                let conditionalFormattingEnabled = featureSwitches ? featureSwitches.conditionalFormattingEnabled : false;
+
                 // Disable tooltips for mobile
                 TooltipManager.ShowTooltips = false;
 
@@ -863,7 +995,8 @@ module powerbi.visuals {
                     }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.table,
                     () => new Table({
-                        isTouchEnabled: true
+                        isTouchEnabled: true,
+                        isConditionalFormattingEnabled: conditionalFormattingEnabled,
                     }));
                 createPlugin(this.visualPlugins, powerbi.visuals.plugins.map,
                     () => new Map({

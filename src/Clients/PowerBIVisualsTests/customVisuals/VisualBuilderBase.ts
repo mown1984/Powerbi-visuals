@@ -27,12 +27,14 @@
 module powerbitests.customVisuals {
     export class VisualBuilderBase<T extends powerbi.IVisual> {
         public element: JQuery;
+        public viewport: powerbi.IViewport;
+        public host: powerbi.IVisualHostServices;
+        public interactivity: powerbi.InteractivityOptions;
+        public animation: powerbi.AnimationOptions;
 
         protected isMinervaVisualPlugin: boolean = false;
         protected visual: T;
-        protected host: powerbi.IVisualHostServices;
         protected style: powerbi.IVisualStyle;
-        protected viewport: powerbi.IViewport;
 
         constructor(
             height: number = 200,
@@ -55,20 +57,44 @@ module powerbitests.customVisuals {
                 element: this.element,
                 host: this.host,
                 style: this.style,
-                viewport: this.viewport
+                viewport: this.viewport,
+                interactivity: this.interactivity,
+                animation: this.animation
             });
         }
 
-        public update(dataViews: powerbi.DataView[]): void {
+        public update(dataView: powerbi.DataView[] | powerbi.DataView): void {
             this.visual.update(<powerbi.VisualUpdateOptions>{
-                dataViews: dataViews,
+                dataViews: _.isArray(dataView) ? dataView : [dataView],
                 viewport: this.viewport
             });
         }
 
-        public updateRenderTimeout(dataViews: powerbi.DataView[], fn: Function): number {
+        public updateRenderTimeout(dataViews: powerbi.DataView[] | powerbi.DataView, fn: Function, timeout?: number): number {
             this.update(dataViews);
-            return helpers.renderTimeout(fn);
+            return helpers.renderTimeout(fn, timeout);
+        }
+
+        public updateEnumerateObjectInstancesRenderTimeout(
+            dataViews: powerbi.DataView[] | powerbi.DataView,
+            options: powerbi.EnumerateVisualObjectInstancesOptions,
+            fn: (enumeration: powerbi.VisualObjectInstance[] | powerbi.VisualObjectInstanceEnumeration) => void,
+            timeout?: number): number {
+
+            this.update(dataViews);
+            let enumeration = this.enumerateObjectInstances(options);
+            return helpers.renderTimeout(() => fn(enumeration), timeout);
+        }
+
+        public updateflushAllD3Transitions(dataViews: powerbi.DataView[] | powerbi.DataView): void {
+            this.update(dataViews);
+            powerbi.visuals.SVGUtil.flushAllD3Transitions();
+        }
+
+        public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions): powerbi.VisualObjectInstance[] | powerbi.VisualObjectInstanceEnumeration {
+
+            debug.assertValue(this.visual.enumerateObjectInstances, "enumerateObjectInstances is not defined");
+            return this.visual.enumerateObjectInstances(options);
         }
     }
 }

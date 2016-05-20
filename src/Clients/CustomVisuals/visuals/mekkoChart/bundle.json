@@ -22,9 +22,9 @@
             "thumbnail": "mekkoillustration.png"
         },
         "code": {
-            "typeScript": "MekkoChart.ts",
-            "javaScript": "MekkoChart.js",
-            "css": "MekkoChart.css"
+            "typeScript": "mekkoChart.ts",
+            "javaScript": "mekkoChart.js",
+            "css": "mekkoChart.css"
         }
     }
 }

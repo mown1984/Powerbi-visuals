@@ -109,7 +109,7 @@ module powerbi {
             }
 
             PowerBIErrorDetailHelper.addAdditionalInfo(errorDetails, this.m_serviceError.errorDetails, resourceProvider);
-            PowerBIErrorDetailHelper.addMessageAndStackTrace(errorDetails, this.m_serviceError.message || null, this.m_serviceError.stackTrace || null, resourceProvider);
+            PowerBIErrorDetailHelper.addDebugErrorInfo(errorDetails, this.code, this.m_serviceError.message || null, this.m_serviceError.stackTrace || null);
 
             return errorDetails;
         }
@@ -127,27 +127,24 @@ module powerbi {
                         errorInfoValue: element.detail.type === PowerBIErrorResourceType.ResourceCodeReference ? localize.get(PowerBIErrorDetailHelper.serverErrorPrefix + element.detail.value) : element.detail.value
                     };
 
-                    errorDetails.additionalErrorInfo.push(additionErrorInfoKeyValuePair);
+                    errorDetails.displayableErrorInfo.push(additionErrorInfoKeyValuePair);
                 }
             }
             return errorDetails;
         }
 
-        public static addMessageAndStackTrace(errorDetails: ErrorDetails, message: string, stackTrace: string, localize: IStringResourceProvider): ErrorDetails {
+        public static addDebugErrorInfo(errorDetails: ErrorDetails, errorCode: string, message: string, stackTrace: string): ErrorDetails {
+            errorDetails.debugErrorInfo = errorDetails.debugErrorInfo || [];
+            if (errorCode) {
+                errorDetails.debugErrorInfo.push({ errorInfoKey: ClientErrorStrings.ClientErrorCode, errorInfoValue: errorCode, });
+            }
             if (message) {
-                let additionErrorInfoKeyValuePair = {
-                    errorInfoKey: localize.get("AdditionalErrorInfo_ErrorDetailsText"),
-                    errorInfoValue: message
-                };
-                errorDetails.additionalErrorInfo.push(additionErrorInfoKeyValuePair);
+                errorDetails.debugErrorInfo.push({ errorInfoKey: ClientErrorStrings.ErrorDetails, errorInfoValue: message, });
             }
             if (stackTrace) {
-                let additionErrorInfoKeyValuePair = {
-                    errorInfoKey: localize.get("AdditionalErrorInfo_StackTraceText"),
-                    errorInfoValue: stackTrace
-                };
-                errorDetails.additionalErrorInfo.push(additionErrorInfoKeyValuePair);
+                errorDetails.debugErrorInfo.push({ errorInfoKey: ClientErrorStrings.StackTrace, errorInfoValue: stackTrace, });
             }
+
             return errorDetails;
         }
 
@@ -161,7 +158,7 @@ module powerbi {
 
             let errorDetails: ErrorDetails = {
                 message: message,
-                additionalErrorInfo: additionalInfo,
+                displayableErrorInfo: additionalInfo,
             };
 
             return errorDetails;
@@ -212,7 +209,7 @@ module powerbi {
 
             let errorDetails: ErrorDetails = {
                 message: message,
-                additionalErrorInfo: additionalInfo,
+                displayableErrorInfo: additionalInfo,
             };
 
             return errorDetails;

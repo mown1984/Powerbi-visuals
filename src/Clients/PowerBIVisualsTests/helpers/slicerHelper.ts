@@ -104,6 +104,17 @@ module powerbitests.slicerHelper {
         return dataView;
     }
 
+    export function buildDataViewWithSelfFilter(orientation: SlicerOrientation, field: SQExpr): powerbi.DataView {
+        let dataViewMetadata: powerbi.DataViewMetadata = buildDefaultDataViewMetadata();
+        let dataViewCategorical: powerbi.DataViewCategorical = buildDefaultDataViewCategorical(field);
+        let dataView: powerbi.DataView = {
+            metadata: dataViewMetadata,
+            categorical: dataViewCategorical
+        };
+        dataView.metadata.objects = buildDefaultDataViewObjects(orientation, true, false, true);
+        return dataView;
+    }
+
     export function buildBooleanValuesDataView(field: SQExpr): powerbi.DataView {
         let dataViewMetadata: powerbi.DataViewMetadata = buildBooleanValueDataViewMetadata();
         let dataViewCategorical: powerbi.DataViewCategorical = buildBooleanValuesDataViewCategorical(field);
@@ -155,10 +166,11 @@ module powerbitests.slicerHelper {
         return dataView;
     }
 
-    export function buildDefaultDataViewObjects(orientation?: SlicerOrientation, selectAllCheckboxEnabled: boolean = true, singleSelect: boolean = false): powerbi.DataViewObjects {
+    export function buildDefaultDataViewObjects(orientation?: SlicerOrientation, selectAllCheckboxEnabled: boolean = true, singleSelect: boolean = false, selfFilterEnabled: boolean = false): powerbi.DataViewObjects {
         return {
             general: {
                 orientation: orientation ? orientation : SlicerOrientation.Vertical,
+                selfFilterEnabled: selfFilterEnabled,
             },
             selection: {
                 selectAllCheckboxEnabled: selectAllCheckboxEnabled,

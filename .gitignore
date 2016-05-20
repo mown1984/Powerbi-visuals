@@ -75,6 +75,7 @@ bld/
 src/Clients/CustomVisuals/services/*.js
 src/Clients/CustomVisuals/visuals/*/release
 src/Clients/CustomVisuals/visuals/*/package/package.json
+src/Clients/CustomVisuals/visuals/*/package/**/*.ts
 src/Clients/CustomVisuals/visuals/**/*.js
 src/Clients/CustomVisuals/visuals/**/*.css
 

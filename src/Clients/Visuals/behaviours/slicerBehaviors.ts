@@ -54,9 +54,19 @@ module powerbi.visuals {
             this.behavior.renderSelection(hasSelection);
         }
 
-        public static bindSlicerEvents(slicerContainer: D3.Selection, slicers: D3.Selection, slicerClear: D3.Selection, selectionHandler: ISelectionHandler, slicerSettings: SlicerSettings, interactivityService: IInteractivityService): void {
+        public static bindSlicerEvents(
+            slicerContainer: D3.Selection,
+            slicers: D3.Selection,
+            slicerClear: D3.Selection,
+            selectionHandler: ISelectionHandler,
+            slicerSettings: SlicerSettings,
+            interactivityService: IInteractivityService,
+            slicerSearch?: D3.Selection): void {
             SlicerWebBehavior.bindSlicerItemSelectionEvent(slicers, selectionHandler, slicerSettings, interactivityService);
             SlicerWebBehavior.bindSlicerClearEvent(slicerClear, selectionHandler);
+            if (slicerSearch)
+                SlicerWebBehavior.bindSlicerSearchEvent(slicerSearch, selectionHandler);
+
             SlicerWebBehavior.styleSlicerContainer(slicerContainer, interactivityService);
         }
 
@@ -141,6 +151,18 @@ module powerbi.visuals {
                     selectionHandler.persistSelectionFilter(slicerProps.filterPropertyIdentifier);
                 });
             }
+        }
+        
+        private static bindSlicerSearchEvent(slicerSearch: D3.Selection, selectionHandler: ISelectionHandler): void {
+            if (!slicerSearch.empty())
+                slicerSearch.on('mousedown', () => {
+                    d3.event.stopPropagation();
+                }).on('keydown', () => {
+                    if (d3.event.ctrlKey && jsCommon.KeyUtils.isCtrlDefaultKey(d3.event.keyCode))
+                        d3.event.stopPropagation();
+                    else if (jsCommon.KeyUtils.isArrowKey(d3.event.keyCode))
+                        d3.event.stopPropagation();
+                });
         }
 
         private static styleSlicerContainer(slicerContainer: D3.Selection, interactivityService: IInteractivityService) {

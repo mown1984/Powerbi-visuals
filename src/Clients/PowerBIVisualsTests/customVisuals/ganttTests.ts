@@ -254,9 +254,5 @@ module powerbitests.customVisuals {
         private build(): void {
             this.visual = new VisualClass();
         }
-
-        public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions): powerbi.VisualObjectInstanceEnumeration {
-            return this.visual.enumerateObjectInstances(options);
-        }
     }
 }

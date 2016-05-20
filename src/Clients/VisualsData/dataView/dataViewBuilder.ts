@@ -190,9 +190,9 @@ module powerbi.data {
 
         private fillData(dataViewValues: DataViewValueColumns) {
             let categoryColumn = _.first(this.categories);
-            let categoryLength = (categoryColumn && categoryColumn.values) ? categoryColumn.values.length : 1;
+            let categoryLength = (categoryColumn && categoryColumn.values) ? categoryColumn.values.length : 0;
 
-            if (this.hasDynamicSeries) {
+            if (this.hasDynamicSeries()) {
                 for (let seriesIndex = 0; seriesIndex < this.dynamicSeriesMetadata.values.length; seriesIndex++) {
                     let seriesMeasures = this.dynamicSeriesValues[seriesIndex];
                     debug.assert(seriesMeasures.length === this.dynamicMeasureColumns.length, 'seriesMeasures.length === this.dynamicMeasureColumns.length');
@@ -205,9 +205,9 @@ module powerbi.data {
                 }
             }
 
-            if (this.hasStaticSeries) {
+            if (this.hasStaticSeries()) {
                 // Note: when the target categorical has both dynamic and static series, append static measures at the end of the values array.
-                let staticColumnsStartingIndex = this.hasDynamicSeries ? (this.dynamicSeriesValues.length * this.dynamicMeasureColumns.length) : 0;
+                let staticColumnsStartingIndex = this.hasDynamicSeries() ? (this.dynamicSeriesValues.length * this.dynamicMeasureColumns.length) : 0;
 
                 for (let measureIndex = 0, measuresLen = this.staticMeasureColumns.length; measureIndex < measuresLen; measureIndex++) {
                     applySeriesData(dataViewValues[staticColumnsStartingIndex + measureIndex], this.staticSeriesValues[measureIndex], categoryLength);
@@ -231,7 +231,7 @@ module powerbi.data {
                 pushIfNotExists(metadataColumns, columnMetadata.source);
             }
 
-            if (this.hasDynamicSeries) {
+            if (this.hasDynamicSeries()) {
                 // Dynamic series, or Dyanmic & Static series.
                 pushIfNotExists(metadataColumns, dynamicSeriesMetadata.column);
 
@@ -256,8 +256,8 @@ module powerbi.data {
                     }
                 }
 
-                if (this.hasStaticSeries) {
-                    // IMPORTANT: In the Dyanmic & Static series case, the groups array shall not include any static group. This is to match the behavior of dsrReader.
+                if (this.hasStaticSeries()) {
+                    // IMPORTANT: In the Dyanmic & Static series case, the groups array shall not include any static group. This is to match the behavior of production code that creates query DataView objects.
                     // Get the current return value of grouped() before adding static measure columns, an use that as the return value of this categorical.
                     // Otherwise, the default behavior of DataViewValueColumns.grouped() from DataViewTransform.createValueColumns() is to create series groups from all measure columns.
                     let dynamicSeriesGroups = categorical.values.grouped();
@@ -307,7 +307,7 @@ module powerbi.data {
         }
 
         private isLegalDataView(dataView: DataView): boolean {
-            if (this.hasDynamicSeries && this.hasStaticSeries && CategoricalDataViewBuilder.isVisualDataView(dataView.metadata.columns)) {
+            if (this.hasDynamicSeries() && this.hasStaticSeries() && CategoricalDataViewBuilder.isVisualDataView(dataView.metadata.columns)) {
                 // It is illegal to have both dynamic series and static series in a visual DataViewCategorical,
                 // because the DataViewValueColumns interface today cannot express that 100% (see its 'source' property and return value of its 'grouped()' function).
                 return false;
@@ -317,7 +317,7 @@ module powerbi.data {
         }
 
         /**
-         * This function infers that if any metdata column has 'queryName', 
+         * This function infers that if any metadata column has 'queryName', 
          * then the user of this builder is building a visual DataView (as opposed to query DataView).
          *
          * @param metadataColumns The complete collection of metadata columns in the categorical.
@@ -327,11 +327,11 @@ module powerbi.data {
                 _.any(metadataColumns, (metadataColumn) => !!metadataColumn.queryName);
         }
 
-        private get hasDynamicSeries(): boolean {
+        private hasDynamicSeries(): boolean {
             return !!this.dynamicSeriesMetadata; // In Map visual scenarios, you can have dynamic series without measure columns
         }
 
-        private get hasStaticSeries(): boolean {
+        private hasStaticSeries(): boolean {
             return !!this.staticSeriesValues;
         }
     }
@@ -367,7 +367,7 @@ module powerbi.data {
         debug.assertValue(categoryLength, 'categoryLength');
 
         let values = source.values;
-        debug.assert(categoryLength === values.length, 'categoryLength === values.length');
+        debug.assert(categoryLength === values.length || categoryLength === 0, 'categoryLength === values.length || categoryLength === 0');
 
         target.values = values;
 

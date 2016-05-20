@@ -28,6 +28,7 @@ module powerbi.visuals {
     export interface VerticalSlicerBehaviorOptions extends SlicerBehaviorOptions {
         itemContainers: D3.Selection;
         itemInputs: D3.Selection;
+        searchInput: D3.Selection;
     }
 
     export class VerticalSlicerWebBehavior implements IInteractiveBehavior {
@@ -46,7 +47,7 @@ module powerbi.visuals {
             this.interactivityService = options.interactivityService;
             this.settings = options.settings;
 
-            SlicerWebBehavior.bindSlicerEvents(options.slicerContainer, slicers, options.clear, selectionHandler, this.settings, this.interactivityService);
+            SlicerWebBehavior.bindSlicerEvents(options.slicerContainer, slicers, options.clear, selectionHandler, this.settings, this.interactivityService, options.searchInput);
         }
 
         public renderSelection(hasSelection: boolean): void {

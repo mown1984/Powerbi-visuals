@@ -66,6 +66,8 @@ module powerbitests {
         let nullMeasureColumn: powerbi.DataViewMetadataColumn = { displayName: null, queryName: 'selectNull', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), roles: { Y: true } };
         let measureWithFormatString: powerbi.DataViewMetadataColumn = { displayName: 'tax', queryName: 'selectTax', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), format: '$0', roles: { Y: true } };
 
+        let tooltipsWithFormatString: powerbi.DataViewMetadataColumn = { displayName: 'tooltips', queryName: 'tooltips', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), format: '$0', roles: { Tooltips: true } };
+
         let measureColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'A', roles: { Y: true }  };
         let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'B', roles: { Y: true }  };
         let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales', roles: { Series: true } });
@@ -2555,15 +2557,18 @@ module powerbitests {
                         }, {
                             source: Prototype.inherit(measure2Column, c => c.roles = { 'Gradient': true }),
                             values: [75, 50],
+                        }, {
+                            source: Prototype.inherit(tooltipsWithFormatString, c => c.roles = { 'Tooltips': true }),
+                            values: [10, -20],
                         }])
                 }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            let data = ColumnChart.converter(dataView, colors);
+            let data = ColumnChart.converter(dataView, colors, false, false, null, null, null, /* tooltipsEnabled */true, /* tooltipBucketEnabled */true);
 
-            expect(data.series[0].data[0].tooltipInfo).toEqual([{ displayName: 'year', value: '2011' }, { displayName: 'sales', value: '$100' }, { displayName: 'tax', value: '75' }]);
-            expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: 'year', value: '2012' }, { displayName: 'sales', value: '$200' }, { displayName: 'tax', value: '50' }]);
+            expect(data.series[0].data[0].tooltipInfo).toEqual([{ displayName: 'year', value: '2011' }, { displayName: 'sales', value: '$100' }, { displayName: 'tax', value: '75' }, { displayName: 'tooltips', value: '$10' }]);
+            expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: 'year', value: '2012' }, { displayName: 'sales', value: '$200' }, { displayName: 'tax', value: '50' }, { displayName: 'tooltips', value: '-$20' }]);
         });
 
         it('Gradient and Y have the index - validate tool tip', () => {
@@ -2580,17 +2585,20 @@ module powerbitests {
                     }],
                     values: DataViewTransform.createValueColumns([
                         {
-                            source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true, 'Gradient': true }),
+                            source: Prototype.inherit(measureColumn, c => c.roles = { 'Y': true, 'Gradient': true}),
                             values: [100, 200],
+                        }, {
+                            source: Prototype.inherit(tooltipsWithFormatString, c => c.roles = { 'Tooltips': true }),
+                            values: [null, Infinity],
                         }])
                 }
             };
 
             let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
-            let data = ColumnChart.converter(dataView, colors);
+            let data = ColumnChart.converter(dataView, colors, /*is100PercentStacked*/ false, /*isScalar*/ false, /*dataViewMetadata*/null, /*chartType*/null, /*interactivityService*/null, /* tooltipsEnabled */true, /* tooltipBucketEnabled */true);
 
             expect(data.series[0].data[0].tooltipInfo).toEqual([{ displayName: 'year', value: '2011' }, { displayName: 'sales', value: '$100' }]);
-            expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: 'year', value: '2012' }, { displayName: 'sales', value: '$200' }]);
+            expect(data.series[0].data[1].tooltipInfo).toEqual([{ displayName: 'year', value: '2012' }, { displayName: 'sales', value: '$200' }, { displayName: 'tooltips', value: '+Infinity' }]);
         });
 
         it('single measure with infinite value', () => {

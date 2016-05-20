@@ -184,6 +184,7 @@ module powerbi.visuals {
         private valueAxisProperties: DataViewObject;
         private animator: IGenericAnimator;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
 
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
@@ -194,6 +195,7 @@ module powerbi.visuals {
         constructor(options: ScatterChartConstructorOptions) {
             if (options) {
                 this.tooltipsEnabled = options.tooltipsEnabled;
+                this.tooltipBucketEnabled = options.tooltipBucketEnabled;
                 this.interactivityService = options.interactivityService;
                 this.animator = options.animator;
             }
@@ -255,7 +257,7 @@ module powerbi.visuals {
             return objectProperties;
         }
 
-        public static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled: boolean = true): ScatterChartData {
+        public static converter(dataView: DataView, options: ScatterConverterOptions, playFrameInfo?: PlayFrameInfo, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): ScatterChartData {
             let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let categoryValues: any[],
                 categoryFormatter: IValueFormatter,
@@ -314,7 +316,8 @@ module powerbi.visuals {
                 categoryQueryName,
                 objProps.colorByCategory,
                 playFrameInfo,
-                tooltipsEnabled);
+                tooltipsEnabled,
+                tooltipBucketEnabled);
             let dataPoints = _.reduce(dataPointSeries, (a, s) => a.concat(s.dataPoints), []);
 
             let legendItems = hasDynamicSeries
@@ -395,7 +398,8 @@ module powerbi.visuals {
             categoryQueryName: string,
             colorByCategory: boolean,
             playFrameInfo: PlayFrameInfo,
-            tooltipsEnabled: boolean): ScatterChartDataPointSeries[] {
+            tooltipsEnabled: boolean,
+            tooltipBucketEnabled?: boolean): ScatterChartDataPointSeries[] {
 
             let hasX = reader.hasValues("X");
             let hasY = reader.hasValues("Y");
@@ -495,7 +499,7 @@ module powerbi.visuals {
                                     displayName: dataValueSource.displayName,
                                     value: converterHelper.formatFromMetadataColumn(grouping.name, dataValueSource, formatStringProp),
                                 });
-                    }
+                            }
                         }
 
                         if (measureX && xVal != null) {
@@ -510,28 +514,44 @@ module powerbi.visuals {
                                 displayName: measureY.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(yVal, measureY.source, formatStringProp),
                             });
-                    }
+                        }
 
                         if (measureSize && measureSize.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: measureSize.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(measureSize.values[categoryIndex], measureSize.source, formatStringProp),
                             });
-                    }
+                        }
 
                         if (gradientValueColumn && gradientValueColumn.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: gradientValueColumn.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[categoryIndex], gradientValueColumn.source, formatStringProp),
                             });
-                    }
+                        }
 
-                    if (playFrameInfo) {
+                        if (playFrameInfo) {
                             tooltipInfo.push({
                                 displayName: playFrameInfo.column.displayName,
                                 value: converterHelper.formatFromMetadataColumn(playFrameInfo.label, playFrameInfo.column, formatStringProp),
                             });
-                    }
+                        }
+
+                        if (tooltipBucketEnabled) {
+                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, seriesIndex);
+                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", seriesIndex);
+
+                            if (tooltipValues && tooltipMetadataColumns) {
+                                for (let j = 0; j < tooltipValues.length; j++) {
+                                    if (tooltipValues[j] != null) {
+                                        tooltipInfo.push({
+                                            displayName: tooltipMetadataColumns[j].displayName,
+                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     let dataPoint: ScatterChartDataPoint = {
@@ -717,7 +737,7 @@ module powerbi.visuals {
                         let playData = this.playAxis.setData(
                             dataView,
                             (dataView: DataView, playFrameInfo?: PlayFrameInfo) =>
-                                ScatterChart.converter(dataView, converterOptions, playFrameInfo, this.tooltipsEnabled));
+                                ScatterChart.converter(dataView, converterOptions, playFrameInfo, this.tooltipsEnabled, this.tooltipBucketEnabled));
                         this.mergeSizeRanges(playData);
                         this.data = playData.currentViewModel;
 
@@ -730,7 +750,7 @@ module powerbi.visuals {
                         }
 
                         if (dataView.categorical && dataView.categorical.values) {
-                            this.data = ScatterChart.converter(dataView, converterOptions, undefined, this.tooltipsEnabled);
+                            this.data = ScatterChart.converter(dataView, converterOptions, undefined, this.tooltipsEnabled, this.tooltipBucketEnabled);
                         }
                     }
                 }

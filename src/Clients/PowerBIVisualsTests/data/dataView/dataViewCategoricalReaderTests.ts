@@ -94,6 +94,22 @@ module powerbitests {
                 executeAllMethods(reader);
             });
 
+            it('Empty categorical.values', () => {
+                let reader = createIDataViewCategoricalReader({
+                    metadata: dataViewMetadataTwoColumn,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadataTwoColumn.columns[0],
+                            values: ["abc", "def"],
+                            identity: [mocks.dataViewScopeIdentity("abc"), mocks.dataViewScopeIdentity("def")],
+                            identityFields: [categoryColumnRef]
+                        }],
+                        values: DataViewTransform.createValueColumns([])
+                    }
+                });
+                executeAllMethods(reader);
+            });
+
             it('No categories', () => {
                 let reader = createIDataViewCategoricalReader({
                     metadata: dataViewMetadataTwoColumn,
@@ -195,12 +211,14 @@ module powerbitests {
         
         // Value/measure methods
         reader.hasValues("");
+        reader.hasHighlights("");
         reader.getValue("", 0);
         reader.getAllValuesForRole("", 0);
         reader.getFirstNonNullValueForCategory("", 0);
         reader.getMeasureQueryName("");
         reader.getValueColumn("");
         reader.getValueMetadataColumn("");
+        reader.getAllValueMetadataColumnsForRole("", 0);
         reader.getValueDisplayName("");
         
         // Series methods

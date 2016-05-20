@@ -48,6 +48,7 @@ module powerbi.visuals {
         import SQExprBuilder = powerbi.data.SQExprBuilder;
         import DataViewObjectPropertyDefinition = powerbi.data.DataViewObjectPropertyDefinition;
         const DefaultMidColor: string = "#ffffff";
+        const DefaultColor: string = DefaultMidColor;
         const DataPointPropertyIdentifier: string = "dataPoint";
         const FillRulePropertyIdentifier: string = "fillRule";
 
@@ -275,14 +276,19 @@ module powerbi.visuals {
             };
         }
 
-       /** Returns a string representing the gradient to be used for the GradientBar directive. */
-       export function getGradientBarColors(gradientSettings: GradientSettings): string {
+        /** Returns a string representing the gradient to be used for the GradientBar directive. */
+        export function getGradientBarColors(gradientSettings: GradientSettings): string {
             let colors: string[] = [];
+            gradientSettings.minColor = gradientSettings.minColor || DefaultColor;
             colors.push(gradientSettings.minColor);
+
             if (gradientSettings.diverging) {
-                colors.push(gradientSettings.midColor);
+                gradientSettings.midColor = gradientSettings.midColor || DefaultColor;
+                colors.push(gradientSettings.midColor || DefaultColor);
             }
-            colors.push(gradientSettings.maxColor);
+
+            gradientSettings.maxColor = gradientSettings.maxColor || DefaultColor;
+            colors.push(gradientSettings.maxColor || DefaultColor);
             return colors.join(",");
         }
 

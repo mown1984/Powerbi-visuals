@@ -32,14 +32,15 @@ module powerbitests.customVisuals {
 	powerbitests.mocks.setLocale();
 	
     describe("RadarChart", () => {
+        let visualBuilder: RadarChartBuilder;
+        let dataView: powerbi.DataView;
+        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
 
-            let visualBuilder: RadarChartBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new RadarChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData().getDataView()];
-            });
+        beforeEach(() => {
+            visualBuilder = new RadarChartBuilder(500, 1000);
+            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData();
+            dataView = dataViewBuilder.getDataView();
+        });
 
         describe('Capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
@@ -53,38 +54,35 @@ module powerbitests.customVisuals {
                 expect($(visualBuilder.mainElement[1]).attr('class')).toBe('legend');
             });
 
-            it("update", (done) => {                
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+            it("update", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.find("g.axis").children("text.axisLabel").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
                     expect(visualBuilder.mainElement.find("g.chartNode").first().children("circle.chartDot").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("update with empty data point", (done) => {
-                dataViews[0].categorical.values[0].values[2] = null;
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                dataView.categorical.values[0].values[2] = null;
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.find("g.axis").children("text.axisLabel").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
                     expect(visualBuilder.mainElement.find("g.chartNode").first().children("circle.chartDot").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length - 1);
+                        .toBe(dataView.categorical.categories[0].values.length - 1);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
 
         describe("Drawing tests", () => {
 
             it("data points highlights", (done) => {
-                visualBuilder.update(dataViews);
-                let firstPoint = visualBuilder.mainElement.find("circle.chartDot").first();
-                let secondPoint = visualBuilder.mainElement.find("circle.chartDot").last();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let firstPoint = visualBuilder.mainElement.find("circle.chartDot").first();
+                    let secondPoint = visualBuilder.mainElement.find("circle.chartDot").last();
 
-                setTimeout(() => {
                     expect(firstPoint.css("opacity")).toBe("1");
                     expect(secondPoint.css("opacity")).toBe("1");
 
@@ -92,17 +90,15 @@ module powerbitests.customVisuals {
                     expect(firstPoint.css("opacity")).toBe("1");
 
                     // The value is approximate because of the chutzpah test. In the browser, the test passes with the specific value (0.4).
-                    expect(secondPoint.css("opacity")).toBe("0.4000000059604645");
+                    expect(Math.round((parseFloat(secondPoint.css("opacity"))*100))/100).toBe(0.4);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("legend highlights", (done) => {
-                RadarChartHelper.changeDataColor(dataViews, "#123123");
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                RadarChartBuilder.changeDataColor(dataView, "#123123");
+                 visualBuilder.updateRenderTimeout(dataView, () => {
                     let firstLegendItem = visualBuilder.mainElement.find("circle.legendIcon").first();
                     let secondLegendItem = visualBuilder.mainElement.find("circle.legendIcon").last();
                     let notSelectedColor = "#a6a6a6";
@@ -115,16 +111,15 @@ module powerbitests.customVisuals {
                     ColorAssert(secondLegendItem.css("fill"), secondItemColorBeforeSelection);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("interactivity legend highlights", (done) => {
-                visualBuilder.update(dataViews);
-                let firstPoint = visualBuilder.mainElement.find("circle.chartDot").first();
-                let secondPoint = visualBuilder.mainElement.find("circle.chartDot").last();
-                let firstLegendItem = visualBuilder.mainElement.find("circle.legendIcon").first();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let firstPoint = visualBuilder.mainElement.find("circle.chartDot").first();
+                    let secondPoint = visualBuilder.mainElement.find("circle.chartDot").last();
+                    let firstLegendItem = visualBuilder.mainElement.find("circle.legendIcon").first();
 
-                setTimeout(() => {
                     expect(firstPoint.css("opacity")).toBe("1");
                     expect(secondPoint.css("opacity")).toBe("1");
 
@@ -132,10 +127,10 @@ module powerbitests.customVisuals {
                     expect(firstPoint.css("opacity")).toBe("1");
 
                     // The value is approximate because of the chutzpah test. In the browser, the test passes with the specific value (0.4).
-                    expect(secondPoint.css("opacity")).toBe("0.4000000059604645");
+                    expect(Math.round((parseFloat(secondPoint.css("opacity"))*100))/100).toBe(0.4);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
 
@@ -143,31 +138,29 @@ module powerbitests.customVisuals {
             describe('Legend', () => {
 
                 it("show legend on", (done) => {
-                    dataViews[0].metadata.objects =
+                    dataView.metadata.objects =
                     {
                         legend: {
                             show: true
                         }
                     };
-                    visualBuilder.update(dataViews);
-                    setTimeout(() => {
-                        expect(visualBuilder.mainElement.find("g#legendGroup").children.length).toBe(dataViews[0].categorical.values.length);
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        expect(visualBuilder.mainElement.find("g#legendGroup").children.length).toBe(dataView.categorical.values.length);
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("show legend off", (done) => {
-                    dataViews[0].metadata.objects =
+                    dataView.metadata.objects =
                     {
                         legend: {
                             show: false
                         }
                     };
-                    visualBuilder.update(dataViews);
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(visualBuilder.mainElement.find("g#legendGroup")).toBeEmpty();
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
             });
 
@@ -176,95 +169,84 @@ module powerbitests.customVisuals {
                 it("change data color", (done) => {
 
                     // Init by one color
-                    RadarChartHelper.changeDataColor(dataViews, "#123123");
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    RadarChartBuilder.changeDataColor(dataView, "#123123");
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let polygon = visualBuilder.mainElement.find('.chartPolygon').first();
                         ColorAssert(polygon.css("fill"), "#123123");
 
                         // Change data color
-                        RadarChartHelper.changeDataColor(dataViews, "#ab1234");
-                        visualBuilder.update(dataViews);
+                        RadarChartBuilder.changeDataColor(dataView, "#ab1234");
+                        visualBuilder.update(dataView);
                         let polygonAfterUpdate = visualBuilder.mainElement.find('.chartPolygon').first();
                         ColorAssert(polygonAfterUpdate.css("fill"), "#ab1234");
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
             });
 
             describe("Data Labels", () => {
 
                 it("nodes labels on", done => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(visualBuilder.mainElement.find("g.labels").length).toBe(1);
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("nodes labels off", done => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: false
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(visualBuilder.mainElement.find("g.labels").length).toBe(0);
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("nodes labels change color", done => {
-                    RadarChartHelper.changeDataLabelColor(dataViews, "#123123");
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    RadarChartBuilder.changeDataLabelColor(dataView, "#123123");
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let dataLabel = visualBuilder.mainElement.find('.data-labels').first();
                         ColorAssert(dataLabel.css("fill"), "#123123");
+                        RadarChartBuilder.changeDataLabelColor(dataView, "#324435");
 
-                        RadarChartHelper.changeDataLabelColor(dataViews, "#324435");
-                        visualBuilder.update(dataViews);
+                        visualBuilder.updateRenderTimeout(dataView, () => {
+                            let dataLabelAfterUpdate = visualBuilder.mainElement.find('.data-labels').first();
 
-                        let dataLabelAfterUpdate = visualBuilder.mainElement.find('.data-labels').first();
-                        setTimeout(() => {
                             ColorAssert(dataLabelAfterUpdate.css("fill"), "#324435");
                             done();
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
+                        });
+                    });
                 });
 
                 it("nodes labels change font size", done => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true,
                             fontSize: 16
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let label = visualBuilder.mainElement.find('.data-labels').first();
                         expect(Math.round(parseInt(label.css('font-size'), 10))).toBe(Math.round(parseInt(PixelConverter.fromPoint(16), 10)));
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("nodes labels change percision - decimal places", done => {
                     let decimalPlaces = 4;
 
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true,
                             labelPrecision: decimalPlaces,
@@ -272,40 +254,36 @@ module powerbitests.customVisuals {
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let labelText = visualBuilder.mainElement.find('.data-labels').first().text();
                         let percisionValues = labelText.split('.');
                         expect(percisionValues[1].length).toBe(decimalPlaces);
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("nodes labels change display unit", done => {
                    
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true,
                             displayUnits: 2
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let labelText = visualBuilder.mainElement.find('.data-labels').first().text();
                         let lastChart = labelText.charAt(labelText.length-1);
                         expect(lastChart).toBe("K");
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
             });
         });
     });
 
     class RadarChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
@@ -318,19 +296,18 @@ module powerbitests.customVisuals {
         private build(): void {
             this.visual = new VisualClass();
         }
-    }
 
-    export module RadarChartHelper {
-        export function changeDataColor(dataViews: powerbi.DataView[], colorValue: string): void {
-            dataViews[0].categorical.values[0].source.objects = {
+        //Helpers
+        public static changeDataColor(dataView: powerbi.DataView, colorValue: string): void {
+            dataView.categorical.values[0].source.objects = {
                 dataPoint: {
                     fill: { solid: { color: colorValue } }
                 }
             };
         }
 
-        export function changeDataLabelColor(dataViews: powerbi.DataView[], colorValue: string): void {
-            dataViews[0].metadata.objects = {
+        public static changeDataLabelColor(dataView: powerbi.DataView, colorValue: string): void {
+            dataView.metadata.objects = {
                 labels: {
                     show: true,
                     color: { solid: { color: colorValue } }

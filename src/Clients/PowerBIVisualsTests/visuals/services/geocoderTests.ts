@@ -166,6 +166,124 @@ module powerbitests {
         });
     });
 
+    describe("Geocoding Tests", () => {
+        let savedBingAjaxService: services.BingAjaxService;
+        let geocoder: powerbi.IGeocoder;
+        let cache: _.Dictionary<powerbi.IGeocodeCoordinate>;
+
+        beforeEach(() => {
+            cache = {};
+
+            services.resetStaticGeocoderState({
+                getCoordinates: (key: string): powerbi.IGeocodeCoordinate => {
+                    return cache[key];
+                },
+
+                registerCoordinates: (key: string, coordinate: powerbi.IGeocodeCoordinate): void => {
+                    cache[key] = coordinate;
+                },
+            });
+
+            savedBingAjaxService = services.BingAjaxCall;
+
+            geocoder = services.createGeocoder();
+        });
+
+        afterEach(() => {
+            services.resetStaticGeocoderState(null);
+
+            services.BingAjaxCall = savedBingAjaxService;
+        });
+
+        it("Fake fetch from Bing", (done) => {
+            let expectedLocation: powerbi.IGeocodeCoordinate = {
+                latitude: -50,
+                longitude: 50,
+            };
+
+            services.BingAjaxCall = (url: string, settings: JQueryAjaxSettings) => {
+                return {
+                    then: (successFn, errorFn) => {
+                        successFn({
+                            resourceSets: [{
+                                resources: [{
+                                    point: {
+                                        type: "Point",
+                                        coordinates: [expectedLocation.latitude, expectedLocation.longitude]
+                                    },
+                                    entityType: "PopulatedPlace",
+                                }],
+                            }]
+                        });
+                    },
+                };
+            };
+
+            let resultLocation: powerbi.IGeocodeCoordinate;
+            geocoder.geocode("Redmond, WA", "City").then((location) => {
+                resultLocation = location;
+            });
+
+            setTimeout(() => {
+                expect(resultLocation).toEqual(expectedLocation);
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("Can cancel requests", (done) => {
+            let expectedLocation: powerbi.IGeocodeCoordinate = {
+                latitude: -50,
+                longitude: 50,
+            };
+
+            services.BingAjaxCall = (url: string, settings: JQueryAjaxSettings) => {
+                return {
+                    then: (successFn, errorFn) => {
+                        successFn({
+                            resourceSets: [{
+                                resources: [{
+                                    point: {
+                                        type: "Point",
+                                        coordinates: [expectedLocation.latitude, expectedLocation.longitude]
+                                    },
+                                    entityType: "PopulatedPlace",
+                                }],
+                            }]
+                        });
+                    },
+                };
+            };
+
+            // a fake "resolved" timeout
+            let timeout: powerbi.IPromise<any> = {
+                then: (successFn: (_: any) => any, errorFn: (_: any) => any) => {
+                    successFn(null);
+                    return <powerbi.IPromise<any>>null;
+                },
+
+                catch: null,
+                finally: (finallyFn: () => any) => {
+                    finallyFn();
+                    return <powerbi.IPromise<any>>null;
+                },
+            };
+
+            let resultLocation: powerbi.IGeocodeCoordinate;
+            let wasRejected: boolean;
+            geocoder.geocode("Redmond, WA", "City", { timeout: timeout }).then((location) => {
+                resultLocation = location;
+            }, () => {
+                wasRejected = true;
+            });
+
+            setTimeout(() => {
+                expect(resultLocation).toBeUndefined();
+                expect(wasRejected).toBe(true);
+                done();
+            }, DefaultWaitForRender);
+        });
+    });
+
     describe("GeocodePointQueryTests", () => {
         beforeEach(() => {
             MapUtil.Settings.BingKey = "testBingKey";

@@ -178,17 +178,9 @@ declare module powerbi {
         value?: any;
       
         /** 
-         * When used under the context of DataView.tree, this property contains all the values in this node. 
+         * This property contains all the values in this node. 
          * The key of each of the key-value-pair in this dictionary is the position of the column in the 
          * select statement to which the value belongs.
-         *
-         * When used under the context of DataView.matrix.rows (as DataViewMatrixNode), if this node represents the 
-         * inner-most dimension of row groups (i.e. a leaf node), then this property will contain the values at the 
-         * matrix intersection under the group.  The value type will be DataViewMatrixNodeValue, and their 
-         * valueSourceIndex property will contain the position of the column in the select statement to which the 
-         * value belongs.
-         *
-         * When used under the context of DataView.matrix.columns (as DataViewMatrixNode), this property is not used.
          */
         values?: { [id: number]: DataViewTreeNodeValue };
 
@@ -241,6 +233,16 @@ declare module powerbi {
     export interface DataViewMatrixNode extends DataViewTreeNode {
         /** Indicates the level this node is on. Zero indicates the outermost children (root node level is undefined). */
         level?: number;
+
+        children?: DataViewMatrixNode[];
+
+         /* If this DataViewMatrixNode represents the  inner-most dimension of row groups (i.e. a leaf node), then this property will contain the values at the 
+         * matrix intersection under the group. The valueSourceIndex property will contain the position of the column in the select statement to which the 
+         * value belongs.
+         *
+         * When this DataViewMatrixNode is used under the context of DataView.matrix.columns, this property is not used.
+         */
+        values?: { [id: number]: DataViewMatrixNodeValue };         
 
         /**
          * Indicates the source metadata index on the node's level. Its value is 0 if omitted.

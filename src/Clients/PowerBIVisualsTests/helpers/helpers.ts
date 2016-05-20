@@ -255,7 +255,7 @@ module powerbitests.helpers {
         return date;
     }
 
-    export function createMouseWheelEvent(eventName: string, delta: number): MouseWheelEvent {
+    export function createMouseWheelEvent(eventName: string, deltaX: number, deltaY: number, detail: number): MouseWheelEvent {
         let evt = document.createEvent("MouseEvents");
         evt.initMouseEvent(
             eventName,
@@ -275,7 +275,10 @@ module powerbitests.helpers {
             null   // EventTarget relatedTargetArg
         );
         let mouseEvt = <MouseWheelEvent>evt;
-        mouseEvt.wheelDelta = delta;
+        mouseEvt.wheelDelta = deltaY == null ? deltaX : deltaY;
+        mouseEvt.wheelDeltaX = deltaX;
+        mouseEvt.wheelDeltaY = deltaY;
+        mouseEvt.detail = detail;
 
         return mouseEvt;
     }

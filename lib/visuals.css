@@ -1192,25 +1192,25 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 .secondaryFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
 }
 .secondaryBoldFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font_bold', helvetica, arial, sans-serif;
 }
 .lightFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Light', 'wf_segoe-ui_light', helvetica, arial, sans-serif;
 }
 .semilightFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Semilight', 'wf_segoe-ui_semilight', helvetica, arial, sans-serif;
 }
 .regularFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
 }
 .semiboldFont {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Semibold', 'wf_segoe-ui_semibold', helvetica, arial, sans-serif;
 }
 .boldFontFamily {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Bold', 'wf_segoe-ui_bold', helvetica, arial, sans-serif;
 }
 .smallFontSize {
   font-size: 12px;
@@ -1220,6 +1220,54 @@ body {
 }
 .largeFontSize {
   font-size: 16px;
+}
+@font-face {
+  font-family: 'wf_segoe-ui_light';
+  src: local('Segoe UI Light'),local('Segoe WP Light'),local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_segoe-ui_semilight';
+  src: local('Segoe UI Semilight'),local('Segoe WP Light'),local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_segoe-ui_normal';
+  src: local('Segoe UI'),local('Segoe'),local('Segoe WP'),local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_segoe-ui_semibold';
+  src: local('Segoe UI Semibold'),local('Segoe Semibold'),local('Segoe WP Semibold'),local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_segoe-ui_bold';
+  src: local('Segoe UI bold'),local('Segoe bold'),local('Segoe WP bold'),local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_standard-font';
+  src: local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_standard-font_bold';
+  src: local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'wf_standard-font_light';
+  src: local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
 }
 /*
  *  Power BI KPI Glyphs
@@ -1276,6 +1324,12 @@ body {
 .kpi-visual-graph-grey {
   color: #5F6B6D;
   fill: #5F6B6D;
+}
+@font-face {
+  font-family: 'PowerVisuals';
+  src: local('helvetica'),local('arial'),local('sans-serif');
+  font-weight: normal;
+  font-style: normal;
 }
 .powervisuals-glyph {
   font-family: PowerVisuals;
@@ -1746,7 +1800,7 @@ body {
 }
 .visual .slicerHeader .clear {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -96px -80px;
+  background-position: 0px -96px;
   width: 13px;
   height: 12px;
   margin: 4px 8px 4px 2px;
@@ -1754,6 +1808,45 @@ body {
   cursor: pointer;
   display: block;
   visibility: hidden;
+}
+.visual .slicerHeader .searchHeader {
+  overflow: hidden;
+}
+.visual .slicerHeader .searchHeader.collapsed {
+  display: none;
+}
+.visual .slicerHeader .searchHeader.show {
+  display: -webkit-box;
+  display: flex;
+  justify-content: space-between;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  -ms-flex-wrap: nowrap;
+  width: calc(100% - 8px);
+  border: 1px solid;
+  height: 20px;
+}
+.visual .slicerHeader button {
+  background-image: url(../images/visuals.sprites.png);
+  background-position: -96px -48px;
+  width: 16px;
+  height: 16px;
+  margin: 4px 8px 4px 2px;
+  cursor: pointer;
+  margin: 0 8px;
+  flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+}
+.visual .slicerHeader input {
+  color: #333333;
+  cursor: auto;
+  align-self: center;
+  flex: 1 1 0px;
+  -ms-flex: 1 1 0px;
+  -webkit-flex: 1 1 0px;
+  border-style: none;
+  padding: 0;
 }
 .visual .slicerContainer.hasSelection:hover .clear,
 .visual .horizontalSlicerContainer.hasSelection:hover .clear {
@@ -1770,7 +1863,6 @@ body {
   cursor: pointer;
   -ms-box-orient: horizontal;
   display: -webkit-box !important;
-  display: -ms-flexbox !important;
   display: flex !important;
   justify-content: space-between;
   overflow: hidden;
@@ -1890,14 +1982,14 @@ body {
 }
 .visual .horizontalSlicerContainer .navigationArrow.right {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -62px -72px;
+  background-position: -48px -72px;
   width: 14px;
   height: 24px;
   margin-left: 5px;
 }
 .visual .horizontalSlicerContainer .navigationArrow.left {
   background-image: url(../images/visuals.sprites.png);
-  background-position: -48px -72px;
+  background-position: -62px -72px;
   width: 14px;
   height: 24px;
   margin-right: 5px;
@@ -2043,7 +2135,7 @@ body {
   stroke-opacity: 0.5;
 }
 .visual .cartesianChart .axisGraphicsContext {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   font-size: 11px;
 }
 .visual .cartesianChart .axisGraphicsContext text {
@@ -2070,7 +2162,7 @@ body {
 .visual .animatedNumber .mainText,
 .visual .card .mainText {
   fill: #333333;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font_light', helvetica, arial, sans-serif;
 }
 .visual .columnChart .interactive-hover-line {
   stroke: #666666;
@@ -2082,7 +2174,7 @@ body {
   opacity: 1;
 }
 .visual .dataDotChart .dataDotChartMainGraphicsContext {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   font-size: 11px;
 }
 .visual .dataDotChart .dataDotChartMainGraphicsContext .dot.null-value {
@@ -2145,10 +2237,10 @@ body {
 }
 .visual .funnelChart .percentBars text {
   text-anchor: middle;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
 }
 .visual .funnelChart .axis {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   font-size: 11px;
 }
 .visual .funnelChart .axis path {
@@ -2169,7 +2261,7 @@ body {
   stroke: white;
 }
 .visual .donutChart .labels text {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   font-size: 11px;
   fill: #777777;
 }
@@ -2182,15 +2274,15 @@ body {
   fill: #666666;
 }
 .visual .donutLegend .legend-item .category {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   color: #666666;
 }
 .visual .donutLegend .legend-item .percentage {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Light', 'wf_segoe-ui_light', helvetica, arial, sans-serif;
   /* No need for color, as it would be overriden afterwards */
 }
 .visual .donutLegend .legend-item .value {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   color: #666666;
 }
 .visual .scatterChart .mainGraphicsContext path {
@@ -2483,7 +2575,7 @@ body {
   fill: none;
 }
 .visual .treemap .labels {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   fill: #FFF;
   pointer-events: none;
 }
@@ -2502,17 +2594,22 @@ body {
   position: absolute;
 }
 .visual .interactive-legend .title {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
-  font-size: 16px;
+  font-family: 'Segoe UI Semibold', 'wf_segoe-ui_semibold', helvetica, arial, sans-serif;
+  font-size: 12px;
   color: #666666;
 }
 .visual .interactive-legend .item {
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   font-size: 12px;
   color: #666666;
   padding-right: 22px;
   padding-bottom: 0px;
   padding-top: 3px;
+}
+.visual .interactive-legend .itemMeasure {
+  font-family: 'Segoe UI Semibold', 'wf_segoe-ui_semibold', helvetica, arial, sans-serif;
+  font-size: 12px;
+  color: #666666;
 }
 .visual .interactive-legend .icon {
   display: inline-block;
@@ -2523,13 +2620,13 @@ body {
 .visual .labelGraphicsContext .label {
   font-size: 12px;
   text-anchor: middle;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
   pointer-events: none;
 }
 .visual .labelGraphicsContext .catagorylabel {
   font-size: 12px;
   text-anchor: middle;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
   pointer-events: none;
 }
 .visual .leader-lines .line-label {
@@ -2538,7 +2635,7 @@ body {
 .visual .data-labels {
   font-size: 12px;
   text-anchor: middle;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
   /* Enables tooltip when hovering on data label inside visual */
   pointer-events: none;
 }
@@ -2604,7 +2701,7 @@ body {
 }
 .visual .multiRowCard .card .title {
   font-size: 18px;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI Semibold', 'wf_segoe-ui_semibold', helvetica, arial, sans-serif;
   line-height: 24px;
   margin-bottom: 5px;
   overflow: hidden;
@@ -2730,6 +2827,19 @@ body {
 }
 .visual-sandbox .tooltip-container .tooltip-row {
   font-size: 9px;
+}
+div.debugVisual-controlsContainer {
+  background: #444444;
+  padding: 4px;
+}
+div.debugVisual-controlsContainer .controlBtn {
+  margin: 3px;
+  padding: 4px;
+  font-size: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  color: white;
+  cursor: pointer;
 }
 div.ql-toolbar {
   white-space: nowrap;
@@ -2903,7 +3013,7 @@ div.ql-toolbar.darkToolbar select.ql-picker {
 .tooltip-container div.tooltip-title-cell {
   display: table-cell;
   word-wrap: break-word;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
   text-transform: uppercase;
   max-width: 130px;
   padding-right: 12px;
@@ -2912,7 +3022,7 @@ div.ql-toolbar.darkToolbar select.ql-picker {
 .tooltip-container div.tooltip-value-cell {
   display: table-cell;
   word-wrap: break-word;
-  font-family: Segoe UI,Tahoma,Verdana,Geneva,sans-serif;
+  font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   max-width: 260px;
   font-weight: bold;
   color: #FFF;

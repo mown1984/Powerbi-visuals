@@ -40,7 +40,8 @@ module powerbitests {
                 {
                     displayName: "col1",
                     queryName: "col1",
-                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
+                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { Category: true },
                 },
                 {
                     displayName: "col2",

@@ -712,11 +712,9 @@ module powerbitests {
             it('legend dom validation three legend items last item name and measure', (done) => {
                 legend.drawLegend({ dataPoints: legendData }, viewport);
                 setTimeout(() => {
-                    expect($('.interactive-legend .title').text()).toBe(legendData[0].category);
-
-                    // last item is actually the second item since values should be placed in a two-row table.
-                    expect($('.interactive-legend .item').last().find('.itemName').text().trim()).toBe('California');
-                    expect($('.interactive-legend .item').last().find('.itemMeasure').text().trim()).toBe('5');
+                    expect($('.interactive-legend .title').text()).toBe(legendData[0].category);                    
+                    expect($('.interactive-legend .item').last().find('.itemName').text().trim()).toBe('Texas');
+                    expect($('.interactive-legend .item').last().find('.itemMeasure').text().trim()).toBe('10');
                     done();
                 }, DefaultWaitForRender);
             });
@@ -796,11 +794,7 @@ module powerbitests {
             let rearrangedItems = [];
             let rearrangedIcons = [];
 
-            for (let i = 0; i < len; i = i + 2) {
-                rearrangedItems.push($(items.get(i)));
-                rearrangedIcons.push($(icons.get(i)));
-            }
-            for (let i = 1; i < len; i = i + 2) {
+            for (let i = 0; i < len; i++) {
                 rearrangedItems.push($(items.get(i)));
                 rearrangedIcons.push($(icons.get(i)));
             }
@@ -812,7 +806,9 @@ module powerbitests {
 
                 expect(item.find('.itemName').text()).toBe(expectedDatum.label);
                 expect(item.find('.itemMeasure').text().trim()).toBe(expectedDatum.measure.toString());
-                expect(icon.attr('style').trim()).toBe(jsCommon.StringExtensions.format(colorStyle, expectedDatum.color));
+
+                let color = icon.attr('style').substring(icon.attr('style').indexOf('color:')).trim();
+                expect(color).toBe(jsCommon.StringExtensions.format(colorStyle, expectedDatum.color));
             }
         }
     });

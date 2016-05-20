@@ -57,7 +57,7 @@ module powerbitests.customVisuals.helpers {
             };
     }
 
-    export function renderTimeout(fn: Function): number {
-        return setTimeout(fn, powerbitests.DefaultWaitForRender);
+    export function renderTimeout(fn: Function, timeout: number = powerbitests.DefaultWaitForRender): number {
+        return setTimeout(fn, timeout);
     }
 }

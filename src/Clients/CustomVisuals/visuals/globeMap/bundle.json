@@ -22,9 +22,9 @@
             "thumbnail": "thumb.png"
         },
         "code": {
-            "typeScript": "GlobeMap.ts",
-            "javaScript": "GlobeMap.js",
-            "css": "GlobeMap.css"
+            "typeScript": "globeMap.ts",
+            "javaScript": "globeMap.js",
+            "css": "globeMap.css"
         }
     }
 }

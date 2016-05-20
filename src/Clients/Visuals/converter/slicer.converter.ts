@@ -225,6 +225,7 @@ module powerbi.visuals {
 
                 defaultSettings.selection.selectAllCheckboxEnabled = !forceSingleSelect && DataViewObjects.getValue<boolean>(objects, slicerProps.selection.selectAllCheckboxEnabled, defaultSettings.selection.selectAllCheckboxEnabled);
                 defaultSettings.selection.singleSelect = forceSingleSelect || DataViewObjects.getValue<boolean>(objects, slicerProps.selection.singleSelect, defaultSettings.selection.singleSelect);
+                defaultSettings.search.enabled = DataViewObjects.getValue<boolean>(objects, slicerProps.general.selfFilterEnabled, defaultSettings.search.enabled);
             }
 
             return defaultSettings;

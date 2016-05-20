@@ -277,7 +277,7 @@ module powerbitests {
                 }],
                 values: DataViewTransform.createValueColumns([
                     {
-                        source: sampleData.valueColumn,
+                        source: sampleData.y1Column,
                         values: values,
                     }
                 ])

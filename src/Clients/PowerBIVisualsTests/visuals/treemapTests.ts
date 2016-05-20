@@ -1254,6 +1254,7 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+
         it("labels content mutil-measure", (done) => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -1291,7 +1292,7 @@ module powerbitests {
                 expect($('.treemap .labels .majorLabel').last().text()).toBe('c');
                 done();
             }, DefaultWaitForRender);
-
+                
         });
     });
 
@@ -4240,7 +4241,7 @@ module powerbitests {
                 },
                 metadata: dataViewMetadata,
             };
-
+            
             let groupedValues = dataView.categorical.values.grouped();
             groupedValues[0].objects = { dataPoint: { fill: { solid: { color: '#00FF00' } } } };
             groupedValues[1].objects = { dataPoint: { fill: { solid: { color: '#FF0000' } } } };
@@ -4343,6 +4344,20 @@ module powerbitests {
                 expect(node2.children).toBeUndefined();
             });
 
+            it("Categorical treemap with gradient (no values)", () => {
+                let dataView = dataBuilder.withoutValues().build(true);
+                let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+                let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+
+                // We expect gradient to be also used as values if there aren't any values. We should have 1 node per category with no children
+                let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
+                expect(rootNode.children.length).toEqual(dataView.categorical.categories[0].values.length);
+                
+                for (let child of rootNode.children) {
+                    expect(child.children).toBeUndefined();
+                }
+            });
+
             it("Non-categorial treemap with gradient", () => {
 
                 let dataView = dataBuilder.withSingleValues().withoutCategory().build(true);
@@ -4366,15 +4381,18 @@ module powerbitests {
         public singleCategoryValues = ['Front end'];
 
         public valueColumns: powerbi.DataViewMetadataColumn[] = [
-            { displayName: 'value1', isMeasure: true, queryName: 'value1', roles: {'Values': true} },
-            { displayName: 'value2', isMeasure: true, queryName: 'value2', roles: {'Values': true} },
-            { displayName: 'value3', isMeasure: true, queryName: 'value3', roles: {'Values': true} },
+            { displayName: 'value1', isMeasure: true, queryName: 'value1', roles: { 'Values': true } },
+            { displayName: 'value2', isMeasure: true, queryName: 'value2', roles: { 'Values': true } },
+            { displayName: 'value3', isMeasure: true, queryName: 'value3', roles: { 'Values': true } },
         ];
         public values = [[110, 120], [210, 220], [310, 320]];
         public singleValues = [[110], [210], [310]];
+        
+        public valuesSource: powerbi.DataViewMetadataColumn;
+        public dynamicSeriesSource: powerbi.DataViewMetadataColumn = { displayName: 'Year', roles: { 'Details': true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
 
         public gradientColumn: powerbi.DataViewMetadataColumn = { displayName: 'gradient', roles: { 'Gradient': true } };
-        public gradientValues = [410, 420]; 
+        public gradientValues = [410, 420];
         public gradientSingleValues = [410];
 
         public build(gradient: boolean, gradientValuesRole?: boolean): powerbi.DataView {
@@ -4382,44 +4400,52 @@ module powerbitests {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: []
             };
-                
-            debug.assert(this.valueColumns.length === this.values.length, 'The number of columns does not match the number of values.');
-
+            
             let valueDataArray: powerbi.DataViewValueColumn[] = [];
+            
+            if (this.valueColumns !== null && this.values !== null) {
+                debug.assert(this.valueColumns.length === this.values.length, 'The number of columns does not match the number of values.');
+                
+                for (let i = 0; i < this.valueColumns.length; i++) {
 
-            for (let i = 0; i < this.valueColumns.length; i++) {
+                    let valueColumn = this.valueColumns[i];
+                    dataViewMetadata.columns.push(valueColumn);
 
-                let valueColumn = this.valueColumns[i];
-                dataViewMetadata.columns.push(valueColumn);
-
-                let value = this.values[i];
-                valueDataArray.push({
-                    source: valueColumn,
-                    values: value
-                });
+                    let value = this.values[i];
+                    valueDataArray.push({
+                        source: valueColumn,
+                        values: value
+                    });
+                }
+            }
+            else if ((this.valueColumns !== null && this.values == null)
+                || (this.valueColumns == null && this.values !== null)) {
+                debug.assertFail('Either valueColumns or values is null and the other is not.');
             }
             
             if (gradient) {
                 
                 if (gradientValuesRole) {
+                    debug.assert(!_.isEmpty(this.valueColumns), 'No value to set gradient value to.');
                     let gradientColumn = valueDataArray[0];
                     gradientColumn.source.roles['Gradient'] = true;
-                } else {
-                dataViewMetadata.columns.push(this.gradientColumn);
-                valueDataArray.push({
-                    source: this.gradientColumn,
-                    values: this.gradientValues
-                });
+                }
+                else {
+                    dataViewMetadata.columns.push(this.gradientColumn);
+                    valueDataArray.push({
+                        source: this.gradientColumn,
+                        values: this.gradientValues
+                    });
+                }
             }
-            }
-            
+
             let categories: powerbi.DataViewCategoryColumn[] = this.buildCategories(dataViewMetadata);
 
             return <powerbi.DataView>{
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: categories,
-                    values: DataViewTransform.createValueColumns(valueDataArray)
+                    values: DataViewTransform.createValueColumns(valueDataArray, null, this.valuesSource)
                 }
             };
         }
@@ -4440,6 +4466,18 @@ module powerbitests {
             this.valueColumns = [this.valueColumns[0]];
             this.values = [this.values[0]];
 
+            return this;
+        }
+
+        public withoutValues(): TreemapDataBuilder {
+            this.valueColumns = null;
+            this.values = null;
+
+            return this;
+        }
+        
+        public withDynamicSeries(): TreemapDataBuilder {
+            this.valuesSource = this.dynamicSeriesSource;
             return this;
         }
 

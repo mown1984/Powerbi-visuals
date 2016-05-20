@@ -93,6 +93,14 @@ module powerbitests {
             ]
         };
 
+        let tooltipColumn: powerbi.DataViewMetadataColumn = {
+            displayName: 'tooltipDisplayName',
+            queryName: 'tooltipQueryName',
+            isMeasure: true,
+            type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+            roles: { Tooltips: true },
+        };
+
         it('LineChart registered capabilities', () => {
             expect(powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').capabilities).toBe(powerbi.visuals.lineChartCapabilities);
         });
@@ -373,7 +381,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('selection state set on converter result', () => {
@@ -617,7 +625,7 @@ module powerbitests {
                     },
                 ];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert categorical multi-series', () => {
@@ -816,7 +824,219 @@ module powerbitests {
                     },
                 ];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
+        });
+
+        it('Check convert categorical multi-series with tooltip bucket', () => {
+            let seriesId1 = SelectionId.createWithMeasure('col2');
+            let seriesKey1 = seriesId1.getKey();
+            let seriesId2 = SelectionId.createWithMeasure('col3');
+            let seriesKey2 = seriesId2.getKey();
+            let seriesId3 = SelectionId.createWithMeasure('col4');
+            let seriesKey3 = seriesId3.getKey();
+            dataViewMetadata.objects = undefined;
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: ['John Domo', 'Delta Force', 'Jean Tablau']
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata.columns[1],
+                            values: [100, 200, 700],
+                        }, {
+                            source: dataViewMetadata.columns[2],
+                            values: [700, 100, 200],
+                        }, {
+                            source: dataViewMetadata.columns[3],
+                            values: [200, 700, 100],
+                        },
+                        {
+                            source: tooltipColumn,
+                            values: [200, 700, 100],
+                        }]),
+                },
+            };
+
+            let seriesColors = [
+                colors.getColorByIndex(0).value,
+                colors.getColorByIndex(1).value,
+                colors.getColorByIndex(2).value,
+            ];
+            let defaultLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLineChartLabelSettings();
+
+            let actualData = LineChart.converter(dataView, blankCategoryValue, colors, false, undefined, undefined, undefined, undefined, true).series;
+            let expectedData: powerbi.visuals.LineChartSeries[] =
+                [
+                    {
+                        displayName: dataView.metadata.columns[1].displayName,
+                        key: seriesKey1,
+                        lineIndex: 0,
+                        color: seriesColors[0],
+                        xCol: dataView.metadata.columns[0],
+                        yCol: dataView.metadata.columns[1],
+                        labelSettings: actualData[0].labelSettings,
+                        data: [
+                            {
+                                categoryValue: 'John Domo', value: 100,
+                                categoryIndex: 0,
+                                seriesIndex: 0,
+                                tooltipInfo: [{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }],
+                                identity: seriesId1,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey1, category: 0 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "200" }],
+                            },
+                            {
+                                categoryValue: 'Delta Force',
+                                value: 200,
+                                categoryIndex: 1,
+                                seriesIndex: 0,
+                                tooltipInfo: [{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }],
+                                identity: seriesId1,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey1, category: 1 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "700" }],
+                            },
+                            {
+                                categoryValue: 'Jean Tablau',
+                                value: 700,
+                                categoryIndex: 2,
+                                seriesIndex: 0,
+                                tooltipInfo: [{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }],
+                                identity: seriesId1,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey1, category: 2 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "100" }],
+                            },
+                        ],
+                        identity: seriesId1,
+                        selected: false
+                    },
+                    {
+                        displayName: dataView.metadata.columns[2].displayName,
+                        key: seriesKey2,
+                        lineIndex: 1,
+                        color: seriesColors[1],
+                        xCol: dataView.metadata.columns[0],
+                        yCol: dataView.metadata.columns[2],
+                        labelSettings: actualData[1].labelSettings,
+                        data: [
+                            {
+                                categoryValue: 'John Domo',
+                                value: 700,
+                                categoryIndex: 0,
+                                seriesIndex: 1,
+                                tooltipInfo: [{ displayName: "col1", value: "John Domo" }, { displayName: "col3", value: "700" }],
+                                identity: seriesId2,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey2, category: 0 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "200" }],
+                            },
+                            {
+                                categoryValue: 'Delta Force',
+                                value: 100,
+                                categoryIndex: 1,
+                                seriesIndex: 1,
+                                tooltipInfo: [{ displayName: "col1", value: "Delta Force" }, { displayName: "col3", value: "100" }],
+                                identity: seriesId2,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey2, category: 1 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "700" }],
+                            },
+                            {
+                                categoryValue: 'Jean Tablau',
+                                value: 200,
+                                categoryIndex: 2,
+                                seriesIndex: 1,
+                                tooltipInfo: [{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col3", value: "200" }],
+                                identity: seriesId2,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey2, category: 2 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "100" }],
+                            },
+                        ],
+                        identity: seriesId2,
+                        selected: false
+                    },
+                    {
+                        displayName: dataView.metadata.columns[3].displayName,
+                        key: seriesKey3,
+                        lineIndex: 2,
+                        color: seriesColors[2],
+                        xCol: dataView.metadata.columns[0],
+                        yCol: dataView.metadata.columns[3],
+                        labelSettings: actualData[2].labelSettings,
+                        data: [
+                            {
+                                categoryValue: 'John Domo',
+                                value: 200,
+                                categoryIndex: 0,
+                                seriesIndex: 2,
+                                tooltipInfo: [{ displayName: "col1", value: "John Domo" }, { displayName: "col4", value: "200" }],
+                                identity: seriesId3,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey3, category: 0 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "200" }],
+                            },
+                            {
+                                categoryValue: 'Delta Force',
+                                value: 700,
+                                categoryIndex: 1,
+                                seriesIndex: 2,
+                                tooltipInfo: [{ displayName: "col1", value: "Delta Force" }, { displayName: "col4", value: "700" }],
+                                identity: seriesId3,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey3, category: 1 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "700" }],
+                            },
+                            {
+                                categoryValue: 'Jean Tablau',
+                                value: 100,
+                                categoryIndex: 2,
+                                seriesIndex: 2,
+                                tooltipInfo: [{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col4", value: "100" }],
+                                identity: seriesId3,
+                                selected: false,
+                                key: JSON.stringify({ series: seriesKey3, category: 2 }),
+                                labelFill: labelColor,
+                                labelFormatString: undefined,
+                                labelSettings: defaultLabelSettings,
+                                extraTooltipInfo: [{ displayName: "tooltipDisplayName", value: "100" }],
+                            },
+                        ],
+                        identity: seriesId3,
+                        selected: false,
+                    },
+                ];
+
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert non-category multi-measure + fill colors', () => {
@@ -904,7 +1124,7 @@ module powerbitests {
                     }
                 ];
 
-            expect(actualData).toEqual(expectSlices);
+            expect(actualData).toEqualDeep(expectSlices);
         });
 
         let dateTimeColumnsMetadata: powerbi.DataViewMetadata = {
@@ -987,7 +1207,7 @@ module powerbitests {
                     selected: false
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert datetime category with null category value', () => {
@@ -1064,7 +1284,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('variant measure - datetime column with a text category', () => {
@@ -1176,7 +1396,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert categorical with positive infinity value', () => {
@@ -1254,7 +1474,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert categorical with negative infinity value', () => {
@@ -1332,7 +1552,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert categorical with NaN value', () => {
@@ -1410,7 +1630,7 @@ module powerbitests {
                     selected: false,
                 }];
 
-            expect(actualData).toEqual(expectedData);
+            expect(actualData).toEqualDeep(expectedData);
         });
 
         it('Check convert scalar with all null values returns empty series array', () => {
@@ -1799,7 +2019,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it('verify viewport when filtering data', (done) => {
+            xit('verify viewport when filtering data', (done) => {
                 // Clone in order to keep the original as it is
                 let dataViewMeta = _.clone(dataViewMetadata);
                 dataViewMeta.objects = {
@@ -2561,7 +2781,7 @@ module powerbitests {
                         },
                     ];
 
-                expect(actualData).toEqual(expectedData);
+                expect(actualData).toEqualDeep(expectedData);
             });
 
             it('line chart non-category multi-measure dom validation', (done) => {
@@ -5509,7 +5729,7 @@ module powerbitests {
                 let index: number = lineChart.findIndex(pointX);
                 expect(index).toEqual(2);
                 let categoryData = lineChart.selectColumnForTooltip(index);
-                expect(categoryData[0].label).toBe('col2');
+                expect(categoryData[0].measureDisplayName).toBe('col2');
                 expect(categoryData[0].category).toBe('VW');
                 expect(categoryData[0].value).toBe(490000);
                 let tooltipInfo = lineChart.getSeriesTooltipInfo(categoryData);
@@ -5521,7 +5741,7 @@ module powerbitests {
                 index = lineChart.findIndex(pointX);
                 expect(index).toEqual(0);
                 categoryData = lineChart.selectColumnForTooltip(index);
-                expect(categoryData[0].label).toBe('col2');
+                expect(categoryData[0].measureDisplayName).toBe('col2');
                 expect(categoryData[0].category).toBe('Ford');
                 expect(categoryData[0].value).toBe(0);
                 tooltipInfo = lineChart.getSeriesTooltipInfo(categoryData);

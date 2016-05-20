@@ -2,7 +2,7 @@
     "dateAdded": "2015-12-11T15:59:29.000Z",
     "dateLastUpdated": "2016-02-24T20:54:49.000Z",
     "package": {
-        "name": "Sankey",
+        "name": "SankeyDiagram",
         "displayName": "Sankey",
         "guid": "SankeyDiagram1446463184954",
         "version": "0.0.7",
@@ -22,9 +22,9 @@
             "thumbnail": "thumb.png"
         },
         "code": {
-            "typeScript": "SankeyDiagram.ts",
-            "javaScript": "SankeyDiagram.js",
-            "css": "SankeyDiagram.css"
+            "typeScript": "sankeyDiagram.ts",
+            "javaScript": "sankeyDiagram.js",
+            "css": "sankeyDiagram.css"
         }
     }
 }

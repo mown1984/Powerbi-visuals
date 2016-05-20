@@ -1096,7 +1096,7 @@ module powerbi.visuals.samples {
                 !visualUpdateOptions.dataViews[0]) {
                 return;
             }
-            // CartesianChart.InnerPaddingRatio = 1;
+            CartesianChart.InnerPaddingRatio = 1;
            
             let dataView: DataView = visualUpdateOptions.dataViews[0];
 
@@ -1143,10 +1143,9 @@ module powerbi.visuals.samples {
                 fontFamily: this.textProperties.fontFamily,
                 fontSize: this.textProperties.fontSize
             };
-            /* tslint:disable */
             let widthOfLabel = powerbi.TextMeasurementService.measureSvgTextWidth(textProperties);
-            /* tslint:enable */
-            // CartesianChart.MinOrdinalRectThickness = widthOfLabel + 3;
+
+            CartesianChart.MinOrdinalRectThickness = widthOfLabel + 3;
         }
 
         private setSize(viewport: IViewport): void {

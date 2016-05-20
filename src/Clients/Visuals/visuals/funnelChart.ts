@@ -28,13 +28,13 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
-    import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     export interface FunnelChartConstructorOptions {
         animator?: IFunnelAnimator;
         funnelSmallViewPortProperties?: FunnelSmallViewPortProperties;
         behavior?: FunnelWebBehavior;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
     }
 
     export interface FunnelPercent {
@@ -212,6 +212,7 @@ module powerbi.visuals {
         private dataViews: DataView[];
         private funnelSmallViewPortProperties: FunnelSmallViewPortProperties;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
 
         /**
          * Note: Public for testing.
@@ -221,6 +222,7 @@ module powerbi.visuals {
         constructor(options?: FunnelChartConstructorOptions) {
             if (options) {
                 this.tooltipsEnabled = options.tooltipsEnabled;
+                this.tooltipBucketEnabled = options.tooltipBucketEnabled;
                 if (options.funnelSmallViewPortProperties) {
                     this.funnelSmallViewPortProperties = options.funnelSmallViewPortProperties;
                 }
@@ -233,32 +235,16 @@ module powerbi.visuals {
             }
         }
 
-        private static isValidValueColumn(valueColumn: DataViewValueColumn): boolean {
-            debug.assertValue(valueColumn, 'valueColumn');
-            return DataRoleHelper.hasRole(valueColumn.source, 'Y');
-        }
-
-        private static getFirstValidValueColumn(values: DataViewValueColumns): DataViewValueColumn {
-            for (let valueColumn of values) {
-                if (!FunnelChart.isValidValueColumn(valueColumn))
-                    continue;
-                return valueColumn;
-            }
-
-            return undefined;
-        }
-
-        public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string, tooltipsEnabled: boolean = true): FunnelData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): FunnelData {
+            let reader = data.createIDataViewCategoricalReader(dataView);
             let slices: FunnelSlice[] = [];
             let formatStringProp = funnelChartProps.general.formatString;
             let categorical: DataViewCategorical = dataView.categorical;
-            let categories = categorical.categories || [];
-            let values = categorical.values;
+            let hasHighlights = reader.hasHighlights("Y");
             let valueMetaData: DataViewMetadataColumn[] = [];
-            if (values) {
-                valueMetaData = _.map(values, (v) => { return v.source; });
+            for (let seriesIndex = 0, seriesCount = reader.getSeriesCount("Y"); seriesIndex < seriesCount; seriesIndex++) {
+                valueMetaData.push(reader.getValueMetadataColumn("Y", seriesIndex));
             }
-            let hasHighlights = values && values.length > 0 && values[0] && !!values[0].highlights;
             let highlightsOverflow = false;
             let hasNegativeValues = false;
             let allValuesAreNegative = false;
@@ -282,11 +268,8 @@ module powerbi.visuals {
                     dataLabelUtils.updateLabelSettingsFromLabelsObject(percentLabelsObj, percentBarLabelSettings);
             }
 
-            // Always take the first valid value field
-            let firstValueColumn = !_.isEmpty(values) && FunnelChart.getFirstValidValueColumn(values);
-            
             // If we don't have a valid value column, just return
-            if (!firstValueColumn)
+            if (!reader.hasValues("Y"))
                 return {
                     slices: slices,
                     categoryLabels: categoryLabels,
@@ -301,60 +284,59 @@ module powerbi.visuals {
                 };
 
             // Calculate the first value for percent tooltip values
-            firstValue = firstValueColumn.values[0];
+            firstValue = reader.getValue("Y", 0, 0);
             if (hasHighlights) {
-                firstHighlight = firstValueColumn.highlights[0];
+                firstHighlight = reader.getHighlight("Y", 0, 0);
             }
             let pctFormatString = valueFormatter.getLocalizedString('Percentage');
 
-            if (categories.length === 1) {
-                // Single Category, Value and (optional) Gradient
-                let category = categories[0];
-                let categoryValues = category.values;
-
-                for (let i = 0, ilen = categoryValues.length; i < ilen; i++) {
-                    let measureName = firstValueColumn.source.queryName;
+            if (reader.hasCategories()) {
+                // Funnel chart with categories
+                for (let categoryIndex = 0, categoryCount = reader.getCategoryCount(); categoryIndex < categoryCount; categoryIndex++) {
+                    let categoryColumn = reader.getCategoryColumn("Category");
+                    let categoryValue = reader.getCategoryValue("Category", categoryIndex);
+                    let valueMetadataColumn = reader.getValueMetadataColumn("Y");
 
                     let identity = SelectionIdBuilder.builder()
-                        .withCategory(category, i)
-                        .withMeasure(measureName)
+                        .withCategory(categoryColumn, categoryIndex)
+                        .withMeasure(valueMetadataColumn.queryName)
                         .createSelectionId();
 
-                    let value = firstValueColumn.values[i];
-                    let formattedCategoryValue = converterHelper.formatFromMetadataColumn(categoryValues[i], category.source, formatStringProp);
+                    let value = reader.getValue("Y", categoryIndex);
+                    let formattedCategoryValue = converterHelper.formatFromMetadataColumn(categoryValue, categoryColumn.source, formatStringProp);
 
                     let tooltipInfo: TooltipDataItem[];
                     if (tooltipsEnabled) {
                         tooltipInfo = [];
                                                 
                         tooltipInfo.push({
-                            displayName: category.source.displayName,
+                            displayName: categoryColumn.source.displayName,
                             value: formattedCategoryValue,
                         });
 
                         if (value != null) {
                             tooltipInfo.push({
-                                displayName: firstValueColumn.source.displayName,
-                                value: converterHelper.formatFromMetadataColumn(value, firstValueColumn.source, formatStringProp),
+                                displayName: valueMetadataColumn.displayName,
+                                value: converterHelper.formatFromMetadataColumn(value, valueMetadataColumn, formatStringProp),
                             });
                         }
 
                         let highlightValue: number;
                         if (hasHighlights) {
-                            highlightValue = firstValueColumn.highlights[i];
+                            highlightValue = reader.getHighlight("Y", categoryIndex);
                             if (highlightValue != null) {
                                 tooltipInfo.push({
                                     displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
-                                    value: converterHelper.formatFromMetadataColumn(highlightValue, firstValueColumn.source, formatStringProp),
+                                    value: converterHelper.formatFromMetadataColumn(highlightValue, valueMetadataColumn, formatStringProp),
                                 });
                             }
                         }
 
                         let gradientColumnMetadata = gradientValueColumn ? gradientValueColumn.source : undefined;
-                        if (gradientColumnMetadata && gradientColumnMetadata !== firstValueColumn.source && gradientValueColumn.values[i] != null) {
+                        if (gradientColumnMetadata && gradientColumnMetadata !== valueMetadataColumn && gradientValueColumn.values[categoryIndex] != null) {
                             tooltipInfo.push({
                                 displayName: gradientColumnMetadata.displayName,
-                                value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[i], gradientColumnMetadata, formatStringProp),
+                                value: converterHelper.formatFromMetadataColumn(reader.getValue("Gradient", categoryIndex), gradientColumnMetadata, formatStringProp),
                             });
                         }
 
@@ -364,16 +346,32 @@ module powerbi.visuals {
                         else {
                             FunnelChart.addFunnelPercentsToTooltip(pctFormatString, tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
                         }      
+
+                        if (tooltipBucketEnabled) {
+                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, undefined);
+                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", undefined);
+
+                            if (tooltipValues && tooltipMetadataColumns) {
+                                for (let j = 0; j < tooltipValues.length; j++) {
+                                    if (tooltipValues[j] != null) {
+                                        tooltipInfo.push({
+                                            displayName: tooltipMetadataColumns[j].displayName,
+                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                        });
+                                    }
+                                }
+                            }
+                        }      
                     }
                     
                     // Same color for all bars
-                    let color = colorHelper.getColorForMeasure(category.objects && category.objects[i], '');
+                    let color = colorHelper.getColorForMeasure(reader.getCategoryObjects("Category", categoryIndex), '');
 
                     slices.push({
                         label: formattedCategoryValue,
                         value: value,
                         originalValue: value,
-                        categoryOrMeasureIndex: i,
+                        categoryOrMeasureIndex: categoryIndex,
                         identity: identity,
                         selected: false,
                         key: identity.getKey(),
@@ -384,12 +382,12 @@ module powerbi.visuals {
 
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
-                        let highlightValue = firstValueColumn.highlights[i];
+                        let highlightValue = reader.getHighlight("Y", categoryIndex);
                         slices.push({
                             label: formattedCategoryValue,
                             value: value,
                             originalValue: value,
-                            categoryOrMeasureIndex: i,
+                            categoryOrMeasureIndex: categoryIndex,
                             identity: highlightIdentity,
                             selected: false,
                             key: highlightIdentity.getKey(),
@@ -404,37 +402,34 @@ module powerbi.visuals {
                     previousValue = value;
                 }
             }
-            else if (valueMetaData.length > 0 && values && values.length > 0) {
-                // Multi-measures
-                for (let i = 0, len = values.length; i < len; i++) {
-                    let valueColumn = values[i];
-
-                    if (!FunnelChart.isValidValueColumn(valueColumn))
-                        continue;
-
-                    let value = valueColumn.values[0];
-                    let identity = SelectionId.createWithMeasure(valueColumn.source.queryName);
+            else {
+                // Non-categorical static series
+                let categoryIndex = 0; // For non-categorical data, we use categoryIndex = 0
+                for (let seriesIndex = 0, seriesCount = reader.getSeriesCount("Y"); seriesIndex < seriesCount; seriesIndex++) {
+                    let value = reader.getValue("Y", categoryIndex, seriesIndex);
+                    let valueMetadataColumn = reader.getValueMetadataColumn("Y", seriesIndex);
+                    let identity = SelectionId.createWithMeasure(valueMetadataColumn.queryName);
 
                     let tooltipInfo: TooltipDataItem[];
                     // Same color for all bars
-                    let color = colorHelper.getColorForMeasure(valueColumn.source.objects, '');
+                    let color = colorHelper.getColorForMeasure(valueMetadataColumn.objects, '');
 
                     if (tooltipsEnabled) {
                         tooltipInfo = [];
 
                         if (value != null) {
                             tooltipInfo.push({
-                                displayName: valueColumn.source.displayName,
-                                value: converterHelper.formatFromMetadataColumn(value, valueColumn.source, formatStringProp),
+                                displayName: valueMetadataColumn.displayName,
+                                value: converterHelper.formatFromMetadataColumn(value, valueMetadataColumn, formatStringProp),
                             });
                         }
 
                         if (hasHighlights) {
-                            let highlightValue = valueColumn.highlights[0];
+                            let highlightValue = reader.getHighlight("Y", categoryIndex, seriesIndex);
                             if (highlightValue != null) {
                                 tooltipInfo.push({
                                     displayName:  ToolTipComponent.localizationOptions.highlightedValueDisplayName,
-                                    value: converterHelper.formatFromMetadataColumn(highlightValue, valueColumn.source, formatStringProp),
+                                    value: converterHelper.formatFromMetadataColumn(highlightValue, valueMetadataColumn, formatStringProp),
                                 });
                             }
                             FunnelChart.addFunnelPercentsToTooltip(pctFormatString, tooltipInfo, hostServices, firstHighlight ? highlightValue / firstHighlight : null, previousHighlight ? highlightValue / previousHighlight : null, true);
@@ -442,13 +437,29 @@ module powerbi.visuals {
                         else {
                             FunnelChart.addFunnelPercentsToTooltip(pctFormatString, tooltipInfo, hostServices, firstValue ? value / firstValue : null, previousValue ? value / previousValue : null);
                         }
+
+                        if (tooltipBucketEnabled) {
+                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, undefined);
+                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", undefined);
+
+                            if (tooltipValues && tooltipMetadataColumns) {
+                                for (let j = 0; j < tooltipValues.length; j++) {
+                                    if (tooltipValues[j] != null) {
+                                        tooltipInfo.push({
+                                            displayName: tooltipMetadataColumns[j].displayName,
+                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     slices.push({
-                        label: valueMetaData[i].displayName,
+                        label: valueMetadataColumn.displayName,
                         value: value,
                         originalValue: value,
-                        categoryOrMeasureIndex: i,
+                        categoryOrMeasureIndex: seriesIndex,
                         identity: identity,
                         selected: false,
                         key: identity.getKey(),
@@ -458,12 +469,12 @@ module powerbi.visuals {
                     });
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
-                        let highlight = valueColumn.highlights[0];
+                        let highlight = reader.getHighlight("Y", categoryIndex, seriesIndex);
                         slices.push({
-                            label: valueMetaData[i].displayName,
+                            label: valueMetadataColumn.displayName,
                             value: value,
                             originalValue: value,
-                            categoryOrMeasureIndex: i,
+                            categoryOrMeasureIndex: seriesIndex,
                             identity: highlightIdentity,
                             key: highlightIdentity.getKey(),
                             selected: false,
@@ -664,7 +675,7 @@ module powerbi.visuals {
                 }
 
                 if (dataView.categorical) {
-                    this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor, this.tooltipsEnabled);
+                    this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor, this.tooltipsEnabled, this.tooltipBucketEnabled);
 
                     if (this.interactivityService) {
                         this.interactivityService.applySelectionStateToData(this.data.slices);

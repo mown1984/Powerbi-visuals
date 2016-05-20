@@ -142,6 +142,9 @@ module powerbi.data {
             // Step 2
             let dataPointsBySeries = getDataPointsBySeries(xColumns, yColumns, combineSeries, /* preferHighlights */ false);
             let lineDefSet = calculateLineDefinitions(dataPointsBySeries);
+            if (!lineDefSet)
+                return;
+
             let xMin = lineDefSet.xMin;
             let xMax = lineDefSet.xMax;
 
@@ -179,7 +182,7 @@ module powerbi.data {
                 groupValues = ['combinedRegressionSeries'];
             }
             else {
-                // If we are producing a trend line per series we need to maintain the group identities so that we can map between the 
+                // If we are producing a trend line per series we need to maintain the group identities so that we can map between the
                 // trend line and the original series (to match the color for example).
                 if (sourceDataView.categorical.values.source) {
                     // Source data view has dynamic series.

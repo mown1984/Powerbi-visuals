@@ -34,5 +34,12 @@ module jsCommon {
                 || keyCode === DOMConstants.leftArrowKeyCode
                 || keyCode === DOMConstants.rightArrowKeyCode;
         }
+
+        export function isCtrlDefaultKey(keyCode: number): boolean {
+            return keyCode === DOMConstants.aKeyCode
+                || keyCode === DOMConstants.cKeyCode
+                || keyCode === DOMConstants.xKeyCode
+                || keyCode === DOMConstants.vKeyCode;
+        }
     }
 }

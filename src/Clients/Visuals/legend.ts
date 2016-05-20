@@ -44,7 +44,7 @@ module powerbi.visuals {
         TopCenter,
         BottomCenter,
         RightCenter,
-        LeftCenter,          
+        LeftCenter,
     }
 
     export interface LegendPosition2D {
@@ -976,7 +976,7 @@ module powerbi.visuals {
         private static LegendContainerSelector = '.interactive-legend';
         private static LegendTitleClass = 'title';
         private static LegendItem = 'item';
-        private static legendPlaceSelector = '\u25A0';
+        private static legendPlaceSelector = '\u25CF';
         private static legendIconClass = 'icon';
         private static legendColorCss = 'color';
         private static legendItemNameClass = 'itemName';
@@ -987,7 +987,7 @@ module powerbi.visuals {
         constructor(element: JQuery) {
             this.legendContainerParent = d3.select(element.get(0));
         }
-        
+
         public getMargins(): IViewport {
             return {
                 height: CartesianChartInteractiveLegend.LegendHeight,
@@ -1068,20 +1068,9 @@ module powerbi.visuals {
         private drawLegendItems(data: LegendDataPoint[]): void {
             // Add Mesaures - the items of the category in the legend
             this.ensureLegendTableCreated();
-            let dataPointsMatrix: LegendDataPoint[][] = CartesianChartInteractiveLegend.splitArrayToOddEven(data);
+                        
+            let dataPointsMatrix: LegendDataPoint[][] = [data];
             let legendItemsContainer: D3.UpdateSelection = this.legendContainerDiv.select('tbody').selectAll('tr').data(dataPointsMatrix);
-
-            // trs is table rows. 
-            // there are two table rows.
-            // the order of insertion to the legend table is:
-            // Even data points got inserted into the 1st line
-            // Odd data points got inserted into the 2nd line
-            // ----------------------------
-            // | value0 | value 2 | value 4
-            // ----------------------------
-            // | value1 | value 3 | 
-            // ----------------------------
-            // 
 
             // Enter
             let legendItemsEnter: D3.EnterSelection = legendItemsContainer.enter();
@@ -1095,7 +1084,11 @@ module powerbi.visuals {
                 .append('span')
                 .html(CartesianChartInteractiveLegend.legendPlaceSelector)
                 .attr('class', CartesianChartInteractiveLegend.legendIconClass)
-                .attr('white-space', 'nowrap');
+                .attr('white-space', 'nowrap')
+                .style({
+                    'font-size': '20px', // this creates a circle of 10px
+                    'margin-bottom': '7px'
+                });
             cellSpanEnter.append('span').attr('class', CartesianChartInteractiveLegend.legendItemNameClass);
             cellSpanEnter.append('span').attr('class', CartesianChartInteractiveLegend.legendItemMeasureClass);
 
@@ -1125,7 +1118,7 @@ module powerbi.visuals {
          * Set Horizontal Pan gesture for the legend
          */
         private setPanGestureOnLegend(legendTable: D3.Selection): void {
-            let viewportWidth: number = $(this.legendContainerDiv.select('div:nth-child(2)')[0]).width();
+            let viewportWidth: number = $(this.legendContainerParent[0]).width();
             let xscale: D3.Scale.LinearScale = d3.scale.linear().domain([0, viewportWidth]).range([0, viewportWidth]);
             let zoom: D3.Behavior.Zoom = d3.behavior.zoom()
                 .scaleExtent([1, 1]) // disable scaling
@@ -1155,24 +1148,6 @@ module powerbi.visuals {
             } else {
                 legendTable.call(zoom);
             }
-        }
-
-        /**
-         * Split legend data points array into odd and even arrays
-         * Even array will be the legend first line and Odd array will be the 2nd legend line 
-         */
-        private static splitArrayToOddEven(data: LegendDataPoint[]): LegendDataPoint[][] {
-            let oddData: LegendDataPoint[] = [];
-            let evenData: LegendDataPoint[] = [];
-            for (let i = 0; i < data.length; ++i) {
-                if (i % 2 === 0) {
-                    evenData.push(data[i]);
-                }
-                else {
-                    oddData.push(data[i]);
-                }
-            }
-            return [evenData, oddData];
         }
     }
 

@@ -41,6 +41,7 @@ module powerbi.visuals {
         disableGeometricCulling?: boolean;
         behavior?: IInteractiveBehavior;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
         smallViewPortProperties?: DonutSmallViewPortProperties;
     }
 
@@ -179,6 +180,7 @@ module powerbi.visuals {
         private hostService: IVisualHostServices;
         private settings: DonutChartSettings;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
         private donutProperties: DonutChartProperties;
         private maxHeightToScaleDonutLegend: number;
 
@@ -195,6 +197,7 @@ module powerbi.visuals {
                 this.disableGeometricCulling = options.disableGeometricCulling ? options.disableGeometricCulling : false;
                 this.behavior = options.behavior;
                 this.tooltipsEnabled = options.tooltipsEnabled;
+                this.tooltipBucketEnabled = options.tooltipBucketEnabled;
                 if (options.smallViewPortProperties) {
                     this.maxHeightToScaleDonutLegend = options.smallViewPortProperties.maxHeightToScaleDonutLegend;
                 }
@@ -204,8 +207,8 @@ module powerbi.visuals {
             }
         }
 
-        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService, tooltipsEnabled: boolean = true): DonutData {
-            let converter = new DonutChartConversion.DonutChartConverter(dataView, colors, defaultDataPointColor, tooltipsEnabled);
+        public static converter(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, viewport?: IViewport, disableGeometricCulling?: boolean, interactivityService?: IInteractivityService, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): DonutData {
+            let converter = new DonutChartConversion.DonutChartConverter(dataView, colors, defaultDataPointColor, tooltipsEnabled, tooltipBucketEnabled);
             converter.convert();
             let d3PieLayout = d3.layout.pie()
                 .sort(null)
@@ -335,7 +338,7 @@ module powerbi.visuals {
                     }
                 }
 
-                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling, this.interactivityService, this.tooltipsEnabled);
+                this.data = DonutChart.converter(dataViews[0], this.colors, defaultDataPointColor, this.currentViewport, this.disableGeometricCulling, this.interactivityService, this.tooltipsEnabled, this.tooltipBucketEnabled);
                 this.data.defaultDataPointColor = defaultDataPointColor;
                 if (!(this.options.interactivity && this.options.interactivity.isInteractiveLegend))
                     this.renderLegend();
@@ -1621,6 +1624,7 @@ module powerbi.visuals {
             label: any;
             categoryLabel: string;
             color: string;
+            categoryIndex?: number;
             seriesIndex?: number;
         };
 
@@ -1648,7 +1652,8 @@ module powerbi.visuals {
             private legendDataPoints: LegendDataPoint[];
             private colorHelper: ColorHelper;
             private categoryFormatString: string;
-            private tooltipsEnabled;
+            private tooltipsEnabled: boolean;
+            private tooltipBucketEnabled: boolean;
             public hasHighlights: boolean;
             public dataPoints: DonutDataPoint[];
             public legendData: LegendData;
@@ -1656,12 +1661,13 @@ module powerbi.visuals {
             public legendObjectProperties: DataViewObject;
             public maxValue: number;
 
-            public constructor(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, tooltipsEnabled: boolean = true) {
+            public constructor(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean) {
                 let reader = this.reader = data.createIDataViewCategoricalReader(dataView);
                 let dataViewCategorical = dataView.categorical;
                 this.dataViewCategorical = dataViewCategorical;
                 this.dataViewMetadata = dataView.metadata;
                 this.tooltipsEnabled = tooltipsEnabled;
+                this.tooltipBucketEnabled = tooltipBucketEnabled;
                 this.colorHelper = new ColorHelper(colors, donutChartProps.dataPoint.fill, defaultDataPointColor);
                 this.maxValue = 0;
 
@@ -1853,6 +1859,23 @@ module powerbi.visuals {
                         }
                     }
 
+                    if (this.tooltipBucketEnabled) {
+                        // SeriesIndex is not needed for static series.
+                        let tooltipValues = reader.getAllValuesForRole("Tooltips", this.categoryValues ? point.categoryIndex : 0, this.isDynamicSeries ? point.seriesIndex : undefined);
+                        let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", this.isDynamicSeries ? point.seriesIndex : undefined);
+
+                        if (tooltipValues && tooltipMetadataColumns) {
+                            for (let j = 0; j < tooltipValues.length; j++) {
+                                if (tooltipValues[j] != null) {
+                                    tooltipInfo.push({
+                                        displayName: tooltipMetadataColumns[j].displayName,
+                                        value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                    });
+                                }
+                            }
+                        }
+                    }
+
                     let strokeWidth = prevPointColor === point.color && value && value > 0 ? 1 : 0;
                     prevPointColor = value && value > 0 ? point.color : prevPointColor;
                     this.dataPoints.push({
@@ -1945,6 +1968,7 @@ module powerbi.visuals {
                             label: label,
                             categoryLabel: categoryLabel,
                             color: color,
+                            categoryIndex: categoryIndex,
                             seriesIndex: seriesIndex
                         };
                         dataPoints.push(dataPoint);

@@ -28,7 +28,6 @@ module powerbitests.customVisuals {
     import DataView = powerbi.DataView;
     import IDataColorPalette = powerbi.IDataColorPalette;
     import LegendData = powerbi.visuals.LegendData;
-    import SVGUtil = powerbi.visuals.SVGUtil;
     import VisualClass = powerbi.visuals.samples.AsterPlot;
     import AsterData = powerbi.visuals.samples.AsterData;
     import PixelConverter = jsCommon.PixelConverter;
@@ -37,6 +36,16 @@ module powerbitests.customVisuals {
     powerbitests.mocks.setLocale();
 
     describe("AsterPlot", () => {
+        let visualBuilder: AsterPlotBuilder;
+        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
+        let dataView: DataView;
+
+        beforeEach(() => {
+            visualBuilder = new AsterPlotBuilder(500, 1000);
+            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData();
+            dataView = dataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             let asterPlotCapabilities = VisualClass.capabilities;
 
@@ -51,157 +60,149 @@ module powerbitests.customVisuals {
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: AsterPlotBuilder;
-            let dataViews: DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new AsterPlotBuilder(300, 500);
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData().getDataView()];
-            });
-
             it("Should create svg element", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("Should draw right amount of slices", () => {
-                visualBuilder.update(dataViews);
-                SVGUtil.flushAllD3Transitions();
-                    expect(visualBuilder.mainElement.find('.asterSlice').length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                visualBuilder.updateflushAllD3Transitions(dataView);
+
+                expect(visualBuilder.mainElement.find('.asterSlice').length)
+                    .toBe(dataView.categorical.categories[0].values.length);
 
             });
 
             it("Should add center label", () => {
-                visualBuilder.update(dataViews);
-                SVGUtil.flushAllD3Transitions();
-                    let centerText: JQuery = $(".asterPlot .centerLabel");
-                    expect(centerText).toBeInDOM();
+                visualBuilder.updateflushAllD3Transitions(dataView);
+
+                let centerText: JQuery = $(".asterPlot .centerLabel");
+                expect(centerText).toBeInDOM();
             });
 
             it("Should not add center label to DOM when there is no data", () => {
-                visualBuilder.update([]);
-                SVGUtil.flushAllD3Transitions();
-                    let centerText: JQuery = $(".asterPlot .centerLabel");
-                    expect(centerText.length).toBe(0);
+                visualBuilder.updateflushAllD3Transitions([]);
+
+                let centerText: JQuery = $(".asterPlot .centerLabel");
+                expect(centerText.length).toBe(0);
             });
 
             describe("Data Labels", () => {
                 beforeEach(() => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true
                         }
                     };
                 });
-                
+
                 it("Default Data Labels", () => {
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
-                        let numOfLabels = dataViews[0].categorical.values[0].values.length;
-                        let labels: JQuery = $(".asterPlot .labels .data-labels");
-                        expect(labels.length).toBe(numOfLabels);
-                        let lines: JQuery = $(".asterPlot .lines .line-label");
-                        expect(lines.length).toBe(numOfLabels);
-                        let slices: JQuery = $(".asterPlot .asterSlice");
-                        expect(slices.length).toBe(numOfLabels);
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
+                    let numOfLabels = dataView.categorical.values[0].values.length;
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    expect(labels.length).toBe(numOfLabels);
+                    let lines: JQuery = $(".asterPlot .lines .line-label");
+                    expect(lines.length).toBe(numOfLabels);
+                    let slices: JQuery = $(".asterPlot .asterSlice");
+                    expect(slices.length).toBe(numOfLabels);
                 });
 
                 it("Data Labels have conflict with viewport", () => {
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
-                        let numOfLabels = dataViews[0].categorical.values[0].values.length;
-                        let labels: JQuery = $(".asterPlot .labels .data-labels");
-                        let lines: JQuery = $(".asterPlot .lines .line-label");
-                        expect(lines.length).toBe(numOfLabels);
-                        expect(labels.length).toBe(numOfLabels);
-                        //The viewport is reduced
-                        visualBuilder.updateWithViewport(dataViews, { height: 200, width: 350 });
-                        let labelsAfterResize: JQuery = $(".asterPlot .labels .data-labels");
-                        let linesAfterResize: JQuery = $(".asterPlot .lines .line-label");
-                        expect(labelsAfterResize.length).toBe(numOfLabels);
-                        expect(linesAfterResize.length).toBe(numOfLabels);
+                    visualBuilder.updateflushAllD3Transitions(dataView);
 
-                        let firsrtLabelX = $(labels).first().attr('x');
-                        let firsrtLabelY = $(labels).first().attr('y');
-                        //let lastLabelX = $(labels).last().attr('x');
-                        let lastLabelY = $(labels).last().attr('y');
-                        let firsrtResizeLabelX = $(labelsAfterResize).first().attr('x');
-                        let firsrtResizeLabelY = $(labelsAfterResize).first().attr('y');
-                        //let lastResizeLabelX = $(labelsAfterResize).last().attr('x');
-                        let lastResizeLabelY = $(labelsAfterResize).last().attr('y');
+                    let numOfLabels = dataView.categorical.values[0].values.length;
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    let lines: JQuery = $(".asterPlot .lines .line-label");
+                    expect(lines.length).toBe(numOfLabels);
+                    expect(labels.length).toBe(numOfLabels);
+                    //The viewport is reduced
+                    visualBuilder.viewport = { height: 200, width: 350 };
+                    visualBuilder.update(dataView);
+                    let labelsAfterResize: JQuery = $(".asterPlot .labels .data-labels");
+                    let linesAfterResize: JQuery = $(".asterPlot .lines .line-label");
+                    expect(labelsAfterResize.length).toBe(numOfLabels);
+                    expect(linesAfterResize.length).toBe(numOfLabels);
 
-                        expect(firsrtLabelX).toBeGreaterThan(parseFloat(firsrtResizeLabelX));
-                        expect(firsrtLabelY).toBeLessThan(parseFloat(firsrtResizeLabelY));
+                    let firsrtLabelX = $(labels).first().attr('x');
+                    let firsrtLabelY = $(labels).first().attr('y');
+                    //let lastLabelX = $(labels).last().attr('x');
+                    let lastLabelY = $(labels).last().attr('y');
+                    let firsrtResizeLabelX = $(labelsAfterResize).first().attr('x');
+                    let firsrtResizeLabelY = $(labelsAfterResize).first().attr('y');
+                    //let lastResizeLabelX = $(labelsAfterResize).last().attr('x');
+                    let lastResizeLabelY = $(labelsAfterResize).last().attr('y');
 
-                        // TODO: uncomment and fix
-                        //expect(lastLabelX).toBeGreaterThan(parseFloat(lastResizeLabelX));
-                        expect(lastLabelY).toBeLessThan(parseFloat(lastResizeLabelY));
+                    expect(firsrtLabelX).toBeGreaterThan(parseFloat(firsrtResizeLabelX));
+                    expect(firsrtLabelY).toBeLessThan(parseFloat(firsrtResizeLabelY));
+
+                    // TODO: uncomment and fix
+                    //expect(lastLabelX).toBeGreaterThan(parseFloat(lastResizeLabelX));
+                    expect(lastLabelY).toBeLessThan(parseFloat(lastResizeLabelY));
                 });
 
                 it("Data Labels - Decimal value for Labels should have a limit to 17", () => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true,
                             labelPrecision: 5666
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
-                        let labels: JQuery = $(".asterPlot .labels .data-labels");
-                        let dataLabels = $(labels).first().text();
-                        let maxPrecision: number = 17;
-                        expect(dataLabels).toBe("0.86618686000000000M");
-                        expect(dataLabels.length - 3).toBe(maxPrecision);
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    let dataLabels = $(labels).first().text();
+                    let maxPrecision: number = 17;
+                    expect(dataLabels).toBe("0.86618686000000000M");
+                    expect(dataLabels.length - 3).toBe(maxPrecision);
                 });
 
                 it("Data Labels - Change font size", () => {
                     let fontSize: number = 15;
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true,
                             fontSize: fontSize,
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
-                        let labels: JQuery = $(".asterPlot .labels .data-labels");
-                        expect(labels.first().css('font-size')).toBe(fontSize * 4 / 3 + 'px');
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    expect(labels.first().css('font-size')).toBe(fontSize * 4 / 3 + 'px');
                 });
 
                 it("Data Labels should be clear when removing data", () => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
-                        let labels: JQuery = $(".asterPlot .labels .data-labels");
-                        expect(labels.length).toBeGreaterThan(0);
+                    visualBuilder.updateflushAllD3Transitions(dataView);
 
-                        // Manually remove categories
-                        dataViews[0].categorical.categories = undefined;
-                        visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
+                    let labels: JQuery = $(".asterPlot .labels .data-labels");
+                    expect(labels.length).toBeGreaterThan(0);
 
-                        // Check that the labels were removed
-                        labels = $(".asterPlot .labels .data-labels");
-                        expect(labels.length).toBe(0);
+                    // Manually remove categories
+                    dataView.categorical.categories = undefined;
+
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
+                    // Check that the labels were removed
+                    labels = $(".asterPlot .labels .data-labels");
+                    expect(labels.length).toBe(0);
                 });
 
                 it("Data Labels should be displayed correctly when using dates as category values", () => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true
                         }
                     };
 
                     // Manually change the category format to be a date format
-                    dataViews[0].categorical.categories[0].source.format = 'dddd\, MMMM %d\, yyyy';
+                    dataView.categorical.categories[0].source.format = 'dddd\, MMMM %d\, yyyy';
 
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
+                    visualBuilder.updateflushAllD3Transitions(dataView);
 
                     let labels: JQuery = $(".asterPlot .labels .data-labels");
                     expect(labels.length).toBeGreaterThan(0);
@@ -213,23 +214,24 @@ module powerbitests.customVisuals {
                 });
 
                 it("Data Labels should not display lines for null and zero labels", () => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             show: true
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
                     let originalLines: number = $(".asterPlot .lines .line-label").length;
 
                     // Manually set a label to null and zero
-                    dataViews[0].categorical.values[0].values[0] = null;
-                    dataViews[0].categorical.values[1].values[0] = null;
-                    dataViews[0].categorical.values[0].values[3] = 0;
-                    dataViews[0].categorical.values[1].values[3] = 0;
-                    visualBuilder.update(dataViews);
-                    SVGUtil.flushAllD3Transitions();
+                    dataView.categorical.values[0].values[0] = null;
+                    dataView.categorical.values[1].values[0] = null;
+                    dataView.categorical.values[0].values[3] = 0;
+                    dataView.categorical.values[1].values[3] = 0;
+
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+
                     let newLines: number = $(".asterPlot .lines .line-label").length;
 
                     // Verify label lines are not generated for null and zero
@@ -241,12 +243,12 @@ module powerbitests.customVisuals {
                 let defaultLegendLabelFontSize = 8;
 
                 beforeEach(() => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         legend: {
                             show: true
                         }
                     };
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
                 });
 
                 it("Should add legend", () => {
@@ -268,29 +270,32 @@ module powerbitests.customVisuals {
 
                     let legendTitleText: string = Helpers.findElementText(legendTitle);
                     let legendTitleTitle: string = Helpers.findElementTitle(legendTitle);
-                    let expectedDefaultTitleAndToolTipText: string = dataViews[0].categorical.categories[0].source.displayName;
+                    let expectedDefaultTitleAndToolTipText: string = dataView.categorical.categories[0].source.displayName;
                     expect(legendTitleText).toEqual(expectedDefaultTitleAndToolTipText);
                     expect(legendTitleTitle).toEqual(expectedDefaultTitleAndToolTipText);
                 });
 
                 it("Should set legend title and legend items with default font size", () => {
-                    let defaultLabelFontSizeInPixels: string = Math.round(PixelConverter.fromPointToPixel(defaultLegendLabelFontSize)) + "px";
+                    let defaultLabelFontSizeInPixels: number = Math.round(PixelConverter.fromPointToPixel(defaultLegendLabelFontSize));
                     let legendGroup: JQuery = visualBuilder.LegendGroupElement;
                     let legendTitle: JQuery = legendGroup.find('.legendTitle');
                     let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    expect(legendTitle.css('font-size')).toBe(defaultLabelFontSizeInPixels);
-                    expect(firstLegendItemText.css('font-size')).toBe(defaultLabelFontSizeInPixels);
+                    let legendTitleFontSize: number = Math.round(parseFloat(legendTitle.css('font-size')));
+                    let firstLegendItemTextFontSize: number = Math.round(parseFloat(firstLegendItemText.css('font-size')));
+
+                    expect(legendTitleFontSize).toBe(defaultLabelFontSizeInPixels);
+                    expect(firstLegendItemTextFontSize).toBe(defaultLabelFontSizeInPixels);
                 });
             });
 
             describe("Custom Legend", () => {
                 let labelColor: string = powerbi.visuals.dataLabelUtils.defaultLabelColor;
                 let labelFontSizeInPoints = 10;  // 10 (in points) ==> 13.333333 (in pixels)
-                let labelFonSizeInPixels: string = Math.round(PixelConverter.fromPointToPixel(labelFontSizeInPoints)) + "px";
+                let labelFonSizeInPixels: number = Math.round(PixelConverter.fromPointToPixel(labelFontSizeInPoints));
                 let customLegendTitle = "My title";
 
                 beforeEach(() => {
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         legend: {
                             titleText: customLegendTitle,
                             show: true,
@@ -303,21 +308,21 @@ module powerbitests.customVisuals {
                 });
 
                 it("Should add legend", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legend: JQuery = $(".legend");
                     expect(legend).toBeInDOM();
                 });
 
                 it("Should add right amount of legend items", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendItems: JQuery = $("#legendGroup .legendItem");
-                    expect(legendItems.length).toEqual(dataViews[0].categorical.categories[0].values.length);
+                    expect(legendItems.length).toEqual(dataView.categorical.categories[0].values.length);
                 });
 
                 it("Should set legend title & tooltip to user configured text", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
@@ -329,7 +334,7 @@ module powerbitests.customVisuals {
                 });
 
                 it('Should color legend title & items with user configured color', () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendGroup: JQuery = visualBuilder.LegendGroupElement;
                     let legendTitle: JQuery = legendGroup.children('.legendTitle');
@@ -339,25 +344,21 @@ module powerbitests.customVisuals {
                 });
 
                 it('Should set legend title and legend items with user configured font size', () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendGroup: JQuery = visualBuilder.LegendGroupElement;
                     let legendTitle: JQuery = legendGroup.find('.legendTitle');
                     let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    expect(legendTitle.css('font-size')).toBe(labelFonSizeInPixels);
-                    expect(firstLegendItemText.css('font-size')).toBe(labelFonSizeInPixels);
+                    let legendTitleFontSize = Math.round(parseFloat(legendTitle.css('font-size')));
+                    let firstLegendItemTextFontSize = Math.round(parseFloat(firstLegendItemText.css('font-size')));
+
+                    expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
+                    expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
                 });
             });
 
             describe("Converter", () => {
-                let visualBuilder: AsterPlotBuilder;
-                let dataView: DataView;
                 let asterData: AsterData;
-
-                beforeEach(() => {
-                    visualBuilder = new AsterPlotBuilder(300, 500);
-                    dataView = new powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData().getDataView();
-                });
 
                 it("Should convert all data when there is a limit to colors", () => {
 
@@ -383,7 +384,7 @@ module powerbitests.customVisuals {
     }
 
     class AsterPlotBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();
@@ -407,13 +408,6 @@ module powerbitests.customVisuals {
 
         public converter(dataView: DataView, colors: IDataColorPalette): AsterData {
             return this.visual.converter(dataView, colors);
-            }
-
-        public updateWithViewport(dataViews: DataView[], viewport: powerbi.IViewport): void {
-                this.visual.update(<powerbi.VisualUpdateOptions>{
-                    dataViews: dataViews,
-                    viewport: viewport
-                });
         }
     }
 }

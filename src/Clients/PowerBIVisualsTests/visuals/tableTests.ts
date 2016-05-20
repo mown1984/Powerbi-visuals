@@ -25,6 +25,7 @@
  */
 
 module powerbitests {
+    //#region imports
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
     import CompiledDataViewRoleForMapping = powerbi.data.CompiledDataViewRoleForMapping;
     import CompiledSubtotalType = powerbi.data.CompiledSubtotalType;
@@ -43,23 +44,27 @@ module powerbitests {
     import TablixObjects = Controls.internal.TablixObjects;
     import TablixControl = Controls.TablixControl;
     import TablixUtils = Controls.internal.TablixUtils;
+    //#endregion
 
     powerbitests.mocks.setLocale();
 
+    //#region Constants
     const SelectorContainer = '.tablixCanvas';
     const SelectorHeaderCell = '.tablixColumnHeaderLeaf';
     const SelectorBodyCell = '.tableBodyCell';
     const SelectorBodyCellLast = '.tableBodyCellBottom';
     const SelectorFooterCell = '.tableFooterCell';
-    /** rasaro: ToDo Enable
-    const SelectorCellContent = '.tablixCellContentHost';*/
+    //#endregion
 
+    //#region Test Data
+    //#region columnMetadata
     const ColumnHeaderClassNameIconHidden = "tablixDiv tablixCellContentHost tablixHeader tablixColumnHeaderLeaf";
     const RowClassName = "tablixDiv tablixCellContentHost tableBodyCell";
     const LastRowClassName = "tablixDiv tablixCellContentHost tableBodyCellBottom";
     const FooterClassName = "tablixDiv tablixCellContentHost tablixValueTotal tableFooterCell";
     const CssClassTablixValueNumeric = " tablixValueNumeric";
     const EmptyHeaderCell = "\xa0";
+    const NullCell = "(Blank)";
 
     const dataTypeNumber = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double);
     const dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
@@ -93,9 +98,11 @@ module powerbitests {
 
     let measureSourceAscending: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } }, sort: SortDirection.Ascending };
     let measureSourceDescending: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } }, sort: SortDirection.Descending };
+    //#endregion
 
     let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({}, { tooltipsEnabled: true });
 
+    //#region dataViewObjects
     let tableTotals: powerbi.DataViewObjects = {
         general: {
             totals: true,
@@ -135,7 +142,9 @@ module powerbitests {
             textSize: 8,
         }
     };
+    //#endregion
 
+    //#region dataViewTables
     let dataViewTableThreeMeasures: DataViewTable = {
         columns: [measureSource1, measureSource2, measureSource3],
         rows: [
@@ -419,6 +428,8 @@ module powerbitests {
             ]
         }
     };
+    //#endregion
+    //#endregion
 
     describe("Table", () => {
         it("Table registered capabilities", () => {
@@ -512,7 +523,7 @@ module powerbitests {
 
     describe("Table hierarchy navigator tests", () => {
         function createNavigator(dataViewTable: DataViewTable): TableHierarchyNavigator {
-            return new TableHierarchyNavigator(dataViewTable, valueFormatter.formatValueColumn);
+            return new TableHierarchyNavigator(dataViewTable, valueFormatter.formatVariantMeasureValue);
         }
 
         describe("getDepth", () => {
@@ -756,7 +767,7 @@ module powerbitests {
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
+                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: string[][] = [
                     ["A", "100.0", "aa", "101.00", "aa1", "102"],
@@ -776,7 +787,7 @@ module powerbitests {
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
+                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: boolean[][] = [
                     [true],
@@ -792,7 +803,7 @@ module powerbitests {
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatValueColumn);
+                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: string[][] = [
                     ['<div class="powervisuals-glyph circle kpi-red" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
@@ -800,7 +811,7 @@ module powerbitests {
                     ['<div class="powervisuals-glyph circle kpi-green" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
                 ];
 
-                expect(fillResult<string>(navigator, rows, columns, "domContent")).toEqual(expectedValues);
+                expect(fillResult<string>(navigator, rows, columns, "kpiContent")).toEqual(expectedValues);
             });
 
             function fillResult<T>(
@@ -1059,9 +1070,6 @@ module powerbitests {
                         totals: true,
                         autoSizeColumnWidth: true,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1078,9 +1086,6 @@ module powerbitests {
                         totals: false,
                         autoSizeColumnWidth: true,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1099,9 +1104,6 @@ module powerbitests {
                     properties: {
                         autoSizeColumnWidth: true,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1132,9 +1134,6 @@ module powerbitests {
                         totals: true,
                         autoSizeColumnWidth: true,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1158,9 +1157,6 @@ module powerbitests {
                         totals: true,
                         autoSizeColumnWidth: false,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1177,9 +1173,6 @@ module powerbitests {
                         totals: true,
                         autoSizeColumnWidth: true,
                         textSize: 8,
-                        //TODO: add after featureswitch
-                        //outlineColor: "#E8E8E8",
-                        // outlineWeight: 2
                     }
                 }]
             });
@@ -1930,7 +1923,7 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName],
                     [EmptyHeaderCell],
-                    [EmptyHeaderCell]
+                    [NullCell]
                 ];
 
                 validateTable(expectedCells);
@@ -1965,10 +1958,10 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName, groupSource2.displayName, measureSource1.displayName],
                     ["A", "a1", "100.0"],
-                    [EmptyHeaderCell, EmptyHeaderCell, "103.0"],
+                    [EmptyHeaderCell, NullCell, "103.0"],
                     [EmptyHeaderCell, "a3", "106.0"],
                     ["B", EmptyHeaderCell, "112.0"],
-                    [EmptyHeaderCell, EmptyHeaderCell, EmptyHeaderCell]
+                    [NullCell, EmptyHeaderCell, NullCell]
                 ];
 
                 validateTable(expectedCells);
@@ -2723,7 +2716,7 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName],
                     [EmptyHeaderCell],
-                    [EmptyHeaderCell]
+                    [NullCell]
                 ];
 
                 validateTable(expectedCells);
@@ -2738,10 +2731,10 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName, groupSource2.displayName, measureSource1.displayName],
                     ["A", "a1", "100.0"],
-                    [EmptyHeaderCell, EmptyHeaderCell, "103.0"],
+                    [EmptyHeaderCell, NullCell, "103.0"],
                     [EmptyHeaderCell, "a3", "106.0"],
                     ["B", EmptyHeaderCell, "112.0"],
-                    [EmptyHeaderCell, EmptyHeaderCell, EmptyHeaderCell]
+                    [NullCell, EmptyHeaderCell, NullCell]
                 ];
 
                 validateTable(expectedCells);
@@ -3084,7 +3077,7 @@ module powerbitests {
     });
 
     function formatter(value: any, source: DataViewMetadataColumn): string {
-        return valueFormatter.formatValueColumn(value, source, TablixObjects.PropColumnFormatString);
+        return valueFormatter.formatVariantMeasureValue(value, source, TablixObjects.PropColumnFormatString);
     }
 
     function validateChildTag(expectedChildTag: string[][], rows: JQuery): void {

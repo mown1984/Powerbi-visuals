@@ -54,6 +54,7 @@ module powerbi.visuals {
         'Percentage1': '#,0.#%',
         'RichTextbox_Link_DefaultText': 'Link',
         'TableTotalLabel': 'Total',
+        'ListJoin_Separator': ', ',
         'Tooltip_HighlightedValueDisplayName': 'Highlighted',
         'Funnel_PercentOfFirst': 'Percent of first',	
         'Funnel_PercentOfPrevious': 'Percent of previous',
@@ -154,6 +155,7 @@ module powerbi.visuals {
         public geocoder(): IGeocoder { return services.createGeocoder(); }
         public geolocation(): IGeolocation { return services.createGeolocation(); }
         public promiseFactory(): IPromiseFactory { return createJQueryPromiseFactory(); }
+        public visualCapabilitiesChanged(): void { }
         public analyzeFilter(options: FilterAnalyzerOptions): AnalyzedFilter {
             return {
                 isNotFilter: false,

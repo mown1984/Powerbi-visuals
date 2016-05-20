@@ -99,11 +99,11 @@ module powerbitests {
                 ]);
 
                 expect(powerbi.visuals.mapCapabilities.dataRoles[2].preferredTypes.map(ValueType.fromDescriptor)).toEqual([
-                    ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double, "Longitude")
+                    ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double, "Latitude")
                 ]);
 
                 expect(powerbi.visuals.mapCapabilities.dataRoles[3].preferredTypes.map(ValueType.fromDescriptor)).toEqual([
-                    ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double, "Latitude")
+                    ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double, "Longitude")
                 ]);
             });
 
@@ -489,7 +489,7 @@ module powerbitests {
                 'rgba(0,0,2,0.6)',
                 'rgba(0,0,3,0.6)',
             ];
-            
+
             beforeEach(() => {
                 dataBuilder = new MapDataBuilder();
                 dataView = dataBuilder.build(false, false);
@@ -567,15 +567,15 @@ module powerbitests {
 
             beforeEach(() => {
                 dataBuilder = new MapDataBuilder();
-                dataView = dataBuilder.build(true, true, true);
+                dataView = dataBuilder.build(true, true, true, true);
                 let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
                 let palette = new powerbi.visuals.DataColorPalette();
                 colorHelper = new ColorHelper(palette, fillProp);
                 geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
-                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, /*isFilledMap*/false, /*tooltipBucketEnabled*/true);
                 categoryCount = data.dataPoints.length;
             });
-            
+
             it("Size value", () => {
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     let dataPoint = data.dataPoints[categoryIndex];
@@ -616,11 +616,14 @@ module powerbitests {
                         {
                             displayName: dataBuilder.gradientColumn.displayName, value: dataBuilder.getGradientValue(categoryIndex).toString(),
                         },
+                        {
+                            displayName: dataBuilder.tooltipColumn.displayName, value: dataBuilder.getTooltipsValue(categoryIndex).toString(),
+                        },
                     ]);
                 }
             });
         });
-        
+
         describe("Simple category with null measures", () => {
             let colorHelper: ColorHelper;
             let dataBuilder: MapDataBuilder;
@@ -1104,6 +1107,129 @@ module powerbitests {
         });
     });
 
+    describe("Map geocoding", () => {
+        let visualBuilder: MapVisualBuilder;
+        let v: powerbi.IVisual;
+        let scheduleRedrawInterval: number;
+
+        beforeEach(() => {
+            visualBuilder = new MapVisualBuilder();
+            v = visualBuilder.build(false);
+
+            // immediate redraw
+            scheduleRedrawInterval = Map.ScheduleRedrawInterval;
+            Map.ScheduleRedrawInterval = 0;
+        });
+
+        afterEach(() => {
+            Map.ScheduleRedrawInterval = scheduleRedrawInterval;
+        });
+
+        it("Bubbles only after requests complete", (done) => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember whet the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((...args: any[]) => {
+                let promises = { innerPromise: geocode.apply(geocoder, args), outerPromise: $.Deferred() };
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // this will start the geocoding
+            v.onDataChanged({ dataViews: [dataView] });
+
+            expect(geocodingCalls.length).toBe(dataBuilder.categoryValues.length);
+
+            setTimeout(() => {
+                // shouldn't be any bubbles because geocoding isn't yet complete
+                let bubbles = getBubbles();
+                expect(bubbles.length).toBe(0);
+
+                // tie outerPromises to inner ones
+                for (let pair of geocodingCalls)
+                    ((inner, outer) => {
+                        inner.then((location) => {
+                            outer.resolve(location);
+                        });
+                    })(pair.innerPromise, pair.outerPromise);
+
+                setTimeout(() => {
+                    let bubbles = getBubbles();
+                    expect(bubbles.length).toBe(dataBuilder.categoryValues.length);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+
+        it("Requests cancelled on data change", (done) => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember whet the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any; isCancelled: boolean };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((query: string, category?: string, options?: powerbi.GeocodeOptions) => {
+                expect(options && options.timeout).toBeTruthy();
+                let promises: GeocodingCalls = {
+                    innerPromise: geocode.apply(geocoder, [query, category, options]),
+                    outerPromise: $.Deferred(),
+                    isCancelled: false,
+                };
+
+                options.timeout.finally(() => {
+                    promises.isCancelled = true;
+                });
+
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // this will start the geocoding
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let numberOfRequests = geocodingCalls.length;
+            expect(numberOfRequests).toBe(dataBuilder.categoryValues.length);
+
+            setTimeout(() => {
+                // shouldn't be any bubbles because geocoding isn't yet complete
+                let bubbles = getBubbles();
+                expect(bubbles.length).toBe(0);
+
+                // next query will the ones that haven't yet completed
+                v.onDataChanged({ dataViews: [dataView] });
+
+                setTimeout(() => {
+                    for (let i = 0; i < numberOfRequests; ++i)
+                        expect(geocodingCalls[i].isCancelled).toBe(true);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+    });
+
     describe("Bubble Map DOM Tests", () => {
         let visualBuilder: MapVisualBuilder;
         let v: powerbi.IVisual;
@@ -1193,10 +1319,6 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        function getBubbles(): JQuery {
-            return $('.mapControl circle.bubble');
-        }
-
         function getLegendItems(): JQuery {
             return $('.legend .legendItem');
         }
@@ -1241,7 +1363,7 @@ module powerbitests {
                 done();
             }, powerbitests.DefaultWaitForRender);
         });
-        
+
         it("Selecting the main shape of a location by polygon area", function () {
 
             let smallAreaShape: powerbi.IGeocodeBoundaryPolygon = {
@@ -1410,6 +1532,10 @@ module powerbitests {
         });
     });
 
+    function getBubbles(): JQuery {
+        return $('.mapControl circle.bubble');
+    }
+
     function callCreateLabelDataPoints(v: powerbi.IVisual): powerbi.LabelDataPoint[] {
         let map = <any>v;
         return map.dataPointRenderer.createLabelDataPoints();
@@ -1443,6 +1569,7 @@ module powerbitests {
         public longitudeColumn: powerbi.DataViewMetadataColumn = { displayName: 'longitude', queryName: 'longitude', isMeasure: true, roles: { X: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
         public latitudeColumn: powerbi.DataViewMetadataColumn = { displayName: 'latitude', queryName: 'latitude', isMeasure: true, roles: { Y: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
         public gradientColumn: powerbi.DataViewMetadataColumn = { displayName: 'gradient', queryName: 'gradient', isMeasure: true, roles: { Gradient: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
+        public tooltipColumn: powerbi.DataViewMetadataColumn = { displayName: 'tooltips', queryName: 'tooltips', isMeasure: true, roles: { Tooltips: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
 
         public seriesValues = ['A', 'B', 'C', 'D'];
 
@@ -1511,8 +1638,23 @@ module powerbitests {
                 subtotal: 170,
             },
         ];
+        private tooltipsValues: SeriesValues[] = [
+            {
+                values: [10, 11, 12],
+                subtotal: 33,
+            }, {
+                values: [20, 21, 22],
+                subtotal: 63,
+            }, {
+                values: [30, 31, 32],
+                subtotal: 93,
+            }, {
+                values: [40, 41, 42],
+                subtotal: 123,
+            },
+        ];
 
-        public build(size: boolean, longLat: boolean, gradient: boolean = false): powerbi.DataView {
+        public build(size: boolean, longLat: boolean, gradient: boolean = false, tooltips: boolean = false): powerbi.DataView {
             var dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [],
             };
@@ -1551,8 +1693,16 @@ module powerbitests {
                     subtotal: this.gradientValues[0].subtotal,
                 });
             }
+            if (tooltips) {
+                dataViewMetadata.columns.push(this.tooltipColumn);
+                valueDataArray.push({
+                    source: this.tooltipColumn,
+                    values: this.tooltipsValues[0].values,
+                    subtotal: this.tooltipsValues[0].subtotal,
+                });
+            }
 
-            return <powerbi.DataView> {
+            return <powerbi.DataView>{
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: categories,
@@ -1592,7 +1742,7 @@ module powerbitests {
                     };
                     valueDataArray.push(sizeArray);
                     valuesForGrouped.push(sizeArray);
-                    
+
                 }
                 if (longLat) {
                     let longitudeColumn: powerbi.DataViewMetadataColumn = $.extend({}, this.longitudeColumn);
@@ -1629,7 +1779,7 @@ module powerbitests {
             let values = DataViewTransform.createValueColumns(valueDataArray, [this.seriesColumnExpr], this.seriesColumn);
             values.grouped = () => grouped;
 
-            return <powerbi.DataView> {
+            return <powerbi.DataView>{
                 metadata: dataViewMetadata,
                 categorical: {
                     categories: categories,
@@ -1695,6 +1845,10 @@ module powerbitests {
             return this.gradientValues[seriesIndex].values[categoryIndex];
         }
 
+        public getTooltipsValue(categoryIndex: number, seriesIndex: number = 0): number {
+            return this.tooltipsValues[seriesIndex].values[categoryIndex];
+        }
+
         public withAddresses(): MapDataBuilder {
             this.categoryValues = this.addressCategoryValues;
             this.categoryColumn = this.addressCategoryColumn;
@@ -1728,7 +1882,7 @@ module powerbitests {
             if (!this.objects) {
                 this.objects = {};
             }
-            this.objects["categoryLabels"] = <powerbi.visuals.DataLabelObject> {
+            this.objects["categoryLabels"] = <powerbi.visuals.DataLabelObject>{
                 show: true,
                 color: { solid: { color: color } },
                 labelDisplayUnits: labelDisplayUnits,
@@ -1831,7 +1985,8 @@ module powerbitests {
 
         constructor() {
             this._style = powerbi.visuals.visualStyles.create();
-            this._host = mocks.createVisualHostServices();
+            // mock geocoding
+            this._host = powerbi.Prototype.inherit(mocks.createVisualHostServices(), h => h.geocoder = () => this.testGeocoder);
             this._svg = d3.select($('<svg/>').get(0));
             this._viewport = {
                 height: 500,
@@ -1858,11 +2013,9 @@ module powerbitests {
         }
 
         public buildInitOptions(): powerbi.VisualInitOptions {
-            let host = powerbi.Prototype.inherit(this._host, h => h.geocoder = () => this.testGeocoder);
-
             return <powerbi.VisualInitOptions> {
                 element: this._element,
-                host: host,
+                host: this._host,
                 style: this._style,
                 viewport: this._viewport,
                 interactivity: { isInteractiveLegend: false },

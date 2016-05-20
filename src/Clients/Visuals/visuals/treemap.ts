@@ -32,6 +32,7 @@ module powerbi.visuals {
         isScrollable: boolean;
         behavior?: TreemapWebBehavior;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
     }
 
     export interface TreemapData {
@@ -128,7 +129,6 @@ module powerbi.visuals {
             fontFamily: 'wf_segoe-ui_normal',
             fontSize: Treemap.MajorLabelTextSize + 'px'
         };
-        private static ValuesRoleName = 'Values'; 
 
         /**
          * A rect with an area of 9 is a treemap rectangle of only
@@ -152,6 +152,7 @@ module powerbi.visuals {
         private isScrollable: boolean;
         private hostService: IVisualHostServices;
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
 
         /**
          * Note: Public for testing.
@@ -194,6 +195,7 @@ module powerbi.visuals {
 
         constructor(options?: TreemapConstructorOptions) {
             this.tooltipsEnabled = options && options.tooltipsEnabled;
+            this.tooltipBucketEnabled = options && options.tooltipBucketEnabled;
             if (options && options.animator) {
                 this.animator = options.animator;
                 this.isScrollable = options.isScrollable ? options.isScrollable : false;
@@ -247,7 +249,7 @@ module powerbi.visuals {
         /**
          * Note: Public for testing purposes.
          */
-        public static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject, tooltipsEnabled: boolean = true): TreemapData {
+        public static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): TreemapData {
             let reader = data.createIDataViewCategoricalReader(dataView);
 
             let rootNode: TreemapNode = {
@@ -265,6 +267,7 @@ module powerbi.visuals {
             let legendTitle = "";
             let colorHelper = new ColorHelper(colors, treemapProps.dataPoint.fill);
             let dataWasCulled = undefined;
+            
             if (dataView && dataView.metadata && dataView.metadata.objects) {
                 let objects = dataView.metadata.objects;
 
@@ -274,14 +277,17 @@ module powerbi.visuals {
                 labelSettings.precision = DataViewObjects.getValue(objects, treemapProps.labels.labelPrecision, labelSettings.precision);
                 labelSettings.showCategory = DataViewObjects.getValue(objects, treemapProps.categoryLabels.show, labelSettings.showCategory);
             }
-
-            if (dataView && dataView.categorical && dataView.categorical.values) {
+            
+            // If we values or a gradient, render the tree map
+            if (reader.hasValues(treemapRoles.values) || reader.hasValues(treemapRoles.gradient)) {
+                
+                // If we don't have a values column, but do have a gradient one, use that as values
+                let valueColumnRoleName = reader.hasValues(treemapRoles.values) ? treemapRoles.values : treemapRoles.gradient;
                 let categorical = dataView.categorical;
-                let valueColumns = categorical.values;
-                hasHighlights = !!(valueColumns.length > 0 && valueColumns[0].highlights);
+                hasHighlights = reader.hasHighlights(valueColumnRoleName);
 
                 let formatStringProp = treemapProps.general.formatString;
-                let result = Treemap.getValuesFromCategoricalDataView(categorical, hasHighlights);
+                let result = Treemap.getValuesFromCategoricalDataView(dataView, hasHighlights, valueColumnRoleName);
                 let values = result.values;
                 let highlights = result.highlights;
                 let totalValue = result.totalValue;
@@ -292,23 +298,18 @@ module powerbi.visuals {
 
                 let cullableValue = Treemap.getCullableValue(totalValue, viewport);
 
-                let grouped = valueColumns.grouped();
-                let isMultiSeries = grouped && grouped.length > 0 && grouped[0].values && grouped[0].values.length > 1;
-                let hasDynamicSeries = !!valueColumns.source;
+                let hasDynamicSeries = reader.hasDynamicSeries();
                 dataWasCulled = false;
                 let shouldCullValue = undefined;
-                let gradientValueColumn: DataViewValueColumn = GradientUtils.getGradientValueColumn(categorical);
+                let gradientValueColumn: DataViewValueColumn = reader.getValueColumn(treemapRoles.gradient, 0); // Gradient is only used if we have only one series or series are nondynamic (and therefore don't affect gradient)
+                
                 if ((categorical.categories == null) && !_.isEmpty(values)) {
                     // No categories, sliced by series and measures
-                    for (let i = 0, ilen = values[0].length; i < ilen; i++) {
-                        
-                        let valueColumn = valueColumns[i];
-                        
-                        if(!powerbi.data.DataRoleHelper.hasRoleInValueColumn(valueColumn, Treemap.ValuesRoleName)){
-                            continue;
-                        }
+                    for (let seriesIndex = 0, seriesCount = reader.getSeriesCount(valueColumnRoleName); seriesIndex < seriesCount; seriesIndex++) {
 
-                        let value = values[0][i];
+                        let valueColumn = reader.getValueColumn(valueColumnRoleName, seriesIndex);
+
+                        let value = values[0][seriesIndex];
                         if (!Treemap.checkValueForShape(value)) {
                             continue;
                         }
@@ -316,21 +317,21 @@ module powerbi.visuals {
                             dataWasCulled = dataWasCulled || shouldCullValue;
                             continue;
                         }
-                        
-                        let nodeName = hasDynamicSeries ? reader.getSeriesValueColumnGroup(i).name : converterHelper.formatFromMetadataColumn(reader.getValueDisplayName("Values", i), valueColumn.source, formatStringProp);
+
+                        let nodeName = hasDynamicSeries ? converterHelper.formatFromMetadataColumn(reader.getSeriesValueColumnGroup(seriesIndex).name, reader.getSeriesMetadataColumn(), formatStringProp) : converterHelper.formatFromMetadataColumn(reader.getValueDisplayName(valueColumnRoleName, seriesIndex), valueColumn.source, formatStringProp);
 
                         let identity = new SelectionIdBuilder()
-                            .withSeries(valueColumns, hasDynamicSeries ? valueColumns[i] : undefined)
-                            .withMeasure(valueColumns[i].source.queryName)
+                            .withSeries(dataView.categorical.values, hasDynamicSeries ? valueColumn : undefined)
+                            .withMeasure(valueColumn.source.queryName)
                             .createSelectionId();
 
                         let key = identity.getKey();
 
                         let color = hasDynamicSeries
-                            ? colorHelper.getColorForSeriesValue(grouped[i] && grouped[i].objects, categorical.values.identityFields, converterHelper.getSeriesName(valueColumn.source))
+                            ? colorHelper.getColorForSeriesValue(reader.getSeriesObjects(seriesIndex), categorical.values.identityFields, converterHelper.getSeriesName(valueColumn.source))
                             : colorHelper.getColorForMeasure(valueColumn.source.objects, valueColumn.source.queryName);
 
-                        let highlightedValue = hasHighlights ? highlights[0][i] : undefined;
+                        let highlightedValue = hasHighlights ? highlights[0][seriesIndex] : undefined;
 
                         let tooltipInfo: TooltipDataItem[];
                         if (tooltipsEnabled) {
@@ -338,7 +339,7 @@ module powerbi.visuals {
 
                             if (hasDynamicSeries) {
                                 let seriesMetadataColumn = reader.getSeriesMetadataColumn();
-                                let seriesValue = reader.getSeriesValueColumnGroup(i).name;
+                                let seriesValue = reader.getSeriesValueColumnGroup(seriesIndex).name;
                                 tooltipInfo.push({
                                     displayName: seriesMetadataColumn.displayName,
                                     value: converterHelper.formatFromMetadataColumn(seriesValue, seriesMetadataColumn, formatStringProp),
@@ -358,6 +359,20 @@ module powerbi.visuals {
                                     value: converterHelper.formatFromMetadataColumn(highlightedValue, valueColumn.source, formatStringProp),
                                 });
                         }
+                            if (tooltipBucketEnabled) {
+                                let tooltipValues = reader.getAllValuesForRole("Tooltips", 0, hasDynamicSeries ? seriesIndex : undefined);
+                                let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", hasDynamicSeries ? seriesIndex : undefined);
+                                if (tooltipValues && tooltipMetadataColumns) {
+                                    for (let j = 0; j < tooltipValues.length; j++) {
+                                        if (tooltipValues[j] != null) {
+                                            tooltipInfo.push({
+                                                displayName: tooltipMetadataColumns[j].displayName,
+                                                value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
                         }
                         
                         let node: TreemapNode = {
@@ -372,8 +387,8 @@ module powerbi.visuals {
                             labelFormatString: valueFormatter.getFormatString(valueColumn.source, formatStringProp),
                         };
                         if (hasHighlights && highlights) {
-                            node.highlightMultiplier = value !== 0 ? highlights[0][i] / value : 0;
-                            node.highlightValue = highlights[0][i];
+                            node.highlightMultiplier = value !== 0 ? highlights[0][seriesIndex] / value : 0;
+                            node.highlightValue = highlights[0][seriesIndex];
                         }
                         rootNode.children.push(node);
                         allNodes.push(node);
@@ -388,11 +403,10 @@ module powerbi.visuals {
                 }
                 else if (categorical.categories && categorical.categories.length > 0) {
                     // Count the columns that have the value roles
-                    let valueColumnCount = _.filter(valueColumns, x => x.source && x.source.roles && x.source.roles[Treemap.ValuesRoleName] === true).length;
+                    let seriesCount = reader.getSeriesCount(valueColumnRoleName);
 
-                    // Do not add second level if it's one and only one data point per shape and it's not a group value
-                    // e.g. Category/Series group plus only one Value field (excluding the gradient)
-                    let omitSecondLevel = valueColumnCount === 1 && (valueColumns[0].source.groupName == null);
+                    // Do not add second level if there's only one series.
+                    let omitSecondLevel = seriesCount === 1;
 
                     // Create the first level from categories
                     let categoryColumn = categorical.categories[0];
@@ -411,7 +425,7 @@ module powerbi.visuals {
 
                         // This section area builds the tooltip for the parent node. It's only displayed if the node doesn't have any children (essentially if omitSecondLevel is true).
                         // seriesIndex is the index of the 1st series with the role Values.
-                        let seriesIndex = powerbi.data.DataRoleHelper.getMeasureIndexOfRole(grouped, Treemap.ValuesRoleName);
+                        let seriesIndex = 0;
                         let value = currentValues[seriesIndex];
                         let highlightValue = hasHighlights && highlights ? highlights[categoryIndex][seriesIndex] : undefined;
                                                 
@@ -429,7 +443,7 @@ module powerbi.visuals {
 
                             let valueColumnMetadata: DataViewMetadataColumn; 
                             if (value != null) {
-                                valueColumnMetadata = valueColumns[seriesIndex].source;
+                                valueColumnMetadata = reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex);
                                 tooltipInfo.push({
                                     displayName: valueColumnMetadata.displayName,
                                     value: converterHelper.formatFromMetadataColumn(value, valueColumnMetadata, formatStringProp),
@@ -450,11 +464,27 @@ module powerbi.visuals {
                                     value: converterHelper.formatFromMetadataColumn(gradientValueColumn.values[categoryIndex] , gradientValueColumnMetadata, formatStringProp),
                                 });
                             }
+
+                            if (tooltipBucketEnabled) {
+                                let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, seriesIndex);
+                                let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", seriesIndex);
+
+                                if (tooltipValues && tooltipMetadataColumns) {
+                                    for (let j = 0; j < tooltipValues.length; j++) {
+                                        if (tooltipValues[j] != null) {
+                                            tooltipInfo.push({
+                                                displayName: tooltipMetadataColumns[j].displayName,
+                                                value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         let identity: SelectionId = SelectionIdBuilder.builder()
                             .withCategory(categoryColumn, categoryIndex)
-                            .withMeasure(omitSecondLevel ? valueColumns[seriesIndex].source.queryName : undefined)
+                            .withMeasure(omitSecondLevel ? reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex).queryName : undefined)
                             .createSelectionId();
 
                         let key = JSON.stringify({ nodeKey: identity.getKey(), depth: 1 });
@@ -467,7 +497,7 @@ module powerbi.visuals {
                             identity: identity,
                             tooltipInfo: tooltipInfo,
                             highlightedTooltipInfo: tooltipInfo,
-                            labelFormatString: valueColumnCount === 1 ? valueFormatter.getFormatString(valueColumns[seriesIndex].source, formatStringProp) : categoryFormat,
+                            labelFormatString: seriesCount === 1 ? valueFormatter.getFormatString(reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex), formatStringProp) : categoryFormat,
                         };
                         if (hasHighlights) {
                             node.highlightMultiplier = value !== 0 ? highlightValue / value : 0;
@@ -485,15 +515,11 @@ module powerbi.visuals {
                         let total = 0;
                         let highlightTotal = 0; // Used if omitting second level
 
-                        for (let j = 0, jlen = currentValues.length; j < jlen; j++) {
+                        for (; seriesIndex < seriesCount; seriesIndex++) {
 
-                            let valueColumn = valueColumns[j];
+                            let valueColumn = reader.getValueColumn(valueColumnRoleName, seriesIndex);
 
-                            if (!powerbi.data.DataRoleHelper.hasRoleInValueColumn(valueColumn, Treemap.ValuesRoleName)) {
-                                continue;
-                            }
-
-                            let value = currentValues[j];
+                            let value = currentValues[seriesIndex];
                             let highlight: number;
 
                             shouldCullValue = value < cullableValue;
@@ -505,19 +531,19 @@ module powerbi.visuals {
                             total += value;
 
                             if (hasHighlights) {
-                                highlight = highlights[categoryIndex][j];
+                                highlight = highlights[categoryIndex][seriesIndex];
                                 highlightTotal += highlight;
                             }
 
                             if (!omitSecondLevel) {
                                 let childName: string = null;
-                                if (isMultiSeries) {
+                                if (reader.hasDynamicSeries()) {
                                     // Measure: use name and index
-                                    childName = valueColumn.source.displayName;
+                                    childName = converterHelper.formatFromMetadataColumn(reader.getSeriesName(seriesIndex), reader.getSeriesMetadataColumn(), formatStringProp);
                                 }
                                 else {
                                     // Series group instance
-                                    childName = valueColumn.source.groupName;
+                                    childName = converterHelper.formatFromMetadataColumn(reader.getValueDisplayName(valueColumnRoleName, seriesIndex), reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex), formatStringProp);
                                 }
 
                                 let categoricalValues = categorical ? categorical.values : null;
@@ -542,7 +568,7 @@ module powerbi.visuals {
                                             // Category/series on the same column -- don't repeat its value in the tooltip.
                                             tooltipInfo.push({
                                                 displayName: categoricalValues.source.displayName,
-                                                value: converterHelper.formatFromMetadataColumn(grouped[j].name, categoricalValues.source, formatStringProp),
+                                                value: converterHelper.formatFromMetadataColumn(reader.getSeriesName(seriesIndex), categoricalValues.source, formatStringProp),
                                             });
                                         }
                                     }
@@ -559,6 +585,22 @@ module powerbi.visuals {
                                             displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
                                             value: converterHelper.formatFromMetadataColumn(highlightedValue, valueColumn.source, formatStringProp),
                                         });
+                                    }
+
+                                    if (tooltipBucketEnabled) {
+                                        let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, hasDynamicSeries ? seriesIndex : undefined);
+                                        let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", hasDynamicSeries ? seriesIndex : undefined);
+
+                                        if (tooltipValues && tooltipMetadataColumns) {
+                                            for (let j = 0; j < tooltipValues.length; j++) {
+                                                if (tooltipValues[j] != null) {
+                                                    tooltipInfo.push({
+                                                        displayName: tooltipMetadataColumns[j].displayName,
+                                                        value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
+                                                    });
+                                    }
+                                }
+                                        }
                                     }
                                 }
 
@@ -611,37 +653,31 @@ module powerbi.visuals {
             };
         }
 
-        private static getValuesFromCategoricalDataView(data: DataViewCategorical, hasHighlights: boolean): TreemapRawData {
-            let valueColumns = data.values;
-            let categoryValueCount: number;
-            if (valueColumns && (data.categories == null)) {
-                categoryValueCount = 1; // We only get the first value out of each valueColumn since we don't have a category
-            }
-            else if (valueColumns && data.categories && data.categories.length > 0) {
-                categoryValueCount = data.categories[0].values.length;
-            }
+        private static getValuesFromCategoricalDataView(dataView: DataView, hasHighlights: boolean, valueColumnRoleName: string): TreemapRawData {
+            let reader = data.createIDataViewCategoricalReader(dataView);
+            let categoryCount = reader.getCategoryCount() || 1;
+            let seriesCount = reader.getSeriesCount(valueColumnRoleName);
 
             let values: number[][] = [];
             let highlights: number[][] = [];
             let totalValue = 0;
-            for (let i = 0; i < categoryValueCount; i++) {
+            for (let i = 0; i < categoryCount; i++) {
                 values.push([]);
                 if (hasHighlights)
                     highlights.push([]);
             }
 
             let highlightsOverflow: boolean;
-            for (let j = 0; j < valueColumns.length; j++) {
-                let valueColumn = valueColumns[j];
-                for (let i = 0; i < categoryValueCount; i++) {
-                    let value = valueColumn.values[i];
-                    values[i].push(value);
+            for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let value = reader.getValue(valueColumnRoleName, categoryIndex, seriesIndex);
+                    values[categoryIndex].push(value);
                     totalValue += isNaN(value) ? 0 : value;
                     if (hasHighlights) {
-                        let highlight = valueColumn.highlights[i];
-                        if (!highlight)
+                        let highlight = reader.getHighlight(valueColumnRoleName, categoryIndex, seriesIndex);
+                        if (highlight == null)
                             highlight = 0;
-                        highlights[i].push(highlight);
+                        highlights[categoryIndex].push(highlight);
                         if (highlight > value)
                             highlightsOverflow = true;
                     }
@@ -682,7 +718,7 @@ module powerbi.visuals {
                     legendObjectProperties = objects['legend'];
                 }
 
-                this.data = Treemap.converter(dataView, this.colors, labelSettings, this.interactivityService, this.currentViewport, legendObjectProperties, this.tooltipsEnabled);
+                this.data = Treemap.converter(dataView, this.colors, labelSettings, this.interactivityService, this.currentViewport, legendObjectProperties, this.tooltipsEnabled, this.tooltipBucketEnabled);
             }
             else {
                 let rootNode: TreemapNode = {

@@ -339,4 +339,26 @@ module powerbi.visuals.plugins {
         capabilities: capabilities.kpi,
         create: () => new KPIStatusWithHistory()
     };
+    
+    export let debugVisual: IVisualPlugin = {
+        name: 'debugVisual',
+        // TODO: Create new watermark (waiting on design)
+        watermarkKey: 'kpi',
+        capabilities: system.DebugVisual.capabilities,
+        create: () => new system.DebugVisual()
+    };
+    
+    // This plugin is for the visual injected into the debug visual.
+    export let custom: IVisualPlugin = {
+        name: 'custom',
+        capabilities: system.DebugVisual.capabilities,
+        create: () => {
+            return {
+                init : ()=> {},
+                update: () => {},
+                destroy: ()=> {},
+                enumerateObjectInstances: () => []
+            };
+        }
+    };
 }

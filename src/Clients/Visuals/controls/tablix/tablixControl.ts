@@ -418,27 +418,54 @@ module powerbi.visuals.controls {
         }
 
         private onMouseWheel(e: MouseWheelEvent): void {
-            let dimension = this.determineDimensionToScroll();
-            if (dimension)
-                dimension.scrollbar.onMouseWheel(e);
+            this.determineDimensionToScroll(e,
+                (dimension, delta) => { dimension.scrollbar.onMouseWheel(delta); });
+
+            e.preventDefault();
         }
 
         private onFireFoxMouseWheel(e: MouseWheelEvent): void {
-            let dimension = this.determineDimensionToScroll();
-            if (dimension)
-                dimension.scrollbar.onFireFoxMouseWheel(e);
+            this.determineDimensionToScrollFirefox(e,
+                (dimension, delta) => { dimension.scrollbar.onMouseWheel(delta); });
+
+            e.preventDefault();
         }
 
-        private determineDimensionToScroll(): TablixDimension {
-            if (this.rowDim.scrollbar.visible)
-                return this.rowDim;
+        private determineDimensionToScroll(e: MouseWheelEvent, scrollCallback: (dimension: TablixDimension, delta: number) => void): void {
+            // If vertical scrollbar is shown, apply normal scrolling in X, Y
+            if (this.rowDim.scrollbar.visible) {
+                if (e.wheelDeltaY)
+                    scrollCallback(this.rowDim, e.wheelDeltaY);
 
-            // In the absence of the vertical scrollbar, we scroll the
-            // horizontal scrollbar.
-            if (this.columnDim.scrollbar.visible)
-                return this.columnDim;
+                if (e.wheelDeltaX && this.columnDim.scrollbar.visible)
+                    scrollCallback(this.columnDim, e.wheelDeltaX);
+            }
 
-            return null;
+            // If vertical scrollbar is hidden, and horizontal scrollbar is shown
+            // Apply whatever X or Y to it
+            else if (this.columnDim.scrollbar.visible) {
+                if (e.wheelDeltaX)
+                    scrollCallback(this.columnDim, e.wheelDeltaX);
+                else if (e.wheelDeltaY)
+                    scrollCallback(this.columnDim, e.wheelDeltaY);
+            }
+        }
+
+        private determineDimensionToScrollFirefox(e: MouseWheelEvent, scrollCallback: (dimension: TablixDimension, delta: number) => void): void {
+            // Firefox
+            if (e.detail) {
+                if (this.rowDim.scrollbar.visible) {
+                    scrollCallback(this.rowDim, -e.detail);
+                    return;
+                }
+
+                // In the absence of the vertical scrollbar, we scroll the
+                // horizontal scrollbar.
+                if (this.columnDim.scrollbar.visible) {
+                    scrollCallback(this.columnDim, -e.detail);
+                    return;
+                }
+            }
         }
 
         public get layoutManager(): internal.TablixLayoutManager {

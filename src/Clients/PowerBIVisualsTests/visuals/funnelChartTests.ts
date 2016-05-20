@@ -106,14 +106,14 @@ module powerbitests {
 
         let dataViewMetadataOneMeasure: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "col1" },
+                { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                 { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Y": true } },
             ]
         };
 
         let dataViewMetadataTwoMeasures: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "col1" },
+                { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                 { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Y": true } },
                 { displayName: "col3", queryName: "col3", isMeasure: true, roles: { "Y": true } },
             ]
@@ -776,11 +776,11 @@ module powerbitests {
         
         let dataViewMetadataCategorySeriesColumns: DataViewMetadata = {
             columns: [
-                { queryName: "select0", displayName: "Squad", properties: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
-                { displayName: "Period", properties: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                { displayName: null, groupName: "201501", isMeasure: true, roles: { "Y": true }, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                { displayName: null, groupName: "201502", isMeasure: true, roles: { "Y": true }, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
-                { displayName: null, groupName: "201503", isMeasure: true, roles: { "Y": true }, properties: { "Values": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                { queryName: "select0", displayName: "Squad", roles: { "Category": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) },
+                { displayName: "Period", roles: { "Series": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                { displayName: null, groupName: "201501", isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                { displayName: null, groupName: "201502", isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
+                { displayName: null, groupName: "201503", isMeasure: true, roles: { "Y": true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) },
             ]
         };
         let categoryColumnRef: SQExpr =
@@ -1258,7 +1258,7 @@ module powerbitests {
         let visualBuilder: VisualBuilder;
         let dataViewMetadata: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "select0" },
+                { displayName: "col1", queryName: "select0", roles: { "Category": true } },
                 { displayName: "col2", queryName: "select1", isMeasure: true, roles: { "Y": true }, objects: { general: { formatString: "$0" } } },
             ],
             objects: {
@@ -1936,7 +1936,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("Ensure percent bars font size position with many categories", (done) => {
+        it("Ensure percent bars font size position with many categories", (done) => {
             let fontSize = 35;
             let categoryValues: any[] = [
                 "United States",
@@ -2927,7 +2927,7 @@ module powerbitests {
         
         let dataViewMetadata: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "col1" },
+                { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                 { displayName: "col2", queryName: "col2", roles: { "Y": true } },
                 { displayName: "col3", queryName: "col3", roles: { "Y": true } },
             ]
@@ -3288,6 +3288,7 @@ module powerbitests {
                     displayName: "col1",
                     queryName: "col1",
                     type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                    roles: { "Category": true }
                 },
                 {
                     displayName: "col2",
@@ -3308,7 +3309,7 @@ module powerbitests {
 
         let dataViewGradientMetadata: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "col1" },
+                { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                 { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Y": true } },
                 { displayName: "col3", queryName: "col3", isMeasure: true, roles: { "Gradient": true } },
             ]
@@ -3316,7 +3317,7 @@ module powerbitests {
 
         let dataViewGradientAndYMetadata: DataViewMetadata = {
             columns: [
-                { displayName: "col1", queryName: "col1" },
+                { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                 { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Y": true, "Gradient": true } },
                 { displayName: "col3", queryName: "col3", isMeasure: true, roles: { "Y": true } },
             ]
@@ -3546,7 +3547,7 @@ module powerbitests {
 
             let dataViewGradientMetadata: DataViewMetadata = {
                 columns: [
-                    { displayName: "col1", queryName: "col1" },
+                    { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                     { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Gradient": true } },
                     { displayName: "col3", queryName: "col3", isMeasure: true, roles: { "Y": true } },
                 ]
@@ -3762,7 +3763,7 @@ module powerbitests {
             
             let dataViewMetadata: DataViewMetadata = {
                 columns: [
-                    { displayName: "col1", queryName: "col1" },
+                    { displayName: "col1", queryName: "col1", roles: { "Category": true } },
                     { displayName: "col2", queryName: "col2", isMeasure: true, roles: { "Y": true } },
                 ]
             };

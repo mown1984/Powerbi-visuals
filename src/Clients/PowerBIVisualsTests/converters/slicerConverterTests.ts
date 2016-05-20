@@ -117,29 +117,35 @@ module powerbitests {
         it("all filter values selected with selectAllCheckbox disabled", () => {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, false);
+            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, false, false);
             expect(interactivityService.isSelectionModeInverted()).toBe(false);
         });
 
         it("all filter values selected with selectAllCheckbox enabled", () => {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, false);
+            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, false, false);
             expect(interactivityService.isSelectionModeInverted()).toBe(true);
         });
 
         it("NotFilter - all filter values selected with selectAllCheckbox enabled", () => {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, true);
+            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, true, false);
             expect(interactivityService.isSelectionModeInverted()).toBe(false);
         });
-
+        
         it("NotFilter - all filter values selected with selectAllCheckbox disabled", () => {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, true);
+            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, true, false);
             expect(interactivityService.isSelectionModeInverted()).toBe(true);
+        });
+
+        it("SearchEnabled - selfFilterEnabled", () => {
+            let hostServices = slicerHelper.createHostServices();
+            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
+            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, false, true);
         });
 
         it("calling host to get display label", () => {
@@ -184,7 +190,8 @@ module powerbitests {
             hostServices: powerbi.IVisualHostServices,
             selectAllEnabled: boolean,
             singleSelectEnabled: boolean,
-            isNotFilter: boolean): void {
+            isNotFilter: boolean,
+            searchEnabled: boolean): void {
             let inExpr = SQExprBuilder.inExpr(
                 [field],
                 [
@@ -198,6 +205,8 @@ module powerbitests {
 
             let dataView = applyDataTransform(slicerHelper.buildDefaultDataView(field), semanticFilter);
             dataView[0].metadata.objects["selection"] = { selectAllCheckboxEnabled: selectAllEnabled, singleSelect: singleSelectEnabled };
+            let general: any = dataView[0].metadata.objects["general"];
+            general.selfFilterEnabled = searchEnabled;
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
 
             if (selectAllEnabled) {
@@ -219,6 +228,8 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[index + 3].selected).toBe(selected);
             expect(slicerData.slicerDataPoints[index + 4].selected).toBe(selected);
             expect(slicerData.slicerDataPoints[index + 5].selected).toBe(selected);
+
+            expect(slicerData.slicerSettings.search.enabled).toBe(searchEnabled);
         }
 
         it('slicer convert boolean values', () => {
@@ -248,6 +259,7 @@ module powerbitests {
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let descriptor: powerbi.ValueTypeDescriptor = { bool: true };
             let transformedDataViews = applyDataTransform(dataView, undefined, descriptor);
+
             let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(6);
             expect(slicerData.slicerDataPoints[5].value).toBe('(Blank)');

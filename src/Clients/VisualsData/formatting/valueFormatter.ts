@@ -37,7 +37,10 @@ module powerbi.visuals {
     }
 
     export interface ICustomValueColumnFormatter {
-        (value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string;
+        (value: any,
+            column: DataViewMetadataColumn,
+            formatStringProp: DataViewObjectPropertyIdentifier,
+            nullsAreBlank?: boolean): string;
     }
 
     export interface ValueFormatterOptions {
@@ -328,20 +331,25 @@ module powerbi.visuals {
                 !!allowFormatBeautification ? locale.beautify(format) : format);
         }
 
-        function getValueFormat(value: any, columnType: ValueTypeDescriptor): string {
-            // If column type not defined or is not datetime
-            // ...and the value is of time datetime,
+        /**
+         * Value formatting function to handle variant measures.
+         * For a Date/Time value within a non-date/time field, it's formatted with the default date/time formatString instead of as a number
+         * @param {any} value Value to be formatted
+         * @param {DataViewMetadataColumn} column Field which the value belongs to
+         * @param {DataViewObjectPropertyIdentifier} formatStringProp formatString Property ID
+         * @param {boolean} nullsAreBlank? Whether to show "(Blank)" instead of empty string for null values
+         * @returns Formatted value
+         */
+        export function formatVariantMeasureValue(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier, nullsAreBlank?: boolean): string {
+            // If column type is not datetime, but the value is of time datetime,
             // then use the default date format string
-            if ((!columnType || !columnType.dateTime) && value instanceof Date)
-                return getFormatString(DateTimeMetadataColumn, null, false);
-        }
-
-        export function formatValueColumn(value: any, column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier): string {
-            let valueFormat = getValueFormat(value, column.type);
-            if (valueFormat)
-                return formatCore(value, valueFormat);
-            else
-                return formatCore(value, getFormatString(column, formatStringProp));
+            if (!(column && column.type && column.type.dateTime) && value instanceof Date) {
+                let valueFormat = getFormatString(DateTimeMetadataColumn, null, false);
+                return formatCore(value, valueFormat, nullsAreBlank);
+            }
+            else {
+                return formatCore(value, getFormatString(column, formatStringProp), nullsAreBlank);
+            }
         }
 
         function createDisplayUnitSystem(displayUnitSystemType?: DisplayUnitSystemType): DisplayUnitSystem {
@@ -460,8 +468,8 @@ module powerbi.visuals {
             return formatListCompound(strings, locale.restatementCompoundOr);
         }
 
-        function formatCore(value: any, format: string): string {
-            let formattedValue = getStringFormat(value, false /*nullsAreBlank*/);
+        function formatCore(value: any, format: string, nullsAreBlank?: boolean): string {
+            let formattedValue = getStringFormat(value, nullsAreBlank ? nullsAreBlank : false /*nullsAreBlank*/);
 
             if (!StringExtensions.isNullOrUndefinedOrWhiteSpaceString(formattedValue))
                 return formattedValue;

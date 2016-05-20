@@ -61,7 +61,8 @@ module jsCommon {
     export function ensureMap(locale: string, action: () => void): void {
         let mapPackageWithLocale = powerbi.Prototype.inherit(MapPackage);
         if (!_.isEmpty(locale)) {
-            mapPackageWithLocale.javaScriptFilesWithCallback[0].javascriptFile = MSMapcontrol.concat('&mkt=' + locale);
+            let localeSplit = locale.split('-', 2);
+            mapPackageWithLocale.javaScriptFilesWithCallback[0].javascriptFile = MSMapcontrol.concat('&mkt=' + locale + '&ur=' + (localeSplit.length > 1 ? localeSplit[1] : locale));
         }
         requires(mapPackageWithLocale, action);
     }

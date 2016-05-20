@@ -492,12 +492,13 @@ module powerbitests.performanceTestsHelpers {
                     return powerbi.data.createDataViewScopeIdentity(powerbi.data.SQExprBuilder.equal(fieldExpr, powerbi.data.SQExprBuilder.text(String(value))));
                 });
 
-                var columns = [
+                var columns: powerbi.DataViewValueColumn[] = [
                     {
                         source: {
                             displayName: "Population of USA",
                             queryName: "usa",
-                            type: powerbi.ValueType.fromDescriptor({ numeric: true })
+                            type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                            roles: { Y: true, Values: true },
                         },
                         values: getPopulationUSA()
                     },
@@ -505,7 +506,8 @@ module powerbitests.performanceTestsHelpers {
                         source: {
                             displayName: "Population of Canada",
                             queryName: "canada",
-                            type: powerbi.ValueType.fromDescriptor({ numeric: true })
+                            type: powerbi.ValueType.fromDescriptor({ numeric: true }),
+                            roles: { Y: true, Values: true },
                         },
                         values: getPopulationCanada()
                     }
@@ -513,12 +515,13 @@ module powerbitests.performanceTestsHelpers {
 
                 var dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
 
-                var metadata = {
+                var metadata: powerbi.DataViewMetadata = {
                     columns: [
                         {
                             displayName: "Population",
                             queryName: "population",
-                            type: powerbi.ValueType.fromDescriptor({ text: true })
+                            type: powerbi.ValueType.fromDescriptor({ text: true }),
+                            roles: { Category: true },
                         }
                     ]
                 };

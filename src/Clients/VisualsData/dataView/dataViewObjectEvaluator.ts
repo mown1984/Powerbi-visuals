@@ -239,10 +239,10 @@ module powerbi.data {
 
         function evaluateValue(evalContext: IEvalContext, definition: SQExpr | RuleEvaluation, valueType: ValueType): any {
             if (definition instanceof SQExpr)
-                return ExpressionEvaluator.evaluate(<SQExpr>definition, evalContext);
+                return ExpressionEvaluator.evaluate(definition, evalContext);
 
             if (definition instanceof RuleEvaluation)
-                return (<RuleEvaluation>definition).evaluate(evalContext);
+                return definition.evaluate(evalContext);
         }
 
         /** Responsible for evaluating SQExprs into values. */

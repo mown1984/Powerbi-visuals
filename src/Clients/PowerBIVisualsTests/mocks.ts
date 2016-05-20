@@ -204,7 +204,7 @@ module powerbitests.mocks {
         ];
 
         /** With the way our tests run, these values won't be consistent, so you shouldn't validate actual lat/long or pixel lcoations */
-        public geocode(query: string, category?: string): any {
+        public geocode(query: string, category?: string, options?: powerbi.GeocodeOptions): any {
             var resultIndex = this.callNumber++ % this.resultList.length;
             var deferred = $.Deferred();
             deferred.resolve(this.resultList[resultIndex]);
@@ -240,14 +240,14 @@ module powerbitests.mocks {
             };
         }
 
-        public geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): any {   
+        public geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number, options?: powerbi.GeocodeOptions): any {   
             var result = this.makeGeocodeBoundary();
             var deferred = $.Deferred();
             deferred.resolve(result);
             return deferred;
         }
 
-        public geocodePoint(latitude: number, longitude: number): any {
+        public geocodePoint(latitude: number, longitude: number, options?: powerbi.GeocodeOptions): any {
             let result = {
                 latitude: latitude,
                 longitude: longitude,

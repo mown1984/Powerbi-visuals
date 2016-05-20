@@ -378,11 +378,6 @@ module powerbi.visuals.controls {
             this._touchStarted = false;
         }
 
-        public registerElementForMouseWheelScrolling(element: HTMLElement): void {
-            element.addEventListener("mousewheel",(e) => { this.onMouseWheel(<MouseWheelEvent>e); });
-            element.addEventListener("DOMMouseScroll",(e) => { this.onFireFoxMouseWheel(<MouseWheelEvent>e); });
-        }
-
         private createView(parentElement: HTMLElement, layoutKind: TablixLayoutKind): void {
             this._element = <HTMLDivElement>document.createElement("div");
             this._element.className = Scrollbar.className;
@@ -588,20 +583,10 @@ module powerbi.visuals.controls {
             return null;
         }
 
-        public onMouseWheel(e: MouseWheelEvent): void {
-            if (e.wheelDelta) {
-                this.mouseWheel(e.wheelDelta);
+        public onMouseWheel(delta: number): void {
+            if (delta) {
+                this.mouseWheel(delta);
             }
-
-            e.preventDefault();
-        }
-
-        public onFireFoxMouseWheel(e: MouseWheelEvent): void {
-            if (e.detail) {
-                this.mouseWheel(-e.detail);
-            }
-
-            e.preventDefault();
         }
 
         private mouseWheel(delta: number): void {

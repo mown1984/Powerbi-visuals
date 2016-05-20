@@ -96,6 +96,11 @@ declare module powerbi {
          * Visual should prefer to request a higher volume of data.
          */
         preferHigherDataVolume?: boolean;
+        
+        /**
+         * Whether the load more data feature (paging of data) for Cartesian charts should be enabled.
+         */
+        cartesianLoadMoreEnabled?: boolean;
     }
 
     /** Parameters available to a sortable visual candidate */
@@ -289,10 +294,15 @@ declare module powerbi {
     }
 
     /** Defines geocoding services. */
+    export interface GeocodeOptions {
+        /** promise that should abort the request when resolved */
+        timeout?: IPromise<any>;
+    }
+
     export interface IGeocoder {
-        geocode(query: string, category?: string): IPromise<IGeocodeCoordinate>;
-        geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number): IPromise<IGeocodeBoundaryCoordinate>;
-        geocodePoint(latitude: number, longitude: number): IPromise<IGeocodeResource>;
+        geocode(query: string, category?: string, options?: GeocodeOptions): IPromise<IGeocodeCoordinate>;
+        geocodeBoundary(latitude: number, longitude: number, category: string, levelOfDetail?: number, maxGeoData?: number, options?: GeocodeOptions): IPromise<IGeocodeBoundaryCoordinate>;
+        geocodePoint(latitude: number, longitude: number, options?: GeocodeOptions): IPromise<IGeocodeResource>;
 
         /** returns data immediately if it is locally available (e.g. in cache), null if not in cache */
         tryGeocodeImmediate(query: string, category?: string): IGeocodeCoordinate;
@@ -479,7 +489,8 @@ declare module powerbi {
 
         /** Set the display names for their corresponding DataViewScopeIdentity */
         setIdentityDisplayNames(displayNamesIdentityPairs: DisplayNameIdentityPair[]): void;
-
+        
+        visualCapabilitiesChanged?(): void;
     }
 
     export interface DisplayNameIdentityPair {

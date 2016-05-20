@@ -41,6 +41,9 @@ module powerbi.visuals {
                     filter: {
                         type: { filter: {} },
                     },
+                    selfFilter: {
+                        type: { filter: {} },
+                    },
                     defaultValue: {
                         type: { expression: { defaultValue: true } },
                     },
@@ -53,6 +56,9 @@ module powerbi.visuals {
                     },
                     count: {
                         type: { integer: true }
+                    },
+                    selfFilterEnabled: {
+                        type: { bool: true }
                     },
                 },
             },
@@ -126,6 +132,7 @@ module powerbi.visuals {
             outlineWeight: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'outlineWeight' },
             orientation: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'orientation' },
             count: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'count' },
+            selfFilterEnabled: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selfFilterEnabled' },
         },
         selection: {
             selectAllCheckboxEnabled: <DataViewObjectPropertyIdentifier>{ objectName: 'selection', propertyName: 'selectAllCheckboxEnabled' },
@@ -146,8 +153,8 @@ module powerbi.visuals {
         },
         selectedPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selected' },
         filterPropertyIdentifier: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'filter' },
+        selfFilterPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'filter' },
         formatString: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'formatString' },
         defaultValue: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'defaultValue' },
     };
-
 }

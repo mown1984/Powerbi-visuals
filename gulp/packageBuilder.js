@@ -1,4 +1,4 @@
-/*
+ /*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -26,9 +26,11 @@
 
 "use strict";
 var gulp = require("gulp"),
+    base64 = require("gulp-base64"),
     pathModule = require("path"),
     gulpLess = require("gulp-less"),
     insert = require('gulp-insert'),
+    template = require('gulp-template'),
     fs = require('fs'),
     path = require('path'),
     zip = require('gulp-zip'),
@@ -41,8 +43,7 @@ var PACKAGE_BUNDLE_NAME = "bundle.json";
 var CUSTOM_VISUALS_PATH = "src/Clients/CustomVisuals/visuals";
 var CUSTOM_VISUALS_PACKAGES_PATH = "lib/packages";
 var PACKAGE_EXTENSION = ".pbiviz";
-
-var excludeVisuals = ["sunburst"];
+var PACKAGE_SKIPLIST = ["sunburst"];
 
 function PackageBuilder(packageName) {
     if (!packageName) {
@@ -72,7 +73,7 @@ PackageBuilder.prototype.parseBundleConfig = function () {
 }
 
 
-PackageBuilder.prototype.createTasks = function () { 
+PackageBuilder.prototype.createTasks = function () {
     var visualPath = pathModule.join("src/Clients/CustomVisuals/visuals", this._packageName);
     var packageResourcesPath = pathModule.join(visualPath, "package/resources");
     var packageName = this._config.package.name;
@@ -80,10 +81,9 @@ PackageBuilder.prototype.createTasks = function () {
     var guid = this._config.package.guid;
     var regexString = new RegExp(this._config.package.name + "[0-9]+", "g");
     var regexSamples = new RegExp("samples", "g");
-    var regexSampleNames = new RegExp("sampleName", "g");
 
     var jsFileName = this._config.package.code.javaScript;
-    gulp.task("customVisuals:buildTS", function() {    
+    gulp.task("customVisuals:buildTS", function() {
         var tsResult = gulp.src(["src/Clients/Visuals/obj/Visuals.d.ts",
                                  "src/Clients/VisualsCommon/obj/VisualsCommon.d.ts",
                                  "src/Clients/VisualsContracts/obj/VisualsContracts.d.ts",
@@ -104,12 +104,13 @@ PackageBuilder.prototype.createTasks = function () {
                             .pipe(insert.append(PackageBuilder.portalExports))
                             .pipe(replace(regexString, guid))
                             .pipe(replace(regexSamples, guid))
-                            .pipe(replace(regexSampleNames, packageName))
+                            .pipe(template({guid: guid,
+                                            visualName: packageName}))
                             .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
         return tsResult;
     });
 
-    gulp.task("customVisuals:copyTS", function() {    
+    gulp.task("customVisuals:copyTS", function() {
         var tsResult = gulp.src([pathModule.join(visualPath, "visual/*.ts"),
                                  pathModule.join(visualPath, "visual/**/*.ts")])
                             .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
@@ -117,6 +118,7 @@ PackageBuilder.prototype.createTasks = function () {
     });
 
     var cssFileName = this._config.package.code.css;
+    var iconFileName = pathModule.join(visualPath, "package/resources", this._config.package.images.icon);
 
     gulp.task("customVisuals:buildCSS", function() {
         var lessResult = gulp.src([pathModule.join(visualPath, "visual/**/*.less")])
@@ -124,6 +126,13 @@ PackageBuilder.prototype.createTasks = function () {
                // paths: paths || [],
                 relativeUrls: true,
                // modifyVars: options.modifyVars
+            }))
+            .pipe(insert.append(PackageBuilder.cssTemplate))
+            .pipe(template({guid: guid,
+                            cssFileName: iconFileName}))
+            .pipe(base64({
+                extensions: ['svg', 'png'],
+                debug: false
             }))
             .pipe(gulpRename({
                 dirname: "./",
@@ -225,8 +234,6 @@ PackageBuilder.prototype.getVisualConfig = function() {
         "description": this._config.package.description,
         "supportUrl": this._config.package.supportUrl,
         "gitHubUrl": this._config.package.gitHubUrl,
-        "licenseTerms": this._config.package.licenseTerms,
-        "privacyTerms": this._config.package.privacyTerms
     };
 }
 
@@ -299,9 +306,7 @@ PackageBuilder.prototype.getImagesConfig = function() {
 function getFolders(dir) {
     return fs.readdirSync(dir)
       .filter(function(file) {
-        return fs.statSync(path.join(dir, file)).isDirectory() && !excludeVisuals.some(function (visualName) {
-            return visualName === file;
-        });
+        return fs.statSync(path.join(dir, file)).isDirectory();
       });
 }
 
@@ -309,15 +314,21 @@ PackageBuilder.buildAllPackages = function(callback) {
     console.log('Building all custom packages...');
     var customVisuals = getFolders(CUSTOM_VISUALS_PATH);
 
-    var tasks = customVisuals.map(function(packageName) {
-        var taskName = "package:customVisuals:" + packageName;
-
-        gulp.task(taskName, function(cb) {
-            var pb = new PackageBuilder(packageName);
-            pb.build(cb);
-        })
-        return taskName;
-   });
+    var tasks = customVisuals
+            .filter(function(packageName) {
+                if (PACKAGE_SKIPLIST.indexOf(packageName) >= 0) {
+                    return false;
+                }
+                return true;
+            })
+            .map(function(packageName) {
+                var taskName = "package:customVisuals:" + packageName;
+                gulp.task(taskName, function(cb) {
+                    var pb = new PackageBuilder(packageName);
+                    pb.build(cb);
+                })
+                return taskName;
+            });
 
    tasks.push(callback);
    runSequence.apply(null, tasks);
@@ -339,16 +350,20 @@ PackageBuilder.portalExports = "var powerbi;\n\
     (function (visuals) {\n\
         var plugins;\n\
         (function (plugins) {\n\
-            plugins.samples = {\n\
-                name: 'samples',\n\
-                class: 'samples',\n\
-                capabilities: powerbi.visuals.samples.sampleName.capabilities,\n\
+            plugins.<%= guid %> = {\n\
+                name: '<%= guid %>',\n\
+                class: '<%= guid %>',\n\
+                capabilities: powerbi.visuals.<%= guid %>.<%= visualName %>.capabilities,\n\
                 custom: true,\n\
-                create: function () { return new powerbi.visuals.samples.sampleName(); }\n\
+                create: function () { return new powerbi.visuals.<%= guid %>.<%= visualName %>(); }\n\
             };\n\
         })(plugins = visuals.plugins || (visuals.plugins = {}));\n\
     })(visuals = powerbi.visuals || (powerbi.visuals = {}));\n\
 })(powerbi || (powerbi = {}));\n\
 ";
 
+PackageBuilder.cssTemplate = "\n\.visual-icon.<%= guid %> {\n\
+    background-image: url(<%= cssFileName %>);\n\
+}\n\
+";
 module.exports = PackageBuilder;

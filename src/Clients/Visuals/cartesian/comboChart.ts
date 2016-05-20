@@ -80,11 +80,13 @@ module powerbi.visuals {
 
             if (columnMapping && columnMapping.categorical) {
                 columnMapping.categorical.dataVolume = 4;
+                CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, columnMapping);
             }
 
             let lineMapping = options.dataViewMappings.length > 1 && options.dataViewMappings[1];
             if (lineMapping && lineMapping.categorical) {
                 lineMapping.categorical.dataVolume = 4;
+                CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, lineMapping);
             }
         }
 

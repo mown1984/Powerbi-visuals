@@ -35,6 +35,7 @@ module powerbi.visuals {
 
             export const HeaderContainer = createClassAndSelector('headerContainer');
             export const Header = createClassAndSelector('slicerHeader');
+            export const TitleHeader = createClassAndSelector('titleHeader');
             export const HeaderText = createClassAndSelector('headerText');
             export const Body = createClassAndSelector('slicerBody');
             export const Label = createClassAndSelector('slicerLabel');
@@ -42,6 +43,9 @@ module powerbi.visuals {
             export const LabelImage = createClassAndSelector('slicerImage');
             export const CountText = createClassAndSelector('slicerCountText');
             export const Clear = createClassAndSelector('clear');
+            export const SearchHeader = createClassAndSelector('searchHeader');
+            export const SearchHeaderCollapsed = createClassAndSelector('collapsed');
+            export const SearchHeaderShow = createClassAndSelector('show');
             export const MultiSelectEnabled = createClassAndSelector('isMultiSelectEnabled');
         }
 
@@ -49,6 +53,7 @@ module powerbi.visuals {
         export module DisplayNameKeys {
             export const Clear = 'Slicer_Clear';
             export const SelectAll = 'Slicer_SelectAll';
+            export const Search = 'SearchBox_Text';
         }
 
         /** Helper class for slicer settings  */
@@ -97,11 +102,21 @@ module powerbi.visuals {
                 slicerHeaderDiv.className = Selectors.Header.class;
 
                 let slicerHeader: D3.Selection = d3.select(slicerHeaderDiv);
-                slicerHeader.append('span')
+                let slicerTitle = slicerHeader.append('h2')
+                    .classed(Selectors.TitleHeader.class, true);
+                slicerTitle.append('span')
                     .classed(Selectors.Clear.class, true)
                     .attr('title', hostServices.getLocalizedString(DisplayNameKeys.Clear));
-                slicerHeader.append('div').classed(Selectors.HeaderText.class, true);
+                slicerTitle.append('div').classed(Selectors.HeaderText.class, true);
+                let slicerSearch = slicerHeader.append('div')
+                    .classed(Selectors.SearchHeader.class, true)
+                    .classed(Selectors.SearchHeaderCollapsed.class, true);
+                slicerSearch.append('button')
+                    .attr('title', hostServices.getLocalizedString(DisplayNameKeys.Search));
 
+                slicerSearch.append('input')
+                    .attr('type', 'text');
+                
                 return slicerHeaderDiv;
             }
 
@@ -142,14 +157,23 @@ module powerbi.visuals {
             }
 
             public styleSlicerHeader(slicerHeader: D3.Selection, settings: SlicerSettings, headerText: string): void {
+                let titleHeader = slicerHeader.select(SlicerUtil.Selectors.TitleHeader.selector);
+                let searchHeader = slicerHeader.select(SlicerUtil.Selectors.SearchHeader.selector);
                 if (settings.header.show) {
-                    slicerHeader.style('display', 'block');
+                    titleHeader.style('display', 'block');
                     let headerTextElement = slicerHeader.select(Selectors.HeaderText.selector)
                         .text(headerText);
                     this.setSlicerHeaderTextStyle(headerTextElement, settings);
+                } else {
+                    titleHeader.style('display', 'none');
                 }
-                else {
-                    slicerHeader.style('display', 'none');
+
+                if (settings.search.enabled) {
+                    searchHeader.classed(Selectors.SearchHeaderShow.class, true);
+                    searchHeader.classed(Selectors.SearchHeaderCollapsed.class, false);
+                } else {
+                    searchHeader.classed(Selectors.SearchHeaderShow.class, false);
+                    searchHeader.classed(Selectors.SearchHeaderCollapsed.class, true);
                 }
             }
 

@@ -92,6 +92,9 @@ module powerbi.visuals {
             selectAllCheckboxEnabled: boolean;
             singleSelect: boolean;
         };
+        search: {
+            enabled: boolean;
+        };
     }
 
     export interface SlicerInitOptions {
@@ -135,6 +138,9 @@ module powerbi.visuals {
                 selection: {
                     selectAllCheckboxEnabled: false,
                     singleSelect: true,
+                },
+                search: {
+                    enabled: false,
                 },
             };
         }
