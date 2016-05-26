@@ -28,6 +28,7 @@ module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
+    import LabelUtils = NewDataLabelUtils;
 
     export interface FunnelChartConstructorOptions {
         animator?: IFunnelAnimator;
@@ -49,7 +50,7 @@ module powerbi.visuals {
      * Store the original values for non-rendering, user-facing elements
      * e.g. data labels
      */
-    export interface FunnelSlice extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
+    export interface FunnelDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
         value: number;
         originalValue: number;
         label: string;
@@ -62,7 +63,7 @@ module powerbi.visuals {
     }
 
     export interface FunnelData {
-        slices: FunnelSlice[];
+        dataPoints: FunnelDataPoint[];
         categoryLabels: string[];
         valuesMetadata: DataViewMetadataColumn[];
         hasHighlights: boolean;
@@ -84,6 +85,13 @@ module powerbi.visuals {
         rangeEnd: number;
         barToSpaceRatio: number;
         categoryLabels: string[];
+    }
+    
+    export interface IFunnelRect {
+        width: (d: FunnelDataPoint) => number;
+        x: (d: FunnelDataPoint) => number;
+        y: (d: FunnelDataPoint) => number;
+        height: (d: FunnelDataPoint) => number;
     }
 
     export interface IFunnelLayout {
@@ -109,30 +117,10 @@ module powerbi.visuals {
                 maxWidth: number,
             },
         };
-        shapeLayout: {
-            width: (d: FunnelSlice) => number;
-            height: (d: FunnelSlice) => number;
-            x: (d: FunnelSlice) => number;
-            y: (d: FunnelSlice) => number;
-        };
-        shapeLayoutWithoutHighlights: {
-            width: (d: FunnelSlice) => number;
-            height: (d: FunnelSlice) => number;
-            x: (d: FunnelSlice) => number;
-            y: (d: FunnelSlice) => number;
-        };
-        zeroShapeLayout: {
-            width: (d: FunnelSlice) => number;
-            height: (d: FunnelSlice) => number;
-            x: (d: FunnelSlice) => number;
-            y: (d: FunnelSlice) => number;
-        };
-        interactorLayout: {
-            width: (d: FunnelSlice) => number;
-            height: (d: FunnelSlice) => number;
-            x: (d: FunnelSlice) => number;
-            y: (d: FunnelSlice) => number;
-        };
+        shapeLayout: IFunnelRect;
+        shapeLayoutWithoutHighlights: IFunnelRect;
+        zeroShapeLayout: IFunnelRect;
+        interactorLayout: IFunnelRect;
     }
 
     export interface IFunnelChartSelectors {
@@ -159,6 +147,10 @@ module powerbi.visuals {
      * Renders a funnel chart.
      */
     export class FunnelChart implements IVisual {
+        private static LabelInsidePosition = [powerbi.RectLabelPosition.InsideCenter, powerbi.RectLabelPosition.OutsideEnd];
+        private static LabelOutsidePosition = [powerbi.RectLabelPosition.OutsideEnd, powerbi.RectLabelPosition.InsideEnd];
+        private static LabelOrientation = NewRectOrientation.HorizontalLeftBased;
+        
         public static DefaultBarOpacity = 1;
         public static DimmedBarOpacity = 0.4;
         public static PercentBarToBarRatio = 0.75;
@@ -189,7 +181,6 @@ module powerbi.visuals {
         private static MaxBarHeight = 40;
         private static MinBarThickness = 12;
         private static LabelFunnelPadding = 6;
-        private static InnerTextMinimumPadding = 10;
         private static OverflowingHighlightWidthRatio = 0.5;
         private static MaxMarginFactor = 0.25;
 
@@ -198,6 +189,7 @@ module powerbi.visuals {
         private percentGraphicsContext: D3.Selection;
         private clearCatcher: D3.Selection;
         private axisGraphicsContext: D3.Selection;
+        private labelGraphicsContext: D3.Selection;
         private currentViewport: IViewport;
         private colors: IDataColorPalette;
         private data: FunnelData;
@@ -237,7 +229,7 @@ module powerbi.visuals {
 
         public static converter(dataView: DataView, colors: IDataColorPalette, hostServices: IVisualHostServices, defaultDataPointColor?: string, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): FunnelData {
             let reader = data.createIDataViewCategoricalReader(dataView);
-            let slices: FunnelSlice[] = [];
+            let dataPoints: FunnelDataPoint[] = [];
             let formatStringProp = funnelChartProps.general.formatString;
             let categorical: DataViewCategorical = dataView.categorical;
             let hasHighlights = reader.hasHighlights("Y");
@@ -249,8 +241,8 @@ module powerbi.visuals {
             let hasNegativeValues = false;
             let allValuesAreNegative = false;
             let categoryLabels = [];
-            let dataLabelsSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultFunnelLabelSettings();
-            let percentBarLabelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultLabelSettings(true);
+            let dataLabelsSettings: VisualDataLabelsSettings = this.getDefaultLabelSettings();
+            let percentBarLabelSettings: VisualDataLabelsSettings = this.getDefaultPercentLabelSettings();
             let colorHelper = new ColorHelper(colors, funnelChartProps.dataPoint.fill, defaultDataPointColor);
             let firstValue: number;
             let firstHighlight: number;
@@ -271,7 +263,7 @@ module powerbi.visuals {
             // If we don't have a valid value column, just return
             if (!reader.hasValues("Y"))
                 return {
-                    slices: slices,
+                    dataPoints: dataPoints,
                     categoryLabels: categoryLabels,
                     valuesMetadata: valueMetaData,
                     hasHighlights: hasHighlights,
@@ -367,7 +359,7 @@ module powerbi.visuals {
                     // Same color for all bars
                     let color = colorHelper.getColorForMeasure(reader.getCategoryObjects("Category", categoryIndex), '');
 
-                    slices.push({
+                    dataPoints.push({
                         label: formattedCategoryValue,
                         value: value,
                         originalValue: value,
@@ -383,7 +375,7 @@ module powerbi.visuals {
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
                         let highlightValue = reader.getHighlight("Y", categoryIndex);
-                        slices.push({
+                        dataPoints.push({
                             label: formattedCategoryValue,
                             value: value,
                             originalValue: value,
@@ -454,8 +446,8 @@ module powerbi.visuals {
                             }
                         }
                     }
-
-                    slices.push({
+                    
+                    dataPoints.push({
                         label: valueMetadataColumn.displayName,
                         value: value,
                         originalValue: value,
@@ -470,7 +462,7 @@ module powerbi.visuals {
                     if (hasHighlights) {
                         let highlightIdentity = SelectionId.createWithHighlight(identity);
                         let highlight = reader.getHighlight("Y", categoryIndex, seriesIndex);
-                        slices.push({
+                        dataPoints.push({
                             label: valueMetadataColumn.displayName,
                             value: value,
                             originalValue: value,
@@ -490,43 +482,43 @@ module powerbi.visuals {
                 }
             }
 
-            for (let i = 0; i < slices.length; i += hasHighlights ? 2 : 1) {
-                let slice = slices[i];
-                categoryLabels.push(slice.label);
+            for (let i = 0; i < dataPoints.length; i += hasHighlights ? 2 : 1) {
+                let dataPoint = dataPoints[i];
+                categoryLabels.push(dataPoint.label);
             }
 
             // Calculate negative value warning flags
-            allValuesAreNegative = slices.length > 0 && _.every(slices, (slice: FunnelSlice) => (slice.highlight ? slice.highlightValue <= 0 : true) && slice.value < 0);
-            for (let slice of slices) {
+            allValuesAreNegative = dataPoints.length > 0 && _.every(dataPoints, (dataPoint: FunnelDataPoint) => (dataPoint.highlight ? dataPoint.highlightValue <= 0 : true) && dataPoint.value < 0);
+            for (let dataPoint of dataPoints) {
                 if (allValuesAreNegative) {
-                    slice.value = Math.abs(slice.value);
-                    if (slice.highlight)
-                        slice.highlightValue = Math.abs(slice.highlightValue);
+                    dataPoint.value = Math.abs(dataPoint.value);
+                    if (dataPoint.highlight)
+                        dataPoint.highlightValue = Math.abs(dataPoint.highlightValue);
                 }
                 else {
-                    let value = slice.value;
+                    let value = dataPoint.value;
                     let isValueNegative = value < 0;
                     if (isValueNegative)
-                        slice.value = 0;
+                        dataPoint.value = 0;
 
                     let isHighlightValueNegative = false;
-                    if (slice.highlight) {
-                        let highlightValue = slice.highlightValue;
+                    if (dataPoint.highlight) {
+                        let highlightValue = dataPoint.highlightValue;
                         isHighlightValueNegative = highlightValue < 0;
-                        slice.highlightValue = isHighlightValueNegative ? 0 : highlightValue;
+                        dataPoint.highlightValue = isHighlightValueNegative ? 0 : highlightValue;
                     }
 
                     if (!hasNegativeValues)
                         hasNegativeValues = isValueNegative || isHighlightValueNegative;
                 }
 
-                if (slice.highlightValue > slice.value) {
+                if (dataPoint.highlightValue > dataPoint.value) {
                     highlightsOverflow = true;
                 }
             }
 
             return {
-                slices: slices,
+                dataPoints: dataPoints,
                 categoryLabels: categoryLabels,
                 valuesMetadata: valueMetaData,
                 hasHighlights: hasHighlights,
@@ -581,7 +573,7 @@ module powerbi.visuals {
             if (!data)
                 return;
 
-            let slices = data.slices;
+            let dataPoints = data.dataPoints;
 
             enumeration.pushInstance({
                 objectName: 'dataPoint',
@@ -591,18 +583,18 @@ module powerbi.visuals {
                 },
             });
 
-            for (let i = 0; i < slices.length; i++) {
-                let slice = slices[i];
-                if (slice.highlight)
+            for (let i = 0; i < dataPoints.length; i++) {
+                let dataPont = dataPoints[i];
+                if (dataPont.highlight)
                     continue;
 
-                let color = slice.color;
-                let selector = slice.identity.getSelector();
+                let color = dataPont.color;
+                let selector = dataPont.identity.getSelector();
                 let isSingleSeries = !!selector.data;
 
                 enumeration.pushInstance({
                     objectName: 'dataPoint',
-                    displayName: slice.label,
+                    displayName: dataPont.label,
                     selector: ColorHelper.normalizeSelector(selector, isSingleSeries),
                     properties: {
                         fill: { solid: { color: color } }
@@ -637,6 +629,9 @@ module powerbi.visuals {
             this.percentGraphicsContext = svg.append('g').classed(FunnelChart.Selectors.percentBar.root.class, true);
             this.funnelGraphicsContext = svg.append('g');
             this.axisGraphicsContext = svg.append('g');
+            this.labelGraphicsContext = svg
+                .append("g")
+                .classed(LabelUtils.labelGraphicsContextClass.class, true);
 
             this.updateViewportProperties();
         }
@@ -650,13 +645,13 @@ module powerbi.visuals {
         public update(options: VisualUpdateOptions): void {
             debug.assertValue(options, 'options');
             this.data = {
-                slices: [],
+                dataPoints: [],
                 categoryLabels: [],
                 valuesMetadata: [],
                 hasHighlights: false,
                 highlightsOverflow: false,
                 canShowDataLabels: true,
-                dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
+                dataLabelsSettings: dataLabelUtils.getDefaultLabelSettings(),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
                 percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
@@ -678,7 +673,7 @@ module powerbi.visuals {
                     this.data = FunnelChart.converter(dataView, this.colors, this.hostServices, this.defaultDataPointColor, this.tooltipsEnabled, this.tooltipBucketEnabled);
 
                     if (this.interactivityService) {
-                        this.interactivityService.applySelectionStateToData(this.data.slices);
+                        this.interactivityService.applySelectionStateToData(this.data.dataPoints);
                     }
                 }
 
@@ -738,8 +733,8 @@ module powerbi.visuals {
                 return;
 
             let data = this.data;
-            let slices = data.slices;
-            let slicesWithoutHighlights = slices.filter((d: FunnelSlice) => !d.highlight);
+            let dataPoints = data.dataPoints;
+            let dataPointsWithoutHighlights = dataPoints.filter((d: FunnelDataPoint) => !d.highlight);
             let isHidingPercentBars = this.isHidingPercentBars();
 
             let axisOptions = this.setUpAxis();
@@ -747,23 +742,19 @@ module powerbi.visuals {
 
             let funnelContext = this.funnelGraphicsContext.attr('transform',
                 SVGUtil.translate(margin.left, margin.top));
+                
+            let labelContext = this.labelGraphicsContext.attr('transform',
+                SVGUtil.translate(margin.left, margin.top)); 
 
             this.percentGraphicsContext.attr('transform',
                 SVGUtil.translate(margin.left, margin.top));
 
             this.svg.style('font-family', dataLabelUtils.StandardFontFamily);
-
+            
             let layout = FunnelChart.getLayout(data, axisOptions);
-            let labelLayout = dataLabelUtils.getFunnelChartLabelLayout(
-                data,
-                axisOptions,
-                FunnelChart.InnerTextMinimumPadding,
-                data.dataLabelsSettings,
-                this.currentViewport);
-
+            let labels: Label[] = this.getLabels(layout);    
             let result: FunnelAnimationResult;
             let shapes: D3.UpdateSelection;
-            let dataLabels: D3.UpdateSelection;
 
             if (this.animator && !suppressAnimations) {
                 let animationOptions: FunnelAnimationOptions = {
@@ -773,31 +764,25 @@ module powerbi.visuals {
                     axisGraphicsContext: this.axisGraphicsContext,
                     shapeGraphicsContext: funnelContext,
                     percentGraphicsContext: this.percentGraphicsContext,
-                    labelGraphicsContext: this.svg,
+                    labelGraphicsContext: this.labelGraphicsContext,
                     axisOptions: axisOptions,
-                    slicesWithoutHighlights: slicesWithoutHighlights,
-                    labelLayout: labelLayout,
+                    dataPointsWithoutHighlights: dataPointsWithoutHighlights,
+                    labelLayout: labels,
                     isHidingPercentBars: isHidingPercentBars,
                     visualInitOptions: this.options,
                 };
                 result = this.animator.animate(animationOptions);
                 shapes = result.shapes;
-                dataLabels = result.dataLabels;
             }
             if (!this.animator || suppressAnimations || result.failed) {
                 FunnelChart.drawDefaultAxis(this.axisGraphicsContext, axisOptions, isHidingPercentBars);
-                shapes = FunnelChart.drawDefaultShapes(data, slices, funnelContext, layout, this.interactivityService && this.interactivityService.hasSelection());
+                shapes = FunnelChart.drawDefaultShapes(data, dataPoints, funnelContext, layout, this.interactivityService && this.interactivityService.hasSelection());
                 FunnelChart.drawPercentBars(data, this.percentGraphicsContext, layout, isHidingPercentBars);
-                if (data.dataLabelsSettings.show && data.canShowDataLabels) {
-                    dataLabels = dataLabelUtils.drawDefaultLabelsForFunnelChart(data.slices, this.svg, labelLayout);
-                }
-                else {
-                    dataLabelUtils.cleanDataLabels(this.svg);
-                }
+                LabelUtils.drawDefaultLabels(labelContext, labels, false);
             }
 
             if (this.interactivityService) {
-                let interactors: D3.UpdateSelection = FunnelChart.drawInteractorShapes(slices, funnelContext, layout);
+                let interactors: D3.UpdateSelection = FunnelChart.drawInteractorShapes(dataPoints, funnelContext, layout);
                 let behaviorOptions: FunnelBehaviorOptions = {
                     bars: shapes,
                     interactors: interactors,
@@ -805,7 +790,7 @@ module powerbi.visuals {
                     hasHighlights: data.hasHighlights,
                 };
 
-                this.interactivityService.bind(slices, this.behavior, behaviorOptions);
+                this.interactivityService.bind(dataPoints, this.behavior, behaviorOptions);
 
                 if (this.tooltipsEnabled) {
                     TooltipManager.addTooltip(interactors, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
@@ -842,7 +827,7 @@ module powerbi.visuals {
 
         private setUpAxis(): FunnelAxisOptions {
             let data = this.data;
-            let slices = data.slices;
+            let dataPoints = data.dataPoints;
             let categoryLabels = data.categoryLabels;
             let viewport = this.currentViewport;
             let margin = this.margin;
@@ -868,10 +853,10 @@ module powerbi.visuals {
 
             let horizontalRange = viewport.width - (margin.left + margin.right);
             let barToSpaceRatio = FunnelChart.BarToSpaceRatio;
-            let maxScore = d3.max(slices.map(d => d.value));
+            let maxScore = d3.max(dataPoints.map(d => d.value));
 
             if (data.hasHighlights) {
-                let maxHighlight = d3.max(slices.map(d => d.highlightValue));
+                let maxHighlight = d3.max(dataPoints.map(d => d.highlightValue));
                 maxScore = d3.max([maxScore, maxHighlight]);
             }
 
@@ -997,48 +982,48 @@ module powerbi.visuals {
                     },
                 },
                 shapeLayout: {
-                    height: ((d: FunnelSlice) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
-                    width: (d: FunnelSlice) => {
-                        return Math.abs(valueScale(FunnelChart.getFunnelSliceValue(d)) - valueScale(0));
+                    height: ((d: FunnelDataPoint) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
+                    width: (d: FunnelDataPoint) => {
+                        return Math.abs(valueScale(FunnelChart.getValueFromDataPoint(d)) - valueScale(0));
                     },
-                    y: (d: FunnelSlice) => {
+                    y: (d: FunnelDataPoint) => {
                         return categoryScale(d.categoryOrMeasureIndex) + (d.highlight && highlightsOverflow ? overFlowHighlightOffset : 0);
                     },
-                    x: (d: FunnelSlice) => {
-                        let value = FunnelChart.getFunnelSliceValue(d);
+                    x: (d: FunnelDataPoint) => {
+                        let value = FunnelChart.getValueFromDataPoint(d);
                         return valueScale(value) - emptyHorizontalSpace(value);
                     },
                 },
                 shapeLayoutWithoutHighlights: {
-                    height: ((d: FunnelSlice) => columnHeight),
-                    width: (d: FunnelSlice) => {
+                    height: ((d: FunnelDataPoint) => columnHeight),
+                    width: (d: FunnelDataPoint) => {
                         return Math.abs(valueScale(d.value) - valueScale(0));
                     },
-                    y: (d: FunnelSlice) => {
+                    y: (d: FunnelDataPoint) => {
                         return categoryScale(d.categoryOrMeasureIndex) + (0);
                     },
-                    x: (d: FunnelSlice) => {
+                    x: (d: FunnelDataPoint) => {
                         return valueScale(d.value) - emptyHorizontalSpace(d.value);
                     },
                 },
                 zeroShapeLayout: {
-                    height: ((d: FunnelSlice) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
-                    width: (d: FunnelSlice) => 0,
-                    y: (d: FunnelSlice) => {
+                    height: ((d: FunnelDataPoint) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
+                    width: (d: FunnelDataPoint) => 0,
+                    y: (d: FunnelDataPoint) => {
                         return categoryScale(d.categoryOrMeasureIndex) + (d.highlight && highlightsOverflow ? overFlowHighlightOffset : 0);
                     },
-                    x: (d: FunnelSlice) => {
+                    x: (d: FunnelDataPoint) => {
                         return valueScale((valueScale.domain()[0] + valueScale.domain()[1]) / 2);
                     },
                 },
                 interactorLayout: {
-                    height: ((d: FunnelSlice) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
-                    width: (d: FunnelSlice) => getMinimumShapeSize(FunnelChart.getFunnelSliceValue(d)),
-                    y: (d: FunnelSlice) => {
+                    height: ((d: FunnelDataPoint) => d.highlight && highlightsOverflow ? overFlowHighlightColumnWidth : columnHeight),
+                    width: (d: FunnelDataPoint) => getMinimumShapeSize(FunnelChart.getValueFromDataPoint(d)),
+                    y: (d: FunnelDataPoint) => {
                         return categoryScale(d.categoryOrMeasureIndex) + (d.highlight && highlightsOverflow ? overFlowHighlightOffset : 0);
                     },
-                    x: (d: FunnelSlice) => {
-                        let size = getMinimumShapeSize(FunnelChart.getFunnelSliceValue(d));
+                    x: (d: FunnelDataPoint) => {
+                        let size = getMinimumShapeSize(FunnelChart.getValueFromDataPoint(d));
                         return (horizontalDistance - size) / 2;
                     },
                 },
@@ -1072,19 +1057,19 @@ module powerbi.visuals {
                 .call(AxisHelper.LabelLayoutStrategy.clip, leftRightMarginLimit, TextMeasurementService.svgEllipsis);
         }
 
-        public static drawDefaultShapes(data: FunnelData, slices: FunnelSlice[], graphicsContext: D3.Selection, layout: IFunnelLayout, hasSelection: boolean): D3.UpdateSelection {
+        public static drawDefaultShapes(data: FunnelData, dataPoints: FunnelDataPoint[], graphicsContext: D3.Selection, layout: IFunnelLayout, hasSelection: boolean): D3.UpdateSelection {
             let hasHighlights = data.hasHighlights;
-            let columns = graphicsContext.selectAll(FunnelChart.Selectors.funnel.bars.selector).data(slices, (d: FunnelSlice) => d.key);
+            let columns = graphicsContext.selectAll(FunnelChart.Selectors.funnel.bars.selector).data(dataPoints, (d: FunnelDataPoint) => d.key);
 
             columns.enter()
                 .append('rect')
-                .attr("class", (d: FunnelSlice) => d.highlight ? FunnelChart.FunnelBarHighlightClass : FunnelChart.Selectors.funnel.bars.class);
+                .attr("class", (d: FunnelDataPoint) => d.highlight ? FunnelChart.FunnelBarHighlightClass : FunnelChart.Selectors.funnel.bars.class);
 
             columns
                 .style("fill", d => {
                     return d.color;
                 })
-                .style("fill-opacity", d => (d: FunnelSlice) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, hasHighlights))
+                .style("fill-opacity", d => (d: FunnelDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, hasHighlights))
                 .attr(layout.shapeLayout);
 
             columns.exit().remove();
@@ -1092,21 +1077,20 @@ module powerbi.visuals {
             return columns;
         }
 
-        public static getFunnelSliceValue(slice: FunnelSlice, asOriginal: boolean = false) {
+        public static getValueFromDataPoint(dataPoint: FunnelDataPoint, asOriginal: boolean = false): number {
             if (asOriginal)
-                return slice.highlight ? slice.originalHighlightValue : slice.originalValue;
+                return dataPoint.highlight ? (dataPoint.originalHighlightValue) : dataPoint.originalValue;
             else
-                return slice.highlight ? slice.highlightValue : slice.value;
+                return dataPoint.highlight ? dataPoint.highlightValue : dataPoint.value;
         }
 
-        public static drawInteractorShapes(slices: FunnelSlice[], graphicsContext: D3.Selection, layout: IFunnelLayout): D3.UpdateSelection {
+        public static drawInteractorShapes(dataPoints: FunnelDataPoint[], graphicsContext: D3.Selection, layout: IFunnelLayout): D3.UpdateSelection {
             // Draw invsible ineractors for just data points which are below threshold
-            let interactorsData = slices.filter((d: FunnelSlice) => {
+            let interactorsData = dataPoints.filter((d: FunnelDataPoint) => {
                 return !d.highlight && layout.interactorLayout.width(d) === FunnelChart.MinimumInteractorSize;
             });
             
-            let columns = graphicsContext.selectAll(FunnelChart.Selectors.funnel.interactors.selector).data(interactorsData, (d: FunnelSlice) => d.key);
-
+            let columns = graphicsContext.selectAll(FunnelChart.Selectors.funnel.interactors.selector).data(interactorsData, (d: FunnelDataPoint) => d.key);
             columns.enter()
                 .append('rect')
                 .attr("class", FunnelChart.Selectors.funnel.interactors.class);
@@ -1167,13 +1151,13 @@ module powerbi.visuals {
         }
 
         public static drawPercentBars(data: FunnelData, graphicsContext: D3.Selection, layout: IFunnelLayout, isHidingPercentBars: boolean): void {
-            if (isHidingPercentBars || !data.slices || (data.hasHighlights ? data.slices.length / 2 : data.slices.length) < 2) {
+            if (isHidingPercentBars || !data.dataPoints || (data.hasHighlights ? data.dataPoints.length / 2 : data.dataPoints.length) < 2) {
                 FunnelChart.drawPercentBarComponents(graphicsContext, [], layout, data.percentBarLabelSettings);
                 return;
             }
 
-            let slices = [data.slices[data.hasHighlights ? 1 : 0], data.slices[data.slices.length - 1]];
-            let baseline = FunnelChart.getFunnelSliceValue(slices[0]);
+            let dataPoints = [data.dataPoints[data.hasHighlights ? 1 : 0], data.dataPoints[data.dataPoints.length - 1]];
+            let baseline = FunnelChart.getValueFromDataPoint(dataPoints[0]);
 
             if (baseline <= 0) {
                 FunnelChart.drawPercentBarComponents(graphicsContext, [], layout, data.percentBarLabelSettings);
@@ -1182,13 +1166,13 @@ module powerbi.visuals {
 
             let percentData: FunnelPercent[] = [
                 {
-                    value: FunnelChart.getFunnelSliceValue(slices[0]),
+                    value: FunnelChart.getValueFromDataPoint(dataPoints[0]),
                     percent: 1,
                     isTop: true,
                 },
                 {
-                    value: FunnelChart.getFunnelSliceValue(slices[1]),
-                    percent: FunnelChart.getFunnelSliceValue(slices[1]) / baseline,
+                    value: FunnelChart.getValueFromDataPoint(dataPoints[1]),
+                    percent: FunnelChart.getValueFromDataPoint(dataPoints[1]) / baseline,
                     isTop: false,
                 },
             ];
@@ -1225,6 +1209,159 @@ module powerbi.visuals {
                 fontSize: PixelConverter.fromPoint(fontSize || dataLabelUtils.DefaultFontSizeInPt),
                 fontFamily: FunnelChart.DefaultFontFamily,
             };
+        }
+        
+        private static getDefaultLabelSettings(): VisualDataLabelsSettings {
+            return {
+                show: true,
+                position: powerbi.visuals.labelPosition.insideCenter,
+                displayUnits: 0,
+                labelColor: null,
+                formatterOptions: null,
+                fontSize: LabelUtils.DefaultLabelFontSizeInPt,
+            };
+        }
+        
+        private static getDefaultPercentLabelSettings(): VisualDataLabelsSettings {
+           return {
+                show: true,
+                position: PointLabelPosition.Above,
+                displayUnits: 0,
+                labelColor: LabelUtils.defaultLabelColor,
+                formatterOptions: null,
+                fontSize: LabelUtils.DefaultLabelFontSizeInPt,
+            };
+        }
+        
+        /**
+         * Creates labels layout.
+         */
+        private getLabels(layout: IFunnelLayout): Label[] {
+            let labels: Label[] = [];
+            if (this.data.dataLabelsSettings.show && this.data.canShowDataLabels) {
+                let labelDataPoints: LabelDataPoint[] = this.createLabelDataPoints(layout.shapeLayout, this.data.dataLabelsSettings);
+                let newLabelLayout = new LabelLayout({
+                        maximumOffset: LabelUtils.maxLabelOffset,
+                        startingOffset: LabelUtils.startingLabelOffset
+                    });
+                let labelDataPointsGroup: LabelDataPointsGroup = {
+                        labelDataPoints: labelDataPoints,
+                        maxNumberOfLabels: labelDataPoints.length
+                    };
+                let labelViewport: IViewport = {
+                    width: this.currentViewport.width - this.margin.left,
+                    height: this.currentViewport.height - this.margin.top
+                };
+                    
+                labels = newLabelLayout.layout([labelDataPointsGroup], labelViewport);
+            }
+            
+            return labels;
+        }
+        
+        /**
+         * Creates labelDataPoints for rendering labels
+         */
+        private createLabelDataPoints(shapeLayout: IFunnelRect, visualSettings: VisualDataLabelsSettings): LabelDataPoint[] {
+            let data: FunnelData = this.data;
+            let dataPoints = data.dataPoints;
+            if(_.isEmpty(dataPoints)) {
+                return [];
+            }
+            let points = new Array<LabelDataPoint>();
+            // Because labels share the same formatting use the first one as default.
+            let generalSettings = dataPoints[0];
+            
+            // Shape
+            let validPositions = FunnelChart.LabelInsidePosition;
+            let height: number = shapeLayout.height(generalSettings);
+            if (visualSettings.position && visualSettings.position === labelPosition.outsideEnd) {
+                validPositions = FunnelChart.LabelOutsidePosition;
+            }
+            
+            // Formatter
+            let maxAbsoluteValue = data.dataPoints.reduce((memo, value) => Math.abs(memo.value) > Math.abs(value.value) ? memo : value).value;
+            let formatString = valueFormatter.getFormatString(data.valuesMetadata[0], funnelChartProps.general.formatString);
+            let formattersCache = LabelUtils.createColumnFormatterCacheManager();
+            
+            // Text Properties
+            let fontSize = visualSettings.fontSize;
+            let properties: TextProperties = {
+                fontFamily: LabelUtils.LabelTextProperties.fontFamily,
+                fontSize: PixelConverter.fromPoint(fontSize || LabelUtils.DefaultLabelFontSizeInPt),
+                fontWeight: LabelUtils.LabelTextProperties.fontWeight,
+            };
+            
+            let outsideFill: string = generalSettings.labelFill || LabelUtils.defaultLabelColor;
+            let insideFill: string = generalSettings.labelFill || LabelUtils.defaultInsideLabelColor;
+            
+            
+            for (let dataPoint of dataPoints) {
+                let value = FunnelChart.getValueFromDataPoint(dataPoint, true /* asOriginal */);
+                if(_.isNull(value) || _.isUndefined(value) 
+                    || (data.hasHighlights && !dataPoint.highlight)) {
+                    continue;
+                }
+                
+                let labelFormatString = (formatString != null) ? formatString : generalSettings.labelFormatString;
+                let formatter = formattersCache.getOrCreate(labelFormatString, visualSettings, maxAbsoluteValue);
+                let labelText = formatter.format(value);
+                properties.text = labelText;
+                
+                let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(properties);
+                let parentType = LabelDataPointParentType.Rectangle;
+                let shape: any = {
+                    rect: {
+                        left: shapeLayout.x(dataPoint),
+                        top: shapeLayout.y(dataPoint),
+                        width: shapeLayout.width(dataPoint),
+                        height: height
+                    },
+                    orientation: FunnelChart.LabelOrientation,
+                    validPositions: validPositions
+                };
+                
+                var point: LabelDataPoint = {
+                    isPreferred: true,
+                    // text
+                    text: labelText,
+                    textSize: {
+                        width: textWidth,
+                        height: textHeight
+                    },
+                    fontSize: fontSize,
+                    // parent shape
+                    parentType: parentType,
+                    parentShape: shape,
+                    // colors
+                    insideFill: insideFill,
+                    outsideFill: outsideFill,
+                    // additional properties
+                    identity: dataPoint.identity,
+                    hasBackground: false
+                };
+                
+                // For zero value we are using point in order to center text position.
+                if(dataPoint.value === 0) {
+                    shape = <LabelParentPoint> {
+                       validPositions: [ NewPointLabelPosition.Center ],
+                       point: {
+                          x: shapeLayout.x(dataPoint),
+                          y: shapeLayout.y(dataPoint) + height / 2
+                       }
+                       
+                    };
+                    parentType = LabelDataPointParentType.Point;
+                    point.parentShape = shape;
+                    point.parentType = parentType;
+                    point.insideFill = point.outsideFill;
+                }
+                
+                points.push(point);
+            }
+            
+            return points;
         }
     }
 }

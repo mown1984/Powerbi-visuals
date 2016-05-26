@@ -127,6 +127,9 @@ module powerbi {
             if (descriptor.extendedType) {
                 return ValueType.fromExtendedType(descriptor.extendedType);
             }
+            if (descriptor.operations) {
+                if (descriptor.operations.searchEnabled) return ValueType.fromExtendedType(ExtendedType.SearchEnabled);
+            }
 
             return ValueType.fromExtendedType(ExtendedType.Null);
         }
@@ -512,6 +515,9 @@ module powerbi {
         ScriptSource = Text | Scripting | (500 << 16),        
         // NOTE: To avoid confusion, underscores should be used only to delimit primitive type variants of an extended type
         // (e.g. Year_Integer or Latitude_Double above)
+
+        //Operations
+        SearchEnabled = Boolean | (1 << 16),
     }
 
     const PrimitiveTypeMask = 0xFF;

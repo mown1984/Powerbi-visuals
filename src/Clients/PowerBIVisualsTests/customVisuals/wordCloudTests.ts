@@ -30,6 +30,15 @@ module powerbitests.customVisuals {
     import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     describe("WordCloud", () => {
+        let visualBuilder: WordCloudBuilder;
+        let dataView: powerbi.DataView;
+        let defaultDataViewBuilder: powerbitests.customVisuals.sampleDataViews.CountriesData;
+
+        beforeEach(() => {
+            visualBuilder = new WordCloudBuilder(500, 1000);
+            defaultDataViewBuilder = new powerbitests.customVisuals.sampleDataViews.CountriesData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
 
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
@@ -44,129 +53,75 @@ module powerbitests.customVisuals {
         };
 
         describe("DOM tests", () => {
-            let visualBuilder: WordCloudBuilder;
-            let secondVisualBuilder: WordCloudBuilder;
-            let dataViews: powerbi.DataView[];
-            let timeOutTime: number = DefaultWaitForRender;
-
-            beforeEach(() => {
-                visualBuilder = new WordCloudBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.CountriesData().getDataView()];
-            });
-
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("basic update", (done) => {
-                let defaultView = _.cloneDeep(dataViews);
-                visualBuilder.update(defaultView);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.children("g").children("g.words").children("text.word").length)
                         .toBeGreaterThan(0);
                     done();
-                }, timeOutTime);
+                });
             });
 
             it("Word stop property change", (done) => {
-                let defaultView = _.cloneDeep(dataViews);
-                visualBuilder.update(defaultView);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
                         .toBeGreaterThan(0);
 
-                    let item: powerbi.DataViewObjects = {
-                        stopWords: {
-                            show: true,
-                            words: "Afghanistan"
-                        }
-                    };
+                    dataView.metadata.objects = { stopWords: { show: true, words: "Afghanistan" } };
 
-                    let clonedView = _.cloneDeep(defaultView);
-                    clonedView[0].metadata.objects = item;
-                    visualBuilder.update(clonedView);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
                             .toBe(0);
                         done();
-                    }, timeOutTime);
-                }, timeOutTime * 2);
+                    });
+                }, 100);
             });
 
             it("Word returns after word stop property is changed back", (done) => {
-                let defaultView = _.cloneDeep(dataViews);
-                visualBuilder.update(defaultView);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
                         .toBeGreaterThan(0);
 
-                    let item: powerbi.DataViewObjects = {
-                        stopWords: {
-                            show: true,
-                            words: "Afghanistan"
-                        }
-                    };
-                    let clonedView = _.cloneDeep(defaultView);
-                    clonedView[0].metadata.objects = item;
-                    visualBuilder.update(clonedView);
+                    dataView.metadata.objects = { stopWords: { show: true, words: "Afghanistan" } };
 
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
                             .toBe(0);
 
-                        item = {
-                            stopWords: {
-                                show: false,
-                            }
-                        };
-                        let secondView = _.cloneDeep(clonedView);
-                        secondView[0].metadata.objects = item;
-                        visualBuilder.update(secondView);
+                        dataView.metadata.objects = { stopWords: { show: false } };
 
-                        setTimeout(() => {
+                        visualBuilder.updateRenderTimeout(dataView, () => {
                             expect(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray()).length)
                                 .toBeGreaterThan(0);
                             done();
-                        }, timeOutTime);
-                    }, timeOutTime * 2);
-                }, 2 * (timeOutTime * 2));
+                        });
+                    }, 100);
+                }, 200);
             });
 
             it("change color for first country (Afghanistan)", (done) => {
-                let defaultView = _.cloneDeep(dataViews);
-                visualBuilder.update(defaultView);
-
-                setTimeout(() => {
-                    let item: powerbi.DataViewObjects = {
-                        dataPoint: {
-                            fill: {
-                                solid: {
-                                    color: "#00B8AA"
-                                }
-                            }
-                        }
-                    };
-
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let baseWordColor = $(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray())).css('fill');
 
-                    defaultView[0].categorical.categories[0].objects = [item];
-                    visualBuilder.update(defaultView);
+                    dataView.categorical.categories[0].objects = [{ dataPoint: { fill: { solid: { color: "#00B8AA" } } } }];
 
-                    setTimeout(() => {
-                        colorAssert(($(grep(visualBuilder.mainElement.children("g").children("g.words").children("text.word").toArray())).css('fill')), baseWordColor, true);
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        colorAssert(($(grep(visualBuilder.mainElement
+                            .children("g")
+                            .children("g.words")
+                            .children("text.word").toArray())).css('fill')), baseWordColor, true);
                         done();
-                    }, timeOutTime);
-                }, timeOutTime * 2);
+                    });
+                }, 100);
             });
 
             it("click on first visual, then click on the second visual dosen't remove items", (done) => {
-                let defaultView = _.cloneDeep(dataViews);
-                visualBuilder.update(defaultView);
-                secondVisualBuilder = new WordCloudBuilder();
-                secondVisualBuilder.update(defaultView);
+                let secondVisualBuilder = new WordCloudBuilder(500, 1000);
 
-                setTimeout(() => {
+                visualBuilder.update(dataView);
+
+                secondVisualBuilder.updateRenderTimeout(dataView, () => {
                     let firstWord = visualBuilder.mainElement.children("g").children("g.words").children("text.word").first();
                     firstWord.d3Click(parseInt(firstWord.attr("x"), 10), parseInt(firstWord.attr("y"), 10));
                     setTimeout(() => {
@@ -176,15 +131,15 @@ module powerbitests.customVisuals {
                             expect(secondVisualBuilder.mainElement.children("g").children("g.words").children("text.word").length).toBe(
                                 visualBuilder.mainElement.children("g").children("g.words").children("text.word").length);
                             done();
-                        }, timeOutTime);
-                    }, timeOutTime);
-                }, timeOutTime * 2);
+                        });
+                    });
+                }, 100);
             });
         });
     });
 
     class WordCloudBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();

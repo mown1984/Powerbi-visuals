@@ -268,7 +268,7 @@ module powerbi.data {
             }
             return false;
         }
-
+        
         public getValue(roleName: string, categoryIndex: number, seriesIndex: number = 0): any {
             if (this.hasValues(roleName)) {
                 if (this.dataHasDynamicSeries) {

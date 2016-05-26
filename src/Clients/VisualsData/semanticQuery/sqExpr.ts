@@ -55,6 +55,12 @@ module powerbi.data {
         public get kind(): SQExprKind {
             return this._kind;
         }
+        
+        public static isArithmetic(expr: SQExpr): expr is SQArithmeticExpr {
+            debug.assertValue(expr, 'expr');
+            
+            return expr.kind === SQExprKind.Arithmetic;
+        }
 
         public static isColumn(expr: SQExpr): expr is SQColumnRefExpr {
             debug.assertValue(expr, 'expr');
@@ -102,6 +108,18 @@ module powerbi.data {
             debug.assertValue(expr, 'expr');
 
             return expr.kind === SQExprKind.SelectRef;
+        }
+        
+        public static isScopedEval(expr: SQExpr): expr is SQScopedEvalExpr {
+            debug.assertValue(expr, 'expr');
+            
+            return expr.kind === SQExprKind.ScopedEval;
+        }
+        
+        public static isWithRef(expr: SQExpr): expr is SQWithRefExpr {
+            debug.assertValue(expr, 'expr');
+            
+            return expr.kind === SQExprKind.WithRef;
         }
 
         public static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr {
@@ -400,7 +418,7 @@ module powerbi.data {
         FillRule,
         ResourcePackageItem,
         ScopedEval,
-        Scope,
+        WithRef,
         Percentile,
         SelectRef,
     }
@@ -510,6 +528,21 @@ module powerbi.data {
 
         public getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata {
             return this.expression.getMetadata(federatedSchema);
+        }
+    }
+    
+    export class SQWithRefExpr extends SQExpr {
+        public expressionName: string;
+
+        constructor(expressionName: string) {
+            debug.assertValue(expressionName, 'expressionName');
+
+            super(SQExprKind.WithRef);
+            this.expressionName = expressionName;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitWithRef(this, arg);
         }
     }
 
@@ -1010,6 +1043,10 @@ module powerbi.data {
         export function scopedEval(expression: SQExpr, scope: SQExpr[]): SQScopedEvalExpr {
             return new SQScopedEvalExpr(expression, scope);
         }
+        
+        export function withRef(expressionName: string): SQWithRefExpr {
+            return new SQWithRefExpr(expressionName);
+        }
 
         export function hierarchy(source: SQExpr, hierarchy: string): SQHierarchyExpr {
             return new SQHierarchyExpr(source, hierarchy);
@@ -1487,6 +1524,11 @@ module powerbi.data {
                 this.equals(expr.expression, comparand.expression) &&
                 this.equalsAll(expr.scope, comparand.scope);
         }
+        
+        public visitWithRef(expr: SQWithRefExpr, comparand: SQExpr): boolean {
+            return  comparand instanceof SQWithRefExpr &&
+                expr.expressionName === comparand.expressionName;
+        }
 
         private optionalEqual(x: string, y: string) {
             // Only check equality if both values are specified.
@@ -1533,6 +1575,7 @@ module powerbi.data {
         invalidRightOperandType,
         invalidValueType,
         invalidPercentileArgument,
+        invalidScopeArgument,
     }
 
     export class SQExprValidationVisitor extends SQExprRewriter {
@@ -1677,7 +1720,15 @@ module powerbi.data {
         }
 
         public visitScopedEval(expr: SQScopedEvalExpr): SQExpr {
-            // No validation necessary
+            for (let scopeRef of expr.scope) {
+                if (!(SQExpr.isWithRef(scopeRef) || SQExpr.isColumn(scopeRef))) {
+                    this.register(SQExprValidationError.invalidScopeArgument);
+                }
+            }
+            return expr;
+        }
+        
+        public visitWithRef(expr: SQWithRefExpr): SQExpr {
             return expr;
         }
 

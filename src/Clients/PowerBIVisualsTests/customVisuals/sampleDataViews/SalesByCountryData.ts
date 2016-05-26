@@ -33,9 +33,59 @@ module powerbitests.customVisuals.sampleDataViews {
     import DataViewValueColumns = powerbi.DataViewValueColumns;
     import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export class SalesByCountryData {
+    export class SalesByCountryData extends DataViewBuilder {
 
-        public getDataView(): DataView {
+        public static ColumnCategory: string = "Country";
+        public static ColumnValues1: string = "Sales Amount (2014)";
+        public static ColumnValues2: string = "Sales Amount (2015)";
+
+        public valuesCategory: string[] =
+            [
+                "Australia",
+                "Canada",
+                "France",
+                "Germany",
+                "United Kingdom",
+                "United States"
+            ];
+        public valuesValue1: number[] = helpers.getRandomNumbers(this.valuesCategory.length, 100, 1000);
+        public valuesValue2: number[] = helpers.getRandomNumbers(this.valuesCategory.length, 100, 1000);
+
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: ValueByNameData.ColumnCategory,
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.valuesCategory
+                }
+                ],[
+                {
+                    source: {
+                        displayName: SalesByCountryData.ColumnValues1,
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: "purple" } } } },
+                    },
+                    values: this.valuesValue1
+                },
+                {
+                    source: {
+                        displayName: SalesByCountryData.ColumnValues2,
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesValue2
+                }
+                ],
+                null,
+                columnNames).build();
+        }
+
+        public getDataViewOld(): DataView {
                 let dataViewMetadata: DataViewMetadata = {
                     columns: [
                         {

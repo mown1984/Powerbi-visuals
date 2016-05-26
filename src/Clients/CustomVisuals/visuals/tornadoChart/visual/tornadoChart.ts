@@ -201,7 +201,7 @@ module powerbi.visuals.samples {
                         position[0] -= offset;
                         position[1] -= offset;
                     }
-                    
+
                     // Update the scroll bar accordingly and redraw
                     this.scrollYBrush.extent(position);
                     this.brushGraphicsContextY.select('.extent').attr('y', position[0]);
@@ -700,7 +700,6 @@ module powerbi.visuals.samples {
             this.textOptions.sizeUnit = fontSize.slice(fontSize.length - 2);
             this.textOptions.fontSize = Number(fontSize.slice(0, fontSize.length - 2));
             this.textOptions.fontFamily = root.style("font-family");
-            this.viewport = visualInitOptions.viewport;
             this.scrolling = new TornadoChartScrolling(() => root, () => this.viewport, () => this.margin, true);
             let main: D3.Selection = this.main = root.append("g");
             this.clearCatcher = appendClearCatcher(main);
@@ -820,7 +819,7 @@ module powerbi.visuals.samples {
             let groupedValues: DataViewValueColumnGroup[] = [];
             if (values.grouped)
                 groupedValues = values.grouped();
-            
+
             // Parse category labels and compute maximum category length
             let maxCategoryLength: number = 0;
             let showCategories = settings.showCategories;
@@ -849,15 +848,12 @@ module powerbi.visuals.samples {
                 series.push(parsedSeries);
                 let currentSeries = values[seriesIndex];
                 let measureName = currentSeries.source.queryName;
-                let columnGroup: DataViewValueColumnGroup = groupedValues.length > seriesIndex && groupedValues[seriesIndex].values
-                    ? groupedValues[seriesIndex]
-                    : null;
 
                 for (let i = 0; i < categoryValuesLength; i++) {
                     let value = currentSeries.values[i] == null || isNaN(currentSeries.values[i]) ? 0 : currentSeries.values[i];
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, i)
-                        .withSeries(values, columnGroup)
+                        .withSeries(values, currentSeries)
                         .withMeasure(measureName)
                         .createSelectionId();
                     let formattedCategoryValue = categoriesLabels[i].text;
@@ -1088,7 +1084,7 @@ module powerbi.visuals.samples {
             }
 
             let scrollBarWidth: number = (tornadoChartDataView.categories.length * TornadoChart.CategoryMinHeight > this.viewport.height) ? TornadoChart.ScrollBarWidth : 0;
-            
+
             // Filter data according to the visible visual area
             tornadoChartDataView.categories = tornadoChartDataView.categories.slice(startIndexRound, endIndexRound);
             tornadoChartDataView.dataPoints = _.filter(tornadoChartDataView.dataPoints, (d: TornadoChartPoint) => d.categoryIndex >= startIndexRound && d.categoryIndex < endIndexRound);
@@ -1140,10 +1136,10 @@ module powerbi.visuals.samples {
             this.renderColumns(dataPointsWithHighlights, tornadoChartDataView.series.length === 2);
             this.renderLabels(this.hasHighlights ? tornadoChartDataView.highlightedDataPoints : tornadoChartDataView.dataPoints, tornadoChartDataView.settings.labelSettings);
         }
-		
-		/**
-		 * Calculate the width, dx value and label info for every data point
-		 */
+
+        /**
+         * Calculate the width, dx value and label info for every data point
+         */
         private calculateDataPoints(dataPoints: TornadoChartPoint[], scrollBarWidth: number): void {
             let maxColumnWidth: number = this.widthRightSection = (this.viewport.width - this.widthLeftSection - scrollBarWidth);
             let categoriesLength: number = this.tornadoChartDataView.categories.length;
@@ -1348,7 +1344,7 @@ module powerbi.visuals.samples {
                     .select(TornadoChart.Labels.selector)
                     .selectAll(TornadoChart.Label.selector)
                     .data(_.filter(dataPoints, (p: TornadoChartPoint) => p.label.dx >= 0));
-            
+
             // Check if labels can be displayed
             if (!labelsSettings.show || this.labelHeight >= this.heightColumn) {
                 this.labels.selectAll("*").remove();

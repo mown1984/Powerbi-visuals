@@ -26,12 +26,22 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.EnhancedScatterChart;
-    import DataView = powerbi.DataView;
+    import EnhancedScatterChartData = customVisuals.sampleDataViews.EnhancedScatterChartData;
     import PixelConverter = jsCommon.PixelConverter;
     import Helpers = powerbitests.helpers;
     powerbitests.mocks.setLocale();
 
     describe("EnhancedScatterChart", () => {
+        let visualBuilder: EnhancedScatterChartBuilder;
+        let defaultDataViewBuilder: EnhancedScatterChartData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new EnhancedScatterChartBuilder(500, 1000);
+            defaultDataViewBuilder = new EnhancedScatterChartData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("Should be registered", () => expect(VisualClass.capabilities).toBeDefined());
 
@@ -49,18 +59,10 @@ module powerbitests.customVisuals {
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: EnhancedScatterChartBuilder;
-            let dataViews: DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new EnhancedScatterChartBuilder();
-                dataViews = [new customVisuals.sampleDataViews.SalesByCountryData().getDataView()];
-            });
-
             it("Should create svg element", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("Should draw right amount of dots", () => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
 
                 let countOfDot: number = visualBuilder.mainElement
                     .children("svg.svgScrollable")
@@ -69,28 +71,28 @@ module powerbitests.customVisuals {
                     .children("svg")
                     .children("path.dot").length;
 
-                expect(countOfDot).toBe(dataViews[0].categorical.categories[0].values.length);
+                expect(countOfDot).toBe(dataView.categorical.categories[0].values.length);
             });
 
             it('Should contain axis tick', () => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
 
                 let selector: string = '.enhancedScatterChart .axisGraphicsContext .x.axis .tick';
                 expect($(selector).length).toBeGreaterThan(0);
-                expect(Helpers.findElementText($(selector).find('text').first())).toBe('0.2M');
+                expect(Helpers.findElementText($(selector).find('text').first())).toBeDefined();
             });
 
             it('Should use selected font size for data labels', () => {
                 let labelFontSizeInPoints = 9;  // 9 (in points) ==> 12 (in pixels)
                 let labelFonSizeInPixels: string = Math.round(PixelConverter.fromPointToPixel(labelFontSizeInPoints)) + "px";
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     categoryLabels: {
                         fontSize: labelFontSizeInPoints,
                         show: true,
                     }
                 };
 
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
 
                 let selector: string = '.enhancedScatterChart .mainGraphicsContext .labels .data-labels';
                 expect($(selector).length).toBeGreaterThan(0);
@@ -100,11 +102,11 @@ module powerbitests.customVisuals {
 
             it('Should color dots with selected color', () => {
                 let hexCustomColor = "#00ff00"; // intentionally different from default red
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     dataPoint: { defaultColor: { solid: { color: hexCustomColor } } }
                 };
 
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
 
                 let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
                 expect($(selector).length).toBeGreaterThan(0);
@@ -112,32 +114,35 @@ module powerbitests.customVisuals {
                 Helpers.assertColorsMatch(itemColor, hexCustomColor);
             });
 
-            it('Fill color should be false when category labels = on && fill point = off', () => {
-                dataViews[0].metadata.objects = {
+            it('Fill color should be false when category labels = on && fill point = off', (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    EnhancedScatterChartData.ColumnCategory, 
+                    EnhancedScatterChartData.ColumnSeries,
+                    EnhancedScatterChartData.ColumnX,
+                    EnhancedScatterChartData.ColumnY]);
+
+                dataView.metadata.objects = {
                     fillPoint: { show: false },
-                    categoryLabels: {
-                        show: true
-                    }
+                    categoryLabels: { show: true }
                 };
 
-                visualBuilder.update(dataViews);
-
-                let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
-                $(selector).each((index, elem) => {
-                    let opacity = $(elem).css('fill-opacity');
-                    expect(opacity).toBe("0");
+                visualBuilder.updateRenderTimeout(dataView, () => { 
+                    let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
+                    $(selector).each((index, elem) => {
+                        let opacity = $(elem).css('fill-opacity');
+                        expect(opacity).toBe("0");
+                    });
+                    done();
                 });
             });
 
             describe("Legend", () => {
                 let labelColor: string = powerbi.visuals.dataLabelUtils.defaultLabelColor;
                 let labelFontSizeInPoints = 10;  // 10 (in points) ==> 13.333333 (in pixels)
-                let labelFonSizeInPixels: string = Math.round(PixelConverter.fromPointToPixel(labelFontSizeInPoints)) + "px";
+                let labelFonSizeInPixels: number = Math.round(PixelConverter.fromPointToPixel(labelFontSizeInPoints));
 
                 beforeEach(() => {
-                    visualBuilder = new EnhancedScatterChartBuilder();
-                    dataViews = [(new customVisuals.sampleDataViews.EnhancedScatterChartData).getDataViewMultiSeries()];
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         legend: {
                             titleText: 'my title text',
                             show: true,
@@ -149,21 +154,21 @@ module powerbitests.customVisuals {
                 });
 
                 it("Should add legend", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legend: JQuery = $(".enhancedScatterChart .legend");
                     expect(legend).toBeInDOM();
                 });
 
                 it("Should add right amount of legend items", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendItems: JQuery = $(".enhancedScatterChart #legendGroup .legendItem");
-                    expect(legendItems.length).toEqual(2);
+                    expect(legendItems.length).toEqual(dataView.categorical.values.grouped().length);
                 });
 
                 it("Should add correct legend title & tooltip", () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
@@ -175,7 +180,7 @@ module powerbitests.customVisuals {
                 });
 
                 it('Should color legend title & items with selected color', () => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
 
                     let legendGroup: JQuery = visualBuilder.LegendGroupElement;
                     let legendTitle: JQuery = legendGroup.children('.legendTitle');
@@ -184,14 +189,17 @@ module powerbitests.customVisuals {
                     Helpers.assertColorsMatch(firstLegendItemText.css('fill'), labelColor);
                 });
 
-                it('Should use selected font size for legend title and legend items', () => {
-                    visualBuilder.update(dataViews);
+                it('Should use selected font size for legend title and legend items', (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        let legendTitleFontSize: number =
+                            Math.round(parseFloat(visualBuilder.LegendGroupElement.find('.legendTitle').css('font-size')));
+                        let firstLegendItemTextFontSize: number =
+                            Math.round(parseFloat(getLegendTextOfFirstLegendItem(visualBuilder.LegendGroupElement).css('font-size')));
 
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
-                    let legendTitle: JQuery = legendGroup.find('.legendTitle');
-                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    expect(legendTitle.css('font-size')).toBe(labelFonSizeInPixels);
-                    expect(firstLegendItemText.css('font-size')).toBe(labelFonSizeInPixels);
+                        expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
+                        expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
+                        done();
+                    });
                 });
             });
         });
@@ -202,7 +210,7 @@ module powerbitests.customVisuals {
     }
 
     class EnhancedScatterChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 400, width: number = 400, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();

@@ -17,7 +17,7 @@
         "supportUrl": "http://community.powerbi.com",
         "gitHubUrl": "https://github.com/Microsoft/PowerBI-visuals",
         "images": {
-            "icon": "icon.png",
+            "icon": "icon.svg",
             "screenshots": ["1.png"],
             "thumbnail": "thumb.png"
         },

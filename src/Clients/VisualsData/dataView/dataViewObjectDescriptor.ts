@@ -43,7 +43,27 @@ module powerbi.data {
                 descriptors,
                 (propDesc: DataViewObjectPropertyDescriptor) => {
                     let propType: StructuralTypeDescriptor = propDesc.type;
-                    return propType && !!propType.filter;
+                    return propType && propType.filter && !propType.filter.selfFilter;
+                });
+        }
+
+        /** Attempts to find the self filter property. */
+        export function findSelfFilter(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier {
+            return findProperty(
+                descriptors,
+                (propDesc: DataViewObjectPropertyDescriptor) => {
+                    let propType: StructuralTypeDescriptor = propDesc.type;
+                    return propType && propType.filter && propType.filter.selfFilter;
+                });
+        }
+
+        /** Attempts to find the self filter enabled property. */
+        export function findSelfFilterEnabled(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier {
+            return findProperty(
+                descriptors,
+                (propDesc: DataViewObjectPropertyDescriptor) => {
+                    let propType: ValueTypeDescriptor = propDesc.type;
+                    return propType && propType.operations && propType.operations.searchEnabled;
                 });
         }
 

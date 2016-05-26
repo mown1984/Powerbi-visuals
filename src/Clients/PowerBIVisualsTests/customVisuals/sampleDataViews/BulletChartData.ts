@@ -25,10 +25,17 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
 
-    export class BulletChartData {
+    export class BulletChartData extends DataViewBuilder {
+        public static ColumnCategory: string = "Category";
+        public static ColumnValue: string = "Value";
+        public static ColumnTargetValue: string = "Target Value";
+        public static ColumnMinimum: string = "Minimum";
+        public static ColumnSatisfactory: string = "Satisfactory";
+        public static ColumnGood: string = "Good";
+        public static ColumnMaximum: string = "Maximum";
+
         public valuesCategory = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"];
         public valuesValue = [2, 4, 3, 3, 4, 3, 4, 5];
         public valuesTargetValue = [3, 3, 3, 2, 2, 2, 3, 3];
@@ -37,75 +44,74 @@ module powerbitests.customVisuals.sampleDataViews {
         public valuesGood = [4, 4, 4 ,6 ,6 ,6 ,4 ,4];
         public valuesMaximum = [6, 6, 6, 8, 8, 8, 8, 7];
 
-        public getDataView(): DataView {
-            return powerbi.data.createCategoricalDataViewBuilder()
-                .withCategory(helpers.addIdentityToDataViewBuilderCategoryColumnOptions({
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
                     source: {
-                        displayName: "Category",
-                        queryName: "category",
+                        displayName: BulletChartData.ColumnCategory,
                         roles: { "Category": true },
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesCategory
-                }))
-                .withValues({
-                    columns: [
-                        {
-                            source: {
-                                displayName: "Value",
-                                roles: { "Value": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                            },
-                            values: this.valuesValue
-                        },
-                        {
-                            source: {
-                                displayName: "Target Value",
-                                roles: { "TargetValue": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                            },
-                            values: this.valuesTargetValue
-                        },
-                        {
-                            source: {
-                                displayName: "Minimum",
-                                roles: { "Minimum": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                            },
-                            values: this.valuesMinimum
-                        },
-                        {
-                            source: {
-                                displayName: "Satisfactory",
-                                roles: { "Satisfactory": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true })
-                            },
-                            values: this.valuesSatisfactory
-                        },
-                        {
-                            source: {
-                                displayName: "Good",
-                                roles: { "Good": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                            },
-                            values: this.valuesGood
-                        },
-                        {
-                            source: {
-                                displayName: "Maximum",
-                                roles: { "Maximum": true },
-                                isMeasure: true,
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                            },
-                            values: this.valuesMaximum
-                        }
-                    ]
-            }).build();
+                }
+                ],[
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnValue,
+                        roles: { "Value": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesValue
+                },
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnTargetValue,
+                        roles: { "TargetValue": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesTargetValue
+                },
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnMinimum,
+                        roles: { "Minimum": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesMinimum
+                },
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnSatisfactory,
+                        roles: { "Satisfactory": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesSatisfactory
+                },
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnGood,
+                        roles: { "Good": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesGood
+                },
+                {
+                    source: {
+                        displayName: BulletChartData.ColumnMaximum,
+                        roles: { "Maximum": true },
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesMaximum
+                }
+                ],
+                null,
+                columnNames).build();
         }
     }
 }

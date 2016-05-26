@@ -65,6 +65,14 @@ module powerbitests {
             expect(data.DataViewObjectDescriptors.findFilterOutput(visuals.slicerCapabilities.objects)).toEqual(visuals.slicerProps.filterPropertyIdentifier);
         });
 
+        it("SelfFilter property should match calculated", () => {
+            expect(data.DataViewObjectDescriptors.findSelfFilter(visuals.slicerCapabilities.objects)).toEqual(visuals.slicerProps.selfFilterPropertyIdentifier);
+        });
+
+        it("SelfFilterEnabled property should match calculated", () => {
+            expect(data.DataViewObjectDescriptors.findSelfFilterEnabled(visuals.slicerCapabilities.objects)).toEqual(visuals.slicerProps.general.selfFilterEnabled);
+        });
+
         it("Sort should be default so the sort UI shows", () => {
             expect(visuals.slicerCapabilities.sorting.custom).not.toBeDefined();
             expect(visuals.slicerCapabilities.sorting.default).toBeDefined();

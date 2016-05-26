@@ -1135,20 +1135,24 @@
             pointer-events: none;
         }
     }
+    
+    .labelBackgroundGraphicsContext {
+        pointer-events: none;
+    }
+    
+    /* Depricated. Done use it for new charts. */
+    .data-labels {
+        font-size: 12px;
+        text-anchor: middle;
+        font-family: @regularSecondaryFontFamily;
+        pointer-events: none;
+    }
+    
 
     .leader-lines {
         .line-label {
             opacity: 0.5;
         }
-    }
-    
-    /* Kept around for funnel labels; can be removed once it's moved to the new system */
-    .data-labels {
-        font-size: 12px;
-        text-anchor: middle;
-        font-family: @regularSecondaryFontFamily;
-        /* Enables tooltip when hovering on data label inside visual */
-        pointer-events: none;
     }
 
     .textbox {
@@ -1601,7 +1605,7 @@ div.ql-toolbar {
 
     .tooltip-content-container {
         padding: 12px;
-        max-width: 390px;
+        max-width: 520px;
     }
 
     div.tooltip-header {
@@ -1615,7 +1619,6 @@ div.ql-toolbar {
 
     .tooltip-row {
         display: table-row;
-        line-height: 16px;
     }
 
     div.tooltip-color-cell {
@@ -1623,6 +1626,8 @@ div.ql-toolbar {
         vertical-align: top;
         max-width: 13px;
         padding-right: 4px;
+        padding-top: 3px;
+        padding-bottom: 3px;
     }
 
     div.tooltip-title-cell {
@@ -1630,8 +1635,10 @@ div.ql-toolbar {
         word-wrap: break-word;
         font-family: @regularSecondaryFontFamily;
         text-transform: uppercase;
-        max-width: 130px;
+        max-width: 260px;
         padding-right: 12px;
+        padding-top: 3px;
+        padding-bottom: 3px;
         color: @neutralTertiaryColor;
     }
 
@@ -1640,6 +1647,8 @@ div.ql-toolbar {
         word-wrap: break-word;
         font-family: @regularFontFamily;
         max-width: 260px;
+        padding-top: 3px;
+        padding-bottom: 3px;
         font-weight: bold;
         color: @whiteColor;
         letter-spacing: 1px;

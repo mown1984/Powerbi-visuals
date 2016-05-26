@@ -301,6 +301,10 @@ module powerbi.data {
 
             return new SQScopedEvalExpr(rewrittenExpression, rewrittenScope);
         }
+        
+        public visitWithRef(orig: SQWithRefExpr): SQExpr {
+            return orig;
+        }
 
         public visitFillRule(orig: SQFillRuleExpr): SQExpr {
             let origInput = orig.input,

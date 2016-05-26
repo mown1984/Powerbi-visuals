@@ -95,12 +95,12 @@ module powerbi.visuals {
             return false;
         };
     }
-    
+
     /**
-     * Interface for refreshing Matrix Data View.
-     */
+    * Interface for refreshing Matrix Data View.
+    */
     export interface MatrixDataAdapter {
-        update(dataViewMatrix?: DataViewMatrix, updateColumns?: boolean): void;
+        update(dataViewMatrix?: DataViewMatrix, isDataComplete?: boolean, updateColumns?: boolean): void;
     }
 
     export interface IMatrixHierarchyNavigator extends controls.ITablixHierarchyNavigator, MatrixDataAdapter {
@@ -130,8 +130,12 @@ module powerbi.visuals {
     /**
      * Factory method used by unit tests.
      */
-    export function createMatrixHierarchyNavigator(matrix: DataViewMatrix, formatter: ICustomValueColumnFormatter, compositeGroupSeparator: string): IMatrixHierarchyNavigator {
-        return new MatrixHierarchyNavigator(matrix, formatter, compositeGroupSeparator);
+    export function createMatrixHierarchyNavigator(matrix: DataViewMatrix,
+        isDataComplete: boolean,
+        formatter: ICustomValueColumnFormatter,
+        compositeGroupSeparator: string): IMatrixHierarchyNavigator {
+
+        return new MatrixHierarchyNavigator(matrix, isDataComplete, formatter, compositeGroupSeparator);
     }
 
     class MatrixHierarchyNavigator implements IMatrixHierarchyNavigator {
@@ -141,12 +145,22 @@ module powerbi.visuals {
         private formatter: ICustomValueColumnFormatter;
         private compositeGroupSeparator: string;
 
-        constructor(matrix: DataViewMatrix, formatter: ICustomValueColumnFormatter, compositeGroupSeparator: string) {
+        /**
+         * True if the model is not expecting more data
+        */
+        private isDataComplete: boolean;
+
+        constructor(matrix: DataViewMatrix,
+            isDataComplete: boolean,
+            formatter: ICustomValueColumnFormatter,
+            compositeGroupSeparator: string) {
+
             this.matrix = matrix;
             this.rowHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(matrix.rows);
             this.columnHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(matrix.columns);
             this.formatter = formatter;
             this.compositeGroupSeparator = compositeGroupSeparator;
+            this.isDataComplete = isDataComplete;
 
             this.update();
         }
@@ -220,8 +234,7 @@ module powerbi.visuals {
          */
         public getIndex(item: MatrixVisualNode): number {
             debug.assertValue(item, 'item');
-
-            return item.index;
+            return item ? item.index : -1;
         }
         
         /**
@@ -264,7 +277,22 @@ module powerbi.visuals {
         public isLastItem(item: MatrixVisualNode, items: MatrixVisualNode[]): boolean {
             debug.assertValue(item, 'item');
 
-            return item === _.last(items);
+            if(item !== _.last(items))
+                return false;
+
+            // if item is a row, we need to check that data is complete
+            return !this.isItemRow(item) || this.isDataComplete;
+        }
+
+        private isItemRow(item: MatrixVisualNode): boolean {
+            if (!item)
+                return false;
+
+            let firstLevelParent = item;
+            while (firstLevelParent.parent)
+                firstLevelParent = firstLevelParent.parent;
+
+            return firstLevelParent.siblings === this.rowHierarchy.root.children;
         }
 
         public areAllParentsLast(item: MatrixVisualNode, items: MatrixVisualNode[]): boolean {
@@ -363,7 +391,7 @@ module powerbi.visuals {
             bodyCell.position.row.index = rowIndex;
             bodyCell.position.row.indexInSiblings = rowItem.siblings.indexOf(rowItem);
             bodyCell.position.row.isFirst = rowIndex === 0;
-            bodyCell.position.row.isLast = rowIndex === this.rowHierarchy.leafNodes.length - 1;
+            bodyCell.position.row.isLast = this.isDataComplete && (rowIndex === this.rowHierarchy.leafNodes.length - 1);
             bodyCell.position.column.index = colIndex;
             bodyCell.position.column.indexInSiblings = columnItem.siblings.indexOf(columnItem);
             bodyCell.position.column.isFirst = colIndex === 0;
@@ -438,9 +466,11 @@ module powerbi.visuals {
         /**
          * Implementation for MatrixDataAdapter interface.
          */
-        public update(dataViewMatrix?: DataViewMatrix, updateColumns: boolean = true): void {
+        public update(dataViewMatrix?: DataViewMatrix, isDataComplete?: boolean, updateColumns: boolean = true): void {
             if (dataViewMatrix) {
                 this.matrix = dataViewMatrix;
+                if (isDataComplete != null)
+                    this.isDataComplete = isDataComplete;
                 this.rowHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(dataViewMatrix.rows);
                 if (updateColumns)
                     this.columnHierarchy = MatrixHierarchyNavigator.wrapMatrixHierarchy(dataViewMatrix.columns);
@@ -1291,16 +1321,16 @@ module powerbi.visuals {
                 let textSize = formattingProperties.general.textSize;
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
-                    let rootChanged = previousDataView.matrix.rows.root !== this.dataView.matrix.rows.root;
-
-                    this.hierarchyNavigator.update(this.dataView.matrix, rootChanged);
                     // If Root for Rows or Columns has changed by the DataViewTransform (e.g. when having reorders in values)
+                    let rootChanged = previousDataView.matrix.rows.root !== this.dataView.matrix.rows.root;
+                    this.createOrUpdateHierarchyNavigator(rootChanged);
+                    
                     if (rootChanged)
                         this.tablixControl.updateModels(/*resetScrollOffsets*/false, this.dataView.matrix.rows.root.children, this.dataView.matrix.columns.root.children);
 
                     this.refreshControl(/*clear*/false);
                 } else {
-                    this.createOrUpdateHierarchyNavigator();
+                    this.createOrUpdateHierarchyNavigator(true);
                     this.createColumnWidthManager();
                     this.createTablixControl(textSize);
                     let binder = <MatrixBinder>this.tablixControl.getBinder();
@@ -1351,13 +1381,15 @@ module powerbi.visuals {
             return this.isInteractive ? controls.TablixLayoutKind.Canvas : controls.TablixLayoutKind.DashboardTile;
         }
 
-        private createOrUpdateHierarchyNavigator(): void {
+        private createOrUpdateHierarchyNavigator(rootChanged: boolean): void {
+            let isDataComplete = !this.dataView.metadata.segment;
+
             if (!this.tablixControl) {
-                let matrixNavigator = createMatrixHierarchyNavigator(this.dataView.matrix, this.formatter, this.hostServices.getLocalizedString('ListJoin_Separator'));
+                let matrixNavigator = createMatrixHierarchyNavigator(this.dataView.matrix, isDataComplete, this.formatter, this.hostServices.getLocalizedString('ListJoin_Separator'));
                 this.hierarchyNavigator = matrixNavigator;
             }
             else {
-                this.hierarchyNavigator.update(this.dataView.matrix);
+                this.hierarchyNavigator.update(this.dataView.matrix, isDataComplete, rootChanged);
             }
         }
 

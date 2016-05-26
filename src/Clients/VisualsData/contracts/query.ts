@@ -39,7 +39,7 @@ module powerbi.data {
         Version?: number;
         From: EntitySource[];
         Where: QueryFilter[];
-    }    
+    }
 
     export enum EntitySourceType {
         Table = 0,
@@ -111,6 +111,9 @@ module powerbi.data {
 
         // Evaluation Expressions
         ScopedEval?: QueryScopedEvalExpression;
+
+        // Reference Expressions
+        WithRef?: QueryWithRefExpression;
 
         // Client-only expressions
         FillRule?: QueryFillRuleExpression;
@@ -273,6 +276,10 @@ module powerbi.data {
         Scope: QueryExpressionContainer[];
     }
 
+    export interface QueryWithRefExpression {
+        ExpressionName: string;
+    }
+
     export enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -332,9 +339,9 @@ module powerbi.data {
     // TODO: Stop using SemanticType and ConceptualDataCategory here (may need server contract changes)
     export interface SelectMetadata {
         Restatement: string;
-        
+
         /* SemanticType or PrimitiveType. */
-        Type?: number; 
+        Type?: number;
 
         Format?: string;
         DataCategory?: ConceptualDataCategory;

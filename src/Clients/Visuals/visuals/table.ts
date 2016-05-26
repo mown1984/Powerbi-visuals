@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -42,7 +42,7 @@ module powerbi.visuals {
     }
 
     export interface TableDataAdapter {
-        update(table: DataViewTable): void;
+        update(table: DataViewTable, isDataComplete: boolean): void;
     }
 
     export interface TableTotal {
@@ -53,11 +53,17 @@ module powerbi.visuals {
         private tableDataView: DataViewVisualTable;
         private formatter: ICustomValueColumnFormatter;
 
-        constructor(tableDataView: DataViewVisualTable, formatter: ICustomValueColumnFormatter) {
+        /**
+         * True if the model is not expecting more data
+        */
+        private isDataComplete: boolean;
+
+        constructor(tableDataView: DataViewVisualTable, isDataComplete: boolean, formatter: ICustomValueColumnFormatter) {
             debug.assertValue(tableDataView, 'tableDataView');
             debug.assertValue(formatter, 'formatter');
 
             this.tableDataView = tableDataView;
+            this.isDataComplete = isDataComplete;
             this.formatter = formatter;
         }
 
@@ -151,7 +157,9 @@ module powerbi.visuals {
         public isLastItem(item: any, items: any[]): boolean {
             debug.assertValue(item, 'item');
 
-            return items[items.length - 1] === item;
+            // If it's a row, we need to check if data is complete
+            return (items === this.tableDataView.columns || this.isDataComplete)
+                && (item === _.last(items));
         }
 
         public areAllParentsLast(item: any, items: any[]): boolean {
@@ -213,7 +221,7 @@ module powerbi.visuals {
                 let rowIndex = row.index;
                 position.row.index = rowIndex;
                 position.row.isFirst = rowIndex === 0;
-                position.row.isLast = rowIndex === this.tableDataView.rows.length - 1;
+                position.row.isLast = this.isDataComplete && (rowIndex === this.tableDataView.rows.length - 1);
                 value = row.values[columnIndex];
             }
 
@@ -270,8 +278,9 @@ module powerbi.visuals {
             return true;
         }
 
-        public update(table: DataViewVisualTable): void {
+        public update(table: DataViewVisualTable, isDataComplete: boolean): void {
             this.tableDataView = table;
+            this.isDataComplete = isDataComplete;
         }
 
         public static getIndex(items: any[], item: any): number {
@@ -778,7 +787,7 @@ module powerbi.visuals {
                 let textSize = visualTable.formattingProperties.general.textSize;
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
-                    this.hierarchyNavigator.update(visualTable);
+                    this.createOrUpdateHierarchyNavigator(visualTable);
                     this.tablixControl.updateModels(/*resetScrollOffsets*/false, visualTable.visualRows, visualTable.columns);
                     this.refreshControl(/*clear*/false);
                 } else {
@@ -832,12 +841,14 @@ module powerbi.visuals {
         }
 
         private createOrUpdateHierarchyNavigator(visualTable: DataViewVisualTable): void {
+            let isDataComplete = !this.dataView.metadata.segment;
+
             if (!this.tablixControl) {
-                let dataNavigator = new TableHierarchyNavigator(visualTable, this.formatter);
+                let dataNavigator = new TableHierarchyNavigator(visualTable, isDataComplete, this.formatter);
                 this.hierarchyNavigator = dataNavigator;
             }
             else {
-                this.hierarchyNavigator.update(visualTable);
+                this.hierarchyNavigator.update(visualTable, isDataComplete);
             }
         }
 

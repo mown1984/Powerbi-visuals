@@ -65,8 +65,6 @@ module powerbitests {
     let dataTypeWebUrl = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text, "WebUrl");
     let dataTypeKpiStatus = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer);
 
-    let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({}, { tooltipsEnabled: true });
-
     //#region Test Data
     //#region columnMetadata
     let rowGroupSource1: DataViewMetadataColumn = { displayName: "RowGroup1", queryName: "RowGroup1", type: dataTypeString, index: 0, roles: { 'Rows': true } };
@@ -2536,8 +2534,9 @@ module powerbitests {
         return parent.find("." + cssClass);
     }
 
-    function createHierarchyNavigator(matrix: DataViewMatrix): MatrixHierarchyNavigator {
+    function createHierarchyNavigator(matrix: DataViewMatrix, isDataComplete: boolean = true): MatrixHierarchyNavigator {
         return powerbi.visuals.createMatrixHierarchyNavigator(matrix,
+            isDataComplete,
             valueFormatter.formatVariantMeasureValue,
             ", ");
     }
@@ -3289,7 +3288,20 @@ module powerbitests {
                 let items = matrix.rows.root.children;
                 let navigator = createHierarchyNavigator(matrix);
 
-                expect(navigator.isLastItem(items[0], items)).toBeTruthy();
+                expect(navigator.isLastItem(items[0], items)).toBe(true);
+            });
+
+            it("handles incomplete data", () => {
+                let matrix = matrixOneRowGroupOneColumnGroupOneInstance;
+                let rows = matrix.rows.root.children;
+                let columns = matrix.columns.root.children;
+                let navigator = createHierarchyNavigator(matrix, false);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(false);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
+
+                navigator.update(matrix, true);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(true);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
             });
 
             it("returns true if the last item is the last item in its parents collection, but not on the level", () => {
@@ -5709,7 +5721,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("700", "700");
             element["visible"] = () => { return true; };
-            v = dashboardPluginService.getPlugin("matrix").create();
+            v = new powerbi.visuals.Matrix({});
             v.init({
                 element: element,
                 host: mocks.createVisualHostServices(),

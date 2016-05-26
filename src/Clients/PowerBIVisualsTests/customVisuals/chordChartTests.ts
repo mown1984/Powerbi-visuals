@@ -31,142 +31,111 @@ module powerbitests.customVisuals {
 	powerbitests.mocks.setLocale();
 	
     describe("ChordChart", () => {
+        let visualBuilder: ChordChartBuilder;
+        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new ChordChartBuilder(500,1000);
+            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData();
+            dataView = dataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: ChordChartBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new ChordChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ChortChartData().getDataView()];
-            });
-
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let valuesLength = _.sum(dataView.categorical.values.map(x => x.values.filter(_.isNumber).length));
+                    let categoriesLength = dataView.categorical.values.length + dataView.categorical.categories[0].values.length;
+
                     expect(visualBuilder.mainElement.children("g").children("g.chords").children("path").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(valuesLength);
                     expect(visualBuilder.mainElement.children("g").children("g.ticks").children("g.slice-ticks").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length + 1);
+                        .toBe(categoriesLength);
                     expect(visualBuilder.mainElement.children("g").children("g.slices").children("path.slice").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length + 1);
-                    expect(visualBuilder.element.find('.chordChart').attr('height')).toBe('200');
-                    expect(visualBuilder.element.find('.chordChart').attr('width')).toBe('300');
+                        .toBe(categoriesLength);
+                    expect(visualBuilder.element.find('.chordChart').attr('height')).toBe(visualBuilder.viewport.height.toString());
+                    expect(visualBuilder.element.find('.chordChart').attr('width')).toBe(visualBuilder.viewport.width.toString());
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
 
             it("update axis on", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let axis: powerbi.DataViewObjects = { axis: { show: true } };
-                clonedDataViews[0].metadata.objects = axis;
-                visualBuilder.update(clonedDataViews);
-                setTimeout(() => {
+                dataView.metadata.objects = { axis: { show: true } };
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.element.find('.ticks .slice-ticks').length).toBeGreaterThan(0);
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
 
             it("update axis off", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
+
                 let axis: powerbi.DataViewObjects = { axis: { show: false } };
-                clonedDataViews[0].metadata.objects = axis;
-                visualBuilder.update(clonedDataViews);
-                setTimeout(() => {
+                dataView.metadata.objects = axis;
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.element.find('.ticks .slice-ticks').length).toBe(0);
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
 
             it("update labels on", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let labels: powerbi.DataViewObjects = { labels: { show: true, color: { solid: { color: '#222222' } }, fontSize: 22 } };
-                clonedDataViews[0].metadata.objects = labels;
-                visualBuilder.update(clonedDataViews);
-                setTimeout(() => {
+                dataView.metadata.objects = { labels: { show: true, color: { solid: { color: '#222222' } }, fontSize: 22 } };
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.element.find('.labels .data-labels').length).toBeGreaterThan(0);
                     let label = visualBuilder.element.find('.labels .data-labels').first();
                     helpers.assertColorsMatch(label.css('fill'), "#222222");
                     expect(Math.round(parseInt(label.css('font-size'), 10))).toBe(Math.round(parseInt(PixelConverter.fromPoint(22), 10)));
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
 
             it("update labels off", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let labels: powerbi.DataViewObjects = { labels: { show: false } };
-                clonedDataViews[0].metadata.objects = labels;
-                visualBuilder.update(clonedDataViews);
-                setTimeout(() => {
+                dataView.metadata.objects = { labels: { show: false } };
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.element.find('.labels .data-labels').length).toBe(0);
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
-
-            it("update data Colors off", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let labels: powerbi.DataViewObjects = { dataPoint: { showAllDataPoints: false } };
-                clonedDataViews[0].metadata.objects = labels;
-                visualBuilder.update(clonedDataViews);
-                let result = visualBuilder.enumerateObjectInstances({ objectName: 'dataPoint' });
-                setTimeout(() => {
-                    expect(result[1].properties['showAllDataPoints']).toBeFalsy();
-                    expect(result[2]).toBeUndefined();
-                    done();
-                }, powerbitests.DefaultWaitForRender);
-            });
-
-            it("update data Colors on", (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let labels: powerbi.DataViewObjects = { dataPoint: { showAllDataPoints: true } };
-                clonedDataViews[0].metadata.objects = labels;
-                visualBuilder.update(clonedDataViews);
-                let result = visualBuilder.enumerateObjectInstances({ objectName: 'dataPoint' });
-                setTimeout(() => {
-                    expect(result[1].properties['showAllDataPoints']).toBeTruthy();
-                    expect(result[2].properties['fill']).toBeDefined();
-                    done();
-                }, powerbitests.DefaultWaitForRender);
-            });
-
         });
 
         describe('enumerateObjectInstances', () => {
-            let visualBuilder: ChordChartBuilder;
-            let dataViews: powerbi.DataView[];
+             xit("update data Colors off", (done) => {
+                dataView.metadata.objects = { dataPoint: { showAllDataPoints: false } };
+                visualBuilder.updateEnumerateObjectInstancesRenderTimeout(dataView, { objectName: 'dataPoint' }, result => {
+                    expect(result[1].properties['showAllDataPoints']).toBeFalsy();
+                    expect(result[2]).toBeUndefined();
+                    done();
+                });
+            });
 
-            beforeEach(() => {
-                visualBuilder = new ChordChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ChortChartData().getDataView()];
+            it("update data Colors on", (done) => {
+                dataView.metadata.objects = { dataPoint: { showAllDataPoints: true } };
+                visualBuilder.updateEnumerateObjectInstancesRenderTimeout(dataView, { objectName: 'dataPoint' }, result => {
+                    expect(result[1].properties['showAllDataPoints']).toBeTruthy();
+                    expect(result[2].properties['fill']).toBeDefined();
+                    done();
+                });
             });
 
             it('enumerateObjectInstances axis', (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let axis: powerbi.DataViewObjects = { axis: { show: true } };
-                clonedDataViews[0].metadata.objects = axis;
-                visualBuilder.update(clonedDataViews);
-                let result = visualBuilder.enumerateObjectInstances({ objectName: 'axis' });
-                setTimeout(() => {
+                dataView.metadata.objects = { axis: { show: true } };
+                visualBuilder.updateEnumerateObjectInstancesRenderTimeout(dataView, { objectName: 'axis' }, result => {
                     expect(result[0]).toBeDefined();
                     expect(result[0].objectName).toBe('axis');
                     expect(result[0].displayName).toBe('Axis');
                     expect(result[0].properties['show']).toBe(true);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it('enumerateObjectInstances labels', (done) => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let labels: powerbi.DataViewObjects = { labels: { show: true, fontSize: '20px', color: { solid: { color: '#222222' } } } };
-                clonedDataViews[0].metadata.objects = labels;
-                visualBuilder.update(clonedDataViews);
-                let result = visualBuilder.enumerateObjectInstances({ objectName: 'labels' });
-                setTimeout(() => {
+                dataView.metadata.objects = { labels: { show: true, fontSize: '20px', color: { solid: { color: '#222222' } } } };
+                visualBuilder.updateEnumerateObjectInstancesRenderTimeout(dataView, { objectName: 'labels' }, result => {
                     expect(result[0]).toBeDefined();
                     expect(result[0].objectName).toBe('labels');
                     expect(result[0].displayName).toBe('Labels');
@@ -174,13 +143,13 @@ module powerbitests.customVisuals {
                     expect(result[0].properties['color']).toBe('#222222');
                     expect(result[0].properties['fontSize']).toBe('20px');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
     });
 
     class ChordChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();

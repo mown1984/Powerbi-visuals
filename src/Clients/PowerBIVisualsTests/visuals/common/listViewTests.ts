@@ -41,7 +41,8 @@ module powerbitests {
             { first: "Jack", second: "Sparrow" },
             { first: "James", second: "Bond" },
             { first: "Sea", second: "Hawks" },
-            { first: "Sachin", second: "Patney" }
+            { first: "Sachin", second: "Patney" },
+            { first: "Power", second: "BI" },
         ];
 
         beforeEach(() => {
@@ -60,16 +61,16 @@ module powerbitests {
             setTimeout(() => {
                 let itemCount = listViewBuilder.element.find(".item").length;
                 expect(itemCount).toBeGreaterThan(0);
-                expect(itemCount).toBeLessThan(9); // Some should be virtualized, so shouldn't show all 9 items
+                expect(itemCount).toBeLessThan(10); // Some should be virtualized, so shouldn't show all 10 items
                 done();
             }, DefaultWaitForRender);
         });
         
-         xit("Scroll partially down to check if the next item is added to the dom", (done) => {
+         it("Scroll partially down to check if the next element is added to the dom", (done) => {
             listViewBuilder.buildHtmlListView();
             setTimeout(() => {
                 let itemCount = listViewBuilder.element.find(".item").length;
-                expect(itemCount).toBeLessThan(9); // Some should be virtualized, so shouldn't show all 9 items
+                expect(itemCount).toBeLessThan(10); // Some should be virtualized, so shouldn't show all 10 items
 
                 // Scroll just over half way down 1 element. This should force the next element to be added.
                 listViewBuilder.scrollElement.scrollTop(6);
@@ -78,7 +79,7 @@ module powerbitests {
                     let newItemCount = items.length;
                     let lastElem2 = items.last().text();
                     expect(lastElem2).toEqual("-->Sachin-->Patney");
-                    expect(newItemCount).toEqual(itemCount + 1); // We should have an extra element since we're displaying an extra row.
+                    expect(newItemCount).toEqual(itemCount);
                     expect(listViewBuilder.spyOnLoadMoreData).toHaveBeenCalled();
                     done();
                 }, DefaultWaitForRender);
@@ -89,12 +90,13 @@ module powerbitests {
             listViewBuilder.buildHtmlListView();
             setTimeout(() => {
                 let lastElem = listViewBuilder.element.find(".item").last().text();
-                // the 8th item in the list when the viewport height is 80 and each item height is 10.
-                expect(lastElem).toEqual("-->Sea-->Hawks");
+                // The 9th item in the list. When the viewport height is 80 and each item height is 10, 8 will be visible and the 9th will be in the DOM
+                // for partial visiblity.
+                expect(lastElem).toEqual("-->Sachin-->Patney");
                 listViewBuilder.scrollElement.scrollTop(15);
                 setTimeout(() => {
                     let lastElem2 = listViewBuilder.element.find(".item").last().text();
-                    expect(lastElem2).toEqual("-->Sachin-->Patney");
+                    expect(lastElem2).toEqual("-->Power-->BI");
                     expect(listViewBuilder.spyOnLoadMoreData).toHaveBeenCalled();
                     done();
                 }, DefaultWaitForRender);

@@ -123,7 +123,7 @@ module powerbitests.customVisuals {
                 }, DefaultWaitForRender);
             });
 
-            it('Validate Data Label', (done) => {
+            xit('Validate Data Label', (done) => {
                 dataViews[0].metadata.objects = {
                     labels: {
                         show: true

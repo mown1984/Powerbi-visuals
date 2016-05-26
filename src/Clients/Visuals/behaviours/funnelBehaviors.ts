@@ -55,7 +55,7 @@ module powerbi.visuals {
 
         public renderSelection(hasSelection: boolean): void {
             let hasHighlights = this.hasHighlights;
-            this.bars.style("fill-opacity", (d: FunnelSlice) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights));
+            this.bars.style("fill-opacity", (d: FunnelDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights));
         }
     }
 }

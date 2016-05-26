@@ -42,7 +42,7 @@ module powerbi.visuals {
                         type: { filter: {} },
                     },
                     selfFilter: {
-                        type: { filter: {} },
+                        type: { filter: { selfFilter: true } },
                     },
                     defaultValue: {
                         type: { expression: { defaultValue: true } },
@@ -58,7 +58,7 @@ module powerbi.visuals {
                         type: { integer: true }
                     },
                     selfFilterEnabled: {
-                        type: { bool: true }
+                        type: { operations: { searchEnabled: true } }
                     },
                 },
             },
@@ -153,7 +153,7 @@ module powerbi.visuals {
         },
         selectedPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selected' },
         filterPropertyIdentifier: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'filter' },
-        selfFilterPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'filter' },
+        selfFilterPropertyIdentifier: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'selfFilter' },
         formatString: <DataViewObjectPropertyIdentifier> { objectName: 'general', propertyName: 'formatString' },
         defaultValue: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'defaultValue' },
     };

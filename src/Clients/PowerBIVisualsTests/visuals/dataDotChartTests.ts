@@ -481,7 +481,7 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        xit("Check dots in DOM", (done) => {
+        it("Check dots in DOM", (done) => {
             dataViewBuilder.values = [[500000, 495000, 490000, 480000, 500000]];
 
             dataViewBuilder.update();

@@ -27,46 +27,50 @@
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
-    export class SalesByDayOfWeekData {
+    export class SalesByDayOfWeekData extends DataViewBuilder {
+        public static ColumnCategory: string = "category";
+        public static ColumnSales1: string = "sales1";
+        public static ColumnSales2: string = "sales2";
+
         public valuesCategory: string[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];;
         public valuesY1: number[] = [742731.43, 162066.43, 283085.78, 300263.49, 376074.57, 814724.34, 570921.34];
         public valuesY2: number[] = [123455.43, 40566.43, 200457.78, 5000.49, 320000.57, 450000.34, 140832.67];
 
-        public getDataView(): powerbi.DataView {
-            return powerbi.data.createCategoricalDataViewBuilder()
-                .withCategory(helpers.addIdentityToDataViewBuilderCategoryColumnOptions({
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
                     source: {
                         displayName: "Day",
-                        queryName: "category",
+                        queryName: SalesByDayOfWeekData.ColumnCategory,
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesCategory
-                }))
-                .withValues({
-                    columns: [
-                        {
-                            source: {
-                                displayName: 'Previous week sales',
-                                isMeasure: true,
-                                format: "$0,000.00",
-                                queryName: 'sales1',
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                                objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
-                            },
-                            values: this.valuesY1
-                        },
-                        {
-                            source: {
-                                displayName: 'This week sales',
-                                isMeasure: true,
-                                format: "$0,000.00",
-                                queryName: 'sales2',
-                                type: ValueType.fromDescriptor({ numeric: true })
-                            },
-                            values: this.valuesY2
-                        }
-                    ]
-            }).build();
+                }
+                ],[
+                {
+                    source: {
+                        displayName: 'Previous week sales',
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        queryName: SalesByDayOfWeekData.ColumnSales1,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: 'purple' } } } },
+                    },
+                    values: this.valuesY1
+                },
+                {
+                    source: {
+                        displayName: 'This week sales',
+                        isMeasure: true,
+                        format: "$0,000.00",
+                        queryName: SalesByDayOfWeekData.ColumnSales2,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesY2
+                }
+                ],
+                null,
+                columnNames).build();
         }
     }
 }

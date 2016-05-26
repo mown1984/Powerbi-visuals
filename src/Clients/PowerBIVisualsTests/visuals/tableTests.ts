@@ -100,8 +100,6 @@ module powerbitests {
     let measureSourceDescending: DataViewMetadataColumn = { displayName: "measure1", queryName: "measure1", type: dataTypeNumber, isMeasure: true, index: 3, objects: { general: { formatString: "#.0" } }, sort: SortDirection.Descending };
     //#endregion
 
-    let dashboardPluginService = new powerbi.visuals.visualPluginFactory.DashboardPluginService({}, { tooltipsEnabled: true });
-
     //#region dataViewObjects
     let tableTotals: powerbi.DataViewObjects = {
         general: {
@@ -523,7 +521,7 @@ module powerbitests {
 
     describe("Table hierarchy navigator tests", () => {
         function createNavigator(dataViewTable: DataViewTable): TableHierarchyNavigator {
-            return new TableHierarchyNavigator(dataViewTable, valueFormatter.formatVariantMeasureValue);
+            return new TableHierarchyNavigator(dataViewTable, true, valueFormatter.formatVariantMeasureValue);
         }
 
         describe("getDepth", () => {
@@ -649,6 +647,7 @@ module powerbitests {
                 expect(navigator.getIndex(null)).toBe(-1);
             });
         });
+
         describe("isLeaf", () => {
 
             it("returns true for columns", () => {
@@ -761,13 +760,49 @@ module powerbitests {
             });
         });
 
+        describe("isLast", () => {
+            let dataView: DataView;
+            let visualTable: powerbi.visuals.DataViewVisualTable;
+            let rows: powerbi.visuals.DataViewVisualTableRow[];
+            let columns: DataViewMetadataColumn[];
+            let navigator: TableHierarchyNavigator;
+
+            beforeEach(() => {
+                dataView = tableOneMeasure;
+                visualTable = powerbi.visuals.Table.converter(dataView);
+                rows = visualTable.visualRows;
+                columns = visualTable.columns;
+            });
+
+            it("returns true if data is complete", () => {
+                navigator = new TableHierarchyNavigator(visualTable, true, valueFormatter.formatVariantMeasureValue);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(true);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
+            });
+
+            it("returns false if data is incomplete", () => {
+                navigator = new TableHierarchyNavigator(visualTable, false, valueFormatter.formatVariantMeasureValue);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(false);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
+            });
+
+            it("returns true for last segment", () => {
+                navigator = new TableHierarchyNavigator(visualTable, false, valueFormatter.formatVariantMeasureValue);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(false);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
+
+                navigator.update(visualTable, true);
+                expect(navigator.isLastItem(rows[0], rows)).toBe(true);
+                expect(navigator.isLastItem(columns[0], columns)).toBe(true);
+            });
+        });
         describe("getIntersection", () => {
             it("returns values in the intersection", () => {
                 let dataView = tableThreeGroupsThreeMeasuresInterleaved;
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
+                let navigator = new TableHierarchyNavigator(visualTable, true, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: string[][] = [
                     ["A", "100.0", "aa", "101.00", "aa1", "102"],
@@ -787,7 +822,7 @@ module powerbitests {
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
+                let navigator = new TableHierarchyNavigator(visualTable, true, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: boolean[][] = [
                     [true],
@@ -803,7 +838,7 @@ module powerbitests {
                 let visualTable = powerbi.visuals.Table.converter(dataView);
                 let rows = visualTable.visualRows;
                 let columns = dataView.table.columns;
-                let navigator = new TableHierarchyNavigator(visualTable, valueFormatter.formatVariantMeasureValue);
+                let navigator = new TableHierarchyNavigator(visualTable, true, valueFormatter.formatVariantMeasureValue);
 
                 let expectedValues: string[][] = [
                     ['<div class="powervisuals-glyph circle kpi-red" style="display: inline-block; vertical-align: bottom; margin: 0px;"></div>'],
@@ -812,6 +847,42 @@ module powerbitests {
                 ];
 
                 expect(fillResult<string>(navigator, rows, columns, "kpiContent")).toEqual(expectedValues);
+            });
+
+            it("sets proper position for complete data", () => {
+                let dataView = tableOneMeasure;
+                let visualTable = powerbi.visuals.Table.converter(dataView);
+                let rows = visualTable.visualRows;
+                let columns = dataView.table.columns;
+                let navigator = new TableHierarchyNavigator(visualTable, true, valueFormatter.formatVariantMeasureValue);
+
+                let dataPoint = navigator.getIntersection(rows[0], columns[0]);
+
+                expect(dataPoint.position.column.index).toBe(0);
+                expect(dataPoint.position.column.isFirst).toBe(true);
+                expect(dataPoint.position.column.isLast).toBe(true);
+
+                expect(dataPoint.position.row.index).toBe(0);
+                expect(dataPoint.position.row.isFirst).toBe(true);
+                expect(dataPoint.position.row.isLast).toBe(true);
+            });
+
+            it("sets proper position for incomplete data", () => {
+                let dataView = tableOneMeasure;
+                let visualTable = powerbi.visuals.Table.converter(dataView);
+                let rows = visualTable.visualRows;
+                let columns = dataView.table.columns;
+                let navigator = new TableHierarchyNavigator(visualTable, false, valueFormatter.formatVariantMeasureValue);
+
+                let dataPoint = navigator.getIntersection(rows[0], columns[0]);
+
+                expect(dataPoint.position.column.index).toBe(0);
+                expect(dataPoint.position.column.isFirst).toBe(true);
+                expect(dataPoint.position.column.isLast).toBe(true);
+
+                expect(dataPoint.position.row.index).toBe(0);
+                expect(dataPoint.position.row.isFirst).toBe(true);
+                expect(dataPoint.position.row.isLast).toBe(false);
             });
 
             function fillResult<T>(
@@ -2490,7 +2561,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return false; };
-            v = dashboardPluginService.getPlugin("table").create();
+            v = new powerbi.visuals.Table({ isConditionalFormattingEnabled: false });
             v.init({
                 element: element,
                 host: host,

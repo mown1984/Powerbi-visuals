@@ -130,4 +130,10 @@ module powerbi.visuals.plugins {
         capabilities: samples.StreamGraph.capabilities,
         create: () => new samples.StreamGraph()
     };
+
+    export var lineDotChart: IVisualPlugin = {
+        name: "lineDotChart",
+        capabilities: samples.LineDotChart.capabilities,
+        create: () => new samples.LineDotChart()
+    };
 }

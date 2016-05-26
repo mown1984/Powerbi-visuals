@@ -5,7 +5,7 @@
         "name": "SankeyDiagram",
         "displayName": "Sankey",
         "guid": "SankeyDiagram1446463184954",
-        "version": "0.0.7",
+        "version": "0.0.8",
         "description": "Sankey is a type of flow diagram in which the width of the series is in proportion to the quantity of the flow.  Use it to find major contributions to an overall flow.",
         "build": "13.0.1100.210",
         "author": {

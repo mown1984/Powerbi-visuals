@@ -26,5 +26,6 @@
 
 declare module powerbi {
     export interface FilterTypeDescriptor {
+        selfFilter?: boolean;
     }
 }

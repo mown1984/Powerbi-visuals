@@ -30,12 +30,12 @@ module powerbitests {
     import gaugeVisualCapabilities = powerbi.visuals.gaugeCapabilities;
     import SVGUtil = powerbi.visuals.SVGUtil;
 
-    let sideNumbersVisibleMinHeight: number = powerbi.visuals.visualPluginFactory.MobileVisualPluginService.MinHeightGaugeSideNumbersVisible;
+    let sideNumbersVisibleMinHeight: number = 80; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightGaugeSideNumbersVisible
     let sideNumbersVisibleGreaterThanMinHeight: number = sideNumbersVisibleMinHeight + 1;
     let sideNumbersVisibleSmallerThanMinHeight: number = sideNumbersVisibleMinHeight - 1;
     let sideNumbersVisibleGreaterThanMinHeightString: string = sideNumbersVisibleGreaterThanMinHeight.toString();
     let sideNumbersVisibleSmallerThanMinHeightString: string = sideNumbersVisibleSmallerThanMinHeight.toString();
-    let marginsOnSmallViewPort: number = powerbi.visuals.visualPluginFactory.MobileVisualPluginService.GaugeMarginsOnSmallViewPort;
+    let marginsOnSmallViewPort: number = 10; // Matches powerbi.visualHost.MobileVisualPluginService.GaugeMarginsOnSmallViewPort
 
     class GaugeDataBuilder {
         private _dataViewMetadata: powerbi.DataViewMetadata = {
@@ -207,9 +207,16 @@ module powerbitests {
 
         private buildVisual() {
             if (this.isMobile) {
-                this._visual = powerbi.visuals.visualPluginFactory.createMobile().getPlugin(this.pluginName).create();
+                this._visual = new powerbi.visuals.Gauge({
+                    gaugeSmallViewPortProperties: {
+                        hideGaugeSideNumbersOnSmallViewPort: true,
+                        smallGaugeMarginsOnSmallViewPort: true,
+                        MinHeightGaugeSideNumbersVisible: sideNumbersVisibleMinHeight,
+                        GaugeMarginsOnSmallViewPort: marginsOnSmallViewPort,
+                    }
+                });
             } else {
-                this._visual = powerbi.visuals.visualPluginFactory.create().getPlugin(this.pluginName).create();
+                this._visual = new powerbi.visuals.Gauge();
             }
         }
 

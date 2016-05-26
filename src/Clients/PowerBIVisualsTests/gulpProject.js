@@ -60,6 +60,8 @@ module.exports = projects.initProject(
                     "../externals/ThirdPartyIP/QuillJS/quill.min.js",
                     "../externals/ThirdPartyIP/JQueryScrollbar/jquery.scrollbar.min.js",
                     "../externals/css/jquery.scrollbar.css",
+                    "../externals/css/nouislider.min.css",
+                    "../externals/css/nouislider.pips.css",
                     "../externals/ThirdPartyIP/noUiSlider/nouislider.min.js",
                     "../../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js",
                     "../../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js",
@@ -120,15 +122,15 @@ module.exports = projects.initProject(
                         "CustomVisuals.js",
                         "./customVisuals/helpers/dataViewHelpers.js",
                         "./customVisuals/helpers/visualTestHelpers.js",
+                        "./customVisuals/sampleDataViews/DataViewBuilder.js",
                         "./customVisuals/sampleDataViews/SalesByCountryData.js",
                         "./customVisuals/sampleDataViews/SankeyDiagramData.js",
                         "./customVisuals/sampleDataViews/MekkoChartData.js",
                         "./customVisuals/sampleDataViews/BulletChartData.js",
                         "./customVisuals/sampleDataViews/CountriesData.js",
                         "./customVisuals/sampleDataViews/CarLogosData.js",
-                        "./customVisuals/sampleDataViews/chordChartData.js",
+                        "./customVisuals/sampleDataViews/ValueByNameGroupData.js",
                         "./customVisuals/sampleDataViews/SalesByDayOfWeekData.js",
-                        "./customVisuals/sampleDataViews/DotPlotData.js",
                         "./customVisuals/sampleDataViews/forceGraphData.js",
                         "./customVisuals/sampleDataViews/GanttData.js",
                         "./customVisuals/sampleDataViews/TimelineData.js",
@@ -136,6 +138,8 @@ module.exports = projects.initProject(
                         "./customVisuals/sampleDataViews/ProductSalesByDateData.js",
                         "./customVisuals/sampleDataViews/EnhancedScatterChartData.js",
                         "./customVisuals/sampleDataViews/PulseChartData.js",
+                        "./customVisuals/sampleDataViews/ValueByNameData.js",
+                        "./customVisuals/sampleDataViews/LineDotChartData.js",
                         "./customVisuals/VisualBuilderBase.js"
                     ].concat(tests),
                     jasminePaths = [
@@ -154,6 +158,7 @@ module.exports = projects.initProject(
             uglifyJs: false,
             nonminJs: false,
             declarationFiles: false,
+            experimentalDecorators: true,
             mapConfig: {
                 generateMaps: true
             }

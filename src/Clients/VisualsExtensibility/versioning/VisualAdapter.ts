@@ -69,7 +69,7 @@ module powerbi.extensibility {
                 isError = true;
             }
 
-            if (this.telemetryService) {
+            if (this.telemetryService && this.plugin.custom) {
                 this.telemetryService.logEvent(
                     ExtensibilityVisualApiUsage,
                     this.plugin.name,

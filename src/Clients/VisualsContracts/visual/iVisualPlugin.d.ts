@@ -62,6 +62,9 @@ declare module powerbi {
         
         /** The version of the api that this plugin should be run against */
         apiVersion?: string;
+        
+        /** Human readable plugin name displayed to users */
+        displayName?: string;
     }
 
     /** Method for gathering addition information from the visual for telemetry. */

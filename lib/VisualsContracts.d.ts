@@ -454,12 +454,19 @@ declare module powerbi {
         max?: PrimitiveValue;
         min?: PrimitiveValue;
         count?: number;
+        percentiles?: DataViewColumnPercentileAggregate[];
 
         /** Client-computed maximum value for a column. */
         maxLocal?: PrimitiveValue;
 
         /** Client-computed maximum value for a column. */
         minLocal?: PrimitiveValue;
+    }
+
+    export interface DataViewColumnPercentileAggregate {
+        exclusive?: boolean;
+        k: number;
+        value: PrimitiveValue;
     }
 
     export interface DataViewCategorical {
@@ -1519,6 +1526,7 @@ declare module powerbi {
 
 declare module powerbi {
     export interface FilterTypeDescriptor {
+        selfFilter?: boolean;
     }
 }
 ﻿
@@ -1610,6 +1618,7 @@ declare module powerbi {
         formatting?: FormattingTypeDescriptor;
         enumeration?: IEnumType;
         scripting?: ScriptTypeDescriptor;
+        operations?: OperationalTypeDescriptor;
     }
 
     export interface ScriptTypeDescriptor {
@@ -1649,6 +1658,10 @@ declare module powerbi {
         labelDisplayUnits?: boolean;
         fontSize?: boolean;
         labelDensity?: boolean;
+    }
+
+    export interface OperationalTypeDescriptor {
+        searchEnabled?: boolean;
     }
 
     /** Describes instances of value type objects. */
@@ -2171,6 +2184,9 @@ declare module powerbi {
         
         /** The version of the api that this plugin should be run against */
         apiVersion?: string;
+        
+        /** Human readable plugin name displayed to users */
+        displayName?: string;
     }
 
     /** Method for gathering addition information from the visual for telemetry. */

@@ -95,12 +95,19 @@ declare module powerbi {
         max?: PrimitiveValue;
         min?: PrimitiveValue;
         count?: number;
+        percentiles?: DataViewColumnPercentileAggregate[];
 
         /** Client-computed maximum value for a column. */
         maxLocal?: PrimitiveValue;
 
         /** Client-computed maximum value for a column. */
         minLocal?: PrimitiveValue;
+    }
+
+    export interface DataViewColumnPercentileAggregate {
+        exclusive?: boolean;
+        k: number;
+        value: PrimitiveValue;
     }
 
     export interface DataViewCategorical {

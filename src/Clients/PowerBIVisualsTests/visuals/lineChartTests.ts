@@ -2019,7 +2019,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            xit('verify viewport when filtering data', (done) => {
+            it('verify viewport when filtering data', (done) => {
                 // Clone in order to keep the original as it is
                 let dataViewMeta = _.clone(dataViewMetadata);
                 dataViewMeta.objects = {
@@ -4782,7 +4782,7 @@ module powerbitests {
             expect(calculatedIndex).toBe(2);
         });
 
-        xit('select column validation', () => {
+        it('select column validation', () => {
             let lineChart = (<any>v).layers[0];
 
             spyOn(lineChart, 'setHoverLine').and.callThrough();;

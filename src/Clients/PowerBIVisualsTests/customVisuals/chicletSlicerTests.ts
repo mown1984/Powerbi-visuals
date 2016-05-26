@@ -26,253 +26,230 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ChicletSlicer;
+    import CarLogosData = powerbitests.customVisuals.sampleDataViews.CarLogosData;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
 
     describe("ChicletSlicer", () => {
+        let visualBuilder: ChicletSlicerBuilder;
+        let defaultDataViewBuilder: CarLogosData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new ChicletSlicerBuilder(500, 500);
+            defaultDataViewBuilder = new CarLogosData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: ChicletSlicerBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new ChicletSlicerBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataView()];
-            });
-
             it("main element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.visibleGroup[0]).toBeInDOM();
                     expect(visualBuilder.visibleGroup.children("div.row").children(".cell").length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change font size", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         textSize: 16
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let fontUnit = 'px',
                         fontSize = visualBuilder.visibleGroup.children("div.row").children('.cell').first().find('span').css('font-size'),
                         fontSizeVal = Math.round(Number((fontSize.split(fontUnit))[0]))+fontUnit;
 
                     expect(fontSizeVal).toBe('21px');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets height", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         height: 50
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('height')).toBe('50px');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets width", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         width: 50
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('width')).toBe('50px');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets background", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         background: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.mainElement.children("div.slicerBody").css('background-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets background transparency", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         background: { solid: { color: '#123234' } },
                         transparency: 30
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.mainElement.children("div.slicerBody").css('background-color'), 'rgba(18, 50, 52, 0.701961)');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets selected color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         selectedColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let item = visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first();
                     item.click();
                     colorAssert(item.css('background-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets unselected color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         unselectedColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('background-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets disabled color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         disabledColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                let highlights = dataViews[0].categorical.values[0]['highlights'] = [];
+                let highlights = dataView.categorical.values[0]['highlights'] = [];
                 highlights.push(null);
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('background-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets outline color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         outlineColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('border-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets outline color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         outlineColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('border-color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets text color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         fontColor: { solid: { color: '#123234' } }
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').first().find('span').css('color'), '#123234');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("change chiclets outline style", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         borderStyle: "Rounded"
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('border-radius'), '10px');
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("fit chiclet height to font size with images", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     rows: {
                         height: 0
                     }
                 };
 
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let containerHeight: number = Number(visualBuilder.visibleGroup.find("div.row .cell:first .slicerItemContainer").height());
                     let slicerFontSize: number = Number(visualBuilder.visibleGroup.find("div.row .cell:first .slicerItemContainer .slicerText").css('font-size').replace(/[^-\d\.]/g, ''));
                     let textProp = powerbi.visuals.samples.ChicletSlicer.getChicletTextProperties(jsCommon.PixelConverter.toPoint(slicerFontSize)); 
                     let slicerTextDelta: number = powerbi.TextMeasurementService.estimateSvgTextBaselineDelta(textProp);
                     let slicerImgHeight: number = Number(visualBuilder.visibleGroup.find('div.row .cell:first .slicerItemContainer .slicer-img-wrapper').height());
 
-                    expect(containerHeight).toBeGreaterThan(slicerFontSize + slicerTextDelta + slicerImgHeight);                                          
+                    expect(containerHeight).toBeGreaterThan(slicerFontSize + slicerTextDelta + slicerImgHeight);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("fit chiclet height to font size without images", done => {
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataViewWithoutImages()];
-                dataViews[0].metadata.objects = {
+                dataView = new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataView([CarLogosData.ColumnCategory, CarLogosData.ColumnValues]);
+
+                dataView.metadata.objects = {
                     rows: {
                         height: 0
                     }
                 };
 
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let containerHeight: number = Number(visualBuilder.visibleGroup.find("div.row .cell:first .slicerItemContainer").height());
                     let slicerFontSize: number = Number(visualBuilder.visibleGroup.find("div.row .cell:first .slicerItemContainer .slicerText").css('font-size').replace(/[^-\d\.]/g, ''));
                     let textProp = powerbi.visuals.samples.ChicletSlicer.getChicletTextProperties(jsCommon.PixelConverter.toPoint(slicerFontSize));
@@ -280,64 +257,216 @@ module powerbitests.customVisuals {
 
                     expect(containerHeight).toBeGreaterThan(slicerFontSize + slicerTextDelta);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
-            describe('selection', function () {
+            xit("negative image split should behave like 0 (auto)", done => {
+                dataView.metadata.objects = {
+                    images: {
+                        imageSplit: -1,
+                    }
+                };
+                visualBuilder.update(dataView);
+                let chicletImageHeight = visualBuilder.visibleGroup.find("div.row .cell .slicerItemContainer .slicer-img-wrapper").css('height');
+                dataView.metadata.objects = {
+                    images: {
+                        imageSplit: 0,
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletImageHeight0 = visualBuilder.visibleGroup.find("div.row .cell .slicerItemContainer .slicer-img-wrapper").css('height');
+                    expect(chicletImageHeight).toEqual(chicletImageHeight0);
+                    done();
+                });
+            });
+
+            it("negative chiclet rows number should behave like 0 rows (auto) when orientation is vertical", done => {
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Vertical",
+                        Rows: -1
+                    }
+                };
+                visualBuilder.update(dataView);
+                let chicletTotalRows = visualBuilder.visibleGroup.children("div.row").first().children('.cell').length;
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Vertical",
+                        Rows: 0
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletTotalRows0 = visualBuilder.visibleGroup.children("div.row").first().children('.cell').length;
+                    expect(chicletTotalRows).toEqual(chicletTotalRows0);
+                    done();
+                });
+            });
+
+            it("negative chiclet rows number should behave like 0 rows (auto) when orientation is horizontal", done => {
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Horizontal",
+                        Rows: -1
+                    }
+                };
+                visualBuilder.update(dataView);
+                let chicletTotalRows = visualBuilder.visibleGroup.children("div.row").length;
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Horizontal",
+                        Rows: 0
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletTotalRows0 = visualBuilder.visibleGroup.children("div.row").length;
+                    expect(chicletTotalRows).toEqual(chicletTotalRows0);
+                    done();
+                });
+            });
+
+            it("negative chiclet columns number should behave like 0 columns (auto) when orientation is vertical", done => {
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Vertical",
+                        Columns: -1
+                    }
+                };
+                visualBuilder.update(dataView);
+                let chicletTotalColumns = visualBuilder.visibleGroup.children("div.row").length;
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Vertical",
+                        Columns: 0
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletTotalColumns0 = visualBuilder.visibleGroup.children("div.row").length;
+                    expect(chicletTotalColumns).toEqual(chicletTotalColumns0);
+                    done();
+                });
+            });
+
+            it("negative chiclet columns number should behave like 0 columns (auto) when orientation is horizontal", done => {
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Horizontal",
+                        Columns: -1
+                    }
+                };
+                visualBuilder.update(dataView);
+                let chicletTotalColumns = visualBuilder.visibleGroup.children("div.row").first().children('.cell').length;
+                dataView.metadata.objects = {
+                    general: {
+                        orientation: "Horizontal",
+                        Columns: 0
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletTotalColumns0 = visualBuilder.visibleGroup.children("div.row").first().children('.cell').length;
+                    expect(chicletTotalColumns).toEqual(chicletTotalColumns0);
+                    done();
+                });
+            });
+
+            it("negative chiclet width should behave like 0 width (auto)", done => {
+                dataView.metadata.objects = {
+                    rows: {
+                        width: -1,
+                    }
+                };
+
+                visualBuilder.update(dataView);
+                let chicletCellWidth = visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('width');
+                dataView.metadata.objects = {
+                    rows: {
+                        width: 0,
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletCellWidth0 = visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('width');
+                    expect(chicletCellWidth).toEqual(chicletCellWidth0);
+                    done();
+                });
+            });
+
+            xit("negative chiclet height should behave like 0 height (auto)", done => {
+                dataView.metadata.objects = {
+                    rows: {
+                        height: -1,
+                    }
+                };
+
+                visualBuilder.update(dataView);
+                let chicletCellHeight = visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('height');
+
+                dataView.metadata.objects = {
+                    rows: {
+                        height: 0,
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let chicletCellHeight0 = visualBuilder.visibleGroup.children("div.row").children('.cell').first().css('height');
+                    expect(chicletCellHeight).toEqual(chicletCellHeight0);
+                    done();
+                });
+
+            });
+
+            describe('selection', () => {
                 let selectionId = [{
                     "selectior":{"data":[]}
                 }];
 
-                it("chiclet selection is loaded", function (done) {
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(function () {
+                it("chiclet selection is loaded", done => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let selectedItems = visualBuilder
                             .visibleGroup
                             .find('.slicerItemContainer')
                             .last().click();
-                        visualBuilder.update(dataViews);
 
-                        setTimeout(function () {
+                        visualBuilder.updateRenderTimeout(dataView, () => {
                             let savedSelectedItems = visualBuilder.getSelectedPoints();
                             expect(savedSelectedItems.length).toBe(selectedItems.length);
                             done();
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
-                    return true;
+                        });
+                    });
                 });
 
-                it("saved chiclet selection is received", function (done) {
-                    dataViews[0].metadata.objects = {
+                it("saved chiclet selection is received", done => {
+                    dataView.metadata.objects = {
                         general: {
                             selection: JSON.stringify( selectionId )
                         }
                     };
-                    visualBuilder.update(dataViews);
 
-                    setTimeout(function () {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let selection = visualBuilder.getSavedSelection();
                         expect(selection).toBeDefined();
                         expect(selection).toEqual( selectionId );
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
-                it("chiclet selection is saved", function (done) {
-                    visualBuilder.update(dataViews);
-                    setTimeout(function () {
+                it("chiclet selection is saved", done => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         visualBuilder.saveSelection(selectionId);
-                        visualBuilder.update(dataViews);
 
-                        setTimeout(function () {
+                        visualBuilder.updateRenderTimeout(dataView, () => {
                             let selection =  visualBuilder.getSelectionState().items;
                             let stateSelection = visualBuilder.getSelectionState().state;
                             expect(selection).toBeDefined();
                             expect(stateSelection).toBeDefined();
                             expect(stateSelection).toBe(true);
                             done();
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
+                        });
+                    });
                 });
             });
 
@@ -345,7 +474,7 @@ module powerbitests.customVisuals {
     });
 
     class ChicletSlicerBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 500, width: number = 500, isMinervaVisualPlugin: boolean = false) {
+        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
             super(height, width, isMinervaVisualPlugin);
             this.build();
             this.init();

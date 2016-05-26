@@ -347,18 +347,5 @@ module powerbi.visuals.plugins {
         capabilities: system.DebugVisual.capabilities,
         create: () => new system.DebugVisual()
     };
-    
-    // This plugin is for the visual injected into the debug visual.
-    export let custom: IVisualPlugin = {
-        name: 'custom',
-        capabilities: system.DebugVisual.capabilities,
-        create: () => {
-            return {
-                init : ()=> {},
-                update: () => {},
-                destroy: ()=> {},
-                enumerateObjectInstances: () => []
-            };
-        }
-    };
+
 }

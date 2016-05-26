@@ -798,6 +798,12 @@ declare module D3 {
         transition(): Transition.Transition;
 
         /**
+         * Interrupts the active transition of the provided name. Does not cancel scheduled transitions.
+         * @param name the transition name (defaults to "")
+         */
+        interrupt(name?: string): Selection;
+
+        /**
         * Sorts the elements in the current selection according to the specified comparator
         * function.
         *

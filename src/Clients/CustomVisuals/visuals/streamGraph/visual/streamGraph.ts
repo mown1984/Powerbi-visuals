@@ -27,50 +27,41 @@
 module powerbi.visuals.samples {
 
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
-    import PixelConverter = jsCommon.PixelConverter;
 
     export interface StreamData {
-        series: StreamGraphSeries[];
+        dataPoints: StreamDataPoint[][];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
         categoryFormatter: IValueFormatter;
         streamGraphSettings: StreamGraphSettings;
-        categoriesText: string[];
     }
 
-    export interface StreamDataPoint{
+    export interface StreamDataPoint {
         x: number;
         y: number;
         y0?: number;
-        text: string;
-        labelFontSize: string;
-    }
-
-    export interface StreamGraphSeries extends SelectableDataPoint {
-        dataPoints: StreamDataPoint[];
-        tooltipInfo?: TooltipDataItem[];
-        highlight?: boolean;
+        identity: SelectionId;
     }
 
     export interface StreamGraphSettings {
         legendSettings: StreamGraphLegendSettings;
         categoryAxisSettings: StreamGraphAxisSettings;
         valueAxisSettings: StreamGraphAxisSettings;
-        dataLabelsSettings: VisualDataLabelsSettings;
     }
 
     export interface StreamGraphLegendSettings {
         show: boolean;
         showTitle: boolean;
-        labelColor: string;
         titleText: string;
+        labelColor: string;
         fontSize: number;
     }
 
     export interface StreamGraphAxisSettings {
         show: boolean;
-        labelColor: string;
+        axisColor: string;
         showAxisTitle: boolean;
     }
 
@@ -79,75 +70,33 @@ module powerbi.visuals.samples {
     }
 
     const StreamGraphAxisGraphicsContextClassName = 'axisGraphicsContext';
-    const DataPointsContainer = 'dataPointsContainer';
     const StreamGraphXAxisClassName = 'x axis';
     const StreamGraphYAxisClassName = 'y axis';
-    const StreamGraphDefaultColor = "#777";
+    const StreamGraphDefaultAxisColor = "#777";
     const StreamGraphDefaultFontSizeInPoints: number = 8;
-    const DefaultDataLabelsOffset: number = 4;
-    const DefaultLabelTickWidth: number = 10;
+    const DefaultLegendFontSizeInPt = 8;
     const DefaultLegendLabelFillColor: string = '#666666';
     const StreamGraphDefaultFontFamily: string = 'wf_segoe-ui_normal';
     const StreamGraphDefaultFontWeight: string = 'normal';
-    const XAxisOnSize: number = 20;
-    const XAxisOffSize: number = 10;
-    const XAxisLabelSize: number = 20;
-    const YAxisOnSize: number = 45;
-    const YAxisOffSize: number = 10;
-    const YAxisLabelSize: number = 20;
     const StreamGraphDefaultSettings: StreamGraphSettings = {
         legendSettings: {
             show: true,
             showTitle: true,
             labelColor: DefaultLegendLabelFillColor,
             titleText: "",
-            fontSize: StreamGraphDefaultFontSizeInPoints
+            fontSize: DefaultLegendFontSizeInPt
         },
         categoryAxisSettings: {
             show: true,
-            labelColor: StreamGraphDefaultColor,
+            axisColor: StreamGraphDefaultAxisColor,
             showAxisTitle: false,
         },
         valueAxisSettings: {
             show: true,
-            labelColor: StreamGraphDefaultColor,
+            axisColor: StreamGraphDefaultAxisColor,
             showAxisTitle: false,
         },
-        dataLabelsSettings: dataLabelUtils.getDefaultPointLabelSettings(),
     };
-
-    export interface StreamGraphBehaviorOptions {
-        selection: D3.Selection;
-        clearCatcher: D3.Selection;
-        interactivityService: IInteractivityService;
-    }
-
-    class StreamGraphWebBehavior implements IInteractiveBehavior {
-        private selection: D3.Selection;
-        private clearCatcher: D3.Selection;
-        private interactivityService: IInteractivityService;
-
-        public bindEvents(options: StreamGraphBehaviorOptions, selectionHandler: ISelectionHandler) {
-            this.selection = options.selection;
-            this.clearCatcher = options.clearCatcher;
-            this.interactivityService = options.interactivityService;
-
-            this.selection.on('click', (d: StreamGraphSeries, i: number) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
-            });
-
-            this.clearCatcher.on('click', () => {
-                selectionHandler.handleClearSelection();
-            });
-        }
-
-        public renderSelection(hasSelection: boolean) {
-            let hasHighlights = this.interactivityService.hasSelection();
-            this.selection.style("fill-opacity", (d: StreamGraphSeries) => {
-                return ColumnUtil.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
-            });
-        }
-    }
 
     export class StreamGraph implements IVisual {
         private static VisualClassName = 'streamGraph';
@@ -163,22 +112,6 @@ module powerbi.visuals.samples {
                 show: <DataViewObjectPropertyIdentifier>{
                     objectName: "legend",
                     propertyName: "show"
-                },
-                showTitle: <DataViewObjectPropertyIdentifier>{
-                    objectName: "legend",
-                    propertyName: "showTitle"
-                },
-                titleText: <DataViewObjectPropertyIdentifier>{
-                    objectName: "legend",
-                    propertyName: "titleText"
-                },
-                labelColor: <DataViewObjectPropertyIdentifier>{
-                    objectName: "legend",
-                    propertyName: "labelColor"
-                },
-                fontSize: <DataViewObjectPropertyIdentifier>{
-                    objectName: "legend",
-                    propertyName: "fontSize"
                 }
             },
             categoryAxis: {
@@ -186,9 +119,9 @@ module powerbi.visuals.samples {
                     objectName: "categoryAxis",
                     propertyName: "show"
                 },
-                labelColor: <DataViewObjectPropertyIdentifier>{
+                axisColor: <DataViewObjectPropertyIdentifier>{
                     objectName: "categoryAxis",
-                    propertyName: "labelColor"
+                    propertyName: "axisColor"
                 },
                 showAxisTitle: <DataViewObjectPropertyIdentifier>{
                     objectName: "categoryAxis",
@@ -200,27 +133,13 @@ module powerbi.visuals.samples {
                     objectName: "valueAxis",
                     propertyName: "show"
                 },
-                labelColor: <DataViewObjectPropertyIdentifier>{
+                axisColor: <DataViewObjectPropertyIdentifier>{
                     objectName: "valueAxis",
-                    propertyName: "labelColor"
+                    propertyName: "axisColor"
                 },
                 showAxisTitle: <DataViewObjectPropertyIdentifier>{
                     objectName: "valueAxis",
                     propertyName: "showAxisTitle"
-                }
-            },
-            labels: {
-                show: <DataViewObjectPropertyIdentifier>{
-                    objectName: 'labels',
-                    propertyName: 'show'
-                },
-                color: <DataViewObjectPropertyIdentifier>{
-                    objectName: 'labels',
-                    propertyName: 'color'
-                },
-                fontSize: <DataViewObjectPropertyIdentifier>{
-                    objectName: 'labels',
-                    propertyName: 'fontSize'
                 }
             }
         };
@@ -256,7 +175,7 @@ module powerbi.visuals.samples {
                     name: 'Y',
                     kind: VisualDataRoleKind.Measure,
                     displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
-                }
+                },
             ],
             dataViewMappings: [{
                 conditions: [
@@ -299,7 +218,7 @@ module powerbi.visuals.samples {
                             displayName: 'Title',
                             type: { bool: true }
                         },
-                        labelColor: {
+                        axisColor: {
                             displayName: 'Color',
                             type: { fill: { solid: { color: true } } }
                         }
@@ -316,7 +235,7 @@ module powerbi.visuals.samples {
                             displayName: 'Title',
                             type: { bool: true }
                         },
-                        labelColor: {
+                        axisColor: {
                             displayName: 'Color',
                             type: { fill: { solid: { color: true } } }
                         }
@@ -351,123 +270,74 @@ module powerbi.visuals.samples {
                             type: { formatting: { fontSize: true } }
                         }
                     }
-                },
-                labels: {
-                    displayName: 'Data Labels',
-                    properties: {
-                        show: {
-                            displayName: 'Show',
-                            type: { bool: true },
-                        },
-                        color: {
-                            displayName: 'Color',
-                            type: { fill: { solid: { color: true } } }
-                        },
-                        fontSize: {
-                            displayName: 'Text Size',
-                            type: { formatting: { fontSize: true } },
-                        },
-                    }
                 }
-            },
-            supportsHighlight: true,
+            }
         };
 
-        private margin: IMargin = { left: YAxisOnSize, right: 15, bottom: XAxisOnSize, top: 10 };
+        private margin: IMargin = { left: 45, right: 20, bottom: 20, top: 20 };
 
         private viewport: IViewport;
 
         private svg: D3.Selection;
-        private dataPointsContainer: D3.Selection;
         private axisGraphicsContext: D3.Selection;
         private xAxis: D3.Selection;
         private yAxis: D3.Selection;
-        private clearCatcher: D3.Selection;
-        private interactivityService: IInteractivityService;
-        private behavior: IInteractiveBehavior;
         private colors: IDataColorPalette;
+        private selectionManager: utility.SelectionManager;
         private dataView: DataView;
         private legend: ILegend;
+        private legendObjectProperties: DataViewObject;
         private data: StreamData;
 
-        public converter(dataView: DataView, colors: IDataColorPalette, interactivityService: IInteractivityService): StreamData {
+        public converter(dataView: DataView, colors: IDataColorPalette): StreamData {
             if (!dataView || !dataView.categorical || !dataView.categorical.values || !dataView.categorical.categories)
                 return null;
 
             let catDv: DataViewCategorical = dataView.categorical,
-                categories = catDv.categories,
                 values: DataViewValueColumns = catDv.values,
-                series: StreamGraphSeries[] = [],
+                dataPoints: StreamDataPoint[][] = [],
                 legendData: LegendData = {
                     dataPoints: [],
-                    title: values.source ? values.source.displayName : "",
+                    title: values[0].source.displayName,
                     fontSize: StreamGraphDefaultFontSizeInPoints,
                 },
                 value: number = 0,
                 valueFormatter: IValueFormatter,
                 categoryFormatter: IValueFormatter;
 
-            let category = categories && categories.length > 0 ? categories[0] : null;
-            let formatString = StreamGraph.Properties.general.formatString;
-            let hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
-            let streamGraphSettings: StreamGraphSettings = this.parseSettings(dataView);
-            let fontSizeInPx = PixelConverter.fromPoint(streamGraphSettings.dataLabelsSettings.fontSize);
-
             for (let i = 0; i < values.length; i++) {
-                let label = values[i].source.groupName;
-                let identity: SelectionId = values[i].identity
-                    ? SelectionId.createWithId(values[i].identity)
-                    : SelectionId.createWithMeasure(values[i].source.queryName);
+                dataPoints.push([]);
 
-                if (label)
+                if (values[i].source.groupName) {
                     legendData.dataPoints.push({
-                        label: label,
+                        label: values[i].source.groupName,
                         color: colors.getColorByIndex(i).value,
                         icon: LegendIcon.Box,
                         selected: false,
-                        identity: identity
+                        identity: SelectionId.createWithId(values[i].identity)
                     });
-                else
-                    label = values[i].source.displayName;
-
-                let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(
-                    formatString,
-                    catDv,
-                    category.values[i],
-                    null,
-                    null,
-                    null,
-                    i);
-
-                series[i] = {
-                    dataPoints: [],
-                    tooltipInfo: tooltipInfo,
-                    highlight: hasHighlights,
-                    identity: identity,
-                    selected: false,
-                };
-
-                let dataPointsValues = values[i].values;
-                if (dataPointsValues.length === 0)
-                    continue;
-
-                for (let k = 0; k < dataPointsValues.length; k++) {
-                    let y: number = hasHighlights ? values[i].highlights[k] : dataPointsValues[k];
-                    if (y > value)
-                        value = y;
-
-                    series[i].dataPoints.push({
-                        x: k,
-                        y: isNaN(y) ? 0 : y,
-                        text: label,
-                        labelFontSize: fontSizeInPx,
-                        contentPosition: ContentPositions.MiddleLeft, // 8
-                    });
-                    }
                 }
 
-            if (interactivityService)
-                interactivityService.applySelectionStateToData(series);
+                for (let k = 0; k < values[i].values.length; k++) {
+                    let id: SelectionId = SelectionIdBuilder
+                        .builder()
+                        .withSeries(dataView.categorical.values, dataView.categorical.values[i])
+                        .createSelectionId(),
+                        y: number = values[i].values[k];
+
+                    if (y > value) {
+                        value = y;
+                    }
+
+                    dataPoints[i].push({
+                        x: k,
+                        y: y,
+                        identity: id
+                    });
+                }
+            }
+
+            let streamGraphSettings: StreamGraphSettings = this.parseSettings(dataView);
 
             valueFormatter = ValueFormatter.create({
                 format: "g",
@@ -476,32 +346,17 @@ module powerbi.visuals.samples {
 
             categoryFormatter = ValueFormatter.create({
                 format: ValueFormatter.getFormatString(
-                    category.source,
+                    catDv.categories[0].source,
                     StreamGraph.Properties.general.formatString),
-                value: category.values
+                value: catDv.categories[0].values
             });
 
-            let categoriesText: string[] = [];
-            let getTextPropertiesFunction = this.getTextPropertiesFunction;
-
-            for (let index = 0; index < category.values.length; index++) {
-                let formattedValue: string;
-                if (category.values[index] != null) {
-                    formattedValue = categoryFormatter.format(category.values[index]);
-                    let textLength = TextMeasurementService.measureSvgTextWidth(getTextPropertiesFunction(formattedValue));
-                    if (textLength > StreamGraph.MaxNumberOfAxisXValues)
-                        StreamGraph.MaxNumberOfAxisXValues = textLength;
-                }
-                categoriesText.push(formattedValue);
-            }
-
             return {
-                series: series,
+                dataPoints: dataPoints,
                 legendData: legendData,
                 valueFormatter: valueFormatter,
                 categoryFormatter: categoryFormatter,
-                streamGraphSettings: streamGraphSettings,
-                categoriesText: categoriesText
+                streamGraphSettings: streamGraphSettings
             };
         }
 
@@ -510,34 +365,17 @@ module powerbi.visuals.samples {
                 return StreamGraphDefaultSettings;
 
             let objects: DataViewObjects = dataView.metadata.objects;
-            let streamGraphSettings: StreamGraphSettings = _.cloneDeep(StreamGraphDefaultSettings);
+            let streamGraphSettings = _.clone(StreamGraphDefaultSettings);
 
-            let categoryAxisSettings: StreamGraphAxisSettings = streamGraphSettings.categoryAxisSettings;
+            let categoryAxisSettings = streamGraphSettings.categoryAxisSettings;
             categoryAxisSettings.show = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.categoryAxis.show, categoryAxisSettings.show);
-            categoryAxisSettings.labelColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.categoryAxis.labelColor, categoryAxisSettings.labelColor);
+            categoryAxisSettings.axisColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.categoryAxis.axisColor, categoryAxisSettings.axisColor);
             categoryAxisSettings.showAxisTitle = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.categoryAxis.showAxisTitle, categoryAxisSettings.showAxisTitle);
 
-            let valueAxisSettings: StreamGraphAxisSettings = streamGraphSettings.valueAxisSettings;
+            let valueAxisSettings = streamGraphSettings.valueAxisSettings;
             valueAxisSettings.show = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.valueAxis.show, valueAxisSettings.show);
-            valueAxisSettings.labelColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.valueAxis.labelColor, valueAxisSettings.labelColor);
+            valueAxisSettings.axisColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.valueAxis.axisColor, valueAxisSettings.axisColor);
             valueAxisSettings.showAxisTitle = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.valueAxis.showAxisTitle, valueAxisSettings.showAxisTitle);
-
-            let dataLabelsSettings: VisualDataLabelsSettings = streamGraphSettings.dataLabelsSettings;
-            dataLabelsSettings.show = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.labels.show, dataLabelsSettings.show);
-            dataLabelsSettings.labelColor = <string>DataViewObjects.getFillColor(objects, StreamGraph.Properties.labels.color, dataLabelsSettings.labelColor);
-            dataLabelsSettings.fontSize = DataViewObjects.getValue<number>(objects, StreamGraph.Properties.labels.fontSize, dataLabelsSettings.fontSize);
-
-            let legendSettings: StreamGraphLegendSettings = streamGraphSettings.legendSettings;
-            let valuesSource: DataViewMetadataColumn = dataView.categorical.values.source;
-            let titleTextDefault: string = valuesSource && _.isEmpty(legendSettings.titleText) ? valuesSource.displayName : legendSettings.titleText;
-
-            legendSettings.show = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.legend.show, legendSettings.show);
-            legendSettings.showTitle = DataViewObjects.getValue<boolean>(objects, StreamGraph.Properties.legend.showTitle, legendSettings.showTitle);
-            legendSettings.titleText = DataViewObjects.getValue<string>(objects, StreamGraph.Properties.legend.titleText, titleTextDefault);
-            legendSettings.labelColor = DataViewObjects.getValue<string>(objects, StreamGraph.Properties.legend.labelColor, legendSettings.labelColor);
-            legendSettings.fontSize = DataViewObjects.getValue<number>(objects, StreamGraph.Properties.legend.fontSize, legendSettings.fontSize);
-            if (_.isEmpty(legendSettings.titleText))
-                legendSettings.titleText = titleTextDefault; // Force a value (shouldn't be empty with show=true)
 
             return streamGraphSettings;
         }
@@ -545,22 +383,22 @@ module powerbi.visuals.samples {
         public init(options: VisualInitOptions): void {
             let element: JQuery = options.element;
 
-            let svg: D3.Selection = this.svg = d3.select(element.get(0))
+            this.selectionManager = new SelectionManager({ hostServices: options.host });
+
+            this.svg = d3.select(element.get(0))
                 .append('svg')
                 .classed(StreamGraph.VisualClassName, true)
                 .style('position', 'absolute');
 
-            this.clearCatcher = appendClearCatcher(svg);
-            this.axisGraphicsContext = svg.append('g').classed(StreamGraphAxisGraphicsContextClassName, true);
-            this.xAxis = this.axisGraphicsContext.append('g').classed(StreamGraphXAxisClassName, true);
-            this.yAxis = this.axisGraphicsContext.append('g').classed(StreamGraphYAxisClassName, true);
-            this.dataPointsContainer = svg.append('g').classed(DataPointsContainer, true);
-            this.viewport = options.viewport;
+            this.axisGraphicsContext = this.svg.append('g')
+                .classed(StreamGraphAxisGraphicsContextClassName, true);
+
+            this.xAxis = this.axisGraphicsContext.append("g").classed(StreamGraphXAxisClassName, true);
+            this.yAxis = this.axisGraphicsContext.append("g").classed(StreamGraphYAxisClassName, true);
+
             this.colors = options.style.colorPalette.dataColors;
-            this.behavior = new StreamGraphWebBehavior();
-            let interactivity = options.interactivity;
-            this.interactivityService = createInteractivityService(options.host);
-            this.legend = createLegend(element, interactivity && interactivity.isInteractiveLegend, this.interactivityService, true);
+
+            this.legend = createLegend(element, false, null, true);
         }
 
         public update(options: VisualUpdateOptions): void {
@@ -576,101 +414,55 @@ module powerbi.visuals.samples {
 
             let duration: number = options.suppressAnimations ? 0 : 250,
                 dataView: DataView = this.dataView = options.dataViews[0],
-                data: StreamData = this.data = this.converter(dataView, this.colors, this.interactivityService);
+                data: StreamData = this.data = this.converter(dataView, this.colors);
 
-            if (!data || !data.series || !data.series.length) {
+            if (!data || !data.dataPoints || !data.dataPoints.length) {
                 this.clearData();
                 return;
             }
 
+            let dataPoints: StreamDataPoint[][] = data.dataPoints;
+
             this.renderLegend(data);
+            this.updateViewPort();
             this.renderXAxisLabels();
             this.renderYAxisLabels();
 
+            let height: number = Math.max(0, this.viewport.height - this.margin.top);
+
             this.svg.attr({
-                'width': this.viewport.width + 'px',
-                'height': this.viewport.height + 'px'
+                'width': this.viewport.width,
+                'height': height
             });
 
-            let selection: D3.UpdateSelection = this.renderChart(data.series, duration);
+            let stack: D3.Layout.StackLayout = d3.layout.stack();
 
-            TooltipManager.addTooltip(selection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo);
-
-            let interactivityService = this.interactivityService;
-
-            if (interactivityService) {
-                let behaviorOptions: StreamGraphBehaviorOptions = {
-                    selection: selection,
-                    clearCatcher: this.clearCatcher,
-                    interactivityService: interactivityService,
-                };
-                
-                interactivityService.bind(data.series, this.behavior, behaviorOptions);
-                }
-            }
-
-        private getStreamGraphLabelLayout(xScale: D3.Scale.LinearScale, yScale: D3.Scale.LinearScale): ILabelLayout {
-            let dataLabelsSettings = this.data.streamGraphSettings.dataLabelsSettings;
-            let fontSize = PixelConverter.fromPoint(dataLabelsSettings.fontSize);
-
-            return {
-                labelText: (d: StreamDataPoint) => {
-                    return d.text;
-                },
-                labelLayout: {
-                    x: (d: StreamDataPoint) => xScale(d.x),
-                    y: (d: StreamDataPoint) => yScale(d.y0)
-                },
-                filter: (d: StreamDataPoint) => {
-                    return (d != null && d.text != null);
-                },
-                style: {
-                    'fill': dataLabelsSettings.labelColor,
-                    'font-size': fontSize,
-                },
-            };
-        }
-
-        private renderChart(series: StreamGraphSeries[], duration: number): D3.UpdateSelection {
-            let stack: D3.Layout.StackLayout = d3.layout.stack()
-                .values((d: StreamGraphSeries) => d.dataPoints);
-            let width: number = this.viewport.width;
-            let height: number = this.viewport.height;
-
-            if (this.getWiggle(this.dataView))
+            if (this.getWiggle(dataView))
                 stack.offset('wiggle');
 
-            let layers: StreamGraphSeries[] = stack(series);
-            let margin: IMargin = this.margin;
+            let layers: StreamDataPoint[][] = stack(dataPoints);
+
             let xScale: D3.Scale.LinearScale = d3.scale.linear()
-                .domain([0, series[0].dataPoints.length - 1])
-                .range([margin.left, width - margin.right]);
-
-            let yMax = d3.max(layers, (layer: StreamGraphSeries) => {
-                return d3.max(layer.dataPoints, (d: StreamDataPoint) => {
-                    return d.y0 + d.y;
-                });
-            });
-
-            let yMin = d3.min(layers, (layer: StreamGraphSeries) => {
-                return d3.min(layer.dataPoints, (d: StreamDataPoint) => {
-                    return d.y0 + d.y;
-                });
-            });
+                .domain([0, dataPoints[0].length - 1])
+                .range([this.margin.left, this.viewport.width - this.margin.right]);
 
             let yScale: D3.Scale.LinearScale = d3.scale.linear()
-                .domain([Math.min(yMin, 0), yMax])
-                .range([height - margin.bottom, margin.top])
-                .nice();
+                .domain([0, d3.max(layers, (layer) => {
+                    return d3.max(layer, (d) => {
+                        return d.y0 + d.y;
+                    });
+                })])
+                .range([height - this.margin.bottom, this.margin.top]);
 
             let area: D3.Svg.Area = d3.svg.area()
-                .interpolate('monotone')
+                .interpolate('basis')
                 .x(d => xScale(d.x))
                 .y0(d => yScale(d.y0))
-                .y1(d => yScale(d.y0 + d.y))
-                .defined((d: StreamDataPoint) => !isNaN(d.y0) && !isNaN(d.y));
+                .y1(d => yScale(d.y0 + d.y));
 
-            let selection: D3.UpdateSelection = this.dataPointsContainer.selectAll(StreamGraph.Layer.selector)
+            let selectionManager: SelectionManager = this.selectionManager;
+
+            let selection: D3.UpdateSelection = this.svg.selectAll(StreamGraph.Layer.selector)
                 .data(layers);
 
             selection.enter()
@@ -678,81 +470,41 @@ module powerbi.visuals.samples {
                 .classed(StreamGraph.Layer.class, true);
 
             selection
-                .style("fill", (d: StreamGraphSeries, i) => this.colors.getColorByIndex(i).value)
-                .style("fill-opacity", ColumnUtil.DefaultOpacity)
+                .style("fill", (d, i) => this.colors.getColorByIndex(i).value)
+                .on('click', function (d) {
+                    selectionManager.select(d[0].identity).then(ids=> {
+                        if (ids.length > 0) {
+                            selection.style('opacity', 0.5);
+                            d3.select(this).style('opacity', 1);
+                        } else
+                            selection.style('opacity', 1);
+                    });
+                })
                 .transition()
                 .duration(duration)
-                .attr("d", (d: StreamGraphSeries) => area(d.dataPoints));
-
-            selection.selectAll("path").append('g').classed(DataPointsContainer, true);
+                .attr("d", area);
 
             selection.exit().remove();
 
-            if (this.data.streamGraphSettings.dataLabelsSettings.show) {
-                let labelsXScale: D3.Scale.LinearScale = d3.scale.linear()
-                    .domain([0, series[0].dataPoints.length - 1])
-                    .range([0, width - margin.left - margin.right]);
-                let labelsYScale: D3.Scale.LinearScale = d3.scale.linear()
-                    .domain([Math.min(yMin, 0), yMax])
-                    .range([height - margin.bottom - margin.top, 0])
-                    .nice();
-                let layout = this.getStreamGraphLabelLayout(labelsXScale, labelsYScale);
-                
-                // Merge all points into a single array
-                let dataPointsArray: StreamDataPoint[] = [];
-                for (let i = 0; i < series.length; i++)
-                    dataPointsArray = dataPointsArray.concat(series[i].dataPoints);
-
-                let viewport: IViewport = {
-                    height: height - margin.top - margin.bottom,
-                    width: width - margin.right - margin.left,
-                };
-                let labels: D3.UpdateSelection = dataLabelUtils.drawDefaultLabelsForDataPointChart(dataPointsArray, this.svg, layout, viewport);
-                if (labels) {
-                    let offset: number = DefaultDataLabelsOffset + margin.left;
-                    labels.attr('transform', (d) => SVGUtil.translate(offset + (d.size.width / 2), margin.top + (d.size.height / 2)));
-                }
-            }
-            else
-                dataLabelUtils.cleanDataLabels(this.svg);
-
-                this.drawAxis(this.data, xScale, yScale);
-
-            return selection;
+            this.drawAxis(data, xScale, yScale);
         }
 
         private drawAxis(data: StreamData, xScale: D3.Scale.LinearScale, yScale: D3.Scale.LinearScale) {
-            let margin: IMargin = this.margin,
-                shiftY: number = this.viewport.height - margin.bottom,
-                shiftX: number = this.viewport.width - margin.left - margin.right,
-                categoriesText = this.data.categoriesText,
-                xAxis: D3.Svg.Axis = d3.svg.axis(),
-                maxNumberOfAxisXValues: number = StreamGraph.MaxNumberOfAxisXValues,
-                getTextPropertiesFunction = this.getTextPropertiesFunction;
-
-            for (let index = 0; index < categoriesText.length; index++) {
-                if (categoriesText[index] != null) {
-                    let str = categoriesText[index].toString();
-                    let textLength = TextMeasurementService.measureSvgTextWidth(getTextPropertiesFunction(str));
-                    if (textLength > maxNumberOfAxisXValues)
-                        maxNumberOfAxisXValues = textLength;
-                }
-            }
+            let shiftY: number = this.viewport.height - this.margin.bottom - this.margin.top,
+                shiftX: number = this.viewport.width - this.margin.left - this.margin.right,
+                xAxis: D3.Svg.Axis = d3.svg.axis();
 
             xAxis.scale(xScale)
                 .orient("bottom")
-                .ticks(categoriesText.length)
-                .tickFormat(((index: number): any => {
-                    let item = categoriesText[index];
-
+                .tickFormat(((item: any, index: number): any => {
                     if (data.categoryFormatter)
                         item = data.categoryFormatter.format(item);
 
                     if (index != null && xAxis.tickValues() &&
                         (index === 0 || index === xAxis.tickValues().length - 1)) {
                         item = TextMeasurementService.getTailoredTextOrDefault(
-                            getTextPropertiesFunction(item),
-                            (index ? margin.right : margin.left) * 2);
+                            StreamGraph.getTextPropertiesFunction(item),
+                            (index ? this.margin.right : this.margin.left) * 2);
                     }
                     return item;
                 }).bind(xAxis));
@@ -761,22 +513,20 @@ module powerbi.visuals.samples {
                 .scale(yScale)
                 .orient("left")
                 .tickFormat((item: any): any => {
-                    let tempItem = item;
                     if (data.valueFormatter) {
-                        tempItem = data.valueFormatter.format(tempItem);
+                        return data.valueFormatter.format(item);
                     }
-                    tempItem = TextMeasurementService.getTailoredTextOrDefault(getTextPropertiesFunction(tempItem.toString()), YAxisOnSize - DefaultLabelTickWidth);
-                    return tempItem;
+                    return item;
                 });
 
-            this.setMaxTicks(xAxis, shiftX, Math.max(2, Math.round(shiftX / maxNumberOfAxisXValues)));
+            this.setMaxTicks(xAxis, shiftX, StreamGraph.MaxNumberOfAxisXValues);
             this.setMaxTicks(yAxis, shiftY);
 
             let valueAxisSettings = this.data.streamGraphSettings.valueAxisSettings;
             if (valueAxisSettings.show) {
-                let axisColor: Fill = valueAxisSettings.labelColor;
+                let axisColor: Fill = valueAxisSettings.axisColor;
                 this.yAxis
-                    .attr("transform", SVGUtil.translate(margin.left, 0))
+                    .attr("transform", SVGUtil.translate(this.margin.left, 0))
                     .call(yAxis);
                 this.yAxis.selectAll("text").style("fill", axisColor);
             } else
@@ -784,7 +534,7 @@ module powerbi.visuals.samples {
 
             let categoryAxisSettings = this.data.streamGraphSettings.categoryAxisSettings;
             if (categoryAxisSettings.show) {
-                let axisColor: Fill = categoryAxisSettings.labelColor;
+                let axisColor: Fill = categoryAxisSettings.axisColor;
                 this.xAxis
                     .attr("transform", SVGUtil.translate(0, shiftY))
                     .call(xAxis);
@@ -794,125 +544,104 @@ module powerbi.visuals.samples {
         }
 
         private renderYAxisLabels(): void {
-            this.axisGraphicsContext.selectAll(StreamGraph.YAxisLabel.selector).remove();
+            this.yAxis.selectAll(StreamGraph.YAxisLabel.selector).remove();
+
             let valueAxisSettings: StreamGraphAxisSettings = this.data.streamGraphSettings.valueAxisSettings;
-            this.margin.left = valueAxisSettings.show ? YAxisOnSize : YAxisOffSize;
-
-            if (valueAxisSettings.showAxisTitle) {
-                this.margin.left += YAxisLabelSize;
-                let categoryAxisSettings: StreamGraphAxisSettings = this.data.streamGraphSettings.categoryAxisSettings;
-                let isXAxisOn: boolean = categoryAxisSettings.show === true;
-                let isXTitleOn: boolean = categoryAxisSettings.showAxisTitle === true;
-                let marginTop: number = this.margin.top;
-                let height: number = this.viewport.height - marginTop - (isXAxisOn ? XAxisOnSize : XAxisOffSize) - (isXTitleOn ? XAxisLabelSize : 0);
-                let values = this.dataView.categorical.values;
-                let yAxisText: string = values.source ? values.source.displayName : this.getYAxisTitleFromValues(values);
-                let textSettings: TextProperties = this.getTextPropertiesFunction(yAxisText);
-                yAxisText = TextMeasurementService.getTailoredTextOrDefault(textSettings, height);
-                let yAxisClass: string = StreamGraph.YAxisLabel.class;
-                let yAxisLabel: D3.Selection = this.axisGraphicsContext.append("text")
-                    .style("text-anchor", "middle")
-                    .style("font-family", textSettings.fontFamily)
-                    .style("font-size", textSettings.fontSize)
-                    .style("font-style", textSettings.fontStyle)
-                    .style("font-weight", textSettings.fontWeight)
-                    .text(yAxisText)
-                    .call((text: D3.Selection) => {
-                        text.each(function () {
-                            let text = d3.select(this);
-                            text.attr({
-                                class: yAxisClass,
-                                transform: "rotate(-90)",
-                                fill: valueAxisSettings.labelColor,
-                                x: -(marginTop + (height / 2)),
-                                dy: "1em"
+            if (valueAxisSettings.show) {
+                this.margin.left = 45;
+                if (valueAxisSettings.showAxisTitle)
+                    if (this.dataView.categorical.values.source) {
+                        let marginLeft = this.margin.left = 65;
+                        let categoryAxisSettings: StreamGraphAxisSettings = this.data.streamGraphSettings.categoryAxisSettings;
+                        let isXAxisOn: boolean = categoryAxisSettings.show === true;
+                        let isXTitleOn: boolean = categoryAxisSettings.showAxisTitle === true;
+                        let height: number = isXAxisOn ? isXTitleOn ? this.viewport.height - this.margin.bottom : this.viewport.height - this.margin.top : this.viewport.height;
+                        let yAxisText: string = this.dataView.categorical.values.source.displayName;
+                        let yAxisClass: string = StreamGraph.YAxisLabel.class;
+                        let yAxisLabel: D3.Selection = this.yAxis.append("text")
+                            .style("text-anchor", "middle")
+                            .text(yAxisText)
+                            .call((text: D3.Selection) => {
+                                text.each(function () {
+                                    let text = d3.select(this);
+                                    text.attr({
+                                        class: yAxisClass,
+                                        transform: "rotate(-90)",
+                                        y: -marginLeft + 5,
+                                        x: -(height / 2),
+                                        dy: "1em"
+                                    });
+                                });
                             });
-                        });
-                    });
 
-                yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
-                    height,
-                    TextMeasurementService.svgEllipsis);
-            }
-        }
-
-        private getYAxisTitleFromValues(values: DataViewValueColumns): string {
-            let valuesMetadataArray: powerbi.DataViewMetadataColumn[] = [];
-            for (let i = 0; i < values.length; i++) {
-                if (values[i] && values[i].source && values[i].source.displayName) {
-                    valuesMetadataArray.push({ displayName: values[i].source.displayName });
-                }
-            }
-            let valuesNames: string[] = valuesMetadataArray.map(v => v ? v.displayName : '').filter((value, index, self) => value !== '' && self.indexOf(value) === index);
-            return valueFormatter.formatListAnd(valuesNames);
+                        yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
+                            height,
+                            TextMeasurementService.svgEllipsis);
+                    } else
+                        valueAxisSettings.showAxisTitle = false;
+            } else
+                this.margin.left = 20;
         }
 
         private renderXAxisLabels(): void {
-            this.axisGraphicsContext.selectAll(StreamGraph.XAxisLabel.selector).remove();
-            let categoryAxisSettings = this.data.streamGraphSettings.categoryAxisSettings;
-            this.margin.bottom = categoryAxisSettings.show ? XAxisOnSize : XAxisOffSize;
+            this.xAxis.selectAll(StreamGraph.XAxisLabel.selector).remove();
 
-            if (categoryAxisSettings.showAxisTitle)
-                if (this.dataView.categorical.categories[0].source) {
-                    this.margin.bottom += XAxisLabelSize;
-                    let valueAxisSettings: StreamGraphAxisSettings = this.data.streamGraphSettings.valueAxisSettings;
-                    let isYAxisOn: boolean = valueAxisSettings.show === true;
-                    let isYTitleOn: boolean = valueAxisSettings.showAxisTitle === true;
-                    let leftMargin: number = (isYAxisOn ? YAxisOnSize : YAxisOffSize) + (isYTitleOn ? YAxisLabelSize : 0);
-                    let width: number = this.viewport.width - this.margin.right - leftMargin;
-                    let height: number = this.viewport.height;
-                    let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
-                    let textSettings: TextProperties = this.getTextPropertiesFunction(xAxisText);
-                    xAxisText = TextMeasurementService.getTailoredTextOrDefault(textSettings, width);
-                    let xAxisClass: string = StreamGraph.XAxisLabel.class;
-                    let xAxisLabel: D3.Selection = this.axisGraphicsContext.append("text")
-                        .style("text-anchor", "middle")
-                        .style("font-family", textSettings.fontFamily)
-                        .style("font-size", textSettings.fontSize)
-                        .style("font-weight", textSettings.fontWeight)
-                        .text(xAxisText)
-                        .call((text: D3.Selection) => {
-                            text.each(function () {
-                                let text = d3.select(this);
-                                text.attr({
-                                    class: xAxisClass,
-                                    transform: SVGUtil.translate(leftMargin + (width / 2), height),
-                                    fill: categoryAxisSettings.labelColor,
-                                    dy: "-0.5em",
+            let categoryAxisSettings = this.data.streamGraphSettings.categoryAxisSettings;
+            if (categoryAxisSettings.show) {
+                this.margin.bottom = 20;
+                if (categoryAxisSettings.showAxisTitle)
+                    if (this.dataView.categorical.categories[0].source) {
+                        let marginBottom = this.margin.bottom = 40;
+                        let valueAxisSettings: StreamGraphAxisSettings = this.data.streamGraphSettings.valueAxisSettings;
+                        let isYAxisOn: boolean = valueAxisSettings.show === true;
+                        let isYTitleOn: boolean = valueAxisSettings.showAxisTitle === true;
+                        let width: number = isYAxisOn ? isYTitleOn ? this.viewport.width + this.margin.left : this.viewport.width + this.margin.right : this.viewport.width;
+                        let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
+                        let xAxisClass: string = StreamGraph.XAxisLabel.class;
+                        let xAxisLabel: D3.Selection = this.xAxis.append("text")
+                            .style("text-anchor", "middle")
+                            .text(xAxisText)
+                            .call((text: D3.Selection) => {
+                                text.each(function () {
+                                    let text = d3.select(this);
+                                    text.attr({
+                                        class: xAxisClass,
+                                        transform: SVGUtil.translate(width / 2, marginBottom - 5)
+                                    });
                                 });
                             });
-                        });
 
-                    xAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
-                        width,
-                        TextMeasurementService.svgEllipsis);
-                }
+                        xAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
+                            width,
+                            TextMeasurementService.svgEllipsis);
+                    } else
+                        categoryAxisSettings.showAxisTitle = false;
+            } else
+                this.margin.bottom = 10;
         }
 
         private renderLegend(streamGraphData: StreamData): void {
-            let legendSettings: StreamGraphLegendSettings = streamGraphData.streamGraphSettings.legendSettings;
             let legendData: LegendData = streamGraphData.legendData;
-            if (!this.dataView || !this.dataView.metadata)
+            if (!legendData || !this.dataView || !this.dataView.metadata)
                 return;
 
-            let legendObjectProperties: DataViewObject = DataViewObjects.getObject(this.dataView.metadata.objects, "legend", {});
-            legendObjectProperties['titleText'] = legendSettings.titleText; // Force legend title when show = true
-            LegendData.update(legendData, legendObjectProperties);
+            this.legendObjectProperties = DataViewObjects.getObject(this.dataView.metadata.objects, "legend", {});
 
-            let position: string = <string>legendObjectProperties[legendProps.position];
+            if (this.legendObjectProperties) {
+                LegendData.update(legendData, this.legendObjectProperties);
 
-            if (position)
-                this.legend.changeOrientation(LegendPosition[position]);
+                let position: string = <string>this.legendObjectProperties[legendProps.position];
 
+                if (position)
+                    this.legend.changeOrientation(LegendPosition[position]);
+            }
             this.legend.drawLegend(legendData, _.clone(this.viewport));
             Legend.positionChartArea(this.svg, this.legend);
-
-            this.updateViewPort();
         }
 
         private updateViewPort(): void {
             let legendMargins: IViewport = this.legend.getMargins();
-            let legendPosition: LegendPosition = this.legend.getOrientation();
+            let legendPosition = LegendPosition[<string>this.legendObjectProperties[legendProps.position]];
 
             switch (legendPosition) {
                 case LegendPosition.Top:
@@ -1015,20 +744,19 @@ module powerbi.visuals.samples {
             let measureFunction = axis.orient() === "top" || axis.orient() === "bottom"
                 ? TextMeasurementService.measureSvgTextWidth
                 : TextMeasurementService.measureSvgTextHeight;
-            let getTextPropertiesFunction = this.getTextPropertiesFunction;
 
             let cache = {};
 
             return function (x: any): number {
                 return cache[x]
                     ? cache[x]
-                    : cache[x] = measureFunction(getTextPropertiesFunction(axis.tickFormat()(x))) + axis.tickPadding();
+                    : cache[x] = measureFunction(StreamGraph.getTextPropertiesFunction(axis.tickFormat()(x))) + axis.tickPadding();
             };
         }
 
-        private getTextPropertiesFunction(text: string): TextProperties {
+        private static getTextPropertiesFunction(text: string): TextProperties {
             let fontFamily: string = StreamGraphDefaultFontFamily,
-                fontSize: string = PixelConverter.fromPoint(StreamGraphDefaultFontSizeInPoints),
+                fontSize: string = jsCommon.PixelConverter.fromPoint(StreamGraphDefaultFontSizeInPoints),
                 fontWeight: string = StreamGraphDefaultFontWeight;
 
             return { text: text, fontFamily: fontFamily, fontSize: fontSize, fontWeight: fontWeight };
@@ -1049,6 +777,7 @@ module powerbi.visuals.samples {
         }
 
         private enumerateValueAxisValues(enumeration: ObjectEnumerationBuilder): void {
+
             let valueAxisSettings: StreamGraphAxisSettings = this.data && this.data.streamGraphSettings ? this.data.streamGraphSettings.valueAxisSettings : StreamGraphDefaultSettings.valueAxisSettings;
 
             enumeration.pushInstance({
@@ -1058,7 +787,7 @@ module powerbi.visuals.samples {
                 properties: {
                     show: valueAxisSettings.show,
                     showAxisTitle: valueAxisSettings.showAxisTitle,
-                    labelColor: valueAxisSettings.labelColor,
+                    axisColor: valueAxisSettings.axisColor,
                 }
             });
         }
@@ -1073,25 +802,25 @@ module powerbi.visuals.samples {
                 properties: {
                     show: categoryAxisSettings.show,
                     showAxisTitle: categoryAxisSettings.showAxisTitle,
-                    labelColor: categoryAxisSettings.labelColor,
+                    axisColor: categoryAxisSettings.axisColor,
                 }
             });
         }
 
         private enumerateLegend(enumeration: ObjectEnumerationBuilder): void {
-            let legendSettings: StreamGraphLegendSettings = this.data && this.data.streamGraphSettings ? this.data.streamGraphSettings.legendSettings : StreamGraphDefaultSettings.legendSettings;
+            let legendSettings: DataViewObject = this.legendObjectProperties ? this.legendObjectProperties : {};
 
             enumeration.pushInstance({
                 selector: null,
                 objectName: 'legend',
                 displayName: "Legend",
                 properties: {
-                    show: legendSettings.show,
+                    show: this.data && this.data.streamGraphSettings ? this.data.streamGraphSettings.legendSettings.show : true,
                     position: LegendPosition[this.legend.getOrientation()],
-                    showTitle: legendSettings.showTitle,
-                    titleText: legendSettings.titleText,
-                    labelColor: legendSettings.labelColor,
-                    fontSize: legendSettings.fontSize,
+                    showTitle: DataViewObject.getValue<boolean>(legendSettings, legendProps.showTitle, true),
+                    titleText: DataViewObject.getValue<string>(legendSettings, legendProps.titleText, ""),
+                    labelColor: DataViewObject.getValue<string>(legendSettings, legendProps.labelColor, DefaultLegendLabelFillColor),
+                    fontSize: DataViewObject.getValue<number>(legendSettings, legendProps.fontSize, DefaultLegendFontSizeInPt)
                 }
             });
         }
@@ -1100,24 +829,12 @@ module powerbi.visuals.samples {
             this.svg.selectAll(StreamGraph.Layer.selector).remove();
             this.legend.drawLegend({ dataPoints: [] }, this.viewport);
             this.yAxis.selectAll("*").remove();
-            this.axisGraphicsContext.selectAll(StreamGraph.YAxisLabel.selector).remove();
             this.xAxis.selectAll("*").remove();
-            this.axisGraphicsContext.selectAll(StreamGraph.XAxisLabel.selector).remove();
-            this.svg.select('.labels').remove();
-        }
-
-        public onClearSelection(): void {
-            if (this.interactivityService)
-                this.interactivityService.clearSelection();
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             let enumeration: ObjectEnumerationBuilder = new ObjectEnumerationBuilder(),
                 dataView = this.dataView;
-
-            let dataLabelsSettings;
-            if (this.data)
-                dataLabelsSettings = this.data.streamGraphSettings.dataLabelsSettings ? this.data.streamGraphSettings.dataLabelsSettings : StreamGraphDefaultSettings.dataLabelsSettings;
 
             switch (options.objectName) {
                 case 'legend':
@@ -1125,22 +842,13 @@ module powerbi.visuals.samples {
                         && dataView.categorical
                         && dataView.categorical.values
                         && dataView.categorical.values.source)
-                        this.enumerateLegend(enumeration);
+                            this.enumerateLegend(enumeration);
                     break;
                 case 'categoryAxis':
                     this.enumerateCategoryAxisValues(enumeration);
                     break;
                 case 'valueAxis':
                     this.enumerateValueAxisValues(enumeration);
-                    break;
-                case 'labels':
-                    let labelSettingOptions: VisualDataLabelsSettingsOptions = {
-                        enumeration: enumeration,
-                        dataLabelsSettings: dataLabelsSettings,
-                        show: true,
-                        fontSize: true,
-                    };
-                    dataLabelUtils.enumerateDataLabels(labelSettingOptions);
                     break;
                 case 'general':
                     let general: VisualObjectInstance = {

@@ -36,6 +36,7 @@
 
         "sampleData.ts",
         "hostControls.ts",
+        "visualPluginService.ts",
         "app.ts"
     ]
 }

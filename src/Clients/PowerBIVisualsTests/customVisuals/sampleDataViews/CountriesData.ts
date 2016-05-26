@@ -25,29 +25,12 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import SQExprBuilder = powerbi.data.SQExprBuilder;
-    import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
 
-    export class CountriesData {
+    export class CountriesData extends DataViewBuilder {
+        public static ColumnCategory: string = "Country";
 
-        public getDataView(): DataView {
-            let dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [{
-                    displayName: "Country",
-                    queryName: "Country",
-                    type: ValueType.fromDescriptor({ text: true }),
-                    roles: { "Values": true }
-                }],
-                objects: {
-                    rotateText: {
-                        show: false,
-                        quantityAngles: 0
-                    }
-                }
-            };
-
-            let countries: string[] = [
+        public valuesCategory: string[] = [
                 "Afghanistan",
                 "Albania",
                 "Algeria",
@@ -98,23 +81,12 @@ module powerbitests.customVisuals.sampleDataViews {
                 "Micronesia",
                 "Moldova",
                 "Monaco",
-                "Monaco",
-                "Monaco",
-                "Monaco",
-                "Monaco",
-                "Monaco",
-                "Monaco",
                 "Mongolia",
                 "Montenegro",
                 "Morocco",
                 "Mozambique",
                 "United Kingdom",
-                "United Kingdom",
-                "United Kingdom",
-                "The USA",
-                "The USA",
-                "The USA",
-                "The USA",
+                "United States",
                 "Uganda",
                 "Ukraine",
                 "United Arab Emirates",
@@ -131,28 +103,23 @@ module powerbitests.customVisuals.sampleDataViews {
                 "Papua New Guinea",
                 "Fiji",
                 "Finland",
-                "France",
                 "France"
             ];
 
-            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table1", name: "country" } });
-            let categoryIdentities = countries.map((item: string) =>
-                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(fieldExpr, SQExprBuilder.text(item))));
-
-            return {
-                metadata: dataViewMetadata,
-                categorical: {
-                    categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: countries,
-                        identity: categoryIdentities
-                    }],
-                },
-                table: {
-                    columns: [dataViewMetadata.columns[0]],
-                    rows: countries.map((item: string) => [item])
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: CountriesData.ColumnCategory,
+                        roles: { "Values": true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.valuesCategory
                 }
-            };
+                ],
+                null,
+                null,
+                columnNames).build();
         }
     }
 }

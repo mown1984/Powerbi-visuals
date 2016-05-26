@@ -96,6 +96,12 @@ module powerbi.data {
     export interface ProjectionAggregates {
         min?: boolean;
         max?: boolean;
+        percentiles?: ProjectionPercentileAggregate[];
+    }
+
+    export interface ProjectionPercentileAggregate {
+        exclusive?: boolean;
+        k: number;
     }
 
     export interface QueryGeneratorResult {
@@ -180,6 +186,7 @@ module powerbi.data {
         dataSource?: DataReaderDataSource;
         command: DataReaderCommand;
         allowCache?: boolean;
+        allowClientSideFilters?: boolean;
         cacheResponseOnServer?: boolean;
         ignoreViewportForCache?: boolean;
     }

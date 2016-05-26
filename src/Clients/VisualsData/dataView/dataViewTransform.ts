@@ -416,7 +416,8 @@ module powerbi.data {
 
                 let isDynamicSeries = !!valueColumns.source;
 
-                debug.assert(_.every(valueColumns, (valueColumn) => isDynamicSeries === !!valueColumn.identity),
+                debug.assert((prototype.values.length === 1) && (_.isEmpty(prototype.values[0].values)) ||
+                    _.every(valueColumns, (valueColumn) => isDynamicSeries === !!valueColumn.identity),
                     'After applying selectsToInclude, all remaining DataViewValueColumn objects should have a consistent scope type (static vs. dynamic) with the parent DataViewValueColumns object.');
                     
                 // Dynamic or not, always update the return values of grouped() to have the rewritten 'source' property
@@ -425,10 +426,7 @@ module powerbi.data {
                     // We have a dynamic series, so update the return value of grouped() to have the DataViewValueColumn objects with rewritten 'source'.
                     // Also, exclude any column that belongs to a static series.
                     seriesGroups = inherit(valueColumns.grouped());
-
-                    // The following assert is not a rule that's set in stone.  If it becomes false someday, update the code below to remove static series from seriesGroups.
-                    debug.assert(_.every(seriesGroups, (group) => !!group.identity), 'If the categorical has a dynamic series, query DataView is expected to have a grouped() function that returns only dynamic series groups, even when there is any column that belongs to a static group (in the case of combo chart and splits).  If this assertion becomes false someday, update the code below to remove static series from seriesGroups.');
-
+                    
                     let nextSeriesGroupIndex = 0;
                     let currentSeriesGroup: DataViewValueColumnGroup;
                     for (let i = 0, ilen = valueColumns.length; i < ilen; i++) {

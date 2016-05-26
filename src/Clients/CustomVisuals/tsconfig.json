@@ -29,6 +29,7 @@
         "visuals/timeline/visual/timeline.ts",
         "visuals/streamGraph/visual/streamGraph.ts",
         "visuals/sunburst/visual/sunburst.ts",
+        "visuals/lineDotChart/visual/lineDotChart.ts",
         "plugins.ts",
         "services/customVisualPluginService.ts"
     ]

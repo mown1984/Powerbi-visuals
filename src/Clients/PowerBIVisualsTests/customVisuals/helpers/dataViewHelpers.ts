@@ -28,24 +28,21 @@ module powerbitests.customVisuals.helpers {
     const EnglishAlphabetLowerCase = "abcdefghijklmnopqrstuwxyz";
     const EnglishAlphabetUpperCase = "ABCDEFGHIJKLMNOPQRSTUWXYZ";
 
-    export function addIdentityToDataViewBuilderCategoryColumnOptions(
-        options: { source: powerbi.DataViewMetadataColumn, values: any[] }): powerbi.data.DataViewBuilderCategoryColumnOptions {
-        debug.assertValue(options && options.source && options.source.queryName, "source.queryName is not defined");
-        let categoryField = powerbi.data.SQExprBuilder.entity('schema', 'table', options.source.queryName);
-        return <powerbi.data.DataViewBuilderCategoryColumnOptions>_.merge(options, { 
-                identityFrom : { 
-                        fields: [categoryField],
-                        identities: options.values.map(mocks.dataViewScopeIdentity)
-                    }
-            });
-    }
-
     export function getTableDataValues(categoryValues: any[], columns: any[]): any[] {
         return categoryValues.map((category, idx) => {
             var categoryDataValues = columns.map(x => <any>x.values[idx]);
             categoryDataValues.unshift(category);
             return categoryDataValues;
         });
+    }
+
+    export function getDateYearRange(start: Date, stop: Date, yearStep: number): Date[] {
+        return _.range(start.getFullYear(), stop.getFullYear(), yearStep)
+            .map(x => new Date(new Date(start.getTime()).setFullYear(x)));
+    }
+
+    export function getDateRange(start: Date, stop: Date, step: number): Date[] {
+        return _.range(start.getTime(), stop.getTime(), step).map(x => new Date(x));
     }
 
     export function getRandomNumbers(count: number, min: number = 0, max: number = 1): number[] {

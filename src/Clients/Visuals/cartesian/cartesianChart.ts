@@ -772,7 +772,7 @@ module powerbi.visuals {
             enumeration.pushInstance(instance);
         }
 
-        //todo: wrap all these object getters and other related stuff into an interface
+        //TODO: wrap all these object getters and other related stuff into an interface.
         private getValueAxisValues(enumeration: ObjectEnumerationBuilder): void {
             if (!this.valueAxisProperties) {
                 return;
@@ -787,12 +787,13 @@ module powerbi.visuals {
                 validValues: {
                     axisScale: scaleOptions,
                     secAxisScale: secScaleOption,
-                    axisStyle: this.axes.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                    axisStyle: this.axes.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly],
+                    secAxisStyle: this.axes.secondaryValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly],
                 }
             };
 
             instance.properties['show'] = this.valueAxisProperties['show'] != null ? this.valueAxisProperties['show'] : true;
-
+            instance.properties['axisLabel'] = this.valueAxisProperties['axisLabel'];
             if (!this.axes.isYAxisCategorical()) {
                 instance.properties['position'] = this.valueAxisProperties['position'] != null ? this.valueAxisProperties['position'] : yAxisPosition.left;
             }
@@ -811,51 +812,24 @@ module powerbi.visuals {
                     : labelPrecision;
             }
 
-            enumeration.pushInstance(instance);
-
             if (this.layers.length === 2) {
                 instance.properties['secShow'] = this.valueAxisProperties['secShow'] != null ? this.valueAxisProperties['secShow'] : this.axes.hasY2Axis();
-                if (instance.properties['secShow']) {
-                    instance.properties['axisLabel'] = '';
-                }
             }
 
             if (this.axes.hasY2Axis() && instance.properties['secShow']) {
-                enumeration.pushContainer({
-                    displayName: data.createDisplayNameGetter('Visual_YAxis_ShowSecondary'),
-                });
-
-                let secInstance: VisualObjectInstance = {
-                    selector: null,
-                    properties: {},
-                    objectName: 'valueAxis'
-                };
-                secInstance.properties['secAxisLabel'] = '';
-                secInstance.properties['secPosition'] = this.valueAxisProperties['secPosition'] != null ? this.valueAxisProperties['secPosition'] : yAxisPosition.right;
-                secInstance.properties['secAxisScale'] = this.valueAxisProperties['secAxisScale'] || DEFAULT_AXIS_SCALE_TYPE;
-                secInstance.properties['secStart'] = this.valueAxisProperties['secStart'];
-                secInstance.properties['secEnd'] = this.valueAxisProperties['secEnd'];
-                secInstance.properties['secShowAxisTitle'] = this.valueAxisProperties['secShowAxisTitle'] != null ? this.valueAxisProperties['secShowAxisTitle'] : false;
-
-                enumeration
-                    .pushInstance(secInstance)
-                    .pushInstance({
-                        selector: null,
-                        properties: {
-                            secAxisStyle: this.valueAxisProperties['secAxisStyle'] ? this.valueAxisProperties['secAxisStyle'] : axisStyle.showTitleOnly,
-                            labelColor: this.valueAxisProperties['secLabelColor'],
-                            secLabelDisplayUnits: this.valueAxisProperties['secLabelDisplayUnits'] ? this.valueAxisProperties['secLabelDisplayUnits'] : 0,
-                            secLabelPrecision: this.valueAxisProperties['secLabelPrecision'] < 0 ? 0 : this.valueAxisProperties['secLabelPrecision']
-                        },
-                        objectName: 'valueAxis',
-                        validValues: {
-                            secAxisStyle: this.axes.secondaryValueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly],
-                            axisScale: scaleOptions
-                        },
-                    });
-
-                enumeration.popContainer();
+                instance.properties['secAxisLabel'] = '';
+                instance.properties['secPosition'] = this.valueAxisProperties['secPosition'] != null ? this.valueAxisProperties['secPosition'] : yAxisPosition.right;
+                instance.properties['secAxisScale'] = this.valueAxisProperties['secAxisScale'] || DEFAULT_AXIS_SCALE_TYPE;
+                instance.properties['secStart'] = this.valueAxisProperties['secStart'];
+                instance.properties['secEnd'] = this.valueAxisProperties['secEnd'];
+                instance.properties['secShowAxisTitle'] = this.valueAxisProperties['secShowAxisTitle'] != null ? this.valueAxisProperties['secShowAxisTitle'] : false;
+                instance.properties['secAxisStyle'] = this.valueAxisProperties['secAxisStyle'] ? this.valueAxisProperties['secAxisStyle'] : axisStyle.showTitleOnly;
+                instance.properties['labelColor'] = this.valueAxisProperties['secLabelColor'];
+                instance.properties['secLabelDisplayUnits'] = this.valueAxisProperties['secLabelDisplayUnits'] ? this.valueAxisProperties['secLabelDisplayUnits'] : 0;
+                instance.properties['secLabelPrecision'] = this.valueAxisProperties['secLabelPrecision'] < 0 ? 0 : this.valueAxisProperties['secLabelPrecision'];
             }
+
+            enumeration.pushInstance(instance);
         }
 
         public onClearSelection(): void {
@@ -1040,6 +1014,7 @@ module powerbi.visuals {
                 let wheelEvent: any = d3.event;
                 let dy = wheelEvent.deltaY;
                 this.scrollableAxes.scrollDelta(dy);
+                (<MouseWheelEvent>wheelEvent).preventDefault();
             });
 
             this.renderedPlotArea = axesLayout.plotArea;

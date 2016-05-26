@@ -1640,8 +1640,6 @@ module powerbi.visuals {
             private highlightsOverflow: boolean;
             private total: number;
             private highlightTotal: number;
-            private grouped: DataViewValueColumnGroup[];
-            private isMultiMeasure: boolean;
             private isSingleMeasure: boolean;
             private isDynamicSeries: boolean;
             private seriesCount: number;
@@ -1679,11 +1677,9 @@ module powerbi.visuals {
                     this.categoryColumnRef = <data.SQExpr[]>category.identityFields;
                     this.categoryFormatString = valueFormatter.getFormatString(category.source, donutChartProps.general.formatString);
                 }
-
-                let grouped = this.grouped = dataViewCategorical && dataViewCategorical.values ? dataViewCategorical.values.grouped() : undefined;
-                this.isMultiMeasure = grouped && grouped.length > 0 && grouped[0].values && grouped[0].values.length > 1;
-                this.isSingleMeasure = grouped && grouped.length === 1 && grouped[0].values && grouped[0].values.length === 1;
-                this.isDynamicSeries = !!(dataViewCategorical.values && dataViewCategorical.values.source);
+                
+                this.isDynamicSeries = reader.hasDynamicSeries();
+                this.isSingleMeasure = this.isDynamicSeries || reader.getSeriesCount("Y") === 1;
 
                 this.highlightsOverflow = false;
                 this.total = 0;
@@ -2047,7 +2043,7 @@ module powerbi.visuals {
                         .withMeasure(valueColumn.source.queryName)
                         .createSelectionId();
                     let seriesName = converterHelper.getSeriesName(valueColumn.source);
-                    let objects = this.grouped && this.grouped[seriesIndex] && this.grouped[seriesIndex].objects;
+                    let objects = reader.getSeriesObjects(seriesIndex);
                     
                     let nonHighlight = reader.getValue("Y", 0, seriesIndex) || 0;
                     let highlight = this.hasHighlights ? reader.getHighlight("Y", 0, seriesIndex) || 0 : 0;

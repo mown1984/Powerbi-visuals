@@ -42,7 +42,6 @@ module powerbitests {
     import FunnelData = powerbi.visuals.FunnelData;
     import funnelChartCapabilities = powerbi.visuals.funnelChartCapabilities;
     import funnelChartProps = powerbi.visuals.funnelChartProps;
-    import IVisualPluginService = powerbi.visuals.IVisualPluginService;
     import labelPosition = powerbi.visuals.labelPosition;
     import SelectionId = powerbi.visuals.SelectionId;
     import SVGUtil = powerbi.visuals.SVGUtil;
@@ -56,15 +55,20 @@ module powerbitests {
     import Spy = jasmine.Spy;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import PixelConverter = jsCommon.PixelConverter;
+    import FunnelDataPoint = powerbi.visuals.FunnelDataPoint;
+    import IFunnelRect = powerbi.visuals.IFunnelRect;
+    import LabelDataPoint = powerbi.LabelDataPoint;
 
-    let minHeightFunnelCategoryLabelsVisible: number = visualPluginFactory.MobileVisualPluginService.MinHeightFunnelCategoryLabelsVisible;
+    let minHeightFunnelCategoryLabelsVisible: number = 80; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightFunnelCategoryLabelsVisible
     let categoryLabelsVisibleGreaterThanMinHeight: number = minHeightFunnelCategoryLabelsVisible + 1;
     let categoryLabelsSmallerThanMinHeight: number = minHeightFunnelCategoryLabelsVisible - 1;
     let categoryLabelsVisibleGreaterThanMinHeightString: string = categoryLabelsVisibleGreaterThanMinHeight.toString();
     let categoryLabelsVisibleSmallerThanMinHeightString: string = categoryLabelsSmallerThanMinHeight.toString();
 
     let labelColor: string = dataLabelUtils.defaultLabelColor;
-    let defaultInsideLabelColor: string = "#ffffff";
+    const defaultInsideLabelColor: string = "#ffffff";
+    const getPercentLabelSettingsMethod: string = "getDefaultPercentLabelSettings";
+    const getLabelSettingsMethod: string = "getDefaultLabelSettings";
 
     powerbitests.mocks.setLocale();
 
@@ -156,15 +160,15 @@ module powerbitests {
 
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices);
 
-            helpers.assertColorsMatch(actualData.slices[0].color, "#FF0000");
-            expect(actualData.slices[0].labelFill).toBe(labelColor);
-            helpers.assertColorsMatch(actualData.slices[1].color, "#00FF00");
-            expect(actualData.slices[1].labelFill).toBe(labelColor);
-            helpers.assertColorsMatch(actualData.slices[2].color, "#0000FF");
-            expect(actualData.slices[2].labelFill).toBe(labelColor);
+            helpers.assertColorsMatch(actualData.dataPoints[0].color, "#FF0000");
+            expect(actualData.dataPoints[0].labelFill).toBe(null);
+            helpers.assertColorsMatch(actualData.dataPoints[1].color, "#00FF00");
+            expect(actualData.dataPoints[1].labelFill).toBe(null);
+            helpers.assertColorsMatch(actualData.dataPoints[2].color, "#0000FF");
+            expect(actualData.dataPoints[2].labelFill).toBe(null);
         });
 
-        it("Check default color is applied", () => {
+        it("Check by default color doesnt set to anything.", () => {
             let categoricalValues: any[] = [
                 "John Domo",
                 "Delta Force",
@@ -194,9 +198,9 @@ module powerbitests {
 
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor);
 
-            actualData.slices.forEach(slice => {
+            actualData.dataPoints.forEach(slice => {
                 helpers.assertColorsMatch(slice.color, defaultDataPointColor);
-                expect(slice.labelFill).toEqual(labelColor);
+                expect(slice.labelFill).toEqual(null);
             });
         });
 
@@ -233,7 +237,7 @@ module powerbitests {
                 SelectionId.createWithMeasure("col3")];
 
             let expectedData: FunnelData = {
-                slices: [
+                dataPoints: [
                     {
                         value: 100,
                         originalValue: 100,
@@ -244,7 +248,7 @@ module powerbitests {
                         categoryOrMeasureIndex: 0,
                         tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: "#FF0000",
-                        labelFill: labelColor,
+                        labelFill: null,
                     }, {
                         value: 300,
                         originalValue: 300,
@@ -255,15 +259,15 @@ module powerbitests {
                         categoryOrMeasureIndex: 1,
                         tooltipInfo: [{ displayName: "col3", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "300%" }],
                         color: "#00FF00",
-                        labelFill: labelColor,
+                        labelFill: null,
                     }],
                 categoryLabels: ["col2", "col3"],
                 valuesMetadata: [dataViewMetadata.columns[0], dataViewMetadata.columns[1]],
                 hasHighlights: false,
                 highlightsOverflow: false,
                 canShowDataLabels: true,
-                dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
-                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
+                dataLabelsSettings: FunnelChart[getLabelSettingsMethod](),
+                percentBarLabelSettings: FunnelChart[getPercentLabelSettingsMethod](),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -308,7 +312,7 @@ module powerbitests {
             let sliceColor: string = colors.getColorByIndex(0).value;
 
             let expectedData: FunnelData = {
-                slices: [
+                dataPoints: [
                     {
                         value: 100,
                         originalValue: 100,
@@ -319,7 +323,7 @@ module powerbitests {
                         categoryOrMeasureIndex: 0,
                         tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     }, {
                         value: 200,
                         originalValue: 200,
@@ -330,7 +334,7 @@ module powerbitests {
                         categoryOrMeasureIndex: 1,
                         tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     }, {
                         value: 700,
                         originalValue: 700,
@@ -341,15 +345,15 @@ module powerbitests {
                         categoryOrMeasureIndex: 2,
                         tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "700" }, { displayName: "Percent of first", value: "700%" }, { displayName: "Percent of previous", value: "350%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     }],
                 categoryLabels: categoryValues,
                 valuesMetadata: [dataViewMetadataOneMeasure.columns[1]],
                 hasHighlights: false,
                 highlightsOverflow: false,
                 canShowDataLabels: true,
-                dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
-                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
+                dataLabelsSettings: FunnelChart[getLabelSettingsMethod](),
+                percentBarLabelSettings: FunnelChart[getPercentLabelSettingsMethod](),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -395,12 +399,12 @@ module powerbitests {
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, true);
            
             //first highlight tooltip won't show because highlighted value is null
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }]);
             
             //tooltips with highlighted value. Since first value highlighted value is 0, there is no 'percent of first' value
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
-            expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
-            expect(actualData.slices[2].tooltipInfo).toBe(actualData.slices[3].tooltipInfo);
+            expect(actualData.dataPoints[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
+            expect(actualData.dataPoints[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
+            expect(actualData.dataPoints[2].tooltipInfo).toBe(actualData.dataPoints[3].tooltipInfo);
         });
 
         it("Validate highlighted (0) tooltip", () => {
@@ -442,12 +446,12 @@ module powerbitests {
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, true);
            
             //first highlight tooltip is regular because the hilight value is 0
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: 'Highlighted', value: '0' }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toEqual([{ displayName: "col1", value: "John Domo" }, { displayName: "col2", value: "100" }, { displayName: 'Highlighted', value: '0' }]);
             
             //tooltips with highlighted value. Since first value highlighted value is 0, there is no 'percent of first' value
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
-            expect(actualData.slices[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
-            expect(actualData.slices[0].tooltipInfo).toBe(actualData.slices[1].tooltipInfo);
+            expect(actualData.dataPoints[2].tooltipInfo).toEqual([{ displayName: "col1", value: "Delta Force" }, { displayName: "col2", value: "200" }, { displayName: 'Highlighted', value: '140' }]);
+            expect(actualData.dataPoints[4].tooltipInfo).toEqual([{ displayName: "col1", value: "Jean Tablau" }, { displayName: "col2", value: "700" }, { displayName: 'Highlighted', value: '420' }, { displayName: "Percent of previous (highlighted)", value: "300%" }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toBe(actualData.dataPoints[1].tooltipInfo);
         });
 
         it("validate tooltip info not being created when tooltips are disabled", () => {
@@ -489,14 +493,14 @@ module powerbitests {
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices, defaultDataPointColor, false);
            
             //first tooltip is regular because highlighted value is 0
-            expect(actualData.slices[0].tooltipInfo).toBeUndefined();
-            expect(actualData.slices[1].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[0].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[1].tooltipInfo).toBeUndefined();
             
             //tooltips with highlighted value
-            expect(actualData.slices[2].tooltipInfo).toBeUndefined();
-            expect(actualData.slices[3].tooltipInfo).toBeUndefined();
-            expect(actualData.slices[4].tooltipInfo).toBeUndefined();
-            expect(actualData.slices[5].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[2].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[3].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[4].tooltipInfo).toBeUndefined();
+            expect(actualData.dataPoints[5].tooltipInfo).toBeUndefined();
         });
 
         it("Check converter with no category and multi-measures", () => {
@@ -526,7 +530,7 @@ module powerbitests {
             let sliceColor: string = colors.getColorByIndex(0).value;
 
             let expectedData: FunnelData = {
-                slices: [
+                dataPoints: [
                     {
                         value: 100,
                         originalValue: 100,
@@ -537,7 +541,7 @@ module powerbitests {
                         categoryOrMeasureIndex: 0,
                         tooltipInfo: [{ displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     }, {
                         value: 300,
                         originalValue: 300,
@@ -548,15 +552,15 @@ module powerbitests {
                         categoryOrMeasureIndex: 1,
                         tooltipInfo: [{ displayName: "col3", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "300%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     }],
                 categoryLabels: ["col2", "col3"],
                 valuesMetadata: [dataViewMetadataTwoMeasures.columns[1], dataViewMetadataTwoMeasures.columns[2]],
                 hasHighlights: false,
                 highlightsOverflow: false,
                 canShowDataLabels: true,
-                dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
-                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
+                dataLabelsSettings: FunnelChart[getLabelSettingsMethod](),
+                percentBarLabelSettings: FunnelChart[getPercentLabelSettingsMethod](),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -593,7 +597,7 @@ module powerbitests {
             let sliceColor: string = colors.getColorByIndex(0).value;
 
             let expectedData: powerbi.visuals.FunnelData = {
-                slices: [
+                dataPoints: [
                         {
                         label: 'col2',
                         value: 300,
@@ -604,7 +608,7 @@ module powerbitests {
                         key: selectionIds[0].getKey(),
                         tooltipInfo: [{ displayName: "col2", value: "300" }, { displayName: 'Highlighted', value: '15' }, { displayName: "Percent of first (highlighted)", value: "100%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                         },
                         {
                         label: 'col2',
@@ -630,7 +634,7 @@ module powerbitests {
                         key: selectionIds[1].getKey(),
                         tooltipInfo: [{ displayName: "col3", value: "900" }, { displayName: 'Highlighted', value: '250' }, { displayName: "Percent of first (highlighted)", value: "1,666.67%" }, { displayName: "Percent of previous (highlighted)", value: "1,666.67%" }],
                         color: sliceColor,
-                        labelFill: labelColor,
+                        labelFill: null,
                     },
                     {
                         label: 'col3',
@@ -651,8 +655,8 @@ module powerbitests {
                 hasHighlights: true,
                 highlightsOverflow: false,
                 canShowDataLabels: true,
-                dataLabelsSettings: dataLabelUtils.getDefaultFunnelLabelSettings(),
-                percentBarLabelSettings: dataLabelUtils.getDefaultLabelSettings(true),
+                dataLabelsSettings: FunnelChart[getLabelSettingsMethod](),
+                percentBarLabelSettings: FunnelChart[getPercentLabelSettingsMethod](),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
             };
@@ -688,10 +692,10 @@ module powerbitests {
             expect(actualData.allValuesAreNegative).toBeFalsy();
 
             // Render and original values
-            expect(actualData.slices[1].highlightValue).toBe(0);
-            expect(actualData.slices[1].originalHighlightValue).toBe(-5);
-            expect(actualData.slices[2].value).toBe(0);
-            expect(actualData.slices[2].originalValue).toBe(-200);
+            expect(actualData.dataPoints[1].highlightValue).toBe(0);
+            expect(actualData.dataPoints[1].originalHighlightValue).toBe(-5);
+            expect(actualData.dataPoints[2].value).toBe(0);
+            expect(actualData.dataPoints[2].originalValue).toBe(-200);
         });
 
         it('When all values are negative converter converts to absolute values', () => {
@@ -723,14 +727,14 @@ module powerbitests {
             expect(actualData.allValuesAreNegative).toBeTruthy();
 
             // Render and original values
-            expect(actualData.slices[0].value).toBe(100);
-            expect(actualData.slices[0].originalValue).toBe(-100);
-            expect(actualData.slices[1].highlightValue).toBe(5);
-            expect(actualData.slices[1].originalHighlightValue).toBe(-5);
-            expect(actualData.slices[2].value).toBe(200);
-            expect(actualData.slices[2].originalValue).toBe(-200);
-            expect(actualData.slices[3].highlightValue).toBe(150);
-            expect(actualData.slices[3].originalHighlightValue).toBe(-150);
+            expect(actualData.dataPoints[0].value).toBe(100);
+            expect(actualData.dataPoints[0].originalValue).toBe(-100);
+            expect(actualData.dataPoints[1].highlightValue).toBe(5);
+            expect(actualData.dataPoints[1].originalHighlightValue).toBe(-5);
+            expect(actualData.dataPoints[2].value).toBe(200);
+            expect(actualData.dataPoints[2].originalValue).toBe(-200);
+            expect(actualData.dataPoints[3].highlightValue).toBe(150);
+            expect(actualData.dataPoints[3].originalHighlightValue).toBe(-150);
     });
 
         it('non-categorical multi-measure tooltip values test', () => {
@@ -763,9 +767,9 @@ module powerbitests {
             
             let actualData: FunnelData = FunnelChart.converter(dataView, colors, hostServices);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "a", value: "1" }, { displayName: "Percent of first", value: "100%" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "b", value: "2" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "c", value: "3" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toEqual([{ displayName: "a", value: "1" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.dataPoints[1].tooltipInfo).toEqual([{ displayName: "b", value: "2" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.dataPoints[2].tooltipInfo).toEqual([{ displayName: "c", value: "3" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
     });
 
@@ -1313,8 +1317,8 @@ module powerbitests {
                 FunnelChartHelpers.validateDataLabels(dataView);
                 expect($(".funnelChart g").length).toBe(7);
                 expect($(".funnelChart .axis").find("text").length).toBe(3);
-                expect($(".funnelChart .labels").find("text").length).toBe(3);
-                expect($(".funnelChart .labels").find("text").first().text()).toBe("$100");
+                expect($(".funnelChart .labelGraphicsContext").find("text").length).toBe(3);
+                expect($(".funnelChart .labelGraphicsContext").find("text").first().text()).toBe("$100");
 
                 done();
             }, DefaultWaitForRender);
@@ -1481,9 +1485,8 @@ module powerbitests {
             let dataView: DataView = dataViewBuilder.build();
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
-            setTimeout(() => {
-                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();    
-                let labels: JQuery = $(".funnelChart .labels text");
+            setTimeout(() => {  
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
                 let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
                 let lastBarWidth: number = +$(".funnelChart").find(".funnelBar").last().attr("width");
@@ -1495,13 +1498,12 @@ module powerbitests {
 
                 // Check that the first label is inside and white
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth);
 
                 // Check that the last label is outside and equal to fill color
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
-
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth);
                 done();
             }, DefaultWaitForRender);
         });
@@ -1586,7 +1588,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                let labels = $(".funnelChart .labels .data-labels");
+                let labels = $(".funnelChart .labelGraphicsContext .label");
                 expect(labels.eq(1).text()).toBe("-$100");
 
                 done();
@@ -1670,12 +1672,12 @@ module powerbitests {
             setTimeout(() => {
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
-                expect($(".funnelChart .labels text").length).toBe(6);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(6);
                 visualBuilder.visual.onResizing({ height: 50, width: 100 });
                 setTimeout(() => {
-                    expect($(".funnelChart g").length).toBe(3); // No "g" for data labels
+                    expect($(".funnelChart g").length).toBe(4);
                     expect($(".funnelChart .axis").find("text").length).toBe(0);
-                    expect($(".funnelChart .labels text").length).toBe(0);
+                    expect($(".funnelChart .labelGraphicsContext text").length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1715,13 +1717,13 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(true, dataView);
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
-                expect($(".funnelChart .labels text").length).toBe(6);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(6);
                 visualBuilder.visual.onResizing({ height: 100, width: 100 });
                 setTimeout(() => {
                     FunnelChartHelpers.validatePercentBars(false, dataView);
                     expect($(".funnelChart g").length).toBe(10);
                     expect($(".funnelChart .axis").find("text").length).toBe(6);
-                    expect($(".funnelChart .labels text").length).toBe(6);
+                    expect($(".funnelChart .labelGraphicsContext text").length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1761,13 +1763,13 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(true, dataView);
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
-                expect($(".funnelChart .labels text").length).toBe(6);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(6);
                 visualBuilder.visual.onResizing({ height: 50, width: 100 });
                 setTimeout(() => {
                     FunnelChartHelpers.validatePercentBars(false, dataView);
-                    expect($(".funnelChart g").length).toBe(3); // No "g" for data labels
+                    expect($(".funnelChart g").length).toBe(4);
                     expect($(".funnelChart .axis").find("text").length).toBe(0);
-                    expect($(".funnelChart .labels text").length).toBe(0);
+                    expect($(".funnelChart .labelGraphicsContext text").length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -1802,7 +1804,7 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(false, dataView);
                 expect($(".funnelChart g").length).toBe(5);
                 expect($(".funnelChart .axis").find("text").length).toBe(1);
-                expect($(".funnelChart .labels text").length).toBe(1);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(1);
                 
                 done();
             }, DefaultWaitForRender);
@@ -1842,7 +1844,7 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(false, dataView);
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
-                expect($(".funnelChart .labels text").length).toBe(6);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(6);
 
                 done();
             }, DefaultWaitForRender);
@@ -1887,7 +1889,7 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(false, dataView);
                 expect($(".funnelChart g").length).toBe(10);
                 expect($(".funnelChart .axis").find("text").length).toBe(6);
-                expect($(".funnelChart .labels text").length).toBe(6);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(6);
 
                 done();
             }, DefaultWaitForRender);
@@ -2024,9 +2026,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-
-                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
                 let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
                 let lastBarX: number = +$(".funnelChart").find(".funnelBar").last().attr("x");
@@ -2042,12 +2042,11 @@ module powerbitests {
                 expect($(labels[0]).text()).toEqual("$1K");
 
                 // Check that the first label is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth);
 
                 // Check that the last label is outside
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
-
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth);
                 done();
             }, DefaultWaitForRender);
         });
@@ -2055,7 +2054,7 @@ module powerbitests {
         it("Change text size validation", (done) => {
             
             var assert = () => {
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
 
                 expect(labels.length).toBe(3);
                 expect($(labels.first().css("font-size")).selector).toBe('16px');
@@ -2076,8 +2075,8 @@ module powerbitests {
         it("labels filtered when heigher than bar height", (done) => {
 
             var assert = () => {
-                let labels: JQuery = $(".funnelChart .labels text");
-                expect(labels.length).toBe(0);
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
+                expect(labels.length).toBe(2); // Labels are put outside of bar.
                 done();
             };
 
@@ -2127,7 +2126,7 @@ module powerbitests {
                 // to what we would think of as the position and size along the x-axis.
                 // The funnel data labels are not rotated, so for the labels we need to use "x" and "width".
 
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 expect(labels.length).toBe(3);
                 expect($(labels[2]).text()).toEqual("$0K");
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
@@ -2173,16 +2172,15 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
                 let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
 
                 // The first label should be white and should be inside the bar.
                 expect($(labels[0]).text()).toEqual("$2K");
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth);
 
                 // The third label should be the same as the fill color and should be outside the bar.
                 let thirdBarX: number = +$(".funnelChart").find(".funnelBar").eq(2).attr("x");
@@ -2191,8 +2189,7 @@ module powerbitests {
                 //Data labels precision = 0
                 expect($(labels[2]).text()).toEqual("$0K");
                 helpers.assertColorsMatch($(labels[2]).css("fill"), labelColor);
-                expect($(labels[2]).attr("x")).toBeGreaterThan(thirdBarX + thirdBarWidth + transformX);
-
+                expect($(labels[2]).attr("x")).toBeGreaterThan(thirdBarX + thirdBarWidth);
                 done();
             }, DefaultWaitForRender);
         });
@@ -2230,8 +2227,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
-                let labels: JQuery = $(".funnelChart .labels .data-labels");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext .label");
                 let firstBarX: number = +$(".funnelChart").find(".funnelBar").first().attr("x");
                 let firstBarWidth: number = +$(".funnelChart").find(".funnelBar").first().attr("width");
                 let firstBar: number = firstBarX + firstBarWidth;
@@ -2242,8 +2238,8 @@ module powerbitests {
                 helpers.assertColorsMatch($(labels[2]).css("fill"), defaultInsideLabelColor);
                 
                 //Check that the labels position is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBar + transformX);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBar);
                 done();
             }, DefaultWaitForRender);
         });
@@ -2287,14 +2283,12 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 expect(labels.length).toBe(3);
                 
-                //inside labels are white
-                helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
-                helpers.assertColorsMatch($(labels[1]).css("fill"), defaultInsideLabelColor);
-                
-                //outside labels are changed
+                // Check color has changed for both inside outside labels.
+                helpers.assertColorsMatch($(labels[0]).css("fill"), color);
+                helpers.assertColorsMatch($(labels[1]).css("fill"), color);
                 helpers.assertColorsMatch($(labels[2]).css("fill"), color);
                 done();
             }, DefaultWaitForRender);
@@ -2333,7 +2327,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 expect(labels.length).toBe(0);
                 done();
             }, DefaultWaitForRender);
@@ -2415,7 +2409,7 @@ module powerbitests {
             visualBuilder.visual.onDataChanged({ dataViews: [dataViewNoHighlights] });
 
             setTimeout(() => {
-                let labels: JQuery = $(".funnelChart .labels text");
+                let labels: JQuery = $(".funnelChart .labelGraphicsContext text");
                 expect(labels.length).toBe(3);
                 helpers.assertColorsMatch($(labels[0]).css("fill"), defaultInsideLabelColor);
                 expect($(labels[0]).text()).toEqual("$100");
@@ -2551,7 +2545,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                expect($(".funnelChart .labels text").first().text()).toBe("$2K");
+                expect($(".funnelChart .labelGraphicsContext text").first().text()).toBe("$2K");
                 done();
             }, DefaultWaitForRender);
         });
@@ -2591,7 +2585,7 @@ module powerbitests {
             
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
-                expect($(".funnelChart .labels text").first().text()).toBe("$1.56K");
+                expect($(".funnelChart .labelGraphicsContext text").first().text()).toBe("$1.56K");
                 done();
             }, DefaultWaitForRender);
         });
@@ -2633,8 +2627,7 @@ module powerbitests {
             dataView.categorical.values[0].source["objects"]["general"]["formatString"] = "$0.00";
             visualBuilder.visual.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {    
-                let transformX: number = FunnelChartHelpers.getFunnelBarXTransform();
-                let labels = $(".funnelChart .labels text");
+                let labels = $(".funnelChart .labelGraphicsContext text");
                 let firstBarX = +$(".funnelChart").find(".funnelBar").first().attr("x");
                 let firstBarWidth = +$(".funnelChart").find(".funnelBar").first().attr("width");
                 let lastBarX = +$(".funnelChart").find(".funnelBar").last().attr("x");
@@ -2650,12 +2643,11 @@ module powerbitests {
                 expect($(labels[0]).text()).toEqual("$0.56K");
 
                 // Check that the first label is inside
-                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX + transformX);
-                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth + transformX);
+                expect($(labels[0]).attr("x")).toBeGreaterThan(firstBarX);
+                expect($(labels[0]).attr("x")).toBeLessThan(firstBarX + firstBarWidth);
 
                 // Check that the last label is outside
-                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth + transformX);
-
+                expect($(labels[2]).attr("x")).toBeGreaterThan(lastBarX + lastBarWidth);
                 done();
             }, DefaultWaitForRender);
         });
@@ -3264,13 +3256,13 @@ module powerbitests {
                 FunnelChartHelpers.validatePercentBars(true, dataViewHighlights);
                 expect($(".funnelChart g").length).toBe(11);
                 expect($(".funnelChart .axis").find("text").length).toBe(7);
-                expect($(".funnelChart .labels text").length).toBe(7);
+                expect($(".funnelChart .labelGraphicsContext text").length).toBe(7);
                 visualBuilder.visual.onResizing({ height: 50, width: 100 });
                 setTimeout(() => {
                     FunnelChartHelpers.validatePercentBars(false, dataViewHighlights);
-                    expect($(".funnelChart g").length).toBe(3); // No "g" for data labels
+                    expect($(".funnelChart g").length).toBe(4);
                     expect($(".funnelChart .axis").find("text").length).toBe(0);
-                    expect($(".funnelChart .labels text").length).toBe(0);
+                    expect($(".funnelChart .labelGraphicsContext text").length).toBe(0);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -3445,9 +3437,9 @@ module powerbitests {
 
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            helpers.assertColorsMatch(actualData.slices[0].color, colors[0]);
-            helpers.assertColorsMatch(actualData.slices[1].color, colors[1]);
-            helpers.assertColorsMatch(actualData.slices[2].color, colors[2]);
+            helpers.assertColorsMatch(actualData.dataPoints[0].color, colors[0]);
+            helpers.assertColorsMatch(actualData.dataPoints[1].color, colors[1]);
+            helpers.assertColorsMatch(actualData.dataPoints[2].color, colors[2]);
         });
 
         it("Gradient color - validate tool tip", () => {
@@ -3491,9 +3483,9 @@ module powerbitests {
             let defaultDataPointColor: string = "#00FF00";
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "col3", value: "200" }, { displayName: "Percent of first", value: "100%" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "col3", value: "400" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }, { displayName: "col3", value: "600" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col2", value: "100" }, { displayName: "col3", value: "200" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.dataPoints[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col2", value: "200" }, { displayName: "col3", value: "400" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.dataPoints[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col2", value: "300" }, { displayName: "col3", value: "600" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
 
         it("Gradient and Y have the index - validate tool tip", () => {
@@ -3537,9 +3529,9 @@ module powerbitests {
             let defaultDataPointColor: string = "#00FF00";
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host, defaultDataPointColor);
 
-            expect(actualData.slices[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "200" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }]);
-            expect(actualData.slices[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "400" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
-            expect(actualData.slices[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "600" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
+            expect(actualData.dataPoints[0].tooltipInfo).toEqual([{ displayName: "col1", value: "a" }, { displayName: "col3", value: "200" }, { displayName: "col2", value: "100" }, { displayName: "Percent of first", value: "100%" }]);
+            expect(actualData.dataPoints[1].tooltipInfo).toEqual([{ displayName: "col1", value: "b" }, { displayName: "col3", value: "400" }, { displayName: "col2", value: "200" }, { displayName: "Percent of first", value: "200%" }, { displayName: "Percent of previous", value: "200%" }]);
+            expect(actualData.dataPoints[2].tooltipInfo).toEqual([{ displayName: "col1", value: "c" }, { displayName: "col3", value: "600" }, { displayName: "col2", value: "300" }, { displayName: "Percent of first", value: "300%" }, { displayName: "Percent of previous", value: "150%" }]);
         });
 
         it("converter does filter Gradient role", () => {
@@ -3583,7 +3575,7 @@ module powerbitests {
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host);
 
             let expectedSliceValues = [200, 400, 600];
-            actualData.slices.map((slice, i) => {
+            actualData.dataPoints.map((slice, i) => {
                 expect(slice.value).toBe(expectedSliceValues[i]);
             });
         });
@@ -3621,9 +3613,158 @@ module powerbitests {
             let actualData: FunnelData = FunnelChart.converter(dataView, dataColors, visualBuilder.host);
 
             let expectedSliceValues = [100, 200, 300];
-            actualData.slices.map((slice, i) => {
+            actualData.dataPoints.map((slice, i) => {
                 expect(slice.value).toBe(expectedSliceValues[i]);
             });
+        });
+    });
+
+    describe("FunnelChart.prototype.createLabelDataPoints", () => {
+        let type: powerbi.ValueTypeDescriptor = { numeric: true };
+
+        let dataViewMetadata: DataViewMetadata = {
+            columns: [
+                { displayName: "col2", queryName: "col2", type: type, isMeasure: true, roles: { "Y": true }, objects: { dataPoint: { fill: { solid: { color: "#FF0000" } } } } },
+            ]
+        };
+
+        let FunnelChartMock = {
+            data: {
+                dataPoints: [],
+                valuesMetadata: dataViewMetadata,
+                hasHighlights: false
+            }
+        };
+
+        let createLabelDataPoints: (layout: IFunnelRect, settings: powerbi.visuals.VisualDataLabelsSettings)
+            => LabelDataPoint[] = (<any>FunnelChart).prototype.createLabelDataPoints.bind(FunnelChartMock);
+
+        it("Returns empty array for for no data points", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result.length).toBe(0);
+        });
+
+        it("Returns empty for data points with null or 0 value.", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints =
+                [{
+                    value: null,
+                    originalValue: null
+                },
+                {
+                    value: undefined,
+                    originalValue: undefined
+                }];
+
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result.length).toBe(0);
+        });
+
+        it("Default position is inside center", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [{
+                value: 20,
+                originalValue: 20
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+
+            expect(result.length).toBe(1);
+            expect(result[0].parentShape.validPositions.length).toBeGreaterThan(1);
+            expect(result[0].parentShape.validPositions[0]).toBe(powerbi.RectLabelPosition.InsideCenter);
+        });
+
+        it("Fallback position is outside end", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [{
+                value: 20,
+                originalValue: 20
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].parentShape.validPositions[1]).toBe(powerbi.RectLabelPosition.OutsideEnd);
+        });
+
+        it("Change position to Outside End/Fallback Inside End", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null, position: powerbi.visuals.labelPosition.outsideEnd };
+            FunnelChartMock.data.dataPoints = [{
+                value: 20,
+                originalValue: 20
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].parentShape.validPositions[0]).toBe(powerbi.RectLabelPosition.OutsideEnd);
+            expect(result[0].parentShape.validPositions[1]).toBe(powerbi.RectLabelPosition.InsideEnd);
+        });
+
+        it("For value 0 position center shape type point.", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null, position: powerbi.visuals.labelPosition.outsideEnd };
+            FunnelChartMock.data.dataPoints = [{
+                value: 0,
+                originalValue: 0
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].parentShape.validPositions[0]).toBe(powerbi.NewPointLabelPosition.Center);
+        });
+
+        it("Default inside fill and outside fill are properly applied.", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [{
+                value: 20,
+                originalValue: 20,
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].insideFill).toBe(powerbi.visuals.NewDataLabelUtils.defaultInsideLabelColor);
+            expect(result[0].outsideFill).toBe(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+        });
+
+        it("The same default color used for inside/outside if value is 0", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [{
+                value: 0,
+                originalValue: 0,
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].insideFill).toBe(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+            expect(result[0].outsideFill).toBe(powerbi.visuals.NewDataLabelUtils.defaultLabelColor);
+        });
+
+        it("Change color for data point applied for both inside outside.", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            let labelFill: string = "#ffffff";
+            FunnelChartMock.data.dataPoints = [{
+                value: 0,
+                originalValue: 0,
+                labelFill: labelFill
+            }];
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result[0].insideFill).toBe(labelFill);
+            expect(result[0].outsideFill).toBe(labelFill);
+        });
+
+        it("Doesn't create for highlited null value", () => {
+            let layout = FunnelChartHelpers.getShapeLayout();
+            let visualSettings: powerbi.visuals.VisualDataLabelsSettings = { show: true, labelColor: null };
+            FunnelChartMock.data.dataPoints = [{
+                value: 0,
+                originalValue: 0,
+                highlight: false
+            }];
+            FunnelChartMock.data.hasHighlights = true;
+
+            var result = createLabelDataPoints(layout, visualSettings);
+            expect(result.length).toBe(0);
+
+            FunnelChartMock.data.hasHighlights = false;
+
         });
     });
 
@@ -3677,7 +3818,7 @@ module powerbitests {
             let values: any[] = dataView.categorical.values[0].values;
             let highlights: any[] = dataView.categorical.values[0].highlights;
             let hasHighlights: boolean = !!highlights;
-            
+
             let topElement = $(FunnelChart.Selectors.percentBar.text.selector).first();
             let bottomElement = $(FunnelChart.Selectors.percentBar.text.selector).last();
 
@@ -3714,7 +3855,7 @@ module powerbitests {
 
         function validatePercentBarComponents(shown: boolean): void {
             let count: number = shown ? 2 : 0;
-            
+
             expect($(FunnelChart.Selectors.percentBar.mainLine.selector).length).toBe(count);
             expect($(FunnelChart.Selectors.percentBar.leftTick.selector).length).toBe(count);
             expect($(FunnelChart.Selectors.percentBar.rightTick.selector).length).toBe(count);
@@ -3734,7 +3875,7 @@ module powerbitests {
             let highlights = dataView.categorical.values[0].highlights;
             let hasHighlights = !!highlights;
 
-            let allDataLabelsMatch = _.every($(".funnelChart .labels .data-labels"), (label: HTMLElement, i: number) => {
+            let allDataLabelsMatch = _.every($(".funnelChart .labelGraphicsContext .label"), (label: HTMLElement, i: number) => {
                 let expectedValue = hasHighlights ? highlights[i] : values[i];
                 let labelValue = label.textContent.match(/([\d\.\,]+)/g)[0];
                 return expectedValue === parseInt(labelValue, 10);
@@ -3744,23 +3885,31 @@ module powerbitests {
         }
 
         export function testCategoryLabels(domSizeString: string, isMobile: boolean) {
-            let visualPluginService: IVisualPluginService,
+            let funnelCreateFn: () => powerbi.IVisual,
                 dataViewBuilder: DataViewBuilder = new DataViewBuilder(),
                 domSize: number = Number(domSizeString);
             
-            if (isMobile)
-                visualPluginService = visualPluginFactory.createMobile();
-            else
-                visualPluginService = visualPluginFactory.create();
+            if (isMobile) {
+                funnelCreateFn = () => new powerbi.visuals.FunnelChart({
+                    animator: null,
+                    funnelSmallViewPortProperties: {
+                        hideFunnelCategoryLabelsOnSmallViewPort: true,
+                        minHeightFunnelCategoryLabelsVisible: minHeightFunnelCategoryLabelsVisible
+                    }
+                });
+            }
+            else {
+                funnelCreateFn = () => new powerbi.visuals.FunnelChart();
+            }
             
             let visualBuilder: VisualBuilder = new VisualBuilder(
-                visualPluginService.getPlugin("funnel").create,
+                funnelCreateFn,
                 domSize,
                 domSize
             );
 
             visualBuilder.build();
-            
+
             let dataViewMetadata: DataViewMetadata = {
                 columns: [
                     { displayName: "col1", queryName: "col1", roles: { "Category": true } },
@@ -3773,9 +3922,9 @@ module powerbitests {
                 "Delta Force",
                 "Jean Tablau"
             ];
-            
+
             dataViewBuilder.setMetadata(dataViewMetadata);
-            
+
             dataViewBuilder.categoryBuilder()
                 .setSource(dataViewMetadata.columns[0])
                 .setValues(categoryValues)
@@ -3783,12 +3932,12 @@ module powerbitests {
                     return mocks.dataViewScopeIdentity(value);
                 }))
                 .buildCategory();
-            
+
             dataViewBuilder.valueColumnsBuilder()
                 .newValueBuilder()
-                    .setSource(dataViewMetadata.columns[1])
-                    .setValues([100, 200, 700])
-                    .buildNewValue()
+                .setSource(dataViewMetadata.columns[1])
+                .setValues([100, 200, 700])
+                .buildNewValue()
                 .buildValueColumns();
 
             visualBuilder.visual.onDataChanged({
@@ -3863,6 +4012,19 @@ module powerbitests {
          */
         export function getViewportWidth(): number {
             return +$('.funnelChart').first().attr('width');
+        }
+
+        /**
+         * Mocks shape layout for unit testing create label layout.
+         */
+        export function getShapeLayout(): IFunnelRect {
+            var mock =  (d: FunnelDataPoint) => d.value; 
+            return {
+                x: mock,
+                y: mock,
+                width: mock,
+                height: mock,
+            };
         }
     }
 }

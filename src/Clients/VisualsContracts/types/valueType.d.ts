@@ -44,6 +44,7 @@ declare module powerbi {
         formatting?: FormattingTypeDescriptor;
         enumeration?: IEnumType;
         scripting?: ScriptTypeDescriptor;
+        operations?: OperationalTypeDescriptor;
     }
 
     export interface ScriptTypeDescriptor {
@@ -83,6 +84,10 @@ declare module powerbi {
         labelDisplayUnits?: boolean;
         fontSize?: boolean;
         labelDensity?: boolean;
+    }
+
+    export interface OperationalTypeDescriptor {
+        searchEnabled?: boolean;
     }
 
     /** Describes instances of value type objects. */

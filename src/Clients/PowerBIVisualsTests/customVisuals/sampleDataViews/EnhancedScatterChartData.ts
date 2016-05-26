@@ -26,122 +26,69 @@
 
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
-    import DataViewTransform = powerbi.data.DataViewTransform;
 
-    export class EnhancedScatterChartData {
+    export class EnhancedScatterChartData extends DataViewBuilder {
+        public static ColumnCategory: string = "Date";
+        public static ColumnSeries: string = "Country";
+        public static ColumnX: string = "X";
+        public static ColumnY: string = "Y";
+        public static ColumnSize: string = "Size";
 
-        public getDataViewMultiSeries(firstGroupName: string = 'Canada', secondGroupName: string = 'United States', withMinMax: boolean = false): powerbi.DataView {
-            let dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'category',
-                        format: 'yyyy',
-                        type: ValueType.fromDescriptor({ dateTime: true })
-                    }, {
-                        displayName: 'series'
-                    }, {
-                        displayName: 'x',
-                        format: '#,0.00',
-                        isMeasure: true,
-                        roles: { 'X': true },
-                        groupName: firstGroupName,
-                    }, {
-                        displayName: 'y',
-                        format: '#,0',
-                        isMeasure: true,
-                        roles: { 'Y': true },
-                        groupName: firstGroupName,
-                    }, {
-                        displayName: 'size',
-                        format: '#,0',
-                        isMeasure: true,
-                        roles: { 'Size': true },
-                        groupName: firstGroupName,
-                    }, {
-                        displayName: 'x',
-                        format: '#,0.00',
-                        isMeasure: true,
-                        roles: { 'X': true },
-                        groupName: secondGroupName,
-                    }, {
-                        displayName: 'y',
-                        format: '#,0',
-                        isMeasure: true,
-                        roles: { 'Y': true },
-                        groupName: secondGroupName,
-                    }, {
-                        displayName: 'size',
-                        format: '#,0',
-                        isMeasure: true,
-                        roles: { 'Size': true },
-                        groupName: secondGroupName,
-                    }
-                ]
-            };
+        public valuesCategory: Date[] = helpers.getDateYearRange(new Date(2016, 0, 1), new Date(2019, 0, 10), 1);
+        public valuesSeries: string[] = ["Canada", "United States", "Russia"];
+        public valuesX: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 100, 1000);
+        public valuesY: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 100, 1000);
+        public valuesSize: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 10, 20);
 
-            let colP1Ref = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 't', column: 'p1' });
-            let colP2Ref = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 't', column: 'p2' });
-
-            let seriesValues = [firstGroupName, secondGroupName];
-            let seriesIdentities = seriesValues.map(v => mocks.dataViewScopeIdentity(v));
-
-            let dataViewValueColumns: powerbi.DataViewValueColumn[] = [
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
                 {
-                    source: dataViewMetadata.columns[2],
-                    values: [150, 177, 157],
-                    identity: seriesIdentities[0],
-                }, {
-                    source: dataViewMetadata.columns[3],
-                    values: [30, 25, 28],
-                    identity: seriesIdentities[0],
-                }, {
-                    source: dataViewMetadata.columns[4],
-                    values: [100, 200, 300],
-                    identity: seriesIdentities[0],
-                }, {
-                    source: dataViewMetadata.columns[5],
-                    values: [100, 149, 144],
-                    identity: seriesIdentities[1],
-                }, {
-                    source: dataViewMetadata.columns[6],
-                    values: [300, 250, 280],
-                    identity: seriesIdentities[1],
-                }, {
-                    source: dataViewMetadata.columns[7],
-                    values: [150, 250, 350],
-                    identity: seriesIdentities[1],
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnCategory,
+                        roles: { Category: true },
+                        type: ValueType.fromDescriptor({ dateTime: true })
+                    },
+                    values: this.valuesCategory
                 }
-            ];
-
-            if (withMinMax) {
-                dataViewValueColumns[2].min = 50;
-                dataViewValueColumns[2].max = 400;
-                dataViewValueColumns[5].min = 100;
-                dataViewValueColumns[5].max = 500;
-            }
-
-            let dataView: powerbi.DataView = {
-                metadata: dataViewMetadata,
-                categorical: {
-                    categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: [
-                            powerbitests.helpers.parseDateString("2012-01-01T00:00:00"),
-                            powerbitests.helpers.parseDateString("2011-01-01T00:00:00"),
-                            powerbitests.helpers.parseDateString("2010-01-01T00:00:00")
-                        ],
-                        identity: [seriesIdentities[0]],
-                        identityFields: [
-                            colP1Ref
-                        ]
-                    }],
-                    values: DataViewTransform.createValueColumns(dataViewValueColumns, [colP2Ref])
+                ],
+                null,
+                {
+                    source: { 
+                        displayName: EnhancedScatterChartData.ColumnSeries,
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.valuesSeries,
+                    columns: [
+                        {
+                            source: {
+                                displayName: EnhancedScatterChartData.ColumnX,
+                                format: '#,0.00',
+                                isMeasure: true,
+                                roles: { 'X': true },
+                            },
+                            values: this.valuesX
+                        },
+                        {
+                            source: {
+                                displayName: EnhancedScatterChartData.ColumnY,
+                                format: '#,0',
+                                isMeasure: true,
+                                roles: { 'Y': true },
+                            },
+                            values: this.valuesY
+                        },
+                        {
+                            source: {
+                                displayName: EnhancedScatterChartData.ColumnSize,
+                                format: '#,0',
+                                isMeasure: true,
+                                roles: { 'Size': true },
+                            },
+                            values: this.valuesSize
+                        }
+                    ]
                 },
-            };
-
-            dataView.categorical.values.source = dataViewMetadata.columns[1];
-
-            return dataView;
+                columnNames).build();
         }
     }
 }

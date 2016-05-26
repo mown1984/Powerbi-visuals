@@ -118,12 +118,22 @@ module powerbi.data {
 
     export interface DataShapeBindingAggregate {
         Select: number;
-        Kind: DataShapeBindingAggregateKind;
+        Kind?: DataShapeBindingAggregateKind;
+        Aggregations?: DataShapeBindingSelectAggregateContainer[];
     }
 
     export const enum DataShapeBindingAggregateKind {
         None = 0,
         Min = 1,
         Max = 1 << 1,
+    }
+
+    export interface DataShapeBindingSelectAggregateContainer {
+        Percentile: DataShapeBindingSelectPercentileAggregate;
+    }
+
+    export interface DataShapeBindingSelectPercentileAggregate {
+        Exclusive?: boolean;
+        K: number;
     }
 } 

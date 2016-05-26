@@ -39,6 +39,18 @@ var lodash = require("lodash"),
 module.exports = function () {
     var confJSON = require("./config.json");
 
+    /**
+     * --fast flag - disables some of the build process for faster build
+     * it is added to the defaults so they can be individual overridden 
+     */
+    if(cliOptions.hasOwnProperty('fast')) {
+        confJSON.uglifyJS = false;
+        confJSON.minifyCss = false;
+        confJSON.generateMaps = false;
+        confJSON.tslintOnBuild = false;
+        confJSON.tslintOnChange = false;
+    }
+
     return lodash.defaults({
         uglifyJs: strToBool("uglifyJs"),
         nonminJs: strToBool("nonminJs"),

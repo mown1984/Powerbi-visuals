@@ -179,7 +179,7 @@ module powerbi.visuals {
             let visibleGroupContainer = this.visibleGroupContainer;
             let totalRows = this._totalRows;
             let rowHeight = options.rowHeight || ListView.defaultRowHeight;
-            let visibleRows = this.getVisibleRows() || 1;
+            let visibleRows = this.getVisibleRows();
             let scrollTop: number = this.scrollbarInner.node().scrollTop;
             let scrollPosition = (scrollTop === 0) ? 0 : Math.floor(scrollTop / rowHeight);
             let transformAttr = SVGUtil.translateWithPixels(0, scrollPosition * rowHeight);
@@ -192,18 +192,6 @@ module powerbi.visuals {
 
             let position0 = Math.max(0, Math.min(scrollPosition, totalRows - visibleRows + 1)),
                 position1 = position0 + visibleRows;
-            
-            if (this.options.scrollEnabled) {
-
-                // Subtract the amount of height of the top row that's hidden when it's partially visible.
-                let topRowHiddenHeight = scrollTop - (scrollPosition * rowHeight);
-                let halfRowHeight = rowHeight * 0.5;
-
-                // If more than half the top row is hidden, we'll need to render an extra item at the bottom
-                if (topRowHiddenHeight > halfRowHeight) {
-                    position1++;  // Add 1 to handle when rows are partially visible (when scrolling)
-                }
-            }
             
             let rowSelection = visibleGroupContainer.selectAll(".row")
                 .data(this._data.slice(position0, Math.min(position1, totalRows)), this.getDatumIndex);
@@ -235,16 +223,29 @@ module powerbi.visuals {
 
         private getVisibleRows(): number {
             const minimumVisibleRows = 1;
-            let rowHeight = this.options.rowHeight;
-            let viewportHeight = this.options.viewport.height;
+            let options = this.options;
+            let rowHeight = options.rowHeight;
+            let viewportHeight = options.viewport.height;
 
             if (!rowHeight || rowHeight < 1)
                 return minimumVisibleRows;
-            
-            if (this.options.scrollEnabled)
-                return Math.min(Math.ceil(viewportHeight / rowHeight), this._totalRows) || minimumVisibleRows;
 
-            return Math.min(Math.floor(viewportHeight / rowHeight), this._totalRows) || minimumVisibleRows;
+            // How many rows of space the viewport can hold (not the number of rows it can display).
+            let viewportRowCount = viewportHeight / rowHeight;
+            
+            if (this.options.scrollEnabled) {
+                // Ceiling the count since we can have items be partially displayed when scrolling.
+                // Add 1 to make sure we always render enough rows to cover the entire viewport (handles when rows are partially visible when scrolling).
+                // Ex. If you have a viewport that can show 280 (viewport height) / 100 (row height) = 2.8 rows, you need to have up to Math.ceil(2.8) + 1 = 4 rows of data to cover the viewport.
+                // If you only had Math.ceil(2.8) = 3 rows of data, and the top rows was 50% visible (scrolled up), you'd only be able to cover .5 + 1 + 1 = 2.5 rows of the viewport.
+                // This makes a gap at the bottom of the listview.
+                // Add an extra row of data and we can cover .5 + 1 + 1 + 1 = 3.5 rows of the viewport. 3.5 is enough to cover the entire viewport as only 2.8 is needed.
+                // 1 is always added, even if not needed, to keep logic simple. Advanced logic would figure out what % of the top row is visible and use that to add 1 if needed.
+                return Math.min(Math.ceil(viewportRowCount) + 1, this._totalRows) || minimumVisibleRows;
+            }
+
+            // Floor the count since that's the maximum number of entire rows we can display without scrolling.
+            return Math.min(Math.floor(viewportRowCount), this._totalRows) || minimumVisibleRows;
         }
 
         private getRowHeight(): JQueryPromise<number> {

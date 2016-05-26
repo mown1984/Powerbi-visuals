@@ -976,16 +976,15 @@ module powerbi.visuals.samples {
                         return [];
                     }
                 };
-
             data.slicerSettings.general.setSavedSelection = (selectionIds: string[]) => {
                 this.isSelectionSaved = true;
                 this.hostServices.persistProperties(<VisualObjectInstancesToPersist>{
-                    merge: [{
-                    objectName: "general",
-                    selector: null,
-                    properties: { selection: selectionIds && JSON.stringify(selectionIds) || "" }
-                }]});
-            };
+                        merge: [{
+                        objectName: "general",
+                        selector: null,
+                        properties: { selection: selectionIds && JSON.stringify(selectionIds) || "" }
+                    }]});
+                };
 
             if(this.slicerData) {
                 if(this.isSelectionSaved) {
@@ -1034,6 +1033,23 @@ module powerbi.visuals.samples {
                 resetScrollbarPosition)
                 .viewport(this.getSlicerBodyViewport(this.currentViewport))
                 .render();
+
+            // if(!selectedItems.length  &&  String(savedSelection).length && this.slicerData && this.slicerData.hasSelectionOverride){
+            //     var arrSelection = String(savedSelection).split('&');
+            //     var arrSelected = jQuery.map(data.slicerDataPoints, function (d, index) { 
+            //         if (arrSelection.indexOf(d.category) > -1) return d; 
+            //     });
+            //     data.slicerDataPoints.forEach(function (d, index) { 
+            //         if (arrSelection.indexOf(d.category) > -1){
+            //             d.selected = true;
+            //             // console.error('>>>>@@@', d, index);
+            //         }
+            //     });
+            //     if(!arrSelection.length){
+            //         this.slicerData.hasSelectionOverride = false
+            //     }
+            //     // console.error('>>> 2', 'RESTORE',   savedSelection,     arrSelected,     data.slicerDataPoints )
+            // }
         }
 
         private initContainer() {

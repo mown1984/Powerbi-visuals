@@ -32,7 +32,7 @@ module powerbi.visuals.samples {
     import TouchRect = controls.TouchUtils.Rectangle;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
 
-    interface GlobeMapData {
+    interface RenderData {
         lat: number;
         lng: number;
         height: number;
@@ -40,12 +40,6 @@ module powerbi.visuals.samples {
         seriesToolTipData: any[];
         heat: number;
         toolTipData: any;
-    }
-
-    interface GlobeMapDataPoint extends SelectableDataPoint {
-        label: string;
-        color: string;
-        category?: string;
     }
 
     export class GlobeMap implements IVisual {
@@ -59,8 +53,7 @@ module powerbi.visuals.samples {
         private orbitControls: any;
         private earth: any;
         private settings: any;
-        private data: GlobeMapData[] = [];
-        private dataPointsToEnumerate: GlobeMapDataPoint[];
+        private renderData: RenderData[] = [];
         private heatmap: any;
         private heatTexture: any;
         private mapTextures: any[];
@@ -80,9 +73,6 @@ module powerbi.visuals.samples {
         private hoveredBar: any;
         private averageBarVector: any;
         private zoomControl: any;
-        private colorHelper: ColorHelper;
-        private colors: IDataColorPalette;
-        private style: IVisualStyle;
 
         public static capabilities: VisualCapabilities = {
             dataRoles: [
@@ -233,55 +223,8 @@ module powerbi.visuals.samples {
             }
         };
 
-        private static Properties: any = {
-            general: {
-                formatString: <DataViewObjectPropertyIdentifier>{
-                    objectName: "general",
-                    propertyName: "formatString"
-                }
-            },
-            dataPoint: {
-                fill: <DataViewObjectPropertyIdentifier>{
-                    objectName: "dataPoint",
-                    propertyName: "fill"
-                }
-            },
-        };
-
         public static converter(dataView: DataView): any {
             return {};
-        }
-
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            var enumeration = new ObjectEnumerationBuilder();
-
-            switch (options.objectName) {
-                case 'dataPoint':
-                    this.enumerateDataPoints(enumeration);
-                    break;
-            }
-            return enumeration.complete();
-        }
-
-        private enumerateDataPoints(enumeration: ObjectEnumerationBuilder): void {
-            var data = this.data;
-            if (!data)
-                return;
-
-            var dataPoints = this.dataPointsToEnumerate;
-            var dataPointsLength = dataPoints.length;
-
-            for (var i = 0; i < dataPointsLength; i++) {
-                var dataPoint = dataPoints[i];
-                enumeration.pushInstance({
-                    objectName: 'dataPoint',
-                    displayName: dataPoint.label,
-                    selector: ColorHelper.normalizeSelector(dataPoint.identity.getSelector()),
-                    properties: {
-                        fill: { solid: { color: dataPoint.color } }
-                    },
-                });
-            }
         }
 
         public init(options: VisualInitOptions): void {
@@ -289,10 +232,6 @@ module powerbi.visuals.samples {
             this.viewport = options.viewport;
             this.readyToRender = false;
             if (!this.globeMapLocationCache) this.globeMapLocationCache = {};
-
-            this.style = options.style;
-            this.colors = this.style.colorPalette.dataColors;
-            this.colorHelper = new ColorHelper(this.colors, GlobeMap.Properties.dataPoint.fill);
 
             if (!THREE) {
                 loadGlobeMapLibs();
@@ -376,9 +315,7 @@ module powerbi.visuals.samples {
                     orbitControls.update(clock.getDelta());
                     _zis.setEarthTexture();
                     _zis.intersectBars();
-                    if (_zis.heatmap &&_zis.heatmap.display) {
-                        _zis.heatmap.display(); // Needed for IE/Edge to behave nicely
-                    }
+                    _zis.heatmap.display(); // Needed for IE/Edge to behave nicely
                     renderer.render(scene, camera);
                     _zis.needsRender = false;	
                     //console.log("render");			
@@ -425,6 +362,142 @@ module powerbi.visuals.samples {
             this.orbitControls.constraint.rotateUp(2 * Math.PI * deltaY / this.domElement.offsetHeight * this.settings.rotateSpeed);
             this.orbitControls.update();
             this.animateCamera(this.camera.position);
+        }
+
+        private initZoomControl() {
+            let radius = 17;
+            let zoomControlWidth = radius * 8.5;
+            let zoomControlHeight = radius * 8.5;
+            let startX = radius * 3;
+            let startY = radius + 3;
+            let gap = radius * 2;
+
+            let zoomCss = {
+                'position': 'absolute',
+                'left': 'calc(100% - ' + zoomControlWidth + 'px)',
+                'top': 'calc(100% - ' + zoomControlHeight + 'px)',
+                'zIndex': '1000',
+            };
+
+            let zoomContainer =
+                d3.select(this.container[0])
+                    .append('div')
+                    .style(zoomCss);
+
+            this.zoomControl = zoomContainer.append("svg")
+                .attr({
+                    "width": zoomControlWidth,
+                    "height": zoomControlHeight
+                });
+
+            let bottom = this.zoomControl.append("g").on("click", () => this.rotateCam(0, -5));
+
+            bottom.append("circle").attr({
+                cx: startX + gap,
+                cy: startY + (2 * gap),
+                r: radius,
+                fill: "white",
+                opacity: 0.5,
+                stroke: 'gray',
+            });
+
+            bottom.append("path").attr({
+                d: "M" + (startX + (2 * radius)) + " " + (startY + (radius * 4.7)) + " l12 -20 a40,70 0 0,1 -24,0z",
+                fill: "gray",
+            });
+
+            let left = this.zoomControl.append("g").on("click", () => this.rotateCam(5, 0));
+
+            left.append("circle").attr({
+                cx: startX,
+                cy: startY + gap,
+                r: radius,
+                fill: "white",
+                stroke: "gray",
+                opacity: 0.5,
+            });
+
+            left.append("path").attr({
+                d: "M" + (startX - radius / 1.5) + " " + (startY + (radius * 2)) + " l20 -12 a70,40 0 0,0 0,24z",
+                fill: "gray",
+            });
+
+            let top = this.zoomControl.append("g").on("click", () => this.rotateCam(0, 5));
+
+            top.append("circle").attr({
+                cx: startX + gap,
+                cy: startY,
+                r: radius,
+                fill: "white",
+                stroke: "gray",
+                opacity: 0.5,
+            });
+
+            top.append("path").attr({
+                d: "M" + (startX + (2 * radius)) + " " + (startY - (radius / 1.5)) + " l12 20 a40,70 0 0,0 -24,0z",
+                fill: "gray",
+            });
+
+            let right = this.zoomControl.append("g").on("click", () => this.rotateCam(-5, 0));
+
+            right.append("circle").attr({
+                cx: startX + (2 * gap),
+                cy: startY + gap,
+                r: radius,
+                fill: "white",
+                stroke: "gray",
+                opacity: 0.5,
+            });
+
+            right.append("path").attr({
+                d: "M" + (startX + (4.7 * radius)) + " " + (startY + (radius * 2)) + " l-20 -12 a70,40 0 0,1 0,24z",
+                fill: "gray",
+            });
+
+            let zoomIn = this.zoomControl.append("g").on("click", () => this.zoomClicked(-1));
+
+            zoomIn.append("circle").attr({
+                cx: startX + 4 * radius,
+                cy: startY + 6 * radius,
+                r: radius,
+                fill: "white",
+                stroke: "gray",
+                opacity: 0.5,
+            });
+
+            zoomIn.append("rect").attr({
+                x: startX + 3.5 * radius,
+                y: startY + 5.9 * radius,
+                width: radius,
+                height: radius / 3,
+                fill: "gray",
+            });
+            zoomIn.append("rect").attr({
+                x: startX + (4 * radius) - radius / 6,
+                y: startY + 5.55 * radius,
+                width: radius / 3,
+                height: radius,
+                fill: "gray",
+            });
+
+            var zoomOut = this.zoomControl.append("g").on("click", () => this.zoomClicked(1));
+
+            zoomOut.append("circle").attr({
+                cx: startX,
+                cy: startY + 6 * radius,
+                r: radius,
+                fill: "white",
+                stroke: "gray",
+                opacity: "0.50",
+            });
+
+            zoomOut.append("rect").attr({
+                x: startX - (radius / 2),
+                y: startY + 5.9 * radius,
+                width: radius,
+                height: radius / 3,
+                fill: "gray",
+            });
         }
 
         private initTextures() {
@@ -514,6 +587,7 @@ module powerbi.visuals.samples {
 
         public update(options: VisualUpdateOptions) {
             this.needsRender = true;
+            this.cleanHeatAndBar();
             if (options.viewport.height !== this.viewport.height || options.viewport.width !== this.viewport.width) {
                 var viewport = this.viewport = options.viewport;
                 if (this.camera && this.renderer) {
@@ -523,11 +597,10 @@ module powerbi.visuals.samples {
                 }
                 return;
             }
-            this.cleanHeatAndBar();
 
             // PowerBI fires two update calls, one for size, one for data
-            if (options.dataViews[0] && (options.dataViews[0].categorical || options.dataViews[0].metadata)) {
-                this.composeRenderData(options.dataViews[0].categorical, options.dataViews[0].metadata);
+            if (options.dataViews[0] && options.dataViews[0].categorical) {
+                this.composeRenderData(options.dataViews[0].categorical);
             }
         }
 
@@ -546,7 +619,7 @@ module powerbi.visuals.samples {
                 return;
             }
 
-            var renderData = this.data;
+            var renderData = this.renderData;
             var heatmap = this.heatmap;
             var settings = this.settings;
 
@@ -558,6 +631,18 @@ module powerbi.visuals.samples {
 
             this.barsGroup = new THREE.Object3D();
             this.scene.add(this.barsGroup);
+
+            //colors for stacked vector by series values
+            var barMaterials = [
+                new THREE.MeshPhongMaterial({ color: 0xff00ff, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0xffff1a, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0xff0000, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0x00ffff, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0x994d00, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0xb3cccc, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0xace600, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+                new THREE.MeshPhongMaterial({ color: 0x52527a, side: THREE.DoubleSide, shading: THREE.FlatShading, transparent: true }),
+            ];
 
             this.averageBarVector = new THREE.Vector3();
 
@@ -593,9 +678,8 @@ module powerbi.visuals.samples {
                     var dataPointToolTip = [];
                     if (renderDatum.heightBySeries) {
                         for (var c = 0; c < renderDatum.heightBySeries.length; c++) {
-                            if (renderDatum.heightBySeries[c]) {
+                            if (renderDatum.heightBySeries[c])
                                 measuresBySeries.push(renderDatum.heightBySeries[c]);
-                            }
                             dataPointToolTip.push(renderDatum.seriesToolTipData[c]);
                         }
                     } else {
@@ -607,7 +691,7 @@ module powerbi.visuals.samples {
                     for (var j = 0; j < measuresBySeries.length; j++) {
                         previousMeasureValue += measuresBySeries[j];
                         var geometry = new THREE.CubeGeometry(settings.barWidth, settings.barWidth, barHeight * measuresBySeries[j]);
-                        var bar = new THREE.Mesh(geometry, this.getBarMaterialByIndex(j));
+                        var bar = new THREE.Mesh(geometry, barMaterials[j % (barMaterials.length - 1)]);
                         bar.position = v.clone().multiplyScalar(settings.earthRadius + ((barHeight / 2) * previousMeasureValue));
                         bar.lookAt(v);
                         bar.toolTipData = dataPointToolTip.length === 0 ? renderDatum.toolTipData : this.getToolTipDataForSeries(renderDatum.toolTipData, dataPointToolTip[j]);
@@ -632,10 +716,6 @@ module powerbi.visuals.samples {
             //console.log("renderMagic done! locations:", this.barsGroup.children.length, "toload/loaded", this.locationsToLoad, this.locationsLoaded)
         }
 
-        private getBarMaterialByIndex(index): any {
-            return new THREE.MeshPhongMaterial({ color: this.dataPointsToEnumerate[index].color });
-        }
-
         private getToolTipDataForSeries(toolTipData, dataPointToolTip): any {
             var result = jQuery.extend(true, {
                 series: { displayName: dataPointToolTip.displayName, value: dataPointToolTip.value }
@@ -644,24 +724,7 @@ module powerbi.visuals.samples {
             return result;
         }
 
-        private createDataPointForEnumeration(seriesData, valueIndex, seriesIndex, metaData?): GlobeMapDataPoint {
-            let source = seriesData.values[valueIndex].source;
-            let label = converterHelper.getFormattedLegendLabel(source, seriesData.values, null);
-            let identity = SelectionId.createWithId(seriesData.identity);
-            let category = converterHelper.getSeriesName(source);
-            let color = seriesData.objects && seriesData.objects.dataPoint ? seriesData.objects.dataPoint.fill.solid.color :
-                metaData && metaData.objects ? this.colorHelper.getColorForMeasure(metaData.objects,"") : this.colors.getColorByIndex(seriesIndex).value;
-
-            return {
-                label: label,
-                identity: identity,
-                category: category,
-                color: color,
-                selected: null
-            };
-        }
-
-        private composeRenderData(categoricalView?, metadataView?) {
+        private composeRenderData(categoricalView?) {
             // memoize last value
             if (categoricalView) {
                 this.categoricalView = categoricalView;
@@ -669,22 +732,17 @@ module powerbi.visuals.samples {
                 categoricalView = this.categoricalView;
             }
 
-            this.data = [];
-            this.dataPointsToEnumerate = [];
+            this.renderData = [];
             var locations = [];
             var globeMapLocationCache = this.globeMapLocationCache;
 
             //console.log("categoricalView", categoricalView)
             if (!categoricalView) return;
-
-            var heightIndex = 0,
-                intensityIndex = 0,
-                categories = [];
+            var categories = categoricalView.categories;
+            var grouped = categoricalView.values.grouped();
+            var heightIndex = 0;
+            var intensityIndex = 0;
             try {
-                if (categoricalView.categories) {
-                    categories = categoricalView.categories;
-                }
-                var grouped = categoricalView.values.grouped();
                 heightIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, "Height");
                 intensityIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, "Heat");
                 var longitudeIndex = DataRoleHelper.getMeasureIndexOfRole(grouped, "X");
@@ -693,7 +751,7 @@ module powerbi.visuals.samples {
 
             var locationType, heights, heightsBySeries, toolTipDataBySeries, heats, latitudes, longitudes, locationDispName, heightDispName, heatDispName, heightFormat, heatFormat;
 
-            if (categories && categories.length > 0 && categories[0].values) {
+            if (heightIndex !== undefined && categoricalView.values[heightIndex] && categoricalView.values !== undefined) {
                 var locationCategory = categories[0];
                 locations = locationCategory.values;
                 locationDispName = locationCategory.source.displayName;
@@ -710,7 +768,7 @@ module powerbi.visuals.samples {
             //var places = ["kenya", "india", "united states", "london", "australia", "canada"]
             //heightIndex = 0;
 
-            if (heightIndex !== undefined && categoricalView.values[heightIndex] && categoricalView.values !== undefined) {
+            if (heightIndex !== undefined && categoricalView.values[heightIndex]) {
                 // heights = categoricalView.values[heightIndex].values;
                 heightDispName = categoricalView.values[heightIndex].source.displayName;
                 heightFormat = categoricalView.values[heightIndex].source.format;
@@ -718,11 +776,9 @@ module powerbi.visuals.samples {
                     heights = new Array(locations.length);
                     heightsBySeries = new Array(locations.length);
                     toolTipDataBySeries = new Array(locations.length);
-                    this.dataPointsToEnumerate = new Array(grouped.length);
                     //creating a matrix for drawing values by series later.
                     for (var i = 0; i < grouped.length; i++) {
                         var values = grouped[i].values[heightIndex].values;
-                        this.dataPointsToEnumerate[i] = this.createDataPointForEnumeration(grouped[i], heightIndex, i);
                         for (var j = 0; j < values.length; j++) {
                             if (!heights[j]) heights[j] = 0;
                             heights[j] += values[j] ? values[j] : 0;
@@ -742,7 +798,6 @@ module powerbi.visuals.samples {
                 } else {
                     heights = categoricalView.values[heightIndex].values;
                     heightsBySeries = new Array(grouped.length);
-                    this.dataPointsToEnumerate[0] = this.createDataPointForEnumeration(grouped[0], heightIndex, 0, metadataView);
                 }
 
             } else {
@@ -821,7 +876,7 @@ module powerbi.visuals.samples {
                         }
                     };
 
-                    this.data.push(renderDatum);
+                    this.renderData.push(renderDatum);
 
                     if (!longitudes && !latlng) {
                         this.geocodeRenderDatum(renderDatum, place, locationType);
@@ -998,7 +1053,7 @@ module powerbi.visuals.samples {
             this.camera = null;
             if (this.renderer) {
                 if (this.renderer.context) {
-                    var extension = this.renderer.context.getExtension('WEBGL_lose_context');
+                    let extension = this.renderer.context.getExtension('WEBGL_lose_context');
                     if (extension)
                         extension.loseContext();
                     this.renderer.context = null;
@@ -1006,7 +1061,7 @@ module powerbi.visuals.samples {
                 this.renderer.domElement = null;
             }
             this.renderer = null;
-            this.data = null;
+            this.renderData = null;
             this.barsGroup = null;
             if (this.orbitControls) this.orbitControls.dispose();
             this.orbitControls = null;
@@ -1014,53 +1069,6 @@ module powerbi.visuals.samples {
                 .off("mousemove mouseup mousedown mousewheel DOMMouseScroll");
             this.domElement = null;
             if (this.container) this.container.empty();
-        }
-
-        private initZoomControl() {
-            var radius = 17;
-            var zoomControlWidth = radius * 8.5;
-            var zoomControlHeight = radius * 8.5;
-            var startX = radius * 3;
-            var startY = radius + 3;
-            var gap = radius * 2;
-
-            var zoomCss = {
-                'position': 'absolute',
-                'left': 'calc(100% - ' + zoomControlWidth + 'px)',
-                'top': 'calc(100% - ' + zoomControlHeight + 'px)',
-                'zIndex': '1000',
-            };
-
-            var zoomContainer = d3.select(this.container[0])
-                .append('div')
-                .style(zoomCss);
-
-            this.zoomControl = zoomContainer.append("svg").attr({ "width": zoomControlWidth, "height": zoomControlHeight });
-
-            var bottom = this.zoomControl.append("g").on("click", () => this.rotateCam(0, -5));
-            bottom.append("circle").attr({ cx: startX + gap, cy: startY + (2 * gap), r: radius, fill: "white", opacity: 0.5, stroke: 'gray' });
-            bottom.append("path").attr({ d: "M" + (startX + (2 * radius)) + " " + (startY + (radius * 4.7)) + " l12 -20 a40,70 0 0,1 -24,0z", fill: "gray" });
-
-            var left = this.zoomControl.append("g").on("click", () => this.rotateCam(5, 0));
-            left.append("circle").attr({ cx: startX, cy: startY + gap, r: radius, fill: "white", stroke: "gray", opacity: 0.5 });
-            left.append("path").attr({ d: "M" + (startX - radius / 1.5) + " " + (startY + (radius * 2)) + " l20 -12 a70,40 0 0,0 0,24z", fill: "gray" });
-
-            var top = this.zoomControl.append("g").on("click", () => this.rotateCam(0, 5));
-            top.append("circle").attr({ cx: startX + gap, cy: startY, r: radius, fill: "white", stroke: "gray", opacity: 0.5 });
-            top.append("path").attr({ d: "M" + (startX + (2 * radius)) + " " + (startY - (radius / 1.5)) + " l12 20 a40,70 0 0,0 -24,0z", fill: "gray" });
-
-            var right = this.zoomControl.append("g").on("click", () => this.rotateCam(-5, 0));
-            right.append("circle").attr({ cx: startX + (2 * gap), cy: startY + gap, r: radius, fill: "white", stroke: "gray", opacity: 0.5 });
-            right.append("path").attr({ d: "M" + (startX + (4.7 * radius)) + " " + (startY + (radius * 2)) + " l-20 -12 a70,40 0 0,1 0,24z", fill: "gray" });
-
-            var zoomIn = this.zoomControl.append("g").on("click", () => this.zoomClicked(-1));
-            zoomIn.append("circle").attr({ cx: startX + 4 * radius, cy: startY + 6 * radius, r: radius, fill: "white", stroke: "gray", opacity: 0.5 });
-            zoomIn.append("rect").attr({ x: startX + 3.5 * radius, y: startY + 5.9 * radius, width: radius, height: radius / 3, fill: "gray" });
-            zoomIn.append("rect").attr({ x: startX + (4 * radius) - radius / 6, y: startY + 5.55 * radius, width: radius / 3, height: radius, fill: "gray" });
-
-            var zoomOut = this.zoomControl.append("g").on("click", () => this.zoomClicked(1));
-            zoomOut.append("circle").attr({ cx: startX, cy: startY + 6 * radius, r: radius, fill: "white", stroke: "gray", opacity: "0.50" });
-            zoomOut.append("rect").attr({ x: startX - (radius / 2), y: startY + 5.9 * radius, width: radius, height: radius / 3, fill: "gray" });
         }
 
         private initMercartorSphere() {

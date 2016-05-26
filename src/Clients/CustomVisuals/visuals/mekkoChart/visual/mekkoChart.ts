@@ -1201,7 +1201,7 @@ module powerbi.visuals.samples {
         private bottomMarginLimit: number;
         private leftRightMarginLimit: number;
         private sharedColorPalette: SharedColorPalette;
-        
+
         public animator: IGenericAnimator;
 
         // Scrollbar related
@@ -2615,7 +2615,7 @@ module powerbi.visuals.samples {
         private animator: IColumnChartAnimator;
         private isScrollable: boolean;
         private element: JQuery;
-        
+
         constructor(options: ColumnChartConstructorOptions) {
             debug.assertValue(options, 'options');
 

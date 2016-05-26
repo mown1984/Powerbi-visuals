@@ -43,6 +43,7 @@ module powerbitests {
 
     const labelsElement = '.donutChart .label';
     const fontFamily = 'wf_standard-font';
+    const maxHeightToScaleDonutLegend = 300; // Matches powerbi.visualHost.MobileVisualPluginService.MaxHeightToScaleDonutLegend
 
     powerbitests.mocks.setLocale();
 
@@ -50,13 +51,15 @@ module powerbitests {
         let dataViewMetadata: powerbi.DataViewMetadata = {
             columns: [
                 { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
-                { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { Y: true } }]
+                { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { Y: true } },
+                { displayName: 'col3', queryName: 'col3', isMeasure: true, roles: { Tooltips: true } }]
         };
 
         let dataViewMetadataWithFormats: powerbi.DataViewMetadata = {
             columns: [
                 { displayName: 'col1', queryName: 'col1', format: '$0', roles: { Category: true } },
-                { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true, roles: { Y: true } }]
+                { displayName: 'col2', queryName: 'col2', format: '#,0', isMeasure: true, roles: { Y: true } },
+                { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true, roles: { Tooltips: true } }]
         };
 
         let seriesMetaData: powerbi.DataViewMetadataColumn = { displayName: 'series', queryName: 'series', roles: { Series: true } };
@@ -64,6 +67,8 @@ module powerbitests {
         let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), groupName: 'B', roles: { Y: true } };
         let measureColumnDynamic1WithFormats: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'A', roles: { Y: true } };
         let measureColumnDynamic2WithFormats: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '#,0' } }, groupName: 'B', roles: { Y: true } };
+        let tooltipColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'tooltip', queryName: 'selectTooltip', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), groupName: 'A', roles: { Tooltips: true } };
+        let tooltipColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'tooltip', queryName: 'selectTooltip', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), groupName: 'B', roles: { Tooltips: true } };
 
         let dataViewMetadata3Measure1Tooltip: powerbi.DataViewMetadata = {
             columns: [
@@ -91,6 +96,7 @@ module powerbitests {
         };
 
         let categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'p' });
+        let seriesColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'series' });
 
         it('DonutChart registered capabilities', () => {
             expect(visualPluginFactory.create().getPlugin('donutChart').capabilities).toBe(powerbi.visuals.donutChartCapabilities);
@@ -1218,6 +1224,73 @@ module powerbitests {
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
             });
 
+            it('categorical, with tooltip bucket', () => {
+                let dataView: powerbi.DataView = {
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c'],
+                            identity: categoryIdentities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [300, 400, 500]
+                        }, {
+                            source: dataViewMetadata.columns[2],
+                            values: [40, 30, 20]
+                        }])
+                    },
+                    metadata: dataViewMetadata,
+                };
+
+                let actualData = DonutChart.converter(dataView, donutColors, /*defaultDataPointColor*/null, /*viewport*/null, /*disableGeometricCulling*/null, /*interactivityService*/null, /*tooltipsEnabled*/true, /*tooltipBucketEnabled*/true);
+                let selectionIds: SelectionId[] = categoryIdentities.map(categoryId => SelectionId.createWithIdAndMeasureAndCategory(categoryId, dataViewMetadata.columns[1].queryName, dataViewMetadata.columns[0].queryName));
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
+                let sliceColors = [
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor('a').value,
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor('b').value,
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor('c').value,
+                ];
+                let expectSlices: DonutDataPoint[] = [
+                    {
+                        identity: selectionIds[0],
+                        measure: 300,
+                        value: 300 / 1200,
+                        index: 0,
+                        label: 'a',
+                        tooltipInfo: [{ displayName: "col1", value: "a" }, { displayName: "col2", value: "300 (25%)" }, { displayName: "col3", value: "40" }],
+                        color: sliceColors[0],
+                        strokeWidth: 0,
+                    }, {
+                        identity: selectionIds[1],
+                        measure: 400,
+                        value: 400 / 1200,
+                        index: 1,
+                        label: 'b',
+                        tooltipInfo: [{ displayName: "col1", value: "b" }, { displayName: "col2", value: "400 (33.33%)" }, { displayName: "col3", value: "30" }],
+                        color: sliceColors[1],
+                        strokeWidth: 0,
+                    }, {
+                        identity: selectionIds[2],
+                        measure: 500,
+                        value: 500 / 1200,
+                        index: 2,
+                        label: 'c',
+                        tooltipInfo: [{ displayName: "col1", value: "c" }, { displayName: "col2", value: "500 (41.67%)" }, { displayName: "col3", value: "20" }],
+                        color: sliceColors[2],
+                        strokeWidth: 0,
+                    }].map(buildDataPoint);
+
+                expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+
+                // Legend
+                expect(actualData.legendData.title).toBe('col1');
+                expect(actualData.legendData.dataPoints[0].label).toBe('a');
+                expect(actualData.legendData.dataPoints[1].label).toBe('b');
+                expect(actualData.legendData.dataPoints[2].label).toBe('c');
+            });
+
             it('categorical, with slicing', () => {
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -1355,15 +1428,15 @@ module powerbitests {
                             source: dataViewMetadata1Category2Measure2Tooltip.columns[1],
                             values: [-200, null, 150],
                         }, {
-                                source: dataViewMetadata1Category2Measure2Tooltip.columns[2],
-                                values: [-300, 300, -50],
-                            }, {
-                                source: dataViewMetadata1Category2Measure2Tooltip.columns[3],
-                                values: [-100, null, 30],
-                            }, {
-                                source: dataViewMetadata1Category2Measure2Tooltip.columns[4],
-                                values: [null, 200, -50],
-                            }])
+                            source: dataViewMetadata1Category2Measure2Tooltip.columns[2],
+                            values: [-300, 300, -50],
+                        }, {
+                            source: dataViewMetadata1Category2Measure2Tooltip.columns[3],
+                            values: [-100, null, 30],
+                        }, {
+                            source: dataViewMetadata1Category2Measure2Tooltip.columns[4],
+                            values: [null, 200, -50],
+                        }])
                     },
                     metadata: dataViewMetadata1Category2Measure2Tooltip,
                 }; 
@@ -2034,6 +2107,47 @@ module powerbitests {
                 expect(actualData.legendData.title).toBe('series');
                 expect(actualData.legendData.dataPoints[0].label).toBe('A');
                 expect(actualData.legendData.dataPoints[1].label).toBe('B');
+            });
+
+            it('non-categorical series and tooltip bucket', () => {
+                let identityA = mocks.dataViewScopeIdentity('A');
+                let identityB = mocks.dataViewScopeIdentity('B');
+                let dataView: powerbi.DataView = {
+                    categorical: {
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: measureColumnDynamic1,
+                                values: [200],
+                                identity: identityA,
+                            }, {
+                                source: tooltipColumnDynamic1,
+                                values: [40],
+                                identity: identityA,
+                            }, {
+                                source: measureColumnDynamic2,
+                                values: [300],
+                                identity: identityB,
+                            }, {
+                                source: tooltipColumnDynamic2,
+                                values: [50],
+                                identity: identityB,
+                            }
+                        ],
+                            [seriesColumnRef],
+                            seriesMetaData)
+                    },
+                    metadata: dataViewMetadata,
+                };
+
+                let actualData = DonutChart.converter(dataView, donutColors, /*defaultDataPointColor*/null, /*viewport*/null, /*disableGeometricCulling*/null, /*interactivityService*/null, /*tooltipsEnabled*/true, /*tooltipBucketEnabled*/true);
+                
+                // Legend
+                expect(actualData.legendData.title).toBe('series');
+                expect(actualData.legendData.dataPoints[0].label).toBe('A');
+                expect(actualData.legendData.dataPoints[1].label).toBe('B');
+                //Tooltips
+                expect(actualData.dataPoints[0].data.tooltipInfo).toEqual([{ displayName: "series", value: "A" }, { displayName: "sales", value: "200.00 (40%)" }, { displayName: "tooltip", value: "40" }]);
+                expect(actualData.dataPoints[1].data.tooltipInfo).toEqual([{ displayName: "series", value: "B" }, { displayName: "sales", value: "300.00 (60%)" }, { displayName: "tooltip", value: "50" }]);
             });
 
             it('non-categorical series with one series', () => {
@@ -2776,7 +2890,13 @@ module powerbitests {
             hostServices = mocks.createVisualHostServices();
             element = powerbitests.helpers.testDom('500', '500');
             if (interactiveChart)
-                v = visualPluginFactory.createMobile().getPlugin('pieChart').create();
+                v = new powerbi.visuals.DonutChart({
+                    sliceWidthRatio: 0,
+                    disableGeometricCulling: true,
+                    smallViewPortProperties: {
+                        maxHeightToScaleDonutLegend: maxHeightToScaleDonutLegend
+                    }
+                });
             else {
                 v = new DonutChart({
                     sliceWidthRatio: 0,
@@ -4134,8 +4254,7 @@ module powerbitests {
             it('pie chart arrow scale normal size', (done) => {
                 const regexScaleIsNormal = /scale\(\s*1(\.0+)?\s*\)/i;
 
-                let viewportHeight = visualPluginFactory.MobileVisualPluginService.MaxHeightToScaleDonutLegend
-                    + DonutChart.InteractiveLegendContainerHeight * 2;
+                let viewportHeight = maxHeightToScaleDonutLegend + DonutChart.InteractiveLegendContainerHeight * 2;
 
                 v.onResizing({ height: viewportHeight, width: 400 });
                 v.onDataChanged({
@@ -4168,8 +4287,7 @@ module powerbitests {
             it('pie chart arrow scale small size', (done) => {
                 const regexScaleIsLessThanOne = /scale\(\s*0\.\d+\s*\)/i;
 
-                let viewportHeight = visualPluginFactory.MobileVisualPluginService.MaxHeightToScaleDonutLegend - 10
-                    + DonutChart.InteractiveLegendContainerHeight * 2;
+                let viewportHeight = maxHeightToScaleDonutLegend - 10 + DonutChart.InteractiveLegendContainerHeight * 2;
                 v.onResizing({ height: viewportHeight, width: 400 });
                 v.onDataChanged({
                     dataViews: [{
@@ -4229,7 +4347,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = visualPluginFactory.createDashboard({}, { tooltipsEnabled: true }).getPlugin('donutChart').create();
+            v = new powerbi.visuals.DonutChart({ tooltipsEnabled: true });
             v.init({
                 element: element,
                 host: hostServices,

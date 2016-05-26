@@ -119,15 +119,15 @@
     "extensibility/components/selectionManagerTests.ts",
     "customVisuals/helpers/dataViewHelpers.ts",
     "customVisuals/helpers/visualTestHelpers.ts",
+    "customVisuals/sampleDataViews/DataViewBuilder.ts",
     "customVisuals/sampleDataViews/SalesByCountryData.ts",
     "customVisuals/sampleDataViews/SankeyDiagramData.ts",
     "customVisuals/sampleDataViews/MekkoChartData.ts",
     "customVisuals/sampleDataViews/BulletChartData.ts",
     "customVisuals/sampleDataViews/CarLogosData.ts",
     "customVisuals/sampleDataViews/CountriesData.ts",
-    "customVisuals/sampleDataViews/chordChartData.ts",
+    "customVisuals/sampleDataViews/ValueByNameGroupData.ts",
     "customVisuals/sampleDataViews/SalesByDayOfWeekData.ts",
-    "customVisuals/sampleDataViews/DotPlotData.ts",
     "customVisuals/sampleDataViews/EnhancedScatterChartData.ts",
     "customVisuals/sampleDataViews/forceGraphData.ts",
     "customVisuals/sampleDataViews/GanttData.ts",
@@ -135,6 +135,8 @@
     "customVisuals/sampleDataViews/valueByAgeData.ts",
     "customVisuals/sampleDataViews/ProductSalesByDateData.ts",
 
+    "customVisuals/sampleDataViews/ValueByNameData.ts",
+    "customVisuals/sampleDataViews/LineDotChartData.ts",
     "customVisuals/VisualBuilderBase.ts",
     "customVisuals/asterPlotTests.ts",
     "customVisuals/tornadoChartTests.ts",
@@ -151,6 +153,7 @@
     "customVisuals/timelineTests.ts",
     "customVisuals/ganttTests.ts",
     "customVisuals/chicletSlicerTests.ts",
-    "customVisuals/streamGraphTests.ts"
+    "customVisuals/streamGraphTests.ts",
+    "customVisuals/lineDotChartTests.ts"
   ]
 }
