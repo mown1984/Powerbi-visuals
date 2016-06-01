@@ -31,11 +31,20 @@ module powerbi.extensibility {
     import VisualException = powerbi.visuals.telemetry.VisualException;
 
     export class VisualSafeExecutionWrapper implements powerbi.IVisual, WrappedVisual {
+        private perfLoadEvent: powerbi.visuals.telemetry.IDeferredTelemetryEvent;
+        
         constructor(
             private wrappedVisual: powerbi.IVisual,
             private visualInfo: VisualTelemetryInfo,
             private telemetryService: ITelemetryService,
-            private silent?: boolean) { }
+            private silent?: boolean) 
+        { 
+            if (this.telemetryService) {
+                this.perfLoadEvent = this.telemetryService.startEvent(
+                    powerbi.visuals.telemetry.ExtensibilityVisualApiUsage,
+                    visualInfo.apiVersion, visualInfo.name, visualInfo.custom);
+            }
+        }
 
         public init(options: VisualInitOptions): void {
             if (this.wrappedVisual.init) {
@@ -44,13 +53,27 @@ module powerbi.extensibility {
         }
 
         public destroy(): void {
-            if (this.wrappedVisual.destroy)
+            if (this.wrappedVisual.destroy) {
                 this.executeSafely(() => this.wrappedVisual.destroy());
+            }
+
+            // We don't want to .resolve() any perf event here.  Instead, we simply cancel it.
+            if (this.perfLoadEvent) {
+                this.perfLoadEvent = null;
+            }
         }
 
         public update(options: powerbi.VisualUpdateOptions): void {
-            if (this.wrappedVisual.update)
-                this.executeSafely(() => this.wrappedVisual.update(options));
+            if (this.wrappedVisual.update) {
+                this.executeSafely(() => {
+                    this.wrappedVisual.update(options);
+                    
+                    if (this.perfLoadEvent) {
+                        this.perfLoadEvent.resolve();
+                        this.perfLoadEvent = null;
+                    }
+                });
+            }      
         }
 
         public onResizing(finalViewport: IViewport, resizeMode: ResizeMode): void {
@@ -96,7 +119,6 @@ module powerbi.extensibility {
         public isCustomVisual(): boolean {
             return this.visualInfo.custom;
         }
-
         private executeSafely(callback: () => any): any {
             try {
                 return callback();
@@ -116,6 +138,11 @@ module powerbi.extensibility {
                         exception.columnNumber,
                         exception.stack,
                         exception.message);
+                    
+                    if (this.perfLoadEvent) {
+                        this.perfLoadEvent.reject();
+                        this.perfLoadEvent = null;
+                    }
                 }
             }
         }

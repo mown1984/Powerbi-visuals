@@ -752,11 +752,14 @@ module powerbi.visuals.samples {
          * @param dataView
          */
         private isChartHasTask(dataView: DataView): boolean {
-            if (!!dataView.categorical.categories)
-                for (let dvCategory of dataView.categorical.categories) {
-                    if (this.hasRole(dvCategory.source, "Task"))
+            if (dataView.table &&
+                dataView.table.columns) {
+                for (let column of dataView.table.columns) {
+                    if (this.hasRole(column, "Task")) {
                         return true;
-                };
+                    }
+                }
+            }
             return false;
         }
 

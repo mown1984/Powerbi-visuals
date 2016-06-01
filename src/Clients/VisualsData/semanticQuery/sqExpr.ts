@@ -316,7 +316,7 @@ module powerbi.data {
         private getMetadataForPercentOfGrandTotal(): SQExprMetadata {
             return {
                 kind: FieldKind.Measure,
-                format: '#,##0.##%',
+                format: '#,##0.00%',
                 type: ValueType.fromExtendedType(ExtendedType.Double)
             };
         }

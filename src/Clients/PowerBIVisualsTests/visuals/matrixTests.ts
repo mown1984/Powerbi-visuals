@@ -3028,10 +3028,9 @@ module powerbitests {
 
         it("touch disabled", () => {
 
-            let layoutKind = powerbi.visuals.controls.TablixLayoutKind.Canvas;
             let matrix = matrixOneMeasure;
             let navigator = createHierarchyNavigator(matrix);
-            let binder = new powerbi.visuals.MatrixBinder(navigator, { layoutKind: layoutKind });
+            let binder = new powerbi.visuals.MatrixBinder(navigator, { });
             let layoutManager = powerbi.visuals.controls.internal.CanvasTablixLayoutManager.createLayoutManager(binder, undefined);
             let parent = document.createElement("div");
             let tablixControl = new TablixControl(navigator, layoutManager, binder, parent, { interactive: true, enableTouchSupport: false });
@@ -3714,8 +3713,7 @@ module powerbitests {
         it("bindRowHeader callback", () => {
             let callBackCalled = false;
             let binderOptions: powerbi.visuals.MatrixBinderOptions = {
-                onBindRowHeader: () => { callBackCalled = true; },
-                layoutKind: powerbi.visuals.controls.TablixLayoutKind.Canvas
+                onBindRowHeader: () => { callBackCalled = true; }
             };
 
             let binder = new powerbi.visuals.MatrixBinder(null, binderOptions);
@@ -3725,10 +3723,10 @@ module powerbitests {
             let position = new TablixUtils.CellPosition();
 
             binder.bindRowHeader({}, {
-                type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "", colIndex: 0, isBottomMost: false, isLeftMost: false, isRightMost: false, isTopMost: false, rowIndex: 0,
+                type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "",
                 extension: ext,
                 position: position,
-                contentHeight: 0, contentWidth: 0, style: new TablixUtils.CellStyle(), applyStyle: function () { }, unfixRowHeight: function () { },
+                contentHeight: 0, contentWidth: 0, applyStyle: function () { }, unfixRowHeight: function () { },
                 containerHeight: 0, containerWidth: 0
             });
 
@@ -3747,10 +3745,10 @@ module powerbitests {
             let ext = new powerbi.visuals.controls.internal.TablixCellPresenter(false, Controls.TablixLayoutKind.Canvas);
             let position = new TablixUtils.CellPosition();
             binder.unbindColumnHeader({ isSubtotal: true }, {
-                type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "", colIndex: 0, isBottomMost: false, isLeftMost: false, isRightMost: false, isTopMost: false, rowIndex: 0,
+                type: null, item: null, colSpan: 0, rowSpan: 0, textAlign: "",
                 extension: ext,
                 position,
-                contentHeight: 0, contentWidth: 0, style: new TablixUtils.CellStyle(), applyStyle: function () { }, unfixRowHeight: function () { },
+                contentHeight: 0, contentWidth: 0, applyStyle: function () { }, unfixRowHeight: function () { },
                 containerHeight: 0, containerWidth: 0
             });
 

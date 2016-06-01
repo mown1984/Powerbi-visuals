@@ -1668,7 +1668,9 @@ module powerbi.visuals.samples {
 		}
 
 		public renderTimeRangeText(timelineData: TimelineData, timeRangeFormat: LabelFormat): void {
-			let maxWidth = this.svgWidth - this.timelineProperties.leftMargin - (GranularityNames.length + 1) * this.timelineProperties.elementWidth;
+            let leftMargin = (GranularityNames.length + 2) * this.timelineProperties.elementWidth;
+            let maxWidth = this.svgWidth - leftMargin - this.timelineProperties.leftMargin;
+
 			if (timeRangeFormat.showProperty && maxWidth > 0) {
 				let timeRangeText = Utils.timeRangeText(timelineData);
 				let labelFormattedTextOptions: LabelFormattedTextOptions = {
@@ -1684,8 +1686,7 @@ module powerbi.visuals.samples {
 					fill: timeRangeFormat.colorProperty
 				})
 					.style({
-						'font-size': pt(timeRangeFormat.sizeProperty),
-						'text-anchor': 'middle',
+						'font-size': pt(timeRangeFormat.sizeProperty)
 					}).text(actualText)
 					.append('title').text(timeRangeText);;
 			}

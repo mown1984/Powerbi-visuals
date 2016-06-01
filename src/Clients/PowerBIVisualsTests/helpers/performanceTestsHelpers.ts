@@ -58,8 +58,6 @@ module powerbitests.performanceTestsHelpers {
                             roles: { "TargetValue": true },
                             isMeasure: true
                         }],
-                    groups: [],
-                    measures: [0]
                 };
 
                 return {
@@ -345,7 +343,7 @@ module powerbitests.performanceTestsHelpers {
                             {
                                 displayName: "Year",
                                 queryName: "year",
-                                type: ValueType.fromDescriptor({ number: true })
+                                type: powerbi.ValueType.fromDescriptor({ numeric: true })
                             }, {
                                 displayName: "Population of USA",
                                 isMeasure: true,

@@ -30,29 +30,30 @@ module powerbitests.customVisuals {
     import SankeyDiagramData = powerbitests.customVisuals.sampleDataViews.SankeyDiagramData;
 
     describe("SankeyDiagram", () => {
+        let visualBuilder: SankeyDiagramBuilder;
+        let defaultDataViewBuilder: SankeyDiagramData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new SankeyDiagramBuilder(1000,500);
+            defaultDataViewBuilder = new SankeyDiagramData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: SankeyDiagramBuilder;
-            let sankeyDiagramData: SankeyDiagramData;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new SankeyDiagramBuilder();
-                sankeyDiagramData = new SankeyDiagramData();
-                dataViews = [sankeyDiagramData.getDataView()];
-            });
-
             it("main element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+
             it("update", (done) => {
-                 visualBuilder.updateRenderTimeout(dataViews, () => {
+                 visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.linksElement).toBeInDOM();
                     expect(visualBuilder.linksElements.length)
-                        .toBe(dataViews[0].categorical.categories[0].values.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
 
-                    let allCountries: string[] = dataViews[0].categorical.categories[0].values.concat(dataViews[0].categorical.categories[1].values);
+                    let allCountries: string[] = dataView.categorical.categories[0].values.concat(dataView.categorical.categories[1].values);
                     let uniqueCountries = allCountries.sort().filter((value, index, array) => !index || value !== array[index - 1]);
 
                     expect(visualBuilder.nodesElement).toBeInDOM();
@@ -64,53 +65,53 @@ module powerbitests.customVisuals {
             });
 
             it("nodes labels on", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     labels: {
                         show: true
                     }
                 };
 
-                visualBuilder.updateRenderTimeout(dataViews, () => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('block');
                     done();
                 });
             });
 
             it("nodes labels off", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     labels: {
                         show: false
                     }
                 };
 
-                visualBuilder.updateRenderTimeout(dataViews, () => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.nodesElement.find('text').first().css('display')).toBe('none');
                     done();
                 });
             });
 
             it("nodes labels change color", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     labels: {
                         fill: { solid: { color: "#123123" } }
                     }
                 };
 
-                visualBuilder.updateRenderTimeout(dataViews, () => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.nodesElement.find('text').first().css('fill'), "#123123");
                     done();
                 });
             });
 
             it("link change color", done => {
-                let objects = dataViews[0].categorical.categories[0].objects = [];
+                let objects = dataView.categorical.categories[0].objects = [];
                 objects.push({
                     links: {
                         fill: { solid: { color: "#E0F600" } }
                     }
                 });
 
-                visualBuilder.updateRenderTimeout(dataViews, () => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.linksElement.find('.link').first().css('stroke'), "#E0F600");
                     done();
                 });
@@ -120,60 +121,57 @@ module powerbitests.customVisuals {
                 const selectionSelector = ".selected";
 
                 it("nodes", done => {
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(visualBuilder.nodesElements.filter(selectionSelector)).not.toBeInDOM();
                         let node = visualBuilder.nodesElements.first();
                         powerbitests.helpers.clickElement(node);
 
-                        setTimeout(() => {
+                        helpers.renderTimeout(() => {
                             expect(node.filter(selectionSelector)).not.toBeInDOM();
                             expect(visualBuilder.nodesElements.filter(selectionSelector)).toBeInDOM();
 
                             powerbitests.helpers.clickElement(node);
-                            setTimeout(() => {
+                            helpers.renderTimeout(() => {
                                 expect(visualBuilder.nodesElements.filter(selectionSelector)).not.toBeInDOM();
                                 done();
-                            }, DefaultWaitForRender);
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
+                            });
+                        });
+                    });
                 });
 
                 it("links", done => {
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         expect(visualBuilder.linksElements.filter(selectionSelector)).not.toBeInDOM();
                         let link = visualBuilder.linksElements.first();
                         powerbitests.helpers.clickElement(link);
 
-                        setTimeout(() => {
+                        helpers.renderTimeout(() => {
                             expect(link.filter(selectionSelector)).toBeInDOM();
                             expect(visualBuilder.linksElements.not(link).filter(selectionSelector)).not.toBeInDOM();
 
                             powerbitests.helpers.clickElement(link);
-                            setTimeout(() => {
+                            helpers.renderTimeout(() => {
                                 expect(visualBuilder.linksElements.filter(selectionSelector)).not.toBeInDOM();
                                 done();
-                            }, DefaultWaitForRender);
-                        }, DefaultWaitForRender);
-                    }, DefaultWaitForRender);
+                            });
+                        });
+                    });
                 });
             });
 
             describe("data rendering", () => {
                 it("negative and zero values", done => {
-                    let groupLength = Math.floor(sankeyDiagramData.dataLength/3) - 2;
+                    let dataLength: number = defaultDataViewBuilder.valuesSourceDestination.length;
+                    let groupLength = Math.floor(dataLength/3) - 2;
                     let negativeValues = helpers.getRandomNumbers(groupLength, -100, 0);
                     let zeroValues = _.range(0, groupLength, 0);
-                    let positiveValues = helpers.getRandomNumbers(
-                        sankeyDiagramData.dataLength - negativeValues.length - zeroValues.length, 1, 100);
+                    let positiveValues = helpers.getRandomNumbers(dataLength - negativeValues.length - zeroValues.length, 1, 100);
 
-                    sankeyDiagramData.valuesData = negativeValues.concat(zeroValues).concat(positiveValues);
+                    defaultDataViewBuilder.valuesValue = negativeValues.concat(zeroValues).concat(positiveValues);
 
-                    visualBuilder.updateRenderTimeout([sankeyDiagramData.getDataView()], () => {
+                    visualBuilder.updateRenderTimeout([defaultDataViewBuilder.getDataView()], () => {
                         expect(visualBuilder.linksElements.length).toBe(positiveValues.length);
+
                         done();
                     });
                 });
@@ -182,10 +180,12 @@ module powerbitests.customVisuals {
     });
 
     class SankeyDiagramBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement(): JQuery {
@@ -206,10 +206,6 @@ module powerbitests.customVisuals {
 
         public get linksElements(): JQuery  {
             return this.linksElement.children("path.link");
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

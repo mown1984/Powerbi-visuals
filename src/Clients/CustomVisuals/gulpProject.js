@@ -39,6 +39,21 @@ module.exports = projects.initProject(
             require("../VisualsData/gulpProject"),
             require("../Visuals/gulpProject")
         ],
+        drop: [
+            {
+                source: ["./obj/*.js", "./obj/*.map"],
+                dest: [config.paths.VisualsDropScripts]
+            },
+            {
+                source: "./obj/*.d.ts",
+                dest: [config.paths.VisualsDropScripts],
+                transform: utils.transform.rmRefs()
+            },
+            {
+                source: ["./styles/*.css"],
+                dest: config.paths.VisualsDropStyles
+            }
+        ],
         tsc: {
             outFileName: 'CustomVisuals',
             tsLintExcludePaths: [

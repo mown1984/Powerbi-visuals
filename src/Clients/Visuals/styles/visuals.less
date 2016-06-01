@@ -613,6 +613,13 @@
         }
     }
 
+    .realTimeLineChart {
+        .mainGraphicsSVG {
+            position: absolute;
+            overflow: hidden;
+        }
+    }
+
     .funnelChart {
         line {
             shape-rendering: @defaultShapeRendering;
@@ -1179,25 +1186,11 @@
         .card {
             box-sizing: border-box;
             color: #767676;
-            padding-left: 10px;
             position: relative;
             width: 100%;
 
-            &.mrtile {
-                border-bottom: 1px solid @neutralTertiaryAltColor;
-                border-left: 0px;
-                padding-bottom: 5px;
-                padding-left: 0px;
-                padding-top: 5px;
-
-                .cardItemContainer {
-                    padding-top: 5px;
-                }
-            }
-
             .cardItemContainer {
                 box-sizing: border-box;
-                padding-top: 7px;
                 position: relative;
                 vertical-align: top;
 

@@ -184,7 +184,6 @@ module powerbitests {
                 tooltipsEnabled: true,
                 animator: new powerbi.visuals.WebColumnChartAnimator(),
                 behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.ColumnChartWebBehavior(), new powerbi.visuals.LineChartWebBehavior()]),
-                trendLinesEnabled: true
             }));
 
             done();
@@ -627,7 +626,6 @@ module powerbitests {
                 tooltipsEnabled: true,
                 animator: new powerbi.visuals.WebColumnChartAnimator(),
                 behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.ColumnChartWebBehavior(), new powerbi.visuals.LineChartWebBehavior()]),
-                trendLinesEnabled: true
             }), "100", "100");
 
             visualBuilder.onDataChanged({
@@ -2306,7 +2304,7 @@ module powerbitests {
                 isMeasure: true,
                 type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer),
                 objects: { general: { formatString: '$0' } },
-                role: { Y: true },
+                roles: { Y: true },
             };
             if (useY2) {
                 measureColumn.roles = { Y2: true };

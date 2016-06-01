@@ -6183,6 +6183,7 @@ declare module powerbi.visuals {
         getPreferredPlotArea?(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         setFilteredData?(startIndex: number, endIndex: number): CartesianData;
         supportsTrendLine?(): boolean;
+        shouldSuppressAnimation?(): boolean;
     }
     interface CartesianVisualConstructorOptions {
         isScrollable: boolean;
@@ -7255,10 +7256,11 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     interface GaugeData extends TooltipEnabledDataPoint {
-        percent: number;
-        adjustedTotal: number;
         total: number;
         metadataColumn: DataViewMetadataColumn;
+        minColumnMetadata: DataViewMetadataColumn;
+        maxColumnMetadata: DataViewMetadataColumn;
+        targetColumnMetadata: DataViewMetadataColumn;
         targetSettings: GaugeTargetSettings;
         dataLabelsSettings: VisualDataLabelsSettings;
         calloutValueLabelsSettings: VisualDataLabelsSettings;
@@ -7270,7 +7272,7 @@ declare module powerbi.visuals {
         target: number;
     }
     interface GaugeTargetData extends GaugeTargetSettings {
-        total: number;
+        value: number;
         tooltipItems: TooltipDataItem[];
     }
     interface GaugeDataPointSettings {
@@ -7315,8 +7317,6 @@ declare module powerbi.visuals {
      * Renders a number that can be animate change in value.
      */
     class Gauge implements IVisual {
-        private static MIN_VALUE;
-        private static MAX_VALUE;
         private static MinDistanceFromBottom;
         private static MinWidthForTargetLabel;
         private static DefaultTopBottomMargin;
@@ -7364,7 +7364,7 @@ declare module powerbi.visuals {
         private showTargetLabel;
         private tooltipsEnabled;
         private hostService;
-        private dataViews;
+        private dataView;
         animator: IGenericAnimator;
         constructor(options?: GaugeConstructorOptions);
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
@@ -7377,15 +7377,19 @@ declare module powerbi.visuals {
         private updateCalloutValue(suppressAnimations);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
-        private static getValidSettings(targetData);
-        private static getGaugeData(dataView);
-        private static overrideGaugeSettings(settings, gaugeObjectsSettings);
+        /**
+         * Populates Gauge data based on roles or axis settings.
+         */
+        private static parseGaugeData(reader);
         /** Note: Made public for testability */
-        static converter(dataView: DataView, tooltipsEnabled?: boolean): GaugeData;
-        private static convertDataLabelSettings(dataview, objectName);
-        private static convertDataPointSettings(dataView, targetSettings);
-        static getMetaDataColumn(dataView: DataView): DataViewMetadataColumn;
+        static converter(reader: data.IDataViewCategoricalReader, tooltipsEnabled?: boolean): GaugeData;
+        private static convertDataLabelSettings(objects, objectName);
+        private static convertDataPointSettings(objects, targetSettings);
         private initKpiBands();
+        /**
+         * Indicates whether gauge arc is valid.
+         */
+        private isValid();
         private updateKpiBands(radius, innerRadiusFactor, tString, kpiAngleAttr);
         private removeTargetElements();
         private getTargetRatio();
@@ -7396,14 +7400,15 @@ declare module powerbi.visuals {
         getGaugeVisualProperties(): GaugeVisualProperties;
         /** Note: public for testability */
         drawViewPort(drawOptions: GaugeVisualProperties): void;
+        getValueAngle(): number;
         private createTicks();
         private updateInternal(suppressAnimations);
         private updateVisualStyles();
         private updateVisualConfigurations();
-        private appendTextAlongArc(ticks, radius, height, width, margin);
+        private renderMinMaxLabels(ticks, radius, height, width, margin);
         private truncateTextIfNeeded(text, positionX, onRight);
-        private getFormatter(dataLabelSettings, value2?);
-        private appendTargetTextAlongArc(radius, height, width, margin);
+        private getFormatter(dataLabelSettings, metadataColumn, maxValue?);
+        private renderTarget(radius, height, width, margin);
         private arcTween(transition, arr);
         private showMinMaxLabelsOnBottom();
         private setMargins();
@@ -8111,7 +8116,7 @@ declare module powerbi.visuals {
         static converter(dataView: DataView, columnCount: number, maxCards: number, isDashboardVisual?: boolean): MultiRowCardData;
         static getSortableRoles(options: VisualSortableOptions): string[];
         private initializeCardRowSelection();
-        private getBorderStyles(border);
+        private getBorderStyles(border, padding?);
         private getMaxColPerRow();
         private getRowIndex(fieldIndex);
         private getStyle();
@@ -8121,6 +8126,7 @@ declare module powerbi.visuals {
         private hideColumn(fieldIndex);
         private getColumnWidth(fieldIndex, columnCount);
         private isLastRowItem(fieldIndex, columnCount);
+        private isInFirstRow(fieldIndex);
         /**
          * This contains the card column wrapping logic.
          * Determines how many columns can be shown per each row inside a Card.
@@ -8402,6 +8408,7 @@ declare module powerbi.visuals {
         private static getExtents(data);
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         overrideXScale(xProperties: IAxisProperties): void;
+        shouldSuppressAnimation(): boolean;
         render(suppressAnimations: boolean, resizeMode?: ResizeMode): CartesianVisualRenderResult;
         static getStrokeFill(d: ScatterChartDataPoint, colorBorder: boolean): string;
         static getBubblePixelAreaSizeRange(viewPort: IViewport, minSizeRange: number, maxSizeRange: number): DataRange;

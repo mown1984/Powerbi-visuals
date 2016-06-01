@@ -216,7 +216,7 @@ module powerbi.data {
         }
 
         public selectNameOf(expr: SQExpr): string {
-            let index = SQExprUtils.indexOfExpr(_.map(this.selectItems, s => s.expr), expr);
+            let index = SQExprUtils.indexOfNamedExpr(this.selectItems, expr);
             if (index >= 0)
                 return this.selectItems[index].name;
         }

@@ -27,6 +27,7 @@
 module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
+    import NewDataLabelUtils = powerbi.visuals.NewDataLabelUtils;
     import ISize = shapes.ISize;
 
     export const enum MekkoChartType {
@@ -112,6 +113,11 @@ module powerbi.visuals.samples {
         color: any;
         width: number;
         maxWidth?: number;
+    }
+
+    export interface MekkoLabelSettings {
+       maxPrecision: number;
+       minPrecision: number;
     }
 
     export interface MekkoColumnAxisOptions extends ColumnAxisOptions {
@@ -818,10 +824,16 @@ module powerbi.visuals.samples {
                     };
 
                     // Calculate label text
-                    var formatString: string = NewDataLabelUtils.hundredPercentFormat;
+                    var formatString = null;
+                    var value: number = dataPoint.valueOriginal;
+
+                    if (!labelSettings.displayUnits) {
+                        formatString = NewDataLabelUtils.hundredPercentFormat;
+                        value = dataPoint.valueAbsolute;
+                    }
 
                     var formatter = formattersCache.getOrCreate(formatString, labelSettings, axisFormatter);
-                    var text = NewDataLabelUtils.getLabelFormattedText(formatter.format(dataPoint.valueAbsolute));
+                    var text = NewDataLabelUtils.getLabelFormattedText(formatter.format(value));
 
                     // Calculate text size
                     var properties: TextProperties = {
@@ -860,6 +872,7 @@ module powerbi.visuals.samples {
 
     export interface MekkoChartSettings {
         columnBorder: MekkoBorderSettings;
+        labelSettings: MekkoLabelSettings;
     }
 
     /**
@@ -888,7 +901,7 @@ module powerbi.visuals.samples {
             ],
             objects: {
                 columnBorder: {
-                    displayName: 'Border',
+                    displayName: 'Column Border',
                     properties: {
                         show: {
                             displayName: data.createDisplayNameGetter('Visual_Show'),
@@ -1009,6 +1022,10 @@ module powerbi.visuals.samples {
                             displayName: data.createDisplayNameGetter('Visual_Axis_LabelColor'),
                             type: { fill: { solid: { color: true } } }
                         },
+                        fontSize: {
+                            displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                            type: { formatting: { fontSize: true } }
+                        },
                     }
                 },
                 valueAxis: {
@@ -1049,7 +1066,11 @@ module powerbi.visuals.samples {
                         labelColor: {
                             displayName: data.createDisplayNameGetter('Visual_Axis_LabelColor'),
                             type: { fill: { solid: { color: true } } }
-                        }
+                        },
+                        fontSize: {
+                            displayName: data.createDisplayNameGetter('Visual_TextSize'),
+                            type: { formatting: { fontSize: true } }
+                        },
 
                     }
                 },
@@ -1131,10 +1152,20 @@ module powerbi.visuals.samples {
                 color: '#fff',
                 width: 2,
                 maxWidth: 5,
+            },
+            labelSettings: {
+                maxPrecision: 4,
+                minPrecision: 0,
             }
         };
 
-        public static MekkoChartMinWidth = 50;
+        private static getTextProperties(fontSize: number = MekkoChart.FontSize): TextProperties {
+            return {
+                fontFamily: 'wf_segoe-ui_normal',
+                fontSize: jsCommon.PixelConverter.toString(fontSize),
+            };
+        }
+
         public static MinOrdinalRectThickness = 20;
         public static MinScalarRectThickness = 2;
         public static OuterPaddingRatio = 0.4;
@@ -1144,21 +1175,15 @@ module powerbi.visuals.samples {
         private static ClassName = 'cartesianChart';
         private static AxisGraphicsContextClassName = 'axisGraphicsContext';
         private static MaxMarginFactor = 0.25;
-        private static MinBottomMargin = 25;
-        private static TopMargin = 8;
+        private static MinBottomMargin = 50;
         private static LeftPadding = 10;
-        private static RightPadding = 15;
-        private static BottomPadding = 12;
+        private static RightPadding = 10;
+        private static BottomPadding = 16;
         private static YAxisLabelPadding = 20;
-        private static XAxisLabelPadding = 18;
+        private static XAxisLabelPadding = 20;
         private static TickPaddingY = 10;
         private static TickPaddingRotatedX = 5;
         private static FontSize = 11;
-        private static FontSizeString = jsCommon.PixelConverter.toString(MekkoChart.FontSize);
-        private static TextProperties: TextProperties = {
-            fontFamily: 'wf_segoe-ui_normal',
-            fontSize: MekkoChart.FontSizeString,
-        };
 
         public static MaxNumberOfLabels = 100;
 
@@ -1497,13 +1522,22 @@ module powerbi.visuals.samples {
                 }
 
                 this.categoryAxisProperties = CartesianHelper.getCategoryAxisProperties(dataViewMetadata);
-                if (dataViews[0].metadata &&
-                    dataViews[0].metadata.objects &&
-                    dataViews[0].metadata.objects['categoryAxis'] &&
-                    dataViews[0].metadata.objects['categoryAxis']['showBorder']) {
-                    this.categoryAxisProperties['showBorder'] = dataViews[0].metadata.objects['categoryAxis']['showBorder'];
-                }
                 this.valueAxisProperties = CartesianHelper.getValueAxisProperties(dataViewMetadata);
+
+                if (dataViewMetadata &&
+                    dataViewMetadata.objects) {
+                    var categoryAxis = dataViewMetadata.objects['categoryAxis'];
+                    var valueAxis = dataViewMetadata.objects['valueAxis'];
+
+                    if (categoryAxis) {
+                        this.categoryAxisProperties['showBorder'] = categoryAxis['showBorder'];
+                        this.categoryAxisProperties['fontSize'] = categoryAxis['fontSize'];
+                    }
+
+                    if (valueAxis) {
+                        this.valueAxisProperties['fontSize'] = valueAxis['fontSize'];
+                    }
+                }
                 var axisPosition = this.valueAxisProperties['position'];
                 this.yAxisOrientation = axisPosition ? axisPosition.toString() : yAxisPosition.left;
             }
@@ -1561,6 +1595,25 @@ module powerbi.visuals.samples {
             }
             this.render(!this.hasSetData || options.suppressAnimations);
             this.hasSetData = this.hasSetData || (dataViews && dataViews.length > 0);
+        }
+
+        public static parseLabelSettings(objects: DataViewObjects): VisualDataLabelsSettings {
+            var labelSettings: VisualDataLabelsSettings = dataLabelUtils.getDefaultColumnLabelSettings(true);
+            var labelsObj: DataLabelObject = <DataLabelObject>objects['labels'];
+            var minPrecision = MekkoChart.DefaultSettings.labelSettings.minPrecision,
+                maxPrecision = MekkoChart.DefaultSettings.labelSettings.maxPrecision;
+
+            dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings);
+
+            if (labelSettings.precision < minPrecision) {
+                labelSettings.precision = minPrecision;
+            }
+
+            if (labelSettings.precision > maxPrecision) {
+                labelSettings.precision = maxPrecision;
+            }
+
+            return labelSettings;
         }
 
         public static parseBorderSettings(objects: DataViewObjects): MekkoBorderSettings {
@@ -1735,17 +1788,20 @@ module powerbi.visuals.samples {
             instance.properties['showAxisTitle'] = this.categoryAxisProperties && this.categoryAxisProperties['showAxisTitle'] != null ? this.categoryAxisProperties['showAxisTitle'] : false;
             instance.properties['showBorder'] = this.categoryAxisProperties && this.categoryAxisProperties['showBorder'] != null ? this.categoryAxisProperties['showAxisTitle'] : false;
 
+            instance.properties['fontSize'] = this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] != null ? this.categoryAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
+
             enumeration
                 .pushInstance(instance)
                 .pushInstance({
                     selector: null,
                     properties: {
                         axisStyle: this.categoryAxisProperties && this.categoryAxisProperties['axisStyle'] ? this.categoryAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
-                        labelColor: this.categoryAxisProperties ? this.categoryAxisProperties['labelColor'] : null
+                        labelColor: this.categoryAxisProperties ? this.categoryAxisProperties['labelColor'] : null,
+                        fontSize: this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] != null ? this.categoryAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt
                     },
                     objectName: 'categoryAxis',
                     validValues: {
-                        axisStyle: this.categoryAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly]
+                        axisStyle: this.categoryAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly],
                     }
                 });
         }
@@ -1776,13 +1832,16 @@ module powerbi.visuals.samples {
             instance.properties['end'] = this.valueAxisProperties ? this.valueAxisProperties['end'] : null;
             instance.properties['showAxisTitle'] = this.valueAxisProperties && this.valueAxisProperties['showAxisTitle'] != null ? this.valueAxisProperties['showAxisTitle'] : false;
 
+            instance.properties['fontSize'] = this.valueAxisProperties && this.valueAxisProperties['fontSize'] != null ? this.valueAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
+
             enumeration
                 .pushInstance(instance)
                 .pushInstance({
                     selector: null,
                     properties: {
                         axisStyle: this.valueAxisProperties && this.valueAxisProperties['axisStyle'] != null ? this.valueAxisProperties['axisStyle'] : axisStyle.showTitleOnly,
-                        labelColor: this.valueAxisProperties ? this.valueAxisProperties['labelColor'] : null
+                        labelColor: this.valueAxisProperties ? this.valueAxisProperties['labelColor'] : null,
+                        fontSize: this.valueAxisProperties && this.valueAxisProperties['fontSize'] != null ? this.valueAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt
                     },
                     objectName: 'valueAxis',
                     validValues: {
@@ -1968,17 +2027,26 @@ module powerbi.visuals.samples {
 
             var maxMarginFactor = this.getMaxMarginFactor();
             var leftRightMarginLimit = this.leftRightMarginLimit = viewport.width * maxMarginFactor;
-            var bottomMarginLimit = this.bottomMarginLimit = Math.max(MekkoChart.MinBottomMargin, Math.ceil(viewport.height * maxMarginFactor));
+            this.bottomMarginLimit = Math.max(MekkoChart.MinBottomMargin, Math.ceil(viewport.height * maxMarginFactor));
+
+            var xAxisTextProperties = MekkoChart.getTextProperties(parseFloat(<any>this.categoryAxisProperties['fontSize']) || undefined);
+            var y1AxisTextProperties = MekkoChart.getTextProperties(parseFloat(<any>this.valueAxisProperties['fontSize']) || undefined);
 
             var margin = this.margin;
             // reset defaults
-            margin.top = MekkoChart.TopMargin;
+            margin.top = parseFloat(y1AxisTextProperties.fontSize) / 2;
             margin.bottom = MekkoChart.MinBottomMargin;
             margin.right = 0;
 
-            var axes: CartesianAxisProperties = this.axes = calculateAxes(this.layers, viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, MekkoChart.TextProperties, this.isXScrollBarVisible || this.isYScrollBarVisible, null);
+            var axes: CartesianAxisProperties = this.axes = calculateAxes(
+                this.layers,
+                viewport,
+                margin,
+                this.categoryAxisProperties,
+                this.valueAxisProperties,
+                this.isXScrollBarVisible || this.isYScrollBarVisible,
+                null);
 
-            this.y2AxisExists = axes.y2 != null;
             this.yAxisIsCategorical = axes.y1.isCategoryAxis;
             this.hasCategoryAxis = this.yAxisIsCategorical ? axes.y1 && axes.y1.values.length > 0 : axes.x && axes.x.values.length > 0;
 
@@ -2032,7 +2100,14 @@ module powerbi.visuals.samples {
             }
 
             // Recalculate axes now that scrollbar visible variables have been set
-            axes = calculateAxes(this.layers, viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, MekkoChart.TextProperties, this.isXScrollBarVisible || this.isYScrollBarVisible, null);
+            axes = calculateAxes(
+                this.layers,
+                viewport,
+                margin,
+                this.categoryAxisProperties,
+                this.valueAxisProperties,
+                this.isXScrollBarVisible || this.isYScrollBarVisible,
+                null);
 
             // we need to make two passes because the margin changes affect the chosen tick values, which then affect the margins again.
             // after the second pass the margins are correct.
@@ -2044,14 +2119,17 @@ module powerbi.visuals.samples {
             var axisLabels: ChartAxesLabels = undefined;
             while (!doneWithMargins && numIterations < maxIterations) {
                 numIterations++;
-                tickLabelMargins = AxisHelper.getTickLabelMargins(
+                tickLabelMargins = getTickLabelMargins(
                     { width: width, height: viewport.height },
                     leftRightMarginLimit,
                     TextMeasurementService.measureSvgTextWidth,
                     TextMeasurementService.estimateSvgTextHeight,
                     axes,
-                    bottomMarginLimit,
-                    MekkoChart.TextProperties,
+                    this.bottomMarginLimit,
+                    xAxisTextProperties,
+                    y1AxisTextProperties,
+                    null,
+                    false,
                     this.isXScrollBarVisible || this.isYScrollBarVisible,
                     showY1OnRight,
                     renderXAxis,
@@ -2061,11 +2139,10 @@ module powerbi.visuals.samples {
                 // We look at the y axes as main and second sides, if the y axis orientation is right so the main side represents the right side
                 var maxMainYaxisSide = showY1OnRight ? tickLabelMargins.yRight : tickLabelMargins.yLeft,
                     maxSecondYaxisSide = showY1OnRight ? tickLabelMargins.yLeft : tickLabelMargins.yRight,
-                    xMax = tickLabelMargins.xMax;
+                    xMax = renderXAxis ? (tickLabelMargins.xMax/1.8) : 0;
 
                 maxMainYaxisSide += MekkoChart.LeftPadding;
-                if ((renderY2Axis && !showY1OnRight) || (showY1OnRight && renderY1Axis))
-                    maxSecondYaxisSide += MekkoChart.RightPadding;
+                maxSecondYaxisSide += MekkoChart.RightPadding;
                 xMax += MekkoChart.BottomPadding;
 
                 if (this.hideAxisLabels(legendMargins)) {
@@ -2101,7 +2178,14 @@ module powerbi.visuals.samples {
                 // re-calculate the axes with the new margins
                 var previousTickCountY1 = axes.y1.values.length;
                 var previousTickCountY2 = axes.y2 && axes.y2.values.length;
-                axes = calculateAxes(this.layers, viewport, margin, this.categoryAxisProperties, this.valueAxisProperties, MekkoChart.TextProperties, this.isXScrollBarVisible || this.isYScrollBarVisible, axes);
+                axes = calculateAxes(
+                    this.layers,
+                    viewport,
+                    margin,
+                    this.categoryAxisProperties,
+                    this.valueAxisProperties,
+                    this.isXScrollBarVisible || this.isYScrollBarVisible,
+                    axes);
 
                 // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again
                 // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin.
@@ -2167,7 +2251,7 @@ module powerbi.visuals.samples {
                         'transform': 'rotate(0)'
                     });
 
-                TextMeasurementService.wordBreak(this, allowedLength, maxHeight);
+                TextMeasurementService.wordBreak(this, allowedLength, axisProperties.willLabelsWordBreak ? maxHeight : 0);
             });
         }
 
@@ -2194,12 +2278,17 @@ module powerbi.visuals.samples {
             var xLabelColor: Fill;
             var yLabelColor: Fill;
             var y2LabelColor: Fill;
+
+            var xFontSize: any;
+            var yFontSize: any;
             //hide show x-axis here
             if (this.shouldRenderAxis(axes.x)) {
                 if (axes.x.isCategoryAxis) {
                     xLabelColor = this.categoryAxisProperties && this.categoryAxisProperties['labelColor'] ? this.categoryAxisProperties['labelColor'] : null;
+                    xFontSize =   this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] != null ? this.categoryAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
                 } else {
                     xLabelColor = this.valueAxisProperties && this.valueAxisProperties['labelColor'] ? this.valueAxisProperties['labelColor'] : null;
+                    xFontSize = this.valueAxisProperties && this.valueAxisProperties['fontSize'] ? this.valueAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
                 }
                 axes.x.axis.orient("bottom");
                 if (!axes.x.willLabelsFit) {
@@ -2220,7 +2309,8 @@ module powerbi.visuals.samples {
 
                 xAxisGraphicsElement
                     .call(MekkoChart.darkenZeroLine)
-                    .call(MekkoChart.setAxisLabelColor, xLabelColor);
+                    .call(MekkoChart.setAxisLabelColor, xLabelColor)
+                    .call(MekkoChart.setAxisLabelFontSize, xFontSize);
 
                 var xAxisTextNodes = xAxisGraphicsElement.selectAll('text');
 
@@ -2232,7 +2322,7 @@ module powerbi.visuals.samples {
                 }
 
                 xAxisGraphicsElement
-                    .call(MekkoChart.moveBorder, axes.x.scale, borderWidth);
+                    .call(MekkoChart.moveBorder, axes.x.scale, borderWidth, xFontSize / 2 - 8);
 
                 xAxisTextNodes
                     .call(MekkoChart.wordBreak, axes.x, columnWidth, bottomMarginLimit, borderWidth);
@@ -2244,8 +2334,10 @@ module powerbi.visuals.samples {
             if (this.shouldRenderAxis(axes.y1)) {
                 if (axes.y1.isCategoryAxis) {
                     yLabelColor = this.categoryAxisProperties && this.categoryAxisProperties['labelColor'] ? this.categoryAxisProperties['labelColor'] : null;
+                    yFontSize =   this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] != null ? this.categoryAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
                 } else {
                     yLabelColor = this.valueAxisProperties && this.valueAxisProperties['labelColor'] ? this.valueAxisProperties['labelColor'] : null;
+                    yFontSize =   this.valueAxisProperties && this.valueAxisProperties['fontSize'] != null ? this.valueAxisProperties['fontSize'] : NewDataLabelUtils.DefaultLabelFontSizeInPt;
                 }
                 var yAxisOrientation = this.yAxisOrientation;
                 var showY1OnRight = yAxisOrientation === yAxisPosition.right;
@@ -2268,7 +2360,8 @@ module powerbi.visuals.samples {
 
                 y1AxisGraphicsElement
                     .call(MekkoChart.darkenZeroLine)
-                    .call(MekkoChart.setAxisLabelColor, yLabelColor);
+                    .call(MekkoChart.setAxisLabelColor, yLabelColor)
+                    .call(MekkoChart.setAxisLabelFontSize, yFontSize);
 
                 if (tickLabelMargins.yLeft >= leftRightMarginLimit) {
                     y1AxisGraphicsElement.selectAll('text')
@@ -2423,12 +2516,177 @@ module powerbi.visuals.samples {
             g.selectAll('g.tick text').style('fill', fill ? fill.solid.color : null);
         }
 
-        private static moveBorder(g: D3.Selection, scale: D3.Scale.LinearScale, borderWidth: number): void {
+        private static setAxisLabelFontSize(g: D3.Selection, fontSize: number): void {
+            var value = jsCommon.PixelConverter.toString(fontSize);
+            g.selectAll('g.tick text').attr('font-size', value);
+        }
+
+        private static moveBorder(g: D3.Selection, scale: D3.Scale.LinearScale, borderWidth: number, yOffset: number = 0): void {
             g.selectAll('g.tick')
                 .attr("transform", function(value: number, index: number) {
-                     return SVGUtil.translate(scale(value) + (borderWidth * index), 0);
+                     return SVGUtil.translate(scale(value) + (borderWidth * index), yOffset);
             });
         }
+    }
+
+    function getTickLabelMargins(
+        viewport: IViewport,
+        yMarginLimit: number,
+        textWidthMeasurer: ITextAsSVGMeasurer,
+        textHeightMeasurer: ITextAsSVGMeasurer,
+        axes: CartesianAxisProperties,
+        bottomMarginLimit: number,
+        xAxisTextProperties: TextProperties,
+        y1AxisTextProperties: TextProperties,
+        y2AxisTextProperties: TextProperties,
+        enableOverflowCheck: boolean,
+        scrollbarVisible?: boolean,
+        showOnRight?: boolean,
+        renderXAxis?: boolean,
+        renderY1Axis?: boolean,
+        renderY2Axis?: boolean): TickLabelMargins {
+
+        var XLabelMaxAllowedOverflow = 35;
+
+        debug.assertValue(axes, 'axes');
+        var xAxisProperties: IAxisProperties = axes.x;
+        var y1AxisProperties: IAxisProperties = axes.y1;
+        var y2AxisProperties: IAxisProperties = axes.y2;
+
+        debug.assertValue(viewport, 'viewport');
+        debug.assertValue(textWidthMeasurer, 'textWidthMeasurer');
+        debug.assertValue(textHeightMeasurer, 'textHeightMeasurer');
+        debug.assertValue(xAxisProperties, 'xAxis');
+        debug.assertValue(y1AxisProperties, 'yAxis');
+
+        var xLabels = xAxisProperties.values;
+        var y1Labels = y1AxisProperties.values;
+
+        var leftOverflow = 0;
+        var rightOverflow = 0;
+        var maxWidthY1 = 0;
+        var maxWidthY2 = 0;
+        var xMax = 0; // bottom margin
+        var ordinalLabelOffset = xAxisProperties.categoryThickness ? xAxisProperties.categoryThickness / 2 : 0;
+        var scaleIsOrdinal = AxisHelper.isOrdinalScale(xAxisProperties.scale);
+
+        var xLabelOuterPadding = 0;
+        if (xAxisProperties.outerPadding !== undefined) {
+            xLabelOuterPadding = xAxisProperties.outerPadding;
+        }
+        else if (xAxisProperties.xLabelMaxWidth !== undefined) {
+            xLabelOuterPadding = Math.max(0, (viewport.width - xAxisProperties.xLabelMaxWidth * xLabels.length) / 2);
+        }
+
+        if (AxisHelper.getRecommendedNumberOfTicksForXAxis(viewport.width) !== 0
+            ||AxisHelper. getRecommendedNumberOfTicksForYAxis(viewport.height) !== 0) {
+            var rotation;
+            if (scrollbarVisible)
+                rotation = AxisHelper.LabelLayoutStrategy.DefaultRotationWithScrollbar;
+            else
+                rotation = AxisHelper.LabelLayoutStrategy.DefaultRotation;
+
+            if (renderY1Axis) {
+                for (var i = 0, len = y1Labels.length; i < len; i++) {
+                    y1AxisTextProperties.text = y1Labels[i];
+                    maxWidthY1 = Math.max(maxWidthY1, textWidthMeasurer(y1AxisTextProperties));
+                }
+            }
+
+            if (y2AxisProperties && renderY2Axis) {
+                var y2Labels = y2AxisProperties.values;
+                for (var i = 0, len = y2Labels.length; i < len; i++) {
+                    y2AxisTextProperties.text = y2Labels[i];
+                    maxWidthY2 = Math.max(maxWidthY2, textWidthMeasurer(y2AxisTextProperties));
+                }
+            }
+
+            var textHeight = textHeightMeasurer(xAxisTextProperties);
+            var maxNumLines = Math.floor(bottomMarginLimit / textHeight);
+            var xScale = xAxisProperties.scale;
+            var xDomain = xScale.domain();
+            if (renderXAxis && xLabels.length > 0) {
+                for (var i = 0, len = xLabels.length; i < len; i++) {
+                    // find the max height of the x-labels, perhaps rotated or wrapped
+                    var height: number;
+                    xAxisTextProperties.text = xLabels[i];
+                    var width = textWidthMeasurer(xAxisTextProperties);
+                    if (xAxisProperties.willLabelsWordBreak) {
+                        // Split label and count rows
+                        var wordBreaks = jsCommon.WordBreaker.splitByWidth(xAxisTextProperties.text, xAxisTextProperties, textWidthMeasurer, xAxisProperties.xLabelMaxWidth, maxNumLines);
+                        height = wordBreaks.length * textHeight;
+                        // word wrapping will truncate at xLabelMaxWidth
+                        width = xAxisProperties.xLabelMaxWidth;
+                    }
+                    else if (!xAxisProperties.willLabelsFit && scaleIsOrdinal) {
+                        height = width * rotation.sine;
+                        width = width * rotation.cosine;
+                    }
+                    else {
+                        height = textHeight;
+                    }
+
+                    // calculate left and right overflow due to wide X labels
+                    // (Note: no right overflow when rotated)
+                    if (i === 0) {
+                        if (scaleIsOrdinal) {
+                            if (!xAxisProperties.willLabelsFit /*rotated text*/)
+                                leftOverflow = width - ordinalLabelOffset - xLabelOuterPadding;
+                            else
+                                leftOverflow = (width / 2) - ordinalLabelOffset - xLabelOuterPadding;
+                            leftOverflow = Math.max(leftOverflow, 0);
+                        }
+                        else if (xDomain.length > 1) {
+                            // Scalar - do some math
+                            var xPos = xScale(xDomain[0]);
+                            // xPos already incorporates xLabelOuterPadding, don't subtract it twice
+                            leftOverflow = (width / 2) - xPos;
+                            leftOverflow = Math.max(leftOverflow, 0);
+                        }
+                    } else if (i === len - 1) {
+                        if (scaleIsOrdinal) {
+                            // if we are rotating text (!willLabelsFit) there won't be any right overflow
+                            if (xAxisProperties.willLabelsFit || xAxisProperties.willLabelsWordBreak) {
+                                // assume this label is placed near the edge
+                                rightOverflow = (width / 2) - ordinalLabelOffset - xLabelOuterPadding;
+                                rightOverflow = Math.max(rightOverflow, 0);
+                            }
+                        }
+                        else if (xDomain.length > 1) {
+                            // Scalar - do some math
+                            var xPos = xScale(xDomain[1]);
+                            // xPos already incorporates xLabelOuterPadding, don't subtract it twice
+                            rightOverflow = (width / 2) - (viewport.width - xPos);
+                            rightOverflow = Math.max(rightOverflow, 0);
+                        }
+                    }
+
+                    xMax = Math.max(xMax, height);
+                }
+                // trim any actual overflow to the limit
+                leftOverflow = enableOverflowCheck ? Math.min(leftOverflow, XLabelMaxAllowedOverflow) : 0;
+                rightOverflow = enableOverflowCheck ? Math.min(rightOverflow, XLabelMaxAllowedOverflow) : 0;
+            }
+        }
+
+        var rightMargin = 0,
+            leftMargin = 0,
+            bottomMargin = Math.min(Math.ceil(xMax), bottomMarginLimit);
+
+        if (showOnRight) {
+            leftMargin = Math.min(Math.max(leftOverflow, maxWidthY2), yMarginLimit);
+            rightMargin = Math.min(Math.max(rightOverflow, maxWidthY1), yMarginLimit);
+        }
+        else {
+            leftMargin = Math.min(Math.max(leftOverflow, maxWidthY1), yMarginLimit);
+            rightMargin = Math.min(Math.max(rightOverflow, maxWidthY2), yMarginLimit);
+        }
+
+        return {
+            xMax: Math.ceil(bottomMargin),
+            yLeft: Math.ceil(leftMargin),
+            yRight: Math.ceil(rightMargin),
+        };
     }
 
     function getLayerData(dataViews: DataView[], currentIdx: number, totalLayers: number): DataView[] {
@@ -2460,7 +2718,6 @@ module powerbi.visuals.samples {
         margin: IMargin,
         categoryAxisProperties: DataViewObject,
         valueAxisProperties: DataViewObject,
-        textProperties: TextProperties,
         scrollbarVisible: boolean,
         existingAxisProperties: CartesianAxisProperties): CartesianAxisProperties {
         debug.assertValue(layers, 'layers');
@@ -2728,9 +2985,7 @@ module powerbi.visuals.samples {
                 defaultDataPointColor = DataViewObjects.getFillColor(objects, columnChartProps.dataPoint.defaultColor);
                 showAllDataPoints = DataViewObjects.getValue<boolean>(objects, columnChartProps.dataPoint.showAllDataPoints);
 
-                var labelsObj: DataLabelObject = <DataLabelObject>objects['labels'];
-                dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings);
-
+                labelSettings = MekkoChart.parseLabelSettings(objects);
                 borderSettings = MekkoChart.parseBorderSettings(objects);
             }
 
@@ -3333,7 +3588,7 @@ module powerbi.visuals.samples {
             //Draw series settings
             if (!data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata)) {
                 for (var i = 0; i < seriesCount; i++) {
-                    var series = data.series[i],
+                    var series: ColumnChartSeries = data.series[i],
                         labelSettings: VisualDataLabelsSettings = (series.labelSettings) ? series.labelSettings : this.data.labelSettings;
 
                     //enumeration.pushContainer({ displayName: series.displayName });
@@ -3609,10 +3864,10 @@ module powerbi.visuals.samples {
             var MekkoColumnChartDrawInfo = this.columnChart.drawColumns(!suppressAnimations /* useAnimations */);
             var data: MekkoColumnChartData = this.data;
 
-            let margin = this.margin;
-            let viewport = this.currentViewport;
-            let height = viewport.height - (margin.top + margin.bottom);
-            let width = viewport.width - (margin.left + margin.right);
+            var margin = this.margin;
+            var viewport = this.currentViewport;
+            var height = viewport.height - (margin.top + margin.bottom);
+            var width = viewport.width - (margin.left + margin.right);
 
             this.mainGraphicsContext
                 .attr('height', height)
@@ -3727,8 +3982,8 @@ module powerbi.visuals.samples {
                         var label = converterHelper.getFormattedLegendLabel(source, allValues, formatStringProp);
 
                         var color = hasDynamicSeries
-                            ? colorHelper.getColorForSeriesValue(valueGroupObjects, allValues.identityFields, source.groupName)
-                            : colorHelper.getColorForMeasure(source.objects, source.queryName);
+                            ? colorHelper.getColorForSeriesValue(valueGroupObjects || source.objects, allValues.identityFields, source.groupName)
+                            : colorHelper.getColorForMeasure(valueGroupObjects || source.objects, source.queryName);
 
                         legend.push({
                             icon: LegendIcon.Box,

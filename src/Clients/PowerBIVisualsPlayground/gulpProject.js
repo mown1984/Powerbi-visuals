@@ -26,8 +26,7 @@
 "use strict";
 
 var projects = require("../../../gulp/projects.js"),
-    objfolder = "./obj",
-    stylesFolder = "./styles";
+    config = require("../../../gulp/config.js");
 
 module.exports = projects.initProject(
     "powerBIVisualsPlayground", // proj name
@@ -43,30 +42,7 @@ module.exports = projects.initProject(
         staticFiles: [
             {
                 source: "./images/ui-icons_222222_256x240.png",
-                dest: "./styles/images"
-            },
-            {
-                source: "./../../../lib/powerbi-visuals.all.js",
-                dest: objfolder
-            },
-            {
-                source: "./../../../lib/powerbi-visuals.all.js.map",
-                dest: objfolder,
-            },
-            {
-                source: "./../../../lib/visuals.css",
-                dest: stylesFolder
-            },
-            {
-                source: "./../CustomVisuals/styles/customVisuals.css",
-                dest: stylesFolder
-            },
-            {
-                source: [
-                    "./../CustomVisuals/obj/CustomVisuals.js",
-                    "./../CustomVisuals/obj/CustomVisuals.js.map"
-                ],
-                dest: objfolder
+                dest: [config.paths.VisualsDropImages]
             }
         ],
         tsc: {

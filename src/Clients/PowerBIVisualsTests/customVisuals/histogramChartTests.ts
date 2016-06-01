@@ -26,43 +26,38 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Histogram;
+    import ValueByAgeData = powerbitests.customVisuals.sampleDataViews.ValueByAgeData;
 
     describe("HistogramChart", () => {
+        let visualBuilder: HistogramChartBuilder;
+        let defaultDataViewBuilder: ValueByAgeData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new HistogramChartBuilder(1000,500);
+            defaultDataViewBuilder = new ValueByAgeData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: HistogramChartBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new HistogramChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ValueByAgeData().getDataView()];
-            });
-
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {                    
-                    var binsNumber = d3.layout.histogram().frequency(true)(dataViews[0].categorical.categories[0].values).length;
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let binsNumber = d3.layout.histogram().frequency(true)(dataView.categorical.categories[0].values).length;
                     expect(visualBuilder.mainElement.find('.column').length).toBe(binsNumber);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
 
         describe('property pane changes', () => {
-            let visualBuilder: HistogramChartBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new HistogramChartBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ValueByAgeData().getDataView()];
-            });
-
             it('Validate data point color change', (done) => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     dataPoint: {
                         fill: {
                             solid: { color: '#ff0000' }
@@ -70,91 +65,74 @@ module powerbitests.customVisuals {
                     }
                 };
 
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    var elements = visualBuilder.mainElement.find('.column');
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let elements = visualBuilder.mainElement.find('.column');
                     elements.each((index, elem) => {
                         expect($(elem).css('fill')).toBe('#ff0000');
                     });
+
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it('Validate bins count change', (done) => {
-                dataViews[0].metadata.objects = {
-                    general: {
-                        bins: 3
-                    }
-                };
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    var binsCount = visualBuilder.mainElement.find('.column').length;
-                    dataViews[0].metadata.objects = {
-                        general: {
-                            bins: 6
-                        }
-                    };
+                dataView.metadata.objects = { general: { bins: 3 } };
 
-                    visualBuilder.update(dataViews);
-                    setTimeout(() => {
-                        var binsAfterUpdate = visualBuilder.mainElement.find('.column').length;
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let binsCount = visualBuilder.mainElement.find('.column').length;
+                    dataView.metadata.objects = { general: { bins: 6 } };
+
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        let binsAfterUpdate = visualBuilder.mainElement.find('.column').length;
                         expect(binsCount).toBe(3);
                         expect(binsAfterUpdate).toBeGreaterThan(binsCount);
                         expect(binsAfterUpdate).toBe(6);
                         done();
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);                
+                    });
+                });
             });
 
             it('Validate start bigger than end at y axis', (done) => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     yAxis: {
                         start: 65,
                         end:33
                     }
                 };
 
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    var firstY = parseInt(visualBuilder.mainElement.find('.axis:last .tick:first text').text(),10);
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let firstY = parseInt(visualBuilder.mainElement.find('.axis:last .tick:first text').text(),10);
                     expect(firstY).toBe(0);
-                  
+
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             xit('Validate Data Label', (done) => {
-                dataViews[0].metadata.objects = {
-                    labels: {
-                        show: true
-                    }
-                };
+                dataView.metadata.objects = { labels: { show: true } };
 
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    var columns = (visualBuilder.mainElement.find('.columns rect')).length;
-                    var dataLabels = (visualBuilder.mainElement.find('.labels text')).length;
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let columns = (visualBuilder.mainElement.find('.columns rect')).length;
+                    let dataLabels = (visualBuilder.mainElement.find('.labels text')).length;
                     expect(columns).toBe(dataLabels);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
     });
 
     class HistogramChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 1000, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
             return this.element.children("svg");
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

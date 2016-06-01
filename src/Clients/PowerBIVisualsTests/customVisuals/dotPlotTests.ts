@@ -26,16 +26,17 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.DotPlot;
+    import ValueByNameData = powerbitests.customVisuals.sampleDataViews.ValueByNameData;
 
     describe("DotPlot", () => {
         let visualBuilder: DotPlotBuilder;
-        let defaultDataBuilder: powerbitests.customVisuals.sampleDataViews.ValueByNameData;
+        let defaultDataViewBuilder: ValueByNameData;
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new DotPlotBuilder(500, 1500);
-            defaultDataBuilder = new powerbitests.customVisuals.sampleDataViews.ValueByNameData();
-            dataView = defaultDataBuilder.getDataView();
+            visualBuilder = new DotPlotBuilder(1000,500);
+            defaultDataViewBuilder = new ValueByNameData();
+            dataView = defaultDataViewBuilder.getDataView();
         });
 
         describe('capabilities', () => {
@@ -128,18 +129,16 @@ module powerbitests.customVisuals {
     });
 
     class DotPlotBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
             return this.element.children('svg');
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

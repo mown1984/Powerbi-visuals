@@ -1111,7 +1111,6 @@ module powerbitests {
                 textAlign: "",
                 position: position,
                 extension: new powerbi.visuals.controls.internal.TablixCellPresenter(false, Controls.TablixLayoutKind.Canvas),
-                style: new TablixUtils.CellStyle(),
                 contentHeight: 0,
                 contentWidth: 0,
                 applyStyle: function () { },

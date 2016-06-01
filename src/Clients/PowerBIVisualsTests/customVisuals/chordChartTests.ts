@@ -28,17 +28,19 @@ module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ChordChart;
     import helpers = powerbitests.helpers;
     import PixelConverter = jsCommon.PixelConverter;
+    import ValueByNameGroupData = powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData;
+
 	powerbitests.mocks.setLocale();
 	
     describe("ChordChart", () => {
         let visualBuilder: ChordChartBuilder;
-        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData;
+        let defaultDataViewBuilder: ValueByNameGroupData;
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new ChordChartBuilder(500,1000);
-            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData();
-            dataView = dataViewBuilder.getDataView();
+            visualBuilder = new ChordChartBuilder(1000,500);
+            defaultDataViewBuilder = new ValueByNameGroupData();
+            dataView = defaultDataViewBuilder.getDataView();
         });
 
         describe('capabilities', () => {
@@ -149,18 +151,16 @@ module powerbitests.customVisuals {
     });
 
     class ChordChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
-        
+
         public get mainElement() {
             return this.element.children("svg.chordChart");
         }
 
-        private build(): void {
-            this.visual = new VisualClass();
+        protected build() {
+            return new VisualClass();
         }
 
         public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions): powerbi.VisualObjectInstance[] {

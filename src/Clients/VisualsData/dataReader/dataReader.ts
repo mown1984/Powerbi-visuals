@@ -148,6 +148,9 @@ module powerbi.data {
         restartToken?: RestartToken;
         error?: IClientError;
         warning?: IClientWarning;
+
+        /** A value of true in this property indicates that the DataReaderData object from which this result is generated should not get persisted as contract cache nor server cache. */
+        disallowPersisting?: boolean;
     }
 
     export interface QueryGeneratorDataWindow {

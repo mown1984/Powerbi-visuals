@@ -32,18 +32,19 @@ module powerbitests.customVisuals {
     import AsterData = powerbi.visuals.samples.AsterData;
     import PixelConverter = jsCommon.PixelConverter;
     import Helpers = powerbitests.helpers;
+    import SalesByDayOfWeekData = powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
 
     powerbitests.mocks.setLocale();
 
     describe("AsterPlot", () => {
         let visualBuilder: AsterPlotBuilder;
-        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
+        let defaultDataViewBuilder: SalesByDayOfWeekData;
         let dataView: DataView;
 
         beforeEach(() => {
-            visualBuilder = new AsterPlotBuilder(500, 1000);
-            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData();
-            dataView = dataViewBuilder.getDataView();
+            visualBuilder = new AsterPlotBuilder(1000,500);
+            defaultDataViewBuilder = new SalesByDayOfWeekData();
+            dataView = defaultDataViewBuilder.getDataView();
         });
 
         describe('capabilities', () => {
@@ -384,10 +385,8 @@ module powerbitests.customVisuals {
     }
 
     class AsterPlotBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
 
         public get mainElement() {
@@ -398,11 +397,11 @@ module powerbitests.customVisuals {
             return this.element.children(".legend").children('#legendGroup');
         }
 
-        private build(): void {
+        protected build() {
             if (this.isMinervaVisualPlugin) {
-                this.visual = <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
+                return <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
             } else {
-                this.visual = new VisualClass();
+                return new VisualClass();
             }
         }
 

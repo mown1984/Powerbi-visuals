@@ -27,39 +27,38 @@
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Gantt;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+    import GanttData = customVisuals.sampleDataViews.GanttData;
 
     const defaultTaskDuration: number = 1;
-    const taskLabelIndex: number = 1;
 
     describe("Gantt", () => {
-        describe('capabilities', () => {
+        let visualBuilder: GanttBuilder;
+        let defaultDataViewBuilder: GanttData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new GanttBuilder(500,1000);
+            defaultDataViewBuilder = new GanttData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
+        describe("capabilities", () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: GanttBuilder;
-            let dataViews: powerbi.DataView[];
-
-            const func = e => e.innerHTML === "" || e.textContent === "";
 
             // function that uses grep to filter
-            const grep = (val) => {
-                return $.grep(val, func);
-            };
-
-            beforeEach(() => {
-                visualBuilder = new GanttBuilder();
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleData();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-            });
+            function grep(val) { 
+                return $.grep(val, (e: Element) => e.innerHTML === "" || e.textContent === "");
+            }
 
             it("svg element created", () => {
                 expect(visualBuilder.mainElement[0]).toBeInDOM();
             });
 
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     let countOfTaskLabels = visualBuilder.mainElement
                         .children("g.chart")
                         .children("g.tasks")
@@ -76,84 +75,120 @@ module powerbitests.customVisuals {
                         .children("g.task")
                         .length;
 
-                    expect(countOfTaskLabels).toEqual(dataViews[0].table.rows.length);
-                    expect(countOfTaskLines).toEqual(dataViews[0].table.rows.length);
-                    expect(countOfTasks).toEqual(dataViews[0].table.rows.length);
+                    expect(countOfTaskLabels).toEqual(dataView.table.rows.length);
+                    expect(countOfTaskLines).toEqual(dataView.table.rows.length);
+                    expect(countOfTasks).toEqual(dataView.table.rows.length);
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
-            it("When Task Element is Missing, empty viewport should be created", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataNoTask();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData, false /* no task*/);
-                visualBuilder.update(dataViews);
+            it("When Task Element is Missing, empty viewport should be created", (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    GanttData.ColumnType,
+                    GanttData.ColumnStartDate,
+                    GanttData.ColumnDuration,
+                    GanttData.ColumnResource,
+                    GanttData.ColumnCompletePrecntege]);
 
-                let body = d3.select(visualBuilder.element.get(0));
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let body = d3.select(visualBuilder.element.get(0));
 
-                expect(body.select('.axis').selectAll('*')[0].length).toEqual(0);
-                expect(body.select('.task-lines').selectAll('*')[0].length).toEqual(0);
-                expect(body.select('.chart .tasks').selectAll('*')[0].length).toEqual(0);
+                    expect(body.select(".axis").selectAll("*")[0].length).toEqual(0);
+                    expect(body.select(".task-lines").selectAll("*")[0].length).toEqual(0);
+                    expect(body.select(".chart .tasks").selectAll("*")[0].length).toEqual(0);
+                    done();
+                });
             });
 
-            it("When task duration is missing,  it should be set to 1", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataNoDuration();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-                visualBuilder.update(dataViews);
+            it("When task duration is missing,  it should be set to 1", (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    GanttData.ColumnType,
+                    GanttData.ColumnTask,
+                    GanttData.ColumnStartDate,
+                    GanttData.ColumnResource,
+                    GanttData.ColumnCompletePrecntege]);
 
-                let tasks = d3.select(visualBuilder.element.get(0)).selectAll('.task').data();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let tasks = d3.select(visualBuilder.element.get(0)).selectAll(".task").data();
 
-                for (let task of tasks)
-                    expect(task.duration).toEqual(defaultTaskDuration);
+                    for (let task of tasks) {
+                        expect(task.duration).toEqual(defaultTaskDuration);
+                    }
+
+                    done();
+                });
             });
 
-            it("When task start time is missing, it should be set to today date", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataNoStartDate();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-                visualBuilder.update(dataViews);
+            it("When task start time is missing, it should be set to today date", (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    GanttData.ColumnType,
+                    GanttData.ColumnTask,
+                    GanttData.ColumnDuration,
+                    GanttData.ColumnResource,
+                    GanttData.ColumnCompletePrecntege]);
 
-                let tasks = d3.select(visualBuilder.element.get(0)).selectAll('.task').data();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let tasks = d3.select(visualBuilder.element.get(0)).selectAll(".task").data();
 
-                for (let task of tasks)
-                    expect(task.start.toDateString()).toEqual(new Date(Date.now()).toDateString());
+                    for (let task of tasks) {
+                        expect(task.start.toDateString()).toEqual(new Date(Date.now()).toDateString());
+                    }
+
+                    done();
+                });
             });
 
-            it("Task Resource is Missing, not shown on dom", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataNoResource();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-                visualBuilder.update(dataViews);
+            it("Task Resource is Missing, not shown on dom", (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    GanttData.ColumnType,
+                    GanttData.ColumnTask,
+                    GanttData.ColumnStartDate,
+                    GanttData.ColumnDuration,
+                    GanttData.ColumnCompletePrecntege]);
 
-                let resources = d3.select(visualBuilder.element.get(0)).selectAll('.task-resource')[0];
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let resources = d3.select(visualBuilder.element.get(0)).selectAll(".task-resource")[0];
+                    let returnResource = grep(resources);
 
-                var returnResource = grep(resources);
-
-                expect(returnResource.length).toEqual(resources.length);
+                    expect(returnResource.length).toEqual(resources.length);
+                    done();
+                });
             });
 
-            it("Task Completion is Missing, not shown on dom", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataNoCompletion();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-                visualBuilder.update(dataViews);
+            it("Task Completion is Missing, not shown on dom", (done) => {
+                dataView = defaultDataViewBuilder.getDataView([
+                    GanttData.ColumnType,
+                    GanttData.ColumnTask,
+                    GanttData.ColumnStartDate,
+                    GanttData.ColumnDuration,
+                    GanttData.ColumnResource]);
 
-                let progressOfTasks = d3.select(visualBuilder.element.get(0)).selectAll('.task-progress')[0];
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let progressOfTasks = d3.select(visualBuilder.element.get(0)).selectAll(".task-progress")[0];
+                    let returnTasks = grep(progressOfTasks);
 
-                var returnTasks = grep(progressOfTasks);
-
-                expect(progressOfTasks.length).toEqual(returnTasks.length);
+                    expect(progressOfTasks.length).toEqual(returnTasks.length);
+                    done();
+                });
             });
 
-            it("Verify task labels have tooltips", () => {
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleDataLongNames();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-                visualBuilder.update(dataViews);
+            it("Verify task labels have tooltips", (done) => {
+                defaultDataViewBuilder.valuesTaskTypeResource.forEach(x => x[1] = _.repeat(x[1] + " ", 5).trim());
+                dataView = defaultDataViewBuilder.getDataView();
 
-                let taskLabelsInDom = d3.select(visualBuilder.element.get(0)).selectAll('.label title')[0];
-                let taskLabels = d3.select(visualBuilder.element.get(0)).selectAll('.label').data();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let taskLabelsInDom = d3.select(visualBuilder.element.get(0)).selectAll(".label title")[0];
+                    let taskLabels = d3.select(visualBuilder.element.get(0)).selectAll(".label").data();
+                    let tasks = dataView.categorical.categories[1].values;
 
-                for (let i = 0; i < sampleData.length; i++) {
-                    expect(taskLabels[i].name).toEqual(taskLabelsInDom[i].textContent);
-                    expect(sampleData[i][taskLabelIndex]).toEqual(taskLabelsInDom[i].textContent);
-                }
+                    for (let i = 0; i < tasks.length; i++) {
+                        expect(taskLabels[i].name).toEqual(taskLabelsInDom[i].textContent);
+                        expect(tasks[i]).toEqual(taskLabelsInDom[i].textContent);
+                    }
+
+                    done();
+                });
             });
 
             //it("Verify Axis number of ticks", () => {
@@ -171,7 +206,7 @@ module powerbitests.customVisuals {
             //    let endDate: Date = new Date(maxRow[dateIndex]);
             //    endDate.setDate(endDate.getDate() + maxRow[durationIndex]);
 
-            //    let allTicks = d3.select(visualBuilder.element.get(0)).selectAll('.axis .tick')[0];
+            //    let allTicks = d3.select(visualBuilder.element.get(0)).selectAll(".axis .tick")[0];
             //    let numOfTicks = allTicks.length;
             //    let weeks: number = Math.ceil(Math.round(endDate.valueOf() - startDate.valueOf()) / MillisecondsInAWeek);
             //    expect(weeks).toEqual(numOfTicks);
@@ -191,7 +226,7 @@ module powerbitests.customVisuals {
             //    let endDate: Date = new Date(maxRow[dateIndex]);
             //    endDate.setDate(endDate.getDate() + maxRow[durationIndex]);
 
-            //    let allTicks = d3.select(visualBuilder.element.get(0)).selectAll('.axis .tick')[0];
+            //    let allTicks = d3.select(visualBuilder.element.get(0)).selectAll(".axis .tick")[0];
             //    let numOfTicks = allTicks.length;
 
             //    let firstTick: Date = new Date(allTicks[0].textContent + " " + startDate.getUTCFullYear());
@@ -201,58 +236,54 @@ module powerbitests.customVisuals {
             //    expect(endDate).toEqual(endTick);
             //});
 
-            it("Verify Font Size set to default", () => {
-                visualBuilder.update(dataViews);
+            it("Verify Font Size set to default", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let resources = d3.select(visualBuilder.element.get(0)).selectAll(".task-resource")[0];
+                    let labels = d3.select(visualBuilder.element.get(0)).selectAll(".label")[0];
 
-                let resources = d3.select(visualBuilder.element.get(0)).selectAll('.task-resource')[0];
-                let labels = d3.select(visualBuilder.element.get(0)).selectAll('.label')[0];
-
-                expect(resources[0].style["font-size"]).toEqual("12px");
-                expect(labels[0].style["font-size"]).toEqual("12px");
+                    expect(resources[0].style["font-size"]).toEqual("12px");
+                    expect(labels[0].style["font-size"]).toEqual("12px");
+                    done();
+                });
             });
 
         });
 
         describe("View Model tests", () => {
-
-            let visualBuilder: GanttBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new GanttBuilder();
-                let sampleData: any[][] = new customVisuals.sampleDataViews.GanttData().getSampleData();
-                dataViews = new customVisuals.sampleDataViews.GanttData().getDataViews(sampleData);
-            });
-
             it("Test result from enumeration", () => {
-                let clonedDataViews = _.cloneDeep(dataViews);
-                let taskResource: powerbi.DataViewObjects = { taskResource: { show: true, fill: { solid: { color: '#A3A3A3' } }, fontSize: '14px' } };
-                clonedDataViews[0].metadata.objects = taskResource;
-                visualBuilder.update(clonedDataViews);
-                let result = <VisualObjectInstanceEnumerationObject>visualBuilder.enumerateObjectInstances({ objectName: 'taskResource' });
+                dataView.metadata.objects = { 
+                    taskResource: { 
+                        show: true,
+                        fill: { solid: { color: "#A3A3A3" } }, fontSize: "14px"
+                    }
+                };
 
-                expect(result.instances[0]).toBeDefined();
-                expect(result.instances[0].properties['show']).toBe(true);
-                expect(result.instances[0].properties['fill']).toBe('#A3A3A3');
-                expect(result.instances[0].properties['fontSize']).toBe('14px');
+                visualBuilder.updateEnumerateObjectInstancesRenderTimeout(
+                dataView,
+                { objectName: "taskResource" },
+                (result: VisualObjectInstanceEnumerationObject) => {
+                    expect(result.instances[0]).toBeDefined();
+                    expect(result.instances[0].properties["show"]).toBe(true);
+                    expect(result.instances[0].properties["fill"]).toBe("#A3A3A3");
+                    expect(result.instances[0].properties["fontSize"]).toBe("14px");
+                });
             });
         });
     });
 
     class GanttBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
 
         public get mainElement() {
-            return this.element.children("div.gantt-body")
+            return this.element
+                .children("div.gantt-body")
                 .children("svg.gantt");
         }
 
-        private build(): void {
-            this.visual = new VisualClass();
+        protected build() {
+            return new VisualClass();
         }
     }
 }

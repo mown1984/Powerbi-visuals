@@ -468,8 +468,7 @@ module powerbitests {
             displayUnits: 2,
             position: powerbi.visuals.PointLabelPosition.Above,
             precision: 2,
-            labelColor: "#000000",
-            formatterOptions: {}
+            labelColor: "#000000"
         };
 
         public viewPort = {

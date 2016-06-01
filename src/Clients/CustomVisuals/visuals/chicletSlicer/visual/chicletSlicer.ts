@@ -1199,7 +1199,6 @@ module powerbi.visuals.samples {
                             slicerClear: slicerClear,
                             interactivityService: this.interactivityService,
                             slicerSettings: data.slicerSettings,
-                            hostServices: this.hostServices,
                             isSelectionLoaded: this.isSelectionLoaded
                         };
 

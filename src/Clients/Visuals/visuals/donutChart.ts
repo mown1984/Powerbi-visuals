@@ -839,7 +839,6 @@ module powerbi.visuals {
                     allowDrilldown: this.allowDrilldown,
                     visual: this,
                     hasHighlights: data.hasHighlights,
-                    svg: this.svg,
                 };
 
                 this.interactivityService.bind(dataPoints, this.behavior, behaviorOptions);

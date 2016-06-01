@@ -679,7 +679,7 @@ module powerbitests {
 
                     expect(cardItemBottomBorderWidth).toEqual(0);
                     expect(cardItemBottomPadding).toEqual(0);
-                    expect(cardItemTopPadding).toEqual(5);
+                    expect(cardItemTopPadding).toEqual(0);
                 });
             });
 
@@ -721,9 +721,9 @@ module powerbitests {
                     let cardItemTopPadding = parseInt(element.find(".card").first().css("padding-top"), 10);
 
                     expect($(".card .title")).not.toBeInDOM();
-                    expect(cardItemBottomBorderWidth).toEqual(1);
-                    expect(cardItemBottomPadding).toEqual(5);
-                    expect(cardItemTopPadding).toEqual(5);
+                    expect(cardItemBottomBorderWidth).toEqual(0);
+                    expect(cardItemBottomPadding).toEqual(0);
+                    expect(cardItemTopPadding).toEqual(0);
                     expect($('.card .caption').first().css('font-size')).toBe('13px');
                     expect($('.card .details').first().css('font-size')).toBe('12px');
                     helpers.assertColorsMatch($('.card .caption').first().css('color'), '#333333');
@@ -773,7 +773,7 @@ module powerbitests {
                     expect($(".card")).toBeInDOM();
                     expect($(".card .cardItemContainer")).toBeInDOM();
 
-                    expect($(".card").length).toBe(3);
+                    expect($(".card").length).toBe(4);
                     expect($(".card:first>*:visible").length).toBe(1);
                     expect($(".card:first>*:visible").text()).not.toEqual('');
                 });
@@ -791,7 +791,7 @@ module powerbitests {
                     expect($(".card")).toBeInDOM();
                     expect($(".card .cardItemContainer")).toBeInDOM();
 
-                    expect($(".card").length).toBe(1);
+                    expect($(".card").length).toBe(2);
                     expect($(".card:first>*:visible").length).toBe(4);
                 });
             });
@@ -808,7 +808,7 @@ module powerbitests {
                     expect($(".card")).toBeInDOM();
                     expect($(".card .cardItemContainer")).toBeInDOM();
 
-                    expect($(".card").length).toBe(3);
+                    expect($(".card").length).toBe(4);
                     expect($(".card:first>*:visible").length).toBe(6);
                 });
             });

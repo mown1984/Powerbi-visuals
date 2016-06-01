@@ -663,7 +663,6 @@ module powerbi.visuals.samples {
                 bottom: 1,
                 left: 1
             };
-            element.addClass(EnhancedScatterChart.ClassName);
 
             this.yAxisOrientation = yAxisPosition.left;
             this.adjustMargins();
@@ -672,8 +671,10 @@ module powerbi.visuals.samples {
 
             let showLinesOnY = this.scrollX = true;
 
-            let svg = this.svg = d3.select(element.get(0)).append('svg');
-            svg.style('position', 'absolute');
+            let svg = this.svg = d3.select(element.get(0))
+                .append('svg')
+                .style('position', 'absolute')
+                .classed(EnhancedScatterChart.ClassName, true);
 
             let axisGraphicsContext = this.axisGraphicsContext = svg.append('g')
                 .classed(this.AxisGraphicsContextClassName, true);
@@ -927,7 +928,6 @@ module powerbi.visuals.samples {
                 xCol: scatterMetadata.cols.x,
                 yCol: scatterMetadata.cols.y,
                 dataPoints: dataPoints,
-                dataPointSeries: null,
                 legendData: legendData,
                 axesLabels: scatterMetadata.axesLabels,
                 selectedIds: [],

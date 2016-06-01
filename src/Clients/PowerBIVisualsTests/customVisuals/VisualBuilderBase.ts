@@ -25,7 +25,7 @@
  */
 
 module powerbitests.customVisuals {
-    export class VisualBuilderBase<T extends powerbi.IVisual> {
+    export abstract class VisualBuilderBase<T extends powerbi.IVisual> {
         public element: JQuery;
         public viewport: powerbi.IViewport;
         public host: powerbi.IVisualHostServices;
@@ -37,8 +37,8 @@ module powerbitests.customVisuals {
         protected style: powerbi.IVisualStyle;
 
         constructor(
-            height: number = 200,
-            width: number = 300,
+            width: number,
+            height: number,
             isMinervaVisualPlugin: boolean = false,
             element: JQuery = powerbitests.helpers.testDom(height.toString(), width.toString())) {
 
@@ -50,7 +50,12 @@ module powerbitests.customVisuals {
                 height: height,
                 width: width
             };
+
+            this.visual = this.build();
+            this.init();
         }
+
+        protected abstract build(): T;
 
         public init(): void {
             this.visual.init(<powerbi.VisualInitOptions>{
@@ -61,6 +66,12 @@ module powerbitests.customVisuals {
                 interactivity: this.interactivity,
                 animation: this.animation
             });
+        }
+
+        public destroy(): void {
+            if (this.visual && this.visual.destroy) {
+                this.visual.destroy();
+            }
         }
 
         public update(dataView: powerbi.DataView[] | powerbi.DataView): void {
@@ -78,7 +89,7 @@ module powerbitests.customVisuals {
         public updateEnumerateObjectInstancesRenderTimeout(
             dataViews: powerbi.DataView[] | powerbi.DataView,
             options: powerbi.EnumerateVisualObjectInstancesOptions,
-            fn: (enumeration: powerbi.VisualObjectInstance[] | powerbi.VisualObjectInstanceEnumeration) => void,
+            fn: (enumeration: powerbi.VisualObjectInstanceEnumeration) => void,
             timeout?: number): number {
 
             this.update(dataViews);

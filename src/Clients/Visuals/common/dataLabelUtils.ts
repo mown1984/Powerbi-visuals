@@ -193,7 +193,6 @@ module powerbi.visuals {
                 displayUnits: 0,
                 precision: defaultLabelPrecision,
                 labelColor: labelColor || defaultLabelColor,
-                formatterOptions: null,
                 fontSize: fontSize || DefaultFontSizeInPt,
             };
         }
@@ -212,7 +211,6 @@ module powerbi.visuals {
                 precision: defaultLabelPrecision,
                 labelColor: defaultInsideLabelColor,
                 showCategory: true,
-                formatterOptions: null,
             };
         }
 
@@ -241,7 +239,6 @@ module powerbi.visuals {
                 displayUnits: 0,
                 precision: defaultLabelPrecision,
                 labelColor: defaultLabelColor,
-                formatterOptions: null,
                 fontSize: DefaultFontSizeInPt,
             };
         }
@@ -253,7 +250,6 @@ module powerbi.visuals {
                 displayUnits: 0,
                 precision: defaultLabelPrecision,
                 labelColor: defaultLabelColor,
-                formatterOptions: null,
                 fontSize: DefaultFontSizeInPt,
                 labelDensity: isComboChart ? NewDataLabelUtils.LabelDensityMax : NewDataLabelUtils.LabelDensityMin,
             };
@@ -267,7 +263,6 @@ module powerbi.visuals {
                 displayUnits: 0,
                 precision: defaultLabelPrecision,
                 labelColor: defaultInsideLabelColor,
-                formatterOptions: null,
                 fontSize: DefaultFontSizeInPt,
             };
         }
@@ -286,7 +281,6 @@ module powerbi.visuals {
                 labelColor: null,
                 position: null,
                 fontSize: dataLabelUtils.minLabelFontSize,
-                formatterOptions: null,
             };
         }
 
@@ -298,7 +292,6 @@ module powerbi.visuals {
                 labelColor: defaultLabelColor,
                 position: null,
                 showCategory: true,
-                formatterOptions: null,
             };
         }
 

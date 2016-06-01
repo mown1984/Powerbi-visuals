@@ -416,7 +416,7 @@ module powerbi.data {
 
                 let isDynamicSeries = !!valueColumns.source;
 
-                debug.assert((prototype.values.length === 1) && (_.isEmpty(prototype.values[0].values)) ||
+                debug.assert(_.every(valueColumns, (valueColumn) => _.isEmpty(valueColumn.values)) ||
                     _.every(valueColumns, (valueColumn) => isDynamicSeries === !!valueColumn.identity),
                     'After applying selectsToInclude, all remaining DataViewValueColumn objects should have a consistent scope type (static vs. dynamic) with the parent DataViewValueColumns object.');
                     

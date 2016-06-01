@@ -296,7 +296,6 @@ module powerbitests {
         function getMockTooltipEvent(): TooltipEvent {
             return {
                 data: null,
-                index: 0,
                 coordinates: [10, 10],
                 elementCoordinates: [2, 2],
                 context: this,

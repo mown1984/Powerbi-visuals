@@ -294,6 +294,11 @@ module powerbi.visuals.samples {
 
             return { value: [0, value], toScrollPosition: toScrollPosition };
         }
+
+        public clearData(): void {
+            if (this.brushGraphicsContextY)
+                this.brushGraphicsContextY.selectAll("*").remove();
+        }
     }
 
     export class TornadoChartWarning implements IVisualWarning {
@@ -801,9 +806,9 @@ module powerbi.visuals.samples {
             let objects: DataViewObjects = this.getObjectsFromDataView(dataView);
 
             let formatStringProp: DataViewObjectPropertyIdentifier = TornadoChart.Properties.general.formatString;
-            let categorySourceFormatString: string = valueFormatter.getFormatString(category.source, formatStringProp);
+            let valuesSourceFormatString: string = valueFormatter.getFormatString(values[0].source, formatStringProp);
             let maxValue: number = d3.max(values[0].values);
-            let settings: TornadoChartSettings = this.parseSettings(objects, categorySourceFormatString, maxValue);
+            let settings: TornadoChartSettings = this.parseSettings(objects, valuesSourceFormatString, maxValue);
             this.hasDynamicSeries = !!values.source;
             let hasHighlights: boolean = this.hasHighlights = !!(values.length > 0 && values[0].highlights);
             this.labelHeight = TextMeasurementService.estimateSvgTextHeight({
@@ -823,6 +828,7 @@ module powerbi.visuals.samples {
             // Parse category labels and compute maximum category length
             let maxCategoryLength: number = 0;
             let showCategories = settings.showCategories;
+            let categorySourceFormatString: string = valueFormatter.getFormatString(category.source, formatStringProp);
             for (let i = 0; i < categoryValuesLength; i++) {
                 let formattedCategoryValue = valueFormatter.format(categoryValues[i], categorySourceFormatString);
                 let textData = this.getTextData(formattedCategoryValue, true);
@@ -1036,6 +1042,7 @@ module powerbi.visuals.samples {
             this.labels.selectAll("*").remove();
             this.categories.selectAll("*").remove();
             this.legend.drawLegend({ dataPoints: [] }, this.viewport);
+            this.scrolling.clearData();
         }
 
         public onClearSelection(): void {
@@ -1060,6 +1067,8 @@ module powerbi.visuals.samples {
         }
 
         private renderWithScrolling(tornadoChartDataView: TornadoChartDataView, scrollStart: number, scrollEnd: number): void {
+            if (!this.tornadoChartDataView || !this.tornadoChartDataView.settings)
+                return;
             let categoriesLength = tornadoChartDataView.categories.length;
             let startIndex: number = scrollStart * categoriesLength;
             let endIndex: number = scrollEnd * categoriesLength;
@@ -1435,7 +1444,7 @@ module powerbi.visuals.samples {
 
             categoriesSelection
                 .select(TornadoChart.CategoryTitle.selector)
-                .text((text: string) => text);
+                .text((text: TextData) => text.text);
 
             categoriesSelection
                 .select(TornadoChart.CategoryText.selector)

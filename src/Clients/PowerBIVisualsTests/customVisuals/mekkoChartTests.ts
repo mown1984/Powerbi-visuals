@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -27,6 +27,7 @@
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.MekkoChart;
     import MekkoChartData = sampleDataViews.MekkoChartData;
+
     import MekkoColumnChart = powerbi.visuals.samples.MekkoColumnChart;
     import MekkoColumnChartData = powerbi.visuals.samples.MekkoColumnChartData;
     import DataColorPalette = powerbi.visuals.DataColorPalette;
@@ -37,52 +38,68 @@ module powerbitests.customVisuals {
     powerbitests.mocks.setLocale();
 
     describe("MekkoChart", () => {
+        let visualBuilder: MekkoChartBuilder;
+        let defaultDataViewBuilder: MekkoChartData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new MekkoChartBuilder(1000,500);
+            defaultDataViewBuilder = new MekkoChartData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe("capabilities", () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: MekkoChartBuilder,
-                dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new MekkoChartBuilder();
-                dataViews = [new MekkoChartData().getDataView()];
-            });
-
             it("main element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.categoriesAxis).toBeInDOM();
                     expect(visualBuilder.categoriesAxis.children("g.tick").length)
-                        .toBe(dataViews[0].matrix.rows.root.children.length);
+                        .toBe(dataView.matrix.rows.root.children.length);
 
                     expect(visualBuilder.columnElement).toBeInDOM();
                     let series: JQuery = visualBuilder.columnElement.children("g.series");
                     expect(series.length)
-                        .toBe(dataViews[0].matrix.columns.root.children.length);
+                        .toBe(dataView.matrix.columns.root.children.length);
 
                     for (let i = 0, length = series.length; i < length; i++) {
                         expect($(series[i]).children("rect.column").length)
-                            .toBe(dataViews[0].matrix.rows.root.children.length);
+                            .toBe(dataView.matrix.rows.root.children.length);
                     }
+
                     done();
-                }, DefaultWaitForRender);
+                });
+            });
+
+            it("validate that labels are not cut off", done => {
+                dataView.metadata.objects = { 
+                    categoryAxis: { fontSize: 40 },
+                    valueAxis: { fontSize: 40 }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let xTicksElements = <Element[]>visualBuilder.categoriesAxisTicks.children("text").toArray();
+                    let columnsBottomPosition = visualBuilder.columnElement[0].getBoundingClientRect().bottom;
+                    let xTicksElementsTopPosition = xTicksElements.map(
+                        x => x.getBoundingClientRect().bottom - parseFloat(window.getComputedStyle(x).fontSize));
+                    expect(xTicksElementsTopPosition.every(x => x > columnsBottomPosition)).toBeTruthy();
+
+                    done();
+                });
             });
         });
 
         describe("MekkoColumnChartData", () => {
             describe("converter", () => {
-                let dataView: powerbi.DataView,
-                    mekkoColumnChartData: MekkoColumnChartData,
-                    dataColorPalette: DataColorPalette;
+                let mekkoColumnChartData: MekkoColumnChartData;
+                let dataColorPalette: DataColorPalette;
 
                 beforeEach(() => {
-                    dataView = new MekkoChartData().getDataView();
                     dataColorPalette = new DataColorPalette();
-
                     mekkoColumnChartData = MekkoColumnChart.converter(
                         dataView.categorical,
                         dataColorPalette,
@@ -135,35 +152,90 @@ module powerbitests.customVisuals {
 
                 describe("MekkoColumnChartData", () => {
                     describe("converter", () => {
-                        let visualBuilder: MekkoChartBuilder,
-                            dataViews: powerbi.DataView[];
-
-                        beforeEach(() => {
-                            visualBuilder = new MekkoChartBuilder();
-                            dataViews = [new MekkoChartData().getDataView()];
-                        });
-
-                       it("mekko columnBorder on", done => {
-                            dataViews[0].metadata.objects = {
+                        it("mekko columnBorder on", done => {
+                            dataView.metadata.objects = {
                                 columnBorder: {
                                     show: true
                                 }
                             };
-                            visualBuilder.updateRenderTimeout(dataViews, () => {
+                            visualBuilder.updateRenderTimeout(dataView, () => {
                                 expect(visualBuilder.mainElement.find('.mekkoborder').first().attr('width')).toBeGreaterThan(0);
                                 done();
                             });
                         });
 
                         it("nodes border change color", done => {
-                            dataViews[0].metadata.objects = {
+                            dataView.metadata.objects = {
                                 columnBorder: {
                                     color: { solid: { color: "#123123" } }
                                 }
                             };
 
-                            visualBuilder.updateRenderTimeout(dataViews, () => {
+                            visualBuilder.updateRenderTimeout(dataView, () => {
                                 colorAssert(visualBuilder.mainElement.find('rect.mekkoborder').first().css('fill'), "#123123");
+                                done();
+                            });
+
+                        });
+
+                        it("category axes label font-size", done => {
+                            dataView.metadata.objects = {
+                                categoryAxis: {
+                                    fontSize: 17
+                                },
+                                valueAxis: {
+                                    fontSize: 15
+                                },
+                            };
+
+                            visualBuilder.updateRenderTimeout(dataView, () => {
+                                expect(visualBuilder.mainElement.find('.x.axis g.tick text').first().attr('font-size')).toBe("17px");
+                                expect(visualBuilder.mainElement.find('.y.axis g.tick text').first().attr('font-size')).toBe("15px");
+
+                                done();
+                            });
+
+                        });
+
+                        it("Display units - millions", done => {
+                            dataView.metadata.objects = {
+                                labels: {
+                                    show: true,
+                                    labelDisplayUnits: 1000000,
+                                },
+                            };
+
+                            visualBuilder.updateRenderTimeout(dataView, () => {
+                                expect(visualBuilder.mainElement.find('.labelGraphicsContext text').first().text()).toMatch(/[0-9.]*M/);
+                                done();
+                            });
+
+                        });
+
+                        it("Display units - thousands", done => {
+                            dataView.metadata.objects = {
+                                labels: {
+                                    show: true,
+                                    labelDisplayUnits: 1000,
+                                },
+                            };
+                            visualBuilder.updateRenderTimeout(dataView, () => {
+                                expect(visualBuilder.mainElement.find('.labelGraphicsContext text').first().text()).toMatch(/[0-9.]*K/);
+                                done();
+                            });
+
+                        });
+
+                        it("Limit Decimal Places value", done => {
+                            dataView.metadata.objects = {
+                                labels: {
+                                    show: true,
+                                    labelDisplayUnits: 0,
+                                    labelPrecision: 99,
+                                },
+                            };
+                            visualBuilder.updateRenderTimeout(dataView, () => {
+                                expect(visualBuilder.mainElement.find('.labelGraphicsContext text').first().text()).toMatch(/\d*[.]\d{4}%/);
                                 done();
                             });
 
@@ -176,33 +248,34 @@ module powerbitests.customVisuals {
 
     });
 
-        class MekkoChartBuilder extends VisualBuilderBase<VisualClass> {
-            constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-                super(height, width, isMinervaVisualPlugin);
-                this.build();
-                this.init();
-            }
+    class MekkoChartBuilder extends VisualBuilderBase<VisualClass> {
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
 
-            public get mainElement() {
-                return this.element
-                    .children("svg")
-                    .children("g.axisGraphicsContext")
-                    .parent();
-            }
+        protected build() {
+            return new VisualClass(null);
+        }
 
-            public get categoriesAxis() {
-                return this.mainElement
-                    .children("g.axisGraphicsContext")
-                    .children("g.x.axis.showLinesOnAxis");
-            }
+        public get mainElement() {
+            return this.element
+                .children("svg")
+                .children("g.axisGraphicsContext")
+                .parent();
+        }
 
-            public get columnElement() {
-                return this.mainElement.find("svg.svgScrollable g.axisGraphicsContext .columnChartMainGraphicsContext");
-            }
+        public get categoriesAxis() {
+            return this.mainElement
+                .children("g.axisGraphicsContext")
+                .children("g.x.axis.showLinesOnAxis");
+        }
 
-            private build(): void {
-                this.visual = new VisualClass(null);
-            }
+        public get categoriesAxisTicks() {
+            return this.categoriesAxis.children("g.tick");
+        }
+
+        public get columnElement() {
+            return this.mainElement.find("svg.svgScrollable g.axisGraphicsContext .columnChartMainGraphicsContext");
         }
     }
-        
+}

@@ -69,6 +69,7 @@ module.exports = function () {
             VisualsDropFolder: path.resolve(__dirname, confJSON.paths.VisualsDropFolder),
             VisualsDropStyles: path.resolve(__dirname, confJSON.paths.VisualsDropStyles),
             VisualsDropScripts: path.resolve(__dirname, confJSON.paths.VisualsDropScripts),
+            VisualsDropImages: path.resolve(__dirname, confJSON.paths.VisualsDropImages),
             VisualsDropTests: path.resolve(__dirname, confJSON.paths.VisualsDropTests),
         }
     }, confJSON);

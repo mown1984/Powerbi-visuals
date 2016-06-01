@@ -2227,6 +2227,10 @@ body {
   fill: #666666;
   opacity: 1;
 }
+.visual .realTimeLineChart .mainGraphicsSVG {
+  position: absolute;
+  overflow: hidden;
+}
 .visual .funnelChart line {
   shape-rendering: crispEdges;
 }
@@ -2660,23 +2664,11 @@ body {
 .visual .multiRowCard .card {
   box-sizing: border-box;
   color: #767676;
-  padding-left: 10px;
   position: relative;
   width: 100%;
 }
-.visual .multiRowCard .card.mrtile {
-  border-bottom: 1px solid #C8C8C8;
-  border-left: 0px;
-  padding-bottom: 5px;
-  padding-left: 0px;
-  padding-top: 5px;
-}
-.visual .multiRowCard .card.mrtile .cardItemContainer {
-  padding-top: 5px;
-}
 .visual .multiRowCard .card .cardItemContainer {
   box-sizing: border-box;
-  padding-top: 7px;
   position: relative;
   vertical-align: top;
 }

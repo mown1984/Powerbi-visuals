@@ -449,8 +449,6 @@ module powerbitests {
             unbindEmptySpaceHeaderCell: (cell: Controls.ITablixCell) => { },
             bindEmptySpaceFooterCell: (cell: Controls.ITablixCell) => { },
             unbindEmptySpaceFooterCell: (cell: Controls.ITablixCell) => { },
-            setTablixColumnSeparator: (cell: Controls.ITablixCell) => { },
-            setTablixRegionStyle: (cell: Controls.ITablixCell, fontColor: string, backgroundColor, outline: string, outlineWeight: number, outlineColor: string) => { },
             getHeaderLabel: (item: any): string => { return "label"; },
             getCellContent: (item: any): string => { return "label"; },
             hasRowGroups: () => true

@@ -469,11 +469,17 @@ declare module powerbi.data {
         Max = 2,
     }
     interface DataShapeBindingSelectAggregateContainer {
-        Percentile: DataShapeBindingSelectPercentileAggregate;
+        Percentile?: DataShapeBindingSelectPercentileAggregate;
+        Min?: DataShapeBindingSelectMinAggregate;
+        Max?: DataShapeBindingSelectMaxAggregate;
     }
     interface DataShapeBindingSelectPercentileAggregate {
         Exclusive?: boolean;
         K: number;
+    }
+    interface DataShapeBindingSelectMaxAggregate {
+    }
+    interface DataShapeBindingSelectMinAggregate {
     }
 }
 declare module powerbi.data {
@@ -1272,6 +1278,7 @@ declare module powerbi.data {
         getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
+        getStaticObjects(): DataViewObjects;
     }
 }
 declare module powerbi.data {
@@ -1646,6 +1653,8 @@ declare module powerbi.data {
         restartToken?: RestartToken;
         error?: IClientError;
         warning?: IClientWarning;
+        /** A value of true in this property indicates that the DataReaderData object from which this result is generated should not get persisted as contract cache nor server cache. */
+        disallowPersisting?: boolean;
     }
     interface QueryGeneratorDataWindow {
     }
@@ -2769,6 +2778,7 @@ declare module powerbi.data {
     module SQExprUtils {
         function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
         function indexOfExpr(items: SQExpr[], searchElement: SQExpr): number;
+        function indexOfNamedExpr(items: NamedSQExpr[], searchElement: SQExpr): number;
         function sequenceEqual(x: SQExpr[], y: SQExpr[]): boolean;
         function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr, exprDefaultName?: string): string;
         /** Generates a default expression name  */

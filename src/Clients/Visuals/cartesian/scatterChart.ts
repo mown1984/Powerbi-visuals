@@ -708,6 +708,9 @@ module powerbi.visuals {
         public setData(dataViews: DataView[]): void {
             this.data = ScatterChart.getDefaultData();
 
+            if (this.playAxis && this.playAxis.isCurrentlyPlaying())
+                this.playAxis.stop();
+
             if (dataViews.length > 0) {
                 let dataView = dataViews[0] || dataViews[1];
 
@@ -1016,6 +1019,10 @@ module powerbi.visuals {
             this.xAxisProperties = xProperties;
         }
 
+        public shouldSuppressAnimation(): boolean {
+            return this.data && this.data.dataPoints && this.data.dataPoints.length > ScatterChart.NoAnimationThreshold;
+        }
+
         public render(suppressAnimations: boolean, resizeMode?: ResizeMode): CartesianVisualRenderResult {
             if (!this.data)
                 return;
@@ -1284,7 +1291,7 @@ module powerbi.visuals {
             if (viewModel.suppressDataPointRendering) {
                 scatterMarkers = this.removeScatterMarkers();
             }
-            else if (viewModel.animationDuration > 0 && viewModel.data.dataPoints.length <= ScatterChart.NoAnimationThreshold) {
+            else if (viewModel.animationDuration > 0) {
                 scatterMarkers = this.drawScatterMarkers(viewModel);
             }
             else {
@@ -1418,6 +1425,8 @@ module powerbi.visuals {
                     SvgRenderer.applyStyle(this, seriesStyle);
 
                     let markers = g.selectAll(SvgRenderer.DotClass.selector).data(s.dataPoints, (m: ScatterChartDataPoint) => m.identity.getKey());
+
+                    markers.interrupt();
 
                     markers.enter()
                         .append('circle')

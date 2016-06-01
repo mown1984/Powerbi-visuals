@@ -27,7 +27,6 @@
 
 var projects = require("../../../gulp/projects.js"),
     config = require("../../../gulp/config.js"),
-    path = require("path"),
     utils = require("../../../gulp/utils.js");
 
 var externalsJs = [
@@ -80,7 +79,7 @@ module.exports = projects.initProject(
             },
             {
                 source: ["./images/visuals.sprites.png", "./images/locationButton.svg"],
-                dest: path.join(config.paths.VisualsDropStyles, "images")
+                dest: config.paths.VisualsDropImages
             },
             {
                 source: [

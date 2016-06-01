@@ -75,8 +75,16 @@ module powerbitests.customVisuals.helpers {
         return getRandomNumber(max, min, exceptionList, Math.floor);
     }
 
+    export function getRandomDates(count: number, start: Date, end: Date): Date[] {
+        return getRandomNumbers(count, start.getTime(), end.getTime()).map(x => new Date(x));
+    }
+
+    export function getRandomUniqueDates(count: number, start: Date, end: Date): Date[] {
+        return getRandomUniqueNumbers(count, start.getTime(), end.getTime()).map(x => new Date(x));
+    }
+
     export function getRandomUniqueSortedDates(count: number, start: Date, end: Date): Date[] {
-        return getRandomUniqueNumbers(count, start.getTime(), end.getTime()).sort().map(x => new Date(x));
+        return getRandomUniqueDates(count, start, end).sort((a,b) => a.getTime() - b.getTime());
     }
 
     export function getRandomDate(start: Date, end: Date, exceptionList?: Date[]): Date {

@@ -26,17 +26,18 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.BulletChart;
+    import BulletChartData = powerbitests.customVisuals.sampleDataViews.BulletChartData;
     powerbitests.mocks.setLocale();
 
     describe("BulletChart", () => {
         let visualBuilder: BulletChartBuilder;
-        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.BulletChartData;
+        let defaultDataViewBuilder: powerbitests.customVisuals.sampleDataViews.BulletChartData;
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new BulletChartBuilder();
-            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.BulletChartData();
-            dataView = dataViewBuilder.getDataView();
+            visualBuilder = new BulletChartBuilder(1000,500);
+            defaultDataViewBuilder = new BulletChartData();
+            dataView = defaultDataViewBuilder.getDataView();
         });
 
         describe('capabilities', () => {
@@ -64,14 +65,14 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('height'))
                         .toBe(dataView.categorical.categories[0].values.length * defaultCategoryWidth + 'px');
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('width'))
-                        .toBe((visualBuilder.viewport.height + 87) + 'px');
+                        .toBe((visualBuilder.viewport.width - 13) + 'px');
                     done();
                 });
             });
 
             it("update with illegal values", (done) => {
-                dataViewBuilder.valuesValue = [20000, 420837, -3235, -3134, null, 0, 4, 5];
-                dataView = dataViewBuilder.getDataView();
+                defaultDataViewBuilder.valuesValue = [20000, 420837, -3235, -3134, null, 0, 4, 5];
+                dataView = defaultDataViewBuilder.getDataView();
                 dataView.metadata.objects = { orientation: { vertical: false } };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
@@ -87,7 +88,7 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('height'))
                         .toBe(dataView.categorical.categories[0].values.length * defaultCategoryWidth + 'px');
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('width'))
-                        .toBe((visualBuilder.viewport.height + 87) + 'px');
+                        .toBe((visualBuilder.viewport.width - 13) + 'px');
                     done();
                 });
             });
@@ -171,18 +172,16 @@ module powerbitests.customVisuals {
     });
 
     class BulletChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
 
         public get mainElement() {
             return this.element.children("div").children("svg");
         }
 
-        private build(): void {
-            this.visual = new VisualClass();
+        protected build() {
+            return new VisualClass();
         }
     }
 }

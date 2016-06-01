@@ -129,11 +129,19 @@ module powerbi.data {
     }
 
     export interface DataShapeBindingSelectAggregateContainer {
-        Percentile: DataShapeBindingSelectPercentileAggregate;
+        Percentile?: DataShapeBindingSelectPercentileAggregate;
+        Min?: DataShapeBindingSelectMinAggregate;
+        Max?: DataShapeBindingSelectMaxAggregate;
     }
 
     export interface DataShapeBindingSelectPercentileAggregate {
         Exclusive?: boolean;
         K: number;
+    }
+
+    export interface DataShapeBindingSelectMaxAggregate {
+    }
+
+    export interface DataShapeBindingSelectMinAggregate {
     }
 } 

@@ -25,83 +25,27 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
-    import PrimitiveType = powerbi.PrimitiveType;
-    import DataViewMetadata = powerbi.DataViewMetadata;
-    import SQExprBuilder = powerbi.data.SQExprBuilder;
-    import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
-    export class TimelineData {
-        public getDataView(): DataView {
-            let rows = [
-                ['01.01.2014'],
-                ['02.01.2014'],
-                ['03.01.2014'],
-                ['04.01.2014'],
-                ['05.01.2014'],
-                ['06.01.2014'],
-                ['07.01.2014'],
-                ['08.01.2014'],
-                ['09.01.2014'],
-                ['10.01.2014']
-            ];
-            let categoryValues = rows.map(function (value) {
-                let arr = value[0].split('.');
-                return (new Date(Number(arr[2]), Number(arr[1]) - 1, Number(arr[0]))); // months in JavaScript start with 0
-            });
-            let dataViewMetadata: DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'Order Date',
-                        queryName: 'Order Date',
-                        type: powerbi.ValueType.fromDescriptor({ dateTime: true })
-                    }
-                ]
-            };
-            let fieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: 'e', name: 'Order Date' } });
-			let dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime);
-            let groupSource1: DataViewMetadataColumn = { displayName: 'group1', type: dataTypeString, index: 0 };
-			let tree: powerbi.DataViewTree = {
-				root: {
-					childIdentityFields: [{ ref: "Order Date" }]
-				}
-			};
-            return {
-                metadata: { columns: [groupSource1] },
-                categorical: {
-                    categories: [{
-                        source: dataViewMetadata.columns[0],
-                        values: categoryValues,
-                        identityFields: [fieldExpr],
-                        objects: [
-                            {
-                                dataPoint: {
-                                    fill: {
-                                        solid: {
-                                            color: 'rgb(165, 172, 175)'
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                dataPoint: {
-                                    fill: {
-                                        solid: {
-                                            color: 'rgb(175, 30, 44)'
-                                        }
-                                    }
-                                }
-                            },
-                        ]
-                    }]
-                },
-                table: {
-                    columns: [groupSource1],
-                    rows: []
-                },
-				tree: tree
-            };
+    export class TimelineData extends DataViewBuilder {
+        public static ColumnCategory: string = "Date";
+
+        public valuesCategory: Date[] = helpers.getDateRange(new Date(2016, 0, 1), new Date(2016, 0, 10), 1000*24*3600);
+
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: TimelineData.ColumnCategory,
+                        roles: { Category: true },
+                        type: ValueType.fromDescriptor({ dateTime: true })
+                    },
+                    values: this.valuesCategory
+                }
+                ],
+                null,
+                null,
+                columnNames).build();
         }
     }
 }

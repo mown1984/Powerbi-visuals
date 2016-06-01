@@ -68,7 +68,7 @@ module powerbitests {
                 let trendLine: TrendLine = {
                     points: samplePoints,
                     show: true,
-                    lineColor: { fill: { solid: { color: 'red' } } },
+                    lineColor: { solid: { color: 'red' } },
                     style: lineStyle.dotted,
                     transparency: 20,
                     combineSeries: true,
@@ -83,7 +83,7 @@ module powerbitests {
                     selector: null,
                     properties: {
                         show: true,
-                        lineColor: { fill: { solid: { color: 'red' } } },
+                        lineColor: { solid: { color: 'red' } },
                         style: lineStyle.dotted,
                         transparency: 20,
                         combineSeries: true,

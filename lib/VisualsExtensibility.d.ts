@@ -114,6 +114,7 @@ declare module powerbi.extensibility {
         private visualInfo;
         private telemetryService;
         private silent;
+        private perfLoadEvent;
         constructor(wrappedVisual: powerbi.IVisual, visualInfo: VisualTelemetryInfo, telemetryService: ITelemetryService, silent?: boolean);
         init(options: VisualInitOptions): void;
         destroy(): void;

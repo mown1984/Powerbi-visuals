@@ -109,6 +109,7 @@ module powerbi.data {
         getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
+        getStaticObjects(): DataViewObjects;
     }
 
     /**
@@ -477,6 +478,15 @@ module powerbi.data {
         public getSeriesDisplayName(): string {
             if (this.hasAnyValidValues && this.dataHasDynamicSeries)
                 return this.dataView.categorical.values.source.displayName;
+        }
+        
+        public getStaticObjects(): DataViewObjects {
+            let result: DataViewObjects = null;
+            if(this.dataView.metadata && this.dataView.metadata.objects) {
+                result = this.dataView.metadata.objects;
+            }
+            
+            return result;
         }
     }
 }

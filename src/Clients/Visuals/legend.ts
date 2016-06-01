@@ -524,7 +524,6 @@ module powerbi.visuals {
             let dataPoints = data.dataPoints;
             if (data.dataPoints.length === 0) {
                 return {
-                    startIndex: null,
                     numberOfItems: 0,
                     title: null,
                     navigationArrows: []

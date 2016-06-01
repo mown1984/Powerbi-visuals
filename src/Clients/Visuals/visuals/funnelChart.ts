@@ -1217,7 +1217,6 @@ module powerbi.visuals {
                 position: powerbi.visuals.labelPosition.insideCenter,
                 displayUnits: 0,
                 labelColor: null,
-                formatterOptions: null,
                 fontSize: LabelUtils.DefaultLabelFontSizeInPt,
             };
         }
@@ -1228,7 +1227,6 @@ module powerbi.visuals {
                 position: PointLabelPosition.Above,
                 displayUnits: 0,
                 labelColor: LabelUtils.defaultLabelColor,
-                formatterOptions: null,
                 fontSize: LabelUtils.DefaultLabelFontSizeInPt,
             };
         }

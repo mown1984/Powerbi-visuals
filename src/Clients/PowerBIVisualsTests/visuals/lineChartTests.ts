@@ -2825,14 +2825,12 @@ module powerbitests {
                         {
                             displayName: 'col1',
                             queryName: 'col1',
-                            properties: { Series: true },
                             type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
                             roles: { Category: true }
                         },
                         {
                             displayName: 'col2',
                             queryName: 'col2',
-                            properties: { Y: true },
                             type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
                             roles: { Y: true }
                         }
@@ -7120,7 +7118,6 @@ module powerbitests {
     function createTooltipEvent(data: any, context?: HTMLElement): powerbi.visuals.TooltipEvent {
         return {
             data: data,
-            index: 0,
             coordinates: [],
             elementCoordinates: [],
             context: context,

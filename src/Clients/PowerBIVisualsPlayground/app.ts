@@ -201,8 +201,7 @@ module powerbi.visuals {
                 interactivity: {
                     isInteractiveLegend: this.shouldCreateInteractiveVisual(host),
                     selection: this.isInteractiveMode()
-                },
-                settings: { slicingEnabled: true }
+                }
             });
         }
 

@@ -102,16 +102,19 @@ module powerbi.visuals {
     interface MultiRowCardStyle {
         row?: {
             border?: Surround<EdgeSettings>;
+            padding?: Surround<number>;
             marginBottom?: number;
             background?: string
         };
         card?: {
             border?: Surround<EdgeSettings>;
+            padding?: Surround<number>;
             maxRows?: number;
         };
         cardItemContainer?: {
             paddingRight?: number;
             minWidth?: number;
+            padding?: Surround<number>;
         };
         details?: {
             fontSize?: number;
@@ -176,14 +179,29 @@ module powerbi.visuals {
             row: {
                 border: null,
                 marginBottom: 20,
-                background: undefined 
+                background: undefined,
+                padding: {
+                    top: 5,
+                    right: 5,
+                    bottom: 5,
+                    left: 5
+                }
             },
             card: {
-                border: null
+                border: null,
+                padding: {
+                    top: 10,
+                    right: 10,
+                    bottom: 10,
+                    left: 10
+                }
             },
             cardItemContainer: {
                 paddingRight: 20,
                 minWidth: 120,
+                padding: {
+                    top: 7
+                }
             },
             imageCaption: {
                 maxHeight: 75,
@@ -236,6 +254,16 @@ module powerbi.visuals {
                     },
                     imageCaption: {
                         maxHeight: 53,
+                    }
+                }
+            },
+            {
+                maxWidth: Number.MAX_VALUE,
+                style: {
+                    cardItemContainer: {
+                        padding: {
+                            top: 5
+                        }
                     }
                 }
             }
@@ -519,7 +547,7 @@ module powerbi.visuals {
                 let dataLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(false, style.caption.fontSize));
                 let categoryLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(false, style.details.fontSize));
                 let titleLabelHeight = TextMeasurementService.estimateSvgTextHeight(MultiRowCard.getTextProperties(true, style.title.fontSize));
-                let rowBorderStyle = this.getBorderStyles(style.row.border);
+                let rowBorderStyle = this.getBorderStyles(style.row.border, style.row.padding);
                 
                 rowSelection
                     .style(rowBorderStyle)
@@ -564,8 +592,7 @@ module powerbi.visuals {
                 }
    
                 let cardSelection = rowSelection.selectAll(MultiRowCard.Card.selector);
-                
-                let cardBorderStyle = this.getBorderStyles(style.card.border);
+                let cardBorderStyle = this.getBorderStyles(style.card.border, style.card.padding);
                 cardSelection.style(cardBorderStyle);
 
                 cardSelection
@@ -587,10 +614,15 @@ module powerbi.visuals {
                     .selectAll(MultiRowCard.CaptionImageSelector)
                     .attr('src', (d: CardItemData) => d.caption)
                     .style(style.imageCaption);
+                    
+                let cardPaddingTop = getPixelString(style.cardItemContainer.padding.top);
 
                 cardSelection
                     .selectAll(MultiRowCard.CardItemContainer.selector)
                     .style({
+                        'padding-top': (d: CardItemData) => {
+                            return this.isInFirstRow(d.columnIndex) ? '':  cardPaddingTop;
+                        },
                         'padding-right': (d: CardItemData) => {
                             return this.isLastRowItem(d.columnIndex, this.dataView.metadata.columns.length) ? '0px' : getPixelString(style.cardItemContainer.paddingRight);
                         },
@@ -646,13 +678,31 @@ module powerbi.visuals {
             this.listView = ListViewFactory.createListView(listViewOptions);
         }
         
-        private getBorderStyles(border: Surround<EdgeSettings>): { [property: string]: string } {
+        private getBorderStyles(border: Surround<EdgeSettings>, padding?: Surround<number>): { [property: string]: string } {
             
+            let hasBorder: Surround<boolean> = {
+                top: border != null && border.top != null,
+                right: border != null && border.right != null,
+                bottom: border != null && border.bottom != null,
+                left: border != null && border.left != null
+            };
+            
+            let hasPadding: Surround<boolean> = {
+                top: padding != null && padding.top != null,
+                right: padding != null && padding.right != null,
+                bottom: padding != null && padding.bottom != null,
+                left: padding != null && padding.left != null
+            };
+
             return {
-                'border-top': border && border.top ? border.top.getCSS() : '',
-                'border-right': border && border.right ? border.right.getCSS() : '',
-                'border-bottom': border && border.bottom ? border.bottom.getCSS() : '',
-                'border-left': border && border.left ? border.left.getCSS() : ''
+                'border-top': hasBorder.top ? border.top.getCSS() : '',
+                'border-right': hasBorder.right ? border.right.getCSS() : '',
+                'border-bottom': hasBorder.bottom ? border.bottom.getCSS() : '',
+                'border-left': hasBorder.left ? border.left.getCSS() : '',
+                'padding-top': hasBorder.top && hasPadding.top ? getPixelString(padding.top) : '',
+                'padding-right': hasBorder.right && hasPadding.right ? getPixelString(padding.right) : '',
+                'padding-bottom': hasBorder.bottom && hasPadding.bottom ? getPixelString(padding.bottom) : '',
+                'padding-left': hasBorder.left && hasPadding.left ? getPixelString(padding.left) : '',
             };
         } 
 
@@ -769,7 +819,7 @@ module powerbi.visuals {
             return (100.0 / lastRowCount) + '%';
         }
 
-        private isLastRowItem(fieldIndex: number, columnCount: number) {
+        private isLastRowItem(fieldIndex: number, columnCount: number): boolean {
             if (fieldIndex + 1 === columnCount)
                 return true;
             let maxColumnPerRow = this.getMaxColPerRow();
@@ -777,6 +827,10 @@ module powerbi.visuals {
                 return true;
 
             return false;
+        }
+
+        private isInFirstRow(fieldIndex: number): boolean {
+            return fieldIndex < this.getMaxColPerRow();
         }
 
         /**

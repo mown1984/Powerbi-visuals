@@ -132,6 +132,7 @@ module powerbi.visuals {
         getPreferredPlotArea?(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         setFilteredData?(startIndex: number, endIndex: number): CartesianData;
         supportsTrendLine?(): boolean;
+        shouldSuppressAnimation?(): boolean;
     }
 
     export interface CartesianVisualConstructorOptions {
@@ -1306,8 +1307,19 @@ module powerbi.visuals {
             let dataPoints: SelectableDataPoint[] = [];
             let layerBehaviorOptions: any[] = [];
             let labelsAreNumeric: boolean = true;
-            for (let i = 0, len = layers.length; i < len; i++) {
-                let result = layers[i].render(suppressAnimations, resizeMode);
+
+            // some layer (e.g. scatterChart) may want to suppress animations. if any does, suppress for all.
+            if (!suppressAnimations) {
+                for (let layer of layers) {
+                    if (layer.shouldSuppressAnimation && layer.shouldSuppressAnimation()) {
+                        suppressAnimations = true;
+                        break;
+                    }
+                }
+            }
+
+            for (let layer of layers) {
+                let result = layer.render(suppressAnimations, resizeMode);
                 if (result) {
                     if (this.behavior) {
                         // NOTE: these are not needed if we don't have interactivity
@@ -3220,7 +3232,6 @@ module powerbi.visuals {
                 chartType: type,
                 lineChartLabelDensityEnabled: defaultOptions.lineChartLabelDensityEnabled,
                 cartesianLoadMoreEnabled: defaultOptions.cartesianLoadMoreEnabled,
-                isTrendLayer: isTrendLayer,
             };
 
             if (inComboChart) {

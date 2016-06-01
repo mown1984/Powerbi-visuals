@@ -25,13 +25,22 @@
  */
 
 module powerbitests.customVisuals {
-    import DataView = powerbi.DataView;
     import VisualClass = powerbi.visuals.samples.LineDotChart;
-    import LineDotChartData = sampleDataViews.LineDotChartData;
+    import LineDotChartData = powerbitests.customVisuals.sampleDataViews.LineDotChartData;
 
     powerbitests.mocks.setLocale();
 
     describe("LineDotChartTests", () => {
+        let visualBuilder: LineDotChartBuilder;
+        let defaultDataViewBuilder: LineDotChartData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new LineDotChartBuilder(1000,500);
+            defaultDataViewBuilder = new LineDotChartData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => {
                 expect(VisualClass.capabilities).toBeDefined();
@@ -40,51 +49,34 @@ module powerbitests.customVisuals {
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: LineDotChartBuilder,
-                dataViews: DataView[];
-
-            beforeEach(() => {
-                visualBuilder = LineDotChartBuilder.build();
-                dataViews = [LineDotChartData.create().getDataView()];
-            });
-
             it("main element was created", () => {
                 expect(visualBuilder.mainElement.get(0)).toBeDefined();
             });
 
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.find(".axis").length).not.toBe(0);
                     expect(visualBuilder.mainElement.find(".tick").length).not.toBe(0);
                     expect(visualBuilder.mainElement.find(".lineDotChart__playBtn").get(0)).toBeDefined();
                     expect(visualBuilder.mainElement.find(".legends").get(0)).toBeDefined();
 
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
     });
 
     class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 600, width: number = 800, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-
-            this.buildVisual();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
 
-        private buildVisual(): void {
-            this.visual = new VisualClass();
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement(): JQuery {
             return this.element.children(".lineDotChart");
-        }
-
-        public static build(): LineDotChartBuilder {
-            return new LineDotChartBuilder();
         }
     }
 }

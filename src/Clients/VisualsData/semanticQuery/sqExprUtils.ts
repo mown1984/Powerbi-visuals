@@ -54,6 +54,18 @@ module powerbi.data {
             }
             return -1;
         }
+        
+        export function indexOfNamedExpr(items: NamedSQExpr[], searchElement: SQExpr): number {
+            debug.assertValue(items, 'items');
+            debug.assertValue(searchElement, 'searchElement');
+
+            for (let i = 0, len = items.length; i < len; i++) {
+                let item = items[i];
+                if (item && SQExpr.equals(item.expr, searchElement))
+                    return i;
+            }
+            return -1;
+        }
 
         export function sequenceEqual(x: SQExpr[], y: SQExpr[]): boolean {
             debug.assertValue(x, 'x');

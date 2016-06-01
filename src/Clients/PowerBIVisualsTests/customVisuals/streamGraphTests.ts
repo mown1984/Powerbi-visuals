@@ -30,17 +30,17 @@ module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.StreamGraph;
     import StreamData = powerbi.visuals.samples.StreamData;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
-
+    import ProductSalesByDateData = powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData;
     powerbitests.mocks.setLocale();
 
     describe("StreamGraph", () => {
         let visualBuilder: StreamGraphBuilder;
-        let defaultDataViewBuilder: powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData;
+        let defaultDataViewBuilder: ProductSalesByDateData;
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new StreamGraphBuilder(500, 1000);
-            defaultDataViewBuilder = new powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData();
+            visualBuilder = new StreamGraphBuilder(1000,500);
+            defaultDataViewBuilder = new ProductSalesByDateData();
             dataView = defaultDataViewBuilder.getDataView();
         });
 
@@ -412,10 +412,12 @@ module powerbitests.customVisuals {
     });
 
     class StreamGraphBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
@@ -428,10 +430,6 @@ module powerbitests.customVisuals {
 
         public converter(dataView: DataView, colors: powerbi.IDataColorPalette): StreamData {
             return this.visual.converter(dataView, colors);
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

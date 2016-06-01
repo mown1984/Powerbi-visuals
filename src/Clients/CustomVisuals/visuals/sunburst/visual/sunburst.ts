@@ -240,7 +240,6 @@ module powerbi.visuals.samples {
                 name: originParentNode.name,
                 value: Math.max(valueToSet, 0),
                 selector: selectionId,
-                key: selectionId ? selectionId.getKey() : null,
                 total: valueToSet
             };
             if (originParentNode.value) {

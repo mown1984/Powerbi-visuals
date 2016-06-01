@@ -108,8 +108,6 @@ module powerbitests {
 
         let dataViewMetadata: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-            groups: [],
-            measures: [0],
             objects: {
                 labels: {
                     color: { solid: { color: "#222222" } },
@@ -145,8 +143,6 @@ module powerbitests {
         it("changed title", () => {
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: false
@@ -203,20 +199,14 @@ module powerbitests {
 
         let dataViewMetadata: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-            groups: [],
-            measures: [0],
         };
 
         let dataViewMetadataDecimalFormatString: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#,0.00" } } }],
-            groups: [],
-            measures: [0],
         };
 
         let dataViewmetadataWithLabelProperties: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-            groups: [],
-            measures: [0],
             objects: {
                 labels: {
                     color: { solid: { color: "#222222" } },
@@ -462,8 +452,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: true
@@ -489,8 +477,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: false
@@ -514,8 +500,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: true
@@ -537,8 +521,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: true
@@ -561,8 +543,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "column1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: true
@@ -586,8 +566,6 @@ module powerbitests {
                 columns: [{
                     displayName: "This is a very long card label for testing", isMeasure: true, objects: { "general": { formatString: "#" } }
                 }],
-                groups: [],
-                measures: [0],
                 objects: {
                     categoryLabels: {
                         show: true
@@ -625,8 +603,6 @@ module powerbitests {
 
             let metadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     labels: {
                         labelPrecision: 3,
@@ -697,8 +673,6 @@ module powerbitests {
 
             let metadataWithDisplayUnits: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-                groups: [],
-                measures: [0],
                 objects: {
                     labels: {
                         labelDisplayUnits: 1000
@@ -738,8 +712,6 @@ module powerbitests {
                     isMeasure: true,
                     objects: { 'general': { formatString: '#0' } }
                 }],
-                groups: [],
-                measures: [0],
                 objects: {
                     labels: {
                         show: true
@@ -792,8 +764,6 @@ module powerbitests {
                     isMeasure: true,
                     objects: { 'general': { formatString: '#0' } }
                 }],
-                groups: [],
-                measures: [0],
                 objects: {
                     labels: {
                         show: true
@@ -822,8 +792,6 @@ module powerbitests {
 
             let metadataWithDisplayUnits: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "col1", isMeasure: true }],
-                groups: [],
-                measures: [0],
                 objects: {
                     labels: {
                         labelDisplayUnits: 1000
@@ -860,8 +828,6 @@ module powerbitests {
 
         let dataViewMetadata: powerbi.DataViewMetadata = {
             columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#0" } } }],
-            groups: [],
-            measures: [0],
         };
 
         let labelStyles = Card.DefaultStyle.label;
@@ -1075,8 +1041,6 @@ module powerbitests {
         it("card with longer label and value", (done) => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [{ displayName: "this is the value that never ends, it just goes on and on my friends. Some axis started rendering it not knowing what it was, and now it keeps on rendering forever just because this the label that never ends", isMeasure: true, format: "#0" }],
-                groups: [],
-                measures: [0],
             };
 
             cardBuilder.metadata = dataViewMetadata;
@@ -1181,11 +1145,7 @@ module powerbitests {
                     height: this.element.height(),
                     width: this.element.width()
                 },
-                animation: { transitionImmediate: true },
-                isScrollable: this.isScrollable,
-                settings: {
-                    DisplayUnitSystemType: this.displayUnitSystemType
-                }
+                animation: { transitionImmediate: true }
             });
         }
 

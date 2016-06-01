@@ -1337,6 +1337,9 @@ declare module powerbi.visuals.telemetry {
 }
 
 
+// TODO(aafische, 2016.05.16) all methods here are copy-pasted from .\src\Clients\JsCommon\obj\utility.d.ts
+// Eventually, the powerbi.visuals namespace will be merged back into the powerbi namespace, at which point 
+// this here file will be obsolete and deleted.  
 declare module powerbi.visuals.telemetry {
     
     interface ITelemetryService {
@@ -1353,7 +1356,19 @@ declare module powerbi.visuals.telemetry {
         logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
         logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
         logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;        
-    }
+
+        /** Starts recording a timed event **/
+        startEvent(eventFactory: ITelemetryEventFactory): IDeferredTelemetryEvent;
+        startEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): IDeferredTelemetryEvent;
+        startEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2, T2): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): IDeferredTelemetryEvent;
+     }
     
     interface ITelemetryEvent {
         name: string;
@@ -1413,6 +1428,24 @@ declare module powerbi.visuals.telemetry {
     
     interface ICustomerAction extends IBaseEvent {
     }
+    
+    /** Identifies a long-running telemetry event. */
+    interface IDeferredTelemetryEvent {
+        /** The event being recorded. */
+        event: ITelemetryEvent;
+        /** Marks the telemetry event as complete. */
+        resolve(): any;
+        /** Marks the telemetry event as failed. Can specify additional error details if we know the source of the error and/or the error code. */
+        reject(errorDetails?: TelemetryErrorDetails): any;
+    }
+    interface IDeferredTelemetryEventArgs {
+        /** Parent event started by the invoker and passed to the event handler */
+        parentEvent: IDeferredTelemetryEvent;
+    }
+    interface TelemetryErrorDetails {
+        errorSource?: telemetry.ErrorSource;
+        errorCode: string;
+    }    
 }
 
 declare module powerbi {
@@ -2474,6 +2507,7 @@ declare module powerbi.extensibility {
         private visualInfo;
         private telemetryService;
         private silent;
+        private perfLoadEvent;
         constructor(wrappedVisual: powerbi.IVisual, visualInfo: VisualTelemetryInfo, telemetryService: ITelemetryService, silent?: boolean);
         init(options: VisualInitOptions): void;
         destroy(): void;
@@ -4624,11 +4658,17 @@ declare module powerbi.data {
         Max = 2,
     }
     interface DataShapeBindingSelectAggregateContainer {
-        Percentile: DataShapeBindingSelectPercentileAggregate;
+        Percentile?: DataShapeBindingSelectPercentileAggregate;
+        Min?: DataShapeBindingSelectMinAggregate;
+        Max?: DataShapeBindingSelectMaxAggregate;
     }
     interface DataShapeBindingSelectPercentileAggregate {
         Exclusive?: boolean;
         K: number;
+    }
+    interface DataShapeBindingSelectMaxAggregate {
+    }
+    interface DataShapeBindingSelectMinAggregate {
     }
 }
 declare module powerbi.data {
@@ -5427,6 +5467,7 @@ declare module powerbi.data {
         getSeriesColumnIdentityFields(): powerbi.data.ISQExpr[];
         getSeriesName(seriesIndex: number): PrimitiveValue;
         getSeriesDisplayName(): string;
+        getStaticObjects(): DataViewObjects;
     }
 }
 declare module powerbi.data {
@@ -5801,6 +5842,8 @@ declare module powerbi.data {
         restartToken?: RestartToken;
         error?: IClientError;
         warning?: IClientWarning;
+        /** A value of true in this property indicates that the DataReaderData object from which this result is generated should not get persisted as contract cache nor server cache. */
+        disallowPersisting?: boolean;
     }
     interface QueryGeneratorDataWindow {
     }
@@ -6924,6 +6967,7 @@ declare module powerbi.data {
     module SQExprUtils {
         function supportsArithmetic(expr: SQExpr, schema: FederatedConceptualSchema): boolean;
         function indexOfExpr(items: SQExpr[], searchElement: SQExpr): number;
+        function indexOfNamedExpr(items: NamedSQExpr[], searchElement: SQExpr): number;
         function sequenceEqual(x: SQExpr[], y: SQExpr[]): boolean;
         function uniqueName(namedItems: NamedSQExpr[], expr: SQExpr, exprDefaultName?: string): string;
         /** Generates a default expression name  */
@@ -13450,6 +13494,7 @@ declare module powerbi.visuals {
         getPreferredPlotArea?(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         setFilteredData?(startIndex: number, endIndex: number): CartesianData;
         supportsTrendLine?(): boolean;
+        shouldSuppressAnimation?(): boolean;
     }
     interface CartesianVisualConstructorOptions {
         isScrollable: boolean;
@@ -14522,10 +14567,11 @@ declare module powerbi.visuals {
 }
 declare module powerbi.visuals {
     interface GaugeData extends TooltipEnabledDataPoint {
-        percent: number;
-        adjustedTotal: number;
         total: number;
         metadataColumn: DataViewMetadataColumn;
+        minColumnMetadata: DataViewMetadataColumn;
+        maxColumnMetadata: DataViewMetadataColumn;
+        targetColumnMetadata: DataViewMetadataColumn;
         targetSettings: GaugeTargetSettings;
         dataLabelsSettings: VisualDataLabelsSettings;
         calloutValueLabelsSettings: VisualDataLabelsSettings;
@@ -14537,7 +14583,7 @@ declare module powerbi.visuals {
         target: number;
     }
     interface GaugeTargetData extends GaugeTargetSettings {
-        total: number;
+        value: number;
         tooltipItems: TooltipDataItem[];
     }
     interface GaugeDataPointSettings {
@@ -14582,8 +14628,6 @@ declare module powerbi.visuals {
      * Renders a number that can be animate change in value.
      */
     class Gauge implements IVisual {
-        private static MIN_VALUE;
-        private static MAX_VALUE;
         private static MinDistanceFromBottom;
         private static MinWidthForTargetLabel;
         private static DefaultTopBottomMargin;
@@ -14631,7 +14675,7 @@ declare module powerbi.visuals {
         private showTargetLabel;
         private tooltipsEnabled;
         private hostService;
-        private dataViews;
+        private dataView;
         animator: IGenericAnimator;
         constructor(options?: GaugeConstructorOptions);
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
@@ -14644,15 +14688,19 @@ declare module powerbi.visuals {
         private updateCalloutValue(suppressAnimations);
         onDataChanged(options: VisualDataChangedOptions): void;
         onResizing(viewport: IViewport): void;
-        private static getValidSettings(targetData);
-        private static getGaugeData(dataView);
-        private static overrideGaugeSettings(settings, gaugeObjectsSettings);
+        /**
+         * Populates Gauge data based on roles or axis settings.
+         */
+        private static parseGaugeData(reader);
         /** Note: Made public for testability */
-        static converter(dataView: DataView, tooltipsEnabled?: boolean): GaugeData;
-        private static convertDataLabelSettings(dataview, objectName);
-        private static convertDataPointSettings(dataView, targetSettings);
-        static getMetaDataColumn(dataView: DataView): DataViewMetadataColumn;
+        static converter(reader: data.IDataViewCategoricalReader, tooltipsEnabled?: boolean): GaugeData;
+        private static convertDataLabelSettings(objects, objectName);
+        private static convertDataPointSettings(objects, targetSettings);
         private initKpiBands();
+        /**
+         * Indicates whether gauge arc is valid.
+         */
+        private isValid();
         private updateKpiBands(radius, innerRadiusFactor, tString, kpiAngleAttr);
         private removeTargetElements();
         private getTargetRatio();
@@ -14663,14 +14711,15 @@ declare module powerbi.visuals {
         getGaugeVisualProperties(): GaugeVisualProperties;
         /** Note: public for testability */
         drawViewPort(drawOptions: GaugeVisualProperties): void;
+        getValueAngle(): number;
         private createTicks();
         private updateInternal(suppressAnimations);
         private updateVisualStyles();
         private updateVisualConfigurations();
-        private appendTextAlongArc(ticks, radius, height, width, margin);
+        private renderMinMaxLabels(ticks, radius, height, width, margin);
         private truncateTextIfNeeded(text, positionX, onRight);
-        private getFormatter(dataLabelSettings, value2?);
-        private appendTargetTextAlongArc(radius, height, width, margin);
+        private getFormatter(dataLabelSettings, metadataColumn, maxValue?);
+        private renderTarget(radius, height, width, margin);
         private arcTween(transition, arr);
         private showMinMaxLabelsOnBottom();
         private setMargins();
@@ -15378,7 +15427,7 @@ declare module powerbi.visuals {
         static converter(dataView: DataView, columnCount: number, maxCards: number, isDashboardVisual?: boolean): MultiRowCardData;
         static getSortableRoles(options: VisualSortableOptions): string[];
         private initializeCardRowSelection();
-        private getBorderStyles(border);
+        private getBorderStyles(border, padding?);
         private getMaxColPerRow();
         private getRowIndex(fieldIndex);
         private getStyle();
@@ -15388,6 +15437,7 @@ declare module powerbi.visuals {
         private hideColumn(fieldIndex);
         private getColumnWidth(fieldIndex, columnCount);
         private isLastRowItem(fieldIndex, columnCount);
+        private isInFirstRow(fieldIndex);
         /**
          * This contains the card column wrapping logic.
          * Determines how many columns can be shown per each row inside a Card.
@@ -15669,6 +15719,7 @@ declare module powerbi.visuals {
         private static getExtents(data);
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         overrideXScale(xProperties: IAxisProperties): void;
+        shouldSuppressAnimation(): boolean;
         render(suppressAnimations: boolean, resizeMode?: ResizeMode): CartesianVisualRenderResult;
         static getStrokeFill(d: ScatterChartDataPoint, colorBorder: boolean): string;
         static getBubblePixelAreaSizeRange(viewPort: IViewport, minSizeRange: number, maxSizeRange: number): DataRange;

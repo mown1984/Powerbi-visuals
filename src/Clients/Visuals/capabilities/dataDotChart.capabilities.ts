@@ -60,7 +60,6 @@ module powerbi.visuals {
                 values: {
                     select: [{
                         for: { in: 'Y' },
-                        dataReductionAlgorithm: { top: {} }
                     }]
                 },
             },

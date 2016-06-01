@@ -570,7 +570,6 @@ module powerbi.visuals {
             this.xAxisProperties = {
                 axis: null,
                 scale: null,
-                isScalar: null,
                 axisType: null,
                 formatter: null,
                 graphicsContext: null,

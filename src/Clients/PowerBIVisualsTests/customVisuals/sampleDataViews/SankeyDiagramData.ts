@@ -25,83 +25,65 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import DataViewMetadata = powerbi.DataViewMetadata;
-    import DataView = powerbi.DataView;
     import ValueType = powerbi.ValueType;
-    import DataViewTransform = powerbi.data.DataViewTransform;
-    import SQExprBuilder = powerbi.data.SQExprBuilder;
 
-    export class SankeyDiagramData {
-        public sourceData: string[] = [
-                "Brazil", "Brazil", "Brazil", "Brazil", "Canada", "Canada",
-                "Canada", "Mexico", "Mexico", "Mexico", "Mexico", "USA",
-                "USA", "USA", "USA", "Portugal", "Portugal", "Portugal"
+    export class SankeyDiagramData extends DataViewBuilder {
+
+        public static ColumnSource: string = "Source";
+        public static ColumnDestination: string = "Destination";
+        public static ColumnValue: string = "Value";
+
+        public valuesSourceDestination: string[][] =
+            [
+                ["Brazil", "Portugal"],
+                ["Brazil", "France"],
+                ["Brazil", "Spain"],
+                ["Brazil", "England"],
+                ["Canada", "Portugal"],
+                ["Canada", "France"],
+                ["Canada", "England"],
+                ["Mexico", "Portugal"],
+                ["Mexico", "France"],
+                ["Mexico", "Spain"],
+                ["Mexico", "England"],
+                ["USA", "Portugal"],
+                ["USA", "France"],
+                ["USA", "Spain"],
+                ["USA", "England"],
+                ["Portugal", "Angola"],
+                ["Portugal", "Senegal"],
+                ["Portugal", "Morocco"]
             ];
-        public destinationData: string[] = [
-                "Portugal", "France", "Spain", "England", "Portugal", "France",
-                "England", "Portugal", "France", "Spain", "England", "Portugal",
-                "France", "Spain", "England", "Angola", "Senegal", "Morocco"
-            ];
+        public valuesValue: number[] = helpers.getRandomNumbers(this.valuesSourceDestination.length, 10, 500);
 
-        public get dataLength() {
-            return Math.max(this.destinationData.length, this.sourceData.length);
-        }
-
-        public valuesData: number[] = helpers.getRandomNumbers(this.dataLength, 10, 500);
-
-        public getDataView(): DataView {
-            let dataViewMetadata: DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: "Source",
-                        queryName: "Sankey.Source",
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: SankeyDiagramData.ColumnSource,
                         type: ValueType.fromDescriptor({ text: true })
                     },
-                    {
-                        displayName: "Destination",
-                        queryName: "Sankey.Destination",
-                        type: ValueType.fromDescriptor({ text: true })
+                    values: this.valuesSourceDestination.map(x => x[0])
+                },
+                {
+                    source: {
+                        displayName: SankeyDiagramData.ColumnDestination,
+                        type: ValueType.fromDescriptor({ text: true }),
                     },
-                    {
-                        displayName: "Value",
-                        queryName: "Sum(Sankey.Value)"
-                    }]
-            };
-
-            let sourceDataFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table", name: "sourceData" } });
-            let destinationDataFieldExpr = SQExprBuilder.fieldExpr({ column: { schema: "s", entity: "table", name: "destinationData" } });
-            let identities: powerbi.DataViewScopeIdentity[] = [];
-            for(let i = 0, length = Math.min(this.sourceData.length, this.destinationData.length); i< length; i++) {
-                let identity = powerbi.data.createDataViewScopeIdentity(
-                    SQExprBuilder.and(
-                        SQExprBuilder.equal(sourceDataFieldExpr, SQExprBuilder.text(this.sourceData[i])),
-                        SQExprBuilder.equal(destinationDataFieldExpr, SQExprBuilder.text(this.destinationData[i]))));
-
-                identities.push(identity);
-            }
-
-            return {
-                metadata: dataViewMetadata,
-                categorical: {
-                    categories: [
-                        {
-                            source: dataViewMetadata.columns[0],
-                            values: this.sourceData,
-                            identity: identities
-                        },
-                        {
-                            source: dataViewMetadata.columns[1],
-                            values: this.destinationData,
-                            identity: identities
-                        }],
-                    values: DataViewTransform.createValueColumns([
-                        {
-                            source: dataViewMetadata.columns[2],
-                            values: this.valuesData
-                        }
-                    ])
+                    values: this.valuesSourceDestination.map(x => x[1])
                 }
-            };
+                ],[
+                {
+                    source: {
+                        displayName: SankeyDiagramData.ColumnValue,
+                        isMeasure: true,
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                    },
+                    values: this.valuesValue
+                }
+                ],
+                null,
+                columnNames).build();
         }
     }
 }

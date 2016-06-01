@@ -57,9 +57,7 @@ module powerbitests {
                     displayName: "col4",
                     roles: { "TargetValue": true },
                     isMeasure: true
-                }],
-            groups: [],
-            measures: [0],
+                }]
         };
 
         public get dataViewMetadata(): powerbi.DataViewMetadata {
@@ -184,6 +182,10 @@ module powerbitests {
             }
 
             return this._dataView;
+        }
+
+        public get reader(): powerbi.data.IDataViewCategoricalReader {
+            return powerbi.data.createIDataViewCategoricalReader(this.dataView);
         }
 
         constructor(pluginName: string, height: string = "500", width: string = "500", isMobile: boolean = false) {
@@ -334,6 +336,49 @@ module powerbitests {
         });
     });
 
+    describe("Gauge.getFormatter", () => {
+        let gaugeDataBuilder: GaugeDataBuilder;
+        let GaugeMock = {
+            data: {
+                metadataColumn: null
+            }
+        };
+
+        beforeEach(() => {
+            gaugeDataBuilder = new GaugeDataBuilder("gauge");
+        });
+
+        let getFormatter: (data: powerbi.visuals.VisualDataLabelsSettings, metadata: powerbi.DataViewMetadataColumn, max?: number)
+            => powerbi.visuals.IValueFormatter = (<any>powerbi.visuals.Gauge).prototype.getFormatter.bind(GaugeMock);
+
+        it("Uses the formatter based on metadata parrameter", () => {
+            gaugeDataBuilder.singleValue = 200;
+            gaugeDataBuilder.values = [[0], [0], [0], [0]];
+            let metadata =  gaugeDataBuilder.reader.getValueMetadataColumn(powerbi.visuals.gaugeRoleNames.y);
+            let settings = powerbi.visuals.dataLabelUtils.getDefaultGaugeLabelSettings();
+            metadata.objects = { general: { formatString: "$0.00" } };
+
+            let formatter = getFormatter(settings, metadata);
+
+            expect(formatter.format(23)).toEqual("$23.00");
+
+        });
+
+        it("Uses default metadata formatter.", () => {
+            gaugeDataBuilder.singleValue = 200;
+            gaugeDataBuilder.values = [[0], [0], [0], [0]];
+            let metadata = gaugeDataBuilder.reader.getValueMetadataColumn(powerbi.visuals.gaugeRoleNames.y);
+            let settings = powerbi.visuals.dataLabelUtils.getDefaultGaugeLabelSettings();
+            metadata.objects = { general: { formatString: "$0.00" } };
+            GaugeMock.data.metadataColumn = metadata;
+
+            let formatter = getFormatter(settings, null);
+
+            expect(formatter.format(23)).toEqual("$23.00");
+
+        });
+    });
+
     describe("Gauge DOM tests", () => {
         let gaugeDataBuilder: GaugeDataBuilder;
 
@@ -471,12 +516,12 @@ module powerbitests {
                 let textLabels: JQuery = $(".labelText");
 
                 expect(textLabels.length).toBe(2);
-                expect(helpers.findElementText(textLabels)).toEqual("$0");
-                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementText(textLabels)).toEqual("-$50");
+                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$0");
 
                 //check titles
-                expect(helpers.findElementTitle(textLabels)).toEqual("$0");
-                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementTitle(textLabels)).toEqual("-$50");
+                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$0");
 
                 expect($(".mainText").length).toBe(1);
                 expect($(".mainText").text()).toEqual("-$25");
@@ -616,7 +661,7 @@ module powerbitests {
             setTimeout(() => {
                 //Callout value
                 expect($(".mainText").text()).toBe("500T");
-                
+
                 //Data labels
                 let textLabels: JQuery = $(".labelText");
 
@@ -629,13 +674,13 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
         
-        it("Formatting: Currency format does not fallback to scientific notation", (done) => {
+        it("Formatting: Currency format shows scientific notation", (done) => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
-                columns: [{
+                    columns: [{
                     displayName: "col1",
                     roles: { "Y": true },
                     isMeasure: true,
-                    objects: { general: { formatString: '"$"#,##0.00' } },
+                    objects: { general: { formatString: '"$"#,##0.00' } }
                 }],
             };
 
@@ -644,10 +689,10 @@ module powerbitests {
             gaugeDataBuilder.values = [[563732228000000]];
             gaugeDataBuilder.buildDataView();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             expect(data.targetSettings.min).toEqual(0);
             expect(data.targetSettings.max).toEqual(1127464456000000);
-            expect(data.targetSettings.target).toEqual(undefined);
+            expect(data.targetSettings.target).toBe(null);
 
             gaugeDataBuilder.onDataChanged();
 
@@ -714,6 +759,12 @@ module powerbitests {
 
     describe("Gauge Data Tests", () => {
         let gaugeDataBuilder: GaugeDataBuilder;
+        let GaugeMock = {
+            data: null,
+            isValid: (<any>GaugeVisual.prototype).isValid
+        };
+
+        let getValueAngle = GaugeVisual.prototype.getValueAngle.bind(GaugeMock);
 
         beforeEach(() => {
             powerbitests.mocks.setLocale();
@@ -738,8 +789,9 @@ module powerbitests {
             gaugeDataBuilder.values = [[500], [0], [300], [200]];
 
             gaugeDataBuilder.onDataChanged();
-
-            expect(GaugeVisual.converter(gaugeDataBuilder.dataView).percent).toBe(1);
+            
+            GaugeMock.data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            expect(getValueAngle()).toBe(1);
         });
 
         it("Gauge_smallerThanMin", () => {
@@ -747,8 +799,8 @@ module powerbitests {
             gaugeDataBuilder.values = [[-3], [0], [300], [200]];
 
             gaugeDataBuilder.onDataChanged();
-
-            expect(GaugeVisual.converter(gaugeDataBuilder.dataView).percent).toBe(0);
+            GaugeMock.data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            expect(getValueAngle()).toBe(0);
         });
 
         it("Gauge_betweenMinMax", () => {
@@ -756,8 +808,8 @@ module powerbitests {
             gaugeDataBuilder.values = [[200], [100], [300], [200]];
 
             gaugeDataBuilder.onDataChanged();
-
-            expect(GaugeVisual.converter(gaugeDataBuilder.dataView).percent).toBe(0.5);
+            GaugeMock.data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            expect(getValueAngle()).toBe(0.5);
         });
 
         it("Gauge_Nulls", () => {
@@ -766,12 +818,13 @@ module powerbitests {
 
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
-            expect(data.percent).toBe(0);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            GaugeMock.data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            expect(getValueAngle()).toBe(0);
             expect(data.targetSettings).toEqual({
-                min: 0,
-                max: 0,
-                target: 0,
+                min: null,
+                max: null,
+                target: null,
             });
         });
 
@@ -780,12 +833,13 @@ module powerbitests {
             gaugeDataBuilder.values = [[10], [0], [500], [200]];
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             let expectedValues = {
-                percent: 0.02,
-                adjustedTotal: 10,
                 total: 10,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
                 targetSettings: {
                     min: 0,
                     max: 500,
@@ -799,7 +853,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -807,7 +860,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
                     targetColor: DefaultTargetColor
@@ -821,18 +873,19 @@ module powerbitests {
             gaugeDataBuilder.values = [[null], [0], [500], [200]];
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
-            let expectedValues = {
-                percent: 0,
-                adjustedTotal: 0,
-                total: 0,
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
+            let expectedValues: powerbi.visuals.GaugeData = {
+                total: null,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
                 targetSettings: {
                     min: 0,
                     max: 500,
                     target: 200
                 },
-                tooltipInfo: [{ displayName: "col4", value: "$200" }],
+                tooltipInfo: [{ displayName: "col1", value: "(Blank)"}, { displayName: "col4", value: "$200" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -840,7 +893,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -848,7 +900,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
                     targetColor: DefaultTargetColor
@@ -862,18 +913,19 @@ module powerbitests {
             gaugeDataBuilder.values = [[10], [0], [500], [null]];
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             let expectedValues = {
-                percent: 0.02,
-                adjustedTotal: 10,
                 total: 10,
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
                 targetSettings: {
                     min: 0,
                     max: 500,
-                    target: 0
+                    target: null
                 },
-                tooltipInfo: [{ displayName: "col1", value: "$10" }],
+                tooltipInfo: [{ displayName: "col1", value: "$10" }, { displayName: "col4", value: "(Blank)" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -881,7 +933,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -889,10 +940,9 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
-                    targetColor: DefaultTargetColor
+                    targetColor: undefined
                 }
             };
             expect(data).toEqual(expectedValues);
@@ -904,14 +954,15 @@ module powerbitests {
 
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             let expectedValues = {
-                percent: 0,
-                adjustedTotal: 0,
-                total: 0,
+                total: null,
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
-                targetSettings: { min: 0, max: 0, target: 0 },
-                tooltipInfo: [],
+                targetSettings: { min: null, max: null, target: null },
+                tooltipInfo: [{ displayName: "col1", value: "(Blank)" }, { displayName: "col4", value: "(Blank)" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -919,7 +970,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -927,10 +977,9 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
-                    targetColor: DefaultTargetColor
+                    targetColor: undefined
                 }
             };
             expect(data).toEqual(expectedValues);
@@ -942,14 +991,15 @@ module powerbitests {
 
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             let expectedValues = {
-                percent: 0,
-                adjustedTotal: 100,
-                total: 0,
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
+                total: null,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
-                targetSettings: { min: 100, max: 300, target: 0 },
-                tooltipInfo: [],
+                targetSettings: { min: 100, max: 300, target: null },
+                tooltipInfo: [{ displayName: "col1", value: "(Blank)" }, { displayName: "col4", value: "(Blank)" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -957,7 +1007,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -965,10 +1014,9 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
-                    targetColor: DefaultTargetColor
+                    targetColor: undefined
                 }
             };
             expect(data).toEqual(expectedValues);
@@ -980,11 +1028,12 @@ module powerbitests {
 
             gaugeDataBuilder.onDataChanged();
 
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             let expectedValues = {
-                percent: 0.5,
-                adjustedTotal: 200,
                 total: 200,
+                minColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[1],
+                maxColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[2],
+                targetColumnMetadata: gaugeDataBuilder.dataViewMetadata.columns[3],
                 metadataColumn: {
                     displayName: "col1",
                     roles: { Y: true },
@@ -1000,7 +1049,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, calloutValueLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -1008,7 +1056,6 @@ module powerbitests {
                     labelColor: null,
                     position: null,
                     fontSize: 8,
-                    formatterOptions: null
                 }, dataPointSettings: {
                     fillColor: DefaultFillColor,
                     targetColor: DefaultTargetColor
@@ -1040,8 +1087,6 @@ module powerbitests {
                         roles: { "TargetValue": true },
                         isMeasure: true
                     }],
-                groups: [],
-                measures: [0],
                 objects: {
                     axis: {
                         min: 1000,
@@ -1057,7 +1102,7 @@ module powerbitests {
             gaugeDataBuilder.buildDataView();
 
             // Values should not be overrided
-            let data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            let data = GaugeVisual.converter(gaugeDataBuilder.reader);
             expect(data.targetSettings.min).toEqual(0);
             expect(data.targetSettings.max).toEqual(500);
             expect(data.targetSettings.target).toEqual(200);
@@ -1071,8 +1116,6 @@ module powerbitests {
                         isMeasure: true,
                         objects: { general: { formatString: "$0" } },
                     }],
-                groups: [],
-                measures: [0],
                 objects: {
                     axis: {
                         min: 10,
@@ -1088,7 +1131,7 @@ module powerbitests {
             gaugeDataBuilder.buildDataView();
 
             // All values should be overrided
-            data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            data = GaugeVisual.converter(gaugeDataBuilder.reader);
             expect(data.targetSettings.min).toEqual(10);
             expect(data.targetSettings.max).toEqual(1000);
             expect(data.targetSettings.target).toEqual(300);
@@ -1107,8 +1150,6 @@ module powerbitests {
                         isMeasure: true
                     },
                 ],
-                groups: [],
-                measures: [0],
                 objects: {
                     axis: {
                         min: 10,
@@ -1124,7 +1165,7 @@ module powerbitests {
             gaugeDataBuilder.buildDataView();
 
             // All except Min value should be overrided
-            data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            data = GaugeVisual.converter(gaugeDataBuilder.reader);
             expect(data.targetSettings.min).toEqual(0);
             expect(data.targetSettings.max).toEqual(1000);
             expect(data.targetSettings.target).toEqual(300);
@@ -1146,8 +1187,6 @@ module powerbitests {
                         roles: { "TargetValue": true },
                         isMeasure: true
                     }],
-                groups: [],
-                measures: [0],
                 objects: {
                     axis: {
                         min: 10,
@@ -1163,7 +1202,7 @@ module powerbitests {
             gaugeDataBuilder.buildDataView();
 
             // Only Max value should be overrided
-            data = GaugeVisual.converter(gaugeDataBuilder.dataView);
+            data = GaugeVisual.converter(gaugeDataBuilder.reader);
             expect(data.targetSettings.min).toEqual(0);
             expect(data.targetSettings.max).toEqual(1000);
             expect(data.targetSettings.target).toEqual(100);
@@ -1329,7 +1368,7 @@ module powerbitests {
                 }, DefaultWaitForRender);
             });
 
-            it("check target has decimal values", (done) => {
+            it("check target uses its own format instead of metadata format.", (done) => {
                 gaugeVisualDataBuilder.dataViewMetadata.columns[0].objects = {
                     general: { formatString: "0.00" }
                 };
@@ -1343,9 +1382,9 @@ module powerbitests {
                     let targetText = $(".targetText");
 
                     expect(targetText.length).toBe(1);
-                    expect(helpers.findElementText(targetText)).toEqual("6.50");
+                    expect(helpers.findElementText(targetText)).toEqual("$7");
                     //check titles
-                    expect(helpers.findElementTitle(targetText)).toEqual("6.50");
+                    expect(helpers.findElementTitle(targetText)).toEqual("$7");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -1357,17 +1396,18 @@ module powerbitests {
                     categorical: null
                 };
 
-                let expectedValues = {
-                    percent: 0,
-                    adjustedTotal: 0,
-                    total: 0,
-                    metadataColumn: null,
+                let expectedValues: powerbi.visuals.GaugeData = {
+                    total: null,
+                    metadataColumn: undefined,
                     targetSettings: {
                         min: 0,
                         max: 1,
-                        target: undefined
+                        target: null
                     },
-                    tooltipInfo: undefined,
+                    maxColumnMetadata: undefined,
+                    minColumnMetadata: undefined,
+                    targetColumnMetadata: undefined,
+                    tooltipInfo: [],
                     dataLabelsSettings: {
                         show: true,
                         displayUnits: 0,
@@ -1375,7 +1415,6 @@ module powerbitests {
                         labelColor: null,
                         position: null,
                         fontSize: 8,
-                        formatterOptions: null
                     }, calloutValueLabelsSettings: {
                         show: true,
                         displayUnits: 0,
@@ -1383,14 +1422,13 @@ module powerbitests {
                         labelColor: null,
                         position: null,
                         fontSize: 8,
-                        formatterOptions: null
                     }, dataPointSettings: {
                         fillColor: DefaultFillColor,
                         targetColor: undefined
                     }
                 };
 
-                expect(GaugeVisual.converter(dataView)).toEqual(expectedValues);
+                expect(GaugeVisual.converter(powerbi.data.createIDataViewCategoricalReader(dataView))).toEqual(expectedValues);
             });
         });
     });
@@ -1684,11 +1722,11 @@ module powerbitests {
             setTimeout(() => {
                 let textLabels: JQuery = $(".labelText");
                 expect(textLabels.length).toBe(2);
-                expect(helpers.findElementText(textLabels)).toEqual("$0");
-                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementText(textLabels)).toEqual("-$50");
+                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$0");
                 //check titles
-                expect(helpers.findElementTitle(textLabels)).toEqual("$0");
-                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementTitle(textLabels)).toEqual("-$50");
+                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$0");
                 done();
             }, DefaultWaitForRender);
         });
@@ -1703,11 +1741,11 @@ module powerbitests {
             setTimeout(() => {
                 let textLabels: JQuery = $(".labelText");
                 expect(textLabels.length).toBe(2);
-                expect(helpers.findElementText(textLabels)).toEqual("$0");
-                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementText(textLabels)).toEqual("-$50");
+                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$0");
                 //check titles
-                expect(helpers.findElementTitle(textLabels)).toEqual("$0");
-                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementTitle(textLabels)).toEqual("-$50");
+                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$0");
                 done();
             }, DefaultWaitForRender);
         });
@@ -1722,11 +1760,11 @@ module powerbitests {
             setTimeout(() => {
                 let textLabels: JQuery = $(".labelText");
                 expect(textLabels.length).toBe(2);
-                expect(helpers.findElementText(textLabels)).toEqual("$0");
-                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementText(textLabels)).toEqual("-$50");
+                expect(helpers.findElementText(textLabels.eq(1))).toEqual("$0");
                 //check titles
-                expect(helpers.findElementTitle(textLabels)).toEqual("$0");
-                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$1");
+                expect(helpers.findElementTitle(textLabels)).toEqual("-$50");
+                expect(helpers.findElementTitle(textLabels.eq(1))).toEqual("$0");
                 done();
             }, DefaultWaitForRender);
         });

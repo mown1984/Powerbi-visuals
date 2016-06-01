@@ -67,7 +67,6 @@ module powerbitests {
                     height: element.height(),
                     width: element.width()
                 },
-                settings: undefined,
                 interactivity: undefined,
                 animation: undefined
             });

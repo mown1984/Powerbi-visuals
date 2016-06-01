@@ -25,46 +25,40 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import DataView = powerbi.DataView;
-    import getRandomUniqueSortedDates = helpers.getRandomUniqueSortedDates;
-    import getRandomNumbers = helpers.getRandomNumbers;
     import ValueType = powerbi.ValueType;
 
     export class LineDotChartData extends DataViewBuilder {
-        private static CountOfValues: number = 50;
+        public static ColumnDate: string = "Date";
+        public static ColumnValue: string = "Value";
 
-        private static MinDate: Date = new Date(2014, 9, 12, 3, 9, 50);
-        private static MaxDate: Date = new Date(2016, 3, 1, 2, 43, 3);
+        public valuesDate: Date[] = helpers.getRandomUniqueSortedDates(
+            50,
+            new Date(2014, 9, 12, 3, 9, 50),
+            new Date(2016, 3, 1, 2, 43, 3));
+        public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
 
-        private static MinValue: number = 0;
-        private static MaxValue: number = 5361;
-
-        public static create(): LineDotChartData {
-            return new LineDotChartData();
-        }
-
-        public getDataView(): DataView {
-            return this.createCategoricalDataViewBuilder([{
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+            {
                 source: {
-                    displayName: "Updated Date",
+                    displayName: LineDotChartData.ColumnDate,
                     type: ValueType.fromDescriptor({ dateTime: true }),
                     roles: { Date: true }
                 },
-                values: getRandomUniqueSortedDates(
-                    LineDotChartData.CountOfValues,
-                    LineDotChartData.MinDate,
-                    LineDotChartData.MaxDate)
-            }], [{
+                values: this.valuesDate
+            }
+            ],[
+            {
                 source: {
                     displayName: "Values",
                     type: ValueType.fromDescriptor({ integer: true }),
                     roles: { Values: true }
                 },
-                values: getRandomNumbers(
-                    LineDotChartData.CountOfValues,
-                    LineDotChartData.MinValue,
-                    LineDotChartData.MaxValue)
-            }], null, null).build();
+                values: this.valuesValue
+            }
+            ],
+            null,
+            columnNames).build();
         }
     }
 }

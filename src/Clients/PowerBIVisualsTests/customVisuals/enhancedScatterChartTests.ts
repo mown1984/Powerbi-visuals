@@ -37,7 +37,7 @@ module powerbitests.customVisuals {
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new EnhancedScatterChartBuilder(500, 1000);
+            visualBuilder = new EnhancedScatterChartBuilder(1000,500);
             defaultDataViewBuilder = new EnhancedScatterChartData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -156,21 +156,20 @@ module powerbitests.customVisuals {
                 it("Should add legend", () => {
                     visualBuilder.update(dataView);
 
-                    let legend: JQuery = $(".enhancedScatterChart .legend");
-                    expect(legend).toBeInDOM();
+                    expect(visualBuilder.legend).toBeInDOM();
                 });
 
                 it("Should add right amount of legend items", () => {
                     visualBuilder.update(dataView);
 
-                    let legendItems: JQuery = $(".enhancedScatterChart #legendGroup .legendItem");
+                    let legendItems: JQuery = visualBuilder.legendGroupElement.children(".legendItem");
                     expect(legendItems.length).toEqual(dataView.categorical.values.grouped().length);
                 });
 
                 it("Should add correct legend title & tooltip", () => {
                     visualBuilder.update(dataView);
 
-                    let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
+                    let legendTitle: JQuery = visualBuilder.legendGroupElement.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
 
                     let legendTitleText: string = Helpers.findElementText(legendTitle);
@@ -182,7 +181,7 @@ module powerbitests.customVisuals {
                 it('Should color legend title & items with selected color', () => {
                     visualBuilder.update(dataView);
 
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
+                    let legendGroup: JQuery = visualBuilder.legendGroupElement;
                     let legendTitle: JQuery = legendGroup.children('.legendTitle');
                     let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
                     Helpers.assertColorsMatch(legendTitle.css('fill'), labelColor);
@@ -192,9 +191,9 @@ module powerbitests.customVisuals {
                 it('Should use selected font size for legend title and legend items', (done) => {
                     visualBuilder.updateRenderTimeout(dataView, () => {
                         let legendTitleFontSize: number =
-                            Math.round(parseFloat(visualBuilder.LegendGroupElement.find('.legendTitle').css('font-size')));
+                            Math.round(parseFloat(visualBuilder.legendGroupElement.find('.legendTitle').css('font-size')));
                         let firstLegendItemTextFontSize: number =
-                            Math.round(parseFloat(getLegendTextOfFirstLegendItem(visualBuilder.LegendGroupElement).css('font-size')));
+                            Math.round(parseFloat(getLegendTextOfFirstLegendItem(visualBuilder.legendGroupElement).css('font-size')));
 
                         expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
                         expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
@@ -210,22 +209,24 @@ module powerbitests.customVisuals {
     }
 
     class EnhancedScatterChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement(): JQuery {
             return this.element.children("svg").children("g.axisGraphicsContext").parent();
         }
 
-        public get LegendGroupElement(): JQuery {
-            return this.element.children(".legend").children('#legendGroup');
+        public get legend(): JQuery {
+            return this.element.children(".legend");
         }
 
-        private build(): void {
-            this.visual = new VisualClass();
+        public get legendGroupElement(): JQuery {
+            return this.legend.children('#legendGroup');
         }
 
         public getMarkers(): JQuery {

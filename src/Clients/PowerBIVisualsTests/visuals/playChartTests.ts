@@ -30,6 +30,7 @@ module powerbitests {
     import PrimitiveType = powerbi.PrimitiveType;
     import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
     import DataViewMatrix = powerbi.DataViewMatrix;
+    import PlayAxis = powerbi.visuals.PlayAxis;
     import PlayChart = powerbi.visuals.PlayChart;
     import ScatterChart = powerbi.visuals.ScatterChart;
     import SQExpr = powerbi.data.SQExpr;
@@ -774,10 +775,8 @@ module powerbitests {
         * Builds scatter chart visual.
         */
         function buildScatterChart(): powerbi.IVisual {
-            let options: CartesianConstructorOptions;
-            options = {
-                chartType: ChartType.Scatter,
-                trendLinesEnabled: true
+            let options: CartesianConstructorOptions = {
+                chartType: ChartType.Scatter
             };
             options.animator = new Animator();
             options.isScrollable = true;
@@ -971,6 +970,48 @@ module powerbitests {
                 expect(matches.length).toBe(frameCount);
                 done();
             }, frameAnimationSpeed);
+        });
+
+        it("play stopped on scatter chart data changed with no playAxis", (done) => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            let noPlayAxisDataView = PlayChart.convertMatrixToCategorical(matrixSeriesAndPlayDataView, 1);
+            var playAxis: PlayAxis<powerbi.visuals.ScatterChartData> = (<any>(<any>scatterChart).layers[0]).playAxis;
+            let $playButton: JQuery = $(playButtonClass);
+            $playButton.click();
+            setTimeout(() => {
+                expect(playAxis.isCurrentlyPlaying()).toBe(true);
+                scatterChart.onDataChanged({ dataViews: [noPlayAxisDataView] });
+                expect(playAxis.isCurrentlyPlaying()).toBe(false);
+                done();
+            }, frameAnimationSpeed / 2);
+        });
+
+        it("play stopped on scatter chart data changed with playAxis", (done) => {
+            scatterChart.onDataChanged({
+                dataViews: [
+                    matrixSeriesAndPlayDataView
+                ]
+            });
+
+            var playAxis: PlayAxis<powerbi.visuals.ScatterChartData> = (<any>(<any>scatterChart).layers[0]).playAxis;
+            let $playButton: JQuery = $(playButtonClass);
+            $playButton.click();
+            setTimeout(() => {
+                expect(playAxis.isCurrentlyPlaying()).toBe(true);
+                scatterChart.onDataChanged({
+                    dataViews: [
+                        matrixSeriesAndPlayDataView
+                    ]
+                });
+                expect(playAxis.isCurrentlyPlaying()).toBe(false);
+                done();
+            }, frameAnimationSpeed / 2);
+
         });
     }
     

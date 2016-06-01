@@ -534,7 +534,7 @@ module powerbitests {
                 outerPadding: 0.5,
                 isScalar: true,
                 isVertical: false,
-                axisScale: axisScale.log
+                scaleType: axisScale.log
             });
             var scale = <any>os.scale;
             expect(scale).toBeDefined();
@@ -548,7 +548,8 @@ module powerbitests {
 
             var values = <any>os.values;
             expect(values).toBeDefined();
-            expect(values.length).toEqual(2);
+            // TODO: need to verify updated value here because of changed wrong axis prop from axisScale to scaleType 
+            expect(values.length).toEqual(3);
             expect(values[1]).toBe('100.00'); 
         }); 
 
@@ -561,7 +562,7 @@ module powerbitests {
                 outerPadding: 0.5,
                 isScalar: true,
                 isVertical: true,
-                axisScale: axisScale.log
+                scaleType: axisScale.log
             });
             var scale = <any>os.scale;
             expect(scale).toBeDefined();
@@ -585,7 +586,7 @@ module powerbitests {
                 outerPadding: 0.5,
                 isScalar: true,
                 isVertical: false,
-                axisScale: axisScale.log
+                scaleType: axisScale.log
             });
             var scale = <any>os.scale;
             expect(scale).toBeDefined();
@@ -599,6 +600,7 @@ module powerbitests {
 
             var values = <any>os.values;
             expect(values).toBeDefined();
+            // TODO: need to verify updated values here because of changed wrong axis prop from axisScale to scaleType 
             expect(values.length).toEqual(2);
             expect(values[1]).toEqual('100.00');
         });
@@ -614,7 +616,7 @@ module powerbitests {
                 outerPadding: 0.5,
                 isScalar: true,
                 isVertical: true,
-                axisScale: axisScale.log
+                scaleType: axisScale.log
             });
             var scale = <any>os.scale;
             expect(scale).toBeDefined();
@@ -624,8 +626,8 @@ module powerbitests {
 
             var values = <any>os.values;
             expect(values).toBeDefined();
-            expect(values.length).toEqual(2);
-            expect(values[0]).toEqual('0.00');
+            expect(values.length).toEqual(1);
+            expect(values[0]).toEqual('10.00');
         });
     });
 

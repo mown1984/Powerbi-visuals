@@ -70,7 +70,7 @@ module powerbitests {
 
         let measureColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'A', roles: { Y: true }  };
         let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), objects: { general: { formatString: '$0' } }, groupName: 'B', roles: { Y: true }  };
-        let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales', roles: { Series: true } });
+        let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
 
         it('ColumnChart registered capabilities', () => {
             expect(JSON.stringify(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').capabilities)).toBe(JSON.stringify(powerbi.visuals.getColumnChartCapabilities()));
@@ -3355,9 +3355,7 @@ module powerbitests {
             series: [],
             valuesMetadata: [],
             legendData: { dataPoints: [] },
-            hasSelection: false,
             hasHighlights: false,
-            selectedIds: [],
             categoryMetadata: null,
             scalarCategoryAxis: false,
             labelSettings: null,
@@ -3377,9 +3375,7 @@ module powerbitests {
             series: [{ key: '1', index: 0, displayName: '1', identity: SelectionId.createNull(), data: [], labelSettings: null, color: '#01B8AA' }],
             valuesMetadata: [],
             legendData: { dataPoints: [] },
-            hasSelection: false,
             hasHighlights: false,
-            selectedIds: [],
             categoryMetadata: null,
             scalarCategoryAxis: true,
             labelSettings: null,
@@ -4454,7 +4450,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+                let graphicsContext = $('.columnChart .mainGraphicsContext');
 
                 let yLine = $('.y1-ref-line');
                 let yLabel = $('.labelGraphicsContext .label').eq(0);
@@ -4582,7 +4578,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+                let graphicsContext = $('.columnChart .mainGraphicsContext');
 
                 let yLine = $('.y1-ref-line');
                 let yLabel = $('.labelGraphicsContext .label').eq(0);
@@ -4710,7 +4706,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+                let graphicsContext = $('.columnChart .mainGraphicsContext');
 
                 let yLine = $('.y1-ref-line');
                 let yLabel = $('.labelGraphicsContext .label').eq(0);
@@ -8323,7 +8319,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+                let graphicsContext = $('.columnChart .mainGraphicsContext');
 
                 let yLine = $('.y1-ref-line');
                 let yLabel = $('.labelGraphicsContext .label').eq(0);
@@ -8451,7 +8447,7 @@ module powerbitests {
             });
 
             setTimeout(() => {
-                let graphicsContext = $('.columnChart .columnChartMainGraphicsContext');
+                let graphicsContext = $('.columnChart .mainGraphicsContext');
 
                 let yLine = $('.y1-ref-line');
                 let yLabel = $('.labelGraphicsContext .label').eq(0);
@@ -10114,7 +10110,7 @@ module powerbitests {
             spyOn(barChart, 'selectColumn').and.callThrough();
 
             // click on the graph, expect selectColumn to have been called
-            $('.columnChartMainGraphicsContext').d3Click(thirdColumnXCoordinateToClick, thirdColumnYCoordinateToClick);
+            $('.mainGraphicsContext').d3Click(thirdColumnXCoordinateToClick, thirdColumnYCoordinateToClick);
             expect(barChart.selectColumn).toHaveBeenCalled();
 
             // now, instead of clicking on the graph, which can be unstable due to different user's configurations

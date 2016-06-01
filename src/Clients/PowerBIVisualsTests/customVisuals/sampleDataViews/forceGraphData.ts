@@ -25,87 +25,87 @@
  */
 
 module powerbitests.customVisuals.sampleDataViews {
-    import SQExprBuilder = powerbi.data.SQExprBuilder;
-    import DataView = powerbi.DataView;
-    import DataViewMetadata = powerbi.DataViewMetadata;
     import ValueType = powerbi.ValueType;
-    import DataViewTransform = powerbi.data.DataViewTransform;
-    import DataViewValueColumns = powerbi.DataViewValueColumns;
-    import DataViewValueColumn = powerbi.DataViewValueColumn;
 
-    export class ForceGraphData {
+    export class ForceGraphData extends DataViewBuilder {
 
-        public getDataView(): DataView {
-            let dataViewMetadata: DataViewMetadata = {
-                columns: [
-                    {
-                        displayName: 'Source',
-                        roles: { 'Source': true },
+        public static ColumnSource: string = "Source";
+        public static ColumnTarget: string = "Target";
+        public static ColumnLinkType: string = "LinkType";
+        public static ColumnWeight: string = "Weight";
+        public static ColumnSourceType: string = "SourceType";
+        public static ColumnTargetType: string = "TargetType";
+
+        public valuesSourceTarget: string[][] =
+            [
+                ["William", "Brazil"],
+                ["Olivia", "USA"],
+                ["Daniel", "Portugal"],
+                ["Lucas", "Canada"],
+                ["Henry", "USA"],
+                ["Aiden", "Brazil"],
+                ["Daniel", "Portugal"],
+                ["Harper", "USA"],
+                ["Logan", "Brazil"],
+                ["Ella", "Canada"],
+            ];
+
+        public getDataView(columnNames?: string[]): powerbi.DataView {
+            columnNames = columnNames || [ForceGraphData.ColumnSource, ForceGraphData.ColumnTarget];
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnSource,
+                        roles: { Source: true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.valuesSourceTarget.map(x => x[0])
+                },
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnTarget,
+                        roles: { Target: true },
                         type: ValueType.fromDescriptor({ text: true }),
-                    }, {
-                        displayName: 'Target',
-                        roles: { 'Target': true },
+                    },
+                    values: this.valuesSourceTarget.map(x => x[1])
+                },
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnLinkType,
+                        roles: { LinkType: true },
                         type: ValueType.fromDescriptor({ text: true }),
-                    }, {
-                        displayName: 'Weight',
-                        roles: { 'Weight': true },
+                    },
+                    values: []
+                },
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnSourceType,
+                        roles: { SourceType: true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    },
+                    values: []
+                },
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnTargetType,
+                        roles: { TargetType: true },
+                        type: ValueType.fromDescriptor({ text: true }),
+                    },
+                    values: []
+                }
+                ],[
+                {
+                    source: {
+                        displayName: ForceGraphData.ColumnWeight,
+                        roles: { Weight: true },
                         isMeasure: true,
                         type: ValueType.fromDescriptor({ numeric: true }),
-                    }, {
-                        displayName: 'LinkType',
-                        roles: { 'LinkType': true },
-                        type: ValueType.fromDescriptor({ text: true }),
-                    }, {
-                        displayName: 'SourceType',
-                        roles: { 'SourceType': true },
-                        type: ValueType.fromDescriptor({ text: true }),
-                    }, {
-                        displayName: 'TargetType',
-                        roles: { 'TargetType': true },
-                        type: ValueType.fromDescriptor({ text: true }),
-                    }
-                ]
-            };
-
-            let sourceValues = ["Brazil", "Canada",  "USA", "Portugal"];
-            let targetValues = ["One", "Two", "Three", "Four", "Five", "Six", "Seven"];
-
-            let columns: DataViewValueColumn[] = [{
-                    source: dataViewMetadata.columns[0],
-                    values: targetValues
-                }];
-
-            let tableDataValues = helpers.getTableDataValues(sourceValues, columns);
-
-            let dataValues: DataViewValueColumns = DataViewTransform.createValueColumns(columns);
-
-            let sourceValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "source", name: "source" } });
-            let sourceValuesIdentities = sourceValues.map((value) =>
-                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(sourceValuesfieldExpr, SQExprBuilder.text(value))));
-
-            let targetValuesfieldExpr = SQExprBuilder.fieldExpr({ column: { schema: 's', entity: "target", name: "target" } });
-            let targetValuesIdentities = targetValues.map((value) =>
-                powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(targetValuesfieldExpr, SQExprBuilder.text(value))));
-
-            return {
-                metadata: dataViewMetadata,
-                categorical: {
-                    categories: [{
-                            source: dataViewMetadata.columns[0],
-                            values: sourceValues,
-                            identity: sourceValuesIdentities
-                        }, {
-                            source: dataViewMetadata.columns[1],
-                            values: targetValues,
-                            identity: targetValuesIdentities
-                        }],
-                    values: dataValues
-                },
-                table: {
-                    rows: tableDataValues,
-                    columns: dataViewMetadata.columns,
+                    },
+                    values: []
                 }
-            };
+                ],
+                null,
+                columnNames).build();
         }
     }
 }

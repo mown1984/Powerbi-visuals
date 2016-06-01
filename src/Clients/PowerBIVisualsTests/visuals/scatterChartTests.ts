@@ -50,65 +50,16 @@ module powerbitests {
 
     const labelColor: string = powerbi.visuals.dataLabelUtils.defaultLabelColor;
 
-    class ScatterVisualBuilder {
-        public static axisLabelVisibleMinHeight: number = 125; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightAxesVisible
-        public static legendVisibleMinHeight: number = 125; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightLegendVisible
+    const axisLabelVisibleMinHeight: number = 125; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightAxesVisible
+    const legendVisibleMinHeight: number = 125; // Matches powerbi.visualHost.MobileVisualPluginService.MinHeightLegendVisible
 
-        private isMobile: boolean;
-        private labelInteractivity: boolean;
-        private hasAnimator: boolean;
-
-        public forMobile(): this {
-            this.isMobile = true;
-            return this;
-        }
-
-        public withLabelInteractivity(): this {
-            this.labelInteractivity = true;
-            return this;
-        }
-
-        public withAnimator(): this {
-            this.hasAnimator = true;
-            return this;
-        }
-
-        public build(): CartesianChart {
-            let options: powerbi.visuals.CartesianConstructorOptions = {
-                chartType: CartesianChartType.Scatter,
-                trendLinesEnabled: true,
-            };
-
-            if (this.isMobile) {
-                options.cartesianSmallViewPortProperties = {
-                    hideAxesOnSmallViewPort: true,
-                    hideLegendOnSmallViewPort: true,
-                    MinHeightLegendVisible: ScatterVisualBuilder.legendVisibleMinHeight,
-                    MinHeightAxesVisible: ScatterVisualBuilder.axisLabelVisibleMinHeight,
-                };
-                options.behavior = new CartesianChartBehavior([new ScatterChartMobileBehavior()]);
-            }
-            else {
-                options.behavior = new CartesianChartBehavior([new ScatterChartWebBehavior()]);
-            }
-
-            if (this.labelInteractivity)
-                options.isLabelInteractivityEnabled = true;
-
-            if (this.hasAnimator)
-                options.animator = new BaseAnimator();
-
-            return new powerbi.visuals.CartesianChart(options);
-        }
-    }
-
-    const axisLabelVisibleGreaterThanMinHeight: number = ScatterVisualBuilder.axisLabelVisibleMinHeight + 1;
-    const axisLabelVisibleSmallerThanMinHeight: number = ScatterVisualBuilder.axisLabelVisibleMinHeight - 1;
+    const axisLabelVisibleGreaterThanMinHeight: number = axisLabelVisibleMinHeight + 1;
+    const axisLabelVisibleSmallerThanMinHeight: number = axisLabelVisibleMinHeight - 1;
     const axisLabelVisibleGreaterThanMinHeightString: string = axisLabelVisibleGreaterThanMinHeight.toString();
     const axisLabelVisibleSmallerThanMinHeightString: string = axisLabelVisibleSmallerThanMinHeight.toString();
 
-    const legendVisibleGreaterThanMinHeight: number = ScatterVisualBuilder.legendVisibleMinHeight + 1;
-    const legendVisibleSmallerThanMinHeight: number = ScatterVisualBuilder.legendVisibleMinHeight - 1;
+    const legendVisibleGreaterThanMinHeight: number = legendVisibleMinHeight + 1;
+    const legendVisibleSmallerThanMinHeight: number = legendVisibleMinHeight - 1;
     const legendVisibleGreaterThanMinHeightString: string = legendVisibleGreaterThanMinHeight.toString();
     const legendVisibleSmallerThanMinHeightString: string = legendVisibleSmallerThanMinHeight.toString();
 
@@ -6085,4 +6036,53 @@ module powerbitests {
 
         });
     });
+
+    class ScatterVisualBuilder {
+
+        private isMobile: boolean;
+        private labelInteractivity: boolean;
+        private hasAnimator: boolean;
+
+        public forMobile(): this {
+            this.isMobile = true;
+            return this;
+        }
+
+        public withLabelInteractivity(): this {
+            this.labelInteractivity = true;
+            return this;
+        }
+
+        public withAnimator(): this {
+            this.hasAnimator = true;
+            return this;
+        }
+
+        public build(): CartesianChart {
+            let options: powerbi.visuals.CartesianConstructorOptions = {
+                chartType: CartesianChartType.Scatter
+            };
+
+            if (this.isMobile) {
+                options.cartesianSmallViewPortProperties = {
+                    hideAxesOnSmallViewPort: true,
+                    hideLegendOnSmallViewPort: true,
+                    MinHeightLegendVisible: legendVisibleMinHeight,
+                    MinHeightAxesVisible: axisLabelVisibleMinHeight,
+                };
+                options.behavior = new CartesianChartBehavior([new ScatterChartMobileBehavior()]);
+            }
+            else {
+                options.behavior = new CartesianChartBehavior([new ScatterChartWebBehavior()]);
+            }
+
+            if (this.labelInteractivity)
+                options.isLabelInteractivityEnabled = true;
+
+            if (this.hasAnimator)
+                options.animator = new BaseAnimator();
+
+            return new powerbi.visuals.CartesianChart(options);
+        }
+    }
 }

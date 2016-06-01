@@ -35,7 +35,7 @@ module powerbitests.customVisuals {
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new ChicletSlicerBuilder(500, 500);
+            visualBuilder = new ChicletSlicerBuilder(1000,500);
             defaultDataViewBuilder = new CarLogosData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -474,17 +474,18 @@ module powerbitests.customVisuals {
     });
 
     class ChicletSlicerBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
         }
-        private build(): void {
-            this.visual = new VisualClass();
+
+        protected build() {
+            return new VisualClass();
         }
+
         public get mainElement() {
             return this.element.children("div.chicletSlicer");
         }
+
         public get visibleGroup() {
             return this.mainElement
                 .children("div.slicerBody")
@@ -494,15 +495,18 @@ module powerbitests.customVisuals {
         public saveSelection(selectionIds): void {
             return this.visual['settings']['general'].setSavedSelection(selectionIds);
         }
+
         public getSelectedPoints() {
             return this.visual['behavior']
                 .dataPoints
                 .map( (item) => { if(item.selected) return item; })
                 .filter(Boolean);
         }
+
         public getSavedSelection(): string[] {
             return this.visual['settings']['general'].getSavedSelection();
         }
+
         public getSelectionState() {
             return {
                 items : this.visual['settings']['general']['selection'],

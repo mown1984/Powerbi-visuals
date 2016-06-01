@@ -87,6 +87,7 @@ module powerbi.visuals {
             }
 
             labels
+                .interrupt()
                 .text((d: Label) => d.text)
                 .attr(labelAttr)
                 .style({
@@ -121,6 +122,7 @@ module powerbi.visuals {
                 labelAttr.dy = undefined;
             }
             secondLineLabels
+                .interrupt()
                 .text((d: Label) => d.secondRowText)
                 .attr(labelAttr)
                 .style({

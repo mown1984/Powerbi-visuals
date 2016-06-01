@@ -216,13 +216,15 @@ module powerbitests.customVisuals.sampleDataViews {
                     value: this.categoryValues[i],
                     identity: powerbi.data.createDataViewScopeIdentity(SQExprBuilder.equal(
                         this.categoryEntityField, SQExprBuilder.text(this.categoryValues[i]))),
-                    level: 0,
                     values: {}
                 };
 
                 for (let j = 0, terLen = this.territoryValues.length; j < terLen; j++) {
+                    // TODO: remove valueSourceIndex prop because it doesn't exest in DataViewTreeNodeValue
+                    let value = { value: this.sampleDataSalesUnits[j][i], valueSourceIndex: 1 };
+                    
                     children.values[2 * j] = { value: this.sampleDataSales[j][i] };
-                    children.values[2 * j + 1] = { value: this.sampleDataSalesUnits[j][i], valueSourceIndex: 1 };
+                    children.values[2 * j + 1] = value;
                 }
 
                 rowChilds.push(children);

@@ -64,8 +64,6 @@ module powerbi.visuals.sampleDataViews {
                         isMeasure: true,
                         objects: { general: { formatString: '$0' } },
                     }],
-                groups: [],
-                measures: [0],
             };
 
             return [{

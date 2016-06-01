@@ -120,8 +120,8 @@ module powerbitests {
             labelLayout = new LabelLayout({
                 startingOffset: 5,
                 maximumOffset: 20,
-                labelPadding: 2,
-                labelOffsetIterationDelta: 2,
+                horizontalPadding:2,
+                verticalPadding:2
             });
         });
 

@@ -130,8 +130,7 @@ module powerbi.visuals.samples {
                         dataReductionAlgorithm: { sample: {} }
                     },
                     values: {
-                        for: { in: "Values" },
-                        dataReductionAlgorithm: { sample: {} }
+                        for: { in: "Values" }
                     },
                     // labels: {
                     //     for: { in: "Labels" }
@@ -564,7 +563,6 @@ module powerbi.visuals.samples {
                 pixelSpan: effectiveWidth,
                 dataDomain: [min, max],
                 metaDataColumn: metadataColumn,
-                formatStringProp: LineDotChart.Properties.general.formatString,
                 formatString: null,
                 //formatString: LineDotChart.Properties.general.formatString,
                 outerPadding: 0,
@@ -619,7 +617,6 @@ module powerbi.visuals.samples {
                 dataDomain: [min, value_sum],
                 metaDataColumn: metadataColumn,
                 formatString: null,
-                formatStringProp: LineDotChart.Properties.general.formatString,
                 outerPadding: 0,
                 isCategoryAxis: false,
                 isScalar: true,
@@ -632,7 +629,6 @@ module powerbi.visuals.samples {
                 dataDomain: [min, value_sum],
                 metaDataColumn: metadataColumn,
                 formatString: null,
-                formatStringProp: LineDotChart.Properties.general.formatString,
                 outerPadding: 0,
                 isCategoryAxis: false,
                 isScalar: true,

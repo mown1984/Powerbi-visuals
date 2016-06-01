@@ -28,25 +28,27 @@ module powerbitests.customVisuals {
     import GranularityType = powerbi.visuals.samples.GranularityType;
     import VisualClass = powerbi.visuals.samples.Timeline;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
-    import TimeLineData = powerbi.visuals.samples.TimelineData;
     import TimelineCursorOverElement = powerbi.visuals.samples.TimelineCursorOverElement;
+    import TimelineData = powerbitests.customVisuals.sampleDataViews.TimelineData;
 
     powerbitests.mocks.setLocale();
 
     describe("Timeline", () => {
+        let visualBuilder: TimelineBuilder;
+        let defaultDataViewBuilder: TimelineData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new TimelineBuilder(1000,500);
+            defaultDataViewBuilder = new TimelineData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("converter", () => {
-            let visualBuilder: TimelineBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new TimelineBuilder();
-                dataViews = [new customVisuals.sampleDataViews.TimelineData().getDataView()];
-            });
-
             it("prepareValues", () => {
                 let prepareValuesResults: Date[],
                     values: any;
@@ -66,33 +68,26 @@ module powerbitests.customVisuals {
             });
 
             it("identity column name is not changed for non-hierarchical source", () => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
 
-                let column = <powerbi.data.SQColumnRefExpr>dataViews[0].categorical.categories[0].identityFields[0];
-                expect(column.ref).toEqual("Order Date");
+                let column = <powerbi.data.SQColumnRefExpr>dataView.categorical.categories[0].identityFields[0];
+                expect(column.ref).toEqual(sampleDataViews.TimelineData.ColumnCategory);
             });
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: TimelineBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new TimelineBuilder();
-                dataViews = [new customVisuals.sampleDataViews.TimelineData().getDataView()];
-            });
-
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("basic update", (done) => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
-                setTimeout(() => {
-                    let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
-					let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children("g").children(".label").children().length;
 
-                    expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length);
-                    expect(countOfTextItems).toBe(15);
+                helpers.renderTimeout(() => {
+                    let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
+					let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children("g").eq(4).children(".label").children().length;
+
+                    expect(countOfDays).toBe(dataView.categorical.categories[0].values.length);
+                    expect(countOfTextItems).toBe(dataView.categorical.categories[0].values.length);
 					let cellRects = visualBuilder.mainElement.find(".cellRect");
 					cellRects.last().d3Click(0, 0);
 					let fill = window.getComputedStyle(cellRects[0]).fill;
@@ -106,31 +101,43 @@ module powerbitests.customVisuals {
 					expect(cellHeight).toBeLessThan(60.1);
 					expect(cellHeight).toBeGreaterThan(29.9);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("apply blank row data", (done) => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
 
-                setTimeout(() => {
-                    dataViews[0].categorical.categories[0].values.push(null);
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                helpers.renderTimeout(() => {
+                    dataView.categorical.categories[0].values.push(null);
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
-                        expect(countOfDays).toBe(dataViews[0].categorical.categories[0].values.length-1);
+                        expect(countOfDays).toBe(dataView.categorical.categories[0].values.length-1);
                         done();
-                    }, DefaultWaitForRender);
+                    });
+                });
+            });
+
+            it("basic update", (done) => {
+                visualBuilder.update(dataView);
+                visualBuilder.currentPeriod = GranularityType.year;
+                setTimeout(() => {
+                    let textLabels: JQuery = $(".selectionRangeContainer");
+                     //TimeRangeText check visibility when visual is small
+                    let textRangeText = powerbitests.helpers.findElementText(textLabels);
+                    expect(textRangeText).toContain('2016');
+                    done();
                 }, DefaultWaitForRender);
             });
 
             it("change color for header", (done) => {
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
 
-                setTimeout(() => {
-                    let item: powerbi.DataViewObjects = {
+               helpers.renderTimeout(() => {
+                    colorAssert(visualBuilder.mainElement.children('g.rangeTextArea').children('text').css('fill'), '#777777');
+
+                    dataView.metadata.objects = {
                         rangeHeader: {
                             fontColor: {
                                 solid: {
@@ -140,25 +147,22 @@ module powerbitests.customVisuals {
                         }
                     };
 
-                    colorAssert(visualBuilder.mainElement.children('g.rangeTextArea').children('text').css('fill'), '#777777');
-
-                    dataViews[0].metadata.objects = item;
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         colorAssert(visualBuilder.mainElement.children('g.rangeTextArea').children('text').css('fill'), '#00B8AA');
                         done();
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);
+                    });
+                });
             });
 
             it("change color for selected cell color", (done) => {
-                dataViews[0].metadata.objects = {};
-                visualBuilder.update(dataViews);
+                dataView.metadata.objects = {};
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
 
-                setTimeout(() => {
-                    let item: powerbi.DataViewObjects = {
+                helpers.renderTimeout(() => {
+                    colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#ADD8E6');
+
+                    dataView.metadata.objects = {
                         cells: {
                             fillSelected: {
                                 solid: {
@@ -168,25 +172,23 @@ module powerbitests.customVisuals {
                         }
                     };
 
-                    colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#ADD8E6');
-
-                    dataViews[0].metadata.objects = item;
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#00B8AA');
                         done();
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);
+                    });
+                });
             });
 
             it("change color for notselected cell color", (done) => {
-                dataViews[0].metadata.objects = {};
-                visualBuilder.update(dataViews);
+                dataView.metadata.objects = {};
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
 
-                setTimeout(() => {
-                    let item: powerbi.DataViewObjects = {
+                helpers.renderTimeout(() => {
+                    colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#ADD8E6');
+
+                    dataView.categorical.categories[0].values = [new Date(2016,0,2)];
+                    dataView.metadata.objects = {
                         cells: {
                             fillUnselected: {
                                 solid: {
@@ -196,39 +198,26 @@ module powerbitests.customVisuals {
                         }
                     };
 
-                    colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#ADD8E6');
-
-                    let rows = [
-                        ['02.01.2014'], ];
-                    let value = rows.map(function (value) {
-                        let arr = value[0].split('.');
-                        return (new Date(Number(arr[2]), Number(arr[1]) - 1, Number(arr[0]))); 
-                    });
-                    dataViews[0].categorical.categories[0].values = value;
-                    dataViews[0].metadata.objects = item;
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         colorAssert(visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").css('fill'), '#00B8AA');
                         done();
-                    }, DefaultWaitForRender);
-                }, DefaultWaitForRender);
+                    });
+                });
             });
 
             describe("clearCatcher", () => {
                 let clearCatcherElement: JQuery;
 
                 beforeEach((done) => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
                     visualBuilder.currentPeriod = GranularityType.day;
 
                     spyOn(visualBuilder.visualObject, "clear");
 
-                    setTimeout(() => {
+                    helpers.renderTimeout(() => {
                         clearCatcherElement = visualBuilder.element.find(".clearCatcher");
-
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("click - event", () => {
@@ -252,16 +241,15 @@ module powerbitests.customVisuals {
                 let periodSlicerSelectionRectElements: JQuery;
 
                 beforeEach((done) => {
-                    visualBuilder.update(dataViews);
+                    visualBuilder.update(dataView);
                     visualBuilder.currentPeriod = GranularityType.month;
 
                     spyOn(visualBuilder.visualObject, "redrawPeriod");
 
-                    setTimeout(() => {
+                    helpers.renderTimeout(() => {
                         periodSlicerSelectionRectElements = visualBuilder.element.find(".periodSlicerSelectionRect");
-
                         done();
-                    }, DefaultWaitForRender);
+                    });
                 });
 
                 it("mousedown - event", () => {
@@ -283,17 +271,10 @@ module powerbitests.customVisuals {
         });
 
         describe("methods", () => {
-            let visualBuilder: TimelineBuilder,
-                dataViews: powerbi.DataView[];
-
             beforeEach((done) => {
-                visualBuilder = new TimelineBuilder();
-                dataViews = [new customVisuals.sampleDataViews.TimelineData().getDataView()];
-
-                visualBuilder.update(dataViews);
+                visualBuilder.update(dataView);
                 visualBuilder.currentPeriod = GranularityType.day;
-
-                setTimeout(done, DefaultWaitForRender);
+                helpers.renderTimeout(done);
             });
 
             describe("findCursorOverElement", () => {
@@ -302,15 +283,15 @@ module powerbitests.customVisuals {
                 });
 
                 it("9999", () => {
-                    expectToCallFindCursorOverElement(9999, 9);
+                    expectToCallFindCursorOverElement(9999, 8);
                 });
 
                 it("120", () => {
-                    expectToCallFindCursorOverElement(120, 2);
+                    expectToCallFindCursorOverElement(120, 1);
                 });
 
                 it("220", () => {
-                    expectToCallFindCursorOverElement(220, 4);
+                    expectToCallFindCursorOverElement(220, 2);
                 });
 
                 function expectToCallFindCursorOverElement(x: number, expectedIndex: number): void {
@@ -326,10 +307,12 @@ module powerbitests.customVisuals {
     });
 
     class TimelineBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 400, width: number = 600, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get visualObject(): VisualClass {
@@ -344,14 +327,6 @@ module powerbitests.customVisuals {
 
         public set currentPeriod(period: number) {
             this.visual.selectPeriod(period);
-        }
-
-        public click(data: TimeLineData): void {
-            this.visual.setSelection(data);
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

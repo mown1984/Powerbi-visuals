@@ -28,15 +28,16 @@ module powerbitests.customVisuals {
     powerbitests.mocks.setLocale();
     import VisualClass = powerbi.visuals.samples.WordCloud;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
+    import CountriesData = powerbitests.customVisuals.sampleDataViews.CountriesData;
 
     describe("WordCloud", () => {
         let visualBuilder: WordCloudBuilder;
+        let defaultDataViewBuilder: CountriesData;
         let dataView: powerbi.DataView;
-        let defaultDataViewBuilder: powerbitests.customVisuals.sampleDataViews.CountriesData;
 
         beforeEach(() => {
-            visualBuilder = new WordCloudBuilder(500, 1000);
-            defaultDataViewBuilder = new powerbitests.customVisuals.sampleDataViews.CountriesData();
+            visualBuilder = new WordCloudBuilder(1000,500);
+            defaultDataViewBuilder = new CountriesData();
             dataView = defaultDataViewBuilder.getDataView();
         });
 
@@ -139,18 +140,16 @@ module powerbitests.customVisuals {
     });
 
     class WordCloudBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
             return this.element.children("svg.wordCloud");
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

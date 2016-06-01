@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "suppressExcessPropertyErrors": true,
-    "experimentalDecorators":  true
+    "target": "ES5"
   },
   "filesGlob": [
     "**/*.ts"

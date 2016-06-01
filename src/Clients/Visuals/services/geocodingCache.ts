@@ -122,7 +122,7 @@ module powerbi.visuals.services {
                 this.geocodeCacheCount = maxCacheSize;
             }
 
-            geocodeCache[key] = { key: key, coordinate: coordinate, hitCount: 1 };
+            geocodeCache[key] = { coordinate: coordinate, hitCount: 1 };
             ++this.geocodeCacheCount;
         }
 

@@ -4,7 +4,7 @@
     "package": {
         "name": "Timeline",
         "displayName": "Timeline",
-        "version": "1.2.8",
+        "version": "1.2.9",
         "guid": "Timeline1447991079100",
         "description": "Timeline slicer is a graphical date range selector used as a filtering component in the report canvas",
         "build": "13.0.1100.210",

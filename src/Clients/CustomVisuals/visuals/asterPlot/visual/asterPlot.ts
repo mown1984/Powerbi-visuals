@@ -71,6 +71,7 @@ module powerbi.visuals.samples {
         label: string;
         highlight?: boolean;
         tooltipInfo: TooltipDataItem[];
+        labelFontSize: string;
     }
 
     export interface AsterPlotBehaviorOptions {

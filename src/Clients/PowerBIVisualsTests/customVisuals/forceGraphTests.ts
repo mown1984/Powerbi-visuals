@@ -27,120 +27,106 @@
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ForceGraph;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
+    import ForceGraphData = powerbitests.customVisuals.sampleDataViews.ForceGraphData;
 
     describe("ForceGraph", () => {
+        let visualBuilder: ForceGraphBuilder;
+        let defaultDataViewBuilder: ForceGraphData;
+        let dataView: powerbi.DataView;
+
+        beforeEach(() => {
+            visualBuilder = new ForceGraphBuilder(1000,500);
+            defaultDataViewBuilder = new ForceGraphData();
+            dataView = defaultDataViewBuilder.getDataView();
+        });
+
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
         describe("DOM tests", () => {
-            let visualBuilder: ForceGraphBuilder;
-            let dataViews: powerbi.DataView[];
-
-            beforeEach(() => {
-                visualBuilder = new ForceGraphBuilder();
-                dataViews = [new powerbitests.customVisuals.sampleDataViews.ForceGraphData().getDataView()];
-            });
-
             it("svg element created", () => expect(visualBuilder.element[0]).toBeInDOM());
 
             it("update", (done) => {
-                visualBuilder.update(dataViews);
-                setTimeout(() => {
-                    expect(visualBuilder.mainElement.children("path.link").length).toBe(dataViews[0].categorical.categories[0].values.length);
-                    expect(visualBuilder.mainElement.children("g.node").length).toBe(dataViews[0].categorical.categories[0].values.length * 2);
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let categorySourceLength  = _.unique(dataView.categorical.categories[0].values).length;
+                    let categoryTargetLength  = _.unique(dataView.categorical.categories[1].values).length;
+                    expect(visualBuilder.mainElement.children("path.link").length).toBe(Math.max(categorySourceLength, categoryTargetLength));
+                    expect(visualBuilder.mainElement.children("g.node").length).toBe(categorySourceLength + categoryTargetLength);
                     done();
-                }, powerbitests.DefaultWaitForRender);
+                });
             });
 
             it("nodes labels on", done => {
-                dataViews[0].metadata.objects = {
-                    labels: {
-                        show: true
-                    }
-                };
+                dataView.metadata.objects = { labels: { show: true } };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.children("g.node").first().find('text').length).toBe(1);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels off", done => {
-                dataViews[0].metadata.objects = {
-                    labels: {
-                        show: false
-                    }
-                };
+                dataView.metadata.objects = { labels: { show: false } };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.mainElement.children("g.node").first().find('text').length).toBe(0);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels change color", done => {
-                dataViews[0].metadata.objects = {
-                    labels: {
-                        color: { solid: { color: "#123123" } }
-                    }
+                dataView.metadata.objects = { 
+                    labels: { 
+                        color: { solid: { color: "#123123" } } 
+                    } 
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.mainElement.children('g.node').first().find('text').css("fill"), "#123123");
 
-                    dataViews[0].metadata.objects = {
+                    dataView.metadata.objects = {
                         labels: {
                             color: { solid: { color: "#324435" } }
                         }
                     };
 
-                    visualBuilder.update(dataViews);
-
-                    setTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
                         colorAssert(visualBuilder.mainElement.children('g.node').first().find('text').css("fill"), "#324435");
                         done();
-                    }, DefaultWaitForRender);
+                    });
 
-                }, DefaultWaitForRender);
+                });
             });
 
             it("nodes labels change font size", done => {
-                dataViews[0].metadata.objects = {
+                dataView.metadata.objects = {
                     labels: {
                         fontSize: 16
                     }
                 };
 
-                visualBuilder.update(dataViews);
-
-                setTimeout(() => {
-                    expect(visualBuilder.mainElement.children('g.node').first().find('text').css("font-size")).toBe('21px');
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let nodeTextFontSise = Math.round(parseFloat(
+                        visualBuilder.mainElement.children('g.node').first().find('text').css("font-size")));
+                    expect(nodeTextFontSise).toBe(21);
                     done();
-                }, DefaultWaitForRender);
+                });
             });
         });
     });
 
     class ForceGraphBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number = 200, width: number = 300, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
             return this.element.children("svg.forceGraph");
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
     }
 }

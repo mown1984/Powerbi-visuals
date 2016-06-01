@@ -28,18 +28,19 @@ module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.RadarChart;
     import ColorAssert = powerbitests.helpers.assertColorsMatch;
     import PixelConverter = jsCommon.PixelConverter;
+    import SalesByDayOfWeekData = powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
 
 	powerbitests.mocks.setLocale();
-	
+
     describe("RadarChart", () => {
         let visualBuilder: RadarChartBuilder;
+        let defaultDataViewBuilder: SalesByDayOfWeekData;
         let dataView: powerbi.DataView;
-        let dataViewBuilder: powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
 
         beforeEach(() => {
-            visualBuilder = new RadarChartBuilder(500, 1000);
-            dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData();
-            dataView = dataViewBuilder.getDataView();
+            visualBuilder = new RadarChartBuilder(1000,500);
+            defaultDataViewBuilder = new SalesByDayOfWeekData();
+            dataView = defaultDataViewBuilder.getDataView();
         });
 
         describe('Capabilities', () => {
@@ -263,7 +264,7 @@ module powerbitests.customVisuals {
                 });
 
                 it("nodes labels change display unit", done => {
-                   
+
                     dataView.metadata.objects = {
                         labels: {
                             show: true,
@@ -283,18 +284,16 @@ module powerbitests.customVisuals {
     });
 
     class RadarChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(height: number, width: number, isMinervaVisualPlugin: boolean = false) {
-            super(height, width, isMinervaVisualPlugin);
-            this.build();
-            this.init();
+        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+            super(width, height, isMinervaVisualPlugin);
+        }
+
+        protected build() {
+            return new VisualClass();
         }
 
         public get mainElement() {
             return this.element.children("svg");
-        }
-
-        private build(): void {
-            this.visual = new VisualClass();
         }
 
         //Helpers

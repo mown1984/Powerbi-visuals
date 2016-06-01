@@ -293,7 +293,7 @@ module powerbi.visuals {
             this.svg.classed(ColumnChart.ColumnChartClassName, true);
 
             this.unclippedGraphicsContext = this.svg.append('g').classed('columnChartUnclippedGraphicsContext', true);
-            this.mainGraphicsContext = this.unclippedGraphicsContext.append('svg').classed('columnChartMainGraphicsContext', true);
+            this.mainGraphicsContext = this.unclippedGraphicsContext.append('svg').classed('mainGraphicsContext', true);
             this.style = options.style;
             this.currentViewport = options.viewport;
             this.hostService = options.host;

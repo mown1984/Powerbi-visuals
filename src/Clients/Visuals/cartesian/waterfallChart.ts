@@ -689,8 +689,7 @@ module powerbi.visuals {
             let behaviorOptions: WaterfallChartBehaviorOptions = undefined;
             if (this.interactivityService) {
                 behaviorOptions = {
-                    bars: bars,
-                    datapoints: dataPoints,
+                    bars: bars
                 };
             }
 

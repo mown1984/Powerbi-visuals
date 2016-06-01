@@ -1131,17 +1131,15 @@ module powerbitests {
 
                 let dataView: powerbi.DataView = {
                     categorical: {
-                        categorical: {
-                            categories: [{
-                                source: dataViewMetadata.columns[0],
-                                values: []
-                            }],
-                            values: DataViewTransform.createValueColumns([{
-                                source: dataViewMetadata.columns[1],
-                                values: [],
-                                subtotal: 0
-                            }])
-                        }
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: []
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [],
+                            subtotal: 0
+                        }])
                     },
                     metadata: dataViewMetadata,
                 };
@@ -1152,8 +1150,8 @@ module powerbitests {
                     dataPointsToEnumerate: [],
                     dataPoints: [],
                     unCulledDataPoints: [],
-                    legendData: { title: "", dataPoints: [], labelColor: powerbi.visuals.LegendData.DefaultLegendLabelFillColor, fontSize: powerbi.visuals.SVGLegend.DefaultFontSizeInPt },
-                    hasHighlights: undefined,
+                    legendData: { title: "col1", dataPoints: [], labelColor: powerbi.visuals.LegendData.DefaultLegendLabelFillColor, fontSize: powerbi.visuals.SVGLegend.DefaultFontSizeInPt },
+                    hasHighlights: false,
                     dataLabelsSettings: powerbi.visuals.dataLabelUtils.getDefaultDonutLabelSettings(),
                     legendObjectProperties: undefined,
                     maxValue: 0,

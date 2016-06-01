@@ -59,7 +59,6 @@ module powerbi.visuals {
                 },
                 values: {
                     select: [{ for: { in: 'Y' } }, { bind: { to: 'Gradient' } }],
-                    dataReductionAlgorithm: { top: {} }
                 },
                 rowCount: { preferred: { min: 1 } }
             },

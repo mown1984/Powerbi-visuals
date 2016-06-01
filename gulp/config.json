@@ -18,6 +18,7 @@
         "VisualsDropFolder": "../lib/",
         "VisualsDropStyles": "../lib/",
         "VisualsDropScripts": "../lib/",
+        "VisualsDropImages": "../lib/images/",
         "VisualsDropTests": "../VisualsTests"
     }
 }
