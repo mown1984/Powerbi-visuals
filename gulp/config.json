@@ -15,10 +15,22 @@
     "sourceRootMapFullPath": "",
     "cacheFileName": "gulp.tsc.cache",
     "paths": {
-        "VisualsDropFolder": "../lib/",
-        "VisualsDropStyles": "../lib/",
-        "VisualsDropScripts": "../lib/",
-        "VisualsDropImages": "../lib/images/",
+        "VisualsDropFolder": [
+            "../lib/",
+            "../src/Clients/PowerBIVisualsPlayground/lib"
+        ],
+        "VisualsDropStyles": [
+            "../lib/",
+            "../src/Clients/PowerBIVisualsPlayground/lib"
+        ],
+        "VisualsDropScripts": [
+            "../lib/",
+            "../src/Clients/PowerBIVisualsPlayground/lib"
+        ],
+        "VisualsDropImages": [
+            "../lib/images/",
+            "../src/Clients/PowerBIVisualsPlayground/lib/images/"
+        ],
         "VisualsDropTests": "../VisualsTests"
     }
 }

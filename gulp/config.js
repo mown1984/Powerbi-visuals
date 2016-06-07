@@ -66,13 +66,21 @@ module.exports = function () {
         sourceRootMapFullPath: cliOptions.sourceRootMapFullPath,
         emitTsLintError: strToBool("emitTsLintError"),
         paths: {
-            VisualsDropFolder: path.resolve(__dirname, confJSON.paths.VisualsDropFolder),
-            VisualsDropStyles: path.resolve(__dirname, confJSON.paths.VisualsDropStyles),
-            VisualsDropScripts: path.resolve(__dirname, confJSON.paths.VisualsDropScripts),
-            VisualsDropImages: path.resolve(__dirname, confJSON.paths.VisualsDropImages),
-            VisualsDropTests: path.resolve(__dirname, confJSON.paths.VisualsDropTests),
+            VisualsDropFolder: resolveConfigPaths(confJSON.paths.VisualsDropFolder),
+            VisualsDropStyles: resolveConfigPaths(confJSON.paths.VisualsDropStyles),
+            VisualsDropScripts: resolveConfigPaths(confJSON.paths.VisualsDropScripts),
+            VisualsDropImages: resolveConfigPaths(confJSON.paths.VisualsDropImages),
+            VisualsDropTests: resolveConfigPaths(confJSON.paths.VisualsDropTests),
         }
     }, confJSON);
+
+    function resolveConfigPaths(configPaths) {
+        var configPathsArr = [].concat(configPaths);
+
+        return configPathsArr.map(function (configPath) {
+            return path.resolve(__dirname, configPath);
+        });
+    }
 
     function strToBool(option) {
         var arg = cliOptions[option];

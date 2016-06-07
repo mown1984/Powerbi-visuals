@@ -41,11 +41,11 @@ module.exports = projects.initProject(
         drop: [
             {
                 source: ["./obj/*.js", "./obj/*.map"],
-                dest: [config.paths.VisualsDropScripts]
+                dest: config.paths.VisualsDropScripts
             },
             {
                 source: "./obj/*.d.ts",
-                dest: [config.paths.VisualsDropScripts],
+                dest: config.paths.VisualsDropScripts,
                 transform: utils.transform.rmRefs()
             }
         ],

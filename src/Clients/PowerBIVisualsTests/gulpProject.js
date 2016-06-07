@@ -76,7 +76,7 @@ module.exports = projects.initProject(
         drop: [
             {
                 source: ["./obj/**/*"],
-                dest: [config.paths.VisualsDropTests]
+                dest: config.paths.VisualsDropTests
             }
         ],
         // TODO: refactor: crate special project type for tests and add specific task eg `prepareTest`

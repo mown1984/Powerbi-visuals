@@ -42,11 +42,14 @@ module.exports = projects.initProject(
         staticFiles: [
             {
                 source: "./images/ui-icons_222222_256x240.png",
-                dest: [config.paths.VisualsDropImages]
+                dest: config.paths.VisualsDropImages
             }
         ],
         tsc: {
-            outFileName: 'PowerBIVisualsPlayground'
+            outFileName: 'PowerBIVisualsPlayground',
+            tsLintExcludePaths: [
+                "lib/**/*.ts"
+            ]
         },
         less: {
             sourcePaths: [
