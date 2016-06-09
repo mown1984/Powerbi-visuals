@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import ListViewFactory = powerbi.visuals.ListViewFactory;
     import ListViewOptions = powerbi.visuals.ListViewOptions;

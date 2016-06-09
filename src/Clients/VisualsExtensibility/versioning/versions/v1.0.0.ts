@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbi.extensibility.v100 {
     let overloadFactory: VisualVersionOverloadFactory = (visual: IVisual) => {
         return {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -161,7 +163,6 @@ module powerbi.visuals {
         private arc: D3.Svg.Arc;
         private outerArc: D3.Svg.Arc;
         private radius: number;
-        private previousRadius: number;
         private key: any;
         private colors: IDataColorPalette;
         private style: IVisualStyle;
@@ -356,7 +357,7 @@ module powerbi.visuals {
                 };
             }
 
-            this.initViewportDependantProperties();
+            this.initViewportDependentProperties();
             this.initDonutProperties();
             this.updateInternal(this.data, options.suppressAnimations);
             this.hasSetData = true;
@@ -516,7 +517,7 @@ module powerbi.visuals {
             return ratio;
         }
 
-        private initViewportDependantProperties(duration: number = 0) {
+        private initViewportDependentProperties(duration: number = 0) {
             this.currentViewport.height = this.parentViewport.height;
             this.currentViewport.width = this.parentViewport.width;
             let viewport = this.currentViewport;
@@ -549,7 +550,6 @@ module powerbi.visuals {
                 Legend.positionChartArea(this.svg, this.legend);
             }
 
-            this.previousRadius = this.radius;
             let radius = this.radius = this.calculateRadius();
             let halfViewportWidth = viewport.width / 2;
             let halfViewportHeight = viewport.height / 2;
@@ -564,11 +564,9 @@ module powerbi.visuals {
                 this.mainGraphicsContext.attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
                 this.labelGraphicsContext.attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
             } else {
-                this.mainGraphicsContext.transition().duration(duration).attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
-                this.labelGraphicsContext.transition().duration(duration).attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
+                this.mainGraphicsContext.attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
+                this.labelGraphicsContext.attr('transform', SVGUtil.translate(halfViewportWidth, halfViewportHeight));
             }
-
-            SVGUtil.flushAllD3TransitionsIfNeeded(this.options);
         }
 
         private initDonutProperties() {
@@ -998,7 +996,6 @@ module powerbi.visuals {
             let key = this.key;
             let arc = this.arc;
             let radius = this.radius;
-            let previousRadius = this.previousRadius;
             let sliceWidthRatio = this.sliceWidthRatio;
 
             let existingData = this.svg.select('.slices')
@@ -1027,33 +1024,21 @@ module powerbi.visuals {
             let innerRadius = radius * sliceWidthRatio;
             DonutChart.isSingleColor(data.dataPoints);
 
+            arc.innerRadius(innerRadius).outerRadius(radius * DonutChart.InnerArcRadiusRatio);
+
             slice
                 .style('fill', (d: DonutArcDescriptor) => d.data.color)
                 .style('fill-opacity', (d: DonutArcDescriptor) => ColumnUtil.getFillOpacity(d.data.selected, false, false, data.hasHighlights))
                 .style('stroke', 'white')
                 .style('stroke-dasharray', (d: DonutArcDescriptor) => DonutChart.drawStrokeForDonutChart(radius, DonutChart.InnerArcRadiusRatio, d, sliceWidthRatio))
                 .style('stroke-width', (d: DonutArcDescriptor) => d.data.strokeWidth)
-                .transition().duration(duration)
-                .attrTween('d', function (d) {
-                    let i = d3.interpolate(this._current, d),
-                        k = d3.interpolate(previousRadius * DonutChart.InnerArcRadiusRatio
-                            , radius * DonutChart.InnerArcRadiusRatio);
-
-                    this._current = i(0);
-
-                    return function (t) {
-                        return arc.innerRadius(innerRadius).outerRadius(k(t))(i(t));
-                    };
-                });
+                .attr('d', arc);
 
             slice = svg.select('.slices')
                 .selectAll('path' + DonutChart.sliceClass.selector)
                 .data(pie(data.dataPointsToDeprecate), key);
 
             slice.exit()
-                .transition()
-                .delay(duration)
-                .duration(0)
                 .remove();
 
             // For interactive chart, there shouldn't be slice labels (as you have the legend).
@@ -1082,39 +1067,27 @@ module powerbi.visuals {
 
                 DonutChart.isSingleColor(data.dataPoints);
 
+                arc.innerRadius(innerRadius);
+
                 highlightSlices
                     .style('fill', (d: DonutArcDescriptor) => d.data.color)
                     .style('fill-opacity', 1.0)
                     .style('stroke', 'white')
                     .style('stroke-dasharray', (d: DonutArcDescriptor) => DonutChart.drawStrokeForDonutChart(radius, DonutChart.InnerArcRadiusRatio, d, sliceWidthRatio, d.data.highlightRatio))
                     .style('stroke-width', (d: DonutArcDescriptor) => d.data.highlightRatio === 0 ? 0 : d.data.strokeWidth)
-                    .transition().duration(duration)
-                    .attrTween('d', function (d: DonutArcDescriptor) {
-                        let i = d3.interpolate(this._current, d),
-                            k = d3.interpolate(
-                                previousRadius * DonutChart.InnerArcRadiusRatio,
-                                DonutChart.getHighlightRadius(radius, sliceWidthRatio, d.data.highlightRatio));
-
-                        this._current = i(0);
-
-                        return function (t) {
-                            return arc.innerRadius(innerRadius).outerRadius(k(t))(i(t));
-                        };
+                    .attr('d', (d: DonutArcDescriptor) => {
+                        let outerRadius = DonutChart.getHighlightRadius(radius, sliceWidthRatio, d.data.highlightRatio);
+                        arc.outerRadius(outerRadius);
+                        return arc(d.value);
                     });
 
                 highlightSlices
                     .exit()
-                    .transition()
-                    .delay(duration)
-                    .duration(0)
                     .remove();
             }
             else {
                 svg
                     .selectAll('path' + DonutChart.sliceHighlightClass.selector)
-                    .transition()
-                    .delay(duration)
-                    .duration(0)
                     .remove();
             }
 
@@ -1639,7 +1612,6 @@ module powerbi.visuals {
             private highlightsOverflow: boolean;
             private total: number;
             private highlightTotal: number;
-            private isSingleMeasure: boolean;
             private isDynamicSeries: boolean;
             private seriesCount: number;
             private categoryIdentities: DataViewScopeIdentity[];
@@ -1678,7 +1650,6 @@ module powerbi.visuals {
                 }
                 
                 this.isDynamicSeries = reader.hasDynamicSeries();
-                this.isSingleMeasure = this.isDynamicSeries || reader.getSeriesCount("Y") === 1;
 
                 this.highlightsOverflow = false;
                 this.total = 0;
@@ -1931,9 +1902,10 @@ module powerbi.visuals {
                     for (let seriesIndex = 0; seriesIndex < this.seriesCount; seriesIndex++) {
                         let valueColumn = reader.getValueColumn("Y", seriesIndex);
 
-                        let label = this.isSingleMeasure
-                            ? categoryLabel
-                            : converterHelper.getFormattedLegendLabel(valueColumn.source, dataViewCategorical.values, formatStringProp);
+                        let label = categoryLabel;
+                        if (this.isDynamicSeries || reader.getSeriesCount("Y") > 1) {
+                            label = converterHelper.getFormattedLegendLabel(valueColumn.source, dataViewCategorical.values, formatStringProp);
+                        }
 
                         let nonHighlight = reader.getValue("Y", categoryIndex, seriesIndex) || 0;
                         let highlight: number;

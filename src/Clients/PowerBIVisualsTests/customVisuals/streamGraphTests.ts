@@ -24,22 +24,28 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import DataView = powerbi.DataView;
-    import InteractivityService = powerbi.visuals.InteractivityService;
     import VisualClass = powerbi.visuals.samples.StreamGraph;
     import StreamData = powerbi.visuals.samples.StreamData;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
     import ProductSalesByDateData = powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData;
+    import IDataColorPalette = powerbi.IDataColorPalette;
+    import DataColorPalette = powerbi.visuals.DataColorPalette;
+    import StreamDataPoint = powerbi.visuals.samples.StreamDataPoint;
+    import SelectionId = powerbi.visuals.SelectionId;
+
     powerbitests.mocks.setLocale();
 
     describe("StreamGraph", () => {
-        let visualBuilder: StreamGraphBuilder;
-        let defaultDataViewBuilder: ProductSalesByDateData;
-        let dataView: powerbi.DataView;
+        let visualBuilder: StreamGraphBuilder,
+            defaultDataViewBuilder: ProductSalesByDateData,
+            dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new StreamGraphBuilder(1000,500);
+            visualBuilder = new StreamGraphBuilder(1000, 500);
             defaultDataViewBuilder = new ProductSalesByDateData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -394,20 +400,82 @@ module powerbitests.customVisuals {
             });
         });
 
-        describe("Converter tests", () => {
-            let streamData: StreamData,
-                interactivityService: InteractivityService,
-                colors: powerbi.IDataColorPalette = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+        describe("converter", () => {
+            let colors: IDataColorPalette;
 
             beforeEach(() => {
-                interactivityService = <InteractivityService>powerbi.visuals.createInteractivityService(visualBuilder.host);
-                streamData = visualBuilder.converter(dataView, colors);
+                colors = new DataColorPalette();
             });
 
-            it("streamData is defined", () => {
-                expect(streamData).toBeDefined();
-                expect(streamData).not.toBeNull();
+            it("arguments are null", () => {
+                callConverterAndExpectExceptions(null, null);
             });
+
+            it("arguments are undefined", () => {
+                callConverterAndExpectExceptions(undefined, undefined);
+            });
+
+            it("dataView is correct", () => {
+                callConverterAndExpectExceptions(dataView, colors);
+            });
+
+            describe("streamData", () => {
+                let streamData: StreamData;
+
+                beforeEach(() => {
+                    streamData = callConverterAndExpectExceptions(dataView, colors);
+                });
+
+                it("streamData is defined", () => {
+                    expect(streamData).toBeDefined();
+                    expect(streamData).not.toBeNull();
+                });
+
+                it("dataPoints is defined", () => {
+                    let dataPoints: StreamDataPoint[][] = streamData.dataPoints;
+
+                    expect(dataPoints).toBeDefined();
+                    expect(dataPoints).not.toBeNull();
+                });
+
+                it("every dataPoint is defined", () => {
+                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
+                        expect(dataPoint).toBeDefined();
+                        expect(dataPoint).not.toBeNull();
+                        expect(dataPoint.length).toBeGreaterThan(0);
+                    });
+                });
+
+                it("every item of dataPoint is defined", () => {
+                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
+                        dataPoint.forEach((streamDataPoint: StreamDataPoint) => {
+                            expect(streamDataPoint).toBeDefined();
+                            expect(streamDataPoint).not.toBeNull();
+                        });
+                    });
+                });
+
+                it("every identity of dataPoint is defined", () => {
+                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
+                        dataPoint.forEach((streamDataPoint: StreamDataPoint) => {
+                            let identity: SelectionId = streamDataPoint.identity;
+
+                            expect(identity).toBeDefined();
+                            expect(identity).not.toBeNull();
+                        });
+                    });
+                });
+            });
+
+            function callConverterAndExpectExceptions(dataView: DataView, colors: powerbi.IDataColorPalette): StreamData {
+                let streamData: StreamData;
+
+                expect(() => {
+                    streamData = visualBuilder.converter(dataView, colors);
+                }).not.toThrow();
+
+                return streamData;
+            }
         });
     });
 

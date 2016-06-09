@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -306,7 +308,7 @@ module powerbi.visuals {
 
             if (format) {
                 // Calculate precision from positive format by default
-                let positiveFormat = format.split(";")[0];
+                let positiveFormat = NumberFormat.getComponents(format).positive;
                 let formatMetadata = NumberFormat.getCustomFormatMetadata(positiveFormat, true /*calculatePrecision*/);
                 if (formatMetadata.hasDots) {
                     return formatMetadata.precision;

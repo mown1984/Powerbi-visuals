@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -29,22 +29,25 @@ module powerbi.data {
         setCurrentRowIndex(index: number): void;
     }
 
-    export function createCategoricalEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewCategorical: DataViewCategorical): ICategoricalEvalContext {
-        return new CategoricalEvalContext(colorAllocatorProvider, dataViewCategorical);
+    export function createCategoricalEvalContext(colorAllocatorProvider: IColorAllocatorCache, dataViewCategorical: DataViewCategorical, selectTransforms: DataViewSelectTransform[]): ICategoricalEvalContext {
+        return new CategoricalEvalContext(colorAllocatorProvider, dataViewCategorical, selectTransforms);
     }
 
     class CategoricalEvalContext implements ICategoricalEvalContext {
         private colorAllocatorProvider: IColorAllocatorCache;
         private dataView: DataViewCategorical;
+        private selectTransforms: DataViewSelectTransform[];
         private columnsByRole: { [name: string]: DataViewCategoricalColumn };
         private index: number;
 
-        constructor(colorAllocatorProvider: IColorAllocatorCache, dataView: DataViewCategorical) {
+        constructor(colorAllocatorProvider: IColorAllocatorCache, dataView: DataViewCategorical, selectTransforms: DataViewSelectTransform[]) {
             debug.assertValue(colorAllocatorProvider, 'colorAllocatorProvider');
             debug.assertValue(dataView, 'dataView');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
 
             this.colorAllocatorProvider = colorAllocatorProvider;
             this.dataView = dataView;
+            this.selectTransforms = selectTransforms;
             this.columnsByRole = {};
         }
 
@@ -53,7 +56,24 @@ module powerbi.data {
         }
 
         public getExprValue(expr: SQExpr): PrimitiveValue {
-            return;
+            let rowIdx = this.index;
+            if (!_.isNumber(rowIdx))
+                return;
+
+            let selectTransforms = this.selectTransforms;
+            if (!selectTransforms)
+                return;
+            
+            let selectIdx = findSelectIndex(expr, selectTransforms);
+            if (selectIdx === -1)
+                return;
+                
+            let dataView = this.dataView;
+            let column = findValueColumn(dataView.values, selectIdx);
+            if (!column)
+                return;
+                
+            return column.values[rowIdx];
         }
 
         public getRoleValue(roleName: string): PrimitiveValue {
@@ -96,6 +116,22 @@ module powerbi.data {
                 continue;
 
             return column;
+        }
+    }
+    
+    function findValueColumn(columns: DataViewValueColumn[], selectIdx: number): DataViewCategoricalColumn {
+        debug.assertAnyValue(columns, 'columns');
+        debug.assertValue(selectIdx, 'selectIdx');
+        
+        if (!columns)
+            return;
+            
+        for (let column of columns) {
+            if (column.identity)
+                continue;
+            
+            if (column.source.index === selectIdx)    
+                return column;
         }
     }
 }

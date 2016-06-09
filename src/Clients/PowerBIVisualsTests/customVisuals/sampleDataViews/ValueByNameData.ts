@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -32,18 +34,30 @@ module powerbitests.customVisuals.sampleDataViews {
         public static ColumnValues: string = "Value";
 
         public valuesCategory: string[] =
-            [
-                "William",
-                "Olivia",
-                "James",
-                "Lucas",
-                "Henry",
-                "Aiden",
-                "Daniel",
-                "Harper",
-                "Logan",
-                "Ella",
-            ];
+        [
+            "William",
+            "Olivia",
+            "James",
+            "Lucas",
+            "Henry",
+            "Aiden",
+            "Daniel",
+            "Harper",
+            "Logan",
+            "Ella",
+        ];
+
+        public valuesCategoryLongNames: string[] =
+        [
+            "Sir Demetrius",
+            "Sir Montgomery",
+            "Sir Remington",
+            "Sir Forrester",
+            "Sir Christopher",
+            "Miss Annabelle",
+            "Miss Emmaline"
+        ];
+
         public valuesValue: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 10, 100);
 
         public getDataView(columnNames?: string[]): powerbi.DataView {
@@ -56,18 +70,41 @@ module powerbitests.customVisuals.sampleDataViews {
                     },
                     values: this.valuesCategory
                 }
-                ],[
+            ], [
+                    {
+                        source: {
+                            displayName: ValueByNameData.ColumnValues,
+                            isMeasure: true,
+                            roles: { Value: true },
+                            type: ValueType.fromDescriptor({ numeric: true }),
+                        },
+                        values: this.valuesValue
+                    }
+                ],
+                columnNames).build();
+        }
+
+        public getLongNamesDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
                 {
                     source: {
-                        displayName: ValueByNameData.ColumnValues,
-                        isMeasure: true,
-                        roles: { Value: true },
-                        type: ValueType.fromDescriptor({ numeric: true }),
+                        displayName: ValueByNameData.ColumnCategory,
+                        roles: { Category: true },
+                        type: ValueType.fromDescriptor({ text: true })
                     },
-                    values: this.valuesValue
+                    values: this.valuesCategoryLongNames
                 }
+            ], [
+                    {
+                        source: {
+                            displayName: ValueByNameData.ColumnValues,
+                            isMeasure: true,
+                            roles: { Value: true },
+                            type: ValueType.fromDescriptor({ numeric: true }),
+                        },
+                        values: this.valuesValue
+                    }
                 ],
-                null,
                 columnNames).build();
         }
     }

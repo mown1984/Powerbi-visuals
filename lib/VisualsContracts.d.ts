@@ -1,28 +1,4 @@
-/*
- *  Power BI Visualizations
- *
- *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
- *  MIT License
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the ""Software""), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
+
 
 
 declare module powerbi {
@@ -77,29 +53,97 @@ declare module powerbi {
         None = 0,
     }
 }
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
 
 
 declare module powerbi {
     export interface DragPayload {
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module jsCommon {
     export interface IStringResourceProvider {
         get(id: string): string;
         getOptional(id: string): string;
     }
-}
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
 
-declare module powerbi.visuals {
-    export interface IPoint {
-        x: number;
-        y: number;
-    }
-}
-﻿
 
 declare module powerbi {
     /** 
@@ -230,8 +274,33 @@ declare module powerbi {
     export interface IResultCallback<T> {
         (result: T, done: boolean): void;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.visuals {
     export interface IRect {
@@ -240,7 +309,32 @@ declare module powerbi.visuals {
         width: number;
         height: number;
     }
-}
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
 
 
 declare module powerbi.visuals {
@@ -261,8 +355,276 @@ declare module powerbi.visuals {
         getSelectorsByColumn(): Selector;
         hasIdentity(): boolean;
     }
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi.visuals {
+    export interface IPoint {
+        x: number;
+        y: number;
+    }
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+// TODO(aafische, 2016.05.16) all methods here are copy-pasted from .\src\Clients\JsCommon\obj\utility.d.ts
+// Eventually, the powerbi.visuals namespace will be merged back into the powerbi namespace, at which point 
+// this here file will be obsolete and deleted.
+
+
+
+declare module powerbi.visuals.telemetry {
+    
+    interface ITelemetryService {
+        /** Log Telemetry event */
+        logEvent(eventFactory: ITelemetryEventFactory): ITelemetryEvent;
+        logEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): ITelemetryEvent;
+        logEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2: T2): ITelemetryEvent;
+        logEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
+        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;        
+
+        /** Starts recording a timed event **/
+        startEvent(eventFactory: ITelemetryEventFactory): IDeferredTelemetryEvent;
+        startEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): IDeferredTelemetryEvent;
+        startEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2, T2): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): IDeferredTelemetryEvent;
+        startEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): IDeferredTelemetryEvent;
+     }
+    
+    interface ITelemetryEvent {
+        name: string;
+        category?: TelemetryCategory;
+        id: string;
+        loggers?: number;
+        time: number;
+        getFormattedInfoObject(): any;
+        info: any;
+        privateFields: string[];
+        orgInfoFields: string[];
+    }
+
+    interface ITelemetryEventFactory {
+        (parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory1<T> {
+        (arg: T, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory2<T1, T2> {
+        (arg1: T1, arg2: T2, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory3<T1, T2, T3> {
+        (arg1: T1, arg2: T2, arg3: T3, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory4<T1, T2, T3, T4> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory5<T1, T2, T3, T4, T5> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, parentId: string): ITelemetryEvent;
+    }
+    interface ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11, parentId: string): ITelemetryEvent;
+    }
+    
+    interface IBaseEvent {
+        parentId: string;
+        isError: boolean;
+        errorSource: ErrorSource;
+        errorCode: string;
+    }
+    
+    interface ICustomerAction extends IBaseEvent {
+    }
+    
+    /** Identifies a long-running telemetry event. */
+    interface IDeferredTelemetryEvent {
+        /** The event being recorded. */
+        event: ITelemetryEvent;
+        /** Marks the telemetry event as complete. */
+        resolve(): any;
+        /** Marks the telemetry event as failed. Can specify additional error details if we know the source of the error and/or the error code. */
+        reject(errorDetails?: TelemetryErrorDetails): any;
+    }
+    interface IDeferredTelemetryEventArgs {
+        /** Parent event started by the invoker and passed to the event handler */
+        parentEvent: IDeferredTelemetryEvent;
+    }
+    interface TelemetryErrorDetails {
+        errorSource?: telemetry.ErrorSource;
+        errorCode: string;
+    }    
 }
-﻿
+
+declare module powerbi {
+    interface ITelemetryService { }
+}
+
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi.visuals.telemetry {
+    
+    export interface ITelemetryEventI<T> extends ITelemetryEvent {
+        info: T;
+    }
+    
+    interface IErrorWithStackTraceAndSourceDetails extends IErrorWithStackTrace {
+        source: string;
+        lineNumber: number;
+        columnNumber: number;
+    }
+        
+    export interface IErrorWithStackTrace extends IError {
+    	stack: string;
+    }
+    
+    export interface IError {
+    	message: string;
+    }    
+    
+    export interface IPBIVisualException extends IErrorWithStackTraceAndSourceDetails {
+    	visualType: string;
+    	isCustom: boolean;
+    	apiVersion: string;
+    }
+
+    export interface IPBIExtensibilityVisualApiUsage extends ICustomerAction {
+    	name: string;
+    	apiVersion: string;
+    	custom: boolean;
+    }
+    
+    export interface VisualTelemetryInfo {
+        name: string;
+        apiVersion: string;
+        custom: boolean;
+    }
+    
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     export interface CompiledDataViewMapping {
@@ -380,8 +742,66 @@ declare module powerbi.data {
         type?: ValueTypeDescriptor;
         joinPredicate?: JoinPredicateBehavior;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi {
+    export const enum SortDirection {
+        Ascending = 1,
+        Descending = 2,
+    }
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     /** Represents views of a data set. */
@@ -682,8 +1102,33 @@ declare module powerbi {
     export interface DataViewScriptResultData {
         imageBase64: string;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export interface DataViewMapping {
@@ -858,8 +1303,33 @@ declare module powerbi {
             [propertyName: string]: DataViewObjectPropertyIdentifier;
         };
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     /** Represents evaluated, named, custom objects in a DataView. */
@@ -885,8 +1355,33 @@ declare module powerbi {
     export type DataViewObjectMap = DataViewObjectWithId[];
 
     export type DataViewPropertyValue = PrimitiveValue | StructuralObjectValue;
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     export interface DataViewObjectDescriptors {
@@ -937,8 +1432,33 @@ declare module powerbi.data {
         selector: string[];
     }
     
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     /** Defines a match against all instances of given roles. */
@@ -946,8 +1466,33 @@ declare module powerbi.data {
         roles: string[];
         key: string;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     /** Encapsulates the identity of a data scope in a DataView. */
@@ -958,8 +1503,33 @@ declare module powerbi {
         /** Key string that identifies the DataViewScopeIdentity to a string, which can be used for equality comparison. */
         key: string;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     /** Defines a match against all instances of a given DataView scope. */
@@ -967,15 +1537,65 @@ declare module powerbi.data {
         exprs: ISQExpr[];
         key: string;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
 
     export type DisplayNameGetter = ((resourceProvider: IStringResourceProvider) => string) | string;
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     export interface ScriptInputColumn {
@@ -990,8 +1610,33 @@ declare module powerbi.data {
         VariableName?: string;
         Columns?: ScriptInputColumn[];
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     /** Defines a selector for content, including data-, metadata, and user-defined repetition. */
@@ -1007,8 +1652,33 @@ declare module powerbi.data {
     }
 
     export type DataRepetitionSelector = DataViewScopeIdentity | DataViewScopeWildcard | DataViewRoleWildcard; 
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi.data {
     //intentionally blank interfaces since this is not part of the public API
@@ -1019,24 +1689,66 @@ declare module powerbi.data {
 
     export interface ISQConstantExpr extends ISQExpr { }
 
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
-declare module powerbi {
-    export const enum SortDirection {
-        Ascending = 1,
-        Descending = 2,
-    }
-}
-﻿
+
 
 declare module powerbi {
     export interface IViewport {
         height: number;
         width: number;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     import DisplayNameGetter = powerbi.data.DisplayNameGetter;
@@ -1070,190 +1782,33 @@ declare module powerbi {
     export interface RoleCondition extends NumberRange {
         kind?: VisualDataRoleKind;
     }
-}
-
-
-declare module powerbi.extensibility {
-    export interface ISelectionId { }
-
-    export interface ISelectionIdBuilder {
-        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
-        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
-        withMeasure(measureId: string): this;
-        createSelectionId(): ISelectionId;
-    }
-}
-
-
-declare module powerbi.extensibility {
-    interface ISelectionManager {
-        select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
-        hasSelection(): boolean;
-        clear(): IPromise<{}>;
-        getSelectionIds(): ISelectionId[];
-    }
-}
-﻿
-
-declare module powerbi.extensibility {
-
-    export interface IVisualPluginOptions {
-        capabilities: VisualCapabilities;
-    }
-
-    export interface IVisualConstructor {
-        __capabilities__: VisualCapabilities;
-    }
-
-    // These are the base interfaces. These should remain empty
-    // All visual versions should extend these for type compatability
-
-    export interface IVisual { }
-
-    export interface IVisualHost { }
-
-    export interface VisualUpdateOptions { }
-
-    export interface VisualConstructorOptions { }
-  
-}
-
-
-
-declare module powerbi.extensibility {
-
-    export interface VisualVersionOverloads {
-        [name: string]: Function;
-    }
-
-    export interface VisualVersionOverloadFactory {
-        (visual: powerbi.extensibility.IVisual): VisualVersionOverloads;
-    }
-
-    export interface VisualHostAdapter {
-        (host: powerbi.IVisualHostServices): IVisualHost;
-    }
-
-    export interface VisualVersion {
-        version: string;
-        overloads?: VisualVersionOverloadFactory;
-        hostAdapter: VisualHostAdapter;
-    }
-
-    /**
-     * Extends the interface of a visual wrapper (IVisual) to include
-     * the unwrap method which returns a direct reference to the wrapped visual. 
-     * Used in SafeExecutionWrapper and VisualAdapter
-     */
-    export interface WrappedVisual {
-        /** Returns this visual inside of this wrapper */
-        unwrap: () => powerbi.IVisual;
-    }
-}
-
-
-/**
- * Change Log Version 1.0.0
- * - Add type to update options (data, resize, viewmode)
- * - Remove deprecated methods (onDataChange, onResizing, onViewModeChange) 
- * - Add hostAdapter for host services versioning
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
  */
-declare module powerbi.extensibility.v100 {
-    /**
-     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
-     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
-     */
-    export interface IVisual extends extensibility.IVisual {
-        /** Notifies the IVisual of an update (data, viewmode, size change). */
-        update(options: VisualUpdateOptions): void;
-
-        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
-        destroy?(): void;
-
-        /** Gets the set of objects that the visual is currently displaying. */
-        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-    }
-
-    export interface IVisualHost extends extensibility.IVisualHost { }
-
-    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
-        viewport: IViewport;
-        dataViews: DataView[];
-        type: VisualUpdateType;
-        viewMode?: ViewMode;
-    }
-
-    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
-        element: HTMLElement;
-        host: IVisualHost;
-    }
-
-}
 
 
-
-/**
- * Change Log Version 1.1.0
- */
-declare module powerbi.extensibility.v110 {
-    /**
-     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
-     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
-     */
-    export interface IVisual extends extensibility.IVisual {
-        /** Notifies the IVisual of an update (data, viewmode, size change). */
-        update(options: VisualUpdateOptions): void;
-
-        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
-        destroy?(): void;
-
-        /** Gets the set of objects that the visual is currently displaying. */
-        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
-    }
-
-    export interface IVisualHost extends extensibility.IVisualHost {
-        createSelectionIdBuilder: () => visuals.ISelectionIdBuilder;
-        createSelectionManager: () => ISelectionManager;
-    }
-
-    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
-        viewport: IViewport;
-        dataViews: DataView[];
-        type: VisualUpdateType;
-        viewMode?: ViewMode;
-    }
-
-    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
-        element: HTMLElement;
-        host: IVisualHost;
-    }
-
-}
-
-
-
-declare module powerbi.extensibility {
-    import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
-
-    /** Defines the capabilities of an IVisual. */
-    export interface VisualCapabilities {
-        /** Defines what roles the visual expects, and how those roles should be populated.  This is useful for visual generation/editing. */
-        dataRoles?: VisualDataRole[];
-
-        /** Defines the set of objects supported by this IVisual. */
-        objects?: DataViewObjectDescriptors;
-
-        /** Defines how roles that the visual understands map to the DataView.  This is useful for query generation. */
-        dataViewMappings?: DataViewMapping[];
-
-        /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
-        supportsHighlight?: boolean;
-        
-        /** Indicates whether sorting is supported by the visual. This is useful for query generation */
-        sorting?: VisualSortingCapabilities;        
-    }
-}
-﻿
 
 declare module powerbi {   
     
@@ -1293,167 +1848,33 @@ declare module powerbi {
     export interface IPositionErrorCallback {
         (error: PositionError): void;
     }
-}
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
 
-declare module powerbi.visuals.telemetry {
-    
-    export interface ITelemetryEventI<T> extends ITelemetryEvent {
-        info: T;
-    }
-    
-    interface IErrorWithStackTraceAndSourceDetails extends IErrorWithStackTrace {
-        source: string;
-        lineNumber: number;
-        columnNumber: number;
-    }
-        
-    export interface IErrorWithStackTrace extends IError {
-    	stack: string;
-    }
-    
-    export interface IError {
-    	message: string;
-    }    
-    
-    export interface IPBIVisualException extends IErrorWithStackTraceAndSourceDetails {
-    	visualType: string;
-    	isCustom: boolean;
-    	apiVersion: string;
-    }
-
-    export interface IPBIExtensibilityVisualApiUsage extends ICustomerAction {
-    	name: string;
-    	apiVersion: string;
-    	custom: boolean;
-    }
-    
-    export interface VisualTelemetryInfo {
-        name: string;
-        apiVersion: string;
-        custom: boolean;
-    }
-    
-}
-
-
-// TODO(aafische, 2016.05.16) all methods here are copy-pasted from .\src\Clients\JsCommon\obj\utility.d.ts
-// Eventually, the powerbi.visuals namespace will be merged back into the powerbi namespace, at which point 
-// this here file will be obsolete and deleted.  
-declare module powerbi.visuals.telemetry {
-    
-    interface ITelemetryService {
-        /** Log Telemetry event */
-        logEvent(eventFactory: ITelemetryEventFactory): ITelemetryEvent;
-        logEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): ITelemetryEvent;
-        logEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2: T2): ITelemetryEvent;
-        logEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(eventFactory: ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10): ITelemetryEvent;
-        logEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(eventFactory: ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11): ITelemetryEvent;        
-
-        /** Starts recording a timed event **/
-        startEvent(eventFactory: ITelemetryEventFactory): IDeferredTelemetryEvent;
-        startEvent<T>(eventFactory: ITelemetryEventFactory1<T>, arg: T): IDeferredTelemetryEvent;
-        startEvent<T1, T2>(eventFactory: ITelemetryEventFactory2<T1, T2>, arg1: T1, arg2, T2): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3>(eventFactory: ITelemetryEventFactory3<T1, T2, T3>, arg1: T1, arg2: T2, arg3: T3): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4>(eventFactory: ITelemetryEventFactory4<T1, T2, T3, T4>, arg1: T1, arg2: T2, arg3: T3, arg4: T4): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4, T5>(eventFactory: ITelemetryEventFactory5<T1, T2, T3, T4, T5>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4, T5, T6>(eventFactory: ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4, T5, T6, T7>(eventFactory: ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4, T5, T6, T7, T8>(eventFactory: ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8): IDeferredTelemetryEvent;
-        startEvent<T1, T2, T3, T4, T5, T6, T7, T8, T9>(eventFactory: ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9): IDeferredTelemetryEvent;
-     }
-    
-    interface ITelemetryEvent {
-        name: string;
-        category?: TelemetryCategory;
-        id: string;
-        loggers?: number;
-        time: number;
-        getFormattedInfoObject(): any;
-        info: any;
-        privateFields: string[];
-        orgInfoFields: string[];
-    }
-
-    interface ITelemetryEventFactory {
-        (parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory1<T> {
-        (arg: T, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory2<T1, T2> {
-        (arg1: T1, arg2: T2, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory3<T1, T2, T3> {
-        (arg1: T1, arg2: T2, arg3: T3, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory4<T1, T2, T3, T4> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory5<T1, T2, T3, T4, T5> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory6<T1, T2, T3, T4, T5, T6> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory7<T1, T2, T3, T4, T5, T6, T7> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory8<T1, T2, T3, T4, T5, T6, T7, T8> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, parentId: string): ITelemetryEvent;
-    }
-    interface ITelemetryEventFactory11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
-        (arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5, arg6: T6, arg7: T7, arg8: T8, arg9: T9, arg10: T10, arg11: T11, parentId: string): ITelemetryEvent;
-    }
-    
-    interface IBaseEvent {
-        parentId: string;
-        isError: boolean;
-        errorSource: ErrorSource;
-        errorCode: string;
-    }
-    
-    interface ICustomerAction extends IBaseEvent {
-    }
-    
-    /** Identifies a long-running telemetry event. */
-    interface IDeferredTelemetryEvent {
-        /** The event being recorded. */
-        event: ITelemetryEvent;
-        /** Marks the telemetry event as complete. */
-        resolve(): any;
-        /** Marks the telemetry event as failed. Can specify additional error details if we know the source of the error and/or the error code. */
-        reject(errorDetails?: TelemetryErrorDetails): any;
-    }
-    interface IDeferredTelemetryEventArgs {
-        /** Parent event started by the invoker and passed to the event handler */
-        parentEvent: IDeferredTelemetryEvent;
-    }
-    interface TelemetryErrorDetails {
-        errorSource?: telemetry.ErrorSource;
-        errorCode: string;
-    }    
-}
-
-declare module powerbi {
-    interface ITelemetryService { }
-}
-
-
-﻿
 
 declare module powerbi {
     export interface DefaultValueDefinition {
@@ -1464,7 +1885,32 @@ declare module powerbi {
     export interface DefaultValueTypeDescriptor {
         defaultValue: boolean;
     }
-}
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
 
 
 declare module powerbi {
@@ -1483,8 +1929,33 @@ declare module powerbi {
         members(validMembers?: EnumMemberValue[]): IEnumMember[];
     }
     
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export interface Fill {
@@ -1521,8 +1992,33 @@ declare module powerbi {
         /** Indicates whether the color value may be nullable, and a 'no fill' option is appropriate. */
         nullable: boolean;
     }  
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export interface FillRule extends FillRuleGeneric<string, number> {
@@ -1554,15 +2050,65 @@ declare module powerbi {
         color: TColor;
         value?: TValue;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export interface FilterTypeDescriptor {
         selfFilter?: boolean;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export type ImageValue = ImageDefinitionGeneric<string>;
@@ -1575,8 +2121,33 @@ declare module powerbi {
 
     export interface ImageTypeDescriptor { }
 
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     export type Paragraphs = Paragraph[];
@@ -1601,8 +2172,33 @@ declare module powerbi {
         url?: string;
         value: string;
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     import SemanticFilter = data.ISemanticFilter;
@@ -1628,8 +2224,33 @@ declare module powerbi {
         //border?: BorderTypeDescriptor;
         //etc.
     }
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     /** Describes a data value type in the client type system. Can be used to get a concrete ValueType instance. */
@@ -1699,8 +2320,138 @@ declare module powerbi {
 
     /** Describes instances of value type objects. */
     export type PrimitiveValue = string | number | boolean | Date;
-}
-﻿
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi {
+    export interface IVisualStyle{
+        colorPalette: IColorPalette;
+        isHighContrast: boolean;
+        titleText: ITextStyle;
+        subTitleText: ITextStyle;
+        labelText: ITextStyle;
+        // TODO 4486317: This is a host-specific property that should be exposed through DataViewObjects.
+        maxMarginFactor?: number;
+    }
+
+    export interface ITextStyle extends IStyleInfo {
+        fontFace?: string;
+        fontSize?: string;
+        fontWeight?: string;
+        color: IColorInfo;
+    }
+
+    export interface IColorPalette {
+        background?: IColorInfo;
+        foreground?: IColorInfo;
+
+        positive?: IColorInfo;
+        neutral?: IColorInfo;
+        negative?: IColorInfo;
+        separator?: IColorInfo;
+        selection?: IColorInfo;
+
+        dataColors: IDataColorPalette;
+    }
+
+    export interface IDataColorPalette {
+        /** Gets the color scale associated with the given key. */
+        getColorScaleByKey(scaleKey: string): IColorScale;
+
+        /** Gets a fresh color scale with no colors allocated. */
+        getNewColorScale(): IColorScale;
+
+        /** Gets the nth color in the palette. */
+        getColorByIndex(index: number): IColorInfo;
+
+        /**
+         * Gets the set of sentiment colors used for visuals such as KPIs
+         * Note: This is only a temporary API so that we can have reasonable color schemes for KPIs
+         * and gauges until the conditional formatting feature is implemented.
+         */
+        getSentimentColors(): IColorInfo[];
+
+        getBasePickerColors(): IColorInfo[];
+
+        /** Gets all the colors for the color palette **/
+        getAllColors?(): IColorInfo[];
+    }
+
+    export interface IColorScale {
+        /** Gets the color associated with the given key. */
+        getColor(key: any): IColorInfo;
+
+        /**
+         * Clears the current scale, but rotates the colors such that the first color allocated will
+         * the be first color that would have been allocated before clearing the scale. 
+         */
+        clearAndRotateScale(): void;
+
+        /** Returns a copy of the current scale. */
+        clone(): IColorScale;
+
+        getDomain(): any[];
+    }
+
+    export interface IColorInfo extends IStyleInfo {
+        value: string;
+    }
+
+    export interface IStyleInfo {
+        className?: string;
+    }
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
 
 declare module powerbi {
     import DataViewObjectDescriptor = powerbi.data.DataViewObjectDescriptor;
@@ -2009,6 +2760,7 @@ declare module powerbi {
         countryRegionIso2: string;
         countryRegion: string;
         landmark: string;
+        name: string;
     }
 
     export interface IGeocodeBoundaryPolygon {
@@ -2176,143 +2928,33 @@ declare module powerbi {
         identity: DataViewScopeIdentity;
     }
 }
+﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
-﻿
 
-declare module powerbi {
-
-    export interface IVisualPlugin {
-        /** The name of the plugin.  Must match the property name in powerbi.visuals. */
-        name: string;
-
-        /** The key for the watermark style of this visual. Must match the id name in ExploreUI/views/svg/visualsWatermarks.svg */
-        watermarkKey?: string;
-
-        /** Declares the capabilities for this IVisualPlugin type. */
-        capabilities?: VisualCapabilities;
-
-        /** Function to call to create the visual. */
-        create: (options?: extensibility.VisualConstructorOptions) => IVisual;
-
-        /** 
-         * Function to allow the visual to influence query generation. Called each time a query is generated
-        * so the visual can translate its state into options understood by the query generator. 
-        */
-        customizeQuery?: CustomizeQueryMethod;
-
-        /** Funation to allow the visual to provide additional information for telemetry. */
-        getAdditionalTelemetry?: GetAdditionalTelemetryMethod;
-
-        /** The class of the plugin.  At the moment it is only used to have a way to indicate the class name that a custom visual has. */
-        class?: string;
-
-        /** The url to the icon to display within the visualization pane. */
-        iconUrl?: string;
-
-        /** Check if a visual is custom */
-        custom?: boolean;
-
-        /** Function to get the list of sortable roles */
-        getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
-        
-        /** The version of the api that this plugin should be run against */
-        apiVersion?: string;
-        
-        /** Human readable plugin name displayed to users */
-        displayName?: string;
-    }
-
-    /** Method for gathering addition information from the visual for telemetry. */
-    export interface GetAdditionalTelemetryMethod {
-        (dataView: DataView): any;
-    }
-
-    /** Factory method for an IVisual.  This factory method should be registered on the powerbi.visuals object. */
-    export interface IVisualFactoryMethod {
-        (): powerbi.IVisual;
-    }
-}
-﻿
-
-declare module powerbi {
-    export interface IVisualStyle{
-        colorPalette: IColorPalette;
-        isHighContrast: boolean;
-        titleText: ITextStyle;
-        subTitleText: ITextStyle;
-        labelText: ITextStyle;
-        // TODO 4486317: This is a host-specific property that should be exposed through DataViewObjects.
-        maxMarginFactor?: number;
-    }
-
-    export interface ITextStyle extends IStyleInfo {
-        fontFace?: string;
-        fontSize?: string;
-        fontWeight?: string;
-        color: IColorInfo;
-    }
-
-    export interface IColorPalette {
-        background?: IColorInfo;
-        foreground?: IColorInfo;
-
-        positive?: IColorInfo;
-        neutral?: IColorInfo;
-        negative?: IColorInfo;
-        separator?: IColorInfo;
-        selection?: IColorInfo;
-
-        dataColors: IDataColorPalette;
-    }
-
-    export interface IDataColorPalette {
-        /** Gets the color scale associated with the given key. */
-        getColorScaleByKey(scaleKey: string): IColorScale;
-
-        /** Gets a fresh color scale with no colors allocated. */
-        getNewColorScale(): IColorScale;
-
-        /** Gets the nth color in the palette. */
-        getColorByIndex(index: number): IColorInfo;
-
-        /**
-         * Gets the set of sentiment colors used for visuals such as KPIs
-         * Note: This is only a temporary API so that we can have reasonable color schemes for KPIs
-         * and gauges until the conditional formatting feature is implemented.
-         */
-        getSentimentColors(): IColorInfo[];
-
-        getBasePickerColors(): IColorInfo[];
-
-        /** Gets all the colors for the color palette **/
-        getAllColors?(): IColorInfo[];
-    }
-
-    export interface IColorScale {
-        /** Gets the color associated with the given key. */
-        getColor(key: any): IColorInfo;
-
-        /**
-         * Clears the current scale, but rotates the colors such that the first color allocated will
-         * the be first color that would have been allocated before clearing the scale. 
-         */
-        clearAndRotateScale(): void;
-
-        /** Returns a copy of the current scale. */
-        clone(): IColorScale;
-
-        getDomain(): any[];
-    }
-
-    export interface IColorInfo extends IStyleInfo {
-        value: string;
-    }
-
-    export interface IStyleInfo {
-        className?: string;
-    }
-}
-﻿
 
 declare module powerbi {
     import Selector = powerbi.data.Selector;
@@ -2370,6 +3012,31 @@ declare module powerbi {
         objectName: string;
     }
 }
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
 
 
@@ -2389,5 +3056,445 @@ declare module powerbi {
     export interface DataViewRepetitionObjectDescriptor {
         /** Properties used for formatting (e.g., Conditional Formatting). */
         formattingProperties?: string[];
+    }
+}
+﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi {
+
+    export interface IVisualPlugin {
+        /** The name of the plugin.  Must match the property name in powerbi.visuals. */
+        name: string;
+
+        /** The key for the watermark style of this visual. Must match the id name in ExploreUI/views/svg/visualsWatermarks.svg */
+        watermarkKey?: string;
+
+        /** Declares the capabilities for this IVisualPlugin type. */
+        capabilities?: VisualCapabilities;
+
+        /** Function to call to create the visual. */
+        create: (options?: extensibility.VisualConstructorOptions) => IVisual;
+
+        /** 
+         * Function to allow the visual to influence query generation. Called each time a query is generated
+        * so the visual can translate its state into options understood by the query generator. 
+        */
+        customizeQuery?: CustomizeQueryMethod;
+
+        /** Funation to allow the visual to provide additional information for telemetry. */
+        getAdditionalTelemetry?: GetAdditionalTelemetryMethod;
+
+        /** The class of the plugin.  At the moment it is only used to have a way to indicate the class name that a custom visual has. */
+        class?: string;
+
+        /** The url to the icon to display within the visualization pane. */
+        iconUrl?: string;
+
+        /** Check if a visual is custom */
+        custom?: boolean;
+
+        /** Function to get the list of sortable roles */
+        getSortableRoles?: (visualSortableOptions?: VisualSortableOptions) => string[];
+        
+        /** The version of the api that this plugin should be run against */
+        apiVersion?: string;
+        
+        /** Human readable plugin name displayed to users */
+        displayName?: string;
+    }
+
+    /** Method for gathering addition information from the visual for telemetry. */
+    export interface GetAdditionalTelemetryMethod {
+        (dataView: DataView): any;
+    }
+
+    /** Factory method for an IVisual.  This factory method should be registered on the powerbi.visuals object. */
+    export interface IVisualFactoryMethod {
+        (): powerbi.IVisual;
+    }
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi.extensibility {
+    import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
+
+    /** Defines the capabilities of an IVisual. */
+    export interface VisualCapabilities {
+        /** Defines what roles the visual expects, and how those roles should be populated.  This is useful for visual generation/editing. */
+        dataRoles?: VisualDataRole[];
+
+        /** Defines the set of objects supported by this IVisual. */
+        objects?: DataViewObjectDescriptors;
+
+        /** Defines how roles that the visual understands map to the DataView.  This is useful for query generation. */
+        dataViewMappings?: DataViewMapping[];
+
+        /** Indicates whether cross-highlight is supported by the visual. This is useful for query generation. */
+        supportsHighlight?: boolean;
+        
+        /** Indicates whether sorting is supported by the visual. This is useful for query generation */
+        sorting?: VisualSortingCapabilities;        
+    }
+}﻿/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi.extensibility {
+
+    export interface IVisualPluginOptions {
+        capabilities: VisualCapabilities;
+    }
+
+    export interface IVisualConstructor {
+        __capabilities__: VisualCapabilities;
+    }
+
+    // These are the base interfaces. These should remain empty
+    // All visual versions should extend these for type compatability
+
+    export interface IVisual { }
+
+    export interface IVisualHost { }
+
+    export interface VisualUpdateOptions { }
+
+    export interface VisualConstructorOptions { }
+  
+}
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+
+
+declare module powerbi.extensibility {
+
+    export interface VisualVersionOverloads {
+        [name: string]: Function;
+    }
+
+    export interface VisualVersionOverloadFactory {
+        (visual: powerbi.extensibility.IVisual): VisualVersionOverloads;
+    }
+
+    export interface VisualHostAdapter {
+        (host: powerbi.IVisualHostServices): IVisualHost;
+    }
+
+    export interface VisualVersion {
+        version: string;
+        overloads?: VisualVersionOverloadFactory;
+        hostAdapter: VisualHostAdapter;
+    }
+
+    /**
+     * Extends the interface of a visual wrapper (IVisual) to include
+     * the unwrap method which returns a direct reference to the wrapped visual. 
+     * Used in SafeExecutionWrapper and VisualAdapter
+     */
+    export interface WrappedVisual {
+        /** Returns this visual inside of this wrapper */
+        unwrap: () => powerbi.IVisual;
+    }
+}/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+/**
+ * Change Log Version 1.0.0
+ * - Add type to update options (data, resize, viewmode)
+ * - Remove deprecated methods (onDataChange, onResizing, onViewModeChange) 
+ * - Add hostAdapter for host services versioning
+ */
+
+
+
+declare module powerbi.extensibility.v100 {
+    /**
+     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
+     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
+     */
+    export interface IVisual extends extensibility.IVisual {
+        /** Notifies the IVisual of an update (data, viewmode, size change). */
+        update(options: VisualUpdateOptions): void;
+
+        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
+        destroy?(): void;
+
+        /** Gets the set of objects that the visual is currently displaying. */
+        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+    }
+
+    export interface IVisualHost extends extensibility.IVisualHost { }
+
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
+        viewport: IViewport;
+        dataViews: DataView[];
+        type: VisualUpdateType;
+        viewMode?: ViewMode;
+    }
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
+        element: HTMLElement;
+        host: IVisualHost;
+    }
+
+}
+/*
+ *  Power BI Visualizations
+ *
+ *  Copyright (c) Microsoft Corporation
+ *  All rights reserved. 
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the ""Software""), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *   
+ *  The above copyright notice and this permission notice shall be included in 
+ *  all copies or substantial portions of the Software.
+ *   
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
+
+/**
+ * Change Log Version 1.1.0
+ */
+
+
+
+declare module powerbi.extensibility.v110 {
+    /**
+     * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).
+     * This interface does not make assumptions about the underlying JS/HTML constructs the visual uses to render itself.
+     */
+    export interface IVisual extends extensibility.IVisual {
+        /** Notifies the IVisual of an update (data, viewmode, size change). */
+        update(options: VisualUpdateOptions): void;
+
+        /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
+        destroy?(): void;
+
+        /** Gets the set of objects that the visual is currently displaying. */
+        enumerateObjectInstances?(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
+    }
+
+    export interface IVisualHost extends extensibility.IVisualHost {
+        createSelectionIdBuilder: () => visuals.ISelectionIdBuilder;
+        createSelectionManager: () => ISelectionManager;
+    }
+
+    export interface VisualUpdateOptions extends extensibility.VisualUpdateOptions {
+        viewport: IViewport;
+        dataViews: DataView[];
+        type: VisualUpdateType;
+        viewMode?: ViewMode;
+    }
+
+    export interface VisualConstructorOptions extends extensibility.VisualConstructorOptions {
+        element: HTMLElement;
+        host: IVisualHost;
+    }
+
+}
+/*
+*  Power BI Visualizations
+*
+*  Copyright (c) Microsoft Corporation
+*  All rights reserved. 
+*  MIT License
+*
+*  Permission is hereby granted, free of charge, to any person obtaining a copy
+*  of this software and associated documentation files (the ""Software""), to deal
+*  in the Software without restriction, including without limitation the rights
+*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+*  copies of the Software, and to permit persons to whom the Software is
+*  furnished to do so, subject to the following conditions:
+*   
+*  The above copyright notice and this permission notice shall be included in 
+*  all copies or substantial portions of the Software.
+*   
+*  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+*  THE SOFTWARE.
+*/
+
+
+
+declare module powerbi.extensibility {
+    interface ISelectionManager {
+        select(selectionId: ISelectionId, multiSelect?: boolean): IPromise<ISelectionId[]>;
+        hasSelection(): boolean;
+        clear(): IPromise<{}>;
+        getSelectionIds(): ISelectionId[];
+    }
+}/*
+*  Power BI Visualizations
+*
+*  Copyright (c) Microsoft Corporation
+*  All rights reserved. 
+*  MIT License
+*
+*  Permission is hereby granted, free of charge, to any person obtaining a copy
+*  of this software and associated documentation files (the ""Software""), to deal
+*  in the Software without restriction, including without limitation the rights
+*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+*  copies of the Software, and to permit persons to whom the Software is
+*  furnished to do so, subject to the following conditions:
+*   
+*  The above copyright notice and this permission notice shall be included in 
+*  all copies or substantial portions of the Software.
+*   
+*  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+*  THE SOFTWARE.
+*/
+
+
+
+declare module powerbi.extensibility {
+    export interface ISelectionId { }
+
+    export interface ISelectionIdBuilder {
+        withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
+        withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
+        withMeasure(measureId: string): this;
+        createSelectionId(): ISelectionId;
     }
 }

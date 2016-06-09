@@ -27,6 +27,9 @@
 /**
  * Change Log Version 1.1.0
  */
+
+/// <reference path="../../_references.ts"/>
+
 declare module powerbi.extensibility.v110 {
     /**
      * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).

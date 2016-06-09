@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     import Color = jsCommon.Color;
     import DataRoleHelper = powerbi.data.DataRoleHelper;

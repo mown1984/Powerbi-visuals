@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+ 
 var THREE: any;
 var WebGLHeatmap;
 var GlobeMapCanvasLayers: JQuery[];

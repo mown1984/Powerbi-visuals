@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.helpers {
     const EnglishAlphabetLowerCase = "abcdefghijklmnopqrstuwxyz";
     const EnglishAlphabetUpperCase = "ABCDEFGHIJKLMNOPQRSTUWXYZ";
@@ -71,7 +73,20 @@ module powerbitests.customVisuals.helpers {
         return result;
     }
 
-    export function getRandomInt(min: number, max: number, exceptionList?: number[]): number {
+    export function getRandomIntegers(count: number, min: number = 0, max: number = 1): number[] {
+        return getRandomNumbers(count, min, max).map(Math.round);
+    }
+
+    export function getRandomUniqueIntegers(count: number, min: number = 0, max: number = 1): number[] {
+        let result: number[] = [];
+        for(let i = 0; i< count; i++) {
+            result.push(getRandomNumber(min, max, result, Math.round));
+        }
+
+        return result;
+    }
+
+    export function getRandomInteger(min: number, max: number, exceptionList?: number[]): number {
         return getRandomNumber(max, min, exceptionList, Math.floor);
     }
 
@@ -96,8 +111,8 @@ module powerbitests.customVisuals.helpers {
         maxLength: number,
         alphabet: string|string[] = EnglishAlphabetLowerCase + EnglishAlphabetUpperCase): string {
         let alphabetLength = alphabet.length;
-        let length = getRandomInt(minLength, maxLength);
-        let strings = <string[]>_.range(length).map(x => alphabet[getRandomInt(0, alphabetLength)]);
+        let length = getRandomInteger(minLength, maxLength);
+        let strings = <string[]>_.range(length).map(x => alphabet[getRandomInteger(0, alphabetLength)]);
         return strings.join('');
     }
 
@@ -108,5 +123,13 @@ module powerbitests.customVisuals.helpers {
         alphabet: string|string[] = EnglishAlphabetLowerCase + EnglishAlphabetUpperCase): string {
         let words = <string[]>_.range(alphabet.length).map(x => getRandomWord(minLength, maxLength, alphabet));
         return words.join(' ');
+    }
+
+    export function getRandomBoolean(trueProbability: number = 0): boolean {
+        return (Math.random() - trueProbability/2) < 0.5;
+    }
+
+    export function getRandomBooleans(count: number, trueProbability: number = 0): boolean[] {
+        return _.range(count).map(x => getRandomBoolean(trueProbability));
     }
 }

@@ -1,3 +1,8 @@
+
+
+
+
+
 declare module powerbi.visuals.telemetry {
     /**
      * Creates a client-side Guid string.
@@ -5,6 +10,7 @@ declare module powerbi.visuals.telemetry {
      */
     function generateGuid(): string;
 }
+
 declare module powerbi.visuals.telemetry {
     /**
     * Event fired when a visual is loaded through the visual adapter
@@ -36,9 +42,11 @@ declare module powerbi.visuals.telemetry {
     var VisualExceptionLoggers: number;
     var VisualException: (visualType: string, isCustom: boolean, apiVersion: string, source: string, lineNumber: number, columnNumber: number, stack: string, message: string) => ITelemetryEventI<IPBIVisualException>;
 }
+
 declare module powerbi.extensibility {
     function VisualPlugin(options: IVisualPluginOptions): ClassDecorator;
 }
+
 declare module powerbi.extensibility {
     import IPoint = visuals.IPoint;
     interface SelectionManagerOptions {
@@ -61,6 +69,7 @@ declare module powerbi.extensibility {
         static containsSelection(list: ISelectionId[], id: ISelectionId): boolean;
     }
 }
+
 declare module powerbi.extensibility {
     /**
      * This class is designed to simplify the creation of SelectionId objects
@@ -76,6 +85,7 @@ declare module powerbi.extensibility {
         private ensureDataMap();
     }
 }
+
 declare module powerbi.extensibility {
     import ITelemetryService = visuals.telemetry.ITelemetryService;
     let visualApiVersions: VisualVersion[];
@@ -106,6 +116,7 @@ declare module powerbi.extensibility {
         private getCompiledOverloads();
     }
 }
+
 declare module powerbi.extensibility {
     import ITelemetryService = visuals.telemetry.ITelemetryService;
     import VisualTelemetryInfo = visuals.telemetry.VisualTelemetryInfo;
@@ -131,7 +142,9 @@ declare module powerbi.extensibility {
         private executeSafely(callback);
     }
 }
+
 declare module powerbi.extensibility.v100 {
 }
+
 declare module powerbi.extensibility.v110 {
 }

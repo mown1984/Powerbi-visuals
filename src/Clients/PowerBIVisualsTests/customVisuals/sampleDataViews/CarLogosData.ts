@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -51,30 +53,27 @@ module powerbitests.customVisuals.sampleDataViews {
                         type: this.valuesCategory
                     },
                     values: this.valuesCategory
-                }
-                ],
-                null,
+                },
                 {
+                    isGroup: true,
                     source: { 
                         displayName: CarLogosData.ColumnImage,
                         roles: { Image: true },
                         type: ValueType.fromDescriptor({ text: true })
                     },
-                    values: this.valuesImage,
-                    columns: [
-                        {
-                            source: {
-                                displayName: CarLogosData.ColumnValues,
-                                isMeasure: true,
-                                roles: { Values: true },
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                                objects: { dataPoint: { fill: { solid: { color: "purple" } } } },
-                            },
-                            values: this.valuesValue
-                        },
-                    ]
-                },
-                columnNames).build();
+                    values: this.valuesImage
+                }
+                ],[
+                {
+                    source: {
+                        displayName: CarLogosData.ColumnValues,
+                        isMeasure: true,
+                        roles: { Values: true },
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: "purple" } } } },
+                    },
+                    values: this.valuesValue
+                }], columnNames).build();
         }
     }
 }

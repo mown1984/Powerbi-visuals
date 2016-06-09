@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import EnumExtensions = jsCommon.EnumExtensions;
@@ -420,7 +422,7 @@ module powerbi.visuals {
         public static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor): boolean {
             let axisTypeValue = DataViewObjects.getValue(objects, propertyId);
 
-            if (!objects || axisTypeValue === undefined) {
+            if (!objects || axisTypeValue == null) {
                 // If we don't have anything set (Auto), show charts as Scalar if the category type is numeric or time. 
                 // If we have the property, it will override the type.
                 return !AxisHelper.isOrdinal(type);

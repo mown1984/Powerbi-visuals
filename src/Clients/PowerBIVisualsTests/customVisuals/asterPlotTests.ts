@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import DataView = powerbi.DataView;
     import IDataColorPalette = powerbi.IDataColorPalette;

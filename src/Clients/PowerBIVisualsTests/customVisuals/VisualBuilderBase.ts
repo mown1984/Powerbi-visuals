@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     export abstract class VisualBuilderBase<T extends powerbi.IVisual> {
         public element: JQuery;
@@ -102,7 +104,14 @@ module powerbitests.customVisuals {
             powerbi.visuals.SVGUtil.flushAllD3Transitions();
         }
 
-        public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions): powerbi.VisualObjectInstance[] | powerbi.VisualObjectInstanceEnumeration {
+        public updateflushAllD3TransitionsRenderTimeout(dataViews: powerbi.DataView[] | powerbi.DataView, fn: Function, timeout?: number): number {
+            this.update(dataViews);
+            powerbi.visuals.SVGUtil.flushAllD3Transitions();
+            return helpers.renderTimeout(fn, timeout);
+        }
+
+        public enumerateObjectInstances(options: powerbi.EnumerateVisualObjectInstancesOptions)
+            : powerbi.VisualObjectInstance[] | powerbi.VisualObjectInstanceEnumeration {
 
             debug.assertValue(this.visual.enumerateObjectInstances, "enumerateObjectInstances is not defined");
             return this.visual.enumerateObjectInstances(options);

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import Map = powerbi.visuals.Map;
@@ -110,6 +112,10 @@ module powerbitests {
             it('FormatString property should match calculated', () => {
                 expect(powerbi.data.DataViewObjectDescriptors.findFormatString(powerbi.visuals.mapCapabilities.objects)).toEqual(powerbi.visuals.mapProps.general.formatString);
             });
+        });
+
+        it ('globalMapControlLoaded is globally defined', () => {
+            expect(globalMapControlLoaded).toBeDefined();
         });
 
         it('getMeasureIndexOfRole', () => {
@@ -1133,7 +1139,7 @@ module powerbitests {
             let geocoder = visualBuilder.testGeocoder;
             let geocode = geocoder.geocode;
 
-            // ensure geocoding is really async. remember whet the geocoder would return but give back an
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
             // unresolved one.
             type GeocodingCalls = { innerPromise: any; outerPromise: any };
 
@@ -1182,7 +1188,7 @@ module powerbitests {
             let geocoder = visualBuilder.testGeocoder;
             let geocode = geocoder.geocode;
 
-            // ensure geocoding is really async. remember whet the geocoder would return but give back an
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
             // unresolved one.
             type GeocodingCalls = { innerPromise: any; outerPromise: any; isCancelled: boolean };
 
@@ -1223,6 +1229,201 @@ module powerbitests {
                 setTimeout(() => {
                     for (let i = 0; i < numberOfRequests; ++i)
                         expect(geocodingCalls[i].isCancelled).toBe(true);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+
+        it("Requests cancelled on destroy", (done) => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any; isCancelled: boolean };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((query: string, category?: string, options?: powerbi.GeocodeOptions) => {
+                expect(options && options.timeout).toBeTruthy();
+                let promises: GeocodingCalls = {
+                    innerPromise: geocode.apply(geocoder, [query, category, options]),
+                    outerPromise: $.Deferred(),
+                    isCancelled: false,
+                };
+
+                options.timeout.finally(() => {
+                    promises.isCancelled = true;
+                });
+
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // this will start the geocoding
+            v.onDataChanged({ dataViews: [dataView] });
+
+            let numberOfRequests = geocodingCalls.length;
+            expect(numberOfRequests).toBe(dataBuilder.categoryValues.length);
+
+            setTimeout(() => {
+                v.destroy();
+
+                setTimeout(() => {
+                    for (let i = 0; i < numberOfRequests; ++i)
+                        expect(geocodingCalls[i].isCancelled).toBe(true);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+    });
+
+    describe("Slow Bing Map load", () => {
+        let scheduleRedrawInterval: number;
+
+        beforeEach(() => {
+            // immediate redraw
+            scheduleRedrawInterval = Map.ScheduleRedrawInterval;
+            Map.ScheduleRedrawInterval = 0;
+        });
+
+        afterEach(() => {
+            Map.ScheduleRedrawInterval = scheduleRedrawInterval;
+        });
+
+        it("Geocoding completes after Maps eventually initializes", (done) => {
+            let visualBuilder = new MapVisualBuilder();
+
+            let mapControlFactory = visualBuilder.testMapControlFactory;
+            let ensureMapMethod = mapControlFactory.ensureMap;
+            let ensureMapRelease = $.Deferred();
+
+            // defer calling back until later to simulate slow Bing Maps initialization
+            spyOn(mapControlFactory, 'ensureMap').and.callFake((locale: string, action: () => void) => {
+                ensureMapMethod.apply(mapControlFactory, [locale, () => { ensureMapRelease.then(() => { action(); }); } ]);
+            });
+
+            let v: powerbi.IVisual = visualBuilder.build(false);
+
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any; isCancelled: boolean };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((query: string, category?: string, options?: powerbi.GeocodeOptions) => {
+                expect(options && options.timeout).toBeTruthy();
+                let promises: GeocodingCalls = {
+                    innerPromise: geocode.apply(geocoder, [query, category, options]),
+                    outerPromise: $.Deferred(),
+                    isCancelled: false,
+                };
+
+                options.timeout.finally(() => {
+                    promises.isCancelled = true;
+                });
+
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // give map data but it should not do any geocoding yet as it's waiting for Bing Maps to initialize
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                expect(geocodingCalls.length).toBe(0);
+
+                // now complete Bing Maps initializtion
+                ensureMapRelease.resolve();
+
+                setTimeout(() => {
+                    // geocoding should have started in ensureMap callback
+                    expect(geocodingCalls.length).toBe(dataBuilder.categoryValues.length);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
+
+        it("Destroy map before slow Bing Maps initialization completes", (done) => {
+            let visualBuilder = new MapVisualBuilder();
+
+            let mapControlFactory = visualBuilder.testMapControlFactory;
+            let ensureMapMethod = mapControlFactory.ensureMap;
+            let ensureMapRelease = $.Deferred();
+
+            // defer calling back until later to simulate slow Bing Maps initialization
+            spyOn(mapControlFactory, 'ensureMap').and.callFake((locale: string, action: () => void) => {
+                ensureMapMethod.apply(mapControlFactory, [locale, () => { ensureMapRelease.then(() => { action(); }); }]);
+            });
+
+            let v: powerbi.IVisual = visualBuilder.build(false);
+
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any; isCancelled: boolean };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((query: string, category?: string, options?: powerbi.GeocodeOptions) => {
+                expect(options && options.timeout).toBeTruthy();
+                let promises: GeocodingCalls = {
+                    innerPromise: geocode.apply(geocoder, [query, category, options]),
+                    outerPromise: $.Deferred(),
+                    isCancelled: false,
+                };
+
+                options.timeout.finally(() => {
+                    promises.isCancelled = true;
+                });
+
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // give map data but it should not do any geocoding yet as it's waiting for Bing Maps to initialize
+            v.onDataChanged({ dataViews: [dataView] });
+
+            setTimeout(() => {
+                expect(geocodingCalls.length).toBe(0);
+
+                // Bing Maps initializtion completes after visual destroyed
+                v.destroy();
+
+                ensureMapRelease.resolve();
+
+                setTimeout(() => {
+                    // destroy is now detected and prevents geocoding.
+                    expect(geocodingCalls.length).toBe(0);
+
+                    // but cancelled because of the destroy
+                    expect(_.every(geocodingCalls, c => c.isCancelled)).toBe(true);
 
                     done();
                 }, DefaultWaitForRender);

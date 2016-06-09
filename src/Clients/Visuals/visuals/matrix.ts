@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
 
@@ -519,7 +521,7 @@ module powerbi.visuals {
                     if (node.levelValues) {
                         let displayNames = _.map(node.levelValues, component => {
                             let source = level.sources[component.levelSourceIndex || 0];
-                            return this.formatter(component.value, source, formatStringPropID, true);
+                            return this.formatter(component.value, source, formatStringPropID, false);
                         });
 
                         node.valueFormatted = displayNames.join(this.compositeGroupSeparator);

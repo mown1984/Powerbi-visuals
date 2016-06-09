@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import DOMConstants = jsCommon.DOMConstants;
     import Textbox = powerbi.visuals.Textbox;
@@ -395,7 +397,7 @@ module powerbitests {
                     }
                 });
 
-                it("arrow keys are prevented from bubbling", () => {
+                it("arrow keys and shift are prevented from bubbling", () => {
                     let $editor = getEditor($element);
 
                     let keydown = false;
@@ -409,7 +411,8 @@ module powerbitests {
                         DOMConstants.upArrowKeyCode,
                         DOMConstants.downArrowKeyCode,
                         DOMConstants.rightArrowKeyCode,
-                        DOMConstants.leftArrowKeyCode
+                        DOMConstants.leftArrowKeyCode,
+                        DOMConstants.shiftKeyCode
                     ];
 
                     for (let key of arrowKeys) {

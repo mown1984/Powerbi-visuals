@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,8 +24,14 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     const unsupportedVisuals: string[] = ['play', 'subview', 'smallMultiple'];
+
+    export interface IHostInformation {
+        name: string;
+    }
 
     export interface IVisualPluginService {
         getPlugin(type: string): IVisualPlugin;
@@ -39,6 +45,7 @@ module powerbi.visuals {
         isScriptVisualQueryable(): boolean;
         shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
         getInteractivityOptions(visualType: string): InteractivityOptions;
+        getTelemetryHostInformation: () => IHostInformation;
     }
 
     export interface MinervaVisualFeatureSwitches {
@@ -187,6 +194,10 @@ module powerbi.visuals {
                 };
                 return interactivityOptions;
             }
+
+            getTelemetryHostInformation(): IHostInformation {
+                return { name: "" };
+            }
         }
 
         export function createPlugin(
@@ -287,6 +298,10 @@ module powerbi.visuals {
 
             public requireSandbox(plugin: IVisualPlugin): boolean {
                 return (this.featureSwitches.sandboxVisualsEnabled) && (!plugin || (plugin && plugin.custom));
+            }
+
+            getTelemetryHostInformation(): IHostInformation {
+                return { name: "Insights" };
             }
         }
 

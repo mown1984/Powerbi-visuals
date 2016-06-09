@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -27,6 +27,9 @@
 /**
  * IMPORTANT: This chart is not currently enabled in the PBI system and is under development.
  */
+
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
 
     export interface IDataDotChartConfiguration {

@@ -24,8 +24,11 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.MekkoChart;
+    import VisualBuilderBase = powerbitests.customVisuals.VisualBuilderBase;
     import MekkoChartData = sampleDataViews.MekkoChartData;
 
     import MekkoColumnChart = powerbi.visuals.samples.MekkoColumnChart;
@@ -59,16 +62,20 @@ module powerbitests.customVisuals {
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     expect(visualBuilder.categoriesAxis).toBeInDOM();
                     expect(visualBuilder.categoriesAxis.children("g.tick").length)
-                        .toBe(dataView.matrix.rows.root.children.length);
+                        .toBe(dataView.categorical.categories[0].values.length);
 
                     expect(visualBuilder.columnElement).toBeInDOM();
                     let series: JQuery = visualBuilder.columnElement.children("g.series");
+                    let grouped: powerbi.DataViewValueColumnGroup[] = dataView.categorical.values.grouped();
+
                     expect(series.length)
-                        .toBe(dataView.matrix.columns.root.children.length);
+                        .toBe(grouped.length);
 
                     for (let i = 0, length = series.length; i < length; i++) {
                         expect($(series[i]).children("rect.column").length)
-                            .toBe(dataView.matrix.rows.root.children.length);
+                            .toBe((i === 0
+                                ? grouped[i].values[0].values
+                                : grouped[i].values[0].values.filter(_.isNumber)).length);
                     }
 
                     done();

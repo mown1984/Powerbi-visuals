@@ -24,13 +24,16 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     export const imageVisualCapabilities: VisualCapabilities = {
         objects: {
             general: {
                 properties: {
                     imageUrl: {
-                        type: { misc: { imageUrl: true } }
+                        type: { misc: { imageUrl: true } },
+                        suppressFormatPainterCopy: true,
                     }
                 }
             },

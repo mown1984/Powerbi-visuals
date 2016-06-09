@@ -24,6 +24,8 @@
 *  THE SOFTWARE.
 */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import ScriptVisual = powerbi.visuals.ScriptVisual;
     import scriptVisualCapabilities = powerbi.visuals.scriptVisualCapabilities;

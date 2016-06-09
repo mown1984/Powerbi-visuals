@@ -24,10 +24,13 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ChicletSlicer;
     import CarLogosData = powerbitests.customVisuals.sampleDataViews.CarLogosData;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
+    import VisualBuilderBase = powerbitests.customVisuals.VisualBuilderBase;
 
     describe("ChicletSlicer", () => {
         let visualBuilder: ChicletSlicerBuilder;
@@ -149,6 +152,20 @@ module powerbitests.customVisuals {
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     colorAssert(visualBuilder.visibleGroup.children("div.row").children('.cell').children('.slicerItemContainer').first().css('background-color'), '#123234');
+                    done();
+                });
+            });
+
+            it("change chiclets hover color", done => {
+                dataView.metadata.objects = {
+                    rows: {
+                        hoverColor: { solid: { color: '#123234' } }
+                    }
+                };
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    $("div.row").children('.cell').children('.slicerItemContainer').first().attr('id', 'customHoveredEl');
+                    document.getElementById('customHoveredEl').dispatchEvent( new Event('mouseover') );
+                    colorAssert(d3.select( d3.select('#customHoveredEl').selectAll(".slicerText")[0].pop() ).style('color'), '#123234');
                     done();
                 });
             });
@@ -497,8 +514,7 @@ module powerbitests.customVisuals {
         }
 
         public getSelectedPoints() {
-            return this.visual['behavior']
-                .dataPoints
+            return this.visual['behavior']['dataPoints']
                 .map( (item) => { if(item.selected) return item; })
                 .filter(Boolean);
         }

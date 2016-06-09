@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import QueryProjectionCollection = powerbi.data.QueryProjectionCollection;
     import QueryProjectionsByRole = powerbi.data.QueryProjectionsByRole;

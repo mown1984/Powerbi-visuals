@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import MultiRowCard = powerbi.visuals.MultiRowCard;
     import multiRowCardCapabilities = powerbi.visuals.multiRowCardCapabilities;

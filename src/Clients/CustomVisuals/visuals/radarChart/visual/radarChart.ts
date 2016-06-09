@@ -24,8 +24,9 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
-    import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import CreateClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import PixelConverter = jsCommon.PixelConverter;
@@ -69,7 +70,7 @@ module powerbi.visuals.samples {
         selection: D3.Selection;
         clearCatcher: D3.Selection;
     }
-    
+
     /**
      * RadarChartBehavior
      */
@@ -91,7 +92,7 @@ module powerbi.visuals.samples {
         }
 
         public renderSelection(hasSelection: boolean): void {
-            this.selection.style("opacity", (d: SelectableDataPoint) => (hasSelection && !d.selected) ? RadarChart.DimmedAreaFillOpacity : RadarChart.AreaFillOpacity);
+            this.selection.style("opacity", (d: SelectableDataPoint) => (hasSelection && !d.selected) ? RadarChart.DimmedAreaFillOpacity : RadarChart.NodeFillOpacity);
         }
     }
 
@@ -234,22 +235,26 @@ module powerbi.visuals.samples {
         private static VisualClassName = 'radarChart';
         private static Segments: ClassAndSelector = CreateClassAndSelector('segments');
         private static SegmentNode: ClassAndSelector = CreateClassAndSelector('segmentNode');
+        private static ZeroSegment: ClassAndSelector = CreateClassAndSelector('zeroSegment');
+        private static ZeroSegmentNode: ClassAndSelector = CreateClassAndSelector('zeroSegmentNode');
+        private static ZeroLabel: ClassAndSelector = CreateClassAndSelector('zeroLabel');
         private static Axis: ClassAndSelector = CreateClassAndSelector('axis');
         private static AxisNode: ClassAndSelector = CreateClassAndSelector('axisNode');
         private static AxisLabel: ClassAndSelector = CreateClassAndSelector('axisLabel');
         private static Chart: ClassAndSelector = CreateClassAndSelector('chart');
         private static ChartNode: ClassAndSelector = CreateClassAndSelector('chartNode');
+        private static ChartArea: ClassAndSelector = CreateClassAndSelector('chartArea');
         private static ChartPolygon: ClassAndSelector = CreateClassAndSelector('chartPolygon');
         private static ChartDot: ClassAndSelector = CreateClassAndSelector('chartDot');
 
         private svg: D3.Selection;
         private segments: D3.Selection;
+        private zeroSegment: D3.Selection;
         private axis: D3.Selection;
         private chart: D3.Selection;
 
         private mainGroupElement: D3.Selection;
         private colors: IDataColorPalette;
-        private selectionManager: SelectionManager;
         private viewport: IViewport;
         private interactivityService: IInteractivityService;
 
@@ -259,6 +264,7 @@ module powerbi.visuals.samples {
         private legendObjectProperties: DataViewObject;
         private radarChartData: RadarChartData;
         private isInteractiveChart: boolean;
+        private zeroPointRadius: number;
 
         private static DefaultMargin: IMargin = {
             top: 50,
@@ -271,10 +277,15 @@ module powerbi.visuals.samples {
         private static SegmentFactor: number = 1;
         private static Radians: number = 2 * Math.PI;
         private static Scale: number = 1;
-        public static AreaFillOpacity = 1;
+        public static NodeFillOpacity = 1;
+        public static AreaFillOpacity = 0.6;
         public static DimmedAreaFillOpacity = 0.4;
         private angle: number;
         private radius: number;
+
+        public static AxesLabelsFontFamily: string = "sans-serif";
+        public static AxesLabelsfontSize: string = "11px";
+        public static AxesLabelsMaxWidth: number = 200;
 
         public static converter(dataView: DataView, colors: IDataColorPalette): RadarChartData {
             if (!dataView ||
@@ -283,7 +294,8 @@ module powerbi.visuals.samples {
                 !(dataView.categorical.categories.length > 0) ||
                 !dataView.categorical.categories[0] ||
                 !dataView.categorical.values ||
-                !(dataView.categorical.values.length > 0)) {
+                !(dataView.categorical.values.length > 0) ||
+                !colors) {
                 return {
                     legendData: {
                         dataPoints: []
@@ -296,10 +308,12 @@ module powerbi.visuals.samples {
                 };
             }
 
-            let catDv: DataViewCategorical = dataView.categorical;
-            let values = catDv.values;
-            let series: RadarChartSeries[] = [];
-            let colorHelper = new ColorHelper(colors, RadarChart.Properties.dataPoint.fill);
+            let catDv: DataViewCategorical = dataView.categorical,
+                values: DataViewValueColumns = catDv.values,
+                grouped: DataViewValueColumnGroup[] = catDv && catDv.values ? catDv.values.grouped() : null,
+                series: RadarChartSeries[] = [],
+                colorHelper = new ColorHelper(colors, RadarChart.Properties.dataPoint.fill);
+
             let legendData: LegendData = {
                 fontSize: 8.25,
                 dataPoints: [],
@@ -316,6 +330,9 @@ module powerbi.visuals.samples {
                     queryName: string,
                     displayName: string,
                     dataPoints: RadarChartDatapoint[] = [];
+
+                let columnGroup: DataViewValueColumnGroup = grouped
+                    && grouped.length > i && grouped[i].values? grouped[i] : null;
 
                 if (values[i].source) {
                     let source = values[i].source;
@@ -343,12 +360,11 @@ module powerbi.visuals.samples {
                 });
 
                 for (let k = 0, kLen = values[i].values.length; k < kLen; k++) {
-
-                    let dataPointIdentity = SelectionIdBuilder
+                    let dataPointIdentity: SelectionId = SelectionIdBuilder
                         .builder()
                         .withMeasure(queryName)
                         .withCategory(catDv.categories[0], k)
-                        .withSeries(dataView.categorical.values, dataView.categorical.values[i])
+                        .withSeries(dataView.categorical.values, columnGroup)
                         .createSelectionId();
 
                     let tooltipInfo: TooltipDataItem[] = TooltipBuilder.createTooltipInfo(RadarChart.formatStringProp,
@@ -393,7 +409,6 @@ module powerbi.visuals.samples {
         }
 
         public constructor(options?: RadarChartConstructorOptions) {
-
             if (options) {
                 if (options.svg)
                     this.svg = options.svg;
@@ -408,7 +423,6 @@ module powerbi.visuals.samples {
 
         public init(options: VisualInitOptions): void {
             let element = options.element;
-            this.selectionManager = new SelectionManager({ hostServices: options.host });
 
             if (!this.svg) {
                 this.svg = d3.select(element.get(0)).append('svg');
@@ -432,6 +446,10 @@ module powerbi.visuals.samples {
             this.segments = this.mainGroupElement
                 .append('g')
                 .classed(RadarChart.Segments.class, true);
+
+            this.zeroSegment = this.mainGroupElement
+                .append('g')
+                .classed(RadarChart.ZeroSegment.class, true);
 
             this.axis = this.mainGroupElement
                 .append('g')
@@ -479,7 +497,7 @@ module powerbi.visuals.samples {
 
             let mainGroup = this.mainGroupElement;
             mainGroup.attr('transform', SVGUtil.translate(this.viewport.width / 2, this.viewport.height / 2));
-           
+
             let width: number = this.viewport.width - this.margin.left - this.margin.right;
             let height: number = this.viewport.height - this.margin.top - this.margin.bottom;
 
@@ -491,25 +509,21 @@ module powerbi.visuals.samples {
             this.drawAxesLabels(categories, dataViewMetadataColumn);
             this.drawChart(series, duration);
             this.drawDataLabels(series);
+            this.drawZeroCircularSegment(categories);
+
+            if (this.zeroPointRadius !== 0)
+                this.drawZeroLabel();
+            else
+                this.mainGroupElement.selectAll(RadarChart.ZeroLabel.selector).remove();
         }
 
         private getRadarChartLabelLayout(labelSettings: PointDataLabelsSettings, allDataPoints: RadarChartDatapoint[]): ILabelLayout {
-
             let formattersCache = dataLabelUtils.createColumnFormatterCacheManager();
             let angle: number = this.angle;
-            let radius: number = this.radius;
-            let dataPoints: RadarChartDatapoint[][] = this.getDataPoints(this.radarChartData.series);
-            let stack = d3.layout.stack();
-            let layers = stack(dataPoints);
             let viewport = this.viewport;
             let halfHeight = this.viewport.height / 2;
             let halfWidth = this.viewport.width / 2;
-            let y = d3.scale.linear()
-                .domain([0, d3.max(layers, (layer) => {
-                    return d3.max(layer, (d) => {
-                        return d.y0 + d.y;
-                    });
-                })]).range([0, radius]);
+            let y: any = this.calculateChartDomain(this.radarChartData.series);
 
             return {
                 labelText: (d: RadarChartDatapoint) => {
@@ -526,7 +540,7 @@ module powerbi.visuals.samples {
                 },
                 labelLayout: {
                     x: (d: RadarChartDatapoint) => -1 * y(d.y) * Math.sin(d.x * angle) + halfWidth,
-                    y: (d: RadarChartDatapoint) => -1 * y(d.y) * Math.cos(d.x * angle) + halfHeight - 10,
+                    y: (d: RadarChartDatapoint) => -1 * y(d.y) * Math.cos(d.x * angle) + halfHeight - 7,
                 },
                 filter: (d: RadarChartDatapoint) => {
                     return (d != null && d.value != null);
@@ -581,23 +595,20 @@ module powerbi.visuals.samples {
         }
 
         private drawDataLabels(series: RadarChartSeries[]): void {
-
             let allDataPoints: RadarChartDatapoint[] = this.getAllDataPointsList(series);
 
             if (this.radarChartData.dataLabelsSettings.show) {
                 let layout = this.getRadarChartLabelLayout(this.radarChartData.dataLabelsSettings, allDataPoints);
                 let viewport = this.viewport;
-                let labels = dataLabelUtils.drawDefaultLabelsForDataPointChart(allDataPoints, this.mainGroupElement, layout, viewport);
 
-                if (labels)
-                    labels.attr('transform', SVGUtil.translate(-(viewport.width / 2), -(viewport.height / 2)));
+                let labels = dataLabelUtils.drawDefaultLabelsForDataPointChart(allDataPoints, this.mainGroupElement, layout, viewport);
+                labels.attr('transform', SVGUtil.translate(-(viewport.width / 2), -(viewport.height / 2)));
             }
             else
                 dataLabelUtils.cleanDataLabels(this.mainGroupElement);
         }
 
         private drawAxes(values: string[]): void {
-
             let angle: number = this.angle,
                 radius: number = -1 * this.radius;
 
@@ -648,10 +659,17 @@ module powerbi.visuals.samples {
                     'text-anchor': 'middle',
                     'dy': '1.5em',
                     'transform': SVGUtil.translate(0, -10),
-                    'x': (name, i) => { return (radius - 20) * Math.sin(i * angle); },
-                    'y': (name, i) => { return (radius - 10) * Math.cos(i * angle); }
+                    'x': (name, i) => { return (radius - 30) * Math.sin(i * angle); },
+                    'y': (name, i) => { return (radius - 20) * Math.cos(i * angle); }
                 })
-                .text(item => formatter.format(item))
+                .text(item => {
+                    let properties: TextProperties = {
+                        fontFamily: RadarChart.AxesLabelsFontFamily,
+                        fontSize: RadarChart.AxesLabelsfontSize,
+                        text: formatter.format(item)
+                    };
+                    return TextMeasurementService.getTailoredTextOrDefault(properties, Math.min(RadarChart.AxesLabelsMaxWidth, this.viewport.width));
+                })
                 .classed(RadarChart.AxisLabel.class, true);
 
             labels.exit().remove();
@@ -659,19 +677,12 @@ module powerbi.visuals.samples {
 
         private drawChart(series: RadarChartSeries[], duration: number): void {
             let angle: number = this.angle,
-                radius: number = this.radius,
                 dotRadius: number = 5,
                 dataPoints: RadarChartDatapoint[][] = this.getDataPoints(series);
 
             let stack = d3.layout.stack();
             let layers = stack(dataPoints);
-
-            let y = d3.scale.linear()
-                .domain([0, d3.max(layers, (layer) => {
-                    return d3.max(layer, (d) => {
-                        return d.y0 + d.y;
-                    });
-                })]).range([0, radius]);
+            let y: any = this.calculateChartDomain(series);
 
             let calculatePoints = (points) => {
                 return points.map((value) => {
@@ -681,14 +692,14 @@ module powerbi.visuals.samples {
                 }).join(' ');
             };
 
-            let selection = this.chart.selectAll(RadarChart.ChartNode.selector).data(layers);
+            let areas = this.chart.selectAll(RadarChart.ChartArea.selector).data(layers);
 
-            selection
+            areas
                 .enter()
                 .append('g')
-                .classed(RadarChart.ChartNode.class, true);
+                .classed(RadarChart.ChartArea.class, true);
 
-            let polygon = selection.selectAll(RadarChart.ChartPolygon.selector).data(d => {
+            let polygon = areas.selectAll(RadarChart.ChartPolygon.selector).data(d => {
                 if (d && d.length > 0) {
                     return [d];
                 }
@@ -715,6 +726,14 @@ module powerbi.visuals.samples {
                 .attr('points', calculatePoints);
             polygon.exit().remove();
 
+            areas.exit().remove();
+            let selection = this.chart.selectAll(RadarChart.ChartNode.selector).data(layers);
+
+            selection
+                .enter()
+                .append('g')
+                .classed(RadarChart.ChartNode.class, true);
+
             let dots = selection.selectAll(RadarChart.ChartDot.selector)
                 .data((d: RadarChartDatapoint[]) => { return d.filter(d => d.y != null); });
 
@@ -729,21 +748,39 @@ module powerbi.visuals.samples {
                 .style('fill', d => d.color);
 
             dots.exit().remove();
-
             TooltipManager.addTooltip(dots, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo, true);
 
             selection.exit().remove();
-
             let behaviorOptions: RadarChartBehaviorOptions = undefined;
 
             if (this.interactivityService) {
-                					                      
                 // Register interactivity
                 let dataPointsToBind = this.getAllDataPointsList(series);
 
                 behaviorOptions = { selection: dots, clearCatcher: this.svg };
                 this.interactivityService.bind(dataPointsToBind, new RadarChartWebBehavior(), behaviorOptions);
             }
+        }
+
+        private calculateChartDomain(series: RadarChartSeries[]): any {
+            let radius: number = this.radius,
+                dataPointsList: RadarChartDatapoint[] = this.getAllDataPointsList(series);
+
+            let minValue: number = d3.min(dataPointsList, (d) => { return d.y; });
+            let maxValue: number = d3.max(dataPointsList, (d) => { return d.y; });
+
+            if (this.isPercentChart(dataPointsList)) {
+                minValue = minValue >= 0 ? 0 : -1;
+                maxValue = maxValue <= 0 ? 0 : 1;
+            }
+
+            let y = d3.scale.linear()
+                .domain([minValue, maxValue]).range([0, radius]);
+
+            // Calculate zero ring radius
+            this.zeroPointRadius = ((minValue < 0) && (maxValue > 0)) ? y(0) : 0;
+
+            return y;
         }
 
         private renderLegend(radarChartData: RadarChartData): void {
@@ -767,6 +804,65 @@ module powerbi.visuals.samples {
             Legend.positionChartArea(this.svg, this.legend);
         }
 
+        private drawZeroCircularSegment(values: string[]): void {
+            let data = [];
+            let angle: number = this.angle,
+                factor: number = RadarChart.SegmentFactor,
+                radius: number = this.zeroPointRadius,
+                transform: number = -1 * radius;
+
+            for (let i = 0; i < values.length; i++)
+                data.push({
+                    x1: radius * (1 - factor * Math.sin(i * angle)),
+                    y1: radius * (1 - factor * Math.cos(i * angle)),
+                    x2: radius * (1 - factor * Math.sin((i + 1) * angle)),
+                    y2: radius * (1 - factor * Math.cos((i + 1) * angle)),
+                    translate: SVGUtil.translate(transform, transform)
+                });
+
+            let selection = this.mainGroupElement
+                .select(RadarChart.ZeroSegment.selector)
+                .selectAll(RadarChart.ZeroSegmentNode.selector)
+                .data(data);
+
+            selection
+                .enter()
+                .append('svg:line')
+                .classed(RadarChart.ZeroSegmentNode.class, true);
+            selection
+                .attr({
+                    'x1': item => item.x1,
+                    'y1': item => item.y1,
+                    'x2': item => item.x2,
+                    'y2': item => item.y2,
+                    'transform': item => item.translate
+                });
+
+            selection.exit().remove();
+        }
+
+        private drawZeroLabel() {
+            let data = [];
+            data.push({
+                'x': this.zeroPointRadius * (1 - RadarChart.SegmentFactor) + 5,
+                'y': -1 * this.zeroPointRadius
+            });
+
+            let zeroLabel = this.mainGroupElement
+                .select(RadarChart.ZeroSegment.selector)
+                .selectAll(RadarChart.ZeroLabel.selector).data(data);
+
+            zeroLabel
+                .enter()
+                .append('text')
+                .classed(RadarChart.ZeroLabel.class, true).text("0");
+            zeroLabel
+                .attr({
+                    'x': item => item.x,
+                    'y': item => item.y
+                });
+        }
+
         private getDataPoints(series: RadarChartSeries[]): RadarChartDatapoint[][] {
             let dataPoints: RadarChartDatapoint[][] = [];
 
@@ -785,6 +881,16 @@ module powerbi.visuals.samples {
             }
 
             return dataPoints;
+        }
+
+        private isPercentChart(dataPointsList: RadarChartDatapoint[]): boolean {
+
+            for (let dataPoint of dataPointsList) {
+                if (dataPoint.labelFormatString.indexOf("%") === -1)
+                    return false;
+            }
+
+            return true;
         }
 
         private parseLegendProperties(dataView: DataView): void {
@@ -871,7 +977,7 @@ module powerbi.visuals.samples {
 
         private enumerateDataLabels(enumeration: ObjectEnumerationBuilder): void {
             let labelSettings = this.radarChartData.dataLabelsSettings;
-           
+
             //Draw default settings
             dataLabelUtils.enumerateDataLabels(this.getLabelSettingsOptions(enumeration, labelSettings));
         }

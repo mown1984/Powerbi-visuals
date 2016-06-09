@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -227,8 +227,9 @@ module powerbi.data {
 
             let projectionOrdering = transforms.roles && transforms.roles.ordering;
             let projectionActiveItems = transforms.roles && transforms.roles.activeItems;
-            transformed = transformSelects(transformed, targetKinds, roleMappings, transforms.selects, projectionOrdering, selectsToInclude);
+            transformed = transformSelects(transformed, targetKinds, roleMappings, transforms.selects, projectionOrdering);
             transformObjects(transformed, targetKinds, objectDescriptors, transforms.objects, transforms.selects, colorAllocatorFactory);
+            DataViewRemoveSelects.apply(transformed, targetKinds, selectsToInclude);
 
             // Note: Do this step after transformObjects() so that metadata columns in 'transformed' have roles and objects.general.formatString populated
             transformed = DataViewConcatenateCategoricalColumns.detectAndApply(transformed, objectDescriptors, roleMappings, projectionOrdering, transforms.selects, projectionActiveItems);
@@ -269,8 +270,7 @@ module powerbi.data {
             targetDataViewKinds: StandardDataViewKinds,
             roleMappings: DataViewMapping[],
             selectTransforms: DataViewSelectTransform[],
-            projectionOrdering?: DataViewProjectionOrdering,
-            selectsToInclude?: INumberDictionary<boolean>): DataView {
+            projectionOrdering?: DataViewProjectionOrdering): DataView {
 
             let columnRewrites: ValueRewrite<DataViewMetadataColumn>[] = [];
             if (selectTransforms) {
@@ -283,7 +283,7 @@ module powerbi.data {
             // NOTE: no rewrites necessary for Tree (it doesn't reference the columns)
 
             if (dataView.categorical && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Categorical)) {
-                dataView.categorical = applyRewritesToCategorical(dataView.categorical, columnRewrites, selectsToInclude);
+                dataView.categorical = applyRewritesToCategorical(dataView.categorical, columnRewrites);
 
                 // TODO VSTS 7024199: separate out structural transformations from dataViewTransform.transformSelects(...)
                 // NOTE: This is slightly DSR-specific.
@@ -370,7 +370,7 @@ module powerbi.data {
             return select.format || column.format;
         }
 
-        function applyRewritesToCategorical(prototype: DataViewCategorical, columnRewrites: ValueRewrite<DataViewMetadataColumn>[], selectsToInclude?: INumberDictionary<boolean>): DataViewCategorical {
+        function applyRewritesToCategorical(prototype: DataViewCategorical, columnRewrites: ValueRewrite<DataViewMetadataColumn>[]): DataViewCategorical {
             debug.assertValue(prototype, 'prototype');
             debug.assertValue(columnRewrites, 'columnRewrites');
 
@@ -389,67 +389,18 @@ module powerbi.data {
             if (categories)
                 categorical.categories = categories;
 
-            let valuesOverride = Prototype.overrideArray(prototype.values, override);
-            let valueColumns = valuesOverride || prototype.values;
-
+            let valueColumns = Prototype.overrideArray(prototype.values, override);
             if (valueColumns) {
+                categorical.values = valueColumns;
+                
                 if (valueColumns.source) {
-                    if (selectsToInclude && !selectsToInclude[valueColumns.source.index]) {
-                        // if processing a split and this is the split without series...
-                        valueColumns.source = undefined;
-                    }
-                    else {
                         let rewrittenValuesSource = findOverride(valueColumns.source, columnRewrites);
                         if (rewrittenValuesSource)
                             valueColumns.source = rewrittenValuesSource;
                     }
                 }
 
-                if (selectsToInclude) {
-                    // Apply selectsToInclude to values by removing value columns not included
-                    for (let i = valueColumns.length - 1; i >= 0; i--) {
-                        if (!selectsToInclude[valueColumns[i].source.index]) {
-                            valueColumns.splice(i, 1);
-                        }
-                    }
-                }
-
-                let isDynamicSeries = !!valueColumns.source;
-
-                debug.assert(_.every(valueColumns, (valueColumn) => _.isEmpty(valueColumn.values)) ||
-                    _.every(valueColumns, (valueColumn) => isDynamicSeries === !!valueColumn.identity),
-                    'After applying selectsToInclude, all remaining DataViewValueColumn objects should have a consistent scope type (static vs. dynamic) with the parent DataViewValueColumns object.');
-                    
-                // Dynamic or not, always update the return values of grouped() to have the rewritten 'source' property
-                let seriesGroups: DataViewValueColumnGroup[];
-                if (isDynamicSeries) {
-                    // We have a dynamic series, so update the return value of grouped() to have the DataViewValueColumn objects with rewritten 'source'.
-                    // Also, exclude any column that belongs to a static series.
-                    seriesGroups = inherit(valueColumns.grouped());
-                    
-                    let nextSeriesGroupIndex = 0;
-                    let currentSeriesGroup: DataViewValueColumnGroup;
-                    for (let i = 0, ilen = valueColumns.length; i < ilen; i++) {
-                        let currentValueColumn = valueColumns[i];
-                        if (!currentSeriesGroup || (currentValueColumn.identity !== currentSeriesGroup.identity)) {
-                            currentSeriesGroup = inherit(seriesGroups[nextSeriesGroupIndex]);
-                            seriesGroups[nextSeriesGroupIndex] = currentSeriesGroup;
-                            currentSeriesGroup.values = [];
-                            nextSeriesGroupIndex++;
-                            debug.assert(currentValueColumn.identity === currentSeriesGroup.identity, 'expecting the value columns are sequenced by series groups');
-                        }
-                        currentSeriesGroup.values.push(currentValueColumn);
-                    }
-                }
-                else {
-                    // We are in a static series, so we should throw away the grouped and recreate it using the static values
-                    //   which have already been filtered
-                    seriesGroups = [{ values: valueColumns }];
-                }
-
-                valueColumns.grouped = () => seriesGroups;
-                categorical.values = valueColumns;
-            }
+            DataViewCategoricalEvalGrouped.apply(categorical);
 
             return categorical;
         }
@@ -1334,10 +1285,10 @@ module powerbi.data {
             let dataViewCategorical = dataView.categorical;
             if (dataViewCategorical && EnumExtensions.hasFlag(targetDataViewKinds, StandardDataViewKinds.Categorical)) {
                 // 1) Match against categories
-                evaluateDataRepetitionCategoricalCategory(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
+                evaluateDataRepetitionCategoricalCategory(dataViewCategorical, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
 
                 // 2) Match against valueGrouping
-                evaluateDataRepetitionCategoricalValueGrouping(dataViewCategorical, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
+                evaluateDataRepetitionCategoricalValueGrouping(dataViewCategorical, selectTransforms, objectDescriptors, selector, rules, containsWildcard, objectDefns, colorAllocatorCache);
 
                 // Consider capturing diagnostics for unmatched selectors to help debugging.
             }
@@ -1421,6 +1372,7 @@ module powerbi.data {
 
         function evaluateDataRepetitionCategoricalCategory(
             dataViewCategorical: DataViewCategorical,
+            selectTransforms: DataViewSelectTransform[],
             objectDescriptors: DataViewObjectDescriptors,
             selector: Selector,
             rules: RuleEvaluation[],
@@ -1428,6 +1380,7 @@ module powerbi.data {
             objectDefns: DataViewNamedObjectDefinition[],
             colorAllocatorCache: IColorAllocatorCache): boolean {
             debug.assertValue(dataViewCategorical, 'dataViewCategorical');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
@@ -1444,7 +1397,7 @@ module powerbi.data {
 
             let identities = targetColumn.identities,
                 foundMatch: boolean,
-                evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical);
+                evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical, selectTransforms);
 
             if (!identities)
                 return;
@@ -1480,6 +1433,7 @@ module powerbi.data {
 
         function evaluateDataRepetitionCategoricalValueGrouping(
             dataViewCategorical: DataViewCategorical,
+            selectTransforms: DataViewSelectTransform[],
             objectDescriptors: DataViewObjectDescriptors,
             selector: Selector,
             rules: RuleEvaluation[],
@@ -1487,6 +1441,7 @@ module powerbi.data {
             objectDefns: DataViewNamedObjectDefinition[],
             colorAllocatorCache: IColorAllocatorCache): boolean {
             debug.assertValue(dataViewCategorical, 'dataViewCategorical');
+            debug.assertAnyValue(selectTransforms, 'selectTransforms');
             debug.assertValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(selector, 'selector');
             debug.assertAnyValue(rules, 'rules');
@@ -1507,7 +1462,7 @@ module powerbi.data {
 
             // NOTE: We do not set the evalContext row index below because iteration is over value groups (i.e., columns, no rows).
             // This should be enhanced in the future.
-            let evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical);
+            let evalContext = createCategoricalEvalContext(colorAllocatorCache, dataViewCategorical, selectTransforms);
 
             let foundMatch: boolean;
             for (let i = 0, len = valuesGrouped.length; i < len; i++) {

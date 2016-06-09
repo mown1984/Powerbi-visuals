@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module jsCommon {
     /**
      * JavaScript files.
@@ -88,8 +90,10 @@ module jsCommon {
 	}
 }
 
+declare let globalMapControlLoaded: Function;
+
 /* tslint:disable:no-unused-variable */
-let globalMapControlLoaded = function() {
+globalMapControlLoaded = function() {
 	// Map requires a function in the global namespace to callback once loaded
 	jsCommon.mapControlLoaded();
 };

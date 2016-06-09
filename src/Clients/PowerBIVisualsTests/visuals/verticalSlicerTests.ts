@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import SelectionId = powerbi.visuals.SelectionId;
@@ -249,7 +251,8 @@ module powerbitests {
 
                 expect($(".slicerContainer .slicerBody").first().css("height")).toBe("181px");
                 expect($(".slicerContainer .slicerBody").first().css("width")).toBe("300px");
-                expect($(".slicerContainer .headerText").first().css("width")).toBe("269px");
+                expect($(".slicerContainer .slicerHeader").first().css("width")).toBe("292px");
+                expect($(".slicerContainer .titleHeader").first().css("width")).toBe("284px");
 
                 // Next Resize
                 let viewport2 = {

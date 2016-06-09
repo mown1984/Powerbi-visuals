@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
 
     import ValueFormatter = powerbi.visuals.valueFormatter;
@@ -290,10 +292,16 @@ module powerbi.visuals.samples {
         private data: StreamData;
 
         public converter(dataView: DataView, colors: IDataColorPalette): StreamData {
-            if (!dataView || !dataView.categorical || !dataView.categorical.values || !dataView.categorical.categories)
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.values ||
+                !dataView.categorical.categories ||
+                !colors) {
                 return null;
+            }
 
             let catDv: DataViewCategorical = dataView.categorical,
+                grouped = catDv && catDv.values ? catDv.values.grouped() : undefined,
                 values: DataViewValueColumns = catDv.values,
                 dataPoints: StreamDataPoint[][] = [],
                 legendData: LegendData = {
@@ -306,6 +314,9 @@ module powerbi.visuals.samples {
                 categoryFormatter: IValueFormatter;
 
             for (let i = 0; i < values.length; i++) {
+                let columnGroup: DataViewValueColumnGroup = grouped
+                    && grouped.length > i && grouped[i].values ? grouped[i] : null;
+
                 dataPoints.push([]);
 
                 if (values[i].source.groupName) {
@@ -321,7 +332,7 @@ module powerbi.visuals.samples {
                 for (let k = 0; k < values[i].values.length; k++) {
                     let id: SelectionId = SelectionIdBuilder
                         .builder()
-                        .withSeries(dataView.categorical.values, dataView.categorical.values[i])
+                        .withSeries(dataView.categorical.values, columnGroup)
                         .createSelectionId(),
                         y: number = values[i].values[k];
 

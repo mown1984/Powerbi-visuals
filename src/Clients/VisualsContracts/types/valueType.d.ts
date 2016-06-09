@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi {
     /** Describes a data value type in the client type system. Can be used to get a concrete ValueType instance. */
     export interface ValueTypeDescriptor {

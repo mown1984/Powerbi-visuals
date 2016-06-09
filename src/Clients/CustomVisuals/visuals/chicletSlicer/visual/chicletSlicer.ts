@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,18 +11,20 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../../../_references.ts"/>
 
 module powerbi.visuals.samples {
 
@@ -171,11 +173,11 @@ module powerbi.visuals.samples {
             var visibleGroupContainer = this.visibleGroupContainer;
             var rowHeight = options.rowHeight || TableView.defaultRowHeight;
             var groupedData: any[] = [];
-            var totalRows = options.rows; 
+            var totalRows = options.rows;
             var totalColumns = options.columns;
             var totalItems: number = this._data.length;
-            var totalRows = options.rows > totalItems ? totalItems : options.rows; 
-            var totalColumns = options.columns > totalItems ? totalItems : options.columns; 
+            var totalRows = options.rows > totalItems ? totalItems : options.rows;
+            var totalColumns = options.columns > totalItems ? totalItems : options.columns;
 
             if (totalColumns === 0 && totalRows === 0) {
                 if (options.orientation === Orientation.HORIZONTAL)
@@ -216,7 +218,7 @@ module powerbi.visuals.samples {
                     {
                         m = i * Math.ceil(totalItems / options.columns);
                         k = m + Math.ceil(totalItems / options.columns);
-                        groupedData.push(this._data.slice(m, k)); 
+                        groupedData.push(this._data.slice(m, k));
                     }
                     else
                     {
@@ -319,6 +321,7 @@ module powerbi.visuals.samples {
             background: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'background' },
             transparency: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'transparency' },
             selectedColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'selectedColor' },
+            hoverColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'hoverColor' },
             unselectedColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'unselectedColor' },
             disabledColor: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'disabledColor' },
             outline: <DataViewObjectPropertyIdentifier>{ objectName: 'rows', propertyName: 'outline' },
@@ -425,8 +428,8 @@ module powerbi.visuals.samples {
             height: number;
             width: number;
             fontColor: string;
-            hoverColor: string;
             selectedColor: string;
+            hoverColor: string;
             unselectedColor: string;
             disabledColor: string;
             marginLeft: number;
@@ -454,12 +457,12 @@ module powerbi.visuals.samples {
                 {
                     name: 'Category',
                     kind: VisualDataRoleKind.Grouping,
-                    displayName: powerbi.data.createDisplayNameGetter('Role_DisplayName_Field'),
+                    displayName: 'Category',
                 },
                 {
                     name: 'Values',
                     kind: VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
+                    displayName: 'Values',
                 },
                 {
                     name: 'Image',
@@ -500,12 +503,12 @@ module powerbi.visuals.samples {
                         },
                         filter: {
                             type: { filter: {} },
-                            rule: {
-                                output: {
-                                    property: 'selected',
-                                    selector: ['Category'],
-                                }
-                            }
+                        },
+                        selfFilter: {
+                            type: { filter: { selfFilter: true } },
+                        },
+                        selfFilterEnabled: {
+                            type: { operations: { searchEnabled: true } }
                         },
                         formatString: {
                             type: { formatting: { formatString: true } },
@@ -572,6 +575,10 @@ module powerbi.visuals.samples {
                             displayName: 'Selected Color',
                             type: { fill: { solid: { color: true } } }
                         },
+                        hoverColor: {
+                            displayName: 'Hover Color',
+                            type: { fill: { solid: { color: true } } }
+                        },
                         unselectedColor: {
                             displayName: 'Unselected Color',
                             type: { fill: { solid: { color: true } } }
@@ -631,14 +638,14 @@ module powerbi.visuals.samples {
                 categorical: {
                     categories: {
                         for: { in: 'Category' },
-                        dataReductionAlgorithm: { top: {} }
+                        dataReductionAlgorithm: { top: { count: 10000 } }
                     },
                     values: {
                         group: {
                             by: 'Image',
                             select: [{ bind: { to: 'Values' } },
                             ],
-                            dataReductionAlgorithm: { top: {} }
+                           dataReductionAlgorithm: { top: { count: 10000 } }
                         }
                     },
                     includeEmptyGroups: true
@@ -666,7 +673,7 @@ module powerbi.visuals.samples {
         private isSelectionSaved: boolean;
 
         public static DefaultFontFamily: string = 'Segoe UI, Tahoma, Verdana, Geneva, sans-serif';
-        public static DefaultFontSizeInPt: number = 11;       
+        public static DefaultFontSizeInPt: number = 11;
         private static cellTotalInnerPaddings = 8;
         private static cellTotalInnerBorders = 2;
         private static chicletTotalInnerRightLeftPaddings = 14;
@@ -679,7 +686,7 @@ module powerbi.visuals.samples {
         private static Input: ClassAndSelector = createClassAndSelector('slicerCheckbox');
         private static Clear: ClassAndSelector = createClassAndSelector('clear');
         private static Body: ClassAndSelector = createClassAndSelector('slicerBody');
-      
+
         public static DefaultStyleProperties(): ChicletSlicerSettings {
             return {
                 general: {
@@ -788,6 +795,7 @@ module powerbi.visuals.samples {
                 defaultSettings.slicerText.height = DataViewObjects.getValue<number>(objects, chicletSlicerProps.rows.height, defaultSettings.slicerText.height);
                 defaultSettings.slicerText.width = DataViewObjects.getValue<number>(objects, chicletSlicerProps.rows.width, defaultSettings.slicerText.width);
                 defaultSettings.slicerText.selectedColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.selectedColor, defaultSettings.slicerText.selectedColor);
+                defaultSettings.slicerText.hoverColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.hoverColor, defaultSettings.slicerText.hoverColor);
                 defaultSettings.slicerText.unselectedColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.unselectedColor, defaultSettings.slicerText.unselectedColor);
                 defaultSettings.slicerText.disabledColor = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.disabledColor, defaultSettings.slicerText.disabledColor);
                 defaultSettings.slicerText.background = DataViewObjects.getFillColor(objects, chicletSlicerProps.rows.background, defaultSettings.slicerText.background);
@@ -817,16 +825,31 @@ module powerbi.visuals.samples {
             return slicerData;
         }
 
-        public init(options: VisualInitOptions): void {
+       public init(options: VisualInitOptions): void {
             this.element = options.element;
             this.currentViewport = options.viewport;
             if (this.behavior) {
                 this.interactivityService = createInteractivityService(options.host);
             }
             this.hostServices = options.host;
+            this.hostServices.canSelect = ChicletSlicer.canSelect;
             this.settings = ChicletSlicer.DefaultStyleProperties();
 
             this.initContainer();
+        }
+
+        private static canSelect(args: SelectEventArgs): boolean {
+            var selectors = args.data;
+
+            // We can't have multiple selections if any include more than one identity
+            if (selectors.length > 1) {
+                if (selectors.some((value: data.Selector) => value && value.data && value.data.length > 1)) {
+                    return false;
+                }
+            }
+
+            // Todo: check for cases of trying to select a category and a series (not the intersection)
+            return true;
         }
 
         public update(options: VisualUpdateOptions) {
@@ -910,6 +933,7 @@ module powerbi.visuals.samples {
                     background: slicerSettings.slicerText.background,
                     transparency: slicerSettings.slicerText.transparency,
                     selectedColor: slicerSettings.slicerText.selectedColor,
+                    hoverColor: slicerSettings.slicerText.hoverColor,
                     unselectedColor: slicerSettings.slicerText.unselectedColor,
                     disabledColor: slicerSettings.slicerText.disabledColor,
                     outline: slicerSettings.slicerText.outline,
@@ -967,7 +991,7 @@ module powerbi.visuals.samples {
             data.slicerSettings.slicerText.outlineWeight = data.slicerSettings.slicerText.outlineWeight < 0 ? 0 : data.slicerSettings.slicerText.outlineWeight;
 
             data.slicerSettings.general.getSavedSelection = () => {
-                    try 
+                    try
                     {
                         return JSON.parse(this.slicerData.slicerSettings.general.selection) || [];
                     }
@@ -1036,10 +1060,10 @@ module powerbi.visuals.samples {
 
             // if(!selectedItems.length  &&  String(savedSelection).length && this.slicerData && this.slicerData.hasSelectionOverride){
             //     var arrSelection = String(savedSelection).split('&');
-            //     var arrSelected = jQuery.map(data.slicerDataPoints, function (d, index) { 
-            //         if (arrSelection.indexOf(d.category) > -1) return d; 
+            //     var arrSelected = jQuery.map(data.slicerDataPoints, function (d, index) {
+            //         if (arrSelection.indexOf(d.category) > -1) return d;
             //     });
-            //     data.slicerDataPoints.forEach(function (d, index) { 
+            //     data.slicerDataPoints.forEach(function (d, index) {
             //         if (arrSelection.indexOf(d.category) > -1){
             //             d.selected = true;
             //             // console.error('>>>>@@@', d, index);
@@ -1137,7 +1161,7 @@ module powerbi.visuals.samples {
                         var text = valueFormatter.format(d.category, formatString);
                         textProperties.text = text;
                         if (this.settings.slicerText.width === 0)
-                            return powerbi.TextMeasurementService.getTailoredTextOrDefault(textProperties, (this.currentViewport.width / this.settings.general.columns) - ChicletSlicer.chicletTotalInnerRightLeftPaddings - ChicletSlicer.cellTotalInnerBorders - settings.slicerText.outlineWeight); 
+                            return powerbi.TextMeasurementService.getTailoredTextOrDefault(textProperties, (this.currentViewport.width / this.settings.general.columns) - ChicletSlicer.chicletTotalInnerRightLeftPaddings - ChicletSlicer.cellTotalInnerBorders - settings.slicerText.outlineWeight);
                         else
                             return TextMeasurementService.getTailoredTextOrDefault(textProperties, this.settings.slicerText.width - ChicletSlicer.chicletTotalInnerRightLeftPaddings - ChicletSlicer.cellTotalInnerBorders - settings.slicerText.outlineWeight);
                     });
@@ -1432,7 +1456,7 @@ module powerbi.visuals.samples {
                         var categoryLabel = valueFormatter.format(categoryValue, this.categoryFormatString);
 
                         if (this.dataViewCategorical.values) {
-                        
+
                             // Series are either measures in the multi-measure case, or the single series otherwise
                             for (var seriesIndex: number = 0; seriesIndex < this.dataViewCategorical.values.length; seriesIndex++) {
                                 var seriesData = dataViewCategorical.values[seriesIndex];
@@ -1523,7 +1547,7 @@ module powerbi.visuals.samples {
                 });
 
             // We're expecting the browser to give a synchronous measurement here
-            // We're using SVGTextElement because it works across all browsers 
+            // We're using SVGTextElement because it works across all browsers
             return svgTextElement.node<SVGTextElement>().getBBox();
         }
 
@@ -1677,7 +1701,7 @@ module powerbi.visuals.samples {
                 if (d.selectable && d.selected) {
                     selectedItems.push(d);
                 }
-                
+
                 d3.select(this).style({
                     'background': d.selectable ? (d.selected ? settings.slicerText.selectedColor : settings.slicerText.unselectedColor)
                         : settings.slicerText.disabledColor
@@ -1689,7 +1713,7 @@ module powerbi.visuals.samples {
 
     module explore.util {
         export function hexToRGBString(hex: string, transparency?: number): string {
-        
+
             // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
             var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
             hex = hex.replace(shorthandRegex, function (m, r, g, b) {

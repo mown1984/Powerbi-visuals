@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -49,46 +51,43 @@ module powerbitests.customVisuals.sampleDataViews {
                         type: ValueType.fromDescriptor({ dateTime: true })
                     },
                     values: this.valuesCategory
-                }
-                ],
-                null,
+                },
                 {
+                    isGroup: true,
                     source: { 
                         displayName: EnhancedScatterChartData.ColumnSeries,
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesSeries,
-                    columns: [
-                        {
-                            source: {
-                                displayName: EnhancedScatterChartData.ColumnX,
-                                format: '#,0.00',
-                                isMeasure: true,
-                                roles: { 'X': true },
-                            },
-                            values: this.valuesX
-                        },
-                        {
-                            source: {
-                                displayName: EnhancedScatterChartData.ColumnY,
-                                format: '#,0',
-                                isMeasure: true,
-                                roles: { 'Y': true },
-                            },
-                            values: this.valuesY
-                        },
-                        {
-                            source: {
-                                displayName: EnhancedScatterChartData.ColumnSize,
-                                format: '#,0',
-                                isMeasure: true,
-                                roles: { 'Size': true },
-                            },
-                            values: this.valuesSize
-                        }
-                    ]
+                }
+                ],[
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnX,
+                        format: '#,0.00',
+                        isMeasure: true,
+                        roles: { 'X': true },
+                    },
+                    values: this.valuesX
                 },
-                columnNames).build();
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnY,
+                        format: '#,0',
+                        isMeasure: true,
+                        roles: { 'Y': true },
+                    },
+                    values: this.valuesY
+                },
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnSize,
+                        format: '#,0',
+                        isMeasure: true,
+                        roles: { 'Size': true },
+                    },
+                    values: this.valuesSize
+                }], columnNames).build();
         }
     }
 }

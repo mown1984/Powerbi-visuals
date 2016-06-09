@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.slicerHelper {
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
     import SQExpr = powerbi.data.SQExpr;

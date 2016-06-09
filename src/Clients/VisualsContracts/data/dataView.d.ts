@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi {
     /** Represents views of a data set. */
     export interface DataView {

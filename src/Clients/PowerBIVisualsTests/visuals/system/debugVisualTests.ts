@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import IVisualHostServices = powerbi.IVisualHostServices;
 
@@ -63,6 +65,7 @@ module powerbitests {
             let debugVisual: powerbi.visuals.system.DebugVisual;
             let getSpy: jasmine.Spy;
             let getScriptSpy: jasmine.Spy;
+            let getJSONSpy: jasmine.Spy;
 
             let mockVisualGuid = 'customDebugViz';
             class MockVisual implements powerbi.IVisual {
@@ -91,6 +94,17 @@ module powerbitests {
                     }
                     return d.promise();
                 });
+                
+                getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
+                    let d = $.Deferred();
+                    d.resolve({
+                        visual: {
+                            guid: mockVisualGuid
+                        },
+                        capabilities: {}
+                    });
+                    return d.promise();
+                });                
 
                 getScriptSpy = spyOn($, 'getScript').and.callFake(url => {
                     let d = $.Deferred();
@@ -133,6 +147,7 @@ module powerbitests {
                     let adapterSpy = spyOn(powerbi.extensibility, 'createVisualAdapter').and.callThrough();
                     let hostSpy = spyOn((<any>debugVisual).host, 'visualCapabilitiesChanged').and.callFake(() => { });
 
+                    expect(getJSONSpy.calls.count()).toBe(1);
                     expect(getScriptSpy.calls.count()).toBe(1);
                     expect(getSpy.calls.count()).toBe(2);
 
@@ -140,6 +155,7 @@ module powerbitests {
 
                     expect(adapterSpy).toHaveBeenCalled();
                     expect(hostSpy).toHaveBeenCalled();
+                    expect(getJSONSpy.calls.count()).toBe(2);
                     expect(getScriptSpy.calls.count()).toBe(2);
                     expect(getSpy.calls.count()).toBe(4);
                 });
@@ -191,6 +207,7 @@ module powerbitests {
             let initOptions: powerbi.VisualInitOptions;
             let debugVisual: powerbi.visuals.system.DebugVisual;
             let getSpy: jasmine.Spy;
+            let getJSONSpy: jasmine.Spy;
             let getScriptSpy: jasmine.Spy;
 
             beforeEach(() => {
@@ -203,6 +220,12 @@ module powerbitests {
                     d.reject();
                     return d.promise();
                 });
+                
+                getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
+                    let d = $.Deferred();
+                    d.reject();
+                    return d.promise();
+                });                
 
                 getScriptSpy = spyOn($, 'getScript').and.callFake(url => {
                     let d = $.Deferred();
@@ -227,6 +250,21 @@ module powerbitests {
                     expect(elem.length).toBe(1);
                 });
             });
+            
+            describe("refresh", () => {
+                it("Should not try to get script, json, or css if status call fails", () => {
+                    expect(getSpy.calls.count()).toBe(1);
+                    expect(getJSONSpy).not.toHaveBeenCalled();
+                    expect(getScriptSpy).not.toHaveBeenCalled();
+
+                    (<any>debugVisual).reloadAdapter();
+
+                    expect(getSpy.calls.count()).toBe(2);
+                    expect(getJSONSpy).not.toHaveBeenCalled();
+                    expect(getScriptSpy).not.toHaveBeenCalled();
+                });
+
+            });            
 
             describe("auto refresh", () => {
                 beforeEach(() => {
@@ -277,7 +315,6 @@ module powerbitests {
                 it("Should display error message", () => {
                     let elem = $element.find('.debugVisualContainer .errorContainer');
                     expect(elem.length).toBe(1);
-                    expect(getSpy).not.toHaveBeenCalled();
                 });
 
                 it("Should not attempt to contact server", () => {

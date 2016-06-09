@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import AxisType = powerbi.visuals.axisType;
     import ComboChart = powerbi.visuals.ComboChart;
@@ -86,6 +88,92 @@ module powerbitests {
 
             expect((<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMappings[0].categorical.values).group.by.items).toBeUndefined();
         });
+        
+        it('CustomizeQuery does not remove series when there are column values', () => {
+            let dataViewMappings = createCompiledDataViewMapping(true);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect((<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMappings[0].categorical.values).group.by.items).toBeDefined();
+        });
+        
+        it('CustomizeQuery scalar type, no scalar axis flag', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: null
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true, ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime), objects);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect(dataViewMappings[0].categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+            expect(dataViewMappings[1].categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+        });
+
+        it('CustomizeQuery non-scalar type, scalar axis flag', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: 'Scalar',
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true, ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), objects);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect(dataViewMappings[0].categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            // TODO: why isn't the top sampling set on the lineMapping?
+            //expect(dataViewMappings[1].categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+        });
+
+        it('CustomizeQuery scalar type, scalar axis flag', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: 'Scalar',
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true, ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.DateTime), objects);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect(dataViewMappings[0].categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+            expect(dataViewMappings[1].categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+        });
+
+        it('CustomizeQuery non-scalar type, no scalar axis flag', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: null,
+                }
+            };
+            let dataViewMappings = createCompiledDataViewMapping(true, ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), objects);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect(dataViewMappings[0].categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            //expect(dataViewMappings[1].categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+        });
+        
+        it('CustomizeQuery DataVolume', () => {
+            let dataViewMappings = createCompiledDataViewMapping(true);
+
+            ComboChart.customizeQuery({
+                dataViewMappings: dataViewMappings
+            });
+
+            expect(dataViewMappings[0].categorical.dataVolume).toEqual(4);
+            expect(dataViewMappings[1].categorical.dataVolume).toEqual(4);
+        });
 
         it('Sortable roles with categorical axis', () => {
             let objects: DataViewObjects = {
@@ -108,33 +196,26 @@ module powerbitests {
                     axisType: 'Scalar',
                 }
             };
-            let dataViewMappings = createCompiledDataViewMapping(true);
+            let dataViewMappings = createCompiledDataViewMapping(true, ValueType.fromDescriptor({dateTime: true}), objects);
             expect(dataViewMappings.length).toBe(2);
-            dataViewMappings[0].metadata.objects = objects;
 
             expect(ComboChart.getSortableRoles({
                 dataViewMappings: [dataViewMappings[0]]
             })).toBeNull();
         });
 
-        it('CustomizeQuery does not remove series when there are column values', () => {
-            let dataViewMappings = createCompiledDataViewMapping(true);
-
-            ComboChart.customizeQuery({
-                dataViewMappings: dataViewMappings
-            });
-
-            expect((<powerbi.data.CompiledDataViewGroupedRoleMapping>dataViewMappings[0].categorical.values).group.by.items).toBeDefined();
-        });
-
-        function createCompiledDataViewMapping(includeColumnValues: boolean): CompiledDataViewMapping[] {
+        function createCompiledDataViewMapping(includeColumnValues: boolean, categoryType?: ValueType, objects?: DataViewObjects): CompiledDataViewMapping[] {
+            let categoryItems: powerbi.data.CompiledDataViewRoleItem[] = [{ queryName: 'c1', type: ValueType.fromDescriptor({text: true}) }];
+            if (categoryType)
+                categoryItems[0].type = categoryType;
+            
             let result: CompiledDataViewMapping[] = [{
                 metadata: {
                 },
                 categorical: {
                     categories: {
                         for: {
-                            in: { role: 'Category', items: [{ queryName: "c1" }] }
+                            in: { role: 'Category', items: categoryItems }
                         },
                         dataReductionAlgorithm: { top: {} },
                     },
@@ -153,12 +234,12 @@ module powerbitests {
                 categorical: {
                     categories: {
                         for: {
-                            in: { role: 'Category', items: [{ queryName: "c1" }] }
+                            in: { role: 'Category', items: categoryItems }
                         },
                     },
                     values: {
                         select: [
-                            { for: { in: { role: 'Y', items: [{ queryName: 'y1' }] } } },
+                            { for: { in: { role: 'Y2', items: [{ queryName: 'y2' }] } } },
                         ],
                     }
                 }

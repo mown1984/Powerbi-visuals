@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import getLocalizedString = powerbi.visuals.valueFormatter.getLocalizedString;
      

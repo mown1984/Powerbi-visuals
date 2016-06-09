@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import BaseAnimator = powerbi.visuals.BaseAnimator;
     import IAnimatorOptions = powerbi.visuals.IAnimatorOptions;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -50,7 +52,8 @@ module powerbitests.customVisuals.sampleDataViews {
                     source: {
                         displayName: BulletChartData.ColumnCategory,
                         roles: { "Category": true },
-                        type: ValueType.fromDescriptor({ text: true })
+                        type: ValueType.fromDescriptor({ text: true }),
+                        
                     },
                     values: this.valuesCategory
                 }
@@ -109,9 +112,7 @@ module powerbitests.customVisuals.sampleDataViews {
                     },
                     values: this.valuesMaximum
                 }
-                ],
-                null,
-                columnNames).build();
+                ], columnNames).build();
         }
     }
 }

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import converterHelper = powerbi.visuals.converterHelper;
     import ValueType = powerbi.ValueType;

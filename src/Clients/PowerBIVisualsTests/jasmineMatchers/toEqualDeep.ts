@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module jasmine {
     type ObjectOrArray = {} | any[];
     type ObjectKey = string | number;

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     import SlicerOrientation = slicerOrientation.Orientation;
 
@@ -43,7 +45,6 @@ module powerbi.visuals {
 
     export class SlicerWebBehavior implements IInteractiveBehavior {
         private behavior: IInteractiveBehavior;
-        private static isTouch: boolean;
 
         public bindEvents(options: SlicerOrientationBehaviorOptions, selectionHandler: ISelectionHandler): void {
             this.behavior = this.createWebBehavior(options);
@@ -116,31 +117,15 @@ module powerbi.visuals {
         }
 
         private static bindSlicerItemSelectionEvent(slicers: D3.Selection, selectionHandler: ISelectionHandler, slicerSettings: SlicerSettings, interactivityService: IInteractivityService): void {
-            SlicerWebBehavior.isTouch = false;
-
-            slicers.on("touchstart", (d: SlicerDataPoint) => {
-                SlicerWebBehavior.isTouch = true;
-            });
-
-            slicers.on("pointerdown", (d: SlicerDataPoint) => {
-                let e: PointerEvent = <any>d3.event;
-
-                if (e && e.pointerType === "touch") {
-                    SlicerWebBehavior.isTouch = true;
-                }
-            });
-
             slicers.on("click", (d: SlicerDataPoint) => {
                 d3.event.preventDefault();
                 if (d.isSelectAllDataPoint) {
                     selectionHandler.toggleSelectionModeInversion();
                 }
                 else {
-                    selectionHandler.handleSelection(d, SlicerWebBehavior.isTouch || SlicerWebBehavior.isMultiSelect(d3.event, slicerSettings, interactivityService));
+                    selectionHandler.handleSelection(d, SlicerWebBehavior.isMultiSelect(d3.event, slicerSettings, interactivityService));
                 }
                 selectionHandler.persistSelectionFilter(slicerProps.filterPropertyIdentifier);
-
-                SlicerWebBehavior.isTouch = false;
             });
         }
 

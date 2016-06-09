@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import ColorHelper = powerbi.visuals.ColorHelper;
     import SQExprShortSerializer = powerbi.data.SQExprShortSerializer;

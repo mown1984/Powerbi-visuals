@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -117,6 +119,7 @@ module powerbi.visuals {
         gaugeSmallViewPortProperties?: GaugeSmallViewPortProperties;
         animator?: IGenericAnimator;
         tooltipsEnabled?: boolean;
+        tooltipBucketEnabled?: boolean;
     }
 
     export interface GaugeDataViewObjects extends DataViewObjects {
@@ -219,6 +222,7 @@ module powerbi.visuals {
         private showTargetLabel: boolean;
 
         private tooltipsEnabled: boolean;
+        private tooltipBucketEnabled: boolean;
 
         private hostService: IVisualHostServices;
 
@@ -234,6 +238,7 @@ module powerbi.visuals {
                 }
                 this.animator = options.animator;
                 this.tooltipsEnabled = options.tooltipsEnabled;
+                this.tooltipBucketEnabled = options.tooltipBucketEnabled;
             }
         }
 
@@ -387,7 +392,7 @@ module powerbi.visuals {
             
             let dataView = this.dataView = options.dataViews[0];  
             let reader = data.createIDataViewCategoricalReader(dataView);
-            this.data = Gauge.converter(reader, this.tooltipsEnabled);
+            this.data = Gauge.converter(reader, this.tooltipBucketEnabled);
             this.targetSettings = this.data.targetSettings;
             this.dataView.single = { value: this.data.total };
 
@@ -468,7 +473,7 @@ module powerbi.visuals {
         /**
          * Populates Gauge data based on roles or axis settings.
          */
-        private static parseGaugeData(reader: data.IDataViewCategoricalReader): GaugeTargetData {
+        private static parseGaugeData(reader: data.IDataViewCategoricalReader, tooltipBucketEnabled?: boolean): GaugeTargetData {
             let dataViewObjects = <GaugeDataViewObjects>reader.getStaticObjects();
             let metadataColumn = reader.getCategoryMetadataColumn(gaugeRoleNames.y);
             let axisObject = dataViewObjects ? dataViewObjects.axis : null;
@@ -552,14 +557,18 @@ module powerbi.visuals {
                 }
             }
 
+            if (tooltipBucketEnabled) {
+                data.tooltipItems = TooltipBuilder.addTooltipBucketItem(reader, data.tooltipItems, 0);
+            }
+
             return data;
         }
         
         /** Note: Made public for testability */
-        public static converter(reader: data.IDataViewCategoricalReader, tooltipsEnabled: boolean = true): GaugeData {
+        public static converter(reader: data.IDataViewCategoricalReader, tooltipBucketEnabled: boolean = true): GaugeData {
             let objectSettings = reader.getStaticObjects();
             let metadataColumn = reader.getValueMetadataColumn(gaugeRoleNames.y);
-            let gaugeData = Gauge.parseGaugeData(reader);
+            let gaugeData = Gauge.parseGaugeData(reader, tooltipBucketEnabled);
             let value = gaugeData.value;
             
             return {

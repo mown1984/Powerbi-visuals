@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import Shapes = powerbi.visuals.shapes;
     import Point = powerbi.visuals.shapes.Point;

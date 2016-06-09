@@ -3,7 +3,6 @@
     "editor.insertSpaces": true,
     "files.exclude": {
         "**/node_modules": true,
-        "build": true,
         "VisualsTests": true,
         "**/obj": true
     }

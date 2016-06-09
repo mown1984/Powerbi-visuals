@@ -21,11 +21,11 @@ coverage
 
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 /build/Release
-/build
+
+node_modules/
 
 # Dependency directory
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
-node_modules
 Docs
 /src/.vs
 
@@ -35,41 +35,21 @@ src/Clients/Externals/ThirdPartyIP/JasmineJQuery/jasmine-jquery.js
 # Combine/Min/PNG Files
 src/Clients/Visuals/images/visuals.sprites.png
 src/Clients/Visuals/styles/sprites.less
+src/Clients/PowerBIVisualsPlayground/**/*.js
+!src/Clients/PowerBIVisualsPlayground/gulpProject.js
+src/Clients/PowerBIVisualsPlayground/**/*.d.ts
+src/Clients/PowerBIVisualsPlayground/visuals.min.css
+src/Clients/PowerBIVisualsPlayground/visuals.css
+src/Clients/PowerBIVisualsPlayground/images/visuals.sprites.png
+src/Clients/PowerBIVisualsPlayground/.vs
+src/Clients/PowerBIVisualsPlayground/bin
 
 # Test Files
 VisualsTests
-src/Clients/PowerBIVisualsTests/obj/
+src/Clients/PowerBIVisualsTests/obj/**/*.css
 src/Clients/PowerBIVisualsTests/**/*.js
-
-# Obj dirs
-src/Clients/**/obj/*.*
-
-# IDE temp data
-.sublime-gulp.cache
-
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# User-specific files (MonoDevelop/Xamarin Studio)
-*.userprefs
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-
-# Visual Studio 2015 cache/options directory
-.vs/
+!src/Clients/PowerBIVisualsTests/karma.conf.js
+!src/Clients/PowerBIVisualsTests/webpack.config.js
 
 # CustomVisuals packages
 src/Clients/CustomVisuals/services/*.js
@@ -79,17 +59,17 @@ src/Clients/CustomVisuals/visuals/*/package/**/*.ts
 src/Clients/CustomVisuals/visuals/**/*.js
 src/Clients/CustomVisuals/visuals/**/*.css
 
-# PowerBIVisualsPlayground
-src/Clients/PowerBIVisualsPlayground/**/*.css
-src/Clients/PowerBIVisualsPlayground/**/*.js
-src/Clients/PowerBIVisualsPlayground/**/*.map
-!src/Clients/PowerBIVisualsPlayground/gulpProject.js
-src/Clients/PowerBIVisualsPlayground/**/*.d.ts
-src/Clients/PowerBIVisualsPlayground/images/visuals.sprites.png
-src/Clients/PowerBIVisualsPlayground/styles/**/*.png
+# Dont ignore telemetry files
+!**/telemetry/*.ts
 
-# Styles
-src/Clients/**/styles/*.css
+# Obj dirs
+src/Clients/**/obj/*.*
+
+# IDE temp data
+.sublime-gulp.cache
 
 # Images
 lib/images/ui-icons_222222_256x240.png
+
+# Package
+lib/tests

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi.data {
     export interface ScriptInputColumn {
         /** The queryName of the corresponding Select from the associated SemanticQuery providing the data for this column. */ 

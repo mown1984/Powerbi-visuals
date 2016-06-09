@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.data {
     import DataViewTransform = powerbi.data.DataViewTransform;
@@ -244,7 +246,12 @@ module powerbi.data {
                     let seriesIdentity = getScopeIdentity(dynamicSeriesMetadata.identityFrom, seriesIndex, seriesValue, dynamicSeriesMetadata.column.type);
 
                     for (let measure of this.dynamicMeasureColumns) {
-                        let column = _.clone(measure);
+
+                        // Note related to VSTS 7705322: It is possible that the 'measure' object is part of visual DataView with prototypal inheritance,
+                        // in which case _.clone() would not copy any inherited properties. Meanwhile, this builder class can also be used for building
+                        // query DataView, hence this code should not produce an inherited object from 'measure'.
+                        let column = _.toPlainObject<DataViewMetadataColumn>(measure);
+
                         column.groupName = <string>seriesValue;
 
                         pushIfNotExists(metadataColumns, column);

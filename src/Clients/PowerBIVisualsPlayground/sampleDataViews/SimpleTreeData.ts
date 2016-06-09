@@ -24,6 +24,8 @@
 *  THE SOFTWARE.
 */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals.sampleDataViews {
     
     export class SimpleTreeData extends SampleDataViews implements ISampleDataViewsMethods {

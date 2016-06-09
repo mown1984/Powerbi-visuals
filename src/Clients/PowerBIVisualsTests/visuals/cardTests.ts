@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import Card = powerbi.visuals.Card;
     import cardCapabilities = powerbi.visuals.cardCapabilities;

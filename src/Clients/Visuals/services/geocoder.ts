@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals.services {
     import CategoryTypes = MapUtil.CategoryTypes;
     import Settings = MapUtil.Settings;
@@ -189,25 +191,23 @@ module powerbi.visuals.services {
     export class GeocodePointQuery extends GeocodeQuery {
         public latitude: number;
         public longitude: number;
+        public entities: string[];
        
-        constructor(latitude: number, longitude: number) {
+        constructor(latitude: number, longitude: number, entities:string[]) {
             super([latitude, longitude].join(), "Point");
             this.latitude = latitude;
             this.longitude = longitude;
+            this.entities = entities;
         }           
 
         public getUrl(): string {
+            debug.assert(
+                this.entities.every(e => !!_.findKey(BingEntities, be => be === e)),
+                "All entities should match one of the allowed BingEntities");
             let url = Settings.BingUrl + "/" +
                 [this.latitude, this.longitude].join() + "?" +
                 "key=" + Settings.BingKey +
-                "&includeEntityTypes=" + [
-                    BingEntities.Address,
-                    BingEntities.Neighborhood,
-                    BingEntities.PopulatedPlace,
-                    BingEntities.Postcode1,
-                    BingEntities.AdminDivision1,
-                    BingEntities.AdminDivision2,
-                    BingEntities.CountryRegion].join() +
+                (_.isEmpty(this.entities) ? "" : "&includeEntityTypes=" + this.entities.join()) +
                 "&include=ciso2";  
             return url;
         }
@@ -312,8 +312,8 @@ module powerbi.visuals.services {
         return geocodeCore(new GeocodeBoundaryQuery(latitude, longitude, category, levelOfDetail, maxGeoData), options);
     }
 
-    export function geocodePoint(latitude: number, longitude: number, options?: GeocodeOptions): any {
-        return geocodeCore(new GeocodePointQuery(latitude, longitude), options);
+    export function geocodePoint(latitude: number, longitude: number, entities: string[], options?: GeocodeOptions): any {
+        return geocodeCore(new GeocodePointQuery(latitude, longitude, entities), options);
     }
 
     function dequeue(decrement: number = 0) {
@@ -408,6 +408,7 @@ module powerbi.visuals.services {
                             let index = getBestResultIndex(resources, item.query);
                             let pointData = resources[index].point.coordinates;
                             let addressData = resources[index].address;
+                            let name = resources[index].name;
                             let coordinates: IGeocodeResource = {
                                 latitude: parseFloat(pointData[0]),
                                 longitude: parseFloat(pointData[1]),
@@ -421,11 +422,12 @@ module powerbi.visuals.services {
                                 countryRegionIso2: addressData.countryRegionIso2, 
                                 countryRegion: addressData.countryRegion, 
                                 landmark: addressData.landmark,  
+                                name: name,
                             };
                             completeRequest(item, null, coordinates);
                         }
                         else {
-                            completeRequest(item, new Error("Geocode result is empty."));
+                            completeRequest(item, null, null);
                         }
                     }
                     else {

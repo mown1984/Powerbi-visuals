@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi.data {
     /** Defines a match against all instances of a given DataView scope. */
     export interface DataViewScopeWildcard {

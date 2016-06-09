@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     import TablixFormattingProperties = powerbi.visuals.controls.TablixFormattingPropertiesTable;
     import TablixUtils = controls.internal.TablixUtils;
@@ -225,7 +227,7 @@ module powerbi.visuals {
                 value = row.values[columnIndex];
             }
 
-            let cellItem = new TablixUtils.TablixVisualCell(value, isTotal, columnItem, this.formatter, true);
+            let cellItem = new TablixUtils.TablixVisualCell(value, isTotal, columnItem, this.formatter, false);
             cellItem.position = position;
 
             let tableRow = <DataViewVisualTableRow>rowItem;

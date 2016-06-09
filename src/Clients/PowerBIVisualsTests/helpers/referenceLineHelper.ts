@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.helpers {
     const dashedArray = '5px, 5px';
     const dottedArray = '1px, 5px';

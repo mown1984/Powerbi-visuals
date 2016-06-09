@@ -24,6 +24,8 @@
 *  THE SOFTWARE.
 */
 
+/// <reference path="../../_references.ts"/>
+
 declare module powerbi.extensibility {
     export interface ISelectionId { }
 

@@ -30,6 +30,9 @@
  * - Remove deprecated methods (onDataChange, onResizing, onViewModeChange) 
  * - Add hostAdapter for host services versioning
  */
+
+/// <reference path="../../_references.ts"/>
+
 declare module powerbi.extensibility.v100 {
     /**
      * Represents a visualization displayed within an application (PowerBI dashboards, ad-hoc reporting, etc.).

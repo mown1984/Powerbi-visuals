@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -62,30 +64,27 @@ module powerbitests.customVisuals.sampleDataViews {
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesCategoryGroup.map(x => x[0])
-                }
-                ],
-                null,
+                },
                 {
+                    isGroup: true,
                     source: { 
                         displayName: ValueByNameGroupData.ColumnCategoryGroup,
                         roles: { Image: true },
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesCategoryGroup.map(x => x[1]),
-                    columns: [
-                        {
-                            source: {
-                                displayName: ValueByNameGroupData.ColumnValues,
-                                isMeasure: true,
-                                roles: { Values: true },
-                                type: ValueType.fromDescriptor({ numeric: true }),
-                                objects: { dataPoint: { fill: { solid: { color: "purple" } } } },
-                            },
-                            values: this.valuesValue
-                        },
-                    ]
-                },
-                columnNames).build();
+                }
+                ],[
+                {
+                    source: {
+                        displayName: ValueByNameGroupData.ColumnValues,
+                        isMeasure: true,
+                        roles: { Values: true },
+                        type: ValueType.fromDescriptor({ numeric: true }),
+                        objects: { dataPoint: { fill: { solid: { color: "purple" } } } },
+                    },
+                    values: this.valuesValue
+                }], columnNames).build();
         }
     }
 }

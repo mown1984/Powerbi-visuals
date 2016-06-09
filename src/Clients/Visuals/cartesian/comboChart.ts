@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals {
     export interface ComboChartDataViewObjects extends DataViewObjects {
         general: ComboChartDataViewObject;
@@ -77,16 +79,30 @@ module powerbi.visuals {
                 if (_.isEmpty(seriesSelect.for.in.items))
                     columnValuesMapping.group.by.items = undefined;
             }
+            
+            let isScalar = CartesianChart.detectScalarMapping(columnMapping);
 
             if (columnMapping && columnMapping.categorical) {
                 columnMapping.categorical.dataVolume = 4;
-                CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, columnMapping);
+                if (isScalar) {
+                    let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>columnMapping.categorical.categories;
+                    dataViewCategories.dataReductionAlgorithm = { sample: {} };
+                }
+                else {
+                    CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, columnMapping);    
+                }
             }
 
             let lineMapping = options.dataViewMappings.length > 1 && options.dataViewMappings[1];
             if (lineMapping && lineMapping.categorical) {
                 lineMapping.categorical.dataVolume = 4;
-                CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, lineMapping);
+                if (isScalar) {
+                    let dataViewCategories = <data.CompiledDataViewRoleForMappingWithReduction>lineMapping.categorical.categories;
+                    dataViewCategories.dataReductionAlgorithm = { sample: {} };
+                }
+                else {
+                    CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, lineMapping);
+                }
             }
         }
 

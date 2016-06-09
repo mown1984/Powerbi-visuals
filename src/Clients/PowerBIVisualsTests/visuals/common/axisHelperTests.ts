@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import AxisHelper = powerbi.visuals.AxisHelper;
     import ValueType = powerbi.ValueType;
@@ -1188,7 +1190,9 @@ module powerbitests {
             var margins = axisHelperTickLabelBuilder.buildTickLabelMargins(true, false, true, true, true, false);
 
             expect(margins.xMax).toBe(25);
-            expect(margins.yLeft).toBe(17);
+            
+            // 16 for phantomjs(2.1.1) and 17 for phantomjs(2.0.0)
+            expect(powerbitests.helpers.isInRange(margins.yLeft, 16, 17)).toBe(true);
             
             // 11 for Mac OS and 12 for Windows
             expect(powerbitests.helpers.isInRange(margins.yRight, 15, 16)).toBe(true);

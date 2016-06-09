@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import AxisType = powerbi.visuals.axisType;
     import AxisScale = powerbi.visuals.axisScale;

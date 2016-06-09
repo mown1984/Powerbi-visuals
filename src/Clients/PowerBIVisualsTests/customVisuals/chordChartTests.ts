@@ -24,8 +24,11 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ChordChart;
+    import VisualBuilderBase = powerbitests.customVisuals.VisualBuilderBase;
     import helpers = powerbitests.helpers;
     import PixelConverter = jsCommon.PixelConverter;
     import ValueByNameGroupData = powerbitests.customVisuals.sampleDataViews.ValueByNameGroupData;

@@ -24,8 +24,11 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
     import DataRoleHelper = powerbi.data.DataRoleHelper;
 
     interface ScatterChartMeasureMetadata {
@@ -60,12 +63,15 @@ module powerbi.visuals.samples {
         axesLabels: ChartAxesLabels;
     }
 
-    export interface EnhancedScatterChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
+    export interface EnhancedScatterChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint {
         x: any;
         y: any;
         size: any;
         radius: RadiusData;
         fill: string;
+        labelFill?: string;
+        labelFontSize: any;
+        contentPosition: ContentPositions;
         formattedCategory: jsCommon.Lazy<string>;
         colorFill?: string;
         svgurl?: string;
@@ -108,7 +114,6 @@ module powerbi.visuals.samples {
         private AxisGraphicsContextClassName = 'axisGraphicsContext';
         public static DefaultBubbleOpacity = 0.85;
         public static DimmedBubbleOpacity = 0.4;
-        private static DataLabelsOffset = 5;
         private static ClassName = 'enhancedScatterChart';
         private static MainGraphicsContextClassName = 'mainGraphicsContext';
         private static LegendLabelFontSizeDefault: number = 9;
@@ -172,7 +177,7 @@ module powerbi.visuals.samples {
         private oldBackdrop: string;
         private textProperties: TextProperties = {
             fontFamily: 'wf_segoe-ui_normal',
-            fontSize: jsCommon.PixelConverter.toString(EnhancedScatterChart.AxisFontSize),
+            fontSize: PixelConverter.toString(EnhancedScatterChart.AxisFontSize),
         };
         private behavior: IInteractiveBehavior;
         private animator: IGenericAnimator;
@@ -1168,7 +1173,8 @@ module powerbi.visuals.samples {
                 indicies = metadata.idx,
                 formatStringProp = scatterChartProps.general.formatString,
                 dataValueSource = dataValues.source,
-                grouped = dataValues.grouped();
+                grouped = dataValues.grouped(),
+                fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
 
             let colorHelper = new ColorHelper(colorPalette, scatterChartProps.dataPoint.fill, defaultDataPointColor);
 
@@ -1282,7 +1288,8 @@ module powerbi.visuals.samples {
                         identity: identity,
                         tooltipInfo: tooltipInfo,
                         labelFill: labelSettings.labelColor,
-                        labelFontSize: labelSettings.fontSize,
+                        labelFontSize: fontSizeInPx,
+                        contentPosition: ContentPositions.MiddleLeft, // 8
                         colorFill: colorFill,
                         shapeSymbolType: shapeSymbolType,
                         svgurl: image,
@@ -1658,9 +1665,9 @@ module powerbi.visuals.samples {
                 //fix bug 3863: drawDefaultLabelsForDataPointChart add to datapoints[xxx].size = object , which causes when
                 //category labels is on and Fill Points option off to fill the points when mouse click occures because of default size
                 //is set to datapoints.
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(clonedDataPoints, this.mainGraphicsG, layout, this.viewportIn);
-                let offset = dataLabelsSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
-                this.mainGraphicsG.select('.labels').attr('transform', SVGUtil.translate(offset, 0));
+                let labels: D3.UpdateSelection = dataLabelUtils.drawDefaultLabelsForDataPointChart(clonedDataPoints, this.mainGraphicsG, layout, this.viewportIn);
+                if (labels)
+                    labels.attr('transform', (d) => SVGUtil.translate(d.size.width / 2, 0));
             }
             else {
                 dataLabelUtils.cleanDataLabels(this.mainGraphicsG);
@@ -1726,11 +1733,11 @@ module powerbi.visuals.samples {
 
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
-            let fontSizeInPx = jsCommon.PixelConverter.fromPoint(labelSettings.fontSize);
-            let offset = labelSettings.fontSize * EnhancedScatterChart.DataLabelsOffset;
+            let fontSizeInPx = PixelConverter.fromPoint(labelSettings.fontSize);
+            let fontFamily: string = dataLabelUtils.LabelTextProperties.fontFamily;
 
             return {
-                labelText: function (d: EnhancedScatterChartDataPoint) {
+                labelText: (d: EnhancedScatterChartDataPoint) => {
                     return dataLabelUtils.getLabelFormattedText({
                         label: d.formattedCategory.getValue(),
                         fontSize: labelSettings.fontSize,
@@ -1738,18 +1745,17 @@ module powerbi.visuals.samples {
                     });
                 },
                 labelLayout: {
-                    x: function (d: EnhancedScatterChartDataPoint) { return xScale(d.x) - offset; },
-                    y: function (d: EnhancedScatterChartDataPoint) {
+                    x: (d: EnhancedScatterChartDataPoint) => xScale(d.x),
+                    y: (d: EnhancedScatterChartDataPoint) => {
                         let margin = visuals.ScatterChart.getBubbleRadius(d.radius, sizeRange, viewport) + dataLabelUtils.labelMargin;
                         return labelSettings.position === 0 /* Above */ ? yScale(d.y) - margin : yScale(d.y) + margin;
                     },
                 },
-                filter: function (d: EnhancedScatterChartDataPoint) {
-                    return (d != null && d.formattedCategory.getValue() != null);
-                },
+                filter: (d: EnhancedScatterChartDataPoint) => (d != null && d.formattedCategory.getValue() != null),
                 style: {
-                    'fill': function (d: EnhancedScatterChartDataPoint) { return d.labelFill; },
+                    'fill': (d: EnhancedScatterChartDataPoint) => d.labelFill,
                     'font-size': fontSizeInPx,
+                    'font-family': fontFamily,
                 },
             };
         }

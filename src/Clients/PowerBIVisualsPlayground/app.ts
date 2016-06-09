@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="./_references.ts"/>
+
 interface JQuery {
     /** Demonstrates how Power BI visual creation could be implemented as jQuery plugin */
     visual(plugin: Object, dataView?: Object): JQuery;
@@ -36,7 +38,7 @@ enum PlaygroundViewType {
 }
 
 module powerbi.visuals {
-
+  
     import defaultVisualHostServices = powerbi.visuals.defaultVisualHostServices;
     import HostControls = powerbi.visuals.HostControls;
     import IHost = powerbi.visuals.IHost;

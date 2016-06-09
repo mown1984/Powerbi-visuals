@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import GaugeVisual = powerbi.visuals.Gauge;
@@ -56,6 +58,10 @@ module powerbitests {
                 }, {
                     displayName: "col4",
                     roles: { "TargetValue": true },
+                    isMeasure: true
+                }, {
+                    displayName: "tooltip",
+                    roles: { "Tooltips": true },
                     isMeasure: true
                 }]
         };
@@ -830,7 +836,7 @@ module powerbitests {
 
         it("Gauge_tooltip_work", () => {
             gaugeDataBuilder.singleValue = 500;
-            gaugeDataBuilder.values = [[10], [0], [500], [200]];
+            gaugeDataBuilder.values = [[10], [0], [500], [200], [120]];
             gaugeDataBuilder.onDataChanged();
 
             let data = GaugeVisual.converter(gaugeDataBuilder.reader);
@@ -845,7 +851,7 @@ module powerbitests {
                     max: 500,
                     target: 200
                 },
-                tooltipInfo: [{ displayName: "col1", value: "$10" }, { displayName: "col4", value: "$200" }],
+                tooltipInfo: [{ displayName: "col1", value: "$10" }, { displayName: "col4", value: "$200" }, { displayName: "tooltip", value: "120" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,
@@ -950,7 +956,7 @@ module powerbitests {
 
         it("Gauge_Nulls_Tooltip_Data", () => {
             gaugeDataBuilder.singleValue = null;
-            gaugeDataBuilder.values = [[null], [null], [null], [null]];
+            gaugeDataBuilder.values = [[null], [null], [null], [null], [null]];
 
             gaugeDataBuilder.onDataChanged();
 
@@ -987,7 +993,7 @@ module powerbitests {
 
         it("Gauge_onlyMin&Max_Tooltip_Data", () => {
             gaugeDataBuilder.singleValue = null;
-            gaugeDataBuilder.values = [[null], [100], [300], [null]];
+            gaugeDataBuilder.values = [[null], [100], [300], [null], [120]];
 
             gaugeDataBuilder.onDataChanged();
 
@@ -999,7 +1005,7 @@ module powerbitests {
                 total: null,
                 metadataColumn: gaugeDataBuilder.dataViewMetadata.columns[0],
                 targetSettings: { min: 100, max: 300, target: null },
-                tooltipInfo: [{ displayName: "col1", value: "(Blank)" }, { displayName: "col4", value: "(Blank)" }],
+                tooltipInfo: [{ displayName: "col1", value: "(Blank)" }, { displayName: "col4", value: "(Blank)" }, { displayName: "tooltip", value: "120" }],
                 dataLabelsSettings: {
                     show: true,
                     displayUnits: 0,

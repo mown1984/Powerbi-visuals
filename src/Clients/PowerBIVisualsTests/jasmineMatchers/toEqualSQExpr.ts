@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module jasmine {
     import SQExpr = powerbi.data.SQExpr;
 

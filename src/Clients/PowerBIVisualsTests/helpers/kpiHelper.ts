@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.kpiHelper {
     import ValueType = powerbi.ValueType;
     import DataViewTransform = powerbi.data.DataViewTransform;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi {
     import DataViewObjectDescriptor = powerbi.data.DataViewObjectDescriptor;
     import DataViewObjectDescriptors = powerbi.data.DataViewObjectDescriptors;
@@ -331,6 +333,7 @@ declare module powerbi {
         countryRegionIso2: string;
         countryRegion: string;
         landmark: string;
+        name: string;
     }
 
     export interface IGeocodeBoundaryPolygon {

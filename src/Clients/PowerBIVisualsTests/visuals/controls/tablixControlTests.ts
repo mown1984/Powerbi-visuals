@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import Controls = powerbi.visuals.controls;
     import InternalControls = powerbi.visuals.controls.internal;

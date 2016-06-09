@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     powerbitests.mocks.setLocale();
     import VisualClass = powerbi.visuals.samples.WordCloud;

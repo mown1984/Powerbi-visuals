@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import SelectionIdBuilder = powerbi.extensibility.SelectionIdBuilder;
     import SelectionManager = powerbi.extensibility.SelectionManager;

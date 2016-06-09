@@ -26,7 +26,10 @@
 
 // TODO(aafische, 2016.05.16) all methods here are copy-pasted from .\src\Clients\JsCommon\obj\utility.d.ts
 // Eventually, the powerbi.visuals namespace will be merged back into the powerbi namespace, at which point 
-// this here file will be obsolete and deleted.  
+// this here file will be obsolete and deleted.
+
+/// <reference path="../_references.ts"/>
+
 declare module powerbi.visuals.telemetry {
     
     interface ITelemetryService {

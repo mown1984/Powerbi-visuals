@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     //#region imports
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
@@ -64,7 +66,7 @@ module powerbitests {
     const FooterClassName = "tablixDiv tablixCellContentHost tablixValueTotal tableFooterCell";
     const CssClassTablixValueNumeric = " tablixValueNumeric";
     const EmptyHeaderCell = "\xa0";
-    const NullCell = "(Blank)";
+    //const NullCell = "(Blank)";
 
     const dataTypeNumber = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double);
     const dataTypeString = ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text);
@@ -1575,7 +1577,7 @@ module powerbitests {
 
                 expect(layoutManager["_allowHeaderResize"]).toBe(false);
                 let viewMode = powerbi.ViewMode.Edit;
-                tableVisual["hostServices"] = {
+                tableVisual["hostServices"] = <any> {
                     getViewMode: () => { return viewMode; }
                 };
                 tableVisual.onViewModeChanged(viewMode);
@@ -1993,7 +1995,7 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName],
                     [EmptyHeaderCell],
-                    [NullCell]
+                    [EmptyHeaderCell]
                 ];
 
                 validateTable(expectedCells);
@@ -2028,10 +2030,10 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName, groupSource2.displayName, measureSource1.displayName],
                     ["A", "a1", "100.0"],
-                    [EmptyHeaderCell, NullCell, "103.0"],
+                    [EmptyHeaderCell, EmptyHeaderCell, "103.0"],
                     [EmptyHeaderCell, "a3", "106.0"],
                     ["B", EmptyHeaderCell, "112.0"],
-                    [NullCell, EmptyHeaderCell, NullCell]
+                    [EmptyHeaderCell, EmptyHeaderCell, EmptyHeaderCell]
                 ];
 
                 validateTable(expectedCells);
@@ -2786,7 +2788,7 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName],
                     [EmptyHeaderCell],
-                    [NullCell]
+                    [EmptyHeaderCell]
                 ];
 
                 validateTable(expectedCells);
@@ -2801,10 +2803,10 @@ module powerbitests {
                 let expectedCells: string[][] = [
                     [groupSource1.displayName, groupSource2.displayName, measureSource1.displayName],
                     ["A", "a1", "100.0"],
-                    [EmptyHeaderCell, NullCell, "103.0"],
+                    [EmptyHeaderCell, EmptyHeaderCell, "103.0"],
                     [EmptyHeaderCell, "a3", "106.0"],
                     ["B", EmptyHeaderCell, "112.0"],
-                    [NullCell, EmptyHeaderCell, NullCell]
+                    [EmptyHeaderCell, EmptyHeaderCell, EmptyHeaderCell]
                 ];
 
                 validateTable(expectedCells);

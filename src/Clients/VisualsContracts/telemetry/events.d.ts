@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi.visuals.telemetry {
     
     export interface ITelemetryEventI<T> extends ITelemetryEvent {

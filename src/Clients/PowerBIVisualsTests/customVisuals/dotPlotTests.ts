@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.DotPlot;
     import ValueByNameData = powerbitests.customVisuals.sampleDataViews.ValueByNameData;
@@ -63,6 +65,26 @@ module powerbitests.customVisuals {
 						expect(window.getComputedStyle(x).fontSize).toBe("12px");
 					});
                     done();
+                });
+
+                it("X-Axis Tick Labels have tooltip", (done) => {
+                    dataView = defaultDataViewBuilder.getLongNamesDataView();
+                    visualBuilder.update(dataView);
+                    setTimeout(() => {
+                        let numOfTicks: number = $('.tick').length;
+                        /*TODO: run foreach tick*/
+                        for (let i = 0; i < numOfTicks; i++)
+                            expect(powerbitests.helpers.findElementText($('.tick').find('text').eq(i))).toContain('…');
+
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(0))).toEqual('Sir Demetrius');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(1))).toEqual('Sir Montgomery');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(2))).toEqual('Sir Remington');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(3))).toEqual('Sir Forrester');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(4))).toEqual('Sir Christopher');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(5))).toEqual('Miss Annabelle');
+                        expect(powerbitests.helpers.findElementTitle($('.tick').find('text').eq(6))).toEqual('Miss Emmaline');
+                        done();
+                    }, powerbitests.DefaultWaitForRender);
                 });
             });
         });

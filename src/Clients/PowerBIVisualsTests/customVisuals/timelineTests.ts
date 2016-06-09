@@ -24,6 +24,8 @@
 *  THE SOFTWARE.
 */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import GranularityType = powerbi.visuals.samples.GranularityType;
     import VisualClass = powerbi.visuals.samples.Timeline;

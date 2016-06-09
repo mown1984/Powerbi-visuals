@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.helpers {
     //(<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 999999;
 

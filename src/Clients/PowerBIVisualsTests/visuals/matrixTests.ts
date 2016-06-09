@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     //#region imports
     import CompiledDataViewMapping = powerbi.data.CompiledDataViewMapping;
@@ -55,7 +57,7 @@ module powerbitests {
     const CssClassRowHeaderLeaf = "matrixRowHeaderLeaf";
     const CssClassBodyCell = "tablixValueNumeric";
     const TableTotalLabel = 'Total';
-    const NullHeaderCell = "(Blank)";
+    //const NullHeaderCell = "(Blank)";
     const EmptyCell = "\xa0";
     //#endregion
 
@@ -4800,7 +4802,8 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it("7x7 matrix (1 row and 2 columns composite with nulls)", (done) => {
+        // disabled
+        xit("7x7 matrix (1 row and 2 columns composite with nulls)", (done) => {
             v.onDataChanged({
                 dataViews: [matrixOneRowGroupCompositeTwoColumnGroupsCompositeOneGroupInstanceDataView]
             });
@@ -5066,11 +5069,11 @@ module powerbitests {
 
                 let expectedCells: string[][] = [
                     [rowGroupSource1.displayName, rowGroupSource2.displayName, ""],
-                    [header_1.levelValues[0].value, NullHeaderCell],
+                    [header_1.levelValues[0].value, EmptyCell],
                     [header_1_2.levelValues[0].value],
                     [header_2.levelValues[0].value, header_2_1.levelValues[0].value],
-                    [NullHeaderCell],
-                    [NullHeaderCell, NullHeaderCell]
+                    [EmptyCell],
+                    [EmptyCell, EmptyCell]
                 ];
 
                 validateMatrix(expectedCells);
@@ -5103,8 +5106,8 @@ module powerbitests {
                 let header_2_1 = header_2.children[0];
 
                 let expectedCells: string[][] = [
-                    ["", header_1.levelValues[0].value, header_2.levelValues[0].value, NullHeaderCell, ""],
-                    ["", NullHeaderCell, header_1_2.levelValues[0].value, header_2_1.levelValues[0].value, NullHeaderCell, NullHeaderCell]
+                    ["", header_1.levelValues[0].value, header_2.levelValues[0].value, EmptyCell, ""],
+                    ["", EmptyCell, header_1_2.levelValues[0].value, header_2_1.levelValues[0].value, EmptyCell, EmptyCell]
                 ];
 
                 validateMatrix(expectedCells);
@@ -5358,7 +5361,7 @@ module powerbitests {
                     [rowGroupSource4.displayName, formatter(colHeader1.levelValues[0].value, columnGroupSource4), formatter(colHeader2.levelValues[0].value, columnGroupSource4), ""],
                     [formatter(rowHeader1.levelValues[0].value, columnGroupSource4), formatter(rowHeader1.values[0].value, measureSource1), formatter(rowHeader1.values[1].value, measureSource1)],
                     [formatter(rowHeader2.levelValues[0].value, columnGroupSource4), formatter(rowHeader2.values[0].value, measureSource1), formatter(rowHeader2.values[1].value, measureSource1)],
-                    [NullHeaderCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1)]
+                    [EmptyCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1)]
                 ];
 
                 validateMatrix(expectedCells);
@@ -5403,7 +5406,7 @@ module powerbitests {
                     [rowGroupSource4.displayName, formatter(colHeader1.levelValues[0].value, columnGroupSource4), formatter(colHeader2.levelValues[0].value, columnGroupSource4), TableTotalLabel, ""],
                     [formatter(rowHeader1.levelValues[0].value, rowGroupSource4), formatter(rowHeader1.values[0].value, measureSource1), formatter(rowHeader1.values[1].value, measureSource1), formatter(rowHeader1.values[2].value, measureSource1)],
                     [formatter(rowHeader2.levelValues[0].value, rowGroupSource4), formatter(rowHeader2.values[0].value, measureSource1), formatter(rowHeader2.values[1].value, measureSource1), formatter(rowHeader2.values[2].value, measureSource1)],
-                    [NullHeaderCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1), formatter(rowHeader3.values[2].value, measureSource1)],
+                    [EmptyCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1), formatter(rowHeader3.values[2].value, measureSource1)],
                     [TableTotalLabel, formatter(rowHeader4.values[0].value, measureSource1), formatter(rowHeader4.values[1].value, measureSource1), formatter(rowHeader4.values[2].value, measureSource1)]
                 ];
 
@@ -6172,11 +6175,11 @@ module powerbitests {
 
                 let expectedCells: string[][] = [
                     [rowGroupSource1.displayName, rowGroupSource2.displayName],
-                    [header_1.levelValues[0].value, NullHeaderCell],
+                    [header_1.levelValues[0].value, EmptyCell],
                     [header_1_2.levelValues[0].value],
                     [header_2.levelValues[0].value, header_2_1.levelValues[0].value],
-                    [NullHeaderCell],
-                    [NullHeaderCell, NullHeaderCell]
+                    [EmptyCell],
+                    [EmptyCell, EmptyCell]
                 ];
 
                 validateMatrix(expectedCells);
@@ -6208,8 +6211,8 @@ module powerbitests {
                 let header_2_1 = header_2.children[0];
 
                 let expectedCells: string[][] = [
-                    ["", header_1.levelValues[0].value, header_2.levelValues[0].value, NullHeaderCell],
-                    ["", NullHeaderCell, header_1_2.levelValues[0].value, header_2_1.levelValues[0].value, NullHeaderCell, NullHeaderCell]
+                    ["", header_1.levelValues[0].value, header_2.levelValues[0].value, EmptyCell],
+                    ["", EmptyCell, header_1_2.levelValues[0].value, header_2_1.levelValues[0].value, EmptyCell, EmptyCell]
                 ];
 
                 validateMatrix(expectedCells);
@@ -6383,7 +6386,7 @@ module powerbitests {
                     [rowGroupSource4.displayName, formatter(colHeader1.levelValues[0].value, columnGroupSource4), formatter(colHeader2.levelValues[0].value, columnGroupSource4)],
                     [formatter(rowHeader1.levelValues[0].value, rowGroupSource4), formatter(rowHeader1.values[0].value, measureSource1), formatter(rowHeader1.values[1].value, measureSource1)],
                     [formatter(rowHeader2.levelValues[0].value, rowGroupSource4), formatter(rowHeader2.values[0].value, measureSource1), formatter(rowHeader2.values[1].value, measureSource1)],
-                    [NullHeaderCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1)]
+                    [EmptyCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1)]
                 ];
 
                 validateMatrix(expectedCells);
@@ -6427,7 +6430,7 @@ module powerbitests {
                     [rowGroupSource4.displayName, formatter(colHeader1.levelValues[0].value, columnGroupSource4), formatter(colHeader2.levelValues[0].value, columnGroupSource4), TableTotalLabel],
                     [formatter(rowHeader1.levelValues[0].value, rowGroupSource4), formatter(rowHeader1.values[0].value, measureSource1), formatter(rowHeader1.values[1].value, measureSource1), formatter(rowHeader1.values[2].value, measureSource1)],
                     [formatter(rowHeader2.levelValues[0].value, rowGroupSource4), formatter(rowHeader2.values[0].value, measureSource1), formatter(rowHeader2.values[1].value, measureSource1), formatter(rowHeader2.values[2].value, measureSource1)],
-                    [NullHeaderCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1), formatter(rowHeader3.values[2].value, measureSource1)],
+                    [EmptyCell, formatter(rowHeader3.values[0].value, measureSource1), formatter(rowHeader3.values[1].value, measureSource1), formatter(rowHeader3.values[2].value, measureSource1)],
                     [TableTotalLabel, formatter(rowHeader4.values[0].value, measureSource1), formatter(rowHeader4.values[1].value, measureSource1), formatter(rowHeader4.values[2].value, measureSource1)]
                 ];
 

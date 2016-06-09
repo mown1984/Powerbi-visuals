@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbi.extensibility.v110 {
     let hostAdapter: VisualHostAdapter = (host: powerbi.IVisualHostServices): IVisualHost => {
         return {

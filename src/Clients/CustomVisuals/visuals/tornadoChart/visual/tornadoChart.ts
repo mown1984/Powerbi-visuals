@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -821,9 +823,7 @@ module powerbi.visuals.samples {
             let highlightedDataPoints: TornadoChartPoint[] = [];
             let categoriesLabels: TextData[] = [];
 
-            let groupedValues: DataViewValueColumnGroup[] = [];
-            if (values.grouped)
-                groupedValues = values.grouped();
+            let groupedValues: DataViewValueColumnGroup[] = values.grouped ? values.grouped() : null;
 
             // Parse category labels and compute maximum category length
             let maxCategoryLength: number = 0;
@@ -850,18 +850,25 @@ module powerbi.visuals.samples {
             }
 
             for (let seriesIndex = 0; seriesIndex < values.length; seriesIndex++) {
-                let parsedSeries: TornadoChartSeries = this.parseSeries(values, seriesIndex, this.hasDynamicSeries, groupedValues);
+                let columnGroup: DataViewValueColumnGroup = groupedValues && groupedValues.length > seriesIndex 
+                    && groupedValues[seriesIndex].values ? groupedValues[seriesIndex] : null;
+
+                let parsedSeries: TornadoChartSeries = this.parseSeries(values, seriesIndex, this.hasDynamicSeries, columnGroup);
+
                 series.push(parsedSeries);
+
                 let currentSeries = values[seriesIndex];
                 let measureName = currentSeries.source.queryName;
 
                 for (let i = 0; i < categoryValuesLength; i++) {
                     let value = currentSeries.values[i] == null || isNaN(currentSeries.values[i]) ? 0 : currentSeries.values[i];
+
                     let identity = SelectionIdBuilder.builder()
                         .withCategory(category, i)
-                        .withSeries(values, currentSeries)
+                        .withSeries(values, columnGroup)
                         .withMeasure(measureName)
                         .createSelectionId();
+
                     let formattedCategoryValue = categoriesLabels[i].text;
                     let tooltipInfo: TooltipDataItem[];
                     tooltipInfo = TooltipBuilder.createTooltipInfo(formatStringProp, categorical, formattedCategoryValue, value, null, null, seriesIndex, i, null);
@@ -974,31 +981,39 @@ module powerbi.visuals.samples {
                 this.legendObjectProperties = {};
                 return null;
             }
+
             this.legendObjectProperties = DataViewObjects.getObject(dataView.metadata.objects, "legend", {});
+
             return dataView.metadata.objects;
         }
 
-        private parseSeries(dataViewValueColumns: DataViewValueColumns, index: number, isGrouped: boolean, grouped: DataViewValueColumnGroup[]): TornadoChartSeries {
-            let dataViewValueColumn: DataViewValueColumn = dataViewValueColumns[index];
-            let seriesGroup: DataViewValueColumnGroup | DataViewValueColumn = isGrouped ? grouped[index] : grouped[0].values[index];
-            let source: DataViewMetadataColumn = dataViewValueColumn.source;
+        /**
+         * Public for testability.
+         */
+        public parseSeries(dataViewValueColumns: DataViewValueColumns, index: number, isGrouped: boolean, columnGroup: DataViewValueColumnGroup): TornadoChartSeries {
+            let dataViewValueColumn: DataViewValueColumn = dataViewValueColumns ? dataViewValueColumns[index] : null,
+                source: DataViewMetadataColumn = dataViewValueColumn ? dataViewValueColumn.source : null,
+                identity: DataViewScopeIdentity = columnGroup ? columnGroup.identity : null,
+                queryName: string = source ? source.queryName : null;
 
-            let selectionId: SelectionId = seriesGroup.identity
-                ? SelectionId.createWithId(seriesGroup.identity)
+            let selectionId: SelectionId = identity
+                ? SelectionId.createWithId(identity)
                 : SelectionIdBuilder.builder()
-                    .withSeries(dataViewValueColumns, seriesGroup)
-                    .withMeasure(source.queryName)
+                    .withSeries(dataViewValueColumns, columnGroup)
+                    .withMeasure(queryName)
                     .createSelectionId();
 
-            let displayName: string = source.groupName ? source.groupName : source.displayName;
-            let objects;
-            let categoryAxisObject: DataViewObject | DataViewObjectWithId[];
+            let objects: DataViewObjects,
+                categoryAxisObject: DataViewObject | DataViewObjectWithId[],
+                displayName: string = source ? source.groupName
+                    ? source.groupName : source.displayName
+                    : null;
 
-            if (isGrouped) {
-                categoryAxisObject = seriesGroup.objects ? seriesGroup.objects['categoryAxis'] : null;
-                objects = seriesGroup.objects;
+            if (isGrouped && columnGroup) {
+                categoryAxisObject = columnGroup.objects ? columnGroup.objects['categoryAxis'] : null;
+                objects = columnGroup.objects;
             }
-            else {
+            else if (source) {
                 objects = source.objects;
                 categoryAxisObject = objects ? objects['categoryAxis'] : null;
             }
@@ -1007,6 +1022,7 @@ module powerbi.visuals.samples {
                 TornadoChart.Properties.dataPoint.fill,
                 this.DefaultFillColors[index],
                 objects);
+
             let categoryAxisEnd: number = categoryAxisObject ? categoryAxisObject['end'] : null;
 
             return <TornadoChartSeries>{

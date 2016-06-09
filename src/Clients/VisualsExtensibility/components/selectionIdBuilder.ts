@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.extensibility {
     /**
      * This class is designed to simplify the creation of SelectionId objects

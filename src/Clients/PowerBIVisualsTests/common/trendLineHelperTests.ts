@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import lineStyle = powerbi.visuals.lineStyle;
     import ColorHelper = powerbi.visuals.ColorHelper;

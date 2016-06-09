@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import Color = jsCommon.Color;
@@ -1006,6 +1008,7 @@ module powerbi.visuals {
         private isCurrentLocation: boolean;
         private boundsHaveBeenUpdated: boolean;
         private geocodingContext: GeocodingContext;
+        private isDestroyed: boolean = false;
 
         constructor(options: MapConstructionOptions) {
             if (options.filledMap) {
@@ -1052,7 +1055,12 @@ module powerbi.visuals {
 
             this.resetBounds();
 
+            this.isDestroyed = false;
+
             this.mapControlFactory.ensureMap(this.locale, () => {
+                if (this.isDestroyed)
+                    return;
+
                 Map.removeHillShading();
                 Microsoft.Maps.loadModule('Microsoft.Maps.Overlays.Style', {
                     callback: () => {
@@ -1066,9 +1074,10 @@ module powerbi.visuals {
         }
 
         public destroy(): void {
+            this.isDestroyed = true;
+
             if (this.geocodingContext && this.geocodingContext.timeout) {
                 this.geocodingContext.timeout.resolve(null);
-                this.geocodingContext.timeout = null;
             }
         }
 
@@ -1125,8 +1134,8 @@ module powerbi.visuals {
                 this.completeGeoCode(dataPoint, location);
             else {
                 let geocodingContext = this.geocodingContext;
-                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory, { timeout: this.geocodingContext.timeout.promise }).then((location) => {
-                    if (location && geocodingContext === this.geocodingContext) {
+                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory, { timeout: geocodingContext.timeout.promise }).then((location) => {
+                    if (!this.isDestroyed && location && geocodingContext === this.geocodingContext) {
                         this.completeGeoCode(dataPoint, location);
                     }
                 });
@@ -1144,8 +1153,8 @@ module powerbi.visuals {
                 this.completeGeoCodeAndGeoShape(dataPoint, params, location);
             else {
                 let geocodingContext = this.geocodingContext;
-                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory, { timeout: this.geocodingContext.timeout.promise }).then((location) => {
-                    if (location && geocodingContext === this.geocodingContext) {
+                this.geocoder.geocode(dataPoint.geocodingQuery, this.geocodingCategory, { timeout: geocodingContext.timeout.promise }).then((location) => {
+                    if (!this.isDestroyed && location && geocodingContext === this.geocodingContext) {
                         this.completeGeoCodeAndGeoShape(dataPoint, params, location);
                     }
                 });
@@ -1164,10 +1173,10 @@ module powerbi.visuals {
                 this.completeGeoShape(dataPoint, params, result);
             else {
                 let geocodingContext = this.geocodingContext;
-                this.geocoder.geocodeBoundary(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons, { timeout: this.geocodingContext.timeout.promise })
+                this.geocoder.geocodeBoundary(dataPoint.location.latitude, dataPoint.location.longitude, this.geocodingCategory, params.level, params.maxPolygons, { timeout: geocodingContext.timeout.promise })
                     .then((result: IGeocodeBoundaryCoordinate) => {
-                        if (geocodingContext === this.geocodingContext)
-                            this.completeGeoShape(dataPoint, params, result);
+                        if (!this.isDestroyed && result && geocodingContext === this.geocodingContext)
+                            this.completeGeoShape(dataPoint, params, result); 
                     });
             }
         }
@@ -1585,6 +1594,9 @@ module powerbi.visuals {
                 if (data != null) {
                     this.geocodingCategory = data.geocodingCategory;
                     this.mapControlFactory.ensureMap(this.locale, () => {
+                        if (this.isDestroyed)
+                            return;
+
                         Map.removeHillShading();
                         let params;
                         if (isFilledMap) {

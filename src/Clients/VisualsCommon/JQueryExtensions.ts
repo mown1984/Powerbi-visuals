@@ -52,6 +52,8 @@ $.fn.togglePanelControl = function () {
     });
 };
 
+/// <reference path="./_references.ts"/>
+
 module jsCommon {
     /** 
      * Represents a promise that may be rejected by its consumer.

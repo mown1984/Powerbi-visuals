@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import AnimatedNumber = powerbi.visuals.AnimatedNumber; 
     import animatedNumberCapabilities = powerbi.visuals.animatedNumberCapabilities;

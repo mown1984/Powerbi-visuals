@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
@@ -690,10 +692,12 @@ module powerbi.visuals {
                 // Prevent parent elements from handling keyboard shortcuts (e.g. ctrl+a) that have special meaning for textboxes.
                 // Quill will also capture and prevent bubbling of some keyboard shortcuts, such as ctrl+c, ctrl+b, etc.
                 this.$container.keydown((e) => {
-                    if (e.ctrlKey && KeyUtils.isCtrlDefaultKey(e.which))
+                    let which = e.which;
+
+                    if (e.ctrlKey && KeyUtils.isCtrlDefaultKey(which))
                         e.stopPropagation();
 
-                    if (KeyUtils.isArrowKey(e.which))
+                    if (KeyUtils.isArrowKey(which) || KeyUtils.isNudgeModifierKey(which))
                         e.stopPropagation();
                 });
 

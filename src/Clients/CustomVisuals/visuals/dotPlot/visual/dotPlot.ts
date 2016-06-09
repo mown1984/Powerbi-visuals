@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import getAnimationDuration = AnimatorCommon.GetAnimationDuration;
@@ -257,7 +259,7 @@ module powerbi.visuals.samples {
         private colors: IDataColorPalette;
         private dataView: DataView;
         private animator: IGenericAnimator;
-        private durationAnimations: number = 200;
+        private durationAnimations: number = 100;
         private dotPlotDataView: DotPlotDataView;
 
         private radius: number;
@@ -726,6 +728,14 @@ module powerbi.visuals.samples {
                 .transition()
                 .duration(duration)
                 .call(xAxis);
+
+            let xAxisTicks: D3.Selection = this.xAxis.selectAll('.tick text');
+            xAxisTicks.data(xAxisProperties.values);
+            xAxisTicks.call(AxisHelper.LabelLayoutStrategy.clip,
+                xAxisProperties.xLabelMaxWidth,
+                TextMeasurementService.svgEllipsis);
+
+            xAxisTicks.append('title').text((d) => d);
         }
     }
 

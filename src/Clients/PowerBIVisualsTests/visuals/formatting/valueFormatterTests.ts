@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import ValueType = powerbi.ValueType;
     import PrimitiveType = powerbi.PrimitiveType;
@@ -66,9 +68,47 @@ module powerbitests {
                 expect(valueFormatter.format(0.5, "0 %;-0 %;0 %", true)).toBe("50 %");
             });
 
+            it("different signs", () => {
+                let format = "Positive;Negative;Zero";
+                expect(valueFormatter.format(1, format)).toBe("Positive");
+                expect(valueFormatter.format(-1, format)).toBe("Negative");
+                expect(valueFormatter.format(0, format)).toBe("Zero");
+            });
+
+            it("special chars in literals", () => {
+                // try to confuse formatter with special characters in a literal
+                let format = "\\#\\,\\0\\.\\0\\0\\% #,0.00% '#,0.00%'";
+                let value = 987654.32198;
+                let expected = "#,0.00% 98,765,432.20% #,0.00%";
+
+                expect(valueFormatter.format(value, format)).toBe(expected);
+            });
+
+            it("unterminated literals", () => {
+                let format = "#,0.00%";
+                let value = 987654.32198;
+                let expected = "98,765,432.20%";
+
+                // unterminated single-quote
+                expect(valueFormatter.format(value, format + " '" + format)).toBe(expected + " " + format);
+
+                // unterminated double-quote
+                expect(valueFormatter.format(value, format + ' "' + format)).toBe(expected + " " + format);
+
+                // backslash at end
+                expect(valueFormatter.format(value, format + ' \\')).toBe(expected + " ");
+            });
+
             it("format Boolean", () => {
                 expect(valueFormatter.format(true)).toBe("True");
                 expect(valueFormatter.format(false)).toBe("False");
+            });
+
+            it("format Date", () => {
+                let date = new Date(2001, 1, 3, 22, 5, 6);
+                expect(valueFormatter.format(date, "yyyy\\-MM\\-dd HH:mm:ss")).toBe("2001-02-03 22:05:06");
+                expect(valueFormatter.format(date, "yyyy\\-MM\\-dd HH:mm:ss \\t\\t")).toBe("2001-02-03 22:05:06 tt");
+                expect(valueFormatter.format(date, "yy\\-MM\\-dd hh:mm tt")).toBe("01-02-03 10:05 PM");
             });
 
             it("format Invalids", () => {

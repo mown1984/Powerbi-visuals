@@ -26,6 +26,8 @@
 
 // TODO: We should not be validating specific styles (e.g. RGB codes) in unit tests.
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import data = powerbi.data;
     import DataViewMetadata = powerbi.DataViewMetadata;
@@ -210,14 +212,9 @@ module powerbitests {
                 slicerText.eq(2).d3Click(0, 0);
                 validateSelectionState(orientation, [2]);
 
-                // Select another checkbox using touch. The previous one should not be cleared.
-                slicerText.eq(1).d3TouchStart();
-                slicerText.eq(1).d3Click(0, 0);
-                validateSelectionState(orientation, [1, 2]);
-
                 // Select another checkbox using ctrl. The prvious one should not be cleared.
-                slicerText.eq(3).d3Click(0, 0, 1);
-                validateSelectionState(orientation, [1, 2, 3]);
+                slicerText.eq(1).d3Click(0, 0, 1);
+                validateSelectionState(orientation, [1, 2]);
 
                 // validate the style for select
                 expect(getSlicerContainer(orientation).hasClass('isMultiSelectEnabled')).toBe(false);
@@ -312,7 +309,7 @@ module powerbitests {
             });
 
             it('Header outline color test', () => {
-                expect($(".headerText").css('border-color')).toBe('rgb(128, 128, 128)');
+                expect($(".titleHeader").css('border-color')).toBe('rgb(128, 128, 128)');
             });
 
             it('Background and font slicer text test', () => {
@@ -345,7 +342,7 @@ module powerbitests {
             });
 
             it('Test header border outline', () => {
-                expect($(".headerText").css('border-width')).toBe('0px 0px 1px');
+                expect($(".titleHeader").css('border-width')).toBe('0px 0px 1px');
 
                 let dataView = builder.dataView;
                 let visual = builder.visual;
@@ -356,27 +353,27 @@ module powerbitests {
                 };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
-                expect($(".headerText").css('border-width')).toBe('0px');
+                expect($(".titleHeader").css('border-width')).toBe('0px');
 
                 dataView.metadata.objects["header"] = { outline: visuals.outline.topOnly };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
-                expect($(".headerText").css('border-width')).toBe('1px 0px 0px');
+                expect($(".titleHeader").css('border-width')).toBe('1px 0px 0px');
 
                 dataView.metadata.objects["header"] = { outline: visuals.outline.topBottom };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
-                expect($(".headerText").css('border-width')).toBe('1px 0px');
+                expect($(".titleHeader").css('border-width')).toBe('1px 0px');
 
                 dataView.metadata.objects["header"] = { outline: visuals.outline.leftRight };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
-                expect($(".headerText").css('border-width')).toBe('0px 1px');
+                expect($(".titleHeader").css('border-width')).toBe('0px 1px');
 
                 dataView.metadata.objects["header"] = { outline: visuals.outline.frame };
                 helpers.fireOnDataChanged(visual, { dataViews: [dataView] });
 
-                expect($(".headerText").css('border-width')).toBe('1px');
+                expect($(".titleHeader").css('border-width')).toBe('1px');
             });
 
             it('Row text size', () => {

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import AxisHelper = powerbi.visuals.AxisHelper;
     import axisScale = powerbi.visuals.axisScale;
@@ -108,7 +110,7 @@ module powerbitests {
                 dataViewMappings: [dataViewMapping]
             });
 
-            expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
+            expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
         });
 
         it('CustomizeQuery non-scalar type, scalar axis flag', () => {
@@ -139,6 +141,21 @@ module powerbitests {
             });
 
             expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ sample: {} });
+        });
+
+        it('CustomizeQuery non-scalar type, no scalar axis flag', () => {
+            let objects: DataViewObjects = {
+                categoryAxis: {
+                    axisType: null,
+                }
+            };
+            let dataViewMapping = createCompiledDataViewMapping(ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text), objects);
+
+            ColumnChart.customizeQuery({
+                dataViewMappings: [dataViewMapping]
+            });
+
+            expect(dataViewMapping.categorical.categories.dataReductionAlgorithm).toEqual({ top: {} });
         });
 
         it('CustomizeQuery no category', () => {

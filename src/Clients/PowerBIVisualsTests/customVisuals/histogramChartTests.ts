@@ -24,9 +24,12 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Histogram;
     import ValueByAgeData = powerbitests.customVisuals.sampleDataViews.ValueByAgeData;
+    import assertColorsMatch = powerbitests.helpers.assertColorsMatch;
 
     describe("HistogramChart", () => {
         let visualBuilder: HistogramChartBuilder;
@@ -39,7 +42,7 @@ module powerbitests.customVisuals {
             dataView = defaultDataViewBuilder.getDataView();
         });
 
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
         });
 
@@ -49,41 +52,41 @@ module powerbitests.customVisuals {
             it("update", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     let binsNumber = d3.layout.histogram().frequency(true)(dataView.categorical.categories[0].values).length;
-                    expect(visualBuilder.mainElement.find('.column').length).toBe(binsNumber);
+                    expect(visualBuilder.mainElement.find(".column").length).toBe(binsNumber);
                     done();
                 });
             });
         });
 
-        describe('property pane changes', () => {
-            it('Validate data point color change', (done) => {
+        describe("property pane changes", () => {
+            it("Validate data point color change", (done) => {
                 dataView.metadata.objects = {
                     dataPoint: {
                         fill: {
-                            solid: { color: '#ff0000' }
+                            solid: { color: "#ff0000" }
                         }
                     }
                 };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let elements = visualBuilder.mainElement.find('.column');
+                    let elements = visualBuilder.mainElement.find(".column");
                     elements.each((index, elem) => {
-                        expect($(elem).css('fill')).toBe('#ff0000');
+                        assertColorsMatch($(elem).css("fill"), "#ff0000");
                     });
 
                     done();
                 });
             });
 
-            it('Validate bins count change', (done) => {
+            it("Validate bins count change", (done) => {
                 dataView.metadata.objects = { general: { bins: 3 } };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let binsCount = visualBuilder.mainElement.find('.column').length;
+                    let binsCount = visualBuilder.mainElement.find(".column").length;
                     dataView.metadata.objects = { general: { bins: 6 } };
 
                     visualBuilder.updateRenderTimeout(dataView, () => {
-                        let binsAfterUpdate = visualBuilder.mainElement.find('.column').length;
+                        let binsAfterUpdate = visualBuilder.mainElement.find(".column").length;
                         expect(binsCount).toBe(3);
                         expect(binsAfterUpdate).toBeGreaterThan(binsCount);
                         expect(binsAfterUpdate).toBe(6);
@@ -92,7 +95,7 @@ module powerbitests.customVisuals {
                 });
             });
 
-            it('Validate start bigger than end at y axis', (done) => {
+            it("Validate start bigger than end at y axis", (done) => {
                 dataView.metadata.objects = {
                     yAxis: {
                         start: 65,
@@ -101,23 +104,60 @@ module powerbitests.customVisuals {
                 };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let firstY = parseInt(visualBuilder.mainElement.find('.axis:last .tick:first text').text(),10);
+                    let firstY = parseInt(visualBuilder.mainElement.find(".axis:last .tick:first text").text(),10);
                     expect(firstY).toBe(0);
 
                     done();
                 });
             });
 
-            xit('Validate Data Label', (done) => {
-                dataView.metadata.objects = { labels: { show: true } };
+            it('Validate position right y axis', (done) => {
+                dataView.metadata.objects = {
+                    yAxis: {
+                        position: "Right"
+                    }
+                };
+
+                visualBuilder.update(dataView);
+                setTimeout(() => {
+                    var firstY = parseInt(visualBuilder.mainElement.find('.axis:last').attr("transform").split(',')[0].split('(')[1], 10);
+                    var lastX = parseInt(visualBuilder.mainElement.find('.axis:first .tick:last').attr("transform").split(',')[0].split('(')[1], 10);
+                    expect(firstY).toBe(lastX);
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('Validate Data Label', (done) => {
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true
+                    }
+                };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let columns = (visualBuilder.mainElement.find('.columns rect')).length;
-                    let dataLabels = (visualBuilder.mainElement.find('.labels text')).length;
+                    let columns = (visualBuilder.mainElement.find(".columns rect")).length;
+                    let dataLabels = (visualBuilder.mainElement.find(".labels text")).length;
                     expect(columns).toBe(dataLabels);
 
                     done();
                 });
+            });
+
+            it('Validate title disabled', (done) => {
+                dataView.metadata.objects = {
+                    yAxis: {
+                        title: false
+                    }
+                };
+
+                visualBuilder.update(dataView);
+                setTimeout(() => {
+                    var title = visualBuilder.mainElement.find('.legends text:last').attr("style").indexOf("display: none") > -1;
+                    expect(title).toBe(true);
+
+                    done();
+                }, DefaultWaitForRender);
             });
         });
     });

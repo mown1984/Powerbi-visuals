@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="./_references.ts"/>
 
 module powerbi.visuals {
 
@@ -364,7 +366,7 @@ module powerbi.visuals {
             selection.on("mouseout", () => {
                 if (!handleTouchTimeoutId) {
                     clearTooltipTimeout();
-                    tooltipTimeoutId = hideDelayedTooltip(tooltipMouseOutDelay);
+                    tooltipTimeoutId = hideDelayedTooltip();
                 }
 
                 if (onMouseOutDelegate) {
@@ -441,8 +443,8 @@ module powerbi.visuals {
             return setTimeout(() => showTooltipEventHandler(tooltipEvent, getTooltipInfoDelegate), delayInMs);
         }
 
-        export function hideDelayedTooltip(delayInMs: number): number {
-            return setTimeout(() => hideTooltipEventHandler(), delayInMs);
+        export function hideDelayedTooltip(): number {
+            return setTimeout(() => hideTooltipEventHandler(), tooltipMouseOutDelay);
         }
 
         export function setLocalizedStrings(localizationOptions: TooltipLocalizationOptions): void {
@@ -704,6 +706,24 @@ module powerbi.visuals {
             return items;
         }
 
+        export function addTooltipBucketItem(reader: data.IDataViewCategoricalReader, tooltipInfo: TooltipDataItem[], categoryIndex: number, seriesIndex?: number): TooltipDataItem[]{
+            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, seriesIndex);
+            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", seriesIndex);
+
+            if (tooltipValues) {
+                for (let j = 0; j < tooltipValues.length; j++) {
+                    if (tooltipValues[j] != null) {
+                        tooltipInfo.push({
+                            displayName: tooltipMetadataColumns[j].displayName,
+                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], Gauge.formatStringProp),
+                        });
+                    }
+                }
+            }
+
+            return tooltipInfo;
+        }
+        
         function getFormattedValue(column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier, value: any) {
             let formatString: string = getFormatStringFromColumn(column, formatStringProp);
             return valueFormatter.format(value, formatString);

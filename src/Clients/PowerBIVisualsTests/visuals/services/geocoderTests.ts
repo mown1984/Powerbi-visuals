@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import MapUtil = powerbi.visuals.MapUtil;
     import services = powerbi.visuals.services;
@@ -289,9 +291,24 @@ module powerbitests {
             MapUtil.Settings.BingKey = "testBingKey";
         });
 
-        it("getUrl", () => {
-            let query = new GeocodePointQuery(47.12435, 122.67891);
+        it("getUrl with all entity types", () => {
+            let query = new GeocodePointQuery(47.12435, 122.67891,["Address","Neighborhood","PopulatedPlace","Postcode1","AdminDivision1","AdminDivision2","CountryRegion"]);
             expect(query.getUrl()).toBe("https://dev.virtualearth.net/REST/v1/Locations/47.12435,122.67891?key=testBingKey&includeEntityTypes=Address,Neighborhood,PopulatedPlace,Postcode1,AdminDivision1,AdminDivision2,CountryRegion&include=ciso2");
+        });
+        
+        it("getUrl with some entity types", () => {
+            let query = new GeocodePointQuery(47.12435, 122.67891,["Address","Neighborhood","PopulatedPlace","Postcode1","AdminDivision1"]);
+            expect(query.getUrl()).toBe("https://dev.virtualearth.net/REST/v1/Locations/47.12435,122.67891?key=testBingKey&includeEntityTypes=Address,Neighborhood,PopulatedPlace,Postcode1,AdminDivision1&include=ciso2");
+        });
+        
+        it("getUrl with one entity type", () => {
+            let query = new GeocodePointQuery(47.12435, 122.67891,["Address"]);
+            expect(query.getUrl()).toBe("https://dev.virtualearth.net/REST/v1/Locations/47.12435,122.67891?key=testBingKey&includeEntityTypes=Address&include=ciso2");
+        });
+        
+        it("getUrl with no entity types", () => {
+            let query = new GeocodePointQuery(47.12435, 122.67891,[]);
+            expect(query.getUrl()).toBe("https://dev.virtualearth.net/REST/v1/Locations/47.12435,122.67891?key=testBingKey&include=ciso2");
         });
     });
 } 

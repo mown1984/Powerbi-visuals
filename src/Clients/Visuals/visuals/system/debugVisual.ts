@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbi.visuals.system {
 
     interface VisualErrorMessageOptions {
@@ -94,39 +96,49 @@ module powerbi.visuals.system {
                     return;
                 }
                 this.lastUpdateStatus = status;
-
-                let statusParts = status.split("\n");
-                if (statusParts.length < 2) {
-                    return;
-                }
-
-                if (this.visualGuid !== statusParts[1]) {
-                    this.visualGuid = statusParts[1];
-                    this.visualContainer.attr('class', 'visual-' + this.visualGuid);
-                }
-
-                $.getScript(baseUrl + 'visual.js').done(() => {
-                    debug.assert(!!powerbi.visuals.plugins[this.visualGuid], "DebugVisual - Plugin not found");
-                    if (!powerbi.visuals.plugins[this.visualGuid]) {
+                
+                $.getJSON(baseUrl + 'pbiviz.json').done((pbivizJson) => {
+                    debug.assertValue(pbivizJson.capabilities, "DebugVisual - pbiviz capabilities missing");
+                    debug.assertValue(pbivizJson.visual && pbivizJson.visual.guid, "DebugVisual - pbiviz visual guid missing");
+                    if (!pbivizJson.capabilities || !pbivizJson.visual || !pbivizJson.visual.guid) {
                         return;
                     }
-                    $.get(baseUrl + 'visual.css').done((data) => {
-                        $('#css-DEBUG').remove();
-                        $("<style/>", {
-                            id: 'css-DEBUG',
-                            html: data,
-                        }).appendTo($('head'));
-                        this.visualContainer.empty();
-                        this.container.empty().append(this.visualContainer);
-                        let adapter = this.adapter = extensibility.createVisualAdapter(powerbi.visuals.plugins[this.visualGuid]);
-                        if (adapter.init) {
-                            adapter.init(this.optionsForVisual);
+                    
+                    //update guid if needed
+                    if (this.visualGuid !== pbivizJson.visual.guid) {
+                        this.visualGuid = pbivizJson.visual.guid;
+                        this.visualContainer.attr('class', 'visual-' + this.visualGuid);
+                    }
+                    
+                    //loaded separately for sourcemap support
+                    $.getScript(baseUrl + 'visual.js').done(() => {
+                        debug.assertValue(powerbi.visuals.plugins[this.visualGuid], "DebugVisual - Plugin not found");
+                        if (!powerbi.visuals.plugins[this.visualGuid]) {
+                            return;
                         }
-                        if (adapter.update && this.lastUpdateOptions) {
-                            adapter.update(this.lastUpdateOptions);
-                        }
-                        powerbi.visuals.plugins.debugVisual.capabilities = powerbi.visuals.plugins[this.visualGuid].capabilities;
-                        this.host.visualCapabilitiesChanged();
+                        //attach json capabilities to plugin
+                        powerbi.visuals.plugins[this.visualGuid].capabilities = pbivizJson.capabilities;
+                        
+                        //loaded separately for sourcemap support
+                        $.get(baseUrl + 'visual.css').done((data) => {
+                            $('#css-DEBUG').remove();
+                            $("<style/>", {
+                                id: 'css-DEBUG',
+                                html: data,
+                            }).appendTo($('head'));
+                            this.visualContainer.empty();
+                            this.container.empty().append(this.visualContainer);
+                            let adapter = this.adapter = extensibility.createVisualAdapter(powerbi.visuals.plugins[this.visualGuid]);
+                            if (adapter.init) {
+                                adapter.init(this.optionsForVisual);
+                            }
+                            if (adapter.update && this.lastUpdateOptions) {
+                                adapter.update(this.lastUpdateOptions);
+                            }
+                            //override debugVisual capabilities with user's
+                            powerbi.visuals.plugins.debugVisual.capabilities = powerbi.visuals.plugins[this.visualGuid].capabilities;
+                            this.host.visualCapabilitiesChanged();
+                        });
                     });
                 });
             }).fail((a, b, c) => {

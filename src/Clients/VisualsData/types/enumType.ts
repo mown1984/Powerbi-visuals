@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi {
     /** Defines a custom enumeration data type, and its values. */
     export interface IEnumType {

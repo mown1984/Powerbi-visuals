@@ -24,9 +24,13 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import SQExprBuilder = powerbi.data.SQExprBuilder;
     import SQExpr = powerbi.data.SQExpr;
+    import DataViewBuilderValuesColumnOptions = powerbi.data.DataViewBuilderValuesColumnOptions;
+    import DataViewBuilderColumnIdentitySource = powerbi.data.DataViewBuilderColumnIdentitySource;
 
     export interface DataViewBuilderColumnOptions extends powerbi.data.DataViewBuilderColumnOptions {
         values: any[];
@@ -34,16 +38,13 @@ module powerbitests.customVisuals.sampleDataViews {
 
     export interface DataViewBuilderCategoryColumnOptions extends DataViewBuilderColumnOptions {
         objects?: powerbi.DataViewObjects[];
-    }
-
-    export interface DataViewBuilderGroupedValuesColumnOptions extends DataViewBuilderColumnOptions {
-        columns: powerbi.data.DataViewBuilderValuesColumnOptions[];
+        isGroup?: boolean;
     }
 
     export interface DataViewBuilderAllColumnOptions {
         categories: DataViewBuilderCategoryColumnOptions[];
-        values: powerbi.data.DataViewBuilderValuesColumnOptions[];
-        grouped: DataViewBuilderGroupedValuesColumnOptions;
+        grouped: DataViewBuilderCategoryColumnOptions[];
+        values: DataViewBuilderValuesColumnOptions[];
     }
 
     export abstract class DataViewBuilder {
@@ -76,7 +77,8 @@ module powerbitests.customVisuals.sampleDataViews {
         }
 
         static getDataViewBuilderColumnIdentitySources(
-            options: DataViewBuilderColumnOptions[] | DataViewBuilderColumnOptions): powerbi.data.DataViewBuilderColumnIdentitySource[] {
+            options: DataViewBuilderColumnOptions[] | DataViewBuilderColumnOptions)
+            : DataViewBuilderColumnIdentitySource[] {
 
             let optionsArray: DataViewBuilderColumnOptions[] = <any>(_.isArray(options) ? options : [options]);
 
@@ -106,16 +108,10 @@ module powerbitests.customVisuals.sampleDataViews {
                 identityExpressions = optionsIdentityExpressions[0];
             }
 
-            return optionsArray.map((opt,i) => <powerbi.data.DataViewBuilderColumnIdentitySource>{ 
+            return optionsArray.map((opt,i) => <DataViewBuilderColumnIdentitySource>{ 
                     fields: fields,
                     identities: identityExpressions.map(powerbi.data.createDataViewScopeIdentity)
                 });
-        }
-
-        static filterDataViewBuilderColumnOptionsByDisplayName<T extends powerbi.data.DataViewBuilderColumnOptions>(
-            columns: T[],
-            displayNames: string[]): T[] {
-            return displayNames ? (columns && columns.filter(x => _.contains(displayNames, x.source.displayName))) : columns;
         }
 
         static getValuesTable(categories?: powerbi.DataViewCategoryColumn[], values?: powerbi.DataViewValueColumn[]): any[][] {
@@ -124,22 +120,44 @@ module powerbitests.customVisuals.sampleDataViews {
             return _.range(maxLength).map(i => columns.map(x => x.values[i]));
         }
 
+        static createDataViewBuilderColumnOptions(
+            categoriesColumns: (DataViewBuilderCategoryColumnOptions | DataViewBuilderCategoryColumnOptions[])[],
+            valuesColumns: (DataViewBuilderValuesColumnOptions | DataViewBuilderValuesColumnOptions[])[],
+            filter?: (options: DataViewBuilderColumnOptions) => boolean): DataViewBuilderAllColumnOptions {
+
+            let filterColumns = filter
+                ? (options) => _.isArray(options.values) && filter(options)
+                : (options) => _.isArray(options.values);
+
+            let resultCategoriesColumns = _.isEmpty(categoriesColumns) ? [] : (<DataViewBuilderCategoryColumnOptions[]>_
+                .flatten(categoriesColumns)).filter(filterColumns);
+
+            let resultValuesColumns = _.isEmpty(valuesColumns) ? [] : (<DataViewBuilderValuesColumnOptions[]>_
+                .flatten(valuesColumns)).filter(filterColumns);
+
+            return { 
+                    categories: resultCategoriesColumns.filter(x => !x.isGroup),
+                    grouped: resultCategoriesColumns.filter(x => x.isGroup),
+                    values: resultValuesColumns
+                };
+        }
+
         static setUpDataViewBuilderColumnOptions(
             options: DataViewBuilderAllColumnOptions, 
             aggregateFunction: (array: number[]) => number): DataViewBuilderAllColumnOptions {
             let resultOptions = _.clone(options);
-            resultOptions.categories = _.clone(resultOptions.categories);
-            resultOptions.values = _.clone(resultOptions.values);
-            resultOptions.grouped = _.clone(resultOptions.grouped);
+            resultOptions.categories = resultOptions.categories && resultOptions.categories.map(x => _.clone(x));
+            resultOptions.values = resultOptions.values && resultOptions.values.map(x => _.clone(x));
+            resultOptions.grouped = resultOptions.grouped && resultOptions.grouped.map(x => _.clone(x));;
 
             if(!_.isEmpty(options.categories)) {
                 resultOptions.categories.forEach(x => x.source = DataViewBuilder.setDefaultQueryName(x.source));
                 let allRows: any[][] =  DataViewBuilder.getValuesTable(options.categories, options.values);
                 let categoriesLength = options.categories.length;
                 let grouped = _.toArray(_.groupBy(allRows, x => _.take(x, categoriesLength)));
-                resultOptions.categories.forEach((c,i) => c.values = grouped.map(x => x[0][i] || null)); 
+                resultOptions.categories.forEach((c,i) => c.values = grouped.map(x => x[0][i] === undefined ? null : x[0][i])); 
 
-                if(!_.isEmpty(options.values)) {
+                if(!_.isEmpty(options.values) && _.isEmpty(options.grouped)) {//Not completed for group categories
                     resultOptions.values.forEach((c,i) =>
                         c.values = grouped.map(v => aggregateFunction(v.map(x => x[categoriesLength + i] || 0)))); 
                 }
@@ -150,14 +168,14 @@ module powerbitests.customVisuals.sampleDataViews {
             }
 
             if(!_.isEmpty(options.grouped)) {
-                resultOptions.grouped.source = DataViewBuilder.setDefaultQueryName(resultOptions.grouped.source);
-                resultOptions.grouped.columns.forEach(x => x.source = DataViewBuilder.setDefaultQueryName(x.source));
+                resultOptions.grouped.forEach(x => x.source = DataViewBuilder.setDefaultQueryName(x.source));
             }
 
             return resultOptions;
         }
 
-        static setUpDataView(dataView: powerbi.DataView, options: DataViewBuilderAllColumnOptions): powerbi.DataView {
+        static setUpDataView(dataView: powerbi.DataView, options: DataViewBuilderAllColumnOptions)
+            : powerbi.DataView {
             if(!_.isEmpty(options.categories) && _.isEmpty(options.grouped)) {
                 let category = dataView.categorical.categories[0];
 
@@ -186,34 +204,15 @@ module powerbitests.customVisuals.sampleDataViews {
         }
 
         protected createCategoricalDataViewBuilder(
-            categories: DataViewBuilderCategoryColumnOptions[],
-            values: powerbi.data.DataViewBuilderValuesColumnOptions[],
-            grouped: DataViewBuilderGroupedValuesColumnOptions,
+            categoriesColumns: (DataViewBuilderCategoryColumnOptions | DataViewBuilderCategoryColumnOptions[])[],
+            valuesColumns: (DataViewBuilderValuesColumnOptions | DataViewBuilderValuesColumnOptions[])[],
             columnNames: string[]) {
             let builder = powerbi.data.createCategoricalDataViewBuilder();
-            let originalOptions: DataViewBuilderAllColumnOptions = 
-                { 
-                    categories: DataViewBuilder.filterDataViewBuilderColumnOptionsByDisplayName(categories, columnNames),
-                    values: DataViewBuilder.filterDataViewBuilderColumnOptionsByDisplayName(values, columnNames),
-                    grouped: grouped && 
-                        {
-                            source: grouped.source,
-                            values: grouped.values,
-                            columns: DataViewBuilder.filterDataViewBuilderColumnOptionsByDisplayName(grouped.columns, columnNames)
-                        }
-                };
 
-            if(!_.isEmpty(originalOptions.grouped) 
-                && DataViewBuilder.filterDataViewBuilderColumnOptionsByDisplayName([originalOptions.grouped], columnNames).length === 0) {
-                if(!originalOptions.values) {
-                    originalOptions.values = originalOptions.grouped.columns;
-                } else {
-                    originalOptions.values.concat(originalOptions.grouped.columns);
-                }
-
-                originalOptions.grouped = null;
-            }
-
+            let originalOptions = DataViewBuilder.createDataViewBuilderColumnOptions(
+                categoriesColumns,
+                valuesColumns,
+                columnNames && (options => _.contains(columnNames, options.source.displayName)));
             let options = DataViewBuilder.setUpDataViewBuilderColumnOptions(originalOptions, this.aggregateFunction);
 
             if(!_.isEmpty(options.categories)) {
@@ -227,31 +226,29 @@ module powerbitests.customVisuals.sampleDataViews {
                     }));
             }
 
-            if(!_.isEmpty(options.values)) {
-                builder.withValues({ columns: options.values });
-            }
-
             if(!_.isEmpty(options.grouped)) {
+                let groupedCategory = options.grouped[0]; //Finished only for one category.
+
                 let categoryValues = originalOptions.categories 
                     && originalOptions.categories[0] 
                     && originalOptions.categories[0].values 
                     || [];
                 let uniqueCategoryValues =_.unique(categoryValues) || [undefined];
-                let uniqueGroupedValues = _.unique(options.grouped.values);
+                let uniqueGroupedValues = _.unique(groupedCategory.values);
 
                 builder.withGroupedValues({
                     groupColumn: <powerbi.data.DataViewBuilderCategoryColumnOptions> {
-                            source: options.grouped.source,
+                            source: groupedCategory.source,
                             values: uniqueGroupedValues,
-                            identityFrom: DataViewBuilder.getDataViewBuilderColumnIdentitySources(options.grouped)[0]
+                            identityFrom: DataViewBuilder.getDataViewBuilderColumnIdentitySources(groupedCategory)[0]
                         },
-                    valueColumns: options.grouped.columns.map(x => <DataViewBuilderColumnOptions>{ source: x.source }),
-                    data: uniqueGroupedValues.map(groupedValue => options.grouped.columns.map((column, columnIndex) => 
+                    valueColumns: options.values.map(x => <DataViewBuilderColumnOptions>{ source: x.source }),
+                    data: uniqueGroupedValues.map(groupedValue => options.values.map((column, columnIndex) => 
                         <powerbi.data.DataViewBuilderSeriesData>{
                             values: column.values && uniqueCategoryValues
                                 .map(categoryValue => {
                                     let index = _.findIndex(d3.range(categoryValues.length), 
-                                        i => categoryValues[i] === categoryValue && options.grouped.values[i] === groupedValue);
+                                        i => categoryValues[i] === categoryValue && groupedCategory.values[i] === groupedValue);
                                     return column.values[index] === undefined ? null : column.values[index];
                                 }),
                             highlights: column.highlights,
@@ -259,6 +256,8 @@ module powerbitests.customVisuals.sampleDataViews {
                             maxLocal: column.maxLocal
                         }))
                     }); 
+            } else if(!_.isEmpty(options.values)) {
+                 builder.withValues({ columns: options.values });
             }
 
             let builderBuild = builder.build.bind(builder);

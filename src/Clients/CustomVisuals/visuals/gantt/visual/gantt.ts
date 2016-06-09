@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../../_references.ts"/>
+
 module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
     import PixelConverter = jsCommon.PixelConverter;

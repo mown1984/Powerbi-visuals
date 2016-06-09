@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.data {
     import DataRoleHelper = powerbi.data.DataRoleHelper;
 
@@ -74,7 +76,7 @@ module powerbi.data {
         * from each of the value columns at that intersection.  Used when you have multiple
         * values in a role that are not conceptually a static series.
         */
-        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
+        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex?: number): DataViewMetadataColumn[];
         /**
          * Obtains all the highlight values for the given role name, category index, and series index, drawing
          * from each of the value columns at that intersection.  Used when you have multiple
@@ -90,7 +92,6 @@ module powerbi.data {
         getMeasureQueryName(roleName: string): string;
         getValueColumn(roleName: string, seriesIndex?: number): DataViewValueColumn;
         getValueMetadataColumn(roleName: string, seriesIndex?: number): DataViewMetadataColumn;
-        getAllValueMetadataColumnsForRole(roleName: string, seriesIndex: number): DataViewMetadataColumn[];
         getValueDisplayName(roleName: string, seriesIndex?: number): string;
         // Series Methods
         hasDynamicSeries(): boolean;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
     import DonutChart = powerbi.visuals.DonutChart;
@@ -62,6 +64,7 @@ module powerbitests {
                 { displayName: 'col3', queryName: 'col3', format: '#,0', isMeasure: true, roles: { Tooltips: true } }]
         };
 
+        let categoryMetaData: powerbi.DataViewMetadataColumn = { displayName: 'category', queryName: 'category', roles: { Category: true } };
         let seriesMetaData: powerbi.DataViewMetadataColumn = { displayName: 'series', queryName: 'series', roles: { Series: true } };
         let measureColumnDynamic1: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), groupName: 'A', roles: { Y: true } };
         let measureColumnDynamic2: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'selectSales', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double), groupName: 'B', roles: { Y: true } };
@@ -76,6 +79,16 @@ module powerbitests {
                 { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { Y: true } },
                 { displayName: 'col3', queryName: 'col3', isMeasure: true, roles: { Y: true } },
                 { displayName: 'col4', queryName: 'col4', isMeasure: true, roles: { Tooltips: true } }]
+        };
+
+        let dataViewMetadata1Category1Measure1Tooltip: powerbi.DataViewMetadata = {
+            columns: [
+                categoryMetaData,
+                seriesMetaData,
+                measureColumnDynamic1,
+                measureColumnDynamic2,
+                tooltipColumnDynamic1,
+                tooltipColumnDynamic2]
         };
 
         let dataViewMetadata1Category2Measure2Tooltip: powerbi.DataViewMetadata = {
@@ -556,6 +569,55 @@ module powerbitests {
                     expect(helpers.findElementTitle($(labels[0]))).toBe("a");
                     expect(helpers.findElementTitle($(labels[1]))).toBe("b");
                     expect(helpers.findElementTitle($(labels[2]))).toBe("c");
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it('Show the correct text - category and series, with slicing and single measure ', (done) => {
+                let categoryValues = ['a', 'b', 'c'];
+                let categoryIdentities = _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v));
+                let seriesValues = ['A', 'B'];
+                let seriesIdentities = _.map(seriesValues, (v) => mocks.dataViewScopeIdentity(v));
+
+                let dataViewMetadataWithLabels = powerbi.Prototype.inherit(dataViewMetadata1Category1Measure1Tooltip);
+                dataViewMetadataWithLabels.objects = {
+                    labels: { show: true, labelStyle: LabelStyle.category },
+                };
+                v.onDataChanged({
+                    dataViews: [{
+                        categorical: {
+                            categories: [{
+                                source: dataViewMetadata1Category1Measure1Tooltip.columns[0],
+                                values: categoryValues,
+                                identity: categoryIdentities,
+                                identityFields: [categoryColumnRef],
+                            }],
+                            values: DataViewTransform.createValueColumns([
+                                {
+                                    source: dataViewMetadata1Category1Measure1Tooltip.columns[2],
+                                    values: [200, 210, 220],
+                                    identity: seriesIdentities[0],
+                                }, {
+                                    source: dataViewMetadata1Category1Measure1Tooltip.columns[3],
+                                    values: [300, 310, 320],
+                                    identity: seriesIdentities[1],
+                                }
+                            ],
+                                [seriesColumnRef],
+                                seriesMetaData)
+                        },
+                        metadata: dataViewMetadata1Category1Measure1Tooltip,
+                    }]
+                });
+
+                setTimeout(() => {
+                    let labels = element.find(labelsElement);
+
+                    expect(helpers.findElementText($(labels[0]))).toBe("A");
+                    expect(helpers.findElementText($(labels[1]))).toBe("B");
+
+                    expect(helpers.findElementTitle($(labels[0]))).toBe("A");
+                    expect(helpers.findElementTitle($(labels[1]))).toBe("B");
                     done();
                 }, DefaultWaitForRender);
             });
@@ -1125,7 +1187,8 @@ module powerbitests {
         });
 
         describe('converter', () => {
-            let categoryIdentities = [mocks.dataViewScopeIdentity('a'), mocks.dataViewScopeIdentity('b'), mocks.dataViewScopeIdentity('c')];
+            let categoryValues = ['a', 'b', 'c'];
+            let categoryIdentities = _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v));
 
             it('empty', () => {
 
@@ -1412,7 +1475,7 @@ module powerbitests {
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
             });
 
-            it('category and series, with slicing and add two tooltip bucket items', () => {
+            it('category and multi-measure slices and add two tooltip bucket items', () => {
 
                 let dataView: powerbi.DataView = {
                     categorical: {
@@ -1508,6 +1571,127 @@ module powerbitests {
                 // Legend
                 expect(actualData.legendData.title).toBe('col1');
                 expect(actualData.legendData.dataPoints.length).toBe(3);
+                expect(actualData.legendData.dataPoints[0].label).toBe('a');
+                expect(actualData.legendData.dataPoints[1].label).toBe('b');
+                expect(actualData.legendData.dataPoints[2].label).toBe('c');
+            });
+
+            it('category and series, with slicing and single measure', () => {
+                let seriesValues = ['A', 'B'];
+                let seriesIdentities = _.map(seriesValues, (v) => mocks.dataViewScopeIdentity(v));
+                let dataView: powerbi.DataView = {
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata1Category1Measure1Tooltip.columns[0],
+                            values: categoryValues,
+                            identity: categoryIdentities,
+                            identityFields: [categoryColumnRef],
+                        }],
+                        values: DataViewTransform.createValueColumns([
+                            {
+                                source: dataViewMetadata1Category1Measure1Tooltip.columns[2],
+                                values: [200, 210, 220],
+                                identity: seriesIdentities[0],
+                            }, {
+                                source: dataViewMetadata1Category1Measure1Tooltip.columns[3],
+                                values: [300, 310, 320],
+                                identity: seriesIdentities[1],
+                            }
+                        ],
+                            [seriesColumnRef],
+                            seriesMetaData)
+                    },
+                    metadata: dataViewMetadata1Category1Measure1Tooltip,
+                };
+
+                let actualData = DonutChart.converter(dataView, donutColors);
+
+                let identity: SelectionId[][] = [];
+                for (let seriesIndex = 0; seriesIndex < seriesValues.length; seriesIndex++) {
+                    identity.push([]);
+                    for (let categoryIndex = 0; categoryIndex < categoryValues.length; categoryIndex++) {
+                        identity[seriesIndex].push(powerbi.visuals.SelectionIdBuilder.builder()
+                            .withCategory(dataView.categorical.categories[0], categoryIndex)
+                            .withSeries(dataView.categorical.values, dataView.categorical.values[seriesIndex])
+                            .withMeasure('selectSales')
+                            .createSelectionId());
+                    }
+                }
+
+                let categoryColumnId = powerbi.data.SQExprShortSerializer.serializeArray(<powerbi.data.SQExpr[]>dataView.categorical.categories[0].identityFields);
+
+                let sliceColors = [
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor(categoryValues[0]).value,
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor(categoryValues[1]).value,
+                    donutColors.getColorScaleByKey(categoryColumnId).getColor(categoryValues[2]).value,
+                ];
+
+                let expectSlices: DonutDataPoint[] = [
+                    {
+                        identity: identity[0][0],
+                        label: seriesValues[0],
+                        measure: 200,
+                        value: 200/1560,
+                        index: 0,
+                        tooltipInfo: [{ displayName: "category", value: "a" }, { displayName: "series", value: "A" }, { displayName: "sales", value: "200.00 (12.82%)" }],
+                        color: sliceColors[0],
+                        labelFormatString: undefined,
+                        strokeWidth: 0,
+                    }, {
+                        identity: identity[1][0],
+                        label: seriesValues[1],
+                        measure: 300,
+                        value: 300/1560,
+                        index: 1,
+                        tooltipInfo: [{ displayName: "category", value: "a" }, { displayName: "series", value: "B" }, { displayName: "sales", value: "300.00 (19.23%)" }],
+                        color: sliceColors[0],
+                        labelFormatString: undefined,
+                        strokeWidth: 1,
+                    }, {
+                        identity: identity[0][1],
+                        label: seriesValues[0],
+                        measure: 210,
+                        value: 210 / 1560,
+                        index: 2,
+                        tooltipInfo: [{ displayName: "category", value: "b" }, { displayName: "series", value: "A" }, { displayName: "sales", value: "210.00 (13.46%)" }],
+                        color: sliceColors[1],
+                        labelFormatString: undefined,
+                        strokeWidth: 0,
+                    }, {
+                        identity: identity[1][1],
+                        label: seriesValues[1],
+                        measure: 310,
+                        value: 310 / 1560,
+                        index: 3,
+                        tooltipInfo: [{ displayName: "category", value: "b" }, { displayName: "series", value: "B" }, { displayName: "sales", value: "310.00 (19.87%)" }],
+                        color: sliceColors[1],
+                        labelFormatString: undefined,
+                        strokeWidth: 1,
+                    }, {
+                        identity: identity[0][2],
+                        label: seriesValues[0],
+                        measure: 220,
+                        value: 220 / 1560,
+                        index: 4,
+                        tooltipInfo: [{ displayName: "category", value: "c" }, { displayName: "series", value: "A" }, { displayName: "sales", value: "220.00 (14.1%)" }],
+                        color: sliceColors[2],
+                        labelFormatString: undefined,
+                        strokeWidth: 0,
+                    }, {
+                        identity: identity[1][2],
+                        label: seriesValues[1],
+                        measure: 320,
+                        value: 320 / 1560,
+                        index: 5,
+                        tooltipInfo: [{ displayName: "category", value: "c" }, { displayName: "series", value: "B" }, { displayName: "sales", value: "320.00 (20.51%)" }],
+                        color: sliceColors[2],
+                        labelFormatString: undefined,
+                        strokeWidth: 1,
+                    }].map(buildDataPoint);
+                expect(actualData.dataPoints.map((value) => value.data)).toEqual(expectSlices);
+                
+                // Legend
+                expect(actualData.legendData.title).toBe('category');
                 expect(actualData.legendData.dataPoints[0].label).toBe('a');
                 expect(actualData.legendData.dataPoints[1].label).toBe('b');
                 expect(actualData.legendData.dataPoints[2].label).toBe('c');

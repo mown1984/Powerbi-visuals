@@ -24,21 +24,32 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.RadarChart;
     import ColorAssert = powerbitests.helpers.assertColorsMatch;
+    import VisualBuilderBase = powerbitests.customVisuals.VisualBuilderBase;
     import PixelConverter = jsCommon.PixelConverter;
+    import DataView = powerbi.DataView;
+    import IDataColorPalette = powerbi.IDataColorPalette;
     import SalesByDayOfWeekData = powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
+    import RadarChartData = powerbi.visuals.samples.RadarChartData;
+    import RadarChartSeries = powerbi.visuals.samples.RadarChartSeries;
+    import RadarChartDatapoint = powerbi.visuals.samples.RadarChartDatapoint;
+    import LegendData = powerbi.visuals.LegendData;
+    import SelectionId = powerbi.visuals.SelectionId;
+    import DataColorPalette = powerbi.visuals.DataColorPalette;
 
-	powerbitests.mocks.setLocale();
+    powerbitests.mocks.setLocale();
 
     describe("RadarChart", () => {
-        let visualBuilder: RadarChartBuilder;
-        let defaultDataViewBuilder: SalesByDayOfWeekData;
-        let dataView: powerbi.DataView;
+        let visualBuilder: RadarChartBuilder,
+            defaultDataViewBuilder: SalesByDayOfWeekData,
+            dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new RadarChartBuilder(1000,500);
+            visualBuilder = new RadarChartBuilder(1000, 500);
             defaultDataViewBuilder = new SalesByDayOfWeekData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -75,9 +86,37 @@ module powerbitests.customVisuals {
                     done();
                 });
             });
+
+            it("draw nodes after area", (done) => {
+                visualBuilder.update(dataView);
+                setTimeout(() => {
+                    expect(visualBuilder.mainElement.find("g.chart").children().first().attr('class')).toBe('chartArea');
+                    expect(visualBuilder.mainElement.find("g.chart").children().last().attr('class')).toBe('chartNode');
+
+                    done();
+                }, DefaultWaitForRender);
+            });
+
+            it("zero segment created", (done) => {
+                dataView.categorical.values[0].values[3] *= (-1);
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find("g.zeroSegment")).toBeInDOM();
+                    expect(visualBuilder.mainElement.find("line.zeroSegmentNode").length)
+                        .toBe(dataView.categorical.categories[0].values.length);
+                    done();
+                });
+            });
+
+            it("zero label created", (done) => {
+                dataView.categorical.values[0].values[3] *= (-1);
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find("text.zeroLabel")).toBeInDOM();
+                    done();
+                });
+            });
         });
 
-        describe("Drawing tests", () => {
+        describe("Highlights tests", () => {
 
             it("data points highlights", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
@@ -280,6 +319,101 @@ module powerbitests.customVisuals {
                     });
                 });
             });
+        });
+
+        describe("converter", () => {
+            let colors: IDataColorPalette;
+
+            beforeEach(() => {
+                colors = new DataColorPalette();
+            });
+
+            it("arguments are null", () => {
+                callConverterAndExpectExceptions(null, null);
+            });
+
+            it("arguments are undefined", () => {
+                callConverterAndExpectExceptions(undefined, undefined);
+            });
+
+            it("dataView is correct", () => {
+                callConverterAndExpectExceptions(dataView, colors);
+            });
+
+            describe("radarChartData", () => {
+                let radarChartData: RadarChartData;
+
+                beforeEach(() => {
+                    radarChartData = callConverterAndExpectExceptions(dataView, colors);
+                });
+
+                it("radarChart data is defined", () => {
+                    expect(radarChartData).toBeDefined();
+                    expect(radarChartData).not.toBeNull();
+                });
+
+                it("series is defined", () => {
+                    let series: RadarChartSeries[] = radarChartData.series;
+
+                    expect(series).toBeDefined();
+                    expect(series).not.toBeNull();
+                    expect(series.length).toBeGreaterThan(0);
+                });
+
+                it("legendData is defined", () => {
+                    let legendData: LegendData = radarChartData.legendData;
+
+                    expect(legendData).toBeDefined();
+                    expect(legendData).not.toBeNull();
+                });
+
+                it("dataPoints is defined", () => {
+                    radarChartData.series.forEach((series: RadarChartSeries) => {
+                        expect(series.data).toBeDefined();
+                        expect(series.data).not.toBeNull();
+                        expect(series.data.length).toBeGreaterThan(0);
+                    });
+                });
+
+                it("every dataPoint is defined", () => {
+                    radarChartData.series.forEach((series: RadarChartSeries) => {
+                        series.data.forEach((dataPoint: RadarChartDatapoint) => {
+                            expect(dataPoint).toBeDefined();
+                            expect(dataPoint).not.toBeNull();
+                        });
+                    });
+                });
+
+                it("every dataPoint is defined", () => {
+                    radarChartData.series.forEach((series: RadarChartSeries) => {
+                        series.data.forEach((dataPoint: RadarChartDatapoint) => {
+                            expect(dataPoint).toBeDefined();
+                            expect(dataPoint).not.toBeNull();
+                        });
+                    });
+                });
+
+                it("every identity of dataPoint is defined", () => {
+                    radarChartData.series.forEach((series: RadarChartSeries) => {
+                        series.data.forEach((dataPoint: RadarChartDatapoint) => {
+                            let identity: SelectionId = dataPoint.identity;
+
+                            expect(identity).toBeDefined();
+                            expect(identity).not.toBeNull();
+                        });
+                    });
+                });
+            });
+
+            function callConverterAndExpectExceptions(dataView: DataView, colors: IDataColorPalette): RadarChartData {
+                let radarChartData: RadarChartData;
+
+                expect(() => {
+                    radarChartData = VisualClass.converter(dataView, colors);
+                }).not.toThrow();
+
+                return radarChartData;
+            }
         });
     });
 

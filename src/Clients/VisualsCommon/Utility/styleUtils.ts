@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.visuals.utility {
     import ExtendedCSSProperties = jsCommon.ExtendedCSSProperties;
     import IThickness = powerbi.visuals.shapes.IThickness;

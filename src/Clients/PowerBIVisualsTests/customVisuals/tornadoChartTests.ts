@@ -24,11 +24,16 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.TornadoChart;
     import TornadoChartDataView = powerbi.visuals.samples.TornadoChartDataView;
     import TornadoChartSeries = powerbi.visuals.samples.TornadoChartSeries;
+    import TornadoChartPoint = powerbi.visuals.samples.TornadoChartPoint;
     import SalesByCountryData = powerbitests.customVisuals.sampleDataViews.SalesByCountryData;
+    import DataViewValueColumns = powerbi.DataViewValueColumns;
+    import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 
     powerbitests.mocks.setLocale();
 
@@ -38,7 +43,7 @@ module powerbitests.customVisuals {
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new TornadoChartBuilder(1000,500);
+            visualBuilder = new TornadoChartBuilder(1000, 500);
             defaultDataViewBuilder = new SalesByCountryData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -126,31 +131,112 @@ module powerbitests.customVisuals {
             });
         });
 
-        describe("Converter tests", () => {
-            let tornadoChartDataView: TornadoChartDataView;
-            let series: TornadoChartSeries[];
+        describe("parseSeries", () => {
+            let visualInstance: VisualClass;
 
             beforeEach(() => {
-                tornadoChartDataView = visualBuilder.converter(dataView);
-                series = tornadoChartDataView.series;
+                visualBuilder.update(dataView);
+
+                visualInstance = visualBuilder.visualInstance;
             });
 
-            xit("tornadoChartDataView is defined", () => {
+            it("every argument is null", () => {
+                callParseSeriesAndExpectExceptions(null, null, null, null);
+            });
+
+            it("every argument is undefined", () => {
+                callParseSeriesAndExpectExceptions(undefined, undefined, undefined, undefined);
+            });
+
+            it("index is negative, other arguments are null", () => {
+                callParseSeriesAndExpectExceptions(null, -5, null, null);
+            });
+
+            it("every argument is correct", () => {
+                let index: number = 0,
+                    series: TornadoChartSeries;
+
+                series = callParseSeriesAndExpectExceptions(
+                    dataView.categorical.values,
+                    index,
+                    true,
+                    dataView.categorical.values.grouped()[index]);
+
+                expect(series.categoryAxisEnd).toBeDefined();
+                expect(series.name).toBeDefined();
+
+                expect(series.selectionId).toBeDefined();
+                expect(series.selectionId).not.toBeNull();
+                expect(series.selectionId.getKey()).toBeDefined();
+
+                expect(series.categoryAxisEnd).toBeDefined();
+            });
+
+            function callParseSeriesAndExpectExceptions(
+                dataViewValueColumns: DataViewValueColumns,
+                index: number,
+                isGrouped: boolean,
+                columnGroup: DataViewValueColumnGroup): TornadoChartSeries {
+
+                let series: TornadoChartSeries;
+
+                expect(() => {
+                    series = visualInstance.parseSeries(
+                        dataViewValueColumns,
+                        index,
+                        isGrouped,
+                        columnGroup);
+                }).not.toThrow();
+
+                return series;
+            }
+        });
+
+        describe("Converter tests", () => {
+            let tornadoChartDataView: TornadoChartDataView,
+                tornadoChartSeries: TornadoChartSeries[];
+
+            beforeEach(() => {
+                visualBuilder.update(dataView);
+
+                tornadoChartDataView = visualBuilder.converter(dataView);
+                tornadoChartSeries = tornadoChartDataView.series;
+            });
+
+            it("tornadoChartDataView is defined", () => {
                 expect(tornadoChartDataView).toBeDefined();
                 expect(tornadoChartDataView).not.toBeNull();
             });
 
-            describe("Series", () => {
-                xit("Series are defined", () => {
-                    expect(series).toBeDefined();
-                    expect(series).not.toBeNull();
+            describe("DataPoints", () => {
+                it("dataPoints are defined", () => {
+                    expect(tornadoChartDataView.dataPoints).toBeDefined();
+                    expect(tornadoChartDataView.dataPoints).not.toBeNull();
+                    expect(tornadoChartDataView.dataPoints.length).toBeGreaterThan(0);
                 });
 
-                xit("Identity is defined with key", () => {
-                    for (let tornadoChartSeries of series) {
-                        expect(tornadoChartSeries.selectionId).not.toBeNull();
-                        expect(tornadoChartSeries.selectionId.getKey()).toBeDefined();
-                    }
+                it("identity is defined with key", () => {
+                    tornadoChartDataView.dataPoints.forEach((dataPoint: TornadoChartPoint) => {
+                        expect(dataPoint.identity).toBeDefined();
+                        expect(dataPoint.identity).not.toBeNull();
+
+                        expect(dataPoint.identity.getKey()).toBeDefined();
+                        expect(dataPoint.identity.getKey()).not.toBeNull();
+                    });
+                });
+            });
+
+            describe("Series", () => {
+                it("series are defined", () => {
+                    expect(tornadoChartSeries).toBeDefined();
+                    expect(tornadoChartSeries).not.toBeNull();
+                });
+
+                it("identity is defined with key", () => {
+                    tornadoChartSeries.forEach((series: TornadoChartSeries) => {
+                        expect(series.selectionId).not.toBeNull();
+                        expect(series.selectionId.getKey()).toBeDefined();
+                    });
                 });
             });
         });
@@ -165,8 +251,12 @@ module powerbitests.customVisuals {
             return new VisualClass();
         }
 
+        public get visualInstance(): VisualClass {
+            return this.visual;
+        }
+
         public get mainElement() {
-            return this.element.children('svg.tornado-chart');
+            return this.element.children("svg.tornado-chart");
         }
 
         public converter(dataView: powerbi.DataView): TornadoChartDataView {

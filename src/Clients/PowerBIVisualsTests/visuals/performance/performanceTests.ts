@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import VisualPlugin = powerbi.IVisualPlugin;
     import VisualPluginFactory = powerbi.visuals.visualPluginFactory;

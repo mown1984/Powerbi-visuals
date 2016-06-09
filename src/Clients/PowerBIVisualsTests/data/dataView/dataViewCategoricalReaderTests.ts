@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import IDataViewCategoricalReader = powerbi.data.IDataViewCategoricalReader;
     import ValueType = powerbi.ValueType;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbi.extensibility {
     export function VisualPlugin(options: IVisualPluginOptions): ClassDecorator {
         return function (constructor: IVisualConstructor): void {

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.LineDotChart;
     import LineDotChartData = powerbitests.customVisuals.sampleDataViews.LineDotChartData;

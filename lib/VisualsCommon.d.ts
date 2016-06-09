@@ -1,3 +1,8 @@
+
+
+
+
+
 declare module jsCommon {
     /**
      * DOM constants.
@@ -83,8 +88,11 @@ declare module jsCommon {
         const inputAndSelectEventNames: string;
     }
 }
+
 declare module powerbi {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
+    const RS_AccessDeniedDueToRLSGroup: string;
+    const RS_CannotRetrieveModel: string;
     interface ServiceError {
         statusCode: number;
         /**
@@ -139,12 +147,14 @@ declare module powerbi {
         static addAdditionalInfo(errorDetails: ErrorDetails, pbiErrorDetails: PowerBIErrorDetail[], localize: IStringResourceProvider): ErrorDetails;
         static addDebugErrorInfo(errorDetails: ErrorDetails, errorCode: string, message: string, stackTrace: string): ErrorDetails;
         static GetDetailsFromTransformError(localize: IStringResourceProvider, serviceError: ServiceError): ErrorDetails;
-        static GetDetailsFromServerErrorStatusCode(localize: IStringResourceProvider, statusCode: number): ErrorDetails;
+        static GetDetailsFromServerError(localize: IStringResourceProvider, serviceError: ServiceError): ErrorDetails;
     }
 }
+
 declare module powerbi {
     let build: any;
 }
+
 declare module powerbi {
     const CategoryTypes: {
         Address: string;
@@ -238,6 +248,7 @@ declare module powerbi {
     }
 }
 declare var DEBUG: boolean;
+
 declare module powerbi {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     interface ILocalizableError {
@@ -290,6 +301,7 @@ declare module powerbi {
         getDetails(resourceProvider: IStringResourceProvider): ErrorDetails;
     }
 }
+
 declare module jsCommon {
     interface ArrayIdItems<T> extends Array<T> {
         withId(id: number): T;
@@ -378,6 +390,7 @@ declare module jsCommon {
         function isArrayOrInheritedArray(obj: {}): obj is Array<any>;
     }
 }
+
 declare module InJs {
     module DomFactory {
         function div(): JQuery;
@@ -392,6 +405,7 @@ declare module InJs {
         function iframe(): JQuery;
     }
 }
+
 declare module powerbi {
     /**
      * Module Double contains a set of constants and precision based utility methods
@@ -540,6 +554,7 @@ declare module powerbi {
         function toIncrement(value: number, increment: number): number;
     }
 }
+
 declare module jsCommon {
     module Color {
         function rotate(rgbString: string, rotateFactor: number): string;
@@ -556,6 +571,7 @@ declare module jsCommon {
         }
     }
 }
+
 declare module jsCommon {
     /**
      * CSS constants.
@@ -673,6 +689,7 @@ declare module jsCommon {
         webkitTransform: string;
     }
 }
+
 /**
  * Defines a Debug object. Calls to any functions in this object removed by the minifier.
  * The functions within this class are not minified away, so we use the preprocessor-style
@@ -701,6 +718,7 @@ declare module debug {
     function assertAnyValue<T>(value: T, message: string): void;
     function assertFail(message: string): void;
 }
+
 declare module jsCommon {
     interface IError extends Error {
         stack?: string;
@@ -737,6 +755,7 @@ declare module jsCommon {
         const VisibleSelector: string;
     }
 }
+
 declare module jsCommon {
     /**
      * Represents a lazily instantiated value.
@@ -748,6 +767,7 @@ declare module jsCommon {
         getValue(): T;
     }
 }
+
 declare module powerbi {
     module Prototype {
         /**
@@ -767,6 +787,7 @@ declare module powerbi {
         function overrideArray<T, TArray>(prototype: TArray, override: (T) => T): TArray;
     }
 }
+
 declare module powerbi {
     interface ScriptErrorInfo {
         message: string;
@@ -794,6 +815,7 @@ declare module powerbi {
         errorType?: ErrorType;
     }
 }
+
 declare module powerbi.visuals {
     module shapes {
         interface IPolygon {
@@ -820,6 +842,7 @@ declare module powerbi.visuals {
         }
     }
 }
+
 declare module jsCommon {
     module Formatting {
         /**
@@ -835,6 +858,7 @@ declare module jsCommon {
         function fixDateTimeFormat(format: string): string;
     }
 }
+
 declare module jsCommon {
     /**
      * Public API.
@@ -850,9 +874,11 @@ declare module jsCommon {
     }
     function requires(dependency: IDependency, to?: () => void): void;
 }
+
 declare module powerbi {
     function createJQueryPromiseFactory(): IPromiseFactory;
 }
+
 declare module powerbi {
     interface IStorageService {
         getData(key: string): any;
@@ -871,6 +897,7 @@ declare module powerbi {
     var localStorageService: IStorageService;
     const ephemeralStorageService: IStorageService;
 }
+
 declare module jsCommon {
     module WordBreaker {
         import TextProperties = powerbi.TextProperties;
@@ -913,6 +940,7 @@ declare module jsCommon {
         function splitByWidth(content: string, properties: TextProperties, textWidthMeasurer: ITextAsSVGMeasurer, maxWidth: number, maxNumLines: number, truncator?: ITextTruncator): string[];
     }
 }
+
 declare module powerbi {
     interface ITextMeasurer {
         (textElement: SVGTextElement): number;
@@ -1014,12 +1042,15 @@ declare module powerbi {
         function wordBreakOverflowingText(textElement: any, maxWidth: number, maxHeight: number, linePadding?: number): void;
     }
 }
+
 declare module jsCommon {
     module KeyUtils {
         function isArrowKey(keyCode: number): boolean;
         function isCtrlDefaultKey(keyCode: number): boolean;
+        function isNudgeModifierKey(keyCode: number): boolean;
     }
 }
+
 declare module jsCommon {
     /**
      * Responsible for throttling input function.
@@ -1036,6 +1067,7 @@ declare module jsCommon {
         timerComplete(fn: () => void): void;
     }
 }
+
 declare module jsCommon {
     interface ITimerPromiseFactory {
         /**
@@ -1438,6 +1470,7 @@ declare module jsCommon {
         function deferUntilNextFrame(callback: Function): Function;
     }
 }
+
 declare module jsCommon {
     class TraceItem {
         type: TraceType;
@@ -1454,6 +1487,7 @@ declare module jsCommon {
         toString(): string;
     }
 }
+
 declare module jsCommon {
     module UrlUtils {
         function isValidUrl(value: string): boolean;
@@ -1462,6 +1496,7 @@ declare module jsCommon {
         function getBase64ContentFromDataUri(uri: string): string;
     }
 }
+
 declare module jsCommon {
     module BrowserUtils {
         function isChrome(): boolean;
@@ -1473,6 +1508,7 @@ declare module jsCommon {
         function getInternetExplorerVersion(): number;
     }
 }
+
 declare module jsCommon {
     /**
      * Interface to help define objects indexed by number to a particular type.
@@ -1582,6 +1618,7 @@ declare module jsCommon {
         function run(regex: RegExp, value: string, start?: number): RegExpExecArray;
     }
 }
+
 declare module powerbi.visuals.utility {
     import IThickness = powerbi.visuals.shapes.IThickness;
     module StyleUtils {
@@ -1590,6 +1627,7 @@ declare module powerbi.visuals.utility {
         function getPadding(element: JQuery): IThickness;
     }
 }
+
 declare module jsCommon {
     interface ITraceListener {
         logTrace(trace: TraceItem): void;
@@ -1622,6 +1660,7 @@ declare module jsCommon {
         function enableDefaultListener(): void;
     }
 }
+
 declare module jsCommon {
     /**
      * The types of possible traces within the system, this aligns to the traces available in Cloud Platform.
@@ -1636,13 +1675,15 @@ declare module jsCommon {
         Fatal = 6,
     }
 }
+
 declare module jsCommon {
     function ensurePowerView(action?: () => void): void;
     function ensureMap(locale: string, action: () => void): void;
     function mapControlLoaded(): void;
     function waitForMapControlLoaded(): JQueryPromise<void>;
 }
-declare let globalMapControlLoaded: () => void;
+declare let globalMapControlLoaded: Function;
+
 declare module InJs {
     /**
      * The types of possible traces within the system, this aligns to the traces available in Cloud Platform.

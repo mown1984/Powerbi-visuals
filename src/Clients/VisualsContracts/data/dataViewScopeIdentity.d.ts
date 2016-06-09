@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi {
     /** Encapsulates the identity of a data scope in a DataView. */
     export interface DataViewScopeIdentity {

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests {
     import DataViewRoleWildcard = powerbi.data.DataViewRoleWildcard;
     import VisualObjectRepetition = powerbi.VisualObjectRepetition;

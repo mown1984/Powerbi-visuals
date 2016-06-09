@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests {
     import CartesianChart = powerbi.visuals.CartesianChart;
     import CartesianAxes = powerbi.visuals.CartesianAxes;

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 /* tslint:disable */
 const powerBIAccessToken = "fooBarBaz";
 const powerBIAccessTokenExpiry = "2115-01-01 00:00:00Z";

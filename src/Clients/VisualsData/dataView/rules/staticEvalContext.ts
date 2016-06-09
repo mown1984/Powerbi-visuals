@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../../_references.ts"/>
 
 module powerbi.data {
     import SQExpr = powerbi.data.SQExpr;
@@ -128,7 +130,7 @@ module powerbi.data {
         }
     }
 
-    function findSelectIndex(expr: SQExpr, selectTransforms: DataViewSelectTransform[]): number {
+    export function findSelectIndex(expr: SQExpr, selectTransforms: DataViewSelectTransform[]): number {
         debug.assertValue(expr, 'expr');
         debug.assertValue(selectTransforms, 'selectTransforms');
 

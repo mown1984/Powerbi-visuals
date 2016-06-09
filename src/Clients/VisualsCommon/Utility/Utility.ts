@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -28,6 +28,8 @@
  * Defined in host.
  */
 declare var clusterUri: string;
+
+/// <reference path="../_references.ts"/>
 
 module jsCommon {
 

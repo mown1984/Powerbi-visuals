@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -23,6 +23,8 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+/// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
@@ -111,7 +113,8 @@ module powerbi.visuals {
                 let slicerSearch = slicerHeader.append('div')
                     .classed(Selectors.SearchHeader.class, true)
                     .classed(Selectors.SearchHeaderCollapsed.class, true);
-                slicerSearch.append('button')
+                slicerSearch.append('span')
+                    .classed('powervisuals-glyph search', true)
                     .attr('title', hostServices.getLocalizedString(DisplayNameKeys.Search));
 
                 slicerSearch.append('input')
@@ -163,7 +166,7 @@ module powerbi.visuals {
                     titleHeader.style('display', 'block');
                     let headerTextElement = slicerHeader.select(Selectors.HeaderText.selector)
                         .text(headerText);
-                    this.setSlicerHeaderTextStyle(headerTextElement, settings);
+                    this.setSlicerHeaderTextStyle(titleHeader, headerTextElement, settings, settings.search.enabled);
                 } else {
                     titleHeader.style('display', 'none');
                 }
@@ -205,12 +208,26 @@ module powerbi.visuals {
                 }
             }
 
-            private setSlicerHeaderTextStyle(slicerHeader: D3.Selection, settings: SlicerSettings): void {
+            private setSlicerHeaderTextStyle(slicerHeader: D3.Selection, headerTextElement: D3.Selection, settings: SlicerSettings, searchEnabled: boolean): void {
+                let hideOutline = false;
+
+                // When search is enabled, we will hide the default outline if the outline properties haven't been customized by user.
+                if (searchEnabled) {
+                    let defaultSetting = Slicer.DefaultStyleProperties();
+                    hideOutline = (settings.header.outline === defaultSetting.header.outline
+                        && settings.general.outlineWeight === defaultSetting.general.outlineWeight
+                        && settings.general.outlineColor === defaultSetting.general.outlineColor);
+                }
+
                 slicerHeader
                     .style({
-                        'border-style': 'solid',
+                        'border-style': hideOutline ? 'none': 'solid',
                         'border-color': settings.general.outlineColor,
                         'border-width': VisualBorderUtil.getBorderWidth(settings.header.outline, settings.general.outlineWeight),
+                    });
+
+                headerTextElement
+                    .style({
                         'color': settings.header.fontColor,
                         'background-color': settings.header.background,
                         'font-size': PixelConverter.fromPoint(settings.header.textSize),

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module jsCommon {
     import DOMConstants = jsCommon.DOMConstants;
 
@@ -40,6 +42,10 @@ module jsCommon {
                 || keyCode === DOMConstants.cKeyCode
                 || keyCode === DOMConstants.xKeyCode
                 || keyCode === DOMConstants.vKeyCode;
+        }
+
+        export function isNudgeModifierKey(keyCode: number): boolean {
+            return keyCode === DOMConstants.shiftKeyCode;
         }
     }
 }

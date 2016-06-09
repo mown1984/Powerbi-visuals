@@ -27,6 +27,7 @@
     "no-eval": true,
     "no-string-literal": false,
     "no-switch-case-fall-through": false,
+    "no-trailing-comma": false,
     "no-trailing-whitespace": false,
     "no-unused-expression": true,
     "no-unused-variable": true,
@@ -63,6 +64,13 @@
         "check-operator",
         "check-separator",
         "check-type"
-    ]
+    ],
+    "no-static-this": false,
+    "bi-duplicate-variable": false,
+    "no-equals-nan": true,
+    "no-underscore-prefix-for-variables": false,
+    "function-return-type-required": false,
+    "empty-line-before-comments": false,
+    "copyright-check": false
   }
 }

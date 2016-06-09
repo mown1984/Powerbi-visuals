@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 module powerbitests.tablixHelper {
     import CssConstants = jsCommon.CssConstants;
     import DataView = powerbi.DataView;
@@ -435,7 +437,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i] ? values[i].toString() : '';
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, true);
+                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, false);
                 }
 
                 expect(tableItems[i - 1].textContent).toBe(formattedValue);
@@ -454,7 +456,7 @@ module powerbitests.tablixHelper {
                 let formattedValue: string = values[i].toString();
 
                 if (columnFormat) {
-                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, true);
+                    formattedValue = ValueFormatter.formatVariantMeasureValue(values[i], columnFormat, TablixObjects.PropColumnFormatString, false);
                 }
 
                 expect(tableItems[i].textContent).toBe(formattedValue);

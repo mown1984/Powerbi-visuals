@@ -1,3 +1,6 @@
+
+declare function requireAll(requireContext: any): any;
+
 declare module powerbi.visuals.samples {
     import ArcDescriptor = D3.Layout.ArcDescriptor;
     interface AsterData {
@@ -92,6 +95,7 @@ declare module powerbi.visuals.samples {
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
     }
 }
+
 declare module powerbi.visuals.samples {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     interface TornadoChartTextOptions {
@@ -241,7 +245,10 @@ declare module powerbi.visuals.samples {
         private getColor(properties, defaultColor, objects);
         private getPrecision(objects);
         private getObjectsFromDataView(dataView);
-        private parseSeries(dataViewValueColumns, index, isGrouped, grouped);
+        /**
+         * Public for testability.
+         */
+        parseSeries(dataViewValueColumns: DataViewValueColumns, index: number, isGrouped: boolean, columnGroup: DataViewValueColumnGroup): TornadoChartSeries;
         private getLegendData(series);
         private clearData();
         onClearSelection(): void;
@@ -270,6 +277,7 @@ declare module powerbi.visuals.samples {
         destroy(): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import ISize = shapes.ISize;
@@ -684,6 +692,7 @@ declare module powerbi.visuals.samples {
         renderSelection(hasSelection: boolean): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     interface SankeyDiagramConstructorOptions {
         svg?: D3.Selection;
@@ -809,6 +818,7 @@ declare module powerbi.visuals.samples {
         private enumerateLinks(enumeration);
     }
 }
+
 declare module powerbi.visuals.samples {
     let bulletChartProps: {
         values: {
@@ -999,6 +1009,7 @@ declare module powerbi.visuals.samples {
         renderSelection(hasSelection: boolean): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     enum WordCloudScaleType {
         logn = 0,
@@ -1132,6 +1143,7 @@ declare module powerbi.visuals.samples {
         destroy(): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     interface ITableView {
         data(data: any[], dataIdFunction: (d) => {}, dataAppended: boolean): ITableView;
@@ -1188,6 +1200,7 @@ declare module powerbi.visuals.samples {
             background: DataViewObjectPropertyIdentifier;
             transparency: DataViewObjectPropertyIdentifier;
             selectedColor: DataViewObjectPropertyIdentifier;
+            hoverColor: DataViewObjectPropertyIdentifier;
             unselectedColor: DataViewObjectPropertyIdentifier;
             disabledColor: DataViewObjectPropertyIdentifier;
             outline: DataViewObjectPropertyIdentifier;
@@ -1256,8 +1269,8 @@ declare module powerbi.visuals.samples {
             height: number;
             width: number;
             fontColor: string;
-            hoverColor: string;
             selectedColor: string;
+            hoverColor: string;
             unselectedColor: string;
             disabledColor: string;
             marginLeft: number;
@@ -1311,6 +1324,7 @@ declare module powerbi.visuals.samples {
         constructor(options?: ChicletSlicerConstructorOptions);
         static converter(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService): ChicletSlicerData;
         init(options: VisualInitOptions): void;
+        private static canSelect(args);
         update(options: VisualUpdateOptions): void;
         onResizing(finalViewport: IViewport): void;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
@@ -1359,6 +1373,7 @@ declare module powerbi.visuals.samples {
         styleSlicerInputs(slicers: D3.Selection, hasSelection: boolean): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     interface ChordChartData {
         dataMatrix: number[][];
@@ -1455,13 +1470,17 @@ declare module powerbi.visuals.samples {
         static union_arrays(x: any[], y: any[]): any[];
     }
 }
+
 declare module powerbi.visuals.samples {
-    interface EnhancedScatterChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
+    interface EnhancedScatterChartDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint {
         x: any;
         y: any;
         size: any;
         radius: RadiusData;
         fill: string;
+        labelFill?: string;
+        labelFontSize: any;
+        contentPosition: ContentPositions;
         formattedCategory: jsCommon.Lazy<string>;
         colorFill?: string;
         svgurl?: string;
@@ -1502,7 +1521,6 @@ declare module powerbi.visuals.samples {
         private AxisGraphicsContextClassName;
         static DefaultBubbleOpacity: number;
         static DimmedBubbleOpacity: number;
-        private static DataLabelsOffset;
         private static ClassName;
         private static MainGraphicsContextClassName;
         private static LegendLabelFontSizeDefault;
@@ -1612,6 +1630,7 @@ declare module powerbi.visuals.samples {
         onClearSelection(): void;
     }
 }
+
 declare var THREE: any;
 declare var WebGLHeatmap: any;
 declare var GlobeMapCanvasLayers: JQuery[];
@@ -1677,6 +1696,7 @@ declare module powerbi.visuals.samples {
     }
 }
 declare function loadGlobeMapLibs(): void;
+
 declare module powerbi.visuals.samples {
     interface RadarChartConstructorOptions {
         animator?: IGenericAnimator;
@@ -1728,20 +1748,24 @@ declare module powerbi.visuals.samples {
         private static VisualClassName;
         private static Segments;
         private static SegmentNode;
+        private static ZeroSegment;
+        private static ZeroSegmentNode;
+        private static ZeroLabel;
         private static Axis;
         private static AxisNode;
         private static AxisLabel;
         private static Chart;
         private static ChartNode;
+        private static ChartArea;
         private static ChartPolygon;
         private static ChartDot;
         private svg;
         private segments;
+        private zeroSegment;
         private axis;
         private chart;
         private mainGroupElement;
         private colors;
-        private selectionManager;
         private viewport;
         private interactivityService;
         private animator;
@@ -1750,15 +1774,20 @@ declare module powerbi.visuals.samples {
         private legendObjectProperties;
         private radarChartData;
         private isInteractiveChart;
+        private zeroPointRadius;
         private static DefaultMargin;
         private static SegmentLevels;
         private static SegmentFactor;
         private static Radians;
         private static Scale;
+        static NodeFillOpacity: number;
         static AreaFillOpacity: number;
         static DimmedAreaFillOpacity: number;
         private angle;
         private radius;
+        static AxesLabelsFontFamily: string;
+        static AxesLabelsfontSize: string;
+        static AxesLabelsMaxWidth: number;
         static converter(dataView: DataView, colors: IDataColorPalette): RadarChartData;
         constructor(options?: RadarChartConstructorOptions);
         init(options: VisualInitOptions): void;
@@ -1769,9 +1798,13 @@ declare module powerbi.visuals.samples {
         private drawAxes(values);
         private drawAxesLabels(values, dataViewMetadataColumn?);
         private drawChart(series, duration);
+        private calculateChartDomain(series);
         private renderLegend(radarChartData);
+        private drawZeroCircularSegment(values);
+        private drawZeroLabel();
         private getDataPoints(series);
         private getAllDataPointsList(series);
+        private isPercentChart(dataPointsList);
         private parseLegendProperties(dataView);
         private static parseSettings(dataView);
         private static parseLabelSettings(dataView);
@@ -1783,6 +1816,7 @@ declare module powerbi.visuals.samples {
         private updateViewport();
     }
 }
+
 declare module powerbi.visuals.samples {
     interface HistogramConstructorOptions {
         svg?: D3.Selection;
@@ -1795,6 +1829,27 @@ declare module powerbi.visuals.samples {
         frequency: boolean;
         bins?: number;
         precision: number;
+        xAxisColor?: string;
+        xDisplayUnits?: number;
+        xPrecision?: number;
+        xTitle?: boolean;
+        xShow?: boolean;
+        xStyle?: string;
+        yAxisColor?: string;
+        yTitle?: boolean;
+        yDisplayUnits?: number;
+        yPrecision?: number;
+        yShow?: boolean;
+        yStyle?: string;
+        yStart?: number;
+        yEnd?: number;
+        yPosition?: string;
+        labelShow?: boolean;
+        labelColor?: string;
+        labelDisplayUnit?: number;
+        labelPrecision?: number;
+        labelFontSize?: number;
+        maxX?: number;
     }
     interface HistogramData extends D3.Layout.Bin, TooltipEnabledDataPoint {
         range: number[];
@@ -1806,6 +1861,8 @@ declare module powerbi.visuals.samples {
         yScale?: D3.Scale.LinearScale;
         settings: HistogramSettings;
         formatter: IValueFormatter;
+        xLabelFormatter?: IValueFormatter;
+        yLabelFormatter?: IValueFormatter;
     }
     class HistogramChartWarning {
         static ErrorInvalidDataValues: string;
@@ -1822,6 +1879,7 @@ declare module powerbi.visuals.samples {
         private static DefaultHistogramSettings;
         private static Axes;
         private static Axis;
+        private static Labels;
         private static Columns;
         private static Column;
         private static Legends;
@@ -1831,7 +1889,6 @@ declare module powerbi.visuals.samples {
         private MinColumnHeight;
         private MinOpacity;
         private MaxOpacity;
-        private NumberOfLabelsOnAxisY;
         private MinNumberOfBins;
         private MaxNumberOfBins;
         private MinPrecision;
@@ -1839,11 +1896,21 @@ declare module powerbi.visuals.samples {
         private TooltipDisplayName;
         private SeparatorNumbers;
         private LegendSize;
+        private YLegendSize;
+        private XLegendSize;
         private AxisSize;
+        private DataLabelMargin;
+        private widthOfColumn;
+        private yTitleMargin;
+        private outerPadding;
+        private xAxisProperties;
+        private yAxisProperties;
         private ExcludeBrackets;
         private IncludeBrackets;
         private margin;
         private durationAnimations;
+        private oldInnerPaddingRatio;
+        private oldMinOrdinalRectThickness;
         private viewport;
         private hostService;
         private selectionManager;
@@ -1856,31 +1923,60 @@ declare module powerbi.visuals.samples {
         private axisY;
         private legend;
         private columns;
+        private labels;
         private histogramDataView;
         private animator;
         private columnsSelection;
+        private textProperties;
         constructor(histogramConstructorOptions?: HistogramConstructorOptions);
         init(visualsOptions: VisualInitOptions): void;
         converter(dataView: DataView): HistogramDataView;
         private getValuesByFrequencies(sourceValues, frequencies, identities);
-        private getData(values, numericalValues, data, settings, valueFormatter);
+        private getData(values, numericalValues, data, settings, yValueFormatter, xValueFormatter);
         private getRange(minValue, maxValue, step, index);
-        private getTooltipData(value, range, settings, includeLeftBorder, valueFormatter);
+        private getTooltipData(value, range, settings, includeLeftBorder, yValueFormatter, xValueFormatter);
         private getSelectionIds(values, bin, index);
         private isValueContainedInRange(value, bin, index);
         private parseSettings(dataView);
+        private setLegend(title, style, displayUnit);
+        private getLabelFontSize(objects);
+        private getLabelShow(objects);
+        private getLabelColor(objects);
+        private getLabelDisplayUnit(objects);
+        private getLabelPrecision(objects);
+        private getXStyle(objects);
+        private getXDisplayUnit(objects);
+        private getXPrecision(objects);
+        private getXAxisShow(objects);
+        private getXAxisColor(objects);
+        private getXTitle(objects);
+        private getYStyle(objects);
+        private getYPosition(objects);
+        private getYAxisShow(objects);
+        private getYAxisColor(objects);
+        private getYStart(objects);
+        private getYEnd(objects);
+        private getYDisplayUnit(objects);
+        private getYPrecision(objects);
+        private getYTitle(objects);
         private getBins(objects);
         private getFrequency(objects);
         private getPrecision(objects);
         validateData(data: HistogramDataView): boolean;
         update(visualUpdateOptions: VisualUpdateOptions): void;
+        private fixXTicSize();
         private setSize(viewport);
         private updateElements(height, width);
+        shouldShowYOnRight(): boolean;
+        private columsAndAxesTransform(labelWidth);
         private render();
+        private adjustTransformToAxisLabels();
         private renderColumns();
         private renderTooltip(selection);
         private getColumnHeight(column, y);
         private renderAxes();
+        private getLabaelLayout();
+        private renderLabels();
         private rangesToArray(data);
         private rangeToString(range, includeLeftBorder, valueFormatter);
         private renderLegend();
@@ -1891,8 +1987,13 @@ declare module powerbi.visuals.samples {
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
         private getObjectsFromDataView(dataView);
         destroy(): void;
+        private calculateXAxes(source, textProperties, scrollbarVisible);
+        private calculateXAxesProperties(options, metaDataColumn);
+        private calculateYAxes(source, textProperties, scrollbarVisible);
+        private calculateYAxesProperties(options, metaDataColumn);
     }
 }
+
 declare module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     const DotPlotProperties: any;
@@ -2002,6 +2103,7 @@ declare module powerbi.visuals.samples {
         renderSelection(hasSelection: boolean): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     interface ForceGraphOptions {
         showDataLabels: boolean;
@@ -2095,6 +2197,7 @@ declare module powerbi.visuals.samples {
         destroy(): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     import IStringResourceProvider = jsCommon.IStringResourceProvider;
     const DefaultDateType: string;
@@ -2391,6 +2494,7 @@ declare module powerbi.visuals.samples {
         getMessages(resourceProvider: IStringResourceProvider): IVisualErrorMessage;
     }
 }
+
 declare module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     const Months: IEnumType;
@@ -2821,6 +2925,7 @@ declare module powerbi.visuals.samples {
         enumerateWeekDay(enumeration: ObjectEnumerationBuilder, dataview: DataView): void;
     }
 }
+
 declare module powerbi.visuals.samples {
     interface StreamData {
         dataPoints: StreamDataPoint[][];
@@ -2899,48 +3004,7 @@ declare module powerbi.visuals.samples {
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
     }
 }
-declare module powerbi.visuals.samples {
-    interface SunburstSlice {
-        children?: SunburstSlice[];
-        value?: any;
-        color?: string;
-        name?: string;
-        parent?: SunburstSlice;
-        selector: SelectionId;
-        total: number;
-        tooltipInfo?: TooltipDataItem[];
-    }
-    interface SunburstViewModel {
-        root: SunburstSlice;
-    }
-    var sunburstRoleNames: {
-        nodes: string;
-        values: string;
-    };
-    class Sunburst implements IVisual {
-        private static minOpacity;
-        private svg;
-        private g;
-        private arc;
-        private total;
-        private viewport;
-        private colors;
-        private selectionManager;
-        private static roleNames;
-        static capabilities: VisualCapabilities;
-        init(options: VisualInitOptions): void;
-        private static setAllUnhide(selection);
-        update(options: VisualUpdateOptions): void;
-        private updateInternal(dataRootNode);
-        private static getTreePath(node);
-        private onResize();
-        private highlightPath(d, sunBurst, setUnhide);
-        private renderTooltip(selection);
-        private static getTooltipData(displayName, value);
-        private covertTreeNodeToSunBurstNode(originParentNode, sunburstParentNode, colors, pathIdentity, color);
-        converter(dataView: DataView, colors: IDataColorPalette): SunburstSlice;
-    }
-}
+
 declare module powerbi.visuals.samples {
     interface LineDotPoint {
         time: number | Date;
@@ -3025,6 +3089,50 @@ declare module powerbi.visuals.samples {
         private renderLegends(model);
     }
 }
+
+declare module powerbi.visuals.samples {
+    interface SunburstSlice {
+        children?: SunburstSlice[];
+        value?: any;
+        color?: string;
+        name?: string;
+        parent?: SunburstSlice;
+        selector: SelectionId;
+        total: number;
+        tooltipInfo?: TooltipDataItem[];
+    }
+    interface SunburstViewModel {
+        root: SunburstSlice;
+    }
+    var sunburstRoleNames: {
+        nodes: string;
+        values: string;
+    };
+    class Sunburst implements IVisual {
+        private static minOpacity;
+        private svg;
+        private g;
+        private arc;
+        private total;
+        private viewport;
+        private colors;
+        private selectionManager;
+        private static roleNames;
+        static capabilities: VisualCapabilities;
+        init(options: VisualInitOptions): void;
+        private static setAllUnhide(selection);
+        update(options: VisualUpdateOptions): void;
+        private updateInternal(dataRootNode);
+        private static getTreePath(node);
+        private onResize();
+        private highlightPath(d, sunBurst, setUnhide);
+        private renderTooltip(selection);
+        private static getTooltipData(displayName, value);
+        private covertTreeNodeToSunBurstNode(originParentNode, sunburstParentNode, colors, pathIdentity, color);
+        converter(dataView: DataView, colors: IDataColorPalette): SunburstSlice;
+    }
+}
+
 declare module powerbi.visuals.plugins {
     let sunburstCustom: IVisualPlugin;
     let asterPlot: IVisualPlugin;
@@ -3045,6 +3153,7 @@ declare module powerbi.visuals.plugins {
     let streamGraph: IVisualPlugin;
     var lineDotChart: IVisualPlugin;
 }
+
 declare module powerbi.visuals.visualPluginFactory {
     class CustomVisualPluginService extends VisualPluginService {
         private customVisualPlugins;

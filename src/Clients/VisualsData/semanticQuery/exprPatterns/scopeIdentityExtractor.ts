@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbi.data {
     import ArrayExtensions = jsCommon.ArrayExtensions;
 
@@ -37,6 +39,16 @@ module powerbi.data {
                 return null;
 
             return ArrayExtensions.emptyToNull(extractor.keys);
+        }
+
+        export function getValues(expr: SQExpr): SQExpr[] {
+            let extractor = new ScopeIdExtractorImpl();
+            expr.accept(extractor);
+
+            if (extractor.malformed)
+                return null;
+
+            return ArrayExtensions.emptyToNull(extractor.values);
         }
 
         export function getInExpr(expr: SQExpr): SQInExpr{

@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../../_references.ts"/>
+
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
 
@@ -103,9 +105,7 @@ module powerbitests.customVisuals.sampleDataViews {
                     },
                     values: []
                 }
-                ],
-                null,
-                columnNames).build();
+                ], columnNames).build();
         }
     }
 }

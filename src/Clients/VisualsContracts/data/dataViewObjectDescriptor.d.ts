@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+/// <reference path="../_references.ts"/>
+
 declare module powerbi.data {
     export interface DataViewObjectDescriptors {
         /** Defines general properties for a visualization. */
