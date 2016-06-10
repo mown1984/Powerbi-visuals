@@ -16,10 +16,10 @@ The Microsoft Power BI visuals project provides high quality data visualizations
 To build the library and run the sample application you will need:
 
 - [Git](http://git-scm.com/book/en/v2/Getting-Started-Installing-Git#Installing-on-Windows)
-- [Node.js](https://nodejs.org/en/download) (>=4.0.0)
+- [Node.js](https://nodejs.org/en/download) (>= 4.x <= 5.x)
 - Recommended IDE - [Visual Studio Community 2015](https://www.visualstudio.com/vs-2015-product-editions?wt.mc_id=github_microsoft_powerbi-visuals) (Free for use)
  -  Be sure to install the "Microsoft Web Developer Tools" optional feature. To install, go to Add/Remove Programs, right-click on Visual Studio, select Change, then Modify. Check the "Microsoft Web Developer Tools" checkbox and finish the install.
- -  Ensure that Visual Studio is not using previous version of Node.js. Go to Tools > Options, then Projects and Solutions > External Web Tools. You can remove old path and add folder with the latest Node.js, or just leave $(PATH), if this environment variable contains path of the latest Node.js.
+ -  Ensure that Visual Studio is not using previous version of Node.js. Go to Tools > Options, then Projects and Solutions > External Web Tools. You can remove old path and add folder with the latest Node.js, or just leave $(PATH) and move it above all folders, if PATH environment variable contains path of the latest Node.js.
  -  You can install [VSIX Package](https://github.com/Microsoft/PowerBI-visuals/blob/master/tools/VSIXExtensions/VisualTemplate.vsix?raw=true) and use Visual Studio Template from it to create new Visual.
 
 ### One-Time Setup
