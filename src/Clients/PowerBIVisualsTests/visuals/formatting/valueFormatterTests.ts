@@ -393,7 +393,7 @@ module powerbitests {
                 expect(scale.format(6.54321)).toBe("654.32%");
                 expect(scale.format(76.54321)).toBe("7,654.32%");
             });
-
+            
             it("create Escaped Character format", () => {
                 let scale = valueFormatter.create({ format: "\\$#,0.00;(\\$#,0.00);\\$#,0.00", value: 1e6 });
 
@@ -624,7 +624,57 @@ module powerbitests {
                 expect(scale.format(maxDate)).toBe("Nov 09");
                 expect(scale.format(null)).toBe("(Blank)");
             });
+            
+            describe("with detectAxisPrecision set to true", () => {
 
+                let options: powerbi.visuals.ValueFormatterOptions;
+
+                beforeEach(() => {
+                    options = {
+                        detectAxisPrecision: true
+                    };
+                });
+
+                describe("with percentage values", () => {
+
+                    beforeEach(() => {
+                        options.format = "0.00 %;-0.00 %;0.00 %";
+                        options.allowFormatBeautification = true;
+                    });
+
+                    it("shows the proper number of decimals when value is less than 1", () => {
+                        options.value = .001;
+
+                        let scale = valueFormatter.create(options);
+
+                        expect(scale.format(0)).toBe("0.0%");
+                        expect(scale.format(1)).toBe("100.0%");
+                        expect(scale.format(-1)).toBe("-100.0%");
+                        expect(scale.format(.54)).toBe("54.0%");
+                        expect(scale.format(.543)).toBe("54.3%");
+                        expect(scale.format(.5432)).toBe("54.3%");
+                        expect(scale.format(.54321)).toBe("54.3%");
+                        expect(scale.format(6.54321)).toBe("654.3%");
+                        expect(scale.format(76.54321)).toBe("7,654.3%");
+                    });
+
+                    it("shows the proper number of decimals when value greater than or equal to 1", () => {
+                        options.value = 1;
+
+                        let scale = valueFormatter.create(options);
+
+                        expect(scale.format(0)).toBe("0%");
+                        expect(scale.format(1)).toBe("100%");
+                        expect(scale.format(-1)).toBe("-100%");
+                        expect(scale.format(.54)).toBe("54%");
+                        expect(scale.format(.543)).toBe("54%");
+                        expect(scale.format(.5432)).toBe("54%");
+                        expect(scale.format(.54321)).toBe("54%");
+                        expect(scale.format(6.54321)).toBe("654%");
+                        expect(scale.format(76.54321)).toBe("7,654%");
+                    });
+                });
+            });
         });
 
         describe("formatListAnd", () => {

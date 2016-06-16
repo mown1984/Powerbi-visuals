@@ -141,7 +141,7 @@ module powerbi.data {
         for (let selectIdx = 0, selectLen = selectTransforms.length; selectIdx < selectLen; selectIdx++) {
             let selectTransform = selectTransforms[selectIdx];
 
-            if (!selectTransform || !selectTransform.queryName)
+            if (!selectTransform || (queryName && !selectTransform.queryName))
                 continue;
 
             if (queryName) {

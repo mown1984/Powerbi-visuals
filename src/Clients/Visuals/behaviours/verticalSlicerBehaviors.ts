@@ -49,7 +49,7 @@ module powerbi.visuals {
             this.interactivityService = options.interactivityService;
             this.settings = options.settings;
 
-            SlicerWebBehavior.bindSlicerEvents(options.slicerContainer, slicers, options.clear, selectionHandler, this.settings, this.interactivityService, options.searchInput);
+            SlicerWebBehavior.bindSlicerEvents(options.slicerContainer, slicers, options.clear, selectionHandler, this.settings, this.interactivityService, options.slicerValueHandler, options.searchInput);
         }
 
         public renderSelection(hasSelection: boolean): void {

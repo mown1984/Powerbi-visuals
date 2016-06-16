@@ -36,7 +36,7 @@ module powerbitests.slicerHelper {
     export const SlicerVisual = 'slicer';
     export const slicerTextClassSelector = ".slicerText";
     export const slicerCountTextClassSelector = ".slicerCountText";
-    export const slicerHeaderClassSelector = ".slicerHeader";
+    export const slicerTitleHeaderClassSelector = ".titleHeader";
     const SelectedClass = 'selected';
 
     export const longSlicerItems = ["First Slicer Long Name for testing",

@@ -51,12 +51,12 @@ module powerbi.data {
 
         /** Attempts to find the self filter property. */
         export function findSelfFilter(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier {
-            return findProperty(
-                descriptors,
-                (propDesc: DataViewObjectPropertyDescriptor) => {
-                    let propType: StructuralTypeDescriptor = propDesc.type;
-                    return propType && propType.filter && propType.filter.selfFilter;
-                });
+            return findProperty(descriptors, isSelfFilter);
+        }
+
+        export function isSelfFilter(descriptor: DataViewObjectPropertyDescriptor): boolean {
+            let propType: StructuralTypeDescriptor = descriptor && descriptor.type;
+            return propType && propType.filter && propType.filter.selfFilter;
         }
 
         /** Attempts to find the self filter enabled property. */

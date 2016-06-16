@@ -23,9 +23,10 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
 "use strict";
 
-var gulp = require("gulp"),
+var gulp = require('gulp-help')(require('gulp'), getHelpOptions()),
     runSequence = require("run-sequence").use(gulp),
     path = require("path"),
     gutil = require("gulp-util"),
@@ -41,7 +42,9 @@ var gulp = require("gulp"),
     merge = require("merge2"),
     clone = require("gulp-clone"),
     Q = require("q"),
+    gutil = require("gulp-util"),
     packageBuilder = require("./build/packageBuilder.js"),
+    assign = require("object-assign"),
     rename = require("gulp-rename");
 
 var uglifyOptions = require("./build/webpack/uglifyOptions.js").uglifyOptions;
@@ -63,6 +66,7 @@ var sandDanceExternalsJs = [
     "src/Clients/Externals/ThirdPartyIP/mat4x/mat4x.js",
     "src/Clients/Externals/ThirdPartyIP/vuePlotCore/vuePlotCore.js"
 ];
+
 var externalsDts = [
     "src/Clients/Typedefs/jquery/jquery.d.ts",
     "src/Clients/Typedefs/microsoftMaps/Microsoft.Maps.d.ts",
@@ -70,6 +74,44 @@ var externalsDts = [
     "src/Clients/Typedefs/lodash/lodash.d.ts",
     "src/Clients/Typedefs/d3/d3.d.ts"
 ];
+
+var commonArgs = {
+    options: {
+        "fast": "disables all time-consuming options (eg. `--uglifyJs`, `--generateMaps`).",
+        "uglifyJs": "minify .js assets after build",
+        "nonminJs": "produce nonmin artifacts",
+        "minifyCss": "minify .css assets after build",
+        "generateMaps": "generate .map files",
+        "tslintOnBuild": "verify tslint errors during the build",
+        "tslintOnChange": "verify tslint errors in watch mode"
+    }
+};
+
+var testArgs = {
+    options: {
+        "debug, --d": "opens tests in browser to debug them ",
+        "spec": "define specifications that will be run during testing (eg: --spec='Some spec name')",
+        "watch": "to run karma in watch mode - tests will be re-run after any detected change",
+        "files": "run specific test files using glob pattern `--files='./tests/**/*tests.js'`",
+        "trx": "turn on creating TRX report after testing",
+        "trx='../some/path/to_report'": "defines the directory to store trx file",
+        "trxName": "name of resulting trx report, 'PowerBIVisualsTests.Results.trx' by default",
+    }
+};
+
+var packageArgs = {
+    options: {
+        "visual='asterPlot'": "Name of custom visual to proceed",
+        "copyToDrop": "Copy packages to lib folder"
+    }
+};
+
+var tslintArgs = {
+    options: {
+        "paths='./Visuals/**'": "Paths that will be linted, can be Glob pattern",
+        "noLog": "Disable showing files during linting"
+    }
+};
 
 function getWebPackConfig(watchMode, path) {
     var pathToConf = path || "./webpack.config.js";
@@ -97,8 +139,10 @@ function getWebPackConfig(watchMode, path) {
     return webpackConfig;
 }
 
-gulp.task("build:copy-externals", function () {
-    
+var buildCopyTaskInfo = gutil.colors.green("Produces and copies external libs for Visuals projects to `./lib` folder");
+
+gulp.task("build:copy-externals", buildCopyTaskInfo, function () {
+
     var dest = "./lib";
 
     return Q.all([
@@ -124,23 +168,27 @@ gulp.task("build:copy-externals", function () {
     ]);
 });
 
-gulp.task("build:projects", ["build:copy-externals"], function () {
+var buildProjectsTaskInfo = gutil.colors.green("Build Visuals projects without tests. It also produces all related assets.");
+
+gulp.task("build:projects", buildProjectsTaskInfo, ["build:copy-externals"], function () {
 
     // build only Visuals projects
     return runBuild(true).then(function () {
         // run post build task
         return Q.nfcall(runSequence, "postBuild");
     });
-});
+}, commonArgs);
 
-gulp.task("build", ["build:copy-externals"], function () {
+var buildTaskInfo = gutil.colors.green("Common task to build all projects and tests that also produces all related assets - min.js, nonmin.js, min.css, rtl.css.");
+
+gulp.task("build", buildTaskInfo, ["build:copy-externals"], function () {
 
     // build Visuals projects and tests together
     return runBuild().then(function () {
         // run post build task
         return Q.nfcall(runSequence, "postBuild");
     });
-});
+}, commonArgs);
 
 function runBuild(withoutTests) {
 
@@ -165,7 +213,9 @@ function runBuild(withoutTests) {
     return deferred.promise;
 }
 
-gulp.task("postBuild", function (cb) {
+var postBuildTaskInfo = gutil.colors.green("Task that performs minification, non-minification and rtl.css producing after completing the build");
+
+gulp.task("postBuild", postBuildTaskInfo, function (cb) {
 
     var uglifyTask = "postBuild:uglify",
         nonminTask = "postBuild:nonmin",
@@ -224,23 +274,31 @@ function processCss() {
         .pipe(gulp.dest(dest));
 }
 
-gulp.task("watch", ["build:copy-externals"], function (callback) {
-    webpack(getWebPackConfig(true), webPackWatcherCallback);
-});
+var watchTaskInfo = gutil.colors.green("Start watchers for Visuals and Tests together.");
 
-gulp.task("watch:projects", ["build:copy-externals"], function (callback) {
+gulp.task("watch", watchTaskInfo, ["build:copy-externals"], function (callback) {
+    webpack(getWebPackConfig(true), webPackWatcherCallback);
+}, commonArgs);
+
+var watchProjectsTaskInfo = gutil.colors.green("Build Visuals projects and run watchers");
+
+gulp.task("watch:projects", watchProjectsTaskInfo, ["build:copy-externals"], function (callback) {
 
     //disable watching tests during gulp watch task.
     options.buildWithoutTests = true;
 
     webpack(getWebPackConfig(true), webPackWatcherCallback);
-});
+}, commonArgs);
 
-gulp.task("test", function (done) {
+var testsTaskInfo = gutil.colors.green("Builds visuals and test project and then run tests");
+
+gulp.task("test", testsTaskInfo, function (done) {
     runSequence("build", "run:tests", done);
-});
+}, { options: assign({}, testArgs.options, commonArgs.options) });
 
-gulp.task("run:tests", function (done) {
+var runTestsTaskInfo = gutil.colors.green("Run tests without full build, useful in conjunction with watchers (visuals or/and tests).");
+
+gulp.task("run:tests", runTestsTaskInfo, function (done) {
 
     var spec = options.spec;
     var watch = options.watch;
@@ -261,13 +319,13 @@ gulp.task("run:tests", function (done) {
             args: ["--grep", spec],
         }
     }
-    
+
     if (watch) {
         karmaConfig.autoWatch = true;
         karmaConfig.singleRun = false;
         karmaConfig.autoWatchBatchDelay = 1000; // delay to batch multiple changes into a single run
     }
-    
+
     new karma.Server(karmaConfig, function (karmaExitCode) {
         console.log("Karma exited with code ", karmaExitCode);
         done(karmaExitCode ? new Error("Karma exited with code " + karmaExitCode) : null);
@@ -275,9 +333,11 @@ gulp.task("run:tests", function (done) {
         //https://github.com/karma-runner/karma/issues/1035
         process.exit(karmaExitCode);
     }).start();
-});
+}, testArgs);
 
-gulp.task("build:tests", function (callback) {
+var buildTestsTaskInfo = gutil.colors.green("Build test project without running them.");
+
+gulp.task("build:tests", buildTestsTaskInfo, function (callback) {
     var webpackConfig = getWebPackConfig(false, "./src/Clients/PowerBIVisualsTests/webpack.config.js");
 
     webpack(webpackConfig, function (err, stats) {
@@ -288,13 +348,17 @@ gulp.task("build:tests", function (callback) {
 
         callback(stats.compilation.errors.length ? "Failure in 'build:tests' task." : undefined);
     });
-});
+}, commonArgs);
 
-gulp.task("watch:tests", function (callback) {
+var watchTestsTaskInfo = gutil.colors.green("Build tests and run watchers");
+
+gulp.task("watch:tests", watchTestsTaskInfo, function (callback) {
     webpack(getWebPackConfig(true, "./src/Clients/PowerBIVisualsTests/webpack.config.js"), webPackWatcherCallback);
-});
+}, commonArgs);
 
-gulp.task("playground", ["build:copy-externals"], function (callback) {
+var playgroundTaskInfo = gutil.colors.green("Run playground with webpack dev server (live reload feature). After running it watches on sources and reflect all changes on opened playground page");
+
+gulp.task("playground", playgroundTaskInfo, ["build:copy-externals"], function (callback) {
 
     //disable building tests
     options.buildWithoutTests = true;
@@ -330,7 +394,7 @@ gulp.task("playground", ["build:copy-externals"], function (callback) {
             }
             gutil.log("[webpack-dev-server]", "http://localhost:3333/");
         });
-});
+}, commonArgs);
 
 function webPackWatcherCallback(err, stats) {
 
@@ -364,7 +428,7 @@ function traceBuildStats(stats, isWatch) {
 
     if (isWatch) {
         var jsonStats = stats.toJson();
-        var emitted = Object.keys(stats.compilation.assets).filter(function(asset){
+        var emitted = Object.keys(stats.compilation.assets).filter(function (asset) {
             return stats.compilation.assets[asset].emitted;
         }).length;
         var emittedMsg = emitted ? gutil.colors.white(" Assets emitted: ") + gutil.colors.cyan(emitted) : gutil.colors.white(" No assets emitted");
@@ -373,7 +437,9 @@ function traceBuildStats(stats, isWatch) {
     }
 }
 
-gulp.task("package", function (callback) {
+var packageTaskInfo = gutil.colors.green("Generate pbviz packages for CustomVisuals");
+
+gulp.task("package", packageTaskInfo, function (callback) {
 
     gulp.task("package:all", function (callback) {
         packageBuilder.buildAllPackages(callback);
@@ -394,4 +460,32 @@ gulp.task("package", function (callback) {
     } else {
         runSequence("package:all", callback);
     }
-});
+}, packageArgs);
+
+var tslintTaskInfo = gutil.colors.green("Performs linting for all .ts files in PowerBI-visuals folder");
+
+gulp.task("tslint", tslintTaskInfo, function () {
+    var tslint = require("./build/tsLint/tslint.js");
+
+    // some paths to exclude from linting 
+    var exclude = [
+        "!./**/*.d.ts",
+        "!./CustomVisuals/visuals/*/package/**/*.*"
+    ];
+
+    // pick up all ts in src/Clients dir to lint if `paths` argument is not passed 
+    var pathsToLint = [].concat(options.paths || "./**/*.ts").concat(exclude);
+
+    return tslint(path.join(__dirname, "src/Clients"), pathsToLint);
+
+}, tslintArgs);
+
+function getHelpOptions() {
+    return {
+        description: false, //modifies the default help message
+        //aliases: false, //adds aliases to the default help task
+        hideEmpty: true, //hide all tasks with no help message defined. Useful when including 3rd party tasks
+        hideDepsMessage: true, //hide all task dependencies
+        afterPrintCallback: false //a function to run after the default help task runs
+    }
+};

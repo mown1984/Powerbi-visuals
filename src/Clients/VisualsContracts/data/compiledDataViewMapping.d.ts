@@ -134,6 +134,7 @@ declare module powerbi.data {
         subtotalType?: CompiledSubtotalType;
         showAll?: boolean;
         activeItems?: string[];
+        aggregates?: DataViewMappingRoleProjectionAggregates;
     }
 
     export interface CompiledDataViewRoleItem {

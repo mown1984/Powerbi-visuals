@@ -28,6 +28,9 @@
 
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
+    import SQExpr = powerbi.data.SQExpr;
+    import SQExprBuilder = powerbi.data.SQExprBuilder;
+    import SemanticFilter = powerbi.data.SemanticFilter;
 
     /** Utility class for slicer*/
     export module SlicerUtil {
@@ -46,6 +49,7 @@ module powerbi.visuals {
             export const CountText = createClassAndSelector('slicerCountText');
             export const Clear = createClassAndSelector('clear');
             export const SearchHeader = createClassAndSelector('searchHeader');
+            export const SearchInput = createClassAndSelector('searchInput');
             export const SearchHeaderCollapsed = createClassAndSelector('collapsed');
             export const SearchHeaderShow = createClassAndSelector('show');
             export const MultiSelectEnabled = createClassAndSelector('isMultiSelectEnabled');
@@ -67,7 +71,7 @@ module powerbi.visuals {
 
         /** Helper class for handling slicer default value  */
         export module DefaultValueHandler {
-            export function getIdentityFields(dataView: DataView): data.SQExpr[] {
+            export function getIdentityFields(dataView: DataView): SQExpr[] {
                 if (!dataView)
                     return;
 
@@ -75,8 +79,14 @@ module powerbi.visuals {
                 if (!dataViewCategorical || _.isEmpty(dataViewCategorical.categories))
                     return;
 
-                return <data.SQExpr[]>dataViewCategorical.categories[0].identityFields;
+                return <SQExpr[]>dataViewCategorical.categories[0].identityFields;
             }
+        }
+
+        export function getContainsFilter(expr: SQExpr, containsText: string): SemanticFilter {
+            let containsTextExpr = SQExprBuilder.text(containsText);
+            let filterExpr = SQExprBuilder.contains(expr, containsTextExpr);
+            return SemanticFilter.fromSQExpr(filterExpr);
         }
 
         // Compare the sqExpr of the scopeId with sqExprs of the retained values. 
@@ -118,7 +128,8 @@ module powerbi.visuals {
                     .attr('title', hostServices.getLocalizedString(DisplayNameKeys.Search));
 
                 slicerSearch.append('input')
-                    .attr('type', 'text');
+                    .attr('type', 'text')
+                    .classed(Selectors.SearchInput.class, true);
                 
                 return slicerHeaderDiv;
             }

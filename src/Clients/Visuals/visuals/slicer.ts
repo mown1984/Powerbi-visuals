@@ -32,9 +32,13 @@ module powerbi.visuals {
     import SettingsHelper = SlicerUtil.SettingsHelper;
     import SlicerOrientation = slicerOrientation.Orientation;
 
-    export interface SlicerDefaultValueHandler {
+    export interface SlicerValueHandler {
         getDefaultValue(): data.SQConstantExpr;
         getIdentityFields(): data.SQExpr[];
+
+        /** gets updated self filter based on the searchKey. 
+         *  If the searchKey didn't change, then the updated filter will be undefined. */
+        getUpdatedSelfFilter(searchKey: string): data.SemanticFilter;
     }
 
     export interface SlicerConstructorOptions {
@@ -60,6 +64,7 @@ module powerbi.visuals {
         slicerSettings: SlicerSettings;
         hasSelectionOverride?: boolean;
         defaultValue?: DefaultValueDefinition;
+        searchKey?: string;
     }
 
     export interface SlicerDataPoint extends SelectableDataPoint {

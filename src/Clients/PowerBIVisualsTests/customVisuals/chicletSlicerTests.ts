@@ -277,7 +277,7 @@ module powerbitests.customVisuals {
                 });
             });
 
-            xit("negative image split should behave like 0 (auto)", done => {
+            it("negative image split should behave like 0 (auto)", done => {
                 dataView.metadata.objects = {
                     images: {
                         imageSplit: -1,
@@ -412,7 +412,7 @@ module powerbitests.customVisuals {
                 });
             });
 
-            xit("negative chiclet height should behave like 0 height (auto)", done => {
+            it("negative chiclet height should behave like 0 height (auto)", done => {
                 dataView.metadata.objects = {
                     rows: {
                         height: -1,

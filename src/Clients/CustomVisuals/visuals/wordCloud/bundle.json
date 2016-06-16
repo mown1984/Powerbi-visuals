@@ -1,10 +1,10 @@
 {
     "dateAdded": "2015-11-10T01:40:27.000Z",
-    "dateLastUpdated": "2016-02-24T20:54:49.000Z",
+    "dateLastUpdated": "2016-06-01T16:08:49.000Z",
     "package": {
         "name": "WordCloud",
         "displayName": "WordCloud",
-        "version": "1.1.0",
+        "version": "1.1.2",
         "guid": "WordCloud1447959067750",
         "description": "Word Cloud is a visual representation of word frequency and value. Use it to get instant insight into the most important terms in a set.",
         "build": "13.0.1100.210",

@@ -77,7 +77,9 @@ module.exports = {
         chunks: false,
     },
     tslint: {
-        emitErrors: true
+        emitErrors: true,
+        configuration: require("../../../build/tsLint/tslint.json"),
+        rulesDirectory: path.join(__dirname, "../../../build/tsLint/custom_rules")
     },
     ts: {
         configFileName: 'tsconfig_.json', // wrong name in order to do not load tsconfig files at all

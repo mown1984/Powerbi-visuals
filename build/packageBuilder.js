@@ -75,15 +75,16 @@ PackageBuilder.prototype.getTaskName = function (name) {
 }
 
 PackageBuilder.prototype.createTasks = function () {
-    var visualPath = pathModule.join("src/Clients/CustomVisuals/visuals", this._packageName);
-    var packageResourcesPath = pathModule.join(visualPath, "package/resources");
-    var packageName = this._config.package.name;
+    var self = this,
+        visualPath = pathModule.join("src/Clients/CustomVisuals/visuals", this._packageName),
+        packageResourcesPath = pathModule.join(visualPath, "package/resources"),
+        packageName = this._config.package.name,
+        guid = this._config.package.guid,
+        regexString = new RegExp(this._config.package.name + "[0-9]+", "g"),
+        regexSamples = new RegExp("samples", "g"),
+        jsFileName = this._config.package.code.javaScript,
+        typeScriptFileName = this._config.package.code.typeScript;
 
-    var guid = this._config.package.guid;
-    var regexString = new RegExp(this._config.package.name + "[0-9]+", "g");
-    var regexSamples = new RegExp("samples", "g");
-
-    var jsFileName = this._config.package.code.javaScript;
     gulp.task(this.getTaskName("buildTS"), function (done) {
 
         var tsResult = gulp.src([
@@ -97,15 +98,15 @@ PackageBuilder.prototype.createTasks = function () {
                 target: "ES5",
                 noEmitOnError: false,
                 noResolve: true,
-                suppressExcessPropertyErrors: true
             }, undefined, ts.reporter.longReporter()))
             .on("error", function(err) {
                 process.exit(1);
             })
             .pipe(gulpRename({
                 basename: jsFileName,
-                extname: "",
+                extname: ""
             }))
+            .pipe(PackageBuilder.removeTypeScriptReference())
             .pipe(insert.append(PackageBuilder.portalExports))
             .pipe(replace(regexString, guid))
             .pipe(replace(regexSamples, guid))
@@ -118,10 +119,17 @@ PackageBuilder.prototype.createTasks = function () {
     });
 
     gulp.task(this.getTaskName("copyTS"), function () {
-        var tsResult = gulp.src([pathModule.join(visualPath, "visual/*.ts"),
-            pathModule.join(visualPath, "visual/**/*.ts")])
+        return gulp
+            .src([
+                pathModule.join(visualPath, "visual/*.ts"),
+                pathModule.join(visualPath, "visual/**/*.ts")
+            ])
+            .pipe(PackageBuilder.removeTypeScriptReference())
+            .pipe(gulpRename({
+                basename: typeScriptFileName,
+                extname: ""
+            }))
             .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
-        return tsResult;
     });
 
     var cssFileName = this._config.package.code.css;
@@ -201,8 +209,8 @@ PackageBuilder.prototype.incrementVersion = function () {
 }
 
 PackageBuilder.prototype.getPackageName = function () {
-    var version = this.getVersion();
-    return this._packageName + "-" + version + PACKAGE_EXTENSION;
+    var config = this.getVisualConfig()
+    return config.guid + PACKAGE_EXTENSION;
 }
 
 PackageBuilder.prototype.getVersion = function () {
@@ -377,4 +385,11 @@ PackageBuilder.cssTemplate = "\n\.visual-icon.<%= guid %> {\n\
     background-image: url(<%= cssFileName %>);\n\
 }\n\
 ";
+
+PackageBuilder.TypeScriptReferenceRegExp = new RegExp('\\/{3}\\s?<reference path\\s?=\\s?.+\/>', "i");
+
+PackageBuilder.removeTypeScriptReference = function () {
+    return replace(PackageBuilder.TypeScriptReferenceRegExp, "");
+};
+
 module.exports = PackageBuilder;

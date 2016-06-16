@@ -124,6 +124,7 @@ module powerbi.data {
      */
     export interface QueryRewriteRecordContainer {
         selectExprAdded?: QueryRewriteSelectExprAddedRecord;
+        aggregatesAdded?: QueryRewriteSelectExprAggregatesAddedRecord;
         projectionQueryRefChanged?: QueryRewriteProjectionQueryRefChangedRecord;
     }
 
@@ -131,6 +132,21 @@ module powerbi.data {
     export interface QueryRewriteSelectExprAddedRecord {
         selectIndex: number;
         namedSQExpr: NamedSQExpr;
+    }
+    
+    export interface QueryRewriteSelectExprAggregatesAddedRecord {
+        originalQueryRef: string;
+        aggregates: QueryRewriteAddedAggregates;
+    }
+    
+    export interface QueryRewriteAddedAggregates {
+        min?: QueryRewriteAddedAggregateSource;
+        max?: QueryRewriteAddedAggregateSource;
+    }
+
+    export interface QueryRewriteAddedAggregateSource {
+         index: number;
+         expr: SQExpr;
     }
 
     /** Indicates a queryRef in the query projection for a particular role got changed. */

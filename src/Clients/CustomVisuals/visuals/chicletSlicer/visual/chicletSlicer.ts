@@ -180,68 +180,58 @@ module powerbi.visuals.samples {
             var totalColumns = options.columns > totalItems ? totalItems : options.columns;
 
             if (totalColumns === 0 && totalRows === 0) {
-                if (options.orientation === Orientation.HORIZONTAL)
-                {
+                if (options.orientation === Orientation.HORIZONTAL) {
                     totalColumns = totalItems;
                     totalRows = 1;
-                }
-                else
-                {
+                } else {
                     totalColumns = 1;
                     totalRows = totalItems;
                 }
-            }
-            else if (totalColumns === 0 && totalRows > 0)
+            } else if (totalColumns === 0 && totalRows > 0) {
                 totalColumns = Math.ceil(totalItems / totalRows);
-            else if (totalColumns > 0 && totalRows === 0)
+            } else if (totalColumns > 0 && totalRows === 0) {
                 totalRows = Math.ceil(totalItems / totalColumns);
+            }
 
-            if (this.options.orientation === Orientation.VERTICAL)
-            {
+            if (this.options.orientation === Orientation.VERTICAL) {
                 var n = totalRows;
                 totalRows = totalColumns;
                 totalColumns = n;
-            }
-
-            else if (this.options.orientation === Orientation.HORIZONTAL)
-            {
-                if (totalRows === 0) totalRows = this._totalRows;
-                if (totalColumns === 0) totalColumns = this._totalColumns;
+            } else if (this.options.orientation === Orientation.HORIZONTAL) {
+                if (totalRows === 0)
+                    totalRows = this._totalRows;
+                if (totalColumns === 0)
+                    totalColumns = this._totalColumns;
             }
 
             var m: number = 0;
             var k: number = 0;
             for (var i: number = 0; i < totalRows; i++) {
-                if (this.options.orientation === Orientation.VERTICAL && options.rows === 0 && totalItems % options.columns > 0 && options.columns <= totalItems)
-                {
-                    if (totalItems % options.columns > i)
-                    {
+                if (this.options.orientation === Orientation.VERTICAL
+                    && options.rows === 0
+                    && totalItems % options.columns > 0
+                    && options.columns <= totalItems) {
+                    if (totalItems % options.columns > i) {
                         m = i * Math.ceil(totalItems / options.columns);
                         k = m + Math.ceil(totalItems / options.columns);
                         groupedData.push(this._data.slice(m, k));
-                    }
-                    else
-                    {
+                    } else {
                         groupedData.push(this._data.slice(k, k + Math.floor(totalItems / options.columns)));
                         k = k + Math.floor(totalItems / options.columns);
                     }
-                }
-                else if (this.options.orientation === Orientation.HORIZONTAL && options.columns === 0 && totalItems % options.rows > 0 && options.rows <= totalItems)
-                {
-                    if (totalItems % options.rows > i)
-                    {
+                } else if (this.options.orientation === Orientation.HORIZONTAL
+                    && options.columns === 0
+                    && totalItems % options.rows > 0
+                    && options.rows <= totalItems) {
+                    if (totalItems % options.rows > i) {
                         m = i * Math.ceil(totalItems / options.rows);
                         k = m + Math.ceil(totalItems / options.rows);
                         groupedData.push(this._data.slice(m, k));
-                    }
-                    else
-                    {
+                    } else {
                         groupedData.push(this._data.slice(k, k + Math.floor(totalItems / options.rows)));
                         k = k + Math.floor(totalItems / options.rows);
                     }
-                }
-                else
-                {
+                } else {
                     var k: number = i * totalColumns;
                     groupedData.push(this._data.slice(k, k + totalColumns));
                 }
@@ -268,23 +258,22 @@ module powerbi.visuals.samples {
             cellUpdateSelection.call(d => options.update(d));
             cellUpdateSelection.style({ 'height': (rowHeight > 0) ? rowHeight + 'px' : 'auto' });
 
-            if (this.options.orientation === Orientation.VERTICAL)
-            {
+            if (this.options.orientation === Orientation.VERTICAL) {
                 var realColumnNumber = 0;
-                for (var i: number = 0; i < groupedData.length; i++)
-                {
+                for (var i: number = 0; i < groupedData.length; i++) {
                     if (groupedData[i].length !== 0)
-                        realColumnNumber = i+1;
+                        realColumnNumber = i + 1;
                 }
 
                 cellUpdateSelection.style({ 'width': '100%' });
                 var rowUpdateSelection = visibleGroupContainer.selectAll('div.row');
                 rowUpdateSelection.style({ 'width': (options.columnWidth > 0) ? options.columnWidth + 'px' : (100 / realColumnNumber) + '%' });
             }
-            else
+            else {
                 cellUpdateSelection.style({
                     'width': (options.columnWidth > 0) ? options.columnWidth + 'px' : (100 / totalColumns) + '%'
                 });
+            }
 
             cellSelection
                 .exit()
@@ -989,14 +978,17 @@ module powerbi.visuals.samples {
 
             data.slicerSettings.header.outlineWeight = data.slicerSettings.header.outlineWeight < 0 ? 0 : data.slicerSettings.header.outlineWeight;
             data.slicerSettings.slicerText.outlineWeight = data.slicerSettings.slicerText.outlineWeight < 0 ? 0 : data.slicerSettings.slicerText.outlineWeight;
+            data.slicerSettings.slicerText.height = data.slicerSettings.slicerText.height < 0 ? 0 : data.slicerSettings.slicerText.height;
+            data.slicerSettings.slicerText.width = data.slicerSettings.slicerText.width < 0 ? 0 : data.slicerSettings.slicerText.width;
+            data.slicerSettings.images.imageSplit = data.slicerSettings.images.imageSplit < 0 ? 0 : data.slicerSettings.images.imageSplit;
+
+            data.slicerSettings.general.columns = data.slicerSettings.general.columns < 0 ? 0 : data.slicerSettings.general.columns;
+            data.slicerSettings.general.rows = data.slicerSettings.general.rows < 0 ? 0 : data.slicerSettings.general.rows;
 
             data.slicerSettings.general.getSavedSelection = () => {
-                    try
-                    {
+                    try {
                         return JSON.parse(this.slicerData.slicerSettings.general.selection) || [];
-                    }
-                    catch(ex)
-                    {
+                    } catch(ex) {
                         return [];
                     }
                 };
@@ -1007,11 +999,12 @@ module powerbi.visuals.samples {
                         objectName: "general",
                         selector: null,
                         properties: { selection: selectionIds && JSON.stringify(selectionIds) || "" }
-                    }]});
-                };
+                    }]
+                });
+            };
 
-            if(this.slicerData) {
-                if(this.isSelectionSaved) {
+            if (this.slicerData) {
+                if (this.isSelectionSaved) {
                      this.isSelectionLoaded = true;
                 } else {
                    this.isSelectionLoaded = this.slicerData.slicerSettings.general.selection === data.slicerSettings.general.selection;
@@ -1041,7 +1034,7 @@ module powerbi.visuals.samples {
                 var extraSpaceForCell = ChicletSlicer.cellTotalInnerPaddings + ChicletSlicer.cellTotalInnerBorders;
                 var textProperties = ChicletSlicer.getChicletTextProperties(this.settings.slicerText.textSize);
                 height = TextMeasurementService.estimateSvgTextHeight(textProperties) + TextMeasurementService.estimateSvgTextBaselineDelta(textProperties) + extraSpaceForCell;
-                var hasImage = _.any(data.slicerDataPoints, x=> x.imageURL !== '' && typeof x.imageURL !== "undefined");
+                var hasImage = _.any(data.slicerDataPoints, x => x.imageURL !== '' && typeof x.imageURL !== "undefined");
                 if (hasImage)
                     height += 100;
             }
@@ -1206,7 +1199,7 @@ module powerbi.visuals.samples {
                     if (settings.slicerText.background)
                         this.slicerBody.style('background-color', explore.util.hexToRGBString(settings.slicerText.background, (100 - settings.slicerText.transparency) / 100));
                     else
-                        this.slicerBody.style('background-color',null);
+                        this.slicerBody.style('background-color', null);
 
                     if (this.interactivityService && this.slicerBody) {
                         var slicerBody = this.slicerBody.attr('width', this.currentViewport.width);
@@ -1366,7 +1359,7 @@ module powerbi.visuals.samples {
                     this.category = dataViewCategorical.categories[0];
                     this.categoryIdentities = this.category.identity;
                     this.categoryValues = this.category.values;
-                    this.categoryColumnRef = <data.SQExpr[]> this.category.identityFields;
+                    this.categoryColumnRef = <data.SQExpr[]>this.category.identityFields;
                     this.categoryFormatString = valueFormatter.getFormatString(this.category.source, chicletSlicerProps.formatString);
                 }
 
@@ -1597,7 +1590,7 @@ module powerbi.visuals.samples {
             this.slicerSettings = options.slicerSettings;
             this.options = options;
 
-            if(!this.options.isSelectionLoaded) {
+            if (!this.options.isSelectionLoaded) {
                 this.loadSelection(selectionHandler);
             }
 
@@ -1655,8 +1648,8 @@ module powerbi.visuals.samples {
 
         public loadSelection(selectionHandler: ISelectionHandler): void {
             selectionHandler.handleClearSelection();
-            var savedSelectionIds =  this.slicerSettings.general.getSavedSelection();
-            if(savedSelectionIds.length) {
+            var savedSelectionIds = this.slicerSettings.general.getSavedSelection();
+            if (savedSelectionIds.length) {
                 var selectedDataPoints = this.dataPoints.filter(d => savedSelectionIds.some(x => d.identity.getKey() === x));
                 selectedDataPoints.forEach(x => selectionHandler.handleSelection(x, true));
                 selectionHandler.persistSelectionFilter(chicletSlicerProps.filterPropertyIdentifier);
@@ -1664,7 +1657,7 @@ module powerbi.visuals.samples {
         }
 
         public saveSelection(selectionHandler: ISelectionHandler): void {
-            var selectionIdKeys = (<SelectionId[]>(<any>selectionHandler).selectedIds).map(x=>x.getKey());
+            var selectionIdKeys = (<SelectionId[]>(<any>selectionHandler).selectedIds).map(x => x.getKey());
             this.slicerSettings.general.setSavedSelection(selectionIdKeys);
         }
 

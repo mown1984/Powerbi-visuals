@@ -477,16 +477,20 @@ module powerbi.visuals.controls.internal {
         }
 
         public getWidth(): number {
-            return this.getCellWidth(this._column.getTablixCell());
+            let width = this.getPersistedWidth();
+            if (width == null)
+                width = this.getCellWidth(this._column.getTablixCell());
+
+            return width;
+        }
+
+        public getPersistedWidth(): number {
+            debug.assertFail("PureVirtualMethod: TablixColumnPresenter.getPersistedWidth");
+            return -1;
         }
 
         public getCellWidth(cell: ITablixCell): number {
             debug.assertFail("PureVirtualMethod: TablixColumnPresenter.getCellWidth");
-            return -1;
-        }
-
-        public getCellContentWidth(cell: ITablixCell): number {
-            debug.assertFail("PureVirtualMethod: TablixColumnPresenter.getCellContentWidth");
             return -1;
         }
     }
@@ -500,12 +504,12 @@ module powerbi.visuals.controls.internal {
             this._gridPresenter = gridPresenter;
         }
 
-        public getCellWidth(cell: ITablixCell): number {
+        public getPersistedWidth(): number {
             return this._gridPresenter.sizeComputationManager.cellWidth;
         }
 
-        public getCellContentWidth(cell: ITablixCell): number {
-            return this._gridPresenter.sizeComputationManager.contentWidth;
+        public getCellWidth(cell: ITablixCell): number {
+            return this._gridPresenter.sizeComputationManager.cellWidth;
         }
     }
 
@@ -518,34 +522,18 @@ module powerbi.visuals.controls.internal {
             this._gridPresenter = gridPresenter;
             this._columnIndex = index;
         }
-        public getCellWidth(cell: ITablixCell): number {
-            let persistedWidth = this._gridPresenter.getPersistedCellWidth(this._columnIndex);
 
-            // Because persistedWidth could be 0 check specifically for null or undefined 
-            if (_.isNumber(persistedWidth))
-                return persistedWidth;
-
-            if (!(<TablixCell>cell)._presenter)
-                return 0;
-
-            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.tableCell);
+        public getPersistedWidth(): number {
+            return this._gridPresenter.getPersistedColumnWidth(this._column);
         }
 
-        public getCellContentWidth(cell: ITablixCell): number {
-            let persistedWidth = this._gridPresenter.getPersistedCellWidth(this._columnIndex);
+        public getCellWidth(cell: ITablixCell): number {
+            let tablixCell = <TablixCell>cell;
 
-            // Because persistedWidth could be 0 check specifically for null or undefined 
-            if (_.isNumber(persistedWidth))
-                return persistedWidth;
-
-            if (!(<TablixCell>cell)._presenter)
+            if (!tablixCell._presenter)
                 return 0;
 
-            let requiredWidth = HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement);
-            if (requiredWidth > 0 && cell.colSpan === 1) // Doing this only for single-column-span cells
-                requiredWidth += 1; // Adding 1px because offsetWidth returns floored number, may risk getting ellipsis
-
-            return requiredWidth; 
+            return cell.contentWidth;
         }
     }
 
@@ -666,14 +654,15 @@ module powerbi.visuals.controls.internal {
             }
         }
 
-        public invokeColumnResizeEndCallback(columnIndex: number, width: number): void {
+        public invokeColumnResizeEndCallback(column: TablixColumn, width: number): void {
             if (this._columnWidthManager)
-                this._columnWidthManager.onColumnWidthChanged(columnIndex, width);
+                this._columnWidthManager.onColumnWidthChanged(TablixColumnWidthManager.getColumnQueryName(column), width);
         }
 
-        public getPersistedCellWidth(columnIndex: number): number {
-            if (this._columnWidthManager)
-                return this._columnWidthManager.getPersistedColumnWidth(columnIndex);
+        public getPersistedColumnWidth(column: TablixColumn): number {
+            if (this._columnWidthManager) {
+                return this._columnWidthManager.getPersistedColumnWidth(TablixColumnWidthManager.getColumnQueryName(column));
+            }
         }
     }
 

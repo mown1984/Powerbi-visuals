@@ -318,36 +318,68 @@ module powerbi.visuals {
         private formattingProperties: TablixFormattingProperties;
         private tableDataView: DataViewVisualTable;
 
+        private fontSizeHeader: number;
+        private textPropsHeader: TextProperties;
         private textHeightHeader: number;
+
+        private fontSizeValue: number;
+        private textPropsValue: TextProperties;
         private textHeightValue: number;
+
+        private fontSizeTotal: number;
+        private textPropsTotal: TextProperties;
         private textHeightTotal: number;
 
-        constructor(options: TableBinderOptions) {
+        private rowHeight: number;
+
+        constructor(options: TableBinderOptions, dataView?: DataViewVisualTable) {
             this.options = options;
+
+            // Handling unit tests calling constructor without a dataView
+            if (dataView) {
+                this.updateDataView(dataView);
+            }
         }
 
-        public onDataViewChanged(dataView: DataViewVisualTable): void {
+        public updateDataView(dataView: DataViewVisualTable): void {
             this.tableDataView = dataView;
             this.formattingProperties = dataView.formattingProperties;
 
             this.updateTextHeights();
+
+            if (this.hasImage()) {
+                this.rowHeight = Math.max(this.textHeightValue, this.formattingProperties.grid.imageHeight);
+            }
+            else {
+                this.rowHeight = this.textHeightValue;
+            }
         }
 
         private updateTextHeights(): void {
-            let textProps: TextProperties = {
-                fontFamily: '',
-                fontSize: TablixObjects.getTextSizeInPx(this.formattingProperties.general.textSize),
-                text: 'a',
+            this.fontSizeHeader = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsHeader = {
+                fontFamily: TablixUtils.FontFamilyHeader,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeHeader),
             };
+            this.textHeightHeader = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsHeader, "a"));
 
-            textProps.fontFamily = TablixUtils.FontFamilyHeader;
-            this.textHeightHeader = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+            this.fontSizeValue = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsValue = {
+                fontFamily: TablixUtils.FontFamilyCell,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeValue),
+            };
+            this.textHeightValue = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsValue, "a"));
 
-            textProps.fontFamily = TablixUtils.FontFamilyCell;
-            this.textHeightValue = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+            this.fontSizeTotal = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsTotal = {
+                fontFamily: TablixUtils.FontFamilyTotal,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeTotal),
+            };
+            this.textHeightTotal = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsTotal, "a"));
+        }
 
-            textProps.fontFamily = TablixUtils.FontFamilyTotal;
-            this.textHeightTotal = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+        private hasImage(): boolean {
+            return _.any(this.tableDataView.columns, (col) => converterHelper.isImageUrlColumn(col));
         }
 
         public onStartRenderingSession(): void {
@@ -360,7 +392,13 @@ module powerbi.visuals {
          * Row Header.
          */
         public bindRowHeader(item: any, cell: controls.ITablixCell): void {
-            cell.contentHeight = this.textHeightValue;
+            // Check if it's a total row
+            if (item.totalCells) {
+                cell.contentHeight = this.textHeightTotal;
+            }
+            else {
+                cell.contentHeight = this.rowHeight;
+            }
 
             // To clear the CSS classes that adds paddings
             TablixUtils.clearCellStyle(cell);
@@ -393,10 +431,17 @@ module powerbi.visuals {
             cell.contentHeight = this.textHeightHeader;
 
             let element = cell.extension.contentHost;
-            if (this.sortIconsEnabled())
+            if (this.sortIconsEnabled()) {
                 element = TablixUtils.addSortIconToColumnHeader(item.sort, element);
+                if (item.sort) {
+                    // Glyph font has all characters width/height same as font size
+                    cell.contentWidth = this.fontSizeHeader + TablixUtils.SortIconPadding;
+                }
+            }
 
             TablixUtils.setCellTextAndTooltip(item.displayName, element, cell.extension.contentHost);
+            cell.contentWidth += TextMeasurementService.measureSvgTextWidth(this.textPropsHeader, item.displayName);
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             if (this.options.onColumnHeaderClick) {
                 let handler = (e: MouseEvent) => {
@@ -467,36 +512,11 @@ module powerbi.visuals {
          */
         public bindBodyCell(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void {
             TablixUtils.resetCellCssClass(cell);
-            let imgHeight: number;
-            imgHeight = this.formattingProperties.grid.imageHeight;
+
+            this.setBodyContent(item, cell);
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             let cellStyle = new TablixUtils.CellStyle();
-
-            if (item.isImage) {
-                cell.contentHeight = imgHeight;
-            }
-            else {
-                cell.contentHeight = this.textHeightValue;
-            }
-
-            let element = cell.extension.contentHost;
-
-            if (item.isUrl && item.isValidUrl) {
-                TablixUtils.appendATagToBodyCell(item.textContent, element, this.formattingProperties.values.urlIcon);
-            }
-            else if (item.isImage && item.isValidUrl) {
-                TablixUtils.appendImgTagToBodyCell(item.textContent, element, imgHeight);
-                cellStyle.hasImage = true;
-            }
-            else if (item.kpiContent) {
-                $(element).append(item.kpiContent);
-            }
-            else if (item.textContent) {
-                TablixUtils.setCellTextAndTooltip(item.textContent, element);
-            }
-            else {
-                TablixUtils.setCellTextAndTooltip(" ", element);
-            }
 
             if (item.isTotal) {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixValueTotal);
@@ -504,8 +524,6 @@ module powerbi.visuals {
 
                 cellStyle.fontFamily = TablixUtils.FontFamilyTotal;
                 cellStyle.borders.top = new EdgeSettings(TablixObjects.PropGridOutlineWeight.defaultValue, TablixObjects.PropGridOutlineColor.defaultValue);
-
-                cell.contentHeight = this.textHeightTotal;
             }
             else if (item.position.row.isLast) {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTableBodyCellBottom);
@@ -524,6 +542,62 @@ module powerbi.visuals {
                 this.setBodyStyle(item, cell, cellStyle);
 
             cell.applyStyle(cellStyle);
+        }
+
+        public setBodyContent(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void {
+            let element = cell.extension.contentHost;
+            let imgHeight = this.formattingProperties.grid.imageHeight;
+
+            let text = item.textContent;
+
+            // #region Setting Height
+            if (item.isTotal) {
+                cell.contentHeight = this.textHeightTotal;
+            }
+            else if (item.isImage) {
+                cell.contentHeight = imgHeight;
+            }
+            else {
+                cell.contentHeight = this.textHeightValue;
+            }
+            // #endregion
+
+            if (item.isUrl && item.isValidUrl) {
+                let showUrlIcon = this.formattingProperties.values.urlIcon;
+                TablixUtils.appendATagToBodyCell(text, element, showUrlIcon);
+                if (showUrlIcon)
+                    cell.contentWidth = this.fontSizeValue;
+                else
+                    cell.contentWidth = TextMeasurementService.measureSvgTextWidth(this.textPropsValue, text);
+                return;
+            }
+
+            if (item.isImage && item.isValidUrl) {
+                TablixUtils.appendImgTagToBodyCell(text, element, imgHeight);
+                cell.contentWidth = imgHeight * TablixUtils.ImageDefaultAspectRatio;
+                return;
+            }
+
+            let kpi = item.kpiContent;
+            if (kpi) {
+                $(element).append(kpi);
+
+                // Glyph font has all characters width/height same as font size
+                cell.contentWidth = this.fontSizeValue;
+                return;
+            }
+
+            if (text) {
+                TablixUtils.setCellTextAndTooltip(text, element);
+                if (item.isTotal)
+                    cell.contentWidth = TextMeasurementService.measureSvgTextWidth(this.textPropsTotal, text);
+                else
+                    cell.contentWidth = TextMeasurementService.measureSvgTextWidth(this.textPropsValue, text);
+                return;
+            }
+
+            TablixUtils.setCellTextAndTooltip(" ", element);
+            cell.contentWidth = 0;
         }
 
         private setBodyStyle(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell, style: TablixUtils.CellStyle): void {
@@ -626,6 +700,7 @@ module powerbi.visuals {
          * Corner Cell.
          */
         public bindCornerCell(item: any, cell: controls.ITablixCell): void {
+            cell.contentWidth = 0;
         }
 
         public unbindCornerCell(item: any, cell: controls.ITablixCell): void {
@@ -668,7 +743,6 @@ module powerbi.visuals {
     }
 
     export interface TableConstructorOptions {
-        isConditionalFormattingEnabled?: boolean;
         isTouchEnabled?: boolean;
     }
 
@@ -691,7 +765,6 @@ module powerbi.visuals {
         private waitingForSort: boolean;
         private columnWidthManager: controls.TablixColumnWidthManager;
         private dataView: DataView;
-        private isConditionalFormattingEnabled: boolean;
 
         /**
         * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
@@ -700,7 +773,6 @@ module powerbi.visuals {
 
         constructor(options?: TableConstructorOptions) {
             if (options) {
-                this.isConditionalFormattingEnabled = options.isConditionalFormattingEnabled;
                 this.isTouchEnabled = options.isTouchEnabled;
             }
         }
@@ -786,7 +858,6 @@ module powerbi.visuals {
                 }
 
                 let visualTable = Table.converter(this.dataView);
-                let textSize = visualTable.formattingProperties.general.textSize;
 
                 if (options.operationKind === VisualDataChangeOperationKind.Append) {
                     this.createOrUpdateHierarchyNavigator(visualTable);
@@ -795,10 +866,8 @@ module powerbi.visuals {
                 } else {
                     this.createOrUpdateHierarchyNavigator(visualTable);
                     this.createColumnWidthManager();
-                    this.createTablixControl(textSize);
-                    let binder = <TableBinder>this.tablixControl.getBinder();
-                    binder.onDataViewChanged(visualTable);
-                    this.updateInternal(textSize, previousDataView, visualTable);
+                    this.createTablixControl(visualTable);
+                    this.updateInternal(previousDataView, visualTable);
                 }
             }
 
@@ -854,15 +923,20 @@ module powerbi.visuals {
             }
         }
 
-        private createTablixControl(textSize: number): void {
+        private createTablixControl(visualTable: DataViewVisualTable): void {
             if (!this.tablixControl) {
                 // Create the control
-                this.tablixControl = this.createControl(this.hierarchyNavigator, textSize);
+                this.tablixControl = this.createControl(this.hierarchyNavigator, visualTable);
+            }
+            else {
+                let binder = <TableBinder>this.tablixControl.getBinder();
+                binder.updateDataView(visualTable);
             }
         }
 
-        private createControl(dataNavigator: TableHierarchyNavigator, textSize: number): controls.TablixControl {
+        private createControl(dataNavigator: TableHierarchyNavigator, visualTable: DataViewVisualTable): controls.TablixControl {
             let layoutKind = this.getLayoutKind();
+            let textSize = visualTable.formattingProperties.general.textSize;
 
             let tableBinderOptions: TableBinderOptions = {
                 onBindRowHeader: (item: any) => this.onBindRowHeader(item),
@@ -870,7 +944,7 @@ module powerbi.visuals {
                 layoutKind: layoutKind
             };
 
-            let tableBinder = new TableBinder(tableBinderOptions);
+            let tableBinder = new TableBinder(tableBinderOptions, visualTable);
             let layoutManager: controls.internal.TablixLayoutManager = layoutKind === controls.TablixLayoutKind.DashboardTile
                 ? controls.internal.DashboardTablixLayoutManager.createLayoutManager(tableBinder)
                 : controls.internal.CanvasTablixLayoutManager.createLayoutManager(tableBinder, this.columnWidthManager);
@@ -889,7 +963,9 @@ module powerbi.visuals {
             return new controls.TablixControl(dataNavigator, layoutManager, tableBinder, tablixContainer, tablixOptions);
         }
 
-        private updateInternal(textSize: number, previousDataView: DataView, visualTable: DataViewVisualTable) {
+        private updateInternal(previousDataView: DataView, visualTable: DataViewVisualTable) {
+            let textSize = visualTable.formattingProperties.general.textSize;
+
             if (this.getLayoutKind() === controls.TablixLayoutKind.DashboardTile) {
                 this.tablixControl.layoutManager.adjustContentSize(converterHelper.hasImageUrlColumn(this.dataView));
             }
@@ -912,9 +988,12 @@ module powerbi.visuals {
                 // Render
                 this.refreshControl(shouldClearControl);
 
-                //Persist actual widths if autoSize flipped to true
-                if (this.columnWidthManager.shouldPersistAllColumnWidths()) {
-                    this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
+                let widthChanged = this.columnWidthManager.onColumnsRendered(this.tablixControl.layoutManager.columnWidthsToPersist);
+
+                // At this point, all columns are rendered with proper width
+                // Resetting the flag unless any unknown columnn width was persisted
+                if (this.persistingObjects && !widthChanged) {
+                    this.persistingObjects = false;
                 }
             }, 0);
         }
@@ -998,7 +1077,7 @@ module powerbi.visuals {
 
             // Visuals are initialized with an empty data view before queries are run, therefore we need to make sure that
             // we are resilient here when we do not have data view.
-            if (this.isConditionalFormattingEnabled && this.dataView) {
+            if (this.dataView) {
                 TablixObjects.enumerateObjectRepetition(enumeration, this.dataView, controls.TablixType.Table);
             }
 

@@ -132,11 +132,13 @@ module powerbitests {
             let equalsNegativesComparison: (x: number, y: number) => boolean = (x, y) => (x === -y);
 
             expect(ArrayExtensions.sequenceEqual([1, 2], [-1, -2], equalsNegativesComparison)).toBeTruthy();
+            expect(ArrayExtensions.sequenceEqual([1, 2], [-2, -1], equalsNegativesComparison)).toBeFalsy();
             expect(ArrayExtensions.sequenceEqual([], [], equalsNegativesComparison)).toBeTruthy();
             expect(ArrayExtensions.sequenceEqual(null, null, equalsNegativesComparison)).toBeTruthy();
             expect(ArrayExtensions.sequenceEqual([1], [1], equalsNegativesComparison)).toBeFalsy();
             expect(ArrayExtensions.sequenceEqual([1], null, equalsNegativesComparison)).toBeFalsy();
             expect(ArrayExtensions.sequenceEqual(null, [1], equalsNegativesComparison)).toBeFalsy();
+            expect(ArrayExtensions.sequenceEqual(null, undefined, equalsNegativesComparison)).toBeTruthy();
         });
 
         it('ArrayExtensionsDistinct', () => {
@@ -220,6 +222,77 @@ module powerbitests {
 
                 expect(ArrayExtensions.isArrayOrInheritedArray(emptyObj)).toBe(false);
                 expect(ArrayExtensions.isArrayOrInheritedArray(objLookingLikeArray)).toBe(false);
+            });
+        });
+        
+        describe('isSorted', function () {
+            function StringLengthComparer(a: string, b: string): number {
+                return a.length - b.length;
+            }
+            
+            it('isSorted - array with length 0', () => {
+                let values: string[] = [];
+                
+                expect(ArrayExtensions.isSorted(values, StringLengthComparer)).toBe(true, 'an empty array is always sorted');
+            });
+            
+            it('isSorted - array with length 1', () => {
+                let values: string[] = ['first'];
+                
+                expect(ArrayExtensions.isSorted(values, StringLengthComparer)).toBe(true, 'an array of single element is always sorted');
+            });
+            
+            it('isSorted - array sorted', () => {
+                let values: string[] = ['long', 'longer', 'longest'];
+                
+                expect(ArrayExtensions.isSorted(values, StringLengthComparer)).toBe(true);
+            });
+            
+            it('isSorted - array sorted in reverse order', () => {
+                let values: string[] = ['longest', 'longer', 'long'];
+                
+                expect(ArrayExtensions.isSorted(values, StringLengthComparer)).toBe(false);
+            });
+
+            it('isSorted - array not sorted', () => {
+                let values: string[] = ['longest', 'long', 'longer'];
+                
+                expect(ArrayExtensions.isSorted(values, StringLengthComparer)).toBe(false);
+            });
+            
+            it('isSortedNumeric - array with length 0', () => {
+                let values: number[] = [];
+                expect(ArrayExtensions.isSortedNumeric(values)).toBe(true, 'an empty array is in default (ascending) order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ false)).toBe(true, 'an empty array is in ascending order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ true)).toBe(true, 'an empty array is also in descending order');
+            });
+            
+            it('isSortedNumeric - array with length 1', () => {
+                let values: number[] = [111];
+                expect(ArrayExtensions.isSortedNumeric(values)).toBe(true, 'an array of single element is in default (ascending) order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ false)).toBe(true, 'an array of single element is in ascending order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ true)).toBe(true, 'an array of single element is also in descending order');
+            });
+            
+            it('isSortedNumeric - array in ascending order', () => {
+                let values: number[] = [1, 3, 3, 7];
+                expect(ArrayExtensions.isSortedNumeric(values)).toBe(true, 'checking if in default (ascending) order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ false)).toBe(true, 'checking if in ascending order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ true)).toBe(false, 'checking if in descending order');
+            });
+            
+            it('isSortedNumeric - array in descending order', () => {
+                let values: number[] = [1, -3, -3, -7];
+                expect(ArrayExtensions.isSortedNumeric(values)).toBe(false, 'checking if in default (ascending) order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ false)).toBe(false, 'checking if in ascending order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ true)).toBe(true, 'checking if in decending order');
+            });
+            
+            it('isSortedNumeric - array not in any order', () => {
+                let values: number[] = [3, 0, 6, 2, 4, 7, 0, 0];
+                expect(ArrayExtensions.isSortedNumeric(values)).toBe(false, 'checking if in default (ascending) order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ false)).toBe(false, 'checking if in ascending order');
+                expect(ArrayExtensions.isSortedNumeric(values, /* descendingOrder */ true)).toBe(false, 'checking if in decending order');
             });
         });
     });

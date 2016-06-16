@@ -249,7 +249,7 @@ module powerbitests {
                     kpi.update(visualUpdateOptions);
 
                     let goalText = $element.find('.goalText').text();
-                    let decimalPlacesFound = goalText.indexOf('%') - goalText.indexOf('.') - 1;
+                    let decimalPlacesFound = goalText.lastIndexOf('%') - goalText.lastIndexOf('.') - 1;
                     expect(decimalPlacesFound).toBe(2);
                 });
 

@@ -28,7 +28,7 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.Sunburst;
-    import DataView = powerbi.DataView;
+    // import DataView = powerbi.DataView;
 
     describe("Sunburst", () => {
         describe('capabilities', () => {
@@ -37,7 +37,7 @@ module powerbitests.customVisuals {
 
         describe("DOM tests", () => {
             let visualBuilder: SunburstBuilder;
-            let dataViews: DataView[];
+            // let dataViews: DataView[];
 
             // beforeEach(() => {
             //     visualBuilder = new SunburstBuilder();

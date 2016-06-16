@@ -1535,6 +1535,37 @@ module powerbitests {
         });
     });
 
+    describe("Dashboard ComboChart DOM validation", () => {
+        let visualBuilder: VisualBuilder;
+        let element: JQuery;
+
+        beforeEach(() => {
+            element = powerbitests.helpers.testDom('500', '500');
+            visualBuilder = new VisualBuilder(() => new powerbi.visuals.CartesianChart({
+                chartType: powerbi.visuals.CartesianChartType.LineClusteredColumnCombo,
+                isScrollable: false,
+                tooltipsEnabled: true,
+                animator: undefined,
+                behavior: undefined,
+            }));
+        });
+
+        it("Ensure interactive line is exist on Dashboard tiles", (done) => {
+            visualBuilder.onDataChanged({
+                dataViews: [
+                    dataViewFactory.buildDataViewDefault(),
+                    dataViewFactory.buildDataViewInAnotherDomainOneValue(undefined, true)
+                ]
+            });
+
+            setTimeout(() => {
+                let interactiveLine = $(".interactivity-line");
+                expect(!_.isEmpty(interactiveLine)).toBeTruthy();
+                done();
+            }, DefaultWaitForRender);
+        });
+    });
+
     describe("SharedColorPalette", () => {
         let dataColors: powerbi.visuals.DataColorPalette;
         let sharedPalette: powerbi.visuals.SharedColorPalette;

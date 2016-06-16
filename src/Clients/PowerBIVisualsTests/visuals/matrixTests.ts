@@ -2543,7 +2543,7 @@ module powerbitests {
             ", ");
     }
 
-    function getMatrixColumnWidthDataView(matrix, objects): any {
+    function getMatrixColumnWidthDataView(matrix, objects): powerbi.DataView {
         return {
             metadata: {
                 columns:
@@ -2561,7 +2561,7 @@ module powerbitests {
         };
     }
 
-    function getMatrixColumnWidthDataView2(columns, matrix, objects): any {
+    function getMatrixColumnWidthDataView2(columns: DataViewMetadataColumn[], matrix: DataViewMatrix, objects): powerbi.DataView {
         return {
             metadata: {
                 columns: columns,
@@ -2569,6 +2569,25 @@ module powerbitests {
             },
             matrix: matrix
         };
+    }
+
+    function createColumnWithWidth(column: DataViewMetadataColumn, width: number): DataViewMetadataColumn {
+        if (column) {
+            let newColumn = powerbi.Prototype.inherit(column);
+            if (!newColumn.objects)
+                newColumn.objects = {};
+
+            if (!newColumn.objects["general"])
+                newColumn.objects["general"] = {};
+
+            newColumn.objects["general"]["columnWidth"] = width;
+            return newColumn;
+        }
+    }
+
+    function isColumnWidthMatchObject(colWidthObjects: Controls.ColumnWidthCollection, column: DataViewMetadataColumn): boolean {
+        let colWidthObj = colWidthObjects[column.queryName];
+        return colWidthObj.isFixed && colWidthObj.width === column.objects["general"]["columnWidth"];
     }
 
     function setShouldAllowHeaderResize(v: powerbi.IVisual, fn: () => boolean): void {
@@ -3824,22 +3843,63 @@ module powerbitests {
             setTimeout(() => {
                 let matrixVisual = <Matrix>v;
                 let colWidthManager = matrixVisual.getColumnWidthManager();
-                let persistedColWidths = colWidthManager.getFixedColumnWidthObjects();
-                expect(persistedColWidths.length).toBe(0);
+                let persistedColWidths = colWidthManager.getColumnWidthObjects();
+                expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
 
-                colWidthManager.onColumnWidthChanged(2, 45);
-                persistedColWidths = colWidthManager.getFixedColumnWidthObjects();
-                expect(persistedColWidths.length).toBe(7);
-
-                for (let i = 0; i < 7; i++) {
-                    expect(persistedColWidths[i].queryName).toBe('Measure1');
-                    expect(persistedColWidths[i].width).toBe(45);
+                for (let colWidthObj in persistedColWidths) {
+                    expect(persistedColWidths[colWidthObj].width).toBeUndefined();
+                    expect(persistedColWidths[colWidthObj].isFixed).toBe(false);
                 }
                 done();
             }, DefaultWaitForRender);
         });
 
-        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off", (done) => {
+        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off - Known columns width", (done) => {
+            let matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
+            let objects = {
+                general: {
+                    rowSubtotals: true,
+                    columnSubtotals: true,
+                    autoSizeColumnWidth: false
+                }
+            };
+
+            let columns: DataViewMetadataColumn[] = [
+                createColumnWithWidth(rowGroupSource1, 300),
+                createColumnWithWidth(rowGroupSource2, 200),
+                createColumnWithWidth(measureSource1, 50),
+                createColumnWithWidth(measureSource2, 75),
+                powerbi.Prototype.inheritSingle(columnGroupSource1),
+                powerbi.Prototype.inheritSingle(columnGroupSource2),
+            ];
+
+            let dataView = getMatrixColumnWidthDataView2(columns, matrix, objects);
+
+            v.onDataChanged({ dataViews: [dataView] });
+            setTimeout(() => {
+                let matrixVisual = <Matrix>v;
+                let colWidthManager = matrixVisual.getColumnWidthManager();
+
+                let persistedColWidths = colWidthManager.getColumnWidthObjects();
+                expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
+                for (let i = 0; i < 4; i++) {
+                    expect(isColumnWidthMatchObject(persistedColWidths, columns[i])).toBeTruthy();
+                }
+
+                //Resizing
+                colWidthManager.onColumnWidthChanged("Measure1", 45);
+                expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
+                expect(persistedColWidths["Measure1"].width).toBe(45);
+                expect(persistedColWidths["Measure1"].isFixed).toBe(true);
+                for (let i = 0; i < 4 && columns[i].queryName !== "Measure1"; i++) {
+                    expect(isColumnWidthMatchObject(persistedColWidths, columns[i])).toBeTruthy();
+                }
+
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("ColumnWidthChangedCallback ColumnAutoSizeProperty off - Unknown columns width", (done) => {
             let matrix = matrixTwoRowGroupsTwoColumnGroupsTwoMeasuresAndTotals;
             let objects = {
                 general: {
@@ -3854,10 +3914,25 @@ module powerbitests {
             setTimeout(() => {
                 let matrixVisual = <Matrix>v;
                 let colWidthManager = matrixVisual.getColumnWidthManager();
-                let widthsToPersist: number[] = [70, 75, 50, 60, 50, 60, 50, 60, 50, 60, 50, 60, 50, 60, 50, 60];
-                colWidthManager.persistAllColumnWidths(widthsToPersist);
                 let persistedColWidths = colWidthManager.getColumnWidthObjects();
-                expect(persistedColWidths.length).toBe(16);
+                expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
+                for (let obj in persistedColWidths) {
+                    expect(persistedColWidths[obj].isFixed).toBe(true);
+                    expect(persistedColWidths[obj].width).toBe(undefined);
+                }
+
+                //Resizing
+                colWidthManager.onColumnWidthChanged("Measure1", 45);
+                expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
+                expect(persistedColWidths["Measure1"].width).toBe(45);
+                expect(persistedColWidths["Measure1"].isFixed).toBe(true);
+
+                for (let obj in persistedColWidths) {
+                    if (obj !== "Measure1") {
+                        expect(persistedColWidths[obj].isFixed).toBe(true);
+                        expect(persistedColWidths[obj].width).toBe(undefined);
+                    }
+                }
                 done();
             }, DefaultWaitForRender);
         });
@@ -3871,7 +3946,18 @@ module powerbitests {
                     autoSizeColumnWidth: false
                 }
             };
-            let dataView = getMatrixColumnWidthDataView(matrix, objects);
+
+            let columns: DataViewMetadataColumn[] = [
+                createColumnWithWidth(rowGroupSource1, 300),
+                createColumnWithWidth(rowGroupSource2, 200),
+                createColumnWithWidth(measureSource1, 50),
+                createColumnWithWidth(measureSource2, 75),
+                columnGroupSource1,
+                columnGroupSource2,
+            ];
+
+            let dataView = getMatrixColumnWidthDataView2(columns, matrix, objects);
+
             setIsInteractive(v, true);
             v.onDataChanged({ dataViews: [dataView] });
             setTimeout(() => {
@@ -3880,21 +3966,19 @@ module powerbitests {
                 expect(matrixVisual.persistingObjects).toBe(false);
 
                 // Resize
-                colWidthManager.onColumnWidthChanged(2, 120);
+                colWidthManager.onColumnWidthChanged("Measure1", 120);
                 expect(matrixVisual.persistingObjects).toBe(true);
 
-                measureSource1.objects = { general: { columnWidth: 120 } };
+                columns[2].objects["general"]["columnWidth"] = 120;
 
+                // Passing the new DataView after persisting
                 v.onDataChanged({ dataViews: [dataView] });
                 setTimeout(() => {
                     expect(matrixVisual.persistingObjects).toBe(false);
 
-                    let persistedColWidths = colWidthManager.getFixedColumnWidthObjects();
-                    expect(persistedColWidths.length).toBe(7);
-                    for (let i = 0; i < 7; i++) {
-                        expect(persistedColWidths[i].queryName).toBe('Measure1');
-                        expect(persistedColWidths[i].width).toBe(120);
-                    }
+                    let persistedColWidths = colWidthManager.getColumnWidthObjects();
+                    expect(Object.getOwnPropertyNames(persistedColWidths)).toHaveLength(4);
+                    expect(persistedColWidths["Measure1"].width).toBe(120);
                     done();
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
@@ -4535,10 +4619,10 @@ module powerbitests {
                 let rows = $(selector);
                 let rowCells = rows.eq(2).find('td');
                 expect(rowCells.length).toBe(16);
-                expect(rowCells.eq(2).children(0).width()).toBeCloseTo(45, -1);
-                expect(rowCells.eq(4).children(0).width()).toBeCloseTo(45, -1);
-                expect(rowCells.eq(6).children(0).width()).toBeCloseTo(45, -1);
-                expect(rowCells.eq(8).children(0).width()).toBeCloseTo(45, -1);
+                expect(rowCells.eq(2).children(0).width()).toBe(45);
+                expect(rowCells.eq(4).children(0).width()).toBe(45);
+                expect(rowCells.eq(6).children(0).width()).toBe(45);
+                expect(rowCells.eq(8).children(0).width()).toBe(45);
                 done();
             }, DefaultWaitForRender);
         });
@@ -4550,7 +4634,7 @@ module powerbitests {
                 general: {
                     rowSubtotals: true,
                     columnSubtotals: true,
-                    autoSizeColumnWidth: false,
+                    autoSizeColumnWidth: true,
                 }
             };
             let dataView = getMatrixColumnWidthDataView(matrix, objects);
@@ -4565,17 +4649,13 @@ module powerbitests {
                 expect(matrixVisual.persistingObjects).toBe(false);
 
                 let columns = [
-                    rowGroupSource1,
-                    rowGroupSource2,
+                    createColumnWithWidth(rowGroupSource1, 74),
+                    createColumnWithWidth(rowGroupSource2, 68),
                     columnGroupSource1,
                     columnGroupSource2,
-                    measureSource1,
-                    measureSource2
+                    createColumnWithWidth(measureSource1, 25),
+                    createColumnWithWidth(measureSource2, 48),
                 ];
-                rowGroupSource1.objects = { general: { columnWidth: 74 } };
-                rowGroupSource2.objects = { general: { columnWidth: 68 } };
-                measureSource1.objects = { general: { columnWidth: 25 } };
-                measureSource2.objects = { general: { columnWidth: 48 } };
 
                 let dataView2 = getMatrixColumnWidthDataView2(columns, matrix, objects);
                 v.onDataChanged({
@@ -4583,7 +4663,6 @@ module powerbitests {
                 });
                 setTimeout(() => {
                     expect(matrixVisual.persistingObjects).toBe(false);
-
                     let rows = $(selector);
                     let rowCells = rows.eq(2).find('td');
                     expect(rowCells.eq(0).children(0).width()).toBe(74);
@@ -4595,14 +4674,13 @@ module powerbitests {
                     expect(rowCells.eq(6).children(0).width()).toBe(25);
                     expect(rowCells.eq(7).children(0).width()).toBe(48);
 
-                    let newMeasureSource1: DataViewMetadataColumn = { displayName: "Measure1+", queryName: "Measure1", type: dataTypeNumber, isMeasure: true, index: 7, objects: { general: { formatString: "#.00", columnWidth: 200 } } };
                     let columns = [
-                        rowGroupSource1,
-                        rowGroupSource2,
+                        createColumnWithWidth(rowGroupSource1, 74),
+                        createColumnWithWidth(rowGroupSource2, 68),
                         columnGroupSource1,
                         columnGroupSource2,
-                        newMeasureSource1,
-                        measureSource2
+                        createColumnWithWidth(measureSource1, 200),
+                        createColumnWithWidth(measureSource2, 48),
                     ];
                     let dataView3 = getMatrixColumnWidthDataView2(columns, matrix, objects);
                     setIsInteractive(v, true);
@@ -4685,7 +4763,7 @@ module powerbitests {
         it("multiple onDataChangedCalls to add matrix columns + resize", (done) => {
             let selector = ".tablixCanvas tr";
             let matrix0 = matrixOneMeasure;
-            let objects = {
+            let objects: powerbi.DataViewObjects = {
                 general: {
                     rowSubtotals: true,
                     columnSubtotals: true,
@@ -4693,7 +4771,9 @@ module powerbitests {
                 }
             };
 
-            let dataView0 = getMatrixColumnWidthDataView(matrix0, objects);
+            let colWidthObjs: Controls.ColumnWidthCollection;
+
+            let dataView0 = getMatrixColumnWidthDataView2([measureSource1], matrix0, objects);
             // 1st onDataChanged call with one column in matrix
             setIsInteractive(v, true);
             v.onDataChanged({ dataViews: [dataView0] });
@@ -4702,52 +4782,84 @@ module powerbitests {
                 let columnWidthManager = matrixVisual.getColumnWidthManager();
                 let rows0 = $(selector);
                 let rowCells0 = rows0.eq(0).find('td');
-                let queryNames0 = columnWidthManager.getColumnWidthObjects();
-                expect(queryNames0.length).toBe(1);
-                expect(queryNames0[0].queryName).toBe(measureSource1.queryName);
-                expect(rowCells0.eq(1).children(0).width()).toEqual(66);
-
-                // 2nd onDataChanged call with two columns in matrix
+                colWidthObjs = columnWidthManager.getColumnWidthObjects();
+                expect(Object.getOwnPropertyNames(colWidthObjs)).toHaveLength(1);
+                expect(colWidthObjs.hasOwnProperty("Measure1")).toBe(true);
+                expect(colWidthObjs["Measure1"].isFixed).toBe(false);
+                expect(colWidthObjs["Measure1"].width).toBeUndefined();
+                expect(rowCells0.eq(1).children(0).width()).toEqual(65);
                 let matrix1 = matrixTwoMeasures;
-                let dataView1 = getMatrixColumnWidthDataView(matrix1, objects);
+                let dataView1 = getMatrixColumnWidthDataView2(
+                    [measureSource1, measureSource2],
+                    matrix1, objects);
                 v.onDataChanged({ dataViews: [dataView1] });
                 setTimeout(() => {
                     let rows1 = $(selector);
                     let rowCells1 = rows1.eq(0).find('td');
-                    let queryNames1 = columnWidthManager.getColumnWidthObjects();
-                    expect(queryNames1.length).toBe(2);
-                    expect(queryNames1[0].queryName).toBe(measureSource1.queryName);
-                    expect(queryNames1[1].queryName).toBe(measureSource2.queryName);
-                    expect(rowCells1.eq(1).children(0).width()).toEqual(48);
-                    expect(rowCells1.eq(2).children(0).width()).toEqual(66);
+
+                    colWidthObjs = columnWidthManager.getColumnWidthObjects();
+                    expect(Object.getOwnPropertyNames(colWidthObjs)).toHaveLength(2);
+                    expect(colWidthObjs.hasOwnProperty("Measure1")).toBe(true);
+                    expect(colWidthObjs["Measure1"].isFixed).toBe(false);
+                    expect(colWidthObjs["Measure1"].width).toBeUndefined();
+                    expect(colWidthObjs.hasOwnProperty("Measure2")).toBe(true);
+                    expect(colWidthObjs["Measure2"].isFixed).toBe(false);
+                    expect(colWidthObjs["Measure2"].width).toBeUndefined();
+                    expect(rowCells1.eq(1).children(0).width()).toEqual(65);
+                    expect(rowCells1.eq(2).children(0).width()).toEqual(65);
 
                     // 3rd onDataChanged call with three columns in matrix
                     let matrix2 = matrixThreeMeasures;
-                    let dataView2 = getMatrixColumnWidthDataView(matrix2, objects);
+                    let dataView2 = getMatrixColumnWidthDataView2(
+                        [measureSource1, measureSource2, measureSource3],
+                        matrix2, objects);
                     v.onDataChanged({ dataViews: [dataView2] });
+
                     setTimeout(() => {
                         let rows2 = $(selector);
                         let rowCells2 = rows2.eq(0).find('td');
-                        let queryNames2 = columnWidthManager.getColumnWidthObjects();
-                        expect(queryNames2.length).toBe(3);
-                        expect(queryNames2[0].queryName).toBe(measureSource1.queryName);
-                        expect(queryNames2[1].queryName).toBe(measureSource2.queryName);
-                        expect(queryNames2[2].queryName).toBe(measureSource3.queryName);
-                        expect(rowCells2.eq(1).children(0).width()).toEqual(48);
-                        expect(rowCells2.eq(2).children(0).width()).toEqual(66);
-                        expect(rowCells2.eq(3).children(0).width()).toEqual(66);
 
-                        // Resize column 2
-                        let newMeasureSource: DataViewMetadataColumn = { displayName: "Measure2", queryName: "Measure2", type: dataTypeNumber, isMeasure: true, index: 7, objects: { general: { formatString: "#.00", columnWidth: 120 } } };
-                        let columns = [measureSource1, newMeasureSource, measureSource3];
-                        let dataView3 = getMatrixColumnWidthDataView2(columns, matrix2, objects);
-                        v.onDataChanged({ dataViews: [dataView3] });
+                        colWidthObjs = columnWidthManager.getColumnWidthObjects();
+                        expect(Object.getOwnPropertyNames(colWidthObjs)).toHaveLength(3);
+                        expect(colWidthObjs.hasOwnProperty("Measure1")).toBe(true);
+                        expect(colWidthObjs["Measure1"].isFixed).toBe(false);
+                        expect(colWidthObjs["Measure1"].width).toBeUndefined();
+                        expect(colWidthObjs.hasOwnProperty("Measure2")).toBe(true);
+                        expect(colWidthObjs["Measure2"].isFixed).toBe(false);
+                        expect(colWidthObjs["Measure2"].width).toBeUndefined();
+                        expect(colWidthObjs.hasOwnProperty("Measure3")).toBe(true);
+                        expect(colWidthObjs["Measure3"].isFixed).toBe(false);
+                        expect(colWidthObjs["Measure3"].width).toBeUndefined();
+
+                        expect(rowCells2.eq(1).children(0).width()).toEqual(65);
+                        expect(rowCells2.eq(2).children(0).width()).toEqual(65);
+                        expect(rowCells2.eq(3).children(0).width()).toEqual(65);
+
+                        // Send column #2 as resized
+                        let newmeasuresource = createColumnWithWidth(measureSource2, 120);
+                        let columns = [measureSource1, newmeasuresource, measureSource3];
+                        let dataview3 = getMatrixColumnWidthDataView2(columns, matrix2, objects);
+                        v.onDataChanged({ dataViews: [dataview3] });
                         setTimeout(() => {
                             let rows3 = $(selector);
-                            let rowCells3 = rows3.eq(1).find('td');
-                            expect(rowCells3.eq(1).children(0).width()).toEqual(120);
-                            expect(rowCells3.eq(2).children(0).width()).toEqual(66);
-                            expect(rowCells3.eq(3).children(0).width()).toEqual(66);
+                            let rowcells3 = rows3.eq(1).find('td');
+
+                            colWidthObjs = columnWidthManager.getColumnWidthObjects();
+                            expect(Object.getOwnPropertyNames(colWidthObjs)).toHaveLength(3);
+                            expect(colWidthObjs.hasOwnProperty("Measure1")).toBe(true);
+                            expect(colWidthObjs["Measure1"].isFixed).toBe(false);
+                            expect(colWidthObjs["Measure1"].width).toBeUndefined();
+                            expect(colWidthObjs.hasOwnProperty("Measure2")).toBe(true);
+                            expect(colWidthObjs["Measure2"].isFixed).toBe(true);
+                            expect(colWidthObjs["Measure2"].width).toBe(120);
+                            expect(colWidthObjs.hasOwnProperty("Measure3")).toBe(true);
+                            expect(colWidthObjs["Measure3"].isFixed).toBe(false);
+                            expect(colWidthObjs["Measure3"].width).toBeUndefined();
+
+                            expect(rowcells3.eq(1).children(0).width()).toEqual(65);
+                            expect(rowcells3.eq(2).children(0).width()).toEqual(120);
+                            expect(rowcells3.eq(3).children(0).width()).toEqual(65);
+
                             done();
                         }, DefaultWaitForRender);
                     }, DefaultWaitForRender);
@@ -4803,18 +4915,18 @@ module powerbitests {
         });
 
         // disabled
-        xit("7x7 matrix (1 row and 2 columns composite with nulls)", (done) => {
+        it("7x7 matrix (1 row and 2 columns composite with nulls)", (done) => {
             v.onDataChanged({
                 dataViews: [matrixOneRowGroupCompositeTwoColumnGroupsCompositeOneGroupInstanceDataView]
             });
 
             setTimeout(() => {
                 let expectedCells: string[][] = [
-                    ["Cat, Prod", "Cat, (Blank)", "(Blank), Prod", "(Blank), (Blank)", ""],
+                    ["Cat, Prod", "Cat, ", ", Prod", ", ", ""],
                     ["Lat, Long", "Blue", "Red", "Blue", "Red", "Blue", "Red"],
-                    ["(Blank), (Blank)", "1.00", "2.00", "3.00", "4.00", "5.00", "6.00"],
-                    ["0.00, (Blank)", "1.10", "2.10", "3.10", "4.10", "5.10", "6.10"],
-                    ["(Blank), 0.000", "1.20", "2.20", "3.20", "4.20", "5.20", "6.20"],
+                    [", ", "1.00", "2.00", "3.00", "4.00", "5.00", "6.00"],
+                    ["0.00, ", "1.10", "2.10", "3.10", "4.10", "5.10", "6.10"],
+                    [", 0.000", "1.20", "2.20", "3.20", "4.20", "5.20", "6.20"],
                     ["0.00, 0.000", "1.30", "2.30", "3.30", "4.30", "5.30", "6.30"],
                     ["Total", "1.40", "2.40", "3.40", "4.40", "5.40", "6.40"],
                 ];

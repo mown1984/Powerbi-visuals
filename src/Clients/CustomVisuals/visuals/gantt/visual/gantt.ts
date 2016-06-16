@@ -36,23 +36,23 @@ module powerbi.visuals.samples {
     const MillisecondsInWeek: number = 604800000;
     const MillisecondsInAMonth: number = 2629746000;
     const MillisecondsInAYear: number = 31556952000;
-    export const DefaultDateType: string = "Week";
     const ChartLineHeight: number = 40;
     const PaddingTasks: number = 5;
 
-    export module dateTypeSelector {
-        export const day: string = 'Day';
-        export const week: string = 'Week';
-        export const month: string = 'Month';
-        export const year: string = 'Year';
-
-        export const type: IEnumType = createEnumType([
-            { value: day, displayName: 'Day' },
-            { value: week, displayName: 'Week' },
-            { value: month, displayName: 'Month' },
-            { value: year, displayName: 'Year' }
-        ]);
+    export enum GanttDateType {
+        Day = <any>"Day",
+        Week = <any>"Week",
+        Month = <any>"Month",
+        Year = <any>"Year"
     }
+
+    function createEnumTypeFromEnum(type: any): IEnumType {
+        var even: any = false;
+        return createEnumType(Object.keys(type)
+            .filter((key,i) => ((!!(i % 2)) === even && type[key] === key && !void(even === !even)) || (!!(i % 2)) !== even)
+            .map(x => <IEnumMember>{ value: x, displayName: x }));
+    }
+
     export interface Task extends SelectableDataPoint {
         id: number;
         name: string;
@@ -117,38 +117,6 @@ module powerbi.visuals.samples {
         tooltipInfo: TooltipDataItem[];
     }
 
-    export const GanttChartProps = {
-        legend: {
-            show: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'show' },
-            position: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'position' },
-            showTitle: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'showTitle' },
-            titleText: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'titleText' },
-            labelColor: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelColor' },
-            fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'fontSize' },
-        },
-        taskCompletion: {
-            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskCompletion', propertyName: 'fill' },
-        },
-        dataPoint: {
-            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
-        },
-        taskLabels: {
-            show: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'show' },
-            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'fill' },
-            fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'fontSize' },
-            width: <DataViewObjectPropertyIdentifier>{ objectName: 'taskLabels', propertyName: 'width' },
-        },
-        taskResource: {
-            show: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'show' },
-            fill: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'fill' },
-            fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'taskResource', propertyName: 'fontSize' },
-        },
-        ganttDateType:
-        {
-            type: <DataViewObjectPropertyIdentifier>{ objectName: 'ganttDateType', propertyName: 'type' },
-        }
-    };
-
     module Selectors {
 
         import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
@@ -191,7 +159,7 @@ module powerbi.visuals.samples {
             fontSize: jsCommon.PixelConverter.toString(9),
         };
 
-        private static DefaultValues = {
+        public static DefaultValues = {
             AxisTickSize: 6,
             LabelFontSize: 9,
             LegendFontSize: 8,
@@ -207,7 +175,13 @@ module powerbi.visuals.samples {
             TaskLabelWidth: 110,
             TaskLineWidth: 15,
             TaskResourceColor: "#000000",
-            ganttFormatString: "MMM dd"
+            DefaultDateType: <string>(<any>GanttDateType.Week),
+            DateFormatStrings: {
+                Day: "MMM dd",
+                Week: "MMM dd",
+                Month: "MMM yyyy",
+                Year: "yyyy"
+            } 
         };
 
         public static capabilities: VisualCapabilities = {
@@ -376,17 +350,33 @@ module powerbi.visuals.samples {
                         }
                     }
                 },
-                ganttDateType: {
+                dateType: {
                     displayName: 'Gantt Date Type',
                     properties: {
                         type: {
                             displayName: "Type",
-                            type: { enumeration: dateTypeSelector.type }
+                            type: { enumeration: createEnumTypeFromEnum(GanttDateType) }
                         },
                     }
                 },
             }
         };
+
+        private static Properties: any = Gantt.getProperties(Gantt.capabilities);
+        public static getProperties(capabilities: VisualCapabilities): any {
+            var result = {};
+            for(var objectKey in capabilities.objects) {
+                result[objectKey] = {};
+                for(var propKey in capabilities.objects[objectKey].properties) {
+                    result[objectKey][propKey] = <DataViewObjectPropertyIdentifier> {
+                        objectName: objectKey,
+                        propertyName: propKey
+                    };
+                }
+            }
+
+            return result;
+        }
 
         private margin: IMargin = {
             top: 50,
@@ -457,7 +447,7 @@ module powerbi.visuals.samples {
             this.ganttSvg = this.ganttDiv
                 .append("svg")
                 .classed(Selectors.ClassName.class, true);
-         
+
             //create clear catcher
             this.clearCatcher = appendClearCatcher(this.ganttSvg);
 
@@ -465,17 +455,17 @@ module powerbi.visuals.samples {
             this.axisGroup = this.ganttSvg
                 .append("g")
                 .classed(Selectors.AxisGroup.class, true);
-            
+
             //create task lines container
             this.lineGroup = this.ganttSvg
                 .append("g")
                 .classed(Selectors.TaskLines.class, true);
-            
+
             //create chart container
             this.chartGroup = this.ganttSvg
                 .append("g")
                 .classed(Selectors.Chart.class, true);
-            
+
             //create tasks container
             this.taskGroup = this.chartGroup
                 .append("g")
@@ -518,7 +508,7 @@ module powerbi.visuals.samples {
        * @param taskTypes All unique types from the tasks array.
        */
         private createSeries(objects: DataViewObjects, tasks: Task[]): GanttSeries[] {
-            let colorHelper = new ColorHelper(this.colors, GanttChartProps.dataPoint.fill);
+            let colorHelper = new ColorHelper(this.colors, undefined /*Gantt.Properties.dataPoint.fill*/);
             let taskGroup: _.Dictionary<Task[]> = _.groupBy(tasks, t=> t.taskType);
             let taskTypes = Gantt.getAllTasksTypes(this.dataView);
 
@@ -540,18 +530,18 @@ module powerbi.visuals.samples {
         * @param dataView The data Model
         */
         public static converter(dataView: DataView, colorPalette: IDataColorPalette): GanttViewModel {
-            let taskLabelsShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, GanttChartProps.taskLabels.show, true);
-            let taskLabelsColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor);
-            let taskLabelsFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
-            let taskLabelsWidth: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskLabels.width, taskLabelsShow ? Gantt.DefaultValues.TaskLabelWidth : 0);
-            let taskProgressColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskCompletion.fill, Gantt.DefaultValues.ProgressColor);
-            let taskResourceColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, GanttChartProps.taskResource.fill, Gantt.DefaultValues.TaskResourceColor);
-            let taskResourceFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, GanttChartProps.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize);
-            let taskResourceShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, GanttChartProps.taskResource.show, true);
-            let dateType: string = DataViewObjects.getValue<string>(dataView.metadata.objects, GanttChartProps.ganttDateType.type, DefaultDateType);
+            let taskLabelsShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, Gantt.Properties.taskLabels.show, true);
+            let taskLabelsColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, Gantt.Properties.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor);
+            let taskLabelsFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, Gantt.Properties.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
+            let taskLabelsWidth: number = DataViewObjects.getValue<number>(dataView.metadata.objects, Gantt.Properties.taskLabels.width, taskLabelsShow ? Gantt.DefaultValues.TaskLabelWidth : 0);
+            let taskProgressColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, Gantt.Properties.taskCompletion.fill, Gantt.DefaultValues.ProgressColor);
+            let taskResourceColor: string = DataViewObjects.getFillColor(dataView.metadata.objects, Gantt.Properties.taskResource.fill, Gantt.DefaultValues.TaskResourceColor);
+            let taskResourceFontSize: number = DataViewObjects.getValue<number>(dataView.metadata.objects, Gantt.Properties.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize);
+            let taskResourceShow: boolean = DataViewObjects.getValue<boolean>(dataView.metadata.objects, Gantt.Properties.taskResource.show, true);
+            let dateType: string = DataViewObjects.getValue<string>(dataView.metadata.objects, Gantt.Properties.dateType.type, Gantt.DefaultValues.DefaultDateType);
 
             let taskTypes = Gantt.getAllTasksTypes(dataView);
-            let colorHelper = new ColorHelper(colorPalette, GanttChartProps.dataPoint.fill);
+            let colorHelper = new ColorHelper(colorPalette, undefined /*Gantt.Properties.dataPoint.fill*/);
             let legendData: LegendData = {
                 fontSize: Gantt.DefaultValues.LegendFontSize,
                 dataPoints: [],
@@ -636,7 +626,7 @@ module powerbi.visuals.samples {
             let columnSource = dataView.table.columns;
             let data = dataView.table.rows;
             let categories = dataView.categorical.categories[0];
-            let colorHelper = new ColorHelper(this.colors, GanttChartProps.dataPoint.fill);
+            let colorHelper = new ColorHelper(this.colors, undefined/* Gantt.Properties.dataPoint.fill*/);
 
             return data.map((child: DataViewTableRow, index: number) => {
                 let dateString = this.getTaskProperty<Date>(columnSource, child, "StartDate");
@@ -872,7 +862,7 @@ module powerbi.visuals.samples {
                 }
             }
         }
-        
+
         private getDateType(): number {
             let milliSeconds: number = MillisecondsInWeek;
 
@@ -945,7 +935,7 @@ module powerbi.visuals.samples {
                 pixelSpan: viewportIn.width,
                 dataDomain: options.forcedXDomain,
                 metaDataColumn: metaDataColumn,
-                formatString: Gantt.DefaultValues.ganttFormatString,
+                formatString: Gantt.DefaultValues.DateFormatStrings[this.viewModel.dateType],
                 outerPadding: 0,
                 isScalar: true,
                 isVertical: false,
@@ -953,7 +943,7 @@ module powerbi.visuals.samples {
                 useTickIntervalForDisplayUnits: true,
                 isCategoryAxis: true,
                 getValueFn: (index, type) => {
-                    return valueFormatter.format(new Date(index), Gantt.DefaultValues.ganttFormatString);
+                    return valueFormatter.format(new Date(index), Gantt.DefaultValues.DateFormatStrings[this.viewModel.dateType]);
                 },
                 scaleType: options.categoryAxisScaleType,
                 axisDisplayUnits: options.categoryAxisDisplayUnits,
@@ -1145,7 +1135,7 @@ module powerbi.visuals.samples {
             this.chartGroup.attr("transform", SVGUtil.translate(viewModel.taskLabelsWidth + margin.left, margin.top));
             this.lineGroup.attr("transform", SVGUtil.translate(0, margin.top));
         }
-       
+
         /**
          * Returns the width of the now line based on num of tasks
          * @param numOfTasks Number of tasks
@@ -1155,9 +1145,9 @@ module powerbi.visuals.samples {
         }
 
         private getTaskLabelFontSize(): number {
-            return DataViewObjects.getValue<number>(this.dataView.metadata.objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
+            return DataViewObjects.getValue<number>(this.dataView.metadata.objects, Gantt.Properties.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize);
         }
-            
+
         /** 
          * handle "Legend" card
          * @param enumeration The instance to be pushed into "Legend" card
@@ -1165,17 +1155,17 @@ module powerbi.visuals.samples {
          */
         private enumerateLegendOptions(enumeration: ObjectEnumerationBuilder, objects: DataViewObjects) {
             enumeration.pushInstance({
-                displayName: GanttChartProps.legend.show.objectName,
+                displayName: Gantt.Properties.legend.show.objectName,
                 selector: null,
                 properties: {
-                    show: DataViewObjects.getValue<boolean>(objects, GanttChartProps.legend.show, true),
-                    position: DataViewObjects.getValue<boolean>(objects, GanttChartProps.legend.position, true), //TODO: change type of prop
-                    showTitle: DataViewObjects.getValue<boolean>(objects, GanttChartProps.legend.showTitle, true),
-                    titleText: DataViewObjects.getValue<string>(objects, GanttChartProps.legend.titleText, ""), //TODO: default text ?
-                    labelColor: DataViewObjects.getFillColor(objects, GanttChartProps.legend.labelColor, Gantt.DefaultValues.LegendLabelColor),
-                    fontSize: DataViewObjects.getValue<number>(objects, GanttChartProps.legend.fontSize, Gantt.DefaultValues.LegendFontSize)
+                    show: DataViewObjects.getValue<boolean>(objects, Gantt.Properties.legend.show, true),
+                    position: DataViewObjects.getValue<boolean>(objects, Gantt.Properties.legend.position, true), //TODO: change type of prop
+                    showTitle: DataViewObjects.getValue<boolean>(objects, Gantt.Properties.legend.showTitle, true),
+                    titleText: DataViewObjects.getValue<string>(objects, Gantt.Properties.legend.titleText, ""), //TODO: default text ?
+                    labelColor: DataViewObjects.getFillColor(objects, Gantt.Properties.legend.labelColor, Gantt.DefaultValues.LegendLabelColor),
+                    fontSize: DataViewObjects.getValue<number>(objects, Gantt.Properties.legend.fontSize, Gantt.DefaultValues.LegendFontSize)
                 },
-                objectName: GanttChartProps.legend.show.objectName
+                objectName: Gantt.Properties.legend.show.objectName
             });
         }
 
@@ -1208,9 +1198,9 @@ module powerbi.visuals.samples {
             enumeration.pushInstance({
                 selector: null,
                 properties: {
-                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskCompletion.fill, Gantt.DefaultValues.ProgressColor)
+                    fill: DataViewObjects.getFillColor(objects, Gantt.Properties.taskCompletion.fill, Gantt.DefaultValues.ProgressColor)
                 },
-                objectName: GanttChartProps.taskCompletion.fill.objectName
+                objectName: Gantt.Properties.taskCompletion.fill.objectName
             });
         }
         
@@ -1223,15 +1213,15 @@ module powerbi.visuals.samples {
             enumeration.pushInstance({
                 selector: null,
                 properties: {
-                    show: DataViewObjects.getValue<boolean>(objects, GanttChartProps.taskLabels.show, true),
-                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor),
-                    fontSize: DataViewObjects.getValue<number>(objects, GanttChartProps.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize),
-                    width: DataViewObjects.getValue<number>(objects, GanttChartProps.taskLabels.width, Gantt.DefaultValues.TaskLabelWidth),
+                    show: DataViewObjects.getValue<boolean>(objects, Gantt.Properties.taskLabels.show, true),
+                    fill: DataViewObjects.getFillColor(objects, Gantt.Properties.taskLabels.fill, Gantt.DefaultValues.TaskLabelColor),
+                    fontSize: DataViewObjects.getValue<number>(objects, Gantt.Properties.taskLabels.fontSize, Gantt.DefaultValues.LabelFontSize),
+                    width: DataViewObjects.getValue<number>(objects, Gantt.Properties.taskLabels.width, Gantt.DefaultValues.TaskLabelWidth),
                 },
-                objectName: GanttChartProps.taskLabels.show.objectName
+                objectName: Gantt.Properties.taskLabels.show.objectName
             });
         }
-      
+
         /** 
         * handle "Data Labels" card
         * @param enumeration The instance to be pushed into "Task Resource" card
@@ -1241,11 +1231,11 @@ module powerbi.visuals.samples {
             enumeration.pushInstance({
                 selector: null,
                 properties: {
-                    show: DataViewObjects.getValue<boolean>(objects, GanttChartProps.taskResource.show, true),
-                    fill: DataViewObjects.getFillColor(objects, GanttChartProps.taskResource.fill, Gantt.DefaultValues.TaskResourceColor),
-                    fontSize: DataViewObjects.getValue<number>(objects, GanttChartProps.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize)
+                    show: DataViewObjects.getValue<boolean>(objects, Gantt.Properties.taskResource.show, true),
+                    fill: DataViewObjects.getFillColor(objects, Gantt.Properties.taskResource.fill, Gantt.DefaultValues.TaskResourceColor),
+                    fontSize: DataViewObjects.getValue<number>(objects, Gantt.Properties.taskResource.fontSize, Gantt.DefaultValues.ResourceFontSize)
                 },
-                objectName: GanttChartProps.taskResource.show.objectName
+                objectName: Gantt.Properties.taskResource.show.objectName
             });
         }
 
@@ -1253,11 +1243,11 @@ module powerbi.visuals.samples {
             enumeration.pushInstance({
                 selector: null,
                 properties: {
-                    type: DataViewObjects.getValue<string>(objects, GanttChartProps.ganttDateType.type, DefaultDateType),
+                    type: DataViewObjects.getValue<string>(objects, Gantt.Properties.dateType.type, Gantt.DefaultValues.DefaultDateType),
                 },
-                objectName: GanttChartProps.ganttDateType.type.objectName
+                objectName: Gantt.Properties.dateType.type.objectName
             });
-        }        
+        }
         /** 
         * handle the property pane options
         * @param objects Dataview enumerate objects
@@ -1285,7 +1275,7 @@ module powerbi.visuals.samples {
                 case 'taskResource':
                     this.enumerateDataLabels(enumeration, dataView.metadata.objects);
                     break;
-                case 'ganttDateType':
+                case 'dateType':
                     this.enumerateDateType(enumeration, dataView.metadata.objects);
                     break;
             }

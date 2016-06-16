@@ -33,6 +33,31 @@ module powerbi.visuals.system {
         moreMessage: string;
         moreLinkHref: string;
         moreLinkText: string;
+        type: string;
+    }
+
+    /**
+     * Makes a copy of an object and flattens prototype chain
+     */
+    function flattenPrototype(obj: any): any {
+        if (obj !== null && typeof obj === 'object') {
+            if (obj instanceof Array) {
+                return obj.map(i => flattenPrototype(i));
+            } else {
+                let output = {};
+                for (let o = obj; o != null; o = Object.getPrototypeOf(o)) {
+                    let oKeys = Object.getOwnPropertyNames(o);
+                    for (let i = 0; i < oKeys.length; i++) {
+                        let key = oKeys[i];
+                        if (typeof output[key] !== 'undefined') continue;
+                        output[key] = flattenPrototype(obj[key]);
+                    }
+                }
+                return output;
+            }
+        } else {
+            return obj;
+        }
     }
 
     export class DebugVisual implements IVisual {
@@ -43,7 +68,7 @@ module powerbi.visuals.system {
             <div class="errorContainer">
                 <div class="errorMessage">
                     <div ng-switch="$ctrl.errorInfo.overlayType">
-                        <div class="glyphicon pbi-glyph-error glyph-med"></div>
+                        <div class="glyphicon pbi-glyph-<%= type %> glyph-med"></div>
                     </div>
                     <div>
                         <div class="errorSpan"><%= message %></div>
@@ -75,7 +100,8 @@ module powerbi.visuals.system {
                     message: this.host.getLocalizedString('DebugVisual_Enabled_Error_Message'),
                     moreMessage: this.host.getLocalizedString('DebugVisual_Enabled_Error_Learn_More'),
                     moreLinkHref: "https://aka.ms/powerbideveloperenablederror",
-                    moreLinkText: this.host.getLocalizedString('DebugVisual_Enabled_Error_Learn_More_Link')
+                    moreLinkText: this.host.getLocalizedString('DebugVisual_Enabled_Error_Learn_More_Link'),
+                    type: 'blockedsite'
                 });
                 this.container.html(errorMessage);
                 return;
@@ -92,24 +118,36 @@ module powerbi.visuals.system {
                     return;
                 }
 
+                if (status === 'error') {
+                    let errorMessage = this.buildErrorMessage({
+                        message: this.host.getLocalizedString('DebugVisual_Compile_Error_Message'),
+                        moreMessage: this.host.getLocalizedString('DebugVisual_Compile_Error_Learn_More'),
+                        moreLinkHref: "https://aka.ms/powerbideveloperpbivizcompileerror",
+                        moreLinkText: this.host.getLocalizedString('DebugVisual_Compile_Error_Learn_More_Link'),
+                        type: 'repair'
+                    });
+                    this.container.html(errorMessage);
+                    return;
+                }
+
                 if (auto && this.lastUpdateStatus === status) {
                     return;
                 }
                 this.lastUpdateStatus = status;
-                
+
                 $.getJSON(baseUrl + 'pbiviz.json').done((pbivizJson) => {
                     debug.assertValue(pbivizJson.capabilities, "DebugVisual - pbiviz capabilities missing");
                     debug.assertValue(pbivizJson.visual && pbivizJson.visual.guid, "DebugVisual - pbiviz visual guid missing");
                     if (!pbivizJson.capabilities || !pbivizJson.visual || !pbivizJson.visual.guid) {
                         return;
                     }
-                    
+
                     //update guid if needed
                     if (this.visualGuid !== pbivizJson.visual.guid) {
                         this.visualGuid = pbivizJson.visual.guid;
                         this.visualContainer.attr('class', 'visual-' + this.visualGuid);
                     }
-                    
+
                     //loaded separately for sourcemap support
                     $.getScript(baseUrl + 'visual.js').done(() => {
                         debug.assertValue(powerbi.visuals.plugins[this.visualGuid], "DebugVisual - Plugin not found");
@@ -118,7 +156,7 @@ module powerbi.visuals.system {
                         }
                         //attach json capabilities to plugin
                         powerbi.visuals.plugins[this.visualGuid].capabilities = pbivizJson.capabilities;
-                        
+
                         //loaded separately for sourcemap support
                         $.get(baseUrl + 'visual.css').done((data) => {
                             $('#css-DEBUG').remove();
@@ -149,7 +187,8 @@ module powerbi.visuals.system {
                     message: this.host.getLocalizedString('DebugVisual_Server_Error_Message'),
                     moreMessage: this.host.getLocalizedString('DebugVisual_Server_Error_Learn_More'),
                     moreLinkHref: "https://aka.ms/powerbideveloperpbivizservererror",
-                    moreLinkText: this.host.getLocalizedString('DebugVisual_Server_Error_Learn_More_Link')
+                    moreLinkText: this.host.getLocalizedString('DebugVisual_Server_Error_Learn_More_Link'),
+                    type: 'error'
                 });
                 this.container.html(errorMessage);
             }).always(() => {
@@ -177,7 +216,7 @@ module powerbi.visuals.system {
         }
 
         private showDataview(): void {
-            let dataview = this.lastUpdateOptions ? this.lastUpdateOptions.dataViews : undefined;
+            let dataview = this.lastUpdateOptions ? flattenPrototype(this.lastUpdateOptions.dataViews) : undefined;
             window.console.log(dataview);
         }
 

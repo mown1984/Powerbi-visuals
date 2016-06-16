@@ -27,7 +27,12 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import DefaultSQExprVisitor = powerbi.data.DefaultSQExprVisitor;
     import SemanticFilter = powerbi.data.SemanticFilter;
+    import SQColumnRefExpr = powerbi.data.SQColumnRefExpr;
+    import SQConstantExpr = powerbi.data.SQConstantExpr;
+    import SQContainsExpr = powerbi.data.SQContainsExpr;
+    import SQExpr = powerbi.data.SQExpr;
     import UrlUtils = jsCommon.UrlUtils;
 
     /** Helper module for converting a DataView into SlicerData. */
@@ -194,9 +199,25 @@ module powerbi.visuals {
                 slicerDataPoints: slicerDataPoints,
                 hasSelectionOverride: hasSelectionOverride,
                 defaultValue: analyzer.defaultValue,
+                searchKey: getSearchKey(dataViewMetadata),
             };
 
             return slicerData;
+        }
+
+        function getSearchKey(dataViewMetadata: DataViewMetadata): string {
+            let selfFilter = DataViewObjects.getValue<SemanticFilter>(dataViewMetadata.objects, slicerProps.selfFilterPropertyIdentifier, undefined);
+            if (!selfFilter)
+                return;
+            
+            let filterItems = selfFilter.conditions();
+            debug.assert(filterItems.length === 1, 'There should be exactly 1 filter expression.');
+            let containsFilter = <SQContainsExpr>filterItems[0];
+            if (containsFilter) {
+                let containsValueVisitor = new ConditionsFilterValueVisitor();
+                containsFilter.accept(containsValueVisitor);
+                return containsValueVisitor.getValueForField();
+            }
         }
 
         function createDefaultSettings(dataViewMetadata: DataViewMetadata): SlicerSettings {
@@ -231,6 +252,34 @@ module powerbi.visuals {
             }
 
             return defaultSettings;
+        }
+
+        class ConditionsFilterValueVisitor extends DefaultSQExprVisitor<void> {
+            private value: string;
+            private fieldExpr: SQExpr;
+
+            public visitConstant(expr: SQConstantExpr): void {
+                if (expr.type && expr.type.text)
+                    this.value = expr.value;
+            }
+
+            public visitContains(expr: SQContainsExpr): void {
+                expr.left.accept(this);
+                expr.right.accept(this);
+            }
+
+            public visitColumnRef(expr: SQColumnRefExpr): void {
+                this.fieldExpr = expr;
+            }
+
+            public visitDefault(expr: SQExpr): void {
+                this.value = undefined;
+                this.fieldExpr = undefined;
+            }
+
+            public getValueForField(): string {
+                return this.fieldExpr && this.value;
+            }
         }
     }
 }

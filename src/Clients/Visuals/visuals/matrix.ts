@@ -454,7 +454,16 @@ module powerbi.visuals {
         }
 
         public cornerCellItemEquals(item1: any, item2: any): boolean {
-            return item1 === item2;
+            let corner1 = <MatrixCornerItem>item1;
+            let corner2 = <MatrixCornerItem>item2;
+
+            if (!corner1 || !corner2)
+                return false;
+
+            return corner1.displayName === corner2.displayName &&
+                corner1.isColumnHeaderLeaf === corner2.isColumnHeaderLeaf &&
+                corner1.isRowHeaderLeaf === corner2.isRowHeaderLeaf &&
+                corner1.metadata === corner2.metadata;
         }
 
         public getMatrixColumnHierarchy(): MatrixHierarchy {
@@ -590,8 +599,16 @@ module powerbi.visuals {
         private hierarchyNavigator: IMatrixHierarchyNavigator;
         private options: MatrixBinderOptions;
 
+        private fontSizeHeader: number;
+        private textPropsHeader: TextProperties;
         private textHeightHeader: number;
+
+        private fontSizeValue: number;
+        private textPropsValue: TextProperties;
         private textHeightValue: number;
+
+        private fontSizeTotal: number;
+        private textPropsTotal: TextProperties;
         private textHeightTotal: number;
 
         constructor(hierarchyNavigator: IMatrixHierarchyNavigator, options: MatrixBinderOptions) {
@@ -608,20 +625,26 @@ module powerbi.visuals {
         }
 
         private updateTextHeights(): void {
-            let textProps: TextProperties = {
-                fontFamily: '',
-                fontSize: TablixObjects.getTextSizeInPx(this.formattingProperties.general.textSize),
-                text: 'a',
+            this.fontSizeHeader = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsHeader = {
+                fontFamily: TablixUtils.FontFamilyHeader,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeHeader),
             };
+            this.textHeightHeader = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsHeader, "a"));
 
-            textProps.fontFamily = TablixUtils.FontFamilyHeader;
-            this.textHeightHeader = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+            this.fontSizeValue = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsValue = {
+                fontFamily: TablixUtils.FontFamilyCell,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeValue),
+            };
+            this.textHeightValue = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsValue, "a"));
 
-            textProps.fontFamily = TablixUtils.FontFamilyCell;
-            this.textHeightValue = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
-
-            textProps.fontFamily = TablixUtils.FontFamilyTotal;
-            this.textHeightTotal = Math.ceil(TextMeasurementService.measureSvgTextHeight(textProps));
+            this.fontSizeTotal = jsCommon.PixelConverter.fromPointToPixel(this.formattingProperties.general.textSize);
+            this.textPropsTotal = {
+                fontFamily: TablixUtils.FontFamilyTotal,
+                fontSize: jsCommon.PixelConverter.toString(this.fontSizeTotal),
+            };
+            this.textHeightTotal = Math.ceil(TextMeasurementService.measureSvgTextHeight(this.textPropsTotal, "a"));
         }
 
         public onStartRenderingSession(): void {
@@ -648,7 +671,9 @@ module powerbi.visuals {
                 cellStyle.paddings.left = TablixUtils.CellPaddingLeftMatrixTotal;
             }
 
+            cell.contentWidth = 0;
             this.bindHeader(item, cell, cell.extension.contentHost, this.getRowHeaderMetadata(item), cellStyle);
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             if (this.options.onBindRowHeader)
                 this.options.onBindRowHeader(item);
@@ -725,6 +750,7 @@ module powerbi.visuals {
 
             let cellElement = cell.extension.contentHost;
 
+            cell.contentWidth = 0;
             let isLeaf = this.hierarchyNavigator && this.hierarchyNavigator.isLeaf(item);
             if (isLeaf) {
                 cellStyle.borders.bottom = new EdgeSettings(TablixObjects.PropGridOutlineWeight.defaultValue, TablixObjects.PropGridOutlineColor.defaultValue);
@@ -737,6 +763,11 @@ module powerbi.visuals {
                     if (sortableHeaderColumnMetadata) {
                         this.registerColumnHeaderClickHandler(sortableHeaderColumnMetadata, cell);
                         cellElement = TablixUtils.addSortIconToColumnHeader(sortableHeaderColumnMetadata.sort, cellElement);
+
+                        if (sortableHeaderColumnMetadata.sort) {
+                            // Glyph font has all characters width/height same as font size
+                            cell.contentWidth = this.fontSizeHeader + TablixUtils.SortIconPadding;
+                        }
                     }
                 }
 
@@ -747,6 +778,7 @@ module powerbi.visuals {
 
             cell.extension.disableDragResize();
             this.bindHeader(item, cell, cellElement, this.getColumnHeaderMetadata(item), cellStyle, overwriteTotalLabel);
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             this.setColumnHeaderStyle(cell, cellStyle);
 
@@ -834,6 +866,7 @@ module powerbi.visuals {
 
                 if (!overwriteSubtotalLabel) {
                     TablixUtils.setCellTextAndTooltip(this.options.totalLabel, cellElement, cell.extension.contentHost);
+                    cell.contentWidth = TextMeasurementService.measureSvgTextWidth(this.textPropsTotal, this.options.totalLabel);
                     return;
                 }
             }
@@ -842,26 +875,29 @@ module powerbi.visuals {
             // If item is empty text, set text to a space to maintain height
             if (!value) {
                 cellElement.innerHTML = TablixUtils.StringNonBreakingSpace;
+                // Keep cell.width assigned as 0
+                return;
             }
-            // if item is a Valid URL, set an Anchor tag
-            else if (converterHelper.isWebUrlColumn(metadata) && UrlUtils.isValidUrl(value)) {
-                TablixUtils.appendATagToBodyCell(item.valueFormatted, cellElement);
-            }
-            // if item is an Image, if it's valid create an Img tag, if not insert text
-            else if (converterHelper.isImageUrlColumn(metadata)) {
-                style.hasImage = true;
 
-                if (UrlUtils.isValidImageUrl(value)) {
-                    TablixUtils.appendImgTagToBodyCell(item.valueFormatted, cellElement, imgHeight);
-                }
-                else {
-                    TablixUtils.setCellTextAndTooltip(value, cellElement, cell.extension.contentHost);
-                }
+            // if item is a Valid URL, set an Anchor tag
+            if (converterHelper.isWebUrlColumn(metadata) && UrlUtils.isValidUrl(value)) {
+                TablixUtils.appendATagToBodyCell(value, cellElement);
+                cell.contentWidth += TextMeasurementService.measureSvgTextWidth(this.textPropsHeader, value);
+                return;
             }
+
+            // if item is an Image, if it's valid create an Img tag, if not insert text
+            if (converterHelper.isImageUrlColumn(metadata) && UrlUtils.isValidImageUrl(value)) {
+                TablixUtils.appendImgTagToBodyCell(item.valueFormatted, cellElement, imgHeight);
+                cell.contentWidth += imgHeight * TablixUtils.ImageDefaultAspectRatio;
+                return;
+            }
+
             // if item is text, insert it
-            else {
-                TablixUtils.setCellTextAndTooltip(value, cellElement, cell.extension.contentHost);
-            }
+            TablixUtils.setCellTextAndTooltip(value, cellElement, cell.extension.contentHost);
+            cell.contentWidth += TextMeasurementService.measureSvgTextWidth(
+                item.isSubtotal ? this.textPropsTotal : this.textPropsHeader,
+                value);
         }
 
         private registerColumnHeaderClickHandler(columnMetadata: DataViewMetadataColumn, cell: controls.ITablixCell): void {
@@ -892,22 +928,34 @@ module powerbi.visuals {
 
             cell.contentHeight = this.textHeightValue;
 
-            if (item.kpiContent) {
-                $(cell.extension.contentHost).append(item.kpiContent);
+            let kpi = item.kpiContent;
+            if (kpi) {
+                $(cell.extension.contentHost).append(kpi);
+
+                // Glyph font has all characters width/height same as font size
+                cell.contentWidth = this.fontSizeValue;
             }
             else
             {
+                let textProps = this.textPropsValue;
+
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixValueNumeric);
                 if (item.isTotal) {
                     TablixUtils.addCellCssClass(cell, TablixUtils.CssClassTablixValueTotal);
                     cellStyle.fontFamily = TablixUtils.FontFamilyTotal;
                     cell.contentHeight = this.textHeightTotal;
+                    textProps = this.textPropsTotal;
                 }
 
-                if (item.textContent) {
-                    TablixUtils.setCellTextAndTooltip(item.textContent, cell.extension.contentHost);
+                let textContent = item.textContent;
+
+                if (textContent) {
+                    TablixUtils.setCellTextAndTooltip(textContent, cell.extension.contentHost);
+                    cell.contentWidth = TextMeasurementService.measureSvgTextWidth(textProps, textContent);
                 }
             }
+
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             this.setBodyCellStyle(cell, item, cellStyle);
             cell.applyStyle(cellStyle);
@@ -999,6 +1047,7 @@ module powerbi.visuals {
             cellStyle.fontColor = TablixUtils.FontColorHeaders;
 
             cell.contentHeight = this.textHeightHeader;
+            cell.contentWidth = 0;
 
             let cellElement = cell.extension.contentHost;
             if (item.isColumnHeaderLeaf) {
@@ -1011,11 +1060,18 @@ module powerbi.visuals {
                     if (cornerHeaderMetadata) {
                         this.registerColumnHeaderClickHandler(cornerHeaderMetadata, cell);
                         cellElement = TablixUtils.addSortIconToColumnHeader((cornerHeaderMetadata ? cornerHeaderMetadata.sort : undefined), cellElement);
+
+                        if (cornerHeaderMetadata.sort) {
+                            // Glyph font has all characters width/height same as font size
+                            cell.contentWidth = this.fontSizeHeader + TablixUtils.SortIconPadding;
+                        }
                     }
                 }
             }
 
             TablixUtils.setCellTextAndTooltip(item.displayName, cellElement, cell.extension.contentHost);
+            cell.contentWidth += TextMeasurementService.measureSvgTextWidth(this.textPropsHeader, item.displayName);
+            cell.contentWidth = Math.ceil(cell.contentWidth);
 
             if (item.isRowHeaderLeaf) {
                 TablixUtils.addCellCssClass(cell, TablixUtils.CssClassMatrixRowHeaderLeaf);
@@ -1454,16 +1510,12 @@ module powerbi.visuals {
             setTimeout(() => {
                 // Render
                 this.refreshControl(shouldClearControl);
+                let widthChanged = this.columnWidthManager.onColumnsRendered(this.tablixControl.layoutManager.columnWidthsToPersist);
 
-                // At this point, all columns are rendered with proper width, reset the flag if it was raised
-                if (this.persistingObjects) {
+                // At this point, all columns are rendered with proper width
+                // Resetting the flag unless any unknown columnn width was persisted
+                if (this.persistingObjects && !widthChanged) {
                     this.persistingObjects = false;
-                    return;
-                }
-
-                // if AutoSize option was set to OFF, persist all columns width
-                if (this.columnWidthManager.shouldPersistAllColumnWidths()) {
-                    this.columnWidthManager.persistAllColumnWidths(this.tablixControl.layoutManager.columnWidthsToPersist);
                 }
             }, 0);
         }

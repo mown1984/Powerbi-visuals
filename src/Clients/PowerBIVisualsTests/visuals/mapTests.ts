@@ -1284,6 +1284,55 @@ module powerbitests {
                 }, DefaultWaitForRender);
             }, DefaultWaitForRender);
         });
+
+        it("Bubbles render with numeric categories", (done) => {
+            let dataBuilder = new MapDataBuilder();
+            let dataView = dataBuilder.withNumericCategories().build(false, false);
+
+            // need the original geocode method so we can call from the spy
+            let geocoder = visualBuilder.testGeocoder;
+            let geocode = geocoder.geocode;
+
+            // ensure geocoding is really async. remember what the geocoder would return but give back an
+            // unresolved one.
+            type GeocodingCalls = { innerPromise: any; outerPromise: any };
+
+            let geocodingCalls: GeocodingCalls[] = [];
+            spyOn(geocoder, 'geocode').and.callFake((...args: any[]) => {
+                let promises = { innerPromise: geocode.apply(geocoder, args), outerPromise: $.Deferred() };
+                geocodingCalls.push(promises);
+                return promises.outerPromise;
+            });
+
+            // prevent loading from cache so async attempt will be made (just making robust to changes in mock)
+            spyOn(geocoder, 'tryGeocodeImmediate').and.returnValue(null);
+
+            // this will start the geocoding
+            v.onDataChanged({ dataViews: [dataView] });
+
+            expect(geocodingCalls.length).toBe(dataBuilder.categoryValues.length);
+
+            setTimeout(() => {
+                // shouldn't be any bubbles because geocoding isn't yet complete
+                let bubbles = getBubbles();
+                expect(bubbles.length).toBe(0);
+
+                // tie outerPromises to inner ones
+                for (let pair of geocodingCalls)
+                    ((inner, outer) => {
+                        inner.then((location) => {
+                            outer.resolve(location);
+                        });
+                    })(pair.innerPromise, pair.outerPromise);
+
+                setTimeout(() => {
+                    let bubbles = getBubbles();
+                    expect(bubbles.length).toBe(dataBuilder.categoryValues.length);
+
+                    done();
+                }, DefaultWaitForRender);
+            }, DefaultWaitForRender);
+        });
     });
 
     describe("Slow Bing Map load", () => {
@@ -1755,13 +1804,16 @@ module powerbitests {
     class MapDataBuilder {
         public categoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Category: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public categoryAsSeriesColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Category: true, Series: true, }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
-        public categoryValues = ['Montana', 'California', 'Arizona'];
+        public categoryValues: any[] = ['Montana', 'California', 'Arizona'];
         public shortCategoryValues = ['MT', 'CA', 'AZ'];
         public categoryColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'state' });
         public addressCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'address', queryName: 'address', roles: { Category: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public addressCategoryValues = ['Some address', 'Some different address', 'Another different address'];
         public addressColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'address' });
-
+        public numericCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'zip code', queryName: 'zip coe', roles: { Category: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) };
+        public numericCategoryValues = [98033, 98034, 98052];
+        public numericColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'zip code' });
+        
         public seriesColumn: powerbi.DataViewMetadataColumn = { displayName: 'region', queryName: 'region', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public seriesSameAsCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public seriesColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'region' });;
@@ -2054,6 +2106,13 @@ module powerbitests {
             this.categoryValues = this.addressCategoryValues;
             this.categoryColumn = this.addressCategoryColumn;
             this.categoryColumnExpr = this.addressColumnExpr;
+            return this;
+        }
+
+        public withNumericCategories(): MapDataBuilder {
+            this.categoryValues = this.numericCategoryValues;
+            this.categoryColumn = this.numericCategoryColumn;
+            this.categoryColumnExpr = this.categoryColumnExpr;
             return this;
         }
 

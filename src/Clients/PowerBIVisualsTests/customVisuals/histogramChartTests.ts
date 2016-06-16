@@ -37,7 +37,7 @@ module powerbitests.customVisuals {
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new HistogramChartBuilder(1000,500);
+            visualBuilder = new HistogramChartBuilder(1000, 500);
             defaultDataViewBuilder = new ValueByAgeData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -158,6 +158,103 @@ module powerbitests.customVisuals {
 
                     done();
                 }, DefaultWaitForRender);
+            });
+
+            it("Display units - millions", done => {
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true,
+                        displayUnits: 1000000,
+                    },
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find('.labels text').first().text()).toMatch(/[0-9.]*M/);
+                    done();
+                });
+
+            });
+
+            it("Display units - thousands", done => {
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true,
+                        displayUnits: 1000,
+                    },
+                };
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find('.labels text').first().text()).toMatch(/[0-9.]*K/);
+                    done();
+                });
+
+            });
+
+            it("Limit Decimal Places value", done => {
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true,
+                        displayUnits: 0,
+                        precision: 4,
+                    },
+                };
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find('.labels text').first().text()).toMatch(/\d*[.]\d{4}/);
+                    done();
+                });
+
+            });
+
+            it("Data labels font-size", done => {
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true,
+                        fontSize: 15,
+                    },
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.mainElement.find('.labels text').first().css('font-size')).toBe("20px");
+                    done();
+                });
+
+            });
+
+            it("X-Axis settings change", (done) => {
+                dataView.metadata.objects = {
+                    xAxis: {
+                        axisColor: {
+                            solid: { color: "#ff0011" }
+                        }
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let elements = visualBuilder.mainElement.find(".axis:first .tick text");
+                    elements.each((index, elem) => {
+                        assertColorsMatch($(elem).first().css("fill"), "#ff0011");
+                    });
+
+                    done();
+                });
+            });
+
+            it("Y-Axis settings change", (done) => {
+                dataView.metadata.objects = {
+                    yAxis: {
+                        axisColor: {
+                            solid: { color: "#ff0022" }
+                        }
+                    }
+                };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let elements = visualBuilder.mainElement.find(".axis:nth-child(2) .tick text");
+                    elements.each((index, elem) => {
+                        assertColorsMatch($(elem).first().css("fill"), "#ff0022");
+                    });
+
+                    done();
+                });
             });
         });
     });

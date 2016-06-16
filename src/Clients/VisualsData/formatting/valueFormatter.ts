@@ -271,9 +271,11 @@ module powerbi.visuals {
                     decimals = -options.precision;
                 else if (displayUnitSystem.displayUnit && displayUnitSystem.displayUnit.value > 1)
                     decimals = -MaxScaledDecimalPlaces;
-
+                
                 // Detect axis precision
                 if (options.detectAxisPrecision) {
+                    debug.assert(!forcePrecision, 'options.forcePrecision should not be true when options.detectAxisPrecision is true.');
+                    
                     // Trailing zeroes
                     forcePrecision = true;
 
@@ -281,10 +283,23 @@ module powerbi.visuals {
                     if (displayUnitSystem.displayUnit && displayUnitSystem.displayUnit.value > 0)
                         axisValue = axisValue / displayUnitSystem.displayUnit.value;
 
-                    if (Double.isInteger(axisValue))
+                    if (Double.isInteger(axisValue)) {
                         decimals = 0;
-                    else
+                    }
+                    else {
                         decimals = Double.log10(axisValue);
+
+                        if (format && valueFormatter.getFormatMetadata(format).hasPercent) {
+                            if (decimals < 0) {
+                                // Show 2 fewer decimals since percentages since the percentage by be multipled by 100
+                                decimals = Math.min(0, decimals + 2);
+                            }
+                            else {
+                                // If decimals > 0, that means the space between ticks is greater than 100%, so don't display decimals.
+                                decimals = 0;
+                            }
+                        }
+                    }
                 }
 
                 return {

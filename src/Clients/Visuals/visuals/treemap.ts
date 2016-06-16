@@ -443,9 +443,8 @@ module powerbi.visuals {
                             };
                             tooltipInfo.push(categoryTooltipItem);
 
-                            let valueColumnMetadata: DataViewMetadataColumn; 
+                            let valueColumnMetadata: DataViewMetadataColumn = reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex); 
                             if (value != null) {
-                                valueColumnMetadata = reader.getValueMetadataColumn(valueColumnRoleName, seriesIndex);
                                 tooltipInfo.push({
                                     displayName: valueColumnMetadata.displayName,
                                     value: converterHelper.formatFromMetadataColumn(value, valueColumnMetadata, formatStringProp),

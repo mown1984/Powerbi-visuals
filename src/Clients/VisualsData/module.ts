@@ -81,6 +81,7 @@ require("./semanticQuery/sqExpr.ts");
 require("./semanticQuery/sqExprUtils.ts");
 require("./semanticQuery/semanticQueryRewriter.ts");
 require("./semanticQuery/semanticQuery.ts");
+require("./semanticQuery/SQFilter.ts");
 require("./dataView/dataViewBuilder.ts");
 require("./dataView/rules/staticEvalContext.ts");
 require("./dataView/rules/matrixEvalContext.ts");

@@ -71,6 +71,8 @@ module powerbitests {
     const defaultInsideLabelColor: string = "#ffffff";
     const getPercentLabelSettingsMethod: string = "getDefaultPercentLabelSettings";
     const getLabelSettingsMethod: string = "getDefaultLabelSettings";
+    const nonHighlightedFillOpacity: number = 0.4;
+    const highlightedFillOpacity: number = 1; 
 
     powerbitests.mocks.setLocale();
 
@@ -1359,7 +1361,9 @@ module powerbitests {
                 FunnelChartHelpers.validateDataLabels(dataView);
                 expect($(".funnelChart g").length).toBe(7);
                 expect($(".funnelBar").length).toBe(6);
+                expect(parseFloat($(".funnelBar").css("fill-opacity"))).toBeCloseTo(nonHighlightedFillOpacity, 2);
                 expect($(".highlight").length).toBe(3);
+                expect(parseFloat($(".highlight").css("fill-opacity"))).toBeCloseTo(highlightedFillOpacity, 2);
 
                 expect(+$(".highlight").eq(0).attr("width"))
                     .toBeLessThan(+$(".funnelBar").eq(0).attr("width"));
@@ -1407,7 +1411,9 @@ module powerbitests {
                 FunnelChartHelpers.validateDataLabels(dataView);
                 expect($(".funnelChart g").length).toBe(7);
                 expect($(".funnelBar").length).toBe(6);
+                expect(parseFloat($(".funnelBar").css("fill-opacity"))).toBeCloseTo(nonHighlightedFillOpacity, 2);
                 expect($(".highlight").length).toBe(3);
+                expect(parseFloat($(".highlight").css("fill-opacity"))).toBeCloseTo(highlightedFillOpacity, 2);
 
                 expect(+$(".highlight").eq(0).attr("width"))
                     .toBeGreaterThan(+$(".funnelBar").eq(0).attr("width"));

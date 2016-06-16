@@ -33,6 +33,17 @@ module powerbitests.customVisuals.sampleDataViews {
         public static ColumnCategory: string = "Name";
         public static ColumnValues: string = "Value";
 
+        public static ValuesCategoryLongNames: string[] =
+        [
+            "Sir Demetrius",
+            "Sir Montgomery",
+            "Sir Remington",
+            "Sir Forrester",
+            "Sir Christopher",
+            "Miss Annabelle",
+            "Miss Emmaline"
+        ];
+
         public valuesCategory: string[] =
         [
             "William",
@@ -47,17 +58,6 @@ module powerbitests.customVisuals.sampleDataViews {
             "Ella",
         ];
 
-        public valuesCategoryLongNames: string[] =
-        [
-            "Sir Demetrius",
-            "Sir Montgomery",
-            "Sir Remington",
-            "Sir Forrester",
-            "Sir Christopher",
-            "Miss Annabelle",
-            "Miss Emmaline"
-        ];
-
         public valuesValue: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 10, 100);
 
         public getDataView(columnNames?: string[]): powerbi.DataView {
@@ -69,30 +69,6 @@ module powerbitests.customVisuals.sampleDataViews {
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesCategory
-                }
-            ], [
-                    {
-                        source: {
-                            displayName: ValueByNameData.ColumnValues,
-                            isMeasure: true,
-                            roles: { Value: true },
-                            type: ValueType.fromDescriptor({ numeric: true }),
-                        },
-                        values: this.valuesValue
-                    }
-                ],
-                columnNames).build();
-        }
-
-        public getLongNamesDataView(columnNames?: string[]): powerbi.DataView {
-            return this.createCategoricalDataViewBuilder([
-                {
-                    source: {
-                        displayName: ValueByNameData.ColumnCategory,
-                        roles: { Category: true },
-                        type: ValueType.fromDescriptor({ text: true })
-                    },
-                    values: this.valuesCategoryLongNames
                 }
             ], [
                     {

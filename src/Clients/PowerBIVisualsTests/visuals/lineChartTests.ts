@@ -2016,7 +2016,7 @@ module powerbitests {
                     }]
                 });
                 setTimeout(() => {
-                    expect($('.interactivity-line').length).toEqual(0);
+                    expect($('.interactivity-line').length).toEqual(interactiveChart ? 0 : 1);
                     done();
                 }, DefaultWaitForRender);
             });

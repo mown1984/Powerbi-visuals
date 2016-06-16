@@ -36,6 +36,7 @@ declare interface JQuery {
     d3TouchStart(): void;
     d3ContextMenu(x: number, y: number): void;
     d3MouseDown(x: number, y: number): void;
+    d3KeyEvent(typeArg: string, keyArg: string, keyCode: number): void;
 }
 
 module powerbitests.helpers {
@@ -144,6 +145,10 @@ module powerbitests.helpers {
         mouseEvent.call(this, MouseEventType.mousedown, x, y, eventType);
     };
 
+    jQuery.fn.d3KeyEvent = function (typeArg: string, keyArg: string, keyCode: number): void {
+        keyEvent.call(this, typeArg, keyArg, keyCode);
+    };
+
     jQuery.fn.d3TouchStart = function (): void {
         this.each(function (i, e) {
             let evt = createTouchStartEvent();
@@ -166,6 +171,14 @@ module powerbitests.helpers {
             e.dispatchEvent(evt);
         });
     };
+
+    function keyEvent(typeArg: string, keyArg: string, keyCode: number): void {
+        this.each(function (i, e) {
+            let evt = document.createEvent("KeyboardEvent");
+            evt.initKeyboardEvent(typeArg, true, true, window, keyArg, KeyboardEvent.DOM_KEY_LOCATION_STANDARD, null, false, null);
+            e.dispatchEvent(evt);
+        });
+    }
 
     export function clickElement(element: JQuery, ctrlKey: boolean = false): void {
         let coords = element.offset();

@@ -31,6 +31,8 @@ module powerbitests.customVisuals {
     import VisualBuilderBase = powerbitests.customVisuals.VisualBuilderBase;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import GanttData = customVisuals.sampleDataViews.GanttData;
+    import GanttDateType = powerbi.visuals.samples.GanttDateType;
+    import valueFormatter = powerbi.visuals.valueFormatter;
 
     const defaultTaskDuration: number = 1;
 
@@ -40,7 +42,7 @@ module powerbitests.customVisuals {
         let dataView: powerbi.DataView;
 
         beforeEach(() => {
-            visualBuilder = new GanttBuilder(500,1000);
+            visualBuilder = new GanttBuilder(1000,500);
             defaultDataViewBuilder = new GanttData();
             dataView = defaultDataViewBuilder.getDataView();
         });
@@ -250,10 +252,23 @@ module powerbitests.customVisuals {
                 });
             });
 
+            for(let dateType in GanttDateType) {
+                it(`Verify date format (${dateType})`, ((dateType) => (done) => {
+                    dataView.metadata.objects = { dateType: { type: dateType } };
+
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        visualBuilder.axisTicks.children("text").each((i,e) =>
+                            expect($(e).text()).toEqual(valueFormatter.format(
+                                new Date((<any>e).__data__),
+                                VisualClass.DefaultValues.DateFormatStrings[dateType])));
+                        done();
+                    });
+                })(dateType));
+            }
         });
 
         describe("View Model tests", () => {
-            it("Test result from enumeration", () => {
+            it("Test result from enumeration", done => {
                 dataView.metadata.objects = { 
                     taskResource: { 
                         show: true,
@@ -262,13 +277,14 @@ module powerbitests.customVisuals {
                 };
 
                 visualBuilder.updateEnumerateObjectInstancesRenderTimeout(
-                dataView,
-                { objectName: "taskResource" },
-                (result: VisualObjectInstanceEnumerationObject) => {
-                    expect(result.instances[0]).toBeDefined();
-                    expect(result.instances[0].properties["show"]).toBe(true);
-                    expect(result.instances[0].properties["fill"]).toBe("#A3A3A3");
-                    expect(result.instances[0].properties["fontSize"]).toBe("14px");
+                    dataView,
+                    { objectName: "taskResource" },
+                    (result: VisualObjectInstanceEnumerationObject) => {
+                        expect(result.instances[0]).toBeDefined();
+                        expect(result.instances[0].properties["show"]).toBe(true);
+                        expect(result.instances[0].properties["fill"]).toBe("#A3A3A3");
+                        expect(result.instances[0].properties["fontSize"]).toBe("14px");
+                        done();
                 });
             });
         });
@@ -283,6 +299,14 @@ module powerbitests.customVisuals {
             return this.element
                 .children("div.gantt-body")
                 .children("svg.gantt");
+        }
+
+        public get axis() {
+            return this.mainElement.children("g.axis");
+        }
+
+        public get axisTicks() {
+            return this.axis.children("g.tick");
         }
 
         protected build() {

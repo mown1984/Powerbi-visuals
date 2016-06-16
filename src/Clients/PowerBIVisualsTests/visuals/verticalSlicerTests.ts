@@ -144,7 +144,7 @@ module powerbitests {
                 helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView2] });
 
                 //Test Slicer header tooltip
-                expect($(slicerHelper.slicerHeaderClassSelector)[0].title).toBe(dataView2.metadata.columns[0].displayName);
+                expect($(slicerHelper.slicerTitleHeaderClassSelector)[0].title).toBe(dataView2.metadata.columns[0].displayName);
 
                 //Test Slicer Items tooltip
                 for (let i = 0; i < dataView2.categorical.categories[0].values.length; i++) {
@@ -232,6 +232,7 @@ module powerbitests {
                     slicerDataPoints: dataPoints,
                     hasSelectionOverride: false,
                     defaultValue: undefined,
+                    searchKey: undefined,
                 };
                 expectedSlicerData.slicerSettings.selection.selectAllCheckboxEnabled = true;
                 expectedSlicerData.slicerSettings.selection.singleSelect = false;
@@ -273,6 +274,32 @@ module powerbitests {
                 helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
                 expect($('.searchHeader').length).toBe(1);
                 expect($(".searchHeader").css('display')).not.toBe('none');
+            });
+
+            it("Search input keyup event", () => {
+                let dataView: powerbi.DataView = slicerHelper.buildDataViewWithSelfFilter(SlicerOrientation.Vertical, builder.field);
+                helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
+                let searchHeader = $('.searchHeader');
+                let searchBox = searchHeader.find('input');
+                searchBox.d3Click(0, 0);
+                let searchSpy = spyOn(powerbi.visuals.SlicerWebBehavior, 'startSearch');
+
+                searchBox.d3KeyEvent('keyup', 'a', 65);
+                jasmine.clock().tick(200);
+                expect(searchSpy).not.toHaveBeenCalled();
+                //jasmine.clock().tick(301);
+                //expect(searchSpy).toHaveBeenCalled();
+            });
+
+            it("Search input keydown with enter key event", () => {
+                let dataView: powerbi.DataView = slicerHelper.buildDataViewWithSelfFilter(SlicerOrientation.Vertical, builder.field);
+                helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
+                let searchHeader = $('.searchHeader');
+                let searchBox = searchHeader.find('input');
+                searchBox.d3Click(0, 0);
+                let searchSpy = spyOn(powerbi.visuals.SlicerWebBehavior, 'startSearch');
+                searchBox.d3KeyEvent('keydown', 'a', 65);
+                expect(searchSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -397,16 +424,8 @@ module powerbitests {
                 builder.slicerCheckbox.eq(1).d3Click(0, 0);
 
                 slicerHelper.validateSelectionState(SlicerOrientation.Vertical, [1], builder);
-                expect(builder.hostServices.onSelect).toHaveBeenCalledWith({
-                    data:
-                    [
-                        {
-                            data: [
-                                builder.interactiveDataViewOptions.dataViews[0].categorical.categories[0].identity[0]
-                            ]
-                        }
-                    ]
-                });
+
+                expect(builder.hostServices.onSelect).toHaveBeenCalled();
             });
 
             it("Switch slicer orientation", () => {

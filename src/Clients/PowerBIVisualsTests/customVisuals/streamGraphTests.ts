@@ -31,7 +31,11 @@ module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.StreamGraph;
     import StreamData = powerbi.visuals.samples.StreamData;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
+    import createInteractivityService = powerbi.visuals.createInteractivityService;
+    import IInteractivityService = powerbi.visuals.IInteractivityService;
     import ProductSalesByDateData = powerbitests.customVisuals.sampleDataViews.ProductSalesByDateData;
+    import ValueByNameData = powerbitests.customVisuals.sampleDataViews.ValueByNameData;
+    import StreamGraphSeries = powerbi.visuals.samples.StreamGraphSeries;
     import IDataColorPalette = powerbi.IDataColorPalette;
     import DataColorPalette = powerbi.visuals.DataColorPalette;
     import StreamDataPoint = powerbi.visuals.samples.StreamDataPoint;
@@ -50,7 +54,7 @@ module powerbitests.customVisuals {
             dataView = defaultDataViewBuilder.getDataView();
         });
 
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             let streamGraphCapabilities = VisualClass.capabilities;
 
             it("registered capabilities", () => expect(streamGraphCapabilities).toBeDefined());
@@ -63,7 +67,7 @@ module powerbitests.customVisuals {
         });
 
         describe("DOM tests", () => {
-            xit("path is not throwing exceptions (NaN values)", () => {
+            it("path is not throwing exceptions (NaN values)", () => {
                 dataView.categorical.values[0].values = [NaN];
                 dataView.categorical.values[1].values = [NaN];
                 dataView.categorical.values[2].values = [NaN];
@@ -79,7 +83,7 @@ module powerbitests.customVisuals {
                 });
             });
 
-            xit("should display text in x-axis and not values", () => {
+            it("should display text in x-axis and not values", () => {
                 dataView.categorical.categories[0].values = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
@@ -92,7 +96,7 @@ module powerbitests.customVisuals {
                 });
             });
 
-            xit("should ellipsis text if its too long", () => {
+            it("should ellipsis text if its too long", () => {
                 dataView = new powerbitests.customVisuals.sampleDataViews.CarLogosData().getDataView();
 
                 let dataPointsArray: number[] = [];
@@ -120,7 +124,7 @@ module powerbitests.customVisuals {
 
                 expect(xAxis).toBeInDOM();
                 expect(xAxis.children("g.tick")).toBeInDOM();
-                expect(xAxis.children('g').length).toBeGreaterThan(0);
+                expect(xAxis.children("g").length).toBeGreaterThan(0);
             });
 
             it("x axis off", () => {
@@ -129,7 +133,7 @@ module powerbitests.customVisuals {
                         show: false
                     }
                 };
-                let xAxis = $(".streamGraph .axisGraphicsContext .x.axis").children('g');
+                let xAxis = $(".streamGraph .axisGraphicsContext .x.axis").children("g");
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
@@ -148,7 +152,7 @@ module powerbitests.customVisuals {
 
                 expect(yAxis).toBeInDOM();
                 expect(yAxis.children("g.tick")).toBeInDOM();
-                expect(yAxis.children('g').length).toBeGreaterThan(0);
+                expect(yAxis.children("g").length).toBeGreaterThan(0);
             });
 
             it("y axis off", () => {
@@ -157,14 +161,14 @@ module powerbitests.customVisuals {
                         show: false
                     }
                 };
-                let yAxis = $(".streamGraph .axisGraphicsContext .y.axis").children('g');
+                let yAxis = $(".streamGraph .axisGraphicsContext .y.axis").children("g");
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
                 expect(yAxis.length).toBe(0);
             });
 
-            xit("x axis title on", () => {
+            it("x axis title on", () => {
                 dataView.metadata.objects = {
                     categoryAxis: {
                         show: true,
@@ -192,7 +196,7 @@ module powerbitests.customVisuals {
                 expect(xAxis.children("text").length).toBe(0);
             });
 
-            xit("y axis title on", () => {
+            it("y axis title on", () => {
                 dataView.metadata.objects = {
                     valueAxis: {
                         show: true,
@@ -220,7 +224,7 @@ module powerbitests.customVisuals {
                 expect(yAxis.children("text").length).toBe(0);
             });
 
-            xit("x axis change color", () => {
+            it("x axis change color", () => {
                 let blackColor = "#111111";
                 let greyColor = "#999999";
                 dataView.metadata.objects = {
@@ -233,7 +237,7 @@ module powerbitests.customVisuals {
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
                 let xAxis = $(".streamGraph .axisGraphicsContext .x.axis .tick");
-                colorAssert(xAxis.children('text').css('fill'), blackColor);
+                colorAssert(xAxis.children("text").css("fill"), blackColor);
 
                 dataView.metadata.objects = {
                     categoryAxis: {
@@ -244,10 +248,10 @@ module powerbitests.customVisuals {
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
-                colorAssert(xAxis.children('text').css("fill"), greyColor);
+                colorAssert(xAxis.children("text").css("fill"), greyColor);
             });
 
-            xit("y axis change color", () => {
+            it("y axis change color", () => {
                 let blackColor = "#111111";
                 let greyColor = "#999999";
                 dataView.metadata.objects = {
@@ -260,7 +264,7 @@ module powerbitests.customVisuals {
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
                 let yAxis = $(".streamGraph .axisGraphicsContext .y.axis .tick");
-                colorAssert(yAxis.children('text').css('fill'), blackColor);
+                colorAssert(yAxis.children("text").css("fill"), blackColor);
 
                 dataView.metadata.objects = {
                     valueAxis: {
@@ -271,10 +275,10 @@ module powerbitests.customVisuals {
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
-                colorAssert(yAxis.children('text').css("fill"), greyColor);
+                colorAssert(yAxis.children("text").css("fill"), greyColor);
             });
 
-            xit("data labels on", () => {
+            it("data labels on", () => {
                 dataView.metadata.objects = {
                     labels: {
                         show: true
@@ -285,7 +289,7 @@ module powerbitests.customVisuals {
 
                 let labels = $(".streamGraph .labels");
                 expect(labels).toBeInDOM();
-                expect(labels.children('text').length).toBeGreaterThan(0);
+                expect(labels.children("text").length).toBeGreaterThan(0);
             });
 
             it("data labels off", () => {
@@ -301,7 +305,7 @@ module powerbitests.customVisuals {
                 expect(labels.length).toBe(0);
             });
 
-            xit("data labels change color", () => {
+            it("data labels change color", () => {
                 let blackColor = "#111111";
                 let greyColor = "#999999";
                 dataView.metadata.objects = {
@@ -314,7 +318,7 @@ module powerbitests.customVisuals {
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
                 let labels = $(".streamGraph .labels");
-                colorAssert(labels.first().find('text').css("fill"), blackColor);
+                colorAssert(labels.first().find("text").css("fill"), blackColor);
 
                 dataView.metadata.objects = {
                     labels: {
@@ -325,10 +329,10 @@ module powerbitests.customVisuals {
 
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
-                colorAssert(labels.first().find('text').css("fill"), greyColor);
+                colorAssert(labels.first().find("text").css("fill"), greyColor);
             });
 
-            xit("data labels change font size", () => {
+            it("data labels change font size", () => {
                 dataView.metadata.objects = {
                     labels: {
                         show: true,
@@ -339,11 +343,11 @@ module powerbitests.customVisuals {
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
                 let labels = $(".streamGraph .labels");
-                expect(labels.first().find('text').css("font-size")).toBe('20px');
+                expect(labels.first().find("text").css("font-size")).toBe("20px");
             });
 
-            xit("data labels position validation", () => {
-                let dataViewBuilder = new powerbitests.customVisuals.sampleDataViews.ValueByNameData();
+            it("data labels position validation", () => {
+                let dataViewBuilder = new ValueByNameData();
                 dataViewBuilder.valuesValue = d3.range(dataViewBuilder.valuesCategory.length);
                 dataView = dataViewBuilder.getDataView();
                 let dataLength = dataView.categorical.categories[0].values.length;
@@ -356,20 +360,16 @@ module powerbitests.customVisuals {
                 visualBuilder.viewport.width = 300;
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
-                let labels = $(".streamGraph .labels").children('text');
+                let labels = $(".streamGraph .labels").children("text");
 
-                // 10 values - 1 from the left and 1 from the right are cut
-                expect(labels.length).toBe(dataLength - 2);
-
-                // Verify that the first label is not drawn on the axis
-                expect(labels.first().attr('x')).toBeGreaterThan(5);
+                expect(labels.length).toBe(dataLength - 1);
             });
 
             it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
 
             it("update", () => {
                 visualBuilder.updateflushAllD3Transitions(dataView);
-                expect($('.streamGraph .layer').length).toBe(dataView.categorical.values.length);
+                expect($(".streamGraph .layer").length).toBe(dataView.categorical.values.length);
             });
 
             it("legend should be in DOM", () => {
@@ -392,10 +392,12 @@ module powerbitests.customVisuals {
                         show: true
                     },
                 };
+
                 visualBuilder.updateflushAllD3Transitions(dataView);
 
-                let legendGroup = $(".legend #legendGroup");
-                let legendItemsCount = legendGroup.children.length;
+                let legendGroup = $(".legend #legendGroup"),
+                    legendItemsCount = legendGroup.children.length;
+
                 expect(legendItemsCount).toBe(dataView.categorical.values.length);
             });
         });
@@ -408,11 +410,11 @@ module powerbitests.customVisuals {
             });
 
             it("arguments are null", () => {
-                callConverterAndExpectExceptions(null, null);
+                callConverterAndExpectExceptions(null, null, null);
             });
 
             it("arguments are undefined", () => {
-                callConverterAndExpectExceptions(undefined, undefined);
+                callConverterAndExpectExceptions(undefined, undefined, undefined);
             });
 
             it("dataView is correct", () => {
@@ -431,47 +433,88 @@ module powerbitests.customVisuals {
                     expect(streamData).not.toBeNull();
                 });
 
-                it("dataPoints is defined", () => {
-                    let dataPoints: StreamDataPoint[][] = streamData.dataPoints;
+                it("series are defined", () => {
+                    expect(streamData.series).toBeDefined();
+                    expect(streamData.series).not.toBeNull();
+                });
 
-                    expect(dataPoints).toBeDefined();
-                    expect(dataPoints).not.toBeNull();
+                it("every series is defined", () => {
+                    streamData.series.forEach((series: StreamGraphSeries) => {
+                        expect(series).toBeDefined();
+                        expect(series).not.toBeNull();
+                    });
+                });
+
+                it("every identity is defined", () => {
+                    streamData.series.forEach((series: StreamGraphSeries) => {
+                        let identity: SelectionId = series.identity;
+
+                        expect(identity).toBeDefined();
+                        expect(identity).not.toBeNull();
+                    });
+                });
+
+                it("dataPoints are defined", () => {
+                    streamData.series.forEach((series: StreamGraphSeries) => {
+                        expect(series.dataPoints).toBeDefined();
+                        expect(series.dataPoints).not.toBeNull();
+                        expect(series.dataPoints.length).toBeGreaterThan(0);
+                    });
                 });
 
                 it("every dataPoint is defined", () => {
-                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
-                        expect(dataPoint).toBeDefined();
-                        expect(dataPoint).not.toBeNull();
-                        expect(dataPoint.length).toBeGreaterThan(0);
-                    });
-                });
-
-                it("every item of dataPoint is defined", () => {
-                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
-                        dataPoint.forEach((streamDataPoint: StreamDataPoint) => {
-                            expect(streamDataPoint).toBeDefined();
-                            expect(streamDataPoint).not.toBeNull();
+                    streamData.series.forEach((series: StreamGraphSeries) => {
+                        series.dataPoints.forEach((dataPoint: StreamDataPoint) => {
+                            expect(dataPoint).toBeDefined();
+                            expect(dataPoint).not.toBeNull();
                         });
                     });
                 });
 
-                it("every identity of dataPoint is defined", () => {
-                    streamData.dataPoints.forEach((dataPoint: StreamDataPoint[]) => {
-                        dataPoint.forEach((streamDataPoint: StreamDataPoint) => {
-                            let identity: SelectionId = streamDataPoint.identity;
+                describe("interactivityService", () => {
+                    let interactivityService: IInteractivityService;
 
-                            expect(identity).toBeDefined();
-                            expect(identity).not.toBeNull();
-                        });
+                    beforeEach(() => {
+                        interactivityService = createInteractivityService(visualBuilder.host);
+                    });
+
+                    it("Selection state set on converter result including clear", () => {
+                        let series: StreamGraphSeries[],
+                            queryName: string = dataView.metadata.columns[1].queryName,
+                            seriesSelectionId: SelectionId = SelectionId.createWithMeasure(queryName);
+
+                        interactivityService["selectedIds"] = [seriesSelectionId];
+
+                        series = visualBuilder.converter(dataView, colors, interactivityService).series;
+
+                        // We should see the selection state applied to resulting data
+                        expect(series[0].selected).toBe(true);
+                        expect(series[1].selected).toBe(false);
+                        expect(series[2].selected).toBe(false);
+                        expect(series[3].selected).toBe(false);
+
+                        interactivityService.clearSelection();
+
+                        series = visualBuilder.converter(dataView, colors, interactivityService).series;
+
+                        // Verify the selection has been cleared
+                        expect(series[0].selected).toBe(false);
+                        expect(series[1].selected).toBe(false);
+                        expect(series[2].selected).toBe(false);
+                        expect(series[3].selected).toBe(false);
                     });
                 });
             });
 
-            function callConverterAndExpectExceptions(dataView: DataView, colors: powerbi.IDataColorPalette): StreamData {
+            function callConverterAndExpectExceptions(
+                dataView: DataView,
+                colors: powerbi.IDataColorPalette,
+                interactivityService?: IInteractivityService): StreamData {
+
                 let streamData: StreamData;
 
                 expect(() => {
-                    streamData = visualBuilder.converter(dataView, colors);
+                    streamData = visualBuilder.converter(dataView, colors, interactivityService);
                 }).not.toThrow();
 
                 return streamData;
@@ -489,15 +532,19 @@ module powerbitests.customVisuals {
         }
 
         public get mainElement() {
-            return this.element.children('svg.streamGraph');
+            return this.element.children("svg.streamGraph");
         }
 
         public get legendElement() {
-            return this.element.children('svg.legend');
+            return this.element.children("svg.legend");
         }
 
-        public converter(dataView: DataView, colors: powerbi.IDataColorPalette): StreamData {
-            return this.visual.converter(dataView, colors);
+        public converter(
+            dataView: DataView,
+            colors: powerbi.IDataColorPalette,
+            interactivityService?: IInteractivityService): StreamData {
+
+            return this.visual.converter(dataView, colors, interactivityService);
         }
     }
 }

@@ -124,5 +124,49 @@ module powerbi.data {
 
             return where;
         }
+
+        public rewriteTransform(transformItems: SQTransform[], from: SQFrom): SQTransform[] {
+            debug.assertAnyValue(transformItems, 'transformItems');
+            debug.assertAnyValue(from, 'from');
+
+            if (_.isEmpty(transformItems))
+                return;
+
+            let transforms: SQTransform[] = [];
+            for (let transformItem of transformItems) {
+                let inputColumns: SQTransformTableColumn[];
+                if (transformItem.input.table && !_.isEmpty(transformItem.input.table.columns)) {
+                    inputColumns = _.map(transformItem.input.table.columns, c => {
+                        return {
+                            role: c.role,
+                            expression: {
+                                name: c.expression.name,
+                                expr: SQExprRewriterWithSourceRenames.rewrite(c.expression.expr.accept(this.exprRewriter), from)
+                            }
+                        };
+                    });
+                }
+
+                let newTransform: SQTransform = {
+                    name: transformItem.name,
+                    algorithm: transformItem.algorithm,
+                    input: {
+                        parameters: transformItem.input.parameters,
+                    },
+                    output: transformItem.output
+                };
+
+                if (transformItem.input.table) {
+                    newTransform.input.table = {
+                        name: transformItem.input.table.name,
+                        columns: inputColumns
+                    };
+                }
+
+                transforms.push(newTransform);
+            }
+
+            return transforms;
+        }
     }
 } 

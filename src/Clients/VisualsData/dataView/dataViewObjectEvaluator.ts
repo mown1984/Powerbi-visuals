@@ -238,7 +238,7 @@ module powerbi.data {
             return evaluatedValues || <TEvaluated[]><any>definitions;
         }
 
-        function evaluateValue(evalContext: IEvalContext, definition: SQExpr | RuleEvaluation, valueType: ValueType): any {
+        export function evaluateValue(evalContext: IEvalContext, definition: SQExpr | RuleEvaluation, valueType: ValueType): any {
             if (definition instanceof SQExpr)
                 return ExpressionEvaluator.evaluate(definition, evalContext);
 

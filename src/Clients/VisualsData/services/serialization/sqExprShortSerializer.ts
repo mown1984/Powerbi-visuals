@@ -172,6 +172,27 @@ module powerbi.data {
                 };
             }
 
+            public visitTransformTableRef(expr: SQTransformTableRefExpr): {} {
+                debug.assertValue(expr, 'expr');
+
+                return {
+                    transformTableRef: {
+                        source: expr.source,
+                    }
+                };
+            }
+
+            public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): {} {
+                debug.assertValue(expr, 'expr');
+
+                return {
+                    transformOutputRoleRef: {
+                        role: expr.role,
+                        transform: expr.transform
+                    }
+                };
+            }
+
             public visitDefault(expr: SQExpr): {} {
                 debug.assertFail('Unexpected expression type found in DataViewScopeIdentity.');
 

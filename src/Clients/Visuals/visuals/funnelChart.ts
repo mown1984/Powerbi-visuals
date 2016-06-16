@@ -1068,10 +1068,10 @@ module powerbi.visuals {
                 .attr("class", (d: FunnelDataPoint) => d.highlight ? FunnelChart.FunnelBarHighlightClass : FunnelChart.Selectors.funnel.bars.class);
 
             columns
-                .style("fill", d => {
+                .style("fill", (d: FunnelDataPoint) => {
                     return d.color;
                 })
-                .style("fill-opacity", d => (d: FunnelDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, hasHighlights))
+                .style("fill-opacity", (d: FunnelDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, hasHighlights))
                 .attr(layout.shapeLayout);
 
             columns.exit().remove();

@@ -81,7 +81,7 @@ module.exports = {
         // enable tslinting 
         preLoaders: [
             { test: TSFilesPattern, loader: "tslint", exclude: /node_modules/ }
-        ],
+        ],        
         loaders: [
             {
                 test: TSFilesPattern, loader: 'imports', exclude: /node_modules/,
@@ -110,6 +110,8 @@ module.exports = {
     },
     tslint: {
         emitErrors: true,
+        configuration: require("./build/tsLint/tslint.json"),
+        rulesDirectory: path.join(__dirname, "build/tsLint/custom_rules"),
     },
     ts: {
         configFileName: 'tsconfig_.json', // wrong name in order to do not load tsconfig files at all

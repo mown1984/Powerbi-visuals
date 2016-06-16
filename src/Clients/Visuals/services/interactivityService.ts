@@ -28,6 +28,7 @@
 
 module powerbi.visuals {
     import ArrayExtensions = jsCommon.ArrayExtensions;
+    import SemanticFilter = powerbi.data.SemanticFilter;
 
     export interface SelectableDataPoint {
         selected: boolean;
@@ -78,7 +79,7 @@ module powerbi.visuals {
         isLabels?: boolean;
         overrideSelectionFromData?: boolean;
         hasSelectionOverride?: boolean;
-        slicerDefaultValueHandler?: SlicerDefaultValueHandler;
+        slicerValueHandler?: SlicerValueHandler;
     }
 
     /**
@@ -126,6 +127,9 @@ module powerbi.visuals {
 
         /** Sends the selection state to the host */
         persistSelectionFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): void;
+
+        /** Sends selfFilter to the host */
+        persistSelfFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier, selfFilter: SemanticFilter): void;
     }
 
     export class InteractivityService implements IInteractivityService, ISelectionHandler {
@@ -140,7 +144,10 @@ module powerbi.visuals {
         private isInvertedSelectionMode: boolean = false;
         private hasSelectionOverride: boolean;
         private behavior: any;
-        private slicerDefaultValueHandler: SlicerDefaultValueHandler;
+
+        // TODO: It is very strange to expose a special handler for slicer in the interactivityService.
+        // We should consider introduce another interface for visuals to implement their own filtering handlers.
+        private slicerValueHandler: SlicerValueHandler;
 
         // undefined means no default value is set
         // True: apply default value. False: apply AnyValue.
@@ -165,27 +172,29 @@ module powerbi.visuals {
                 // Override selection state from data points if needed
                 this.takeSelectionStateFromDataPoints(dataPoints);
             }
+
             if (options){
                 if (options.isLegend) {
-                // Bind to legend data instead of normal data if isLegend
-                this.selectableLegendDataPoints = dataPoints;
-                this.renderSelectionInLegend = () => behavior.renderSelection(this.legendHasSelection());
-            }
+                    // Bind to legend data instead of normal data if isLegend
+                    this.selectableLegendDataPoints = dataPoints;
+                    this.renderSelectionInLegend = () => behavior.renderSelection(this.legendHasSelection());
+                }
                 else if (options.isLabels) {
                     //Bind to label data instead of normal data if isLabels
                     this.selectableLabelsDataPoints = dataPoints;
                     this.renderSelectionInLabels = () => behavior.renderSelection(this.labelsHasSelection());
                 }
-            else {
-                this.selectableDataPoints = dataPoints;
-                this.renderSelectionInVisual = () => behavior.renderSelection(this.hasSelection());
-            }
-                if (options.hasSelectionOverride != null) {
-                this.hasSelectionOverride = options.hasSelectionOverride;
-            }
-                if (options.slicerDefaultValueHandler) {
-                this.slicerDefaultValueHandler = options.slicerDefaultValueHandler;
-            }
+                else {
+                    this.selectableDataPoints = dataPoints;
+                    this.renderSelectionInVisual = () => behavior.renderSelection(this.hasSelection());
+                }
+
+                if (options.hasSelectionOverride != null)
+                    this.hasSelectionOverride = options.hasSelectionOverride;
+
+                if (options.slicerValueHandler)
+                    this.slicerValueHandler = options.slicerValueHandler;
+
             } 
             else {
                 this.selectableDataPoints = dataPoints;
@@ -204,7 +213,7 @@ module powerbi.visuals {
          */
         public clearSelection(): void {
             // if default value is already applied, don't clear the default selection
-            if (this.slicerDefaultValueHandler && this.slicerDefaultValueHandler.getDefaultValue() && this.useDefaultValue) {
+            if (this.slicerValueHandler && this.slicerValueHandler.getDefaultValue() && this.useDefaultValue) {
                 this.isInvertedSelectionMode = false;
                 return;
             }
@@ -284,7 +293,11 @@ module powerbi.visuals {
         }
 
         public persistSelectionFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): void {
-            this.hostService.persistProperties(this.createChangeForFilterProperty(filterPropertyIdentifier));
+            this.hostService.persistProperties(InteractivityService.createChangeForFilterProperty(filterPropertyIdentifier, this.getFilterFromSelectors()));
+        }
+
+        public persistSelfFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier, selfFilter: SemanticFilter): void {
+            this.hostService.persistProperties(InteractivityService.createChangeForFilterProperty(filterPropertyIdentifier, selfFilter));
         }
 
         public setDefaultValueMode(useDefaultValue: boolean): void {
@@ -386,9 +399,7 @@ module powerbi.visuals {
             }
         }
 
-        /** Note: Public for UnitTesting */
-        public createChangeForFilterProperty(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): VisualObjectInstancesToPersist {
-            let properties: { [propertyName: string]: DataViewPropertyValue } = {};
+        private getFilterFromSelectors(): SemanticFilter {
             let selectors: data.Selector[] = [];
 
             if (this.selectedIds.length > 0) {
@@ -398,21 +409,25 @@ module powerbi.visuals {
                     .value();
             }
 
+            let filter = powerbi.data.Selector.filterFromSelector(selectors, this.isInvertedSelectionMode);
+            if (this.slicerValueHandler && this.slicerValueHandler.getDefaultValue()) {
+                // we explicitly check for true/false because undefine means no default value
+                if (this.useDefaultValue === true)
+                    filter = SemanticFilter.getDefaultValueFilter(this.slicerValueHandler.getIdentityFields());
+                else if (_.isEmpty(selectors))
+                    filter = SemanticFilter.getAnyValueFilter(this.slicerValueHandler.getIdentityFields());
+            }
+
+            return filter;
+        }
+
+        private static createChangeForFilterProperty(filterPropertyIdentifier: DataViewObjectPropertyIdentifier, filter: SemanticFilter): VisualObjectInstancesToPersist {
+            let properties: { [propertyName: string]: DataViewPropertyValue } = {};
             let instance = {
                 objectName: filterPropertyIdentifier.objectName,
                 selector: undefined,
                 properties: properties
             };
-
-            let filter = powerbi.data.Selector.filterFromSelector(selectors, this.isInvertedSelectionMode);
-
-            if (this.slicerDefaultValueHandler && this.slicerDefaultValueHandler.getDefaultValue()) {
-                // we explicitly check for true/false because undefine means no default value
-                if (this.useDefaultValue === true)
-                    filter = powerbi.data.SemanticFilter.getDefaultValueFilter(this.slicerDefaultValueHandler.getIdentityFields());
-                else if (_.isEmpty(selectors))
-                    filter = powerbi.data.SemanticFilter.getAnyValueFilter(this.slicerDefaultValueHandler.getIdentityFields());
-            }
 
             if (filter == null) {
                 properties[filterPropertyIdentifier.propertyName] = {};

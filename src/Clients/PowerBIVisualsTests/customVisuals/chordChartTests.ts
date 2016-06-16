@@ -109,7 +109,7 @@ module powerbitests.customVisuals {
         });
 
         describe('enumerateObjectInstances', () => {
-             xit("update data Colors off", (done) => {
+             it("update data Colors off", (done) => {
                 dataView.metadata.objects = { dataPoint: { showAllDataPoints: false } };
                 visualBuilder.updateEnumerateObjectInstancesRenderTimeout(dataView, { objectName: 'dataPoint' }, result => {
                     expect(result[1].properties['showAllDataPoints']).toBeFalsy();

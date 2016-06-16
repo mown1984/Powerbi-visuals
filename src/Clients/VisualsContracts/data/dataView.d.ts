@@ -87,6 +87,9 @@ declare module powerbi {
 
         /** The aggregates computed for this column, if any. */
         aggregates?: DataViewColumnAggregates;
+
+        /** The SQExpr this column represents. */
+        expr?: data.ISQExpr;
     }
 
     export interface DataViewSegmentMetadata {

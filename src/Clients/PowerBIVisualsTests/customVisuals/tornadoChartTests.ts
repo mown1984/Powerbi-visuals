@@ -48,7 +48,7 @@ module powerbitests.customVisuals {
             dataView = defaultDataViewBuilder.getDataView();
         });
 
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             let tornadoChartCapabilities = VisualClass.capabilities;
 
             it("registered capabilities", () => expect(tornadoChartCapabilities).toBeDefined());
@@ -61,11 +61,11 @@ module powerbitests.customVisuals {
         });
 
         describe("DOM tests", () => {
-            it("svg element created", () => expect(visualBuilder.mainElement[0]).toBeInDOM());
+            it("svg element created", () => expect(visualBuilder.scrollable[0]).toBeInDOM());
 
             it("update", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let renderedCategories = visualBuilder.mainElement.find('.columns').children().length / 2;
+                    let renderedCategories = visualBuilder.scrollable.find(".columns").children().length / 2;
                     expect(renderedCategories).toBeGreaterThan(0);
                     expect(renderedCategories).toBeLessThan(dataView.categorical.categories[0].values.length + 1);
                     done();
@@ -74,7 +74,7 @@ module powerbitests.customVisuals {
 
             it("Clear catcher covers the whole visual", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let clearCatcher = visualBuilder.mainElement.children("g").first().children().first().find('clearCatcher');
+                    let clearCatcher = visualBuilder.scrollable.first().children().first().find("clearCatcher");
                     expect(clearCatcher).toBeDefined();
                     done();
                 });
@@ -82,15 +82,15 @@ module powerbitests.customVisuals {
 
             it("Categories tooltip is rendered correctly", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    var categoriesTooltip = visualBuilder.mainElement.find('.category-title');
-                    expect($(categoriesTooltip[0]).text()).toBe('Australia');
-                    expect($(categoriesTooltip[1]).text()).toBe('Canada');
-                    expect($(categoriesTooltip[2]).text()).toBe('France');
+                    var categoriesTooltip = visualBuilder.scrollable.find(".category-title");
+                    expect($(categoriesTooltip[0]).text()).toBe("Australia");
+                    expect($(categoriesTooltip[1]).text()).toBe("Canada");
+                    expect($(categoriesTooltip[2]).text()).toBe("France");
                     done();
                 });
             });
 
-            it("Data Labels should be displayed correctly when using dates as category values", (done) => {
+            xit("Data Labels should be displayed correctly when using dates as category values", (done) => {
                 dataView = new powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData().getDataView();
                 dataView.metadata.objects = {
                     labels: {
@@ -99,10 +99,10 @@ module powerbitests.customVisuals {
                 };
 
                 // Manually change the category format to be a date format
-                dataView.categorical.categories[0].source.format = 'dddd\, MMMM %d\, yyyy';
+                dataView.categorical.categories[0].source.format = "dddd\, MMMM %d\, yyyy";
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let labels: JQuery = visualBuilder.mainElement.find('.labels .label-text');
+                    let labels: JQuery = visualBuilder.scrollable.find(".labels .label-text");
                     expect(labels.length).toBeGreaterThan(0);
 
                     // Verify label text is formatted correctly
@@ -113,31 +113,72 @@ module powerbitests.customVisuals {
                 });
             });
 
-            it("Scrolling should not be enabled when there is no data", () => {
+            it("Scrolling should not be enabled when there is no data", done => {
                 visualBuilder = new TornadoChartBuilder(500, 50);
-                visualBuilder.update(dataView);
+                visualBuilder.updateRenderTimeout(dataView, () => {
 
-                // Check that the scroll bar and data exists
-                expect(visualBuilder.mainElement.find('.y rect').length).toBe(1);
-                expect(visualBuilder.mainElement.find('.columns').children().length).toBe(2);
+                    // Check that the scroll bar and data exists
+                    expect(visualBuilder.scrollbarRect.length).toBe(1);
+                    expect(visualBuilder.columns.length).toBe(2);
 
-                // Clear data
-                dataView.categorical.categories = null;
-                visualBuilder.update(dataView);
+                    // Clear data
+                    dataView.categorical.categories = null;
+                    visualBuilder.updateRenderTimeout(dataView, () => {
 
-                // Check that the scroll bar and data are removed
-                expect(visualBuilder.mainElement.find('.y rect').length).toBe(0);
-                expect(visualBuilder.mainElement.find('.columns').children().length).toBe(0);
+                        // Check that the scroll bar and data are removed
+                        expect(visualBuilder.scrollbarRect.length).toBe(0);
+                        expect(visualBuilder.columns.length).toBe(0);
+
+                        done();
+                    });
+                });
+            });
+
+            it("Category labels should be tailored if their length is big", done => {
+                defaultDataViewBuilder.valuesCategory
+                    = defaultDataViewBuilder.valuesCategory.map(x => helpers.getRandomWord(500,500));
+                dataView = defaultDataViewBuilder.getDataView();
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    visualBuilder.categories.each((i,e) => {
+                        expect((<any>e).getBBox().width).toBeLessThan(visualBuilder.viewport.width/3*2);
+                        expect($(e).children("text.category-text").text()).toContain("…");
+                    });
+
+                    done();
+                });
+            });
+
+            it("Middle axis of Tornado should have correct position", done => {
+                visualBuilder = new TornadoChartBuilder(500, 50);
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let axisRightPosition = Math.round(visualBuilder.axis[0].getBoundingClientRect().right);
+                    let column1RightPosition = Math.round(visualBuilder.columns[0].getBoundingClientRect().right);
+
+                    expect(axisRightPosition).toBe(column1RightPosition);
+
+                    done();
+                });
+            });
+
+            it("Data labels should support different formats", done => {
+                dataView.categorical.values[0].source.format = "$#,0.00;($#,0.00);$#,0.00";
+                dataView.categorical.values[1].source.format = "0.00 %;-0.00 %;0.00 %";
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let labelsText = visualBuilder.labels.children("text.label-text");
+                    expect(labelsText.filter((i,e) => _.contains($(e).text(), "$")).length)
+                        .toEqual(labelsText.length/2);
+                    expect(labelsText.filter((i,e) => _.contains($(e).text(), "%")).length)
+                        .toEqual(labelsText.length/2);
+
+                    done();
+                });
             });
         });
 
         describe("parseSeries", () => {
-            let visualInstance: VisualClass;
-
             beforeEach(() => {
                 visualBuilder.update(dataView);
-
-                visualInstance = visualBuilder.visualInstance;
             });
 
             it("every argument is null", () => {
@@ -181,7 +222,7 @@ module powerbitests.customVisuals {
                 let series: TornadoChartSeries;
 
                 expect(() => {
-                    series = visualInstance.parseSeries(
+                    series = visualBuilder.parseSeries(
                         dataViewValueColumns,
                         index,
                         isGrouped,
@@ -251,16 +292,54 @@ module powerbitests.customVisuals {
             return new VisualClass();
         }
 
-        public get visualInstance(): VisualClass {
-            return this.visual;
-        }
-
         public get mainElement() {
             return this.element.children("svg.tornado-chart");
         }
 
+        public get scrollable() {
+            return this.element.children("svg.tornado-chart").children("g");
+        }
+
+        public get scrollbar() {
+            return this.mainElement.children("g.y.brush");
+        }
+
+        public get scrollbarRect() {
+            return this.scrollbar.children("rect.extent");
+        }
+
+        public get categories() {
+            return this.scrollable.children("g.categories").children("g.category");
+        }
+
+        public get axis() {
+            return this.scrollable.children("g.axes").children("line.axis");
+        }
+
+        public get columns() {
+            return this.scrollable.children("g.columns").children("rect.column");
+        }
+
+        public get labels() {
+            return this.scrollable.children("g.labels").children("g.label");
+        }
+
+        public parseSeries(
+            dataViewValueColumns: DataViewValueColumns,
+            index: number,
+            isGrouped: boolean,
+            columnGroup: DataViewValueColumnGroup) {
+
+            return VisualClass.parseSeries(
+                        dataViewValueColumns,
+                        index,
+                        isGrouped,
+                        columnGroup,
+                        this.visual.colors);
+        }
+
         public converter(dataView: powerbi.DataView): TornadoChartDataView {
-            return this.visual.converter(dataView);
+            return VisualClass.converter(dataView, this.visual.textOptions, this.visual.colors);
         }
     }
 }

@@ -67,9 +67,16 @@ module powerbi.data {
                     }
                 }
 
-                // Apply the latest updates to the values.grouped()
                 if (updatedColumns) {
-                    DataViewCategoricalEvalGrouped.apply(categorical);
+                    let hasRemainingDynamicSeries = !!valueColumns.source;
+                    let hasRemainingMeasures = valueColumns.length > 0;
+                    
+                    if (hasRemainingDynamicSeries || hasRemainingMeasures) {
+                        // Apply the latest updates to the values.grouped()
+                        DataViewCategoricalEvalGrouped.apply(categorical);
+                    } else {
+                        categorical.values = undefined;
+                    }
                 }
             }
         }

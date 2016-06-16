@@ -103,6 +103,9 @@ declare module powerbi {
          */
         bind: {
             to: string;
+            
+            /** Requests aggregates for the visual.  When specified, only the aggregates are requested. */
+            aggregates?: DataViewMappingRoleProjectionAggregates;
         };
     }
 
@@ -198,5 +201,10 @@ declare module powerbi {
         regression: {
             [propertyName: string]: DataViewObjectPropertyIdentifier;
         };
+    }
+
+    export interface DataViewMappingRoleProjectionAggregates {
+        min?: boolean;
+        max?: boolean;
     }
 }

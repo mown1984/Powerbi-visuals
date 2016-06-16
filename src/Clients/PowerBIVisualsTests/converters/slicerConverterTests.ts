@@ -238,7 +238,7 @@ module powerbitests {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let descriptor: powerbi.ValueTypeDescriptor = { bool: true };
-            let dataView = applyDataTransform(slicerHelper.buildBooleanValuesDataView(field), undefined, descriptor);
+            let dataView = applyDataTransform(slicerHelper.buildBooleanValuesDataView(field), undefined, undefined, descriptor);
             let slicerData = powerbi.visuals.DataConversion.convert(dataView[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(3);
             expect(slicerData.slicerDataPoints[0].value).toBe('True');
@@ -260,7 +260,7 @@ module powerbitests {
             let hostServices = slicerHelper.createHostServices();
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let descriptor: powerbi.ValueTypeDescriptor = { bool: true };
-            let transformedDataViews = applyDataTransform(dataView, undefined, descriptor);
+            let transformedDataViews = applyDataTransform(dataView, undefined, undefined, descriptor);
 
             let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.slicerDataPoints.length).toBe(6);
@@ -268,7 +268,29 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[5].count).toBe(1);
         });
 
-        function applyDataTransform(dataView: powerbi.DataView, semanticFilter: data.SemanticFilter, descriptor?: powerbi.ValueTypeDescriptor): powerbi.DataView[]{
+        it('slicer convert dataview with self filter', () => {
+            let dataView = slicerHelper.buildDataViewWithSelfFilter(powerbi.visuals.slicerOrientation.Orientation.Vertical, field);
+            let selfFilter: data.SemanticFilter = data.SemanticFilter.fromSQExpr(
+                SQExprBuilder.contains(field, SQExprBuilder.text('ab')));
+            let transformedDataViews = applyDataTransform(dataView, undefined, selfFilter);
+            let hostServices = slicerHelper.createHostServices();
+            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
+            let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            expect(slicerData.searchKey).toBe('ab');
+        });
+
+        it('slicer convert dataview with self filter that is not contains', () => {
+            let dataView = slicerHelper.buildDataViewWithSelfFilter(powerbi.visuals.slicerOrientation.Orientation.Vertical, field);
+            let selfFilter: data.SemanticFilter = data.SemanticFilter.fromSQExpr(
+                SQExprBuilder.compare(powerbi.data.QueryComparisonKind.Equal, field, SQExprBuilder.text('ab')));
+            let transformedDataViews = applyDataTransform(dataView, undefined, selfFilter);
+            let hostServices = slicerHelper.createHostServices();
+            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
+            let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
+            expect(slicerData.searchKey).toBeUndefined();
+        });
+
+        function applyDataTransform(dataView: powerbi.DataView, semanticFilter: data.SemanticFilter, selfFilter?: data.SemanticFilter, descriptor?: powerbi.ValueTypeDescriptor): powerbi.DataView[]{
             if (descriptor == null)
                 descriptor = { text: true };
 
@@ -282,11 +304,12 @@ module powerbitests {
                 ],
             };
 
-            if (semanticFilter != null) {
-                transforms.objects = {
-                    general: [{ properties: { filter: semanticFilter } }],
-                };
-            }
+            transforms.objects = {};
+            if (semanticFilter != null)
+                powerbi.data.DataViewObjectDefinitions.setValue(transforms.objects, powerbi.visuals.slicerProps.filterPropertyIdentifier, null, semanticFilter);
+
+            if (selfFilter)
+                powerbi.data.DataViewObjectDefinitions.setValue(transforms.objects, powerbi.visuals.slicerProps.selfFilterPropertyIdentifier, null, selfFilter);
 
             return DataViewTransform.apply({
                 prototype: dataView,

@@ -734,6 +734,7 @@ declare module powerbi.data {
         subtotalType?: CompiledSubtotalType;
         showAll?: boolean;
         activeItems?: string[];
+        aggregates?: DataViewMappingRoleProjectionAggregates;
     }
 
     export interface CompiledDataViewRoleItem {
@@ -864,6 +865,9 @@ declare module powerbi {
 
         /** The aggregates computed for this column, if any. */
         aggregates?: DataViewColumnAggregates;
+
+        /** The SQExpr this column represents. */
+        expr?: data.ISQExpr;
     }
 
     export interface DataViewSegmentMetadata {
@@ -1207,6 +1211,9 @@ declare module powerbi {
          */
         bind: {
             to: string;
+            
+            /** Requests aggregates for the visual.  When specified, only the aggregates are requested. */
+            aggregates?: DataViewMappingRoleProjectionAggregates;
         };
     }
 
@@ -1302,6 +1309,11 @@ declare module powerbi {
         regression: {
             [propertyName: string]: DataViewObjectPropertyIdentifier;
         };
+    }
+
+    export interface DataViewMappingRoleProjectionAggregates {
+        min?: boolean;
+        max?: boolean;
     }
 }﻿/*
  *  Power BI Visualizations

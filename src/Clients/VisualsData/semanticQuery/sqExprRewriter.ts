@@ -308,6 +308,14 @@ module powerbi.data {
             return orig;
         }
 
+        public visitTransformTableRef(orig: SQTransformTableRefExpr): SQExpr {
+            return orig;
+        }
+
+        public visitTransformOutputRoleRef(orig: SQTransformOutputRoleRefExpr): SQExpr {
+            return orig;
+        }
+
         public visitFillRule(orig: SQFillRuleExpr): SQExpr {
             let origInput = orig.input,
                 rewrittenInput = origInput.accept(this);

@@ -171,6 +171,9 @@ module powerbi.visuals {
                 },
             },
         }],
+        sorting: {
+            default: {},
+        },
         drilldown: {
             roles: ['Category']
         },

@@ -27,6 +27,8 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.visuals {
+    import DOMConstants = jsCommon.DOMConstants;
+    import KeyUtils = jsCommon.KeyUtils;
     import SlicerOrientation = slicerOrientation.Orientation;
 
     export interface SlicerOrientationBehaviorOptions {
@@ -41,10 +43,12 @@ module powerbi.visuals {
         dataPoints: SlicerDataPoint[];
         interactivityService: IInteractivityService;
         settings: SlicerSettings;
+        slicerValueHandler: SlicerValueHandler;
     }
 
     export class SlicerWebBehavior implements IInteractiveBehavior {
         private behavior: IInteractiveBehavior;
+        private static searchInputTimeoutDuration = 500;
 
         public bindEvents(options: SlicerOrientationBehaviorOptions, selectionHandler: ISelectionHandler): void {
             this.behavior = this.createWebBehavior(options);
@@ -62,11 +66,12 @@ module powerbi.visuals {
             selectionHandler: ISelectionHandler,
             slicerSettings: SlicerSettings,
             interactivityService: IInteractivityService,
+            slicerValueHandler: SlicerValueHandler,
             slicerSearch?: D3.Selection): void {
             SlicerWebBehavior.bindSlicerItemSelectionEvent(slicers, selectionHandler, slicerSettings, interactivityService);
             SlicerWebBehavior.bindSlicerClearEvent(slicerClear, selectionHandler);
             if (slicerSearch)
-                SlicerWebBehavior.bindSlicerSearchEvent(slicerSearch, selectionHandler);
+                SlicerWebBehavior.bindSlicerSearchEvent(slicerSearch, selectionHandler, slicerValueHandler);
 
             SlicerWebBehavior.styleSlicerContainer(slicerContainer, interactivityService);
         }
@@ -131,23 +136,46 @@ module powerbi.visuals {
 
         private static bindSlicerClearEvent(slicerClear: D3.Selection, selectionHandler: ISelectionHandler): void {
             if (slicerClear) {
-                slicerClear.on("click", (d: SelectableDataPoint) => {
+                slicerClear.on("click", () => {
                     selectionHandler.handleClearSelection();
                     selectionHandler.persistSelectionFilter(slicerProps.filterPropertyIdentifier);
                 });
             }
         }
         
-        private static bindSlicerSearchEvent(slicerSearch: D3.Selection, selectionHandler: ISelectionHandler): void {
-            if (!slicerSearch.empty())
-                slicerSearch.on('mousedown', () => {
+        private static bindSlicerSearchEvent(slicerSearch: D3.Selection, selectionHandler: ISelectionHandler, slicerValueHandler: SlicerValueHandler): void {
+            if (slicerSearch.empty())
+                return;
+
+            slicerSearch.on(DOMConstants.mouseDownEventName, () => {
+                d3.event.stopPropagation();
+            }).on(DOMConstants.keyDownEventName, () => {
+                if (d3.event.ctrlKey && KeyUtils.isCtrlDefaultKey(d3.event.keyCode))
                     d3.event.stopPropagation();
-                }).on('keydown', () => {
-                    if (d3.event.ctrlKey && jsCommon.KeyUtils.isCtrlDefaultKey(d3.event.keyCode))
-                        d3.event.stopPropagation();
-                    else if (jsCommon.KeyUtils.isArrowKey(d3.event.keyCode))
-                        d3.event.stopPropagation();
-                });
+                else if (KeyUtils.isArrowKey(d3.event.keyCode))
+                    d3.event.stopPropagation();
+                else if (d3.event.keyCode === DOMConstants.enterKeyCode) {
+                    SlicerWebBehavior.startSearch(slicerSearch, selectionHandler, slicerValueHandler);
+                    d3.event.stopPropagation();
+                }
+            }).on(DOMConstants.keyUpEventName, _.debounce(() => {
+                SlicerWebBehavior.startSearch(slicerSearch, selectionHandler, slicerValueHandler);
+            }, SlicerWebBehavior.searchInputTimeoutDuration));
+        }
+
+        private static startSearch(slicerSearch: D3.Selection, selectionHandler: ISelectionHandler, slicerValueHandler: SlicerValueHandler): void {
+            let element: HTMLInputElement = <HTMLInputElement>slicerSearch.node();
+            let searchKey: string = element && element.value;
+
+            // When searchKey is cleared.
+            if (_.isEmpty(searchKey)) {
+                selectionHandler.persistSelfFilter(slicerProps.selfFilterPropertyIdentifier, null);
+                return;
+            }
+
+            let updatedFilter = slicerValueHandler.getUpdatedSelfFilter(searchKey);
+            if (updatedFilter)
+                selectionHandler.persistSelfFilter(slicerProps.selfFilterPropertyIdentifier, updatedFilter);
         }
 
         private static styleSlicerContainer(slicerContainer: D3.Selection, interactivityService: IInteractivityService) {

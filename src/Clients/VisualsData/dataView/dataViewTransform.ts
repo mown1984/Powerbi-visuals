@@ -278,6 +278,8 @@ module powerbi.data {
                     dataView.metadata.columns,
                     selectTransforms,
                     columnRewrites);
+                    
+                evaluateAggregateSources(dataView, selectTransforms);
             }
 
             // NOTE: no rewrites necessary for Tree (it doesn't reference the columns)
@@ -323,16 +325,31 @@ module powerbi.data {
             if (!selects)
                 return prototypeColumns;
 
-            //column may contain undefined entries
+            // column may contain undefined entries
             let columns = inherit(prototypeColumns);
 
             for (let i = 0, len = prototypeColumns.length; i < len; i++) {
                 let prototypeColumn = prototypeColumns[i];
+                
                 let select = selects[prototypeColumn.index];
                 if (!select)
                     continue;
 
-                let column: DataViewMetadataColumn = columns[i] = inherit(prototypeColumn);
+                let column: DataViewMetadataColumn = columns[i] = inheritColumnProperties(prototypeColumn, select);
+                rewrites.push({
+                    from: prototypeColumn,
+                    to: column,
+                });
+            }
+            
+            return columns;
+        }
+        
+        function inheritColumnProperties(prototypeColumn: DataViewMetadataColumn, select: DataViewSelectTransform): DataViewMetadataColumn {
+            debug.assertValue(prototypeColumn, 'prototypeColumn');
+            debug.assertValue(select, 'select');
+            
+            let column: DataViewMetadataColumn = inherit(prototypeColumn);
 
                 if (select.roles)
                     column.roles = select.roles;
@@ -344,6 +361,8 @@ module powerbi.data {
                     column.displayName = select.displayName;
                 if (select.queryName)
                     column.queryName = select.queryName;
+                if (select.expr)
+                    column.expr = select.expr;
                 if (select.kpi)
                     column.kpi = select.kpi;
                 if (select.sort)
@@ -351,13 +370,69 @@ module powerbi.data {
                 if (select.discourageAggregationAcrossGroups)
                     column.discourageAggregationAcrossGroups = select.discourageAggregationAcrossGroups;
 
-                rewrites.push({
-                    from: prototypeColumn,
-                    to: column,
-                });
+            return column;
+        }
+        
+        function evaluateAggregateSources(dataView: DataView, selects: DataViewSelectTransform[]): void {
+            debug.assertValue(dataView, 'dataView');
+            debug.assertAnyValue(selects, 'selects');
+            
+            if (!selects)
+                return;
+
+            let columns = dataView.metadata.columns,
+                evalContext: IEvalContext;
+            for (let selectIdx = 0, len = selects.length; selectIdx < len; selectIdx++) {
+                let select = selects[selectIdx];
+                let aggregateSources = select && select.aggregateSources;
+                if (!aggregateSources)
+                    continue;
+                
+                if (!evalContext)
+                    evalContext = createStaticEvalContext(createColorAllocatorCache(), dataView, selects);
+
+                let column = findOrCreateColumn(columns, selectIdx, select);
+                let columnAggregates = column.aggregates = <DataViewColumnAggregates>{};
+                
+                let type = ValueType.fromDescriptor(column.type);
+                let value = evaluateAggregate(evalContext, selects, type, aggregateSources.min);
+                if (value !== undefined)
+                    columnAggregates.min = value;
+
+                value = evaluateAggregate(evalContext, selects, type, aggregateSources.max);
+                if (value !== undefined)
+                    columnAggregates.max = value;
+            }
+        }
+        
+        function findOrCreateColumn(columns: DataViewMetadataColumn[], selectIdx: number, select: DataViewSelectTransform): DataViewMetadataColumn {
+            debug.assertValue(columns, 'columns');
+            debug.assertValue(selectIdx, 'selectIdx');
+            debug.assertValue(select, 'select');
+            
+            for (let column of columns) {
+                if (column.index === selectIdx && column.groupName === undefined)
+                    return column;
             }
 
-            return columns;
+            let newColumn = inheritColumnProperties({ displayName: select.displayName }, select);
+            columns.push(newColumn);
+            return newColumn;
+            }
+
+        function evaluateAggregate(
+            evalContext: IEvalContext,
+            selects: DataViewSelectTransform[],
+            type: ValueType,
+            source: DataViewSelectAggregateSource): PrimitiveValue {
+            debug.assertValue(evalContext, 'evalContext');
+            debug.assertValue(selects, 'selects');
+            debug.assertValue(type, 'type');
+            debug.assertValue(source, 'source');
+
+            let select = selects[source.index];
+            if (select)
+                return DataViewObjectEvaluator.evaluateValue(evalContext, select.expr, type);
         }
 
         /**

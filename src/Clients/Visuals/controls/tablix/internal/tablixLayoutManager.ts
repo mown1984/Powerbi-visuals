@@ -788,7 +788,11 @@ module powerbi.visuals.controls.internal {
                 let firstVisibleColumn: TablixColumn = this.getFirstVisibleColumn();
                 if (firstVisibleColumn !== undefined) {
                     firstVisibleColumnWidth = firstVisibleColumn.getContextualWidth();
-                    this.scroll(firstVisibleColumn, firstVisibleColumnWidth, columnOffset);
+
+                    // Ceiling the offset because setting a fraction Width on the TD will ceil it
+                    // We need to let the TD and the OuterDiv to align in order for Borders to touch
+                    let offsetInPixels = Math.ceil(- firstVisibleColumnWidth * columnOffset);
+                    this.scroll(firstVisibleColumn, firstVisibleColumnWidth, offsetInPixels);
                 }
             }
         }
@@ -971,15 +975,24 @@ module powerbi.visuals.controls.internal {
 
         public calculateContextualWidths(): void {
             let items: ITablixGridItem[] = this._getRealizedItems();
-            let columnWidths: number[] = [];
+            let columnWidths: ColumnWidthObject[] = [];
 
-            for (let item of items) {
+            for (let i = 0, len = items.length; i < len; i++) {
+                let item = items[i];
                 if (this.measureEnabled)
                     item.setAligningContextualWidth(-1);
 
-                columnWidths.push(this._calculateSize(item));
+                let queryName = TablixColumnWidthManager.getColumnQueryName(<TablixColumn>item);
+
+                if (queryName != null) { // Hidden Corner cell for Table
+                    columnWidths.push({
+                        queryName: queryName,
+                        width: this._calculateSize(item),
+                        isFixed: false // Unused
+                    });
+                }
             }
-            
+
             // Save all column widths. Needed when user turns off auto-sizing for column widths.
             this.owner.columnWidthsToPersist = columnWidths;
         }
@@ -1183,7 +1196,7 @@ module powerbi.visuals.controls.internal {
         private _footersHost: HTMLElement;
         private _grid: internal.TablixGrid;
         private _allowHeaderResize: boolean = true;
-        private _columnWidthsToPersist: number[];
+        private _columnWidthsToPersist: ColumnWidthObject[];
 
         constructor(
             binder: ITablixBinder,
@@ -1213,11 +1226,11 @@ module powerbi.visuals.controls.internal {
             return this._binder;
         }
 
-        public get columnWidthsToPersist(): number[] {
+        public get columnWidthsToPersist(): ColumnWidthObject[] {
             return this._columnWidthsToPersist;
         }
 
-        public set columnWidthsToPersist(columnWidths: number[]) {
+        public set columnWidthsToPersist(columnWidths: ColumnWidthObject[]) {
             this._columnWidthsToPersist = columnWidths;
         }
 
@@ -1747,11 +1760,11 @@ module powerbi.visuals.controls.internal {
         }
 
         public getCellWidth(cell: ITablixCell): number {
-            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.tableCell);
+            return cell.containerWidth;
         }
 
         public getContentWidth(cell: ITablixCell): number {
-            return HTMLElementUtils.getElementWidth((<TablixCell>cell)._presenter.contentElement);
+            return cell.contentWidth;
         }
 
         public getEstimatedTextWidth(text: string): number {

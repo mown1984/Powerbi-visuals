@@ -1072,7 +1072,6 @@ declare module powerbi.visuals {
             outline: DataViewObjectPropertyIdentifier;
             textSize: DataViewObjectPropertyIdentifier;
         };
-        selectedPropertyIdentifier: DataViewObjectPropertyIdentifier;
         filterPropertyIdentifier: DataViewObjectPropertyIdentifier;
         selfFilterPropertyIdentifier: DataViewObjectPropertyIdentifier;
         formatString: DataViewObjectPropertyIdentifier;
@@ -1447,17 +1446,20 @@ declare module powerbi.visuals {
         dataPoints: SlicerDataPoint[];
         interactivityService: IInteractivityService;
         settings: SlicerSettings;
+        slicerValueHandler: SlicerValueHandler;
     }
     class SlicerWebBehavior implements IInteractiveBehavior {
         private behavior;
+        private static searchInputTimeoutDuration;
         bindEvents(options: SlicerOrientationBehaviorOptions, selectionHandler: ISelectionHandler): void;
         renderSelection(hasSelection: boolean): void;
-        static bindSlicerEvents(slicerContainer: D3.Selection, slicers: D3.Selection, slicerClear: D3.Selection, selectionHandler: ISelectionHandler, slicerSettings: SlicerSettings, interactivityService: IInteractivityService, slicerSearch?: D3.Selection): void;
+        static bindSlicerEvents(slicerContainer: D3.Selection, slicers: D3.Selection, slicerClear: D3.Selection, selectionHandler: ISelectionHandler, slicerSettings: SlicerSettings, interactivityService: IInteractivityService, slicerValueHandler: SlicerValueHandler, slicerSearch?: D3.Selection): void;
         static setSelectionOnSlicerItems(selectableItems: D3.Selection, itemLabel: D3.Selection, hasSelection: boolean, interactivityService: IInteractivityService, slicerSettings: SlicerSettings): void;
         static styleSlicerItems(slicerItems: D3.Selection, hasSelection: boolean, isSelectionInverted: boolean): void;
         private static bindSlicerItemSelectionEvent(slicers, selectionHandler, slicerSettings, interactivityService);
         private static bindSlicerClearEvent(slicerClear, selectionHandler);
-        private static bindSlicerSearchEvent(slicerSearch, selectionHandler);
+        private static bindSlicerSearchEvent(slicerSearch, selectionHandler, slicerValueHandler);
+        private static startSearch(slicerSearch, selectionHandler, slicerValueHandler);
         private static styleSlicerContainer(slicerContainer, interactivityService);
         private static isMultiSelect(event, settings, interactivityService);
         private createWebBehavior(options);
@@ -2446,6 +2448,8 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
+    import SQExpr = powerbi.data.SQExpr;
+    import SemanticFilter = powerbi.data.SemanticFilter;
     /** Utility class for slicer*/
     module SlicerUtil {
         /** CSS selectors for slicer elements. */
@@ -2461,6 +2465,7 @@ declare module powerbi.visuals {
             const CountText: jsCommon.CssConstants.ClassAndSelector;
             const Clear: jsCommon.CssConstants.ClassAndSelector;
             const SearchHeader: jsCommon.CssConstants.ClassAndSelector;
+            const SearchInput: jsCommon.CssConstants.ClassAndSelector;
             const SearchHeaderCollapsed: jsCommon.CssConstants.ClassAndSelector;
             const SearchHeaderShow: jsCommon.CssConstants.ClassAndSelector;
             const MultiSelectEnabled: jsCommon.CssConstants.ClassAndSelector;
@@ -2477,8 +2482,9 @@ declare module powerbi.visuals {
         }
         /** Helper class for handling slicer default value  */
         module DefaultValueHandler {
-            function getIdentityFields(dataView: DataView): data.SQExpr[];
+            function getIdentityFields(dataView: DataView): SQExpr[];
         }
+        function getContainsFilter(expr: SQExpr, containsText: string): SemanticFilter;
         function tryRemoveValueFromRetainedList(value: DataViewScopeIdentity, selectedScopeIds: DataViewScopeIdentity[], caseInsensitive?: boolean): boolean;
         /** Helper class for creating and measuring slicer DOM elements  */
         class DOMHelper {
@@ -3483,6 +3489,7 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
+    import SemanticFilter = powerbi.data.SemanticFilter;
     interface SelectableDataPoint {
         selected: boolean;
         identity: SelectionId;
@@ -3509,7 +3516,7 @@ declare module powerbi.visuals {
         isLabels?: boolean;
         overrideSelectionFromData?: boolean;
         hasSelectionOverride?: boolean;
-        slicerDefaultValueHandler?: SlicerDefaultValueHandler;
+        slicerValueHandler?: SlicerValueHandler;
     }
     /**
      * Responsible for managing interactivity between the hosting visual and its peers
@@ -3543,6 +3550,8 @@ declare module powerbi.visuals {
         toggleSelectionModeInversion(): boolean;
         /** Sends the selection state to the host */
         persistSelectionFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): void;
+        /** Sends selfFilter to the host */
+        persistSelfFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier, selfFilter: SemanticFilter): void;
     }
     class InteractivityService implements IInteractivityService, ISelectionHandler {
         private hostService;
@@ -3553,7 +3562,7 @@ declare module powerbi.visuals {
         private isInvertedSelectionMode;
         private hasSelectionOverride;
         private behavior;
-        private slicerDefaultValueHandler;
+        private slicerValueHandler;
         private useDefaultValue;
         selectableDataPoints: SelectableDataPoint[];
         selectableLegendDataPoints: SelectableDataPoint[];
@@ -3579,6 +3588,7 @@ declare module powerbi.visuals {
         handleClearSelection(): void;
         toggleSelectionModeInversion(): boolean;
         persistSelectionFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): void;
+        persistSelfFilter(filterPropertyIdentifier: DataViewObjectPropertyIdentifier, selfFilter: SemanticFilter): void;
         setDefaultValueMode(useDefaultValue: boolean): void;
         isDefaultValueEnabled(): boolean;
         private renderAll();
@@ -3586,8 +3596,8 @@ declare module powerbi.visuals {
         private select(d, multiSelect);
         private selectInverted(d, multiSelect);
         private removeId(toRemove);
-        /** Note: Public for UnitTesting */
-        createChangeForFilterProperty(filterPropertyIdentifier: DataViewObjectPropertyIdentifier): VisualObjectInstancesToPersist;
+        private getFilterFromSelectors();
+        private static createChangeForFilterProperty(filterPropertyIdentifier, filter);
         private sendContextMenuToHost(dataPoint, position);
         private sendSelectionToHost();
         private getSelectorsByColumn(selectionIds);
@@ -3736,16 +3746,13 @@ declare module powerbi.visuals {
         scriptVisualAuthoringEnabled?: boolean;
         isLabelInteractivityEnabled?: boolean;
         sunburstVisualEnabled?: boolean;
+        shapeMapVisualEnabled?: boolean;
         filledMapDataLabelsEnabled?: boolean;
         lineChartLabelDensityEnabled?: boolean;
         /**
          * Enables button to center map to the current location
          */
         mapCurrentLocationEnabled?: boolean;
-        /**
-         * Enables conditional formatting of the background color of cells for table visuals.
-         */
-        conditionalFormattingEnabled?: boolean;
         tooltipBucketEnabled?: boolean;
         /**
          * Load more data for Cartesian charts (column, bar, line, and combo).
@@ -4078,21 +4085,21 @@ declare module powerbi.visuals.controls.internal {
         protected _column: TablixColumn;
         initialize(column: TablixColumn): void;
         getWidth(): number;
+        getPersistedWidth(): number;
         getCellWidth(cell: ITablixCell): number;
-        getCellContentWidth(cell: ITablixCell): number;
     }
     class DashboardColumnPresenter extends TablixColumnPresenter {
         private _gridPresenter;
         constructor(gridPresenter: DashboardTablixGridPresenter);
+        getPersistedWidth(): number;
         getCellWidth(cell: ITablixCell): number;
-        getCellContentWidth(cell: ITablixCell): number;
     }
     class CanvasColumnPresenter extends TablixColumnPresenter {
         private _gridPresenter;
         private _columnIndex;
         constructor(gridPresenter: CanvasTablixGridPresenter, index: number);
+        getPersistedWidth(): number;
         getCellWidth(cell: ITablixCell): number;
-        getCellContentWidth(cell: ITablixCell): number;
     }
     class TablixGridPresenter {
         protected _table: HTMLTableElement;
@@ -4113,8 +4120,8 @@ declare module powerbi.visuals.controls.internal {
         onAddFooterRow(row: TablixRow): void;
         onClear(): void;
         onFillColumnsProportionallyChanged(value: boolean): void;
-        invokeColumnResizeEndCallback(columnIndex: number, width: number): void;
-        getPersistedCellWidth(columnIndex: number): number;
+        invokeColumnResizeEndCallback(column: TablixColumn, width: number): void;
+        getPersistedColumnWidth(column: TablixColumn): number;
     }
     class DashboardTablixGridPresenter extends TablixGridPresenter {
         private _sizeComputationManager;
@@ -4634,7 +4641,7 @@ declare module powerbi.visuals.controls.internal {
         initialize(owner: TablixControl): void;
         owner: TablixControl;
         binder: ITablixBinder;
-        columnWidthsToPersist: number[];
+        columnWidthsToPersist: ColumnWidthObject[];
         getTablixClassName(): string;
         getLayoutKind(): TablixLayoutKind;
         getOrCreateColumnHeader(item: any, items: any, rowIndex: number, columnIndex: number): ITablixCell;
@@ -4861,6 +4868,8 @@ declare module powerbi.visuals.controls.internal {
         const CellPaddingLeft: number;
         const CellPaddingRight: number;
         const CellPaddingLeftMatrixTotal: number;
+        const SortIconPadding: number;
+        const ImageDefaultAspectRatio: number;
         const FontFamilyCell: string;
         const FontFamilyHeader: string;
         const FontFamilyTotal: string;
@@ -4914,10 +4923,6 @@ declare module powerbi.visuals.controls.internal {
              * Background color of the cell. If undefined, it will be cleared to fall back to default (transparent)
             */
             backColor: string;
-            /**
-             * Indicates whether the Cell contains an Image or not. Affecting cell height.
-            */
-            hasImage: boolean;
             /**
             * Settings for Borders
             */
@@ -5959,15 +5964,27 @@ declare module powerbi.visuals.controls {
         */
         queryName: string;
         /**
-        * Width of the column in px. -1 means it's fixed but unknown.
+        * Flag indicating whether the Column should have a fixed size or fit its size to the contents
         */
-        width: number;
+        isFixed: boolean;
+        /**
+        * Width of the column in px.
+        * If isFixed=False, undefined always
+        * If isFixed=True, undefined if unknown
+        */
+        width?: number;
+    }
+    /**
+     * Collection of Column Widths indexed by Column's queryName
+    */
+    interface ColumnWidthCollection {
+        [queryName: string]: ColumnWidthObject;
     }
     /**
     * Handler for Column Width Changed event
     */
-    interface ColumnWidthCallbackType {
-        (index: number, width: number): void;
+    interface ColumnWidthChangedCallback {
+        (columnWidthChangedEventArgs: ColumnWidthObject): void;
     }
     /**
      * Handler for requesting host to persist Column Width Objects
@@ -5979,10 +5996,9 @@ declare module powerbi.visuals.controls {
         /**
         * PropertyID for Column Widths (General > columnWidth)
         */
-        static columnWidthProp: DataViewObjectPropertyIdentifier;
+        private static columnWidthProp;
         /**
-        * Array holding widths for all columns. Index is the index for the column in the visual Table/Matrix
-        * Width will be a number for fixed size columns, undefined for autosized columns
+        * Array holding widths for all columns. Index is the queryName of the column
         */
         private columnWidthObjects;
         /**
@@ -6025,20 +6041,24 @@ declare module powerbi.visuals.controls {
          */
         updateDataView(dataView: DataView, matrixLeafNodes?: MatrixVisualNode[]): void;
         /**
-        * Destroy columnWidthObjects and construct it again from the currently displayed Columns
+        * Destroy columnWidthObjects and construct it again from the currently displayed Columns with initial width undefined
         */
-        private updateColumnWidthObjects();
-        private updateTableColumnWidthObjects();
-        private updateMatrixColumnWidthObjects();
+        private updateColumnsMetadata();
+        private updateTableColumnsMetadata();
+        private updateMatrixColumnsMetadata();
         /**
          * Update the column widths after a dataViewChange
          */
         updateTablixColumnWidths(): void;
         /**
-         * Read the Column Widths from the Columns metadata
-         * @param {DataViewMetadataColumn[]} columnMetaData Columns metadata
+         * Remove all persisted columns widths and Update visualObjectInstancesToPersist
          */
-        private deserializeColumnWidths(columnMetaData);
+        private autoSizeAllColumns();
+        /**
+         * Read the Column Widths from the Columns metadata
+         * @param {DataViewMetadataColumn[]} columnMetadata Columns metadata
+         */
+        private deserializeColumnsWidth(columnsMetadata);
         /**
          * Returns a value indicating that autoSizeColumns was flipped from true to false
          */
@@ -6048,54 +6068,45 @@ declare module powerbi.visuals.controls {
          */
         shouldClearAllColumnWidths(): boolean;
         /**
+        * Gets the QueryName associated with a Column (Column Header or Corner Item)
+        * @param {internal.TablixColumn} column TablixColumn
+        * @returns queryName
+        */
+        static getColumnQueryName(column: internal.TablixColumn): string;
+        /**
          * Returns the current columnWidthObjects
-         * @returns current columnWidthObjects including undefined widths for autosized columns
+         * @returns current columnWidthObjects including undefined widths for autosized or unknown columns
          */
-        getColumnWidthObjects(): controls.ColumnWidthObject[];
+        getColumnWidthObjects(): ColumnWidthCollection;
         /**
          * Returns the current columnWidthObjects for only the fixed-size columns
          * @returns Returns the current columnWidthObjects excluding auto-sized columns
          */
-        getFixedColumnWidthObjects(): controls.ColumnWidthObject[];
+        getFixedColumnWidthObjects(): ColumnWidthCollection;
         /**
-         * Get the persisted width of a certain column in px, or undefined if the columns is set to autosize or index is out of range
-         * @param {number} index index of the Column
+         * Get the persisted width of a certain column in px, or undefined if the columns is set to autosize or queryName is not found
+         * @param {string} queryName queryName of the Column
          * @returns Column persisted width in pixel
          */
-        getPersistedColumnWidth(index: number): number;
+        getPersistedColumnWidth(queryName: string): number;
         /**
          * Call the host to persist the data
          * @param {boolean} generateInstances
          */
-        private callHostToPersist(generateInstances);
-        /**
-         * Remove all persisted columns widths and Update visualObjectInstancesToPersist
-         */
-        private autoSizeAllColumns();
-        /**
-         * Remove persisted column width for a specific column and Update visualObjectInstancesToPersist
-         */
-        private onColumnAutosized(queryName);
+        private callHostToPersist();
         /**
          * Handler for a column width change by the user
-         * @param {number} index zero-based index of the column, including hidden row header for table
+         * @param {string} queryName queryName of the Column
          * @param {number} width new width
          */
-        onColumnWidthChanged(index: number, width: number): void;
+        onColumnWidthChanged(queryName: string, width: number): void;
         /**
-         * Persist all column widths, called when autoSizeColumns flipped to false
-         * @param {number[]} widthsToPersist Widths to persist, including an empty row header for table
+         * Event handler after rendering all columns. Setting any unknown column width.
+         * Returns True if it calls persist
+         * @param renderedColumns Rendered Columns
          */
-        persistAllColumnWidths(widthsToPersist: number[]): void;
-        /**
-         * Construct a ColumnAutoSize object
-         * @returns ColumnAutoSize object
-         */
-        private getAutoSizeColumnWidthObject();
-        /**
-         * Generate visualObjectInstances with autoSizeColumns and Column Widths
-         */
-        private generateVisualObjectInstancesToPersist();
+        onColumnsRendered(renderedColumns: ColumnWidthObject[]): boolean;
+        private generateColumnWidthObjectToPersist(queryName, width);
     }
 }
 
@@ -8690,12 +8701,14 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
+    import SemanticFilter = powerbi.data.SemanticFilter;
+    import SQExpr = powerbi.data.SQExpr;
     interface CheckboxStyle {
         transform: string;
         'transform-origin': string;
         'font-size': string;
     }
-    class VerticalSlicerRenderer implements ISlicerRenderer, SlicerDefaultValueHandler {
+    class VerticalSlicerRenderer implements ISlicerRenderer, SlicerValueHandler {
         private element;
         private currentViewport;
         private dataView;
@@ -8711,7 +8724,8 @@ declare module powerbi.visuals {
         private domHelper;
         constructor(options?: SlicerConstructorOptions);
         getDefaultValue(): data.SQConstantExpr;
-        getIdentityFields(): data.SQExpr[];
+        getIdentityFields(): SQExpr[];
+        getUpdatedSelfFilter(searchKey: string): SemanticFilter;
         init(slicerInitOptions: SlicerInitOptions): IInteractivityService;
         render(options: SlicerRenderOptions): void;
         private updateSelectionStyle();
@@ -8721,7 +8735,7 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
-    class HorizontalSlicerRenderer implements ISlicerRenderer, SlicerDefaultValueHandler {
+    class HorizontalSlicerRenderer implements ISlicerRenderer, SlicerValueHandler {
         private element;
         private currentViewport;
         private data;
@@ -8746,6 +8760,7 @@ declare module powerbi.visuals {
         constructor(options?: SlicerConstructorOptions);
         getDefaultValue(): data.SQConstantExpr;
         getIdentityFields(): data.SQExpr[];
+        getUpdatedSelfFilter(searchKey: string): data.SemanticFilter;
         init(slicerInitOptions: SlicerInitOptions): IInteractivityService;
         render(options: SlicerRenderOptions): void;
         private renderCore();
@@ -8772,9 +8787,12 @@ declare module powerbi.visuals {
 declare module powerbi.visuals {
     import DOMHelper = SlicerUtil.DOMHelper;
     import SlicerOrientation = slicerOrientation.Orientation;
-    interface SlicerDefaultValueHandler {
+    interface SlicerValueHandler {
         getDefaultValue(): data.SQConstantExpr;
         getIdentityFields(): data.SQExpr[];
+        /** gets updated self filter based on the searchKey.
+         *  If the searchKey didn't change, then the updated filter will be undefined. */
+        getUpdatedSelfFilter(searchKey: string): data.SemanticFilter;
     }
     interface SlicerConstructorOptions {
         domHelper?: DOMHelper;
@@ -8796,6 +8814,7 @@ declare module powerbi.visuals {
         slicerSettings: SlicerSettings;
         hasSelectionOverride?: boolean;
         defaultValue?: DefaultValueDefinition;
+        searchKey?: string;
     }
     interface SlicerDataPoint extends SelectableDataPoint {
         value: string;
@@ -8974,12 +8993,20 @@ declare module powerbi.visuals {
         private options;
         private formattingProperties;
         private tableDataView;
+        private fontSizeHeader;
+        private textPropsHeader;
         private textHeightHeader;
+        private fontSizeValue;
+        private textPropsValue;
         private textHeightValue;
+        private fontSizeTotal;
+        private textPropsTotal;
         private textHeightTotal;
-        constructor(options: TableBinderOptions);
-        onDataViewChanged(dataView: DataViewVisualTable): void;
+        private rowHeight;
+        constructor(options: TableBinderOptions, dataView?: DataViewVisualTable);
+        updateDataView(dataView: DataViewVisualTable): void;
         private updateTextHeights();
+        private hasImage();
         onStartRenderingSession(): void;
         onEndRenderingSession(): void;
         /**
@@ -8997,6 +9024,7 @@ declare module powerbi.visuals {
          * Body Cell.
          */
         bindBodyCell(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void;
+        setBodyContent(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void;
         private setBodyStyle(item, cell, style);
         private setFooterStyle(cell, style);
         unbindBodyCell(item: TablixUtils.TablixVisualCell, cell: controls.ITablixCell): void;
@@ -9018,7 +9046,6 @@ declare module powerbi.visuals {
         private sortIconsEnabled();
     }
     interface TableConstructorOptions {
-        isConditionalFormattingEnabled?: boolean;
         isTouchEnabled?: boolean;
     }
     class Table implements IVisual {
@@ -9038,7 +9065,6 @@ declare module powerbi.visuals {
         private waitingForSort;
         private columnWidthManager;
         private dataView;
-        private isConditionalFormattingEnabled;
         /**
         * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
         */
@@ -9060,9 +9086,9 @@ declare module powerbi.visuals {
         private refreshControl(clear);
         private getLayoutKind();
         private createOrUpdateHierarchyNavigator(visualTable);
-        private createTablixControl(textSize);
-        private createControl(dataNavigator, textSize);
-        private updateInternal(textSize, previousDataView, visualTable);
+        private createTablixControl(visualTable);
+        private createControl(dataNavigator, visualTable);
+        private updateInternal(previousDataView, visualTable);
         private shouldClearControl(previousDataView, newDataView);
         private createTotalsRow(dataView);
         private onBindRowHeader(item);
@@ -9167,8 +9193,14 @@ declare module powerbi.visuals {
         private formattingProperties;
         private hierarchyNavigator;
         private options;
+        private fontSizeHeader;
+        private textPropsHeader;
         private textHeightHeader;
+        private fontSizeValue;
+        private textPropsValue;
         private textHeightValue;
+        private fontSizeTotal;
+        private textPropsTotal;
         private textHeightTotal;
         constructor(hierarchyNavigator: IMatrixHierarchyNavigator, options: MatrixBinderOptions);
         onDataViewChanged(formattingProperties: TablixFormattingPropertiesMatrix): void;
@@ -9845,6 +9877,7 @@ declare module powerbi.visuals {
         private arc;
         private outerArc;
         private radius;
+        private previousRadius;
         private key;
         private colors;
         private style;
@@ -9882,7 +9915,7 @@ declare module powerbi.visuals {
         setInteractiveChosenSlice(sliceIndex: number): void;
         private calculateRadius();
         private getScaleForLegendArrow();
-        private initViewportDependentProperties(duration?);
+        private initViewportDependantProperties(duration?);
         private initDonutProperties();
         private mergeDatasets(first, second);
         private updateInternal(data, suppressAnimations, duration?);

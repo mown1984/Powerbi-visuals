@@ -4063,6 +4063,57 @@ module powerbitests {
             expect(node4.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFixed", value: "220" }, { displayName: powerbi.visuals.ToolTipComponent.localizationOptions.highlightedValueDisplayName, value: "200" }]);
         });
 
+        it("treemap categories and measures (has null) with highlights (not null) tooltip data test", () => {
+            // Treat this case as highlight overflow
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadataCategoryAndMeasures.columns[0],
+                        values: ['Front end', 'Back end'],
+                        identity: [
+                            mocks.dataViewScopeIdentity('f'),
+                            mocks.dataViewScopeIdentity('b'),
+                        ],
+                        identityFields: [categoryColumnRef],
+                    }],
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [110, 120],
+                            highlights: [60, 60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [210, null],
+                            highlights: [140, 200]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0].children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[0].children[1];
+            let node3: TreemapNode = <TreemapNode>rootNode.children[1].children[0];
+            let node4: TreemapNode = <TreemapNode>rootNode.children[1].children[1];
+
+            expect(rootNode.children[0].children.length).toBe(2);
+            expect(rootNode.children[1].children.length).toBe(2);
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFiled", value: "60" }]);
+
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
+            expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Front end" }, { displayName: "BugsFixed", value: "140" }]);
+
+            expect(node3.tooltipInfo).toEqual(node3.highlightedTooltipInfo);
+            expect(node3.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFiled", value: "60" }]);
+
+            expect(node4.tooltipInfo).toEqual(node4.highlightedTooltipInfo);
+            expect(node4.highlightedTooltipInfo).toEqual([{ displayName: "Area", value: "Back end" }, { displayName: "BugsFixed", value: "200" }]);
+
+        });
+
         it("treemap gradient color test",() => {
             let dataPointColors = ["#d9f2fb", "#ff557f", "#b1eab7"];
             let objectDefinitions: powerbi.DataViewObjects[] = [

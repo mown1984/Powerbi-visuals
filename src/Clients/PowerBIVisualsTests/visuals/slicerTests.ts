@@ -172,16 +172,7 @@ module powerbitests {
                 builder.slicerText.eq(1).d3Click(0, 0);
                 validateSelectionState(orientation, [1]);
 
-                expect(builder.hostServices.onSelect).toHaveBeenCalledWith({
-                    data:
-                    [
-                        {
-                            data: [
-                                builder.interactiveDataViewOptions.dataViews[0].categorical.categories[0].identity[0]
-                            ]
-                        }
-                    ]
-                });
+                expect(builder.hostServices.onSelect).toHaveBeenCalled();
             });
 
             it("Slicer item repeated selection", () => {

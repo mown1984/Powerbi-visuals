@@ -29,6 +29,19 @@
 module powerbitests {
     import IVisualHostServices = powerbi.IVisualHostServices;
 
+    let mockVisualGuid = 'customDebugViz';
+    class MockVisual implements powerbi.IVisual {
+        init() { }
+        update() { }
+    }
+    let mockVisualPlugin: powerbi.IVisualPlugin = {
+        name: mockVisualGuid,
+        class: mockVisualGuid,
+        capabilities: {},
+        create: () => new MockVisual(),
+        custom: true
+    };
+
     describe("Debug Visual", () => {
 
         beforeEach(() => {
@@ -67,19 +80,6 @@ module powerbitests {
             let getScriptSpy: jasmine.Spy;
             let getJSONSpy: jasmine.Spy;
 
-            let mockVisualGuid = 'customDebugViz';
-            class MockVisual implements powerbi.IVisual {
-                init() { }
-                update() { }
-            }
-            let mockVisualPlugin: powerbi.IVisualPlugin = {
-                name: mockVisualGuid,
-                class: mockVisualGuid,
-                capabilities: {},
-                create: () => new MockVisual(),
-                custom: true
-            };
-
             beforeEach(() => {
 
                 host = mocks.createVisualHostServices();
@@ -94,7 +94,7 @@ module powerbitests {
                     }
                     return d.promise();
                 });
-                
+
                 getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
                     let d = $.Deferred();
                     d.resolve({
@@ -104,7 +104,7 @@ module powerbitests {
                         capabilities: {}
                     });
                     return d.promise();
-                });                
+                });
 
                 getScriptSpy = spyOn($, 'getScript').and.callFake(url => {
                     let d = $.Deferred();
@@ -201,6 +201,109 @@ module powerbitests {
             });
         });
 
+        describe("visual - compile error", () => {
+            let $element: JQuery;
+            let debugVisual: powerbi.visuals.system.DebugVisual;
+            let getSpy: jasmine.Spy;
+            let getScriptSpy: jasmine.Spy;
+            let getJSONSpy: jasmine.Spy;
+            let statusResponder: () => string;
+
+            beforeEach(() => {
+
+                let host = mocks.createVisualHostServices();
+                $element = helpers.testDom("500", "500");
+                statusResponder = () => 'error';
+
+                getSpy = spyOn($, 'get').and.callFake(url => {
+                    let d = $.Deferred();
+                    if (url.match(/status$/)) {
+                        d.resolve(statusResponder());
+                    } else if (url.match(/visual\.css$/)) {
+                        d.resolve('.hello{}');
+                    }
+                    return d.promise();
+                });
+
+                getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
+                    let d = $.Deferred();
+                    d.resolve({
+                        visual: {
+                            guid: mockVisualGuid
+                        },
+                        capabilities: {}
+                    });
+                    return d.promise();
+                });
+
+                getScriptSpy = spyOn($, 'getScript').and.callFake(url => {
+                    let d = $.Deferred();
+                    window['powerbi']['visuals']['plugins'][mockVisualGuid] = mockVisualPlugin;
+                    d.resolve(null);
+                    return d.promise();
+                });
+
+                let initOptions = {
+                    element: $element,
+                    host: host,
+                    viewport: viewport,
+                    style: style
+                };
+
+                debugVisual = new powerbi.visuals.system.DebugVisual();
+                debugVisual.init(initOptions);
+            });
+
+            describe("init", () => {
+                it("Should display error message", () => {
+                    let elem = $element.find('.debugVisualContainer .errorContainer');
+                    expect(elem.length).toBe(1);
+                });
+
+                it("Should not attempt to contact server for json or scripts", () => {
+                    expect(getScriptSpy).not.toHaveBeenCalled();
+                    expect(getJSONSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe("auto refresh", () => {
+                beforeEach(() => {
+                    (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime = 0;
+                });
+
+                it("should keep calling refresh on interval, but not load scripts / json", (done) => {
+                    (<any>debugVisual).toggleAutoReload();
+
+                    setTimeout(() => {
+                        let elem = $element.find('.debugVisualContainer .errorContainer');
+                        expect(elem.length).toBe(1);
+                        expect((<any>debugVisual).autoReloadInterval).toBeTruthy();
+                        expect(getScriptSpy).not.toHaveBeenCalled();
+                        expect(getJSONSpy).not.toHaveBeenCalled();
+                        done();
+                    }, (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime);
+                });
+
+                it("should clear error and reload scripts / json if error is resolved", (done) => {
+                    expect(getScriptSpy).not.toHaveBeenCalled();
+                    expect(getJSONSpy).not.toHaveBeenCalled();
+                    let elem = $element.find('.debugVisualContainer .errorContainer');
+                    expect(elem.length).toBe(1);
+
+                    statusResponder = () => Date.now() + "\n" + mockVisualGuid;
+                    (<any>debugVisual).toggleAutoReload();
+
+                    setTimeout(() => {
+                        let elem = $element.find('.debugVisualContainer .errorContainer');
+                        expect(elem.length).toBe(0);
+                        expect(getScriptSpy).toHaveBeenCalled();
+                        expect(getJSONSpy).toHaveBeenCalled();
+                        done();
+                    }, (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime);
+                });
+            });
+        });
+
         describe("visual - offline", () => {
             let host: IVisualHostServices;
             let $element: JQuery;
@@ -220,12 +323,12 @@ module powerbitests {
                     d.reject();
                     return d.promise();
                 });
-                
+
                 getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
                     let d = $.Deferred();
                     d.reject();
                     return d.promise();
-                });                
+                });
 
                 getScriptSpy = spyOn($, 'getScript').and.callFake(url => {
                     let d = $.Deferred();
@@ -250,7 +353,7 @@ module powerbitests {
                     expect(elem.length).toBe(1);
                 });
             });
-            
+
             describe("refresh", () => {
                 it("Should not try to get script, json, or css if status call fails", () => {
                     expect(getSpy.calls.count()).toBe(1);
@@ -263,8 +366,7 @@ module powerbitests {
                     expect(getJSONSpy).not.toHaveBeenCalled();
                     expect(getScriptSpy).not.toHaveBeenCalled();
                 });
-
-            });            
+            });
 
             describe("auto refresh", () => {
                 beforeEach(() => {
@@ -282,7 +384,6 @@ module powerbitests {
                     }, (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime);
                 });
             });
-
         });
 
         describe("visual - disabled", () => {
@@ -321,8 +422,6 @@ module powerbitests {
                     expect(getSpy).not.toHaveBeenCalled();
                 });
             });
-
         });
-
     });
 }

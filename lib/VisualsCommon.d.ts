@@ -309,6 +309,21 @@ declare module jsCommon {
     interface ArrayNamedItems<T> extends Array<T> {
         withName(name: string): T;
     }
+    /**
+     * Compares two objects and returns a value indicating whether one is less than, equal to, or greater than the other.
+     */
+    interface IComparer<T> {
+        /**
+         * Returns a signed number that indicates the relative values of x and y, as shown in the following table.
+         *
+         *         Value     |       Meaning
+         * ------------------|--------------------
+         * Less than zero    | a is less than b
+         * Zero              | a equals b
+         * Greater than zero | a is greater than b
+         */
+        (a: T, b: T): number;
+    }
     module ArrayExtensions {
         /**
          * Returns items that exist in target and other.
@@ -388,6 +403,15 @@ declare module jsCommon {
         function isInArray<T>(array: T[], lookupItem: T, compareCallback: (item1: T, item2: T) => boolean): boolean;
         /** Checks if the given object is an Array, and looking all the way up the prototype chain. */
         function isArrayOrInheritedArray(obj: {}): obj is Array<any>;
+        /**
+         * Returns true if the specified values array is sorted in an order as determined by the specified compareFunction.
+         */
+        function isSorted<T>(values: T[], compareFunction: IComparer<T>): boolean;
+        /**
+         * Returns true if the specified number values array is sorted in ascending order
+         * (or descending order if the specified descendingOrder is truthy).
+         */
+        function isSortedNumeric(values: number[], descendingOrder?: boolean): boolean;
     }
 }
 
@@ -968,18 +992,21 @@ declare module powerbi {
         /**
          * This method measures the width of the text with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        function measureSvgTextWidth(textProperties: TextProperties): number;
+        function measureSvgTextWidth(textProperties: TextProperties, text?: string): number;
         /**
          * This method return the rect with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        function measureSvgTextRect(textProperties: TextProperties): SVGRect;
+        function measureSvgTextRect(textProperties: TextProperties, text?: string): SVGRect;
         /**
          * This method measures the height of the text with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        function measureSvgTextHeight(textProperties: TextProperties): number;
+        function measureSvgTextHeight(textProperties: TextProperties, text?: string): number;
         /**
          * This method returns the text Rect with the given SVG text properties.
          * @param {TextProperties} textProperties - The text properties to use for text measurement

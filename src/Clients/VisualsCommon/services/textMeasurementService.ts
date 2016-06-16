@@ -103,8 +103,9 @@ module powerbi {
         /**
          * This method measures the width of the text with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        export function measureSvgTextWidth(textProperties: TextProperties): number {
+        export function measureSvgTextWidth(textProperties: TextProperties, text?: string): number {
             debug.assertValue(textProperties, 'textProperties');
             debug.assert(_.isEmpty(textProperties.fontSize) || textProperties.fontSize.indexOf("px") !== -1, "TextProperties' text size should be in px.");
 
@@ -117,14 +118,15 @@ module powerbi {
                     textProperties.fontSize + " " +
                     (textProperties.fontFamily || fallbackFontFamily);
 
-            return canvasCtx.measureText(textProperties.text).width;
+            return canvasCtx.measureText(text || textProperties.text).width;
         }
 
         /**
          * This method return the rect with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        export function measureSvgTextRect(textProperties: TextProperties): SVGRect {
+        export function measureSvgTextRect(textProperties: TextProperties, text?: string): SVGRect {
             debug.assertValue(textProperties, 'textProperties');
             debug.assert(_.isEmpty(textProperties.fontSize) || textProperties.fontSize.indexOf("px") !== -1, "TextProperties' text size should be in px.");
 
@@ -132,7 +134,7 @@ module powerbi {
 
             svgTextElement.style(null);
             svgTextElement
-                .text(textProperties.text)
+                .text(text || textProperties.text)
                 .attr({
                     'visibility': 'hidden',
                     'font-family': textProperties.fontFamily || fallbackFontFamily,
@@ -151,9 +153,10 @@ module powerbi {
         /**
          * This method measures the height of the text with the given SVG text properties.
          * @param textProperties The text properties to use for text measurement.
+         * @param text The text to measure.
          */
-        export function measureSvgTextHeight(textProperties: TextProperties): number {
-            return measureSvgTextRect(textProperties).height;
+        export function measureSvgTextHeight(textProperties: TextProperties, text?: string): number {
+            return measureSvgTextRect(textProperties, text).height;
         }
 
         /**

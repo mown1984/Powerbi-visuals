@@ -941,20 +941,17 @@ module powerbi.visuals {
                 .remove();
 
             // Render extra lines that are wider and invisible used for better interactivity
-            let interactivityLines;
-            if (this.interactivityService) {
-                interactivityLines = this.mainGraphicsContext.selectAll(".interactivity-line").data(data.series, (d: LineChartSeries) => d.identity.getKey());
-                interactivityLines.enter()
-                    .append(LineChart.PathElementName)
-                    .classed('interactivity-line', true)
-                    .style('stroke-width', LineChart.interactivityStrokeWidth);
-                interactivityLines
-                    .attr('d', (d: LineChartSeries) => {
-                        return line(d.data);
-                    });
-                interactivityLines.exit()
-                    .remove();
-            }
+            let interactivityLines = this.mainGraphicsContext.selectAll(".interactivity-line").data(data.series, (d: LineChartSeries) => d.identity.getKey());
+            interactivityLines.enter()
+                .append(LineChart.PathElementName)
+                .classed('interactivity-line', true)
+                .style('stroke-width', LineChart.interactivityStrokeWidth);
+            interactivityLines
+                .attr('d', (d: LineChartSeries) => {
+                    return line(d.data);
+                });
+            interactivityLines.exit()
+                .remove();
 
             // Prepare grouping for dots
             let dotGroups = this.mainGraphicsContext.selectAll(LineChart.CategorySelector.selector)

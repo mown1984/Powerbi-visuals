@@ -75,6 +75,7 @@
 /// <reference path="./semanticQuery/sqExprUtils.ts"/>
 /// <reference path="./semanticQuery/semanticQueryRewriter.ts"/>
 /// <reference path="./semanticQuery/semanticQuery.ts"/>
+/// <reference path="./semanticQuery/SQFilter.ts"/>
 /// <reference path="./dataView/dataViewBuilder.ts"/>
 /// <reference path="./dataView/rules/staticEvalContext.ts"/>
 /// <reference path="./dataView/rules/matrixEvalContext.ts"/>

@@ -35,6 +35,7 @@ module powerbi.data {
         OrderBy?: QuerySortClause[];
         Select: QueryExpressionContainer[];
         GroupBy?: QueryExpressionContainer[];
+        Transform?: QueryTransform[];
     }
 
     export interface FilterDefinition {
@@ -116,6 +117,10 @@ module powerbi.data {
 
         // Reference Expressions
         WithRef?: QueryWithRefExpression;
+
+        // Transform Expressions
+        TransformTableRef?: QueryTransformTableRefExpression;
+        TransformOutputRoleRef?: QueryTransformOutputRoleRefExpression;
 
         // Client-only expressions
         FillRule?: QueryFillRuleExpression;
@@ -282,6 +287,15 @@ module powerbi.data {
         ExpressionName: string;
     }
 
+    export interface QueryTransformTableRefExpression {
+        Source: string;
+    }
+
+    export interface QueryTransformOutputRoleRefExpression {
+        Role: string;
+        Transform?: string;
+    }
+
     export enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -368,5 +382,31 @@ module powerbi.data {
     export enum FilterKind {
         Default,
         Period,
+    }
+
+    export interface QueryTransform {
+        Name: string;
+        Algorithm: string;
+        Input: QueryTransformInput;
+        Output: QueryTransformOutput;
+    }
+
+    export interface QueryTransformInput {
+        Parameters: QueryExpressionContainer[];
+        Table?: QueryTransformTable;
+    }
+
+    export interface QueryTransformOutput {
+        Table?: QueryTransformTable;
+    }
+
+    export interface QueryTransformTable {
+        Name: string;
+        Columns: QueryTransformTableColumn[];
+    }
+
+    export interface QueryTransformTableColumn {
+        Role?: string;
+        Expression: QueryExpressionContainer;
     }
 }

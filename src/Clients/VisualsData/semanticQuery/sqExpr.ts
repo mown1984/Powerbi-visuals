@@ -124,6 +124,18 @@ module powerbi.data {
             return expr.kind === SQExprKind.WithRef;
         }
 
+        public static isTransformTableRef(expr: SQExpr): expr is SQTransformTableRefExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.TransformTableRef;
+        }
+
+        public static isTransformOutputRoleRef(expr: SQExpr): expr is SQTransformOutputRoleRefExpr {
+            debug.assertValue(expr, 'expr');
+
+            return expr.kind === SQExprKind.TransformOutputRoleRef;
+        }
+
         public static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr {
             debug.assertValue(expr, 'expr');
 
@@ -423,6 +435,8 @@ module powerbi.data {
         WithRef,
         Percentile,
         SelectRef,
+        TransformTableRef,
+        TransformOutputRoleRef,
     }
 
     export interface SQExprMetadata {
@@ -1012,6 +1026,40 @@ module powerbi.data {
         }
     }
 
+    export class SQTransformTableRefExpr extends SQExpr {
+        public source: string;
+
+        constructor(source: string) {
+            debug.assertValue(source, 'source');
+
+            super(SQExprKind.TransformTableRef);
+            this.source = source;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitTransformTableRef(this, arg);
+        }
+    }
+
+    export class SQTransformOutputRoleRefExpr extends SQExpr {
+        public role: string;
+        public transform: string;
+
+        constructor(role: string, transform?: string) {
+            debug.assertValue(role, 'role');
+
+            super(SQExprKind.TransformOutputRoleRef);
+
+            this.role = role;
+            if (transform)
+                this.transform = transform;
+        }
+
+        public accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T {
+            return visitor.visitTransformOutputRoleRef(this, arg);
+        }
+    }
+
     /** Provides utilities for creating & manipulating expressions. */
     export module SQExprBuilder {
         export function entity(schema: string, entity: string, variable?: string): SQEntityExpr {
@@ -1060,6 +1108,14 @@ module powerbi.data {
 
         export function hierarchyLevel(source: SQExpr, level: string): SQHierarchyLevelExpr {
             return new SQHierarchyLevelExpr(source, level);
+        }
+
+        export function transformTableRef(source: string) {
+            return new SQTransformTableRefExpr(source);
+        }
+
+        export function transformOutputRoleRef(source: string, transform?: string) {
+            return new SQTransformOutputRoleRefExpr(source, transform);
         }
 
         export function and(left: SQExpr, right: SQExpr): SQExpr {
@@ -1300,20 +1356,20 @@ module powerbi.data {
 
         public visitColumnRef(expr: SQColumnRefExpr, comparand: SQColumnRefExpr): boolean {
             return comparand instanceof SQColumnRefExpr &&
-                expr.ref === (<SQColumnRefExpr>comparand).ref &&
-                this.equals(expr.source, (<SQColumnRefExpr>comparand).source);
+                expr.ref === comparand.ref &&
+                this.equals(expr.source, comparand.source);
         }
 
         public visitMeasureRef(expr: SQMeasureRefExpr, comparand: SQMeasureRefExpr): boolean {
             return comparand instanceof SQMeasureRefExpr &&
-                expr.ref === (<SQMeasureRefExpr>comparand).ref &&
-                this.equals(expr.source, (<SQMeasureRefExpr>comparand).source);
+                expr.ref === comparand.ref &&
+                this.equals(expr.source, comparand.source);
         }
 
         public visitAggr(expr: SQAggregationExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQAggregationExpr &&
-                expr.func === (<SQAggregationExpr>comparand).func &&
-                this.equals(expr.arg, (<SQAggregationExpr>comparand).arg);
+                expr.func === comparand.func &&
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitPercentile(expr: SQPercentileExpr, comparand: SQExpr): boolean {
@@ -1349,13 +1405,13 @@ module powerbi.data {
 
         public visitBetween(expr: SQBetweenExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQBetweenExpr &&
-                this.equals(expr.arg, (<SQBetweenExpr>comparand).arg) &&
-                this.equals(expr.lower, (<SQBetweenExpr>comparand).lower) &&
-                this.equals(expr.upper, (<SQBetweenExpr>comparand).upper);
+                this.equals(expr.arg, comparand.arg) &&
+                this.equals(expr.lower, comparand.lower) &&
+                this.equals(expr.upper, comparand.upper);
         }
 
         public visitIn(expr: SQInExpr, comparand: SQExpr): boolean {
-            if (!(comparand instanceof SQInExpr) || !this.equalsAll(expr.args, (<SQInExpr>comparand).args))
+            if (!(comparand instanceof SQInExpr) || !this.equalsAll(expr.args, comparand.args))
                 return false;
 
             let values = expr.values,
@@ -1373,57 +1429,57 @@ module powerbi.data {
 
         public visitEntity(expr: SQEntityExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQEntityExpr &&
-                expr.schema === (<SQEntityExpr>comparand).schema &&
-                expr.entity === (<SQEntityExpr>comparand).entity &&
-                this.optionalEqual(expr.variable, (<SQEntityExpr>comparand).variable);
+                expr.schema === comparand.schema &&
+                expr.entity === comparand.entity &&
+                this.optionalEqual(expr.variable, comparand.variable);
         }
 
         public visitAnd(expr: SQAndExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQAndExpr &&
-                this.equals(expr.left, (<SQAndExpr>comparand).left) &&
-                this.equals(expr.right, (<SQAndExpr>comparand).right);
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitOr(expr: SQOrExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQOrExpr &&
-                this.equals(expr.left, (<SQOrExpr>comparand).left) &&
-                this.equals(expr.right, (<SQOrExpr>comparand).right);
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitCompare(expr: SQCompareExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQCompareExpr &&
-                expr.comparison === (<SQCompareExpr>comparand).comparison &&
-                this.equals(expr.left, (<SQCompareExpr>comparand).left) &&
-                this.equals(expr.right, (<SQCompareExpr>comparand).right);
+                expr.comparison === comparand.comparison &&
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitContains(expr: SQContainsExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQContainsExpr &&
-                this.equals(expr.left, (<SQContainsExpr>comparand).left) &&
-                this.equals(expr.right, (<SQContainsExpr>comparand).right);
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitDateSpan(expr: SQDateSpanExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQDateSpanExpr &&
-                expr.unit === (<SQDateSpanExpr>comparand).unit &&
-                this.equals(expr.arg, (<SQDateSpanExpr>comparand).arg);
+                expr.unit === comparand.unit &&
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitDateAdd(expr: SQDateAddExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQDateAddExpr &&
-                expr.unit === (<SQDateAddExpr>comparand).unit &&
-                expr.amount === (<SQDateAddExpr>comparand).amount &&
-                this.equals(expr.arg, (<SQDateAddExpr>comparand).arg);
+                expr.unit === comparand.unit &&
+                expr.amount === comparand.amount &&
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitExists(expr: SQExistsExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQExistsExpr &&
-                this.equals(expr.arg, (<SQExistsExpr>comparand).arg);
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitNot(expr: SQNotExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQNotExpr &&
-                this.equals(expr.arg, (<SQNotExpr>comparand).arg);
+                this.equals(expr.arg, comparand.arg);
         }
 
         public visitNow(expr: SQNowExpr, comparand: SQExpr): boolean {
@@ -1447,15 +1503,15 @@ module powerbi.data {
 
         public visitStartsWith(expr: SQStartsWithExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQStartsWithExpr &&
-                this.equals(expr.left, (<SQStartsWithExpr>comparand).left) &&
-                this.equals(expr.right, (<SQStartsWithExpr>comparand).right);
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitConstant(expr: SQConstantExpr, comparand: SQExpr): boolean {
-            if (comparand instanceof SQConstantExpr && expr.type === (<SQConstantExpr>comparand).type)
+            if (comparand instanceof SQConstantExpr && expr.type === comparand.type)
                 return expr.type.text && this.ignoreCase ?
-                    StringExtensions.equalIgnoreCase(expr.valueEncoded, (<SQConstantExpr>comparand).valueEncoded) :
-                    expr.valueEncoded === (<SQConstantExpr>comparand).valueEncoded;
+                    StringExtensions.equalIgnoreCase(expr.valueEncoded, comparand.valueEncoded) :
+                    expr.valueEncoded === comparand.valueEncoded;
 
             return false;
         }
@@ -1516,9 +1572,9 @@ module powerbi.data {
 
         public visitArithmetic(expr: SQArithmeticExpr, comparand: SQExpr): boolean {
             return comparand instanceof SQArithmeticExpr &&
-                expr.operator === (<SQArithmeticExpr>comparand).operator &&
-                this.equals(expr.left, (<SQArithmeticExpr>comparand).left) &&
-                this.equals(expr.right, (<SQArithmeticExpr>comparand).right);
+                expr.operator === comparand.operator &&
+                this.equals(expr.left, comparand.left) &&
+                this.equals(expr.right, comparand.right);
         }
 
         public visitScopedEval(expr: SQScopedEvalExpr, comparand: SQExpr): boolean {
@@ -1530,6 +1586,17 @@ module powerbi.data {
         public visitWithRef(expr: SQWithRefExpr, comparand: SQExpr): boolean {
             return  comparand instanceof SQWithRefExpr &&
                 expr.expressionName === comparand.expressionName;
+        }
+
+        public visitTransformTableRef(expr: SQTransformTableRefExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQTransformTableRefExpr &&
+                expr.source === comparand.source;
+        }
+
+        public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, comparand: SQExpr): boolean {
+            return comparand instanceof SQTransformOutputRoleRefExpr &&
+                expr.role === comparand.role &&
+                expr.transform === comparand.transform;
         }
 
         private optionalEqual(x: string, y: string) {
@@ -1731,6 +1798,14 @@ module powerbi.data {
         }
         
         public visitWithRef(expr: SQWithRefExpr): SQExpr {
+            return expr;
+        }
+
+        public visitTransformTableRef(expr: SQTransformTableRefExpr): SQExpr {
+            return expr;
+        }
+
+        public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): SQExpr {
             return expr;
         }
 

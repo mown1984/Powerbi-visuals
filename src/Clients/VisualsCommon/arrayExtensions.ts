@@ -35,6 +35,22 @@ module jsCommon {
         withName(name: string): T;
     }
 
+    /**
+     * Compares two objects and returns a value indicating whether one is less than, equal to, or greater than the other.
+     */
+    export interface IComparer<T> {
+        /**
+         * Returns a signed number that indicates the relative values of x and y, as shown in the following table.
+         * 
+         *         Value     |       Meaning
+         * ------------------|--------------------
+         * Less than zero    | a is less than b
+         * Zero              | a equals b
+         * Greater than zero | a is greater than b
+         */
+        (a: T, b: T): number;            
+    }
+
     export module ArrayExtensions {
         /**
          * Returns items that exist in target and other.
@@ -136,6 +152,10 @@ module jsCommon {
          */
         export function sequenceEqual<T>(left: T[], right: T[], comparison: (x: T, y: T) => boolean): boolean {
             debug.assertValue(comparison, 'comparison');
+
+            // Normalize falsy to null
+            if (!left) { left = null; }
+            if (!right) { right = null; }
 
             if (left === right) {
                 return true;
@@ -343,6 +363,40 @@ module jsCommon {
             }
 
             return false;
+        }
+        
+        /**
+         * Returns true if the specified values array is sorted in an order as determined by the specified compareFunction.
+         */
+        export function isSorted<T>(values: T[], compareFunction: IComparer<T>): boolean {
+            debug.assertValue(values, 'values');
+            debug.assertValue(compareFunction, 'compareFunction');
+
+            let ilen = values.length;
+            if (ilen >= 2) {
+                for (let i = 1; i < ilen; i++) {
+                    if (compareFunction(values[i - 1], values[i]) > 0) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;            
+        }
+        
+        /**
+         * Returns true if the specified number values array is sorted in ascending order
+         * (or descending order if the specified descendingOrder is truthy).
+         */
+        export function isSortedNumeric(values: number[], descendingOrder?: boolean): boolean {
+            debug.assertValue(values, 'values');
+            debug.assertAnyValue(descendingOrder, 'descendingOrder');
+            
+            let compareFunction: IComparer<number> = descendingOrder ?
+                (a, b) => b - a :
+                (a, b) => a - b;
+                
+            return isSorted(values, compareFunction);            
         }
     }
 } 

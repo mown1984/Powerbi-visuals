@@ -627,6 +627,36 @@ module powerbitests {
                 done();
             }, DefaultWaitForRender);
         });
+        
+        it("change precision (with percent)", (done) => {
+            cardBuilder = new CardBuilder(null, true);
+            
+            // Start with the standard format string (2 decimal places)
+            let metadata: powerbi.DataViewMetadata = {
+                columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "#,0.##%" } } }],
+                objects: {
+                    labels: {
+                        // Set precision to 4 so we expect 4 decimal places
+                        labelPrecision: 4,
+                    },
+                    categoryLabels: {
+                        show: true
+                    }
+                }
+            };
+
+            cardBuilder.metadata = metadata;
+            cardBuilder.singleValue = .123456789;
+
+            cardBuilder.onDataChanged();
+
+            setTimeout(() => {
+                // Verify we have 4 decimal places
+                expect(helpers.findElementText($(".card .value").first())).toBe("12.3457%");
+                expect(helpers.findElementTitle($(".card .value").first())).toBe("12.3457%");
+                done();
+            }, DefaultWaitForRender);
+        });
 
         it("change category font size", (done) => {
             cardBuilder = new CardBuilder(null, true);

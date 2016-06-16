@@ -35,6 +35,8 @@ declare module powerbi.data {
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
         visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
         visitWithRef(expr: SQWithRefExpr, arg: TArg): T;
+        visitTransformTableRef(expr: SQTransformTableRefExpr, arg: TArg): T;
+        visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, arg: TArg): T;
     }
     interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
     }
@@ -69,6 +71,8 @@ declare module powerbi.data {
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
         visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
         visitWithRef(expr: SQWithRefExpr, arg: TArg): T;
+        visitTransformTableRef(expr: SQTransformTableRefExpr, arg: TArg): T;
+        visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, arg: TArg): T;
         visitDefault(expr: SQExpr, arg: TArg): T;
     }
     /** Default ISQExprVisitor implementation that others may derive from. */
@@ -107,6 +111,8 @@ declare module powerbi.data {
         visitResourcePackageItem(expr: SQResourcePackageItemExpr): void;
         visitScopedEval(expr: SQScopedEvalExpr): void;
         visitWithRef(expr: SQWithRefExpr): void;
+        visitTransformTableRef(expr: SQTransformTableRefExpr): void;
+        visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): void;
         visitDefault(expr: SQExpr): void;
         private visitFillRuleStop(stop);
     }
@@ -543,6 +549,7 @@ declare module powerbi.data {
         OrderBy?: QuerySortClause[];
         Select: QueryExpressionContainer[];
         GroupBy?: QueryExpressionContainer[];
+        Transform?: QueryTransform[];
     }
     interface FilterDefinition {
         Version?: number;
@@ -605,6 +612,8 @@ declare module powerbi.data {
         Arithmetic?: QueryArithmeticExpression;
         ScopedEval?: QueryScopedEvalExpression;
         WithRef?: QueryWithRefExpression;
+        TransformTableRef?: QueryTransformTableRefExpression;
+        TransformOutputRoleRef?: QueryTransformOutputRoleRefExpression;
         FillRule?: QueryFillRuleExpression;
         ResourcePackageItem?: QueryResourcePackageItem;
         SelectRef?: QuerySelectRefExpression;
@@ -736,6 +745,13 @@ declare module powerbi.data {
     interface QueryWithRefExpression {
         ExpressionName: string;
     }
+    interface QueryTransformTableRefExpression {
+        Source: string;
+    }
+    interface QueryTransformOutputRoleRefExpression {
+        Role: string;
+        Transform?: string;
+    }
     enum TimeUnit {
         Day = 0,
         Week = 1,
@@ -806,6 +822,27 @@ declare module powerbi.data {
     enum FilterKind {
         Default = 0,
         Period = 1,
+    }
+    interface QueryTransform {
+        Name: string;
+        Algorithm: string;
+        Input: QueryTransformInput;
+        Output: QueryTransformOutput;
+    }
+    interface QueryTransformInput {
+        Parameters: QueryExpressionContainer[];
+        Table?: QueryTransformTable;
+    }
+    interface QueryTransformOutput {
+        Table?: QueryTransformTable;
+    }
+    interface QueryTransformTable {
+        Name: string;
+        Columns: QueryTransformTableColumn[];
+    }
+    interface QueryTransformTableColumn {
+        Role?: string;
+        Expression: QueryExpressionContainer;
     }
 }
 
@@ -1444,6 +1481,7 @@ declare module powerbi.data {
         function findFilterOutput(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier;
         /** Attempts to find the self filter property. */
         function findSelfFilter(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier;
+        function isSelfFilter(descriptor: DataViewObjectPropertyDescriptor): boolean;
         /** Attempts to find the self filter enabled property. */
         function findSelfFilterEnabled(descriptors: DataViewObjectDescriptors): DataViewObjectPropertyIdentifier;
         /** Attempts to find the default value property.  This can be useful for propagating schema default value. */
@@ -1482,6 +1520,7 @@ declare module powerbi.data {
         function run(evalContext: IEvalContext, objectDescriptor: DataViewObjectDescriptor, propertyDefinitions: DataViewObjectPropertyDefinitions): DataViewObject;
         /** Note: Exported for testability */
         function evaluateProperty(evalContext: IEvalContext, propertyDescriptor: DataViewObjectPropertyDescriptor, propertyDefinition: DataViewObjectPropertyDefinition): any;
+        function evaluateValue(evalContext: IEvalContext, definition: SQExpr | RuleEvaluation, valueType: ValueType): any;
     }
 }
 declare module powerbi.data {
@@ -1686,12 +1725,25 @@ declare module powerbi.data {
      */
     interface QueryRewriteRecordContainer {
         selectExprAdded?: QueryRewriteSelectExprAddedRecord;
+        aggregatesAdded?: QueryRewriteSelectExprAggregatesAddedRecord;
         projectionQueryRefChanged?: QueryRewriteProjectionQueryRefChangedRecord;
     }
     /** Indicates a new SQExpr got added at a particular index. */
     interface QueryRewriteSelectExprAddedRecord {
         selectIndex: number;
         namedSQExpr: NamedSQExpr;
+    }
+    interface QueryRewriteSelectExprAggregatesAddedRecord {
+        originalQueryRef: string;
+        aggregates: QueryRewriteAddedAggregates;
+    }
+    interface QueryRewriteAddedAggregates {
+        min?: QueryRewriteAddedAggregateSource;
+        max?: QueryRewriteAddedAggregateSource;
+    }
+    interface QueryRewriteAddedAggregateSource {
+        index: number;
+        expr: SQExpr;
     }
     /** Indicates a queryRef in the query projection for a particular role got changed. */
     interface QueryRewriteProjectionQueryRefChangedRecord {
@@ -2043,6 +2095,14 @@ declare module powerbi.data {
         discourageAggregationAcrossGroups?: boolean;
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
+        aggregateSources?: DataViewSelectAggregateSources;
+    }
+    interface DataViewSelectAggregateSources {
+        min?: DataViewSelectAggregateSource;
+        max?: DataViewSelectAggregateSource;
+    }
+    interface DataViewSelectAggregateSource {
+        index: number;
     }
     module DataViewSelectTransform {
         /** Convert selection info to projections */
@@ -2398,6 +2458,8 @@ declare module powerbi.data {
         visitArithmetic(orig: SQArithmeticExpr): SQExpr;
         visitScopedEval(orig: SQScopedEvalExpr): SQExpr;
         visitWithRef(orig: SQWithRefExpr): SQExpr;
+        visitTransformTableRef(orig: SQTransformTableRefExpr): SQExpr;
+        visitTransformOutputRoleRef(orig: SQTransformOutputRoleRefExpr): SQExpr;
         visitFillRule(orig: SQFillRuleExpr): SQExpr;
         visitLinearGradient2(origGradient2: LinearGradient2Definition): LinearGradient2Definition;
         visitLinearGradient3(origGradient3: LinearGradient3Definition): LinearGradient3Definition;
@@ -2514,6 +2576,8 @@ declare module powerbi.data {
         static isSelectRef(expr: SQExpr): expr is SQSelectRefExpr;
         static isScopedEval(expr: SQExpr): expr is SQScopedEvalExpr;
         static isWithRef(expr: SQExpr): expr is SQWithRefExpr;
+        static isTransformTableRef(expr: SQExpr): expr is SQTransformTableRefExpr;
+        static isTransformOutputRoleRef(expr: SQExpr): expr is SQTransformOutputRoleRefExpr;
         static isResourcePackageItem(expr: SQExpr): expr is SQResourcePackageItemExpr;
         getMetadata(federatedSchema: FederatedConceptualSchema): SQExprMetadata;
         getDefaultAggregate(federatedSchema: FederatedConceptualSchema, forceAggregation?: boolean): QueryAggregateFunction;
@@ -2563,6 +2627,8 @@ declare module powerbi.data {
         WithRef = 26,
         Percentile = 27,
         SelectRef = 28,
+        TransformTableRef = 29,
+        TransformOutputRoleRef = 30,
     }
     interface SQExprMetadata {
         kind: FieldKind;
@@ -2761,6 +2827,17 @@ declare module powerbi.data {
         constructor(packageName: string, packageType: number, itemName: string);
         accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
     }
+    class SQTransformTableRefExpr extends SQExpr {
+        source: string;
+        constructor(source: string);
+        accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+    }
+    class SQTransformOutputRoleRefExpr extends SQExpr {
+        role: string;
+        transform: string;
+        constructor(role: string, transform?: string);
+        accept<T, TArg>(visitor: ISQExprVisitorWithArg<T, TArg>, arg?: TArg): T;
+    }
     /** Provides utilities for creating & manipulating expressions. */
     module SQExprBuilder {
         function entity(schema: string, entity: string, variable?: string): SQEntityExpr;
@@ -2775,6 +2852,8 @@ declare module powerbi.data {
         function hierarchy(source: SQExpr, hierarchy: string): SQHierarchyExpr;
         function propertyVariationSource(source: SQExpr, name: string, property: string): SQPropertyVariationSourceExpr;
         function hierarchyLevel(source: SQExpr, level: string): SQHierarchyLevelExpr;
+        function transformTableRef(source: string): SQTransformTableRefExpr;
+        function transformOutputRoleRef(source: string, transform?: string): SQTransformOutputRoleRefExpr;
         function and(left: SQExpr, right: SQExpr): SQExpr;
         function between(arg: SQExpr, lower: SQExpr, upper: SQExpr): SQBetweenExpr;
         function inExpr(args: SQExpr[], values: SQExpr[][]): SQInExpr;
@@ -2844,6 +2923,8 @@ declare module powerbi.data {
         visitArithmetic(expr: SQArithmeticExpr): SQExpr;
         visitScopedEval(expr: SQScopedEvalExpr): SQExpr;
         visitWithRef(expr: SQWithRefExpr): SQExpr;
+        visitTransformTableRef(expr: SQTransformTableRefExpr): SQExpr;
+        visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): SQExpr;
         private validateOperandsAndTypeForStartOrContains(left, right);
         private validateArithmeticTypes(left, right);
         private validateCompatibleType(left, right);
@@ -2901,6 +2982,7 @@ declare module powerbi.data {
         private rewriteNamedSQExpressions(expressions, from);
         rewriteOrderBy(orderByItems: SQSortDefinition[], from: SQFrom): SQSortDefinition[];
         rewriteWhere(whereItems: SQFilter[], from: SQFrom): SQFilter[];
+        rewriteTransform(transformItems: SQTransform[], from: SQFrom): SQTransform[];
     }
 }
 
@@ -2931,6 +3013,27 @@ declare module powerbi.data {
     interface SQSourceRenames {
         [from: string]: string;
     }
+    interface SQTransform {
+        name: string;
+        algorithm: string;
+        input: SQTransformInput;
+        output: SQTransformOutput;
+    }
+    interface SQTransformInput {
+        parameters: NamedSQExpr[];
+        table?: SQTransformTable;
+    }
+    interface SQTransformOutput {
+        table?: SQTransformTable;
+    }
+    interface SQTransformTable {
+        name: string;
+        columns: SQTransformTableColumn[];
+    }
+    interface SQTransformTableColumn {
+        role?: string;
+        expression: NamedSQExpr;
+    }
     /**
      * Represents a semantic query that is:
      * 1) Round-trippable with a JSON QueryDefinition.
@@ -2944,9 +3047,10 @@ declare module powerbi.data {
         private orderByItems;
         private selectItems;
         private groupByItems;
-        constructor(from: SQFrom, where: SQFilter[], orderBy: SQSortDefinition[], select: NamedSQExpr[], groupBy: NamedSQExpr[]);
+        private transformItems;
+        constructor(from: SQFrom, where: SQFilter[], orderBy: SQSortDefinition[], select: NamedSQExpr[], groupBy: NamedSQExpr[], transformItems: SQTransform[]);
         static create(): SemanticQuery;
-        private static createWithTrimmedFrom(from, where, orderBy, select, groupBy);
+        private static createWithTrimmedFrom(from, where, transform, orderBy, select, groupBy);
         from(): SQFrom;
         /** Returns a query equivalent to this, with the specified selected items. */
         select(values: NamedSQExpr[]): SemanticQuery;
@@ -2960,6 +3064,8 @@ declare module powerbi.data {
         removeSelect(expr: SQExpr): SemanticQuery;
         /** Removes the given expression from order by. */
         removeOrderBy(expr: SQExpr): SemanticQuery;
+        /** Removes the given expression from transforms. */
+        removeTransform(transform: SQTransform): SemanticQuery;
         selectNameOf(expr: SQExpr): string;
         setSelectAt(index: number, expr: SQExpr): SemanticQuery;
         /** Adds a the expression to the select clause. */
@@ -2983,6 +3089,11 @@ declare module powerbi.data {
         private getWhere();
         private setWhere(values);
         addWhere(filter: SemanticFilter): SemanticQuery;
+        /** Returns a query equivalent to this, with the specified transform items. */
+        transforms(transforms: SQTransform[]): SemanticQuery;
+        transforms(): SQTransform[];
+        private getTransforms();
+        private setTransforms(transforms);
         rewrite(exprRewriter: ISQExprVisitor<SQExpr>): SemanticQuery;
     }
     /** Represents a semantic filter condition.  Round-trippable with a JSON FilterDefinition.  Instances of this class are immutable. */
@@ -3027,6 +3138,20 @@ declare module powerbi.data {
         rewriteFilter(filter: SQFilter): SQFilter;
         rewriteArray(exprs: SQExpr[]): SQExpr[];
         static rewrite(expr: SQExpr, from: SQFrom): SQExpr;
+    }
+}
+
+declare module powerbi.data {
+    module SQFilter {
+        /**
+         * Returns true if leftFilter and rightFilter have the same target and condition.
+         */
+        function equals(leftFilter: SQFilter, rightFilter: SQFilter): boolean;
+        /**
+         * Returns true if leftFilter and rightFilter have the same target.
+         */
+        function targetsEqual(leftFilter: SQFilter, rightFilter: SQFilter): boolean;
+        function contains(filters: SQFilter[], searchTarget: SQFilter): boolean;
     }
 }
 

@@ -118,21 +118,16 @@ module powerbi {
 
         public format(value: number, format: string, decimals?: number, trailingZeros?: boolean): string {
             debug.assert(typeof (value) === "number", "value must be a number");
-            if (this.isFormatSupported(format)) {
-                decimals = this.getNumberOfDecimalsForFormatting(format, decimals);
-
-                if (this.hasScientitifcFormat(format)) {
-                    return this.formatHelper(value, '', format, decimals, trailingZeros);
-                }
-                if (this.isScalingUnit() && this.shouldRespectScalingUnit(format)) {
-                    return this.formatHelper(this.displayUnit.project(value), this.displayUnit.labelFormat, format, decimals, trailingZeros);
-                }
-                if (decimals != null) {
-                    return this.formatHelper(value, '', format, decimals, trailingZeros);
-                }
+            
+            decimals = this.getNumberOfDecimalsForFormatting(format, decimals);
+            let nonScientificFormat = '';
+            
+            if (this.isFormatSupported(format) && !this.hasScientitifcFormat(format) && this.isScalingUnit() && this.shouldRespectScalingUnit(format)) {
+                value = this.displayUnit.project(value);
+                nonScientificFormat = this.displayUnit.labelFormat;
             }
             
-            return formattingService.formatValue(value, format);
+            return this.formatHelper(value, nonScientificFormat, format, decimals, trailingZeros);    
         }
 
         public isFormatSupported(format: string): boolean {

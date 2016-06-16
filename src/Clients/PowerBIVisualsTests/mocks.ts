@@ -490,6 +490,7 @@ module powerbitests.mocks {
         public handleClearSelection(): void { }
         public toggleSelectionModeInversion(): boolean { return true; }
         public persistSelectionFilter(filterPropertyIdentifier: powerbi.DataViewObjectPropertyIdentifier): void { }
+        public persistSelfFilter(filterPropertyIdentifier: powerbi.DataViewObjectPropertyIdentifier, selfFilter: SemanticFilter): void { }
     }
 
     export class FilterAnalyzerMock implements powerbi.AnalyzedFilter {

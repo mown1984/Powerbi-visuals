@@ -1604,7 +1604,8 @@ module powerbi.visuals {
                         }
                         for (let dataPoint of data.dataPoints) {
                             if (!dataPoint.location) {
-                                if (!_.isEmpty(dataPoint.categoryValue)) { // If we don't have a location, but the category string is empty, skip geocoding so we don't geocode null/empty string
+                                let categoryValue = dataPoint.categoryValue;
+                                if (categoryValue != null && categoryValue !== "") { // If we don't have a location, but the category value is non-null and not an empty string
                                     if (isFilledMap)
                                         this.enqueueGeoCodeAndGeoShape(dataPoint, params);
                                     else
@@ -1700,7 +1701,7 @@ module powerbi.visuals {
                     // Create data points
                     for (let categoryIndex = 0, categoryCount = reader.getCategoryCount(); categoryIndex < categoryCount; categoryIndex++) {
                         // Get category information
-                        let categoryValue = undefined;
+                        let categoryValue: string = undefined;
                         // The category objects should come from whichever category exists; in the case of a composite category, the objects should be the same for
                         //   both categories, so we only need to obtain them from one role.
                         let categoryObjects = hasCategoryGroup ? reader.getCategoryObjects('Category', categoryIndex) : reader.getCategoryObjects('Y', categoryIndex);
@@ -1713,10 +1714,10 @@ module powerbi.visuals {
                         let gradientTooltipItem: TooltipDataItem;
                         if (hasCategoryGroup) {
                             // Set category value
-                            categoryValue = reader.getCategoryValue('Category', categoryIndex);
+                            categoryValue = converterHelper.formatFromMetadataColumn(reader.getCategoryValue('Category', categoryIndex), reader.getCategoryMetadataColumn('Category'), formatStringProp);
                             categoryTooltipItem = {
                                 displayName: reader.getCategoryDisplayName('Category'),
-                                value: converterHelper.formatFromMetadataColumn(categoryValue, reader.getCategoryMetadataColumn('Category'), formatStringProp),
+                                value: categoryValue,
                             };
 
                             // Create location from latitude and longitude if they exist as values

@@ -29,6 +29,8 @@
 module powerbi.visuals {
     import PixelConverter = jsCommon.PixelConverter;
     import SlicerOrientation = slicerOrientation.Orientation;
+    import SemanticFilter = powerbi.data.SemanticFilter;
+    import SQExpr = powerbi.data.SQExpr;
 
     export interface CheckboxStyle {
         transform: string;
@@ -36,7 +38,7 @@ module powerbi.visuals {
         'font-size': string;
     }
 
-    export class VerticalSlicerRenderer implements ISlicerRenderer, SlicerDefaultValueHandler {
+    export class VerticalSlicerRenderer implements ISlicerRenderer, SlicerValueHandler {
         private element: JQuery;
         private currentViewport: IViewport;
         private dataView: DataView;
@@ -61,14 +63,29 @@ module powerbi.visuals {
             this.domHelper = options.domHelper;
         }
 
-        // SlicerDefaultValueHandler
+        // SlicerValueHandler
         public getDefaultValue(): data.SQConstantExpr {
             if (this.data && this.data.defaultValue)
                 return <data.SQConstantExpr>this.data.defaultValue.value;
         }
 
-        public getIdentityFields(): data.SQExpr[] {
+        public getIdentityFields(): SQExpr[] {
             return SlicerUtil.DefaultValueHandler.getIdentityFields(this.dataView);
+        }
+
+        public getUpdatedSelfFilter(searchKey: string): SemanticFilter {
+            if (_.isEmpty(searchKey) || this.data.searchKey === searchKey)
+                return;
+            
+            let metadata = this.dataView && this.dataView.metadata;
+            if (!metadata)
+                return;
+
+            debug.assert(_.size(metadata.columns) === 1, 'slicer should not have more than one column based on the capability');
+
+            let column = _.first(metadata.columns);
+            if (column && column.expr)
+                return SlicerUtil.getContainsFilter(<SQExpr>column.expr, searchKey);
         }
 
         public init(slicerInitOptions: SlicerInitOptions): IInteractivityService {
@@ -203,7 +220,9 @@ module powerbi.visuals {
                 // Style Slicer Header
                 let domHelper = this.domHelper;
                 domHelper.styleSlicerHeader(this.header, settings, data.categorySourceName);
-                this.header.attr('title', data.categorySourceName);
+
+                let headerText = this.header.select(SlicerUtil.Selectors.TitleHeader.selector);
+                headerText.attr('title', data.categorySourceName);
                 
                 let labelText = rowSelection.selectAll(SlicerUtil.Selectors.LabelText.selector);
                 labelText.text((d: SlicerDataPoint) => {
@@ -233,6 +252,11 @@ module powerbi.visuals {
                     let slicerItemInputs = body.selectAll(Selectors.Input.selector);
                     let slicerClear = this.header.select(SlicerUtil.Selectors.Clear.selector);
                     let searchInput = this.header.select('input');
+                    if (!searchInput.empty()) {
+                        searchInput
+                            .property('value', data.searchKey);
+                    }
+
                     let behaviorOptions: VerticalSlicerBehaviorOptions = {
                         dataPoints: data.slicerDataPoints,
                         slicerContainer: this.container,
@@ -243,6 +267,7 @@ module powerbi.visuals {
                         interactivityService: interactivityService,
                         settings: data.slicerSettings,
                         searchInput: searchInput,
+                        slicerValueHandler: this,
                     };
 
                     let orientationBehaviorOptions: SlicerOrientationBehaviorOptions = {
@@ -254,7 +279,7 @@ module powerbi.visuals {
                         data.slicerDataPoints,
                         this.behavior,
                         orientationBehaviorOptions,
-                        { overrideSelectionFromData: true, hasSelectionOverride: data.hasSelectionOverride, slicerDefaultValueHandler: this });
+                        { overrideSelectionFromData: true, hasSelectionOverride: data.hasSelectionOverride, slicerValueHandler: this });
                     SlicerWebBehavior.styleSlicerItems(rowSelection.select(Selectors.Input.selector), data.hasSelectionOverride, interactivityService.isSelectionModeInverted());
                 }
                 else {

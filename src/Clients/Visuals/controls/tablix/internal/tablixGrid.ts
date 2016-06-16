@@ -211,12 +211,8 @@ module powerbi.visuals.controls.internal {
                 return;
             }
 
-            // Ceiling the offset because setting a fraction Width on the TD will ceil it
-            // We need to let the TD and the OuterDiv to align in order for Borders to touch
-            let offsetInPixels = Math.ceil(- width * offset);
-            this._horizontalOffset = offsetInPixels;
-            this._presenter.onHorizontalScroll(width, offsetInPixels);
-            this.setContainerWidth(width + offsetInPixels);
+            this._presenter.onHorizontalScroll(width, offset);
+            this.setContainerWidth(width + offset);
         }
 
         public setContainerWidth(value: number): void {
@@ -440,7 +436,7 @@ module powerbi.visuals.controls.internal {
             // Invoke resize callback
             let gridPresenter = this.owner._presenter;
             if (gridPresenter)
-                gridPresenter.invokeColumnResizeEndCallback(this._columnIndex, width);
+                gridPresenter.invokeColumnResizeEndCallback(this, width);
         }
 
         public fixSize(): void {
@@ -472,7 +468,7 @@ module powerbi.visuals.controls.internal {
         }
 
         public getCellIContentContextualWidth(cell: TablixCell): number {
-            return this._presenter.getCellContentWidth(cell);
+            return this._presenter.getCellWidth(cell);
         }
 
         public getCellSpanningWidthWithScrolling(cell: ITablixCell, tablixGrid: TablixGrid): number {
@@ -492,7 +488,7 @@ module powerbi.visuals.controls.internal {
             let offset = 0;
 
             if (this._realizedColumnHeaders.length > 0)
-                offset = this._realizedColumnHeaders[this._realizedColumnHeaders.length - 1].horizontalOffset;
+                offset = _.last(this._realizedColumnHeaders).horizontalOffset;
 
             return offset;
         }
@@ -508,30 +504,35 @@ module powerbi.visuals.controls.internal {
             if (this._sizeFixed)
                 return this._containerWidth;
 
+            // Check for persisted width
+            let persistedWidth: number = this._presenter.getPersistedWidth();
+            if (persistedWidth != null) {
+                return this._containerWidth = persistedWidth;
+            }
+
+            // If no persisted width, we get the maximum width of the visible cells
             let contentWidth: number = 0;
 
-            for (let cell of this._realizedColumnHeaders){
+            for (let cell of this._realizedColumnHeaders) {
                 if (cell.colSpan === 1)
-                    contentWidth = Math.max(contentWidth, this._presenter.getCellContentWidth(cell));
+                    contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(cell));
             }
 
             for (let cell of this._realizedRowHeaders) {
                 if (cell.colSpan === 1)
-                    contentWidth = Math.max(contentWidth, this._presenter.getCellContentWidth(cell));
+                    contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(cell));
             }
 
             for (let cell of this._realizedCornerCells) {
-                contentWidth = Math.max(contentWidth, this._presenter.getCellContentWidth(cell));
+                contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(cell));
             }
 
             for (let cell of this._realizedBodyCells) {
-                contentWidth = Math.max(contentWidth, this._presenter.getCellContentWidth(cell));
+                contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(cell));
             }
 
-            if (this._footerCell !== null) {
-                if (this._footerCell.colSpan === 1)
-                    contentWidth = Math.max(contentWidth, this._presenter.getCellContentWidth(this._footerCell));
-            }
+            if (this._footerCell !== null && this._footerCell.colSpan === 1)
+                contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(this._footerCell));
 
             return this._containerWidth = contentWidth;
         }

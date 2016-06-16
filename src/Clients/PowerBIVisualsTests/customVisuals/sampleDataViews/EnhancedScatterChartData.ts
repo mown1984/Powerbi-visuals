@@ -28,45 +28,97 @@
 
 module powerbitests.customVisuals.sampleDataViews {
     import ValueType = powerbi.ValueType;
+    import EnhancedScatterChart = powerbi.visuals.samples.EnhancedScatterChart;
 
     export class EnhancedScatterChartData extends DataViewBuilder {
-        public static ColumnCategory: string = "Date";
-        public static ColumnSeries: string = "Country";
-        public static ColumnX: string = "X";
-        public static ColumnY: string = "Y";
-        public static ColumnSize: string = "Size";
+        public static ColumnCategoryDisplayName: string = "Date";
+        public static ColumnSeriesDisplayName: string = "Country";
+
+        public static ColumnCategory: string = EnhancedScatterChart.ColumnCategory;
+        public static ColumnX: string = EnhancedScatterChart.ColumnX;
+        public static ColumnY: string = EnhancedScatterChart.ColumnY;
+        public static ColumnSize: string = EnhancedScatterChart.ColumnSize;
+        public static ColumnColorFill: string = EnhancedScatterChart.ColumnColorFill;
+        public static ColumnImage: string = EnhancedScatterChart.ColumnImage;
+        public static ColumnBackdrop: string = EnhancedScatterChart.ColumnBackdrop;
+
+        public static DefaultSetOfColumns: string[] = [
+            EnhancedScatterChartData.ColumnCategoryDisplayName,
+            EnhancedScatterChartData.ColumnSeriesDisplayName,
+            EnhancedScatterChartData.ColumnX,
+            EnhancedScatterChartData.ColumnY,
+            EnhancedScatterChartData.ColumnSize
+        ];
 
         public valuesCategory: Date[] = helpers.getDateYearRange(new Date(2016, 0, 1), new Date(2019, 0, 10), 1);
-        public valuesSeries: string[] = ["Canada", "United States", "Russia"];
+
+        public valuesSeries: string[] = [
+            "Access",
+            "OneNote",
+            "Outlook"
+        ];
+
         public valuesX: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 100, 1000);
         public valuesY: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 100, 1000);
         public valuesSize: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 10, 20);
 
-        public getDataView(columnNames?: string[]): powerbi.DataView {
+        public colorValues: string[] = ["red", "green", "blue"];
+
+        public imageValues: string[] = [
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/reports/ImageViewer/Microsoft_Access.png",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/reports/ImageViewer/Microsoft_OneNote.png",
+            "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/reports/ImageViewer/Microsoft_Outlook.png"
+        ];
+
+        public getDataView(columnNames: string[] = EnhancedScatterChartData.DefaultSetOfColumns): powerbi.DataView {
             return this.createCategoricalDataViewBuilder([
                 {
                     source: {
-                        displayName: EnhancedScatterChartData.ColumnCategory,
-                        roles: { Category: true },
+                        displayName: EnhancedScatterChartData.ColumnCategoryDisplayName,
+                        roles: { [EnhancedScatterChartData.ColumnCategory]: true },
                         type: ValueType.fromDescriptor({ dateTime: true })
                     },
                     values: this.valuesCategory
                 },
                 {
                     isGroup: true,
-                    source: { 
-                        displayName: EnhancedScatterChartData.ColumnSeries,
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnSeriesDisplayName,
                         type: ValueType.fromDescriptor({ text: true })
                     },
                     values: this.valuesSeries,
+                },
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnColorFill,
+                        roles: { [EnhancedScatterChartData.ColumnColorFill]: true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.colorValues
+                },
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnImage,
+                        roles: { [EnhancedScatterChartData.ColumnImage]: true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.imageValues
+                },
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnBackdrop,
+                        roles: { [EnhancedScatterChartData.ColumnBackdrop]: true },
+                        type: ValueType.fromDescriptor({ text: true })
+                    },
+                    values: this.imageValues
                 }
-                ],[
+            ], [
                 {
                     source: {
                         displayName: EnhancedScatterChartData.ColumnX,
                         format: '#,0.00',
                         isMeasure: true,
-                        roles: { 'X': true },
+                        roles: { [EnhancedScatterChartData.ColumnX]: true },
                     },
                     values: this.valuesX
                 },
@@ -75,7 +127,7 @@ module powerbitests.customVisuals.sampleDataViews {
                         displayName: EnhancedScatterChartData.ColumnY,
                         format: '#,0',
                         isMeasure: true,
-                        roles: { 'Y': true },
+                        roles: { [EnhancedScatterChartData.ColumnY]: true },
                     },
                     values: this.valuesY
                 },
@@ -84,10 +136,11 @@ module powerbitests.customVisuals.sampleDataViews {
                         displayName: EnhancedScatterChartData.ColumnSize,
                         format: '#,0',
                         isMeasure: true,
-                        roles: { 'Size': true },
+                        roles: { [EnhancedScatterChartData.ColumnSize]: true },
                     },
                     values: this.valuesSize
-                }], columnNames).build();
+                }
+            ], columnNames).build();
         }
     }
 }

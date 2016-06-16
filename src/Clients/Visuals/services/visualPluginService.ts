@@ -78,6 +78,8 @@ module powerbi.visuals {
 
         sunburstVisualEnabled?: boolean;
 
+        shapeMapVisualEnabled?: boolean;
+
         filledMapDataLabelsEnabled?: boolean;
 
         lineChartLabelDensityEnabled?: boolean;
@@ -87,22 +89,17 @@ module powerbi.visuals {
          */
         mapCurrentLocationEnabled?: boolean;
 
-        /**
-         * Enables conditional formatting of the background color of cells for table visuals.
-         */
-        conditionalFormattingEnabled?: boolean;
-
         tooltipBucketEnabled?: boolean;
-        
+
         /**
-         * Load more data for Cartesian charts (column, bar, line, and combo). 
+         * Load more data for Cartesian charts (column, bar, line, and combo).
          */
         cartesianLoadMoreEnabled?: boolean;
     }
 
     export module visualPluginFactory {
         export class VisualPluginService implements IVisualPluginService {
-            
+
             private plugins: jsCommon.IStringDictionary<IVisualPlugin>;
             protected featureSwitches: MinervaVisualFeatureSwitches;
 

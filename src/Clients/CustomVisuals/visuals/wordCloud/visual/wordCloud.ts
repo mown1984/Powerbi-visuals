@@ -408,6 +408,8 @@ module powerbi.visuals.samples {
 
         private static RenderDelay: number = 50;
 
+        private static MinDelay: number = 10;
+
         private static DefaultMargin: IMargin = {
             top: 10,
             right: 10,
@@ -455,6 +457,10 @@ module powerbi.visuals.samples {
 
         private visualUpdateOptions: VisualUpdateOptions;
 
+        private isUpdating: boolean;
+        private isSingleSentence: boolean;
+        private incomingUpdateOptions: VisualUpdateOptions;
+
         constructor(options?: WordCloudConstructorOptions) {
             if (options) {
                 this.svg = options.svg || this.svg;
@@ -463,6 +469,7 @@ module powerbi.visuals.samples {
                 if (options.animator)
                     this.animator = options.animator;
             }
+            this.isUpdating = false;
         }
 
         public init(options: VisualInitOptions): void {
@@ -1067,6 +1074,9 @@ module powerbi.visuals.samples {
 
         private getReducedText(texts: WordCloudText[]): WordCloudText[] {
             let brokenStrings: WordCloudText[] = [];
+
+            texts.length === 1 ? this.isSingleSentence = true : this.isSingleSentence = false;
+
             brokenStrings = this.getBrokenWords(texts);
 
             return brokenStrings.reduce((previousValue: WordCloudText[], currentValue: WordCloudText) => {
@@ -1186,6 +1196,12 @@ module powerbi.visuals.samples {
             minFontSize = Math.abs(this.parseNumber(this.settings.minFontSize, WordCloud.DefaultSettings.minFontSize));
             maxFontSize = Math.abs(this.parseNumber(this.settings.maxFontSize, WordCloud.DefaultSettings.maxFontSize));
 
+            if (maxFontSize > this.layout.viewportIn.width / 2)
+                maxFontSize = this.layout.viewportIn.width / 2;
+
+            if (this.isSingleSentence)
+                return maxFontSize;
+
             if (minFontSize > maxFontSize) {
                 let buffer: number = minFontSize;
 
@@ -1205,9 +1221,12 @@ module powerbi.visuals.samples {
                 }
             }
 
-            fontSize = weight > minValue
-                ? (maxFontSize * (weight - minValue)) / (maxValue - minValue)
-                : 0;
+            if (weight > minValue) {
+                fontSize = (maxValue - minValue) !== 0
+                    ? (maxFontSize * (weight - minValue)) / (maxValue - minValue)
+                    : 0;
+            } else
+                fontSize = 0;
 
             fontSize = (fontSize * 100) / maxFontSize;
 
@@ -1262,32 +1281,33 @@ module powerbi.visuals.samples {
                 !(visualUpdateOptions.viewport.width >= 0))
                 return;
 
-            this.visualUpdateOptions = visualUpdateOptions;
-
-            this.layout.viewport = this.visualUpdateOptions.viewport;
-            let dataView: DataView = visualUpdateOptions.dataViews[0];
-
-            if (this.layout.viewportInIsZero)
-                return;
-
-            this.durationAnimations = getAnimationDuration(
-                this.animator,
-                visualUpdateOptions.suppressAnimations);
-            this.UpdateSize();
-
-            this.data = this.converter(dataView);
-            if (!this.data)
-                return;
-
-            this.settings = this.data.settings;
-            this.wordCloudTexts = this.data.texts;
-
-            this.computePositions(
-                this.getWords(this.getReducedText(this.data.texts)),
-                (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
-
             if (visualUpdateOptions !== this.visualUpdateOptions)
-                this.update(this.visualUpdateOptions);
+                this.incomingUpdateOptions = visualUpdateOptions;
+
+            if (!this.isUpdating && (this.incomingUpdateOptions !== this.visualUpdateOptions)) {
+                this.visualUpdateOptions = this.incomingUpdateOptions;
+                this.layout.viewport = this.visualUpdateOptions.viewport;
+                let dataView: DataView = visualUpdateOptions.dataViews[0];
+
+                if (this.layout.viewportInIsZero)
+                    return;
+
+                this.durationAnimations = getAnimationDuration(
+                    this.animator,
+                    visualUpdateOptions.suppressAnimations);
+                this.UpdateSize();
+
+                this.data = this.converter(dataView);
+                if (!this.data)
+                    return;
+
+                this.settings = this.data.settings;
+                this.wordCloudTexts = this.data.texts;
+
+                this.computePositions(
+                    this.getWords(this.getReducedText(this.data.texts)),
+                    (wordCloudDataView: WordCloudDataView) => this.render(wordCloudDataView));
+            }
         }
 
         private UpdateSize(): void {
@@ -1331,7 +1351,7 @@ module powerbi.visuals.samples {
             this.wordsSelection = wordElements.data(wordCloudDataView.data);
 
             (<D3.UpdateSelection>this.animation(this.wordsSelection, this.durationAnimations))
-                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`)
+                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)} rotate(${item.rotate})`)
                 .style({
                     "font-size": ((item: WordCloudDataPoint): string => `${item.size}${WordCloud.Size}`),
                     "fill": ((item: WordCloudDataPoint): string => item.color),
@@ -1340,7 +1360,7 @@ module powerbi.visuals.samples {
             animatedWordSelection = this.wordsSelection
                 .enter()
                 .append("svg:text")
-                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)}rotate(${item.rotate})`)
+                .attr("transform", (item: WordCloudDataPoint) => `${SVGUtil.translate(item.x, item.y)} rotate(${item.rotate})`)
                 .style("font-size", "1px");
 
             this.wordsSelection.on("click", (item: WordCloudDataPoint) => {
@@ -1367,6 +1387,10 @@ module powerbi.visuals.samples {
                 if (this.root)
                     this.scaleMainView(wordCloudDataView, wordElements[0].length && this.durationAnimations);
 
+                this.isUpdating = false;
+
+                if (this.incomingUpdateOptions !== this.visualUpdateOptions)
+                    this.update(this.incomingUpdateOptions);
             }, this.durationAnimations + WordCloud.RenderDelay);
         }
 
@@ -1393,6 +1417,13 @@ module powerbi.visuals.samples {
         private setOpacity(element: D3.Selection, opacityValue: number, disableAnimation: boolean = false): void {
             let elementAnimation = disableAnimation ? element : this.animation(element);
             elementAnimation.style("fill-opacity", opacityValue);
+
+            if (this.main) {//TODO: This construction fixes bug #6343.
+                this.main.style("line-height", "14px");
+
+                this.animation(this.main, 0, this.durationAnimations + WordCloud.MinDelay)
+                    .style("line-height", "15px");
+            }
         }
 
         private scaleMainView(wordCloudDataView: WordCloudDataView, durationAnimation: number = 0): void {
@@ -1420,8 +1451,11 @@ module powerbi.visuals.samples {
             height2 = this.layout.margin.top + (mainSVGRect.y * scale * -1)
                 + (this.layout.viewportIn.height - (mainSVGRect.height * scale)) / 2;
 
-            (<D3.Selection>this.animation(this.main, durationAnimation))
-                .attr("transform", `${SVGUtil.translate(width2, height2)}scale(${scale})`);
+            this.main.style("line-height", "5px");//TODO: This construction fixes bug #6343.
+
+            this.animation(this.main, durationAnimation)
+                .attr("transform", `${SVGUtil.translate(width2, height2)} scale(${scale})`)
+                .style("line-height", "10px");//TODO: This construction fixes bug #6343.
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
@@ -1510,9 +1544,11 @@ module powerbi.visuals.samples {
         private animation(
             element: D3.Selection,
             duration: number = 0,
+            delay: number = 0,
             callback?: (data: any, index: number) => void): D3.Transition.Transition | D3.Selection {
             return element
                 .transition()
+                .delay(delay)
                 .duration(duration)
                 .each("end", callback);
         }
@@ -1527,7 +1563,7 @@ module powerbi.visuals.samples {
         export function hexToRgb(hex): string {
             // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
             let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-            hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+            hex = hex.replace(shorthandRegex, function(m, r, g, b) {
                 return r + r + g + g + b + b;
             });
 

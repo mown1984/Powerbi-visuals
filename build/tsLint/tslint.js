@@ -28,32 +28,46 @@
 
 var gulp = require("gulp"),
     gulpTsLint = require("gulp-tslint"),
-    lodash = require("lodash"),
-    path = require("path"),
+    thr = require("through2"),
     config = require("../options"),
-    utils = require("../utils.js");
+    gutils = require("gulp-util"),
+    path = require("path");
 
 /**
  * Runs TypeScript linter for given paths.
  * 
  * @param {String} projectPath Path of project which will be linted. Used as CWD.
- * @param {String | Array} includePaths Paths where linter will be searching .ts files.
- * @param {String | Array} excludePaths Excluded paths.
+ * @param {String | Array} paths Paths where linter will be searching .ts files.
+ * @param {Object} options  
+ * @param {Object} options.noLog - to disable logging  
  */
-function tslint(projectPath, includePaths, excludePaths, options) {
-    var paths,
-        reportOptions = lodash.defaults(options || {}, {
-            emitError: config.emitTsLintError || false,
-        }),
-        includePaths = includePaths || "/**/*.ts",
-        paths = utils.getPaths(includePaths, excludePaths);
+function tslint(projectPath, paths, options) {
+    var options = options || {};
+
+    options.noLog = options.noLog === undefined ? config.noLog : options.noLog;
 
     return gulp.src(paths, { cwd: projectPath })
+        .pipe(thr.obj(function (file, enc, cb) {
+
+            // filtering files to pass only ts 
+            if (path.extname(file.path) === ".ts") {
+
+                if (!options.noLog) {
+                    gutils.log(path.relative("src/Clients/", file.path));
+                }
+                
+                cb(null, file);
+            } else {
+                cb();
+            }
+        }))
         .pipe(gulpTsLint({
             rulesDirectory: path.join(__dirname, "./custom_rules"),
-            configuration: path.join(__dirname, "../../src/Clients/tslint.json")
+            configuration: require("./tslint.json"),
         }))
-        .pipe(gulpTsLint.report("full", reportOptions));
+        .pipe(gulpTsLint.report("full", {
+            emitError: true,
+        }));
 }
 
 module.exports = tslint;

@@ -2989,8 +2989,8 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   vertical-align: top;
   max-width: 13px;
   padding-left: 4px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 .tooltip-container div.tooltip-title-cell {
   display: table-cell;
@@ -2999,8 +2999,8 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   text-transform: uppercase;
   max-width: 260px;
   padding-left: 12px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   color: #A6A6A6;
 }
 .tooltip-container div.tooltip-value-cell {
@@ -3008,8 +3008,8 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   word-wrap: break-word;
   font-family: 'Segoe UI', 'wf_segoe-ui_normal', helvetica, arial, sans-serif;
   max-width: 260px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   font-weight: bold;
   color: #FFF;
   letter-spacing: 1px;

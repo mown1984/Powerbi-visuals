@@ -634,6 +634,8 @@ module powerbi.visuals.controls.internal {
         export const CellPaddingLeft: number = 10;
         export const CellPaddingRight: number = 5;
         export const CellPaddingLeftMatrixTotal: number = 5;
+        export const SortIconPadding: number = 5;
+        export const ImageDefaultAspectRatio: number = 1;
         export const FontFamilyCell: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
         export const FontFamilyHeader: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
         export const FontFamilyTotal: string = "'Segoe UI Bold','wf_segoe-ui_bold', helvetica, arial, sans-serif";
@@ -747,10 +749,6 @@ module powerbi.visuals.controls.internal {
             */
             public backColor: string;
             /**
-             * Indicates whether the Cell contains an Image or not. Affecting cell height.
-            */
-            public hasImage: boolean;
-            /**
             * Settings for Borders
             */
             public borders: Surround<EdgeSettings>;
@@ -769,8 +767,6 @@ module powerbi.visuals.controls.internal {
 
                 this.fontColor = "";
                 this.backColor = "";
-
-                this.hasImage = false;
             }
 
             /**

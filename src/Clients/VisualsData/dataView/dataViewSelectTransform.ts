@@ -42,7 +42,18 @@ module powerbi.data {
 
         /** Describes the default value applied to a column, if any. */
         defaultValue?: DefaultValueDefinition;
+        
+        aggregateSources?: DataViewSelectAggregateSources;
     }
+
+    export interface DataViewSelectAggregateSources {
+         min?: DataViewSelectAggregateSource;
+         max?: DataViewSelectAggregateSource;
+    }
+
+    export interface DataViewSelectAggregateSource {
+         index: number;
+    }    
 
     export module DataViewSelectTransform {
         /** Convert selection info to projections */

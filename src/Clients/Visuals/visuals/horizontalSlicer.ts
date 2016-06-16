@@ -41,7 +41,7 @@ module powerbi.visuals {
         },
     };
 
-    export class HorizontalSlicerRenderer implements ISlicerRenderer, SlicerDefaultValueHandler {
+    export class HorizontalSlicerRenderer implements ISlicerRenderer, SlicerValueHandler {
         private element: JQuery;
         private currentViewport: IViewport;
         private data: SlicerData;
@@ -75,7 +75,7 @@ module powerbi.visuals {
             this.dataStartIndex = 0;
         }
 
-        // SlicerDefaultValueHandler
+        // SlicerValueHandler
         public getDefaultValue(): data.SQConstantExpr {
             if (this.data && this.data.defaultValue)
                 return <data.SQConstantExpr>this.data.defaultValue.value;
@@ -83,6 +83,11 @@ module powerbi.visuals {
 
         public getIdentityFields(): data.SQExpr[] {
             return SlicerUtil.DefaultValueHandler.getIdentityFields(this.dataView);
+        }
+
+        public getUpdatedSelfFilter(searchKey: string): data.SemanticFilter {
+            // Search in horizontal Slicer is not implemented.
+            return;
         }
 
         public init(slicerInitOptions: SlicerInitOptions): IInteractivityService {
@@ -263,6 +268,7 @@ module powerbi.visuals {
                     clear: clear,
                     interactivityService: this.interactivityService,
                     settings: data.slicerSettings,
+                    slicerValueHandler: this,
                 };
 
                 let orientationBehaviorOptions: SlicerOrientationBehaviorOptions = {

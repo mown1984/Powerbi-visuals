@@ -59,6 +59,8 @@ module powerbi.data {
         visitResourcePackageItem(expr: SQResourcePackageItemExpr, arg: TArg): T;
         visitScopedEval(expr: SQScopedEvalExpr, arg: TArg): T;
         visitWithRef(expr: SQWithRefExpr, arg: TArg): T;
+        visitTransformTableRef(expr: SQTransformTableRefExpr, arg: TArg): T;
+        visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, arg: TArg): T;
     }
 
     export interface ISQExprVisitor<T> extends ISQExprVisitorWithArg<T, void> {
@@ -179,6 +181,14 @@ module powerbi.data {
         }
         
         public visitWithRef(expr: SQWithRefExpr, arg: TArg): T {
+            return this.visitDefault(expr, arg);
+        }
+
+        public visitTransformTableRef(expr: SQTransformTableRefExpr, arg: TArg): T {
+            return this.visitDefault(expr, arg);
+        }
+
+        public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, arg: TArg): T {
             return this.visitDefault(expr, arg);
         }
 
@@ -354,6 +364,14 @@ module powerbi.data {
         }
         
         public visitWithRef(expr: SQWithRefExpr): void {
+            this.visitDefault(expr);
+        }
+
+        public visitTransformTableRef(expr: SQTransformTableRefExpr): void {
+            this.visitDefault(expr);
+        }
+
+        public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): void {
             this.visitDefault(expr);
         }
 

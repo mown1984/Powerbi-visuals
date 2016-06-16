@@ -54,7 +54,7 @@ module powerbitests {
             ];
             filterPropertyId = {
                 objectName: 'general',
-                propertyName: 'selected'
+                propertyName: 'filter',
             };
             behavior = new MockBehavior(selectableDataPoints, filterPropertyId);
         });
@@ -133,20 +133,13 @@ module powerbitests {
         });
 
         it('Clear selection should reset isInvertedSelectionMode for defaultValue ', () => {
-            let slicerDefaultValueHandler = new MockDefaultValueHandler();
-            interactivityService.bind(
-                selectableDataPoints,
-                behavior,
-                null,
-                {
-                    overrideSelectionFromData: true,
-                    hasSelectionOverride: false,
-                    slicerDefaultValueHandler: slicerDefaultValueHandler,
-                });
+            let valueHandler = new MockSlicerValueHandler();
+            valueHandler.searchKey = '';
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerValueHandler: valueHandler });
             interactivityService.setSelectionModeInverted(true);
             interactivityService.clearSelection();
             expect(interactivityService.isSelectionModeInverted()).toBe(false);
-        });
+        });                                                                                                                                                                
 
         it('Selection sent to host', () => {
             spyOn(host, "onSelect");
@@ -185,13 +178,31 @@ module powerbitests {
         it('persistSelectionFilter calls persistProperties', () => {
             interactivityService.bind(selectableDataPoints, behavior, null);
             spyOn(host, "persistProperties");
+            behavior.bindEvents(null, interactivityService);
             behavior.selectIndexAndPersist(0, false);
+            expect(host.persistProperties).toHaveBeenCalled();
+        });
 
-            let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
-
-            interactivityService.persistSelectionFilter(filterPropertyId);
-
-            expect(host.persistProperties).toHaveBeenCalledWith(changes);
+        it('persistSelfFilter calls persistProperties', () => {
+            let valueHandler = new MockSlicerValueHandler();
+            valueHandler.searchKey = 'apple';
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerValueHandler: valueHandler });
+            spyOn(host, "persistProperties");
+            behavior.bindEvents(null, interactivityService);
+            let selfFilterPropertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
+                objectName: 'general',
+                propertyName: 'selfFilter',
+            };
+            interactivityService.persistSelfFilter(selfFilterPropertyIdentifier, valueHandler.getSelfFilter());
+            expect(host.persistProperties).toHaveBeenCalledWith({
+                merge: [{
+                    objectName: 'general',
+                    selector: undefined,
+                    properties: {
+                        'selfFilter': valueHandler.getSelfFilter(),
+                    }
+                }]
+            });
         });
 
         describe('createChangeForFilterProperty', () => {
@@ -200,30 +211,34 @@ module powerbitests {
             });
 
             it('select a single data point', () => {
-                behavior.selectIndexAndPersist(0, false);
+                behavior.bindEvents(null, interactivityService);
+                spyOn(host, "persistProperties");
+                behavior.selectIndexAndPersist(0, false);      
                 
-                let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
-                
-                expect(changes).toEqual({
+                expect(host.persistProperties).toHaveBeenCalledWith({
                     merge: [{
                         objectName: 'general',
                         selector: undefined,
                         properties: {
-                            'selected': powerbi.data.Selector.filterFromSelector([selectableDataPoints[0].identity.getSelector()], false),
+                            'filter': powerbi.data.Selector.filterFromSelector([selectableDataPoints[0].identity.getSelector()], false),
                         }
                     }]
                 });
             });
 
             it('no selection should result in empty filter', () => {
-                let changes = interactivityService.createChangeForFilterProperty(filterPropertyId);
+                behavior.bindEvents(null, interactivityService);
+                behavior.selectIndexAndPersist(0, false);
 
-                expect(changes).toEqual({
+                // select the same index again to unselect the selected data.
+                spyOn(host, "persistProperties");
+                behavior.selectIndexAndPersist(0, false);
+                expect(host.persistProperties).toHaveBeenCalledWith({
                     remove: [{
                         objectName: 'general',
                         selector: undefined,
                         properties: {
-                            'selected': { },
+                            'filter': { },
                         }
                     }]
                 });
@@ -481,28 +496,39 @@ module powerbitests {
         });
 
         it('Slicer selection with default value', () => {
+            selectableDataPoints[5].selected = true;
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerValueHandler: new MockSlicerValueHandler() });
+            behavior.bindEvents(null, interactivityService);
+
+            let spyCalled = false;
+            spyOn(host, "persistProperties").and.callFake((change: powerbi.VisualObjectInstancesToPersist) => {
+                expect(powerbi.data.SemanticFilter.isDefaultFilter(<powerbi.data.SemanticFilter>change.merge[0].properties['filter'])).toBeTruthy();
+                spyCalled = true;
+            });
+            interactivityService.setDefaultValueMode(true);
             let propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
                 objectName: 'general',
-                propertyName: 'property'
+                propertyName: 'filter'
             };
-            selectableDataPoints[5].selected = true;
-            interactivityService.bind(selectableDataPoints, behavior, null, { slicerDefaultValueHandler: new MockDefaultValueHandler() });
-            interactivityService.setDefaultValueMode(true);
-            let result = (<powerbi.visuals.InteractivityService>interactivityService).createChangeForFilterProperty(propertyIdentifier);
-
-            expect(powerbi.data.SemanticFilter.isDefaultFilter(<powerbi.data.SemanticFilter>result.merge[0].properties['property'])).toBeTruthy();
+            interactivityService.clearSelection();
+            interactivityService.persistSelectionFilter(propertyIdentifier);
+            expect(spyCalled).toBe(true);
         });
 
         it('Slicer selection with any value', () => {
-            let propertyIdentifier: powerbi.DataViewObjectPropertyIdentifier = {
-                objectName: 'general',
-                propertyName: 'property'
-            };
-            interactivityService.bind(selectableDataPoints, behavior, null, { slicerDefaultValueHandler: new MockDefaultValueHandler() });
-            interactivityService.setDefaultValueMode(false);
-            let result = (<powerbi.visuals.InteractivityService>interactivityService).createChangeForFilterProperty(propertyIdentifier);
+            interactivityService.bind(selectableDataPoints, behavior, null, { slicerValueHandler: new MockSlicerValueHandler() });
+            behavior.bindEvents(null, interactivityService);
+            behavior.selectIndexAndPersist(0, false);
+            
+            let spyCalled = false;
+            spyOn(host, "persistProperties").and.callFake((change: powerbi.VisualObjectInstancesToPersist) => {
+                expect(powerbi.data.SemanticFilter.isAnyFilter(<powerbi.data.SemanticFilter>change.merge[0].properties['filter'])).toBeTruthy();
+                spyCalled = true;
+            });
 
-            expect(powerbi.data.SemanticFilter.isAnyFilter(<powerbi.data.SemanticFilter>result.merge[0].properties['property'])).toBeTruthy();
+            // clear the selected value.
+            behavior.selectIndexAndPersist(0, false);
+            expect(spyCalled).toBe(true);
         });
     });
 
@@ -511,13 +537,26 @@ module powerbitests {
         return interactivityService['selectedIds'];
     }
 
-    class MockDefaultValueHandler implements powerbi.visuals.SlicerDefaultValueHandler {
+    class MockSlicerValueHandler implements powerbi.visuals.SlicerValueHandler {
+        private sqExpr = SQExprBuilder.columnRef(SQExprBuilder.entity('s', 'Entity2'), 'Prop2');
+
         public getIdentityFields(): powerbi.data.SQExpr[]{
-            return [SQExprBuilder.columnRef(SQExprBuilder.entity('s', 'Entity2'), 'Prop2')];
+            return [this.sqExpr];
         }
 
-        public getDefaultValue(): powerbi.data.SQConstantExpr{
+        public getDefaultValue(): powerbi.data.SQConstantExpr {
             return SQExprBuilder.integer(2);
         }
+
+        public getUpdatedSelfFilter(searchKey: string): powerbi.data.SemanticFilter {
+            return this.getSelfFilter();
+        }
+
+        public getSelfFilter(): powerbi.data.SemanticFilter {
+            let filterExpr = SQExprBuilder.contains(this.sqExpr, SQExprBuilder.text(this.searchKey));
+            return powerbi.data.SemanticFilter.fromSQExpr(filterExpr);
+        }
+
+        public searchKey: string;
     }
 }

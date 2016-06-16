@@ -67,7 +67,7 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('height'))
                         .toBe(dataView.categorical.categories[0].values.length * defaultCategoryWidth + 'px');
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('width'))
-                        .toBe((visualBuilder.viewport.width - 13) + 'px');
+                        .toBe((visualBuilder.viewport.width - 22) + 'px');
                     done();
                 });
             });
@@ -90,7 +90,7 @@ module powerbitests.customVisuals {
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('height'))
                         .toBe(dataView.categorical.categories[0].values.length * defaultCategoryWidth + 'px');
                     expect(visualBuilder.element.find('.bullet-scroll-region').css('width'))
-                        .toBe((visualBuilder.viewport.width - 13) + 'px');
+                        .toBe((visualBuilder.viewport.width - 22) + 'px');
                     done();
                 });
             });
