@@ -101,6 +101,8 @@ There are many ways in which you can contribute to Power BI visuals:
 * Follow the [Power BI Developer](http://blogs.msdn.com/powerbidev) blog for updates.
 * Follow Power BI on Twitter [@mspowerbi](http://twitter.com/mspowerbi).
 
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
 ## Documentation
 
 *  [Getting started](https://github.com/Microsoft/PowerBI-visuals/wiki)
