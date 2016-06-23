@@ -184,7 +184,7 @@ module powerbitests.slicerHelper {
     export function buildDefaultDataViewMetadata(): powerbi.DataViewMetadata {
         return {
             columns: [
-                { displayName: "Fruit", roles: { "Values": true }, type: ValueType.fromDescriptor({ text: true }) }]
+                { displayName: "Fruit", roles: { "Values": true }, queryName: 'queryName', type: ValueType.fromDescriptor({ text: true }) }]
         };
     }
 

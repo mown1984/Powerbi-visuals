@@ -67,8 +67,15 @@ declare module powerbi {
 
         /**
          * Combines multiple promises into a single promise that is resolved when all of the input promises are resolved.
+         * Rejects immediately if any of the promises fail
          */
         all(promises: IPromise2<any, any>[]): IPromise<any[]>;
+        
+        /**
+         * Combines multiple promises into a single promise that is resolved when all of the input promises are resolved.
+         * Does not resolve until all promises finish (success or failure).
+         */
+        allSettled<T>(promises: IPromise2<any, any>[]): IPromise<IPromiseResult<T>[]>;        
 
         /**
          * Wraps an object that might be a value or a then-able promise into a promise. 
@@ -154,5 +161,10 @@ declare module powerbi {
 
     export interface IResultCallback<T> {
         (result: T, done: boolean): void;
+    }
+    
+    export interface IPromiseResult<T> {
+        type: PromiseResultType;
+        value: T;
     }
 }

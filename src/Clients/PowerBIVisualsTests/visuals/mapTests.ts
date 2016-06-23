@@ -563,6 +563,65 @@ module powerbitests {
             });
         });
 
+        describe("Numeric category", () => {
+            let colorHelper: ColorHelper;
+            let dataBuilder: MapDataBuilder;
+            let dataView: DataView;
+            let geoTaggingAnalyzerService: IGeoTaggingAnalyzerService;
+            let data: MapData;
+            let categoryCount: number;
+            const colors = [
+                { value: "#000000" },
+                { value: "#000001" },
+                { value: "#000002" },
+                { value: "#000003" }
+            ];
+
+            beforeEach(() => {
+                dataBuilder = new MapDataBuilder();
+                dataView = dataBuilder.withNumericCategories().build(false, false);
+                let fillProp = <powerbi.DataViewObjectPropertyIdentifier>{ objectName: "dataPoint", propertyName: "fill" };
+                let palette = new powerbi.visuals.DataColorPalette(colors);
+                colorHelper = new ColorHelper(palette, fillProp);
+                geoTaggingAnalyzerService = powerbi.createGeoTaggingAnalyzerService(mocks.getLocalizedString);
+                data = Map.converter(dataView, colorHelper, geoTaggingAnalyzerService, false);
+                categoryCount = data.dataPoints.length;
+            });
+
+            it("Data point count", () => {
+                expect(data.dataPoints.length).toBe(categoryCount);
+            });
+
+            it("Geocoding category", () => {
+                expect(data.geocodingCategory).toBe('PostalCode');
+            });
+
+            it("Category value", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.categoryValue).toBe(dataBuilder.numericCategoryValuesFormatted[categoryIndex]);
+                }
+            });
+
+            it("Geocode query", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.geocodingQuery).toBe(dataBuilder.numericCategoryValuesFormatted[categoryIndex]);
+                }
+            });
+
+            it("SubDataPoint tooltipInfo", () => {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let dataPoint = data.dataPoints[categoryIndex];
+                    expect(dataPoint.subDataPoints[0].tooltipInfo).toEqual([
+                        {
+                            displayName: dataBuilder.categoryColumn.displayName, value: dataBuilder.numericCategoryValuesFormatted[categoryIndex],
+                        },
+                    ]);
+                }
+            });
+        });
+
         describe("Simple category with measures", () => {
             let colorHelper: ColorHelper;
             let dataBuilder: MapDataBuilder;
@@ -1813,6 +1872,7 @@ module powerbitests {
         public numericCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'zip code', queryName: 'zip coe', roles: { Category: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Integer) };
         public numericCategoryValues = [98033, 98034, 98052];
         public numericColumnExpr: powerbi.data.SQExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'zip code' });
+        public numericCategoryValuesFormatted = ["98033", "98034", "98052"];
         
         public seriesColumn: powerbi.DataViewMetadataColumn = { displayName: 'region', queryName: 'region', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };
         public seriesSameAsCategoryColumn: powerbi.DataViewMetadataColumn = { displayName: 'state', queryName: 'state', roles: { Series: true }, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text) };

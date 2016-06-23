@@ -62,7 +62,7 @@ module powerbi {
 
         public layout(labelDataPoints: LabelDataPoint[], viewport: IViewport, polygonInfoTransform: Transform, redrawDataLabels: boolean): Label[] {
             if (redrawDataLabels || this.labels === undefined) {
-                let labelDataPointsGroup: LabelDataPointsGroup = {
+                let labelDataPointsGroup: LabelDataPointGroup = {
                     labelDataPoints: labelDataPoints,
                     maxNumberOfLabels: labelDataPoints.length
                 };

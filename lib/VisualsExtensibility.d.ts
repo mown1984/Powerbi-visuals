@@ -144,6 +144,7 @@ declare module powerbi.extensibility {
 }
 
 declare module powerbi.extensibility.v100 {
+    function convertLegacyUpdateType(options: powerbi.VisualUpdateOptions): VisualUpdateType;
 }
 
 declare module powerbi.extensibility.v110 {

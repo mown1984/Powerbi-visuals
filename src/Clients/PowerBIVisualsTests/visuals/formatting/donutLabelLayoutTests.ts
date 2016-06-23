@@ -253,6 +253,7 @@ module powerbitests {
         function createDonutLabelDataPoint(text: string, value: number, index: number, isPreferred: boolean = false, startAngle: number = 1, endAngle: number = 10, customLabelSetting: any = null): powerbi.DonutLabelDataPoint {
             let data: powerbi.visuals.DonutDataPoint = {
                 measure: value,
+                originalMeasure: undefined,
                 percentage: undefined,
                 highlightRatio: undefined,
                 label: undefined,

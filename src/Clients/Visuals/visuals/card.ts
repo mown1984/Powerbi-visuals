@@ -87,7 +87,7 @@ module powerbi.visuals {
             value: {
                 textSize: 27,
                 color: '#333333',
-                fontFamily: 'wf_standard-font'
+                fontFamily: Font.Family.regularSecondary.css
             }
         };
 

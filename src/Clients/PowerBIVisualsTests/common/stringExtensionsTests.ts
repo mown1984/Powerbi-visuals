@@ -204,5 +204,41 @@ module powerbitests {
 
             expect(StringExtensions.deriveClsCompliantName(unicodeInput, "fallback")).toBe("abc123");
         });
+        
+        it('contains', () => {
+            expect(StringExtensions.contains('work it harder', 'work')).toBe(true, 'start');
+            expect(StringExtensions.contains('work it harder', 'it')).toBe(true, 'middle');
+            expect(StringExtensions.contains('work it harder', 'harder')).toBe(true, 'end');
+            expect(StringExtensions.contains('work it harder', 'work it')).toBe(true, 'with space');
+            
+            expect(StringExtensions.contains('harder', 'work it harder')).toBe(false);
+            
+            expect(StringExtensions.contains('work it harder', 'HARDER')).toBe(false, 'lower-case vs. upper-case');
+            expect(StringExtensions.contains('WORK IT HARDER', 'harder')).toBe(false, 'upper-case vs. lower-case');
+            
+            expect(StringExtensions.contains(null, 'null')).toBe(false, "null source");
+            expect(StringExtensions.contains(undefined, 'undefined')).toBe(false, "null source");
+            expect(StringExtensions.contains('', 'empty')).toBe(false, "empty source");
+            expect(StringExtensions.contains('non-empty', '')).toBe(true, "empty substring");
+        });
+        
+        it('containsIgnoreCase', () => {
+            expect(StringExtensions.containsIgnoreCase('make it better', 'make')).toBe(true, 'start');
+            expect(StringExtensions.containsIgnoreCase('make it better', 'it')).toBe(true, 'middle');
+            expect(StringExtensions.containsIgnoreCase('make it better', 'better')).toBe(true, 'start');
+            expect(StringExtensions.containsIgnoreCase('make it better', 'make it')).toBe(true, 'with space');
+            
+            expect(StringExtensions.containsIgnoreCase('better', 'make it better')).toBe(false);
+            
+            expect(StringExtensions.containsIgnoreCase('make it better', 'MAKE')).toBe(true, 'start, lower-case vs. upper-case');
+            expect(StringExtensions.containsIgnoreCase('make it better', 'IT')).toBe(true, 'middle, lower-case vs. upper-case');
+            expect(StringExtensions.containsIgnoreCase('make it better', 'BETTER')).toBe(true, 'end, lower-case vs. upper-case');
+            expect(StringExtensions.containsIgnoreCase('MAKE IT BETTER', 'make it')).toBe(true, 'with space, upper-case vs. lower-case');
+            
+            expect(StringExtensions.containsIgnoreCase(null, 'null')).toBe(false, "null source");
+            expect(StringExtensions.containsIgnoreCase(undefined, 'undefined')).toBe(false, "null source");
+            expect(StringExtensions.containsIgnoreCase('', 'empty')).toBe(false, "empty string source");
+            expect(StringExtensions.containsIgnoreCase('non-empty', '')).toBe(true, "empty substring");
+        });
     });
 }

@@ -558,7 +558,7 @@ module powerbi.visuals {
             }
 
             if (tooltipBucketEnabled) {
-                data.tooltipItems = TooltipBuilder.addTooltipBucketItem(reader, data.tooltipItems, 0);
+                TooltipBuilder.addTooltipBucketItem(reader, data.tooltipItems, 0);
             }
 
             return data;

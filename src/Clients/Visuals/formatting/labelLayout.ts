@@ -221,7 +221,7 @@ module powerbi {
         labelSize?: ISize;
     }
 
-    export interface LabelDataPointsGroup {
+    export interface LabelDataPointGroup {
         labelDataPoints: LabelDataPoint[];
         maxNumberOfLabels: number;
     }
@@ -281,7 +281,7 @@ module powerbi {
          */
         private static cellSizeMultiplier = 2;
 
-        constructor(labelDataPointsGroups: LabelDataPointsGroup[], viewport: IViewport) {
+        constructor(labelDataPointsGroups: LabelDataPointGroup[], viewport: IViewport) {
             this.viewport = viewport;
 
             let maxLabelWidth = 0;
@@ -545,7 +545,7 @@ module powerbi {
          *     placing them at their preferred position (it will place it at a less
          *     preferred position if it will be a smaller offset)
          */
-        public layout(labelDataPointsGroups: LabelDataPointsGroup[], viewport: IViewport): Label[] {
+        public layout(labelDataPointsGroups: LabelDataPointGroup[], viewport: IViewport): Label[] {
             // Clear data labels for a new layout
             for (let labelDataPointsGroup of labelDataPointsGroups) {
                 for (let labelPoint of labelDataPointsGroup.labelDataPoints) {
@@ -605,14 +605,11 @@ module powerbi {
             let currentOffset = this.startingOffset;
             let currentCenteredOffset = 0;
             let drawLeaderLinesOnIteration: boolean;
+            let labelsRendered: number = 0;
 
-            while (currentOffset <= this.maximumOffset && maxLabelsToRender > 0) {
+            while (currentOffset <= this.maximumOffset && labelsRendered < maxLabelsToRender) {
                 drawLeaderLinesOnIteration = this.allowLeaderLines && currentOffset > this.startingOffset;
                 for (let labelPoint of labelDataPoints) {
-                    // Check if maximum number of labels to display has been reached
-                    if (maxLabelsToRender === 0)
-                        break;
-
                     if (labelPoint.hasBeenRendered) {
                         continue;
                     }
@@ -626,7 +623,10 @@ module powerbi {
 
                     if (dataLabel) {
                         resultingDataLabels.push(dataLabel);
-                        maxLabelsToRender--;
+                        labelsRendered++;
+                    }
+                    if (!(labelsRendered < maxLabelsToRender)) {
+                        break;
                     }
                 }
                 currentOffset += offsetDelta;

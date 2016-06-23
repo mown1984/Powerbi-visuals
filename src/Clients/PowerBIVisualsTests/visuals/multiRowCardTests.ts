@@ -781,59 +781,6 @@ module powerbitests {
                 });
             });
 
-            it("Verify number of cards and card items in smallTile ", () => {
-                let options = getVisualInitOptions(helpers.testDom("150", "230"));
-
-                options.interactivity = { overflow: "hidden" };
-                v.init(options);
-
-                helpers.runWithImmediateAnimationFrames(() => {
-                    fireOnDataChanged(v, { dataViews: [tableDataViewHelper.getDataWithColumns(10, 10)] });
-
-                    expect($(".card")).toBeInDOM();
-                    expect($(".card .cardItemContainer")).toBeInDOM();
-
-                    expect($(".card").length).toBe(2);
-                    expect($(".card:first>*:visible").length).toBe(4);
-                });
-            });
-
-            it("Verify number of cards and card items in MediumTile ", () => {
-                let options = getVisualInitOptions(helpers.testDom("300", "470"));
-
-                options.interactivity = { overflow: "hidden" };
-                v.init(options);
-
-                helpers.runWithImmediateAnimationFrames(() => {
-                    fireOnDataChanged(v, { dataViews: [tableDataViewHelper.getDataWithColumns(10, 10)] });
-
-                    expect($(".card")).toBeInDOM();
-                    expect($(".card .cardItemContainer")).toBeInDOM();
-
-                    expect($(".card").length).toBe(4);
-                    expect($(".card:first>*:visible").length).toBe(6);
-                });
-            });
-
-            it("Verify number of cards and card items in LargeTile ", () => {
-                let options = getVisualInitOptions(helpers.testDom("450", "750"));
-
-                options.interactivity = { overflow: "hidden" };
-                v.init(options);
-
-                helpers.runWithImmediateAnimationFrames(() => {
-                    fireOnDataChanged(v, { dataViews: [tableDataViewHelper.getDataWithColumns(10, 10)] });
-
-                    expect($(".card")).toBeInDOM();
-                    expect($(".card .cardItemContainer")).toBeInDOM();
-
-                    expect($(".card").length).toBeGreaterThan(8);
-                    expect($(".card").length).toBeLessThan(11);
-                    expect($(".card:first>*:visible").length).toBe(6);
-
-                });
-            });
-
             it("Validate multiRowCard cardrow column width for default width", () => {
                 v.init(getVisualInitOptions(element = helpers.testDom("100", "760")));
 

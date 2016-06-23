@@ -32,13 +32,12 @@ module powerbi.data {
         export function getConceptualHierarchyLevelFromExpr(
             conceptualSchema: FederatedConceptualSchema,
             fieldExpr: FieldExprPattern): ConceptualHierarchyLevel {
-            let fieldExprItem = FieldExprPattern.toFieldExprEntityItemPattern(fieldExpr);
-            let hierarchyLevel = fieldExpr.hierarchyLevel || fieldExpr.hierarchyLevelAggr;
+            let hierarchyLevel = getHierarchyLevel(fieldExpr);
             if (hierarchyLevel)
                 return SQHierarchyExprUtils.getConceptualHierarchyLevel(
                     conceptualSchema,
-                    fieldExprItem.schema,
-                    fieldExprItem.entity,
+                    hierarchyLevel.schema,
+                    hierarchyLevel.entity,
                     hierarchyLevel.name,
                     hierarchyLevel.level);
         }
@@ -168,6 +167,12 @@ module powerbi.data {
             }
 
             return insertIndex;
+        }
+
+        function getHierarchyLevel(fieldExpr: FieldExprPattern): FieldExprHierarchyLevelPattern {
+            return fieldExpr.hierarchyLevel ||
+                fieldExpr.hierarchyLevelAggr ||
+                (fieldExpr.columnHierarchyLevelVariation && fieldExpr.columnHierarchyLevelVariation.level);
         }
     }
 

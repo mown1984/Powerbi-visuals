@@ -114,9 +114,9 @@ module powerbi.visuals {
         isLabelInteractivityEnabled?: boolean;
         tooltipsEnabled?: boolean;
         tooltipBucketEnabled?: boolean;
-        lineChartLabelDensityEnabled?: boolean;
         cartesianLoadMoreEnabled?: boolean;
         trimOrdinalDataOnOverflow?: boolean;
+        advancedLineLabelsEnabled?: boolean;
     }
 
     export interface ICartesianVisual {
@@ -145,7 +145,7 @@ module powerbi.visuals {
         tooltipsEnabled?: boolean;
         tooltipBucketEnabled?: boolean;
         cartesianLoadMoreEnabled?: boolean;
-        lineChartLabelDensityEnabled?: boolean;
+        advancedLineLabelsEnabled?: boolean;
     }
 
     export interface CartesianVisualRenderResult {
@@ -153,7 +153,7 @@ module powerbi.visuals {
         behaviorOptions: any;
         labelDataPoints: LabelDataPoint[];
         labelsAreNumeric: boolean;
-        labelDataPointGroups?: LabelDataPointsGroup[];
+        labelDataPointGroups?: LabelDataPointGroup[];
     }
 
     export interface CartesianDataPoint {
@@ -268,7 +268,7 @@ module powerbi.visuals {
         private static FontSizeString = jsCommon.PixelConverter.toString(CartesianChart.FontSize);
 
         public static AxisTextProperties: TextProperties = {
-            fontFamily: 'wf_segoe-ui_normal',
+            fontFamily: Font.Family.regular.css,
             fontSize: CartesianChart.FontSizeString,
         };
 
@@ -295,10 +295,10 @@ module powerbi.visuals {
         private isLabelInteractivityEnabled: boolean;
         private tooltipsEnabled: boolean;
         private tooltipBucketEnabled: boolean;
-        private lineChartLabelDensityEnabled: boolean;
         private cartesianLoadMoreEnabled: boolean;
         private trimOrdinalDataOnOverflow: boolean;
         private isMobileChart: boolean;
+        private advancedLineLabelsEnabled: boolean;
 
         private trendLines: TrendLine[];
 
@@ -342,7 +342,7 @@ module powerbi.visuals {
                 this.cartesianLoadMoreEnabled = options.cartesianLoadMoreEnabled;
                 this.type = options.chartType;
                 this.isLabelInteractivityEnabled = options.isLabelInteractivityEnabled;
-                this.lineChartLabelDensityEnabled = options.lineChartLabelDensityEnabled;
+                this.advancedLineLabelsEnabled = options.advancedLineLabelsEnabled;
                 if (options.trimOrdinalDataOnOverflow !== undefined)
                     this.trimOrdinalDataOnOverflow = options.trimOrdinalDataOnOverflow;
                 if (options.isScrollable)
@@ -865,7 +865,7 @@ module powerbi.visuals {
                 this.axes.isScrollable,
                 this.tooltipsEnabled,
                 this.tooltipBucketEnabled,
-                this.lineChartLabelDensityEnabled,
+                this.advancedLineLabelsEnabled,
                 this.cartesianLoadMoreEnabled);
 
             // Initialize the layers
@@ -1247,7 +1247,7 @@ module powerbi.visuals {
             return referenceLineLabels;
         }
 
-        private renderDataLabels(labelDataPointGroups: LabelDataPointsGroup[], labelsAreNumeric: boolean, plotArea: IViewport, suppressAnimations: boolean, isCombo: boolean): void {
+        private renderDataLabels(labelDataPointGroups: LabelDataPointGroup[], labelsAreNumeric: boolean, plotArea: IViewport, suppressAnimations: boolean, isCombo: boolean): void {
             let labelBackgroundRegion = this.svgAxes.getLabelBackground();
             let labelRegion = this.svgAxes.getLabelsRegion();
 
@@ -1305,7 +1305,7 @@ module powerbi.visuals {
         }
 
         private renderLayers(layers: ICartesianVisual[], plotArea: IViewport, axes: CartesianAxisProperties, suppressAnimations: boolean, resizeMode?: ResizeMode): void {
-            let labelDataPointGroups: LabelDataPointsGroup[] = [];
+            let labelDataPointGroups: LabelDataPointGroup[] = [];
             let dataPoints: SelectableDataPoint[] = [];
             let layerBehaviorOptions: any[] = [];
             let labelsAreNumeric: boolean = true;
@@ -2390,10 +2390,15 @@ module powerbi.visuals {
             let height = options.viewport.height;
             let fontSize = options.fontSize;
 
-            let heightOffset = fontSize;
+            let axisTextProperties = _.clone(CartesianChart.AxisTextProperties);
+            axisTextProperties.fontSize = fontSize + "px";
+
             let showOnRight = this.axes.shouldShowY1OnRight();
 
             if (!options.hideXAxisTitle) {
+                axisTextProperties.text = options.axisLabels.x;
+                let heightOffset = TextMeasurementService.estimateSvgTextHeight(axisTextProperties);
+
                 let xAxisLabel = this.axisGraphicsContext.append("text")
                     .style("text-anchor", "middle")
                     .text(options.axisLabels.x)
@@ -2416,6 +2421,9 @@ module powerbi.visuals {
             }
 
             if (!options.hideYAxisTitle) {
+                axisTextProperties.text = options.axisLabels.y;
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(axisTextProperties);
+
                 let yAxisLabel = this.axisGraphicsContext.append("text")
                     .style("text-anchor", "middle")
                     .text(options.axisLabels.y)
@@ -2425,7 +2433,7 @@ module powerbi.visuals {
                             text.attr({
                                 "class": "yAxisLabel",
                                 "transform": "rotate(-90)",
-                                "y": showOnRight ? width + margin.right - fontSize : -margin.left,
+                                "y": showOnRight ? width + margin.right - textHeight : -margin.left,
                                 "x": -((height - margin.top - margin.bottom) / 2),
                                 "dy": "1em",
                             });
@@ -2441,6 +2449,9 @@ module powerbi.visuals {
             }
 
             if (!options.hideY2AxisTitle && options.axisLabels.y2) {
+                axisTextProperties.text = options.axisLabels.y2;
+                let textHeight = TextMeasurementService.estimateSvgTextHeight(axisTextProperties);
+
                 let y2AxisLabel = this.axisGraphicsContext.append("text")
                     .style("text-anchor", "middle")
                     .text(options.axisLabels.y2)
@@ -2450,7 +2461,7 @@ module powerbi.visuals {
                             text.attr({
                                 "class": "yAxisLabel",
                                 "transform": "rotate(-90)",
-                                "y": showOnRight ? -margin.left : width + margin.right - fontSize,
+                                "y": showOnRight ? -margin.left : width + margin.right - textHeight,
                                 "x": -((height - margin.top - margin.bottom) / 2),
                                 "dy": "1em",
                             });
@@ -3143,7 +3154,7 @@ module powerbi.visuals {
             isScrollable: boolean = false,
             tooltipsEnabled?: boolean,
             tooltipBucketEnabled?: boolean,
-            lineChartLabelDensityEnabled?: boolean,
+            advancedLineLabelsEnabled?: boolean,
             cartesianLoadMoreEnabled?: boolean): ICartesianVisual[] {
 
             let layers: ICartesianVisual[] = [];
@@ -3154,7 +3165,7 @@ module powerbi.visuals {
                 interactivityService: interactivityService,
                 tooltipsEnabled: tooltipsEnabled,
                 tooltipBucketEnabled: tooltipBucketEnabled,
-                lineChartLabelDensityEnabled: lineChartLabelDensityEnabled,
+                advancedLineLabelsEnabled: advancedLineLabelsEnabled,
                 cartesianLoadMoreEnabled: cartesianLoadMoreEnabled
             };
 
@@ -3232,7 +3243,7 @@ module powerbi.visuals {
                 tooltipsEnabled: !isTrendLayer && defaultOptions.tooltipsEnabled,
                 tooltipBucketEnabled: defaultOptions.tooltipBucketEnabled,
                 chartType: type,
-                lineChartLabelDensityEnabled: defaultOptions.lineChartLabelDensityEnabled,
+                advancedLineLabelsEnabled: defaultOptions.advancedLineLabelsEnabled,
                 cartesianLoadMoreEnabled: defaultOptions.cartesianLoadMoreEnabled,
             };
 

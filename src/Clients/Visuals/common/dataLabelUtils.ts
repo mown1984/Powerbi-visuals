@@ -126,7 +126,7 @@ module powerbi.visuals {
         fontSize?: number;
         showAll?: boolean;
         showSeries?: boolean;
-        labelDensity?: number;
+        labelDensity?: string;
         labelStyle?: any;
     }
 
@@ -136,11 +136,12 @@ module powerbi.visuals {
         export const maxLabelWidth: number = 50;
         export const defaultColumnLabelMargin: number = 5;
         export const defaultColumnHalfLabelHeight: number = 4;
+        export const defaultLabelDensity: string = "50";
         export const DefaultDy: string = '-0.15em';
         export const DefaultFontSizeInPt = 9;
-        export const StandardFontFamily = 'wf_segoe-ui_normal';
+        export const StandardFontFamily = Font.Family.regular.css;
         export const LabelTextProperties: TextProperties = {
-            fontFamily: 'wf_standard-font',
+            fontFamily: Font.Family.regularSecondary.css,
             fontSize: PixelConverter.fromPoint(DefaultFontSizeInPt),
             fontWeight: 'normal',
         };
@@ -253,7 +254,7 @@ module powerbi.visuals {
                 precision: defaultLabelPrecision,
                 labelColor: defaultLabelColor,
                 fontSize: DefaultFontSizeInPt,
-                labelDensity: isComboChart ? NewDataLabelUtils.LabelDensityMax : NewDataLabelUtils.LabelDensityMin,
+                labelDensity: defaultLabelDensity,
             };
         }
 

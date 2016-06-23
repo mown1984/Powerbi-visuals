@@ -245,6 +245,13 @@ module powerbi.visuals {
             return new SelectionIdBuilder();
         }
 
+        public withCategoryIdentity(categoryColumn: DataViewCategoryColumn, identity: DataViewScopeIdentity): this{
+            if (categoryColumn && categoryColumn.source && categoryColumn.source.queryName)
+                this.ensureDataMap()[categoryColumn.source.queryName] = identity;
+            
+            return this;
+        }
+
         public withCategory(categoryColumn: DataViewCategoryColumn, index: number): this{
             if (categoryColumn && categoryColumn.source && categoryColumn.source.queryName && categoryColumn.identity)
                 this.ensureDataMap()[categoryColumn.source.queryName] = categoryColumn.identity[index];

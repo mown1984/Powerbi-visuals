@@ -43,7 +43,7 @@ module powerbi.visuals.controls.internal {
         onResize(size: number): void;
         onResizeEnd(size: number): void;
         fixSize(): void;
-        
+
         /**
          * In case the parent column/row header size is bigger than the sum of the children,
          * the size of the last item is adjusted to compensate the difference.
@@ -121,6 +121,7 @@ module powerbi.visuals.controls.internal {
             if (this._colSpan !== value) {
                 this._presenter.onColumnSpanChanged(value);
                 this._colSpan = value;
+                this._presenter.onContainerWidthChanged(-1);
             }
         }
 
@@ -504,14 +505,25 @@ module powerbi.visuals.controls.internal {
             if (this._sizeFixed)
                 return this._containerWidth;
 
+            let contentWidth: number = 0;
+
             // Check for persisted width
             let persistedWidth: number = this._presenter.getPersistedWidth();
             if (persistedWidth != null) {
-                return this._containerWidth = persistedWidth;
+                // If yes, Set the width to the persisted width
+                contentWidth = persistedWidth;
+
+                // Handle special case of a single-child non-leaf column header, we need to show that wholly
+                for (let i = 0, len = this._realizedColumnHeaders.length; i < len - 1; i++) {
+                    let cell = this._realizedColumnHeaders[i];
+                    if (cell.colSpan === 1)
+                        contentWidth = Math.max(contentWidth, this._presenter.getCellWidth(cell));
+                }
+
+                return this._containerWidth = contentWidth;
             }
 
             // If no persisted width, we get the maximum width of the visible cells
-            let contentWidth: number = 0;
 
             for (let cell of this._realizedColumnHeaders) {
                 if (cell.colSpan === 1)
@@ -937,7 +949,7 @@ module powerbi.visuals.controls.internal {
         private setContentHeight(): void {
             let count = this._realizedRowHeaders.length;
             // Need to do them in reverse order so that leaf headers are set first
-            for (let i = count-1; i >= 0; i--) {
+            for (let i = count - 1; i >= 0; i--) {
                 let cell: TablixCell = this._realizedRowHeaders[i];
                 cell.setContainerHeight(this._containerHeight);
                 if (cell.rowSpan > 1)

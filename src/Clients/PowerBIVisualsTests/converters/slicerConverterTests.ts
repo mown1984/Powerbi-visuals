@@ -122,20 +122,6 @@ module powerbitests {
             allItemsSelectedSlicerTestHelper(interactivityService, hostServices, false, false, false, false);
             expect(interactivityService.isSelectionModeInverted()).toBe(false);
         });
-
-        it("all filter values selected with selectAllCheckbox enabled", () => {
-            let hostServices = slicerHelper.createHostServices();
-            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, false, false);
-            expect(interactivityService.isSelectionModeInverted()).toBe(true);
-        });
-
-        it("NotFilter - all filter values selected with selectAllCheckbox enabled", () => {
-            let hostServices = slicerHelper.createHostServices();
-            let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
-            allItemsSelectedSlicerTestHelper(interactivityService, hostServices, true, false, true, false);
-            expect(interactivityService.isSelectionModeInverted()).toBe(false);
-        });
         
         it("NotFilter - all filter values selected with selectAllCheckbox disabled", () => {
             let hostServices = slicerHelper.createHostServices();
@@ -268,7 +254,7 @@ module powerbitests {
             expect(slicerData.slicerDataPoints[5].count).toBe(1);
         });
 
-        it('slicer convert dataview with self filter', () => {
+        it('slicer convert dataview with self filter, selectAll, and multi-select', () => {
             let dataView = slicerHelper.buildDataViewWithSelfFilter(powerbi.visuals.slicerOrientation.Orientation.Vertical, field);
             let selfFilter: data.SemanticFilter = data.SemanticFilter.fromSQExpr(
                 SQExprBuilder.contains(field, SQExprBuilder.text('ab')));
@@ -277,6 +263,8 @@ module powerbitests {
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.searchKey).toBe('ab');
+            expect(slicerData.slicerDataPoints[0].value).not.toBe(slicerHelper.SelectAllTextKey);
+            expect(slicerData.slicerDataPoints[0].value).toBe('Apple');
         });
 
         it('slicer convert dataview with self filter that is not contains', () => {
@@ -288,6 +276,8 @@ module powerbitests {
             let interactivityService = powerbi.visuals.createInteractivityService(hostServices);
             let slicerData = powerbi.visuals.DataConversion.convert(transformedDataViews[0], slicerHelper.SelectAllTextKey, interactivityService, hostServices);
             expect(slicerData.searchKey).toBeUndefined();
+            expect(slicerData.slicerDataPoints[0].value).not.toBe(slicerHelper.SelectAllTextKey);
+            expect(slicerData.slicerDataPoints[0].value).toBe('Apple');
         });
 
         function applyDataTransform(dataView: powerbi.DataView, semanticFilter: data.SemanticFilter, selfFilter?: data.SemanticFilter, descriptor?: powerbi.ValueTypeDescriptor): powerbi.DataView[]{

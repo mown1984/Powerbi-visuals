@@ -23,6 +23,7 @@
 /// <reference path="./common/arrayExtensionsTests.ts"/>
 /// <reference path="./common/colorTests.ts"/>
 /// <reference path="./common/doubleTests.ts"/>
+/// <reference path="./common/labelDataPointSorterTests.ts"/>
 /// <reference path="./common/prototypeTests.ts"/>
 /// <reference path="./common/referenceLineHelperTests.ts"/>
 /// <reference path="./common/standaloneUtilityTests.ts"/>

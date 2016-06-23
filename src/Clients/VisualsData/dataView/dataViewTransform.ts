@@ -745,7 +745,7 @@ module powerbi.data {
                         createMatrixHierarchyLevelSourcesPositionMapping(hierarchyLevel, hierarchyRole, projection);
 
                     if (newToOldLevelSourceIndicesMapping) {
-                        if (_.isUndefined(transformedHierarchy)) {
+                        if (transformedHierarchy === undefined) {
                             // Because we start inspecting the hierarchy from the deepest level and work backwards to the root,
                             // the current hierarchyLevel is therefore the inner-most level that needs re-ordering of composite group values...
                             transformedHierarchy = inheritSingle(matrixHierarchy);

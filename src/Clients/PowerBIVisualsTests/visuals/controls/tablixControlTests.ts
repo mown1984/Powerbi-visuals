@@ -219,153 +219,179 @@ module powerbitests {
                     spyHorizontalScrolling.and.stub();
                 });
 
-                afterEach(() => {
-                    expect(evt.defaultPrevented).toBeTruthy();
+                describe("On Canvas", () => {
+
+                    afterEach(() => {
+                        expect(evt.defaultPrevented).toBeTruthy();
+                    });
+
+                    it("Y Scrolling - No scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(false);
+
+                        // Firefox
+                        evt = sendDomMouseScroll(-100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                        expect(evt.defaultPrevented).toBeTruthy();
+
+                        // Others
+                        evt = sendMouseWheel(0, -100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                    });
+
+                    it("Y Scrolling - Vertical scrollbar", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(false);
+
+                        // Firefox
+                        sendDomMouseScroll(-100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                        expect(evt.defaultPrevented).toBeTruthy();
+
+                        // Others
+                        evt = sendMouseWheel(0, -100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(2);
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                    });
+
+                    it("Y scrolling - Horizontal scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(true);
+
+                        // Firefox
+                        sendDomMouseScroll(-100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
+                        expect(evt.defaultPrevented).toBeTruthy();
+
+                        // Others
+                        evt = sendMouseWheel(0, -100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(2);
+                    });
+
+                    it("Y scrolling - Both scrollbars", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(true);
+
+                        // Firefox
+                        sendDomMouseScroll(-100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                        expect(evt.defaultPrevented).toBeTruthy();
+
+                        // Others
+                        evt = sendMouseWheel(0, -100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(2);
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+
+                    });
+
+                    it("X Scrolling - No scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(false);
+
+                        sendMouseWheel(-100, 0);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+
+                    });
+
+                    it("X Scrolling - Vertical scrollbar", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(false);
+
+                        sendMouseWheel(-100, 0);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+
+                    });
+
+                    it("X scrolling - Horizontal scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(true);
+
+                        sendMouseWheel(-100, 0);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
+
+                    });
+
+                    it("X scrolling - Both scrollbars", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(true);
+
+                        sendMouseWheel(-100, 0);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
+
+                    });
+
+                    it("X/Y Scrolling - No scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(false);
+
+                        sendMouseWheel(-100, 100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+
+                    });
+
+                    it("X/Y Scrolling - Vertical scrollbar", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(false);
+
+                        sendMouseWheel(-100, 100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+
+                    });
+
+                    it("X/Y scrolling - Horizontal scrollbar", () => {
+                        showVerticalScroll(false);
+                        showHorizontalScroll(true);
+
+                        sendMouseWheel(-100, 100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
+
+                    });
+
+                    it("X scrolling - Both scrollbars", () => {
+                        showVerticalScroll(true);
+                        showHorizontalScroll(true);
+
+                        sendMouseWheel(-100, 100);
+                        expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
+                        expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
+
+                    });
                 });
 
-                it("Y Scrolling - No scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(false);
+                describe("On Dashboard", () => {
+                    it("doesn't prevent default on event", () => {
+                        tablixControl = createTablixControlWithOptions({
+                            layoutKind: Controls.TablixLayoutKind.DashboardTile,
+                        });
 
-                    // Firefox
-                    evt = sendDomMouseScroll(-100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-                    expect(evt.defaultPrevented).toBeTruthy();
+                        showVerticalScroll(false);
+                        showHorizontalScroll(false);
 
-                    // Others
-                    evt = sendMouseWheel(0, -100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-                });
+                        // Firefox
+                        evt = sendDomMouseScroll(-100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                        expect(evt.defaultPrevented).toBe(false);
 
-                it("Y Scrolling - Vertical scrollbar", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(false);
-
-                    // Firefox
-                    sendDomMouseScroll(-100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-                    expect(evt.defaultPrevented).toBeTruthy();
-
-                    // Others
-                    evt = sendMouseWheel(0, -100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(2);
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-                });
-
-                it("Y scrolling - Horizontal scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(true);
-
-                    // Firefox
-                    sendDomMouseScroll(-100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
-                    expect(evt.defaultPrevented).toBeTruthy();
-
-                    // Others
-                    evt = sendMouseWheel(0, -100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(2);
-                });
-
-                it("Y scrolling - Both scrollbars", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(true);
-
-                    // Firefox
-                    sendDomMouseScroll(-100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-                    expect(evt.defaultPrevented).toBeTruthy();
-
-                    // Others
-                    evt = sendMouseWheel(0, -100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(2);
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-
-                });
-
-                it("X Scrolling - No scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(false);
-
-                    sendMouseWheel(-100, 0);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-
-                });
-
-                it("X Scrolling - Vertical scrollbar", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(false);
-
-                    sendMouseWheel(-100, 0);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-
-                });
-
-                it("X scrolling - Horizontal scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(true);
-
-                    sendMouseWheel(-100, 0);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
-
-                });
-
-                it("X scrolling - Both scrollbars", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(true);
-
-                    sendMouseWheel(-100, 0);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
-
-                });
-
-                it("X/Y Scrolling - No scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(false);
-
-                    sendMouseWheel(-100, 100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-
-                });
-
-                it("X/Y Scrolling - Vertical scrollbar", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(false);
-
-                    sendMouseWheel(-100, 100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
-                    expect(spyHorizontalScrolling).not.toHaveBeenCalled();
-
-                });
-
-                it("X/Y scrolling - Horizontal scrollbar", () => {
-                    showVerticalScroll(false);
-                    showHorizontalScroll(true);
-
-                    sendMouseWheel(-100, 100);
-                    expect(spyVerticalScrolling).not.toHaveBeenCalled();
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
-
-                });
-
-                it("X scrolling - Both scrollbars", () => {
-                    showVerticalScroll(true);
-                    showHorizontalScroll(true);
-
-                    sendMouseWheel(-100, 100);
-                    expect(spyVerticalScrolling).toHaveBeenCalledTimes(1);
-                    expect(spyHorizontalScrolling).toHaveBeenCalledTimes(1);
-
+                        // Others
+                        evt = sendMouseWheel(0, -100);
+                        expect(spyVerticalScrolling).not.toHaveBeenCalled();
+                        expect(spyHorizontalScrolling).not.toHaveBeenCalled();
+                        expect(evt.defaultPrevented).toBe(false);
+                    });
                 });
 
                 function showHorizontalScroll(show: boolean) {

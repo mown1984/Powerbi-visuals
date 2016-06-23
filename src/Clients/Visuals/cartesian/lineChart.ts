@@ -34,12 +34,12 @@ module powerbi.visuals {
 
     export interface LineChartConstructorOptions extends CartesianVisualConstructorOptions {
         chartType?: LineChartType;
-        lineChartLabelDensityEnabled?: boolean;
         tooltipBucketEnabled?: boolean;
+        advancedLineLabelsEnabled?: boolean;
     }
 
     export interface LineChartDataLabelsSettings extends PointDataLabelsSettings {
-        labelDensity: number;
+        labelDensity: string;
     }
 
     export interface ILineChartConfiguration {
@@ -81,7 +81,6 @@ module powerbi.visuals {
         labelSettings: LineChartDataLabelsSettings;
         pointColor?: string;
         stackedValue?: number;
-        weight?: number;
         extraTooltipInfo?: TooltipDataItem[];
     }
 
@@ -106,10 +105,10 @@ module powerbi.visuals {
     }
 
     const enum LineChartRelativePosition {
-        none,
-        equal,
-        lesser,
-        greater,
+        None,
+        Equal,
+        Lesser,
+        Greater,
     };
 
     /**
@@ -134,6 +133,7 @@ module powerbi.visuals {
         private static ScalarOuterPadding = 10;
         private static interactivityStrokeWidth = 10;
         private static pathXAdjustment = 5; // Based on half the stroke width for taking stroke into account in coordinate transforms
+        private static minimumLabelsToRender = 4;
         public static AreaFillOpacity = 0.4;
         public static DimmedAreaFillOpacity = 0.2;
 
@@ -170,23 +170,13 @@ module powerbi.visuals {
 
         private interactivityService: IInteractivityService;
         private animator: IGenericAnimator;
-        private lineChartLabelDensityEnabled: boolean;
 
         private previousCategoryCount: number;
         private shouldAdjustMouseCoordsOnPathsForStroke: boolean;
 
         private tooltipBucketEnabled: boolean;
-
-        private static validLabelPositions = [
-            NewPointLabelPosition.Above,
-            NewPointLabelPosition.Below,
-            NewPointLabelPosition.Right,
-            NewPointLabelPosition.Left,
-            NewPointLabelPosition.AboveRight,
-            NewPointLabelPosition.AboveLeft,
-            NewPointLabelPosition.BelowRight,
-            NewPointLabelPosition.BelowLeft
-        ];
+        private advancedLineLabelsEnabled: boolean;
+        
         private static validStackedLabelPositions = [RectLabelPosition.InsideCenter, RectLabelPosition.InsideEnd, RectLabelPosition.InsideBase];
 
         private overlayRect: D3.Selection;
@@ -214,7 +204,7 @@ module powerbi.visuals {
             }
             else {
                 CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, dataViewMapping);
-            }
+        }
         }
 
         public static getSortableRoles(options: VisualSortableOptions): string[] {
@@ -352,7 +342,7 @@ module powerbi.visuals {
                                 displayName: category.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(categoryValue, category.source, formatStringProp),
                             });
-                        }
+                    }
 
                         // This dynamicSeries tooltip is only using in mobile tooltip.
                         if (hasDynamicSeries) {
@@ -373,24 +363,12 @@ module powerbi.visuals {
 
                         if (tooltipBucketEnabled) {
                             extraTooltipInfo = [];
-                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, hasDynamicSeries ? seriesIndex : undefined);
-                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", hasDynamicSeries ? seriesIndex : undefined);
-
-                            if (tooltipValues && tooltipMetadataColumns) {
-                                for (let j = 0; j < tooltipValues.length; j++) {
-                                    if (tooltipValues[j] != null) {
-                                        extraTooltipInfo.push({
-                                            displayName: tooltipMetadataColumns[j].displayName,
-                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
-                                        });
-                                    }
-                                }
-                            }
+                            TooltipBuilder.addTooltipBucketItem(reader, extraTooltipInfo, categoryIndex, hasDynamicSeries ? seriesIndex : undefined);
                         }
                     }
 
                     let categoryKey = category && !_.isEmpty(category.identity) && category.identity[categoryIndex] ? category.identity[categoryIndex].key : categoryIndex;
-                    
+
                     let dataPoint: LineChartDataPoint = {
                         categoryValue: isDateTime && categoryValue ? categoryValue.getTime() : categoryValue,
                         value: value,
@@ -518,9 +496,9 @@ module powerbi.visuals {
             this.lineType = options.chartType ? options.chartType : LineChartType.default;
             this.interactivityService = options.interactivityService;
             this.animator = options.animator;
-            this.lineChartLabelDensityEnabled = options.lineChartLabelDensityEnabled;
             this.lineClassAndSelector = LineChart.LineClassSelector;
             this.tooltipBucketEnabled = options.tooltipBucketEnabled;
+            this.advancedLineLabelsEnabled = options.advancedLineLabelsEnabled;
         }
 
         public init(options: CartesianVisualInitOptions) {
@@ -592,9 +570,9 @@ module powerbi.visuals {
                     .origin(Object)
                     .on("drag", dragMove);
                 d3.select(rootSvg)
-                    .style('touch-action', 'none')
-                    .call(drag)
-                    .on('click', dragMove);
+                 .style('touch-action', 'none')
+                 .call(drag)
+                 .on('click', dragMove);
             }
 
             // Internet Explorer and Edge use the stroke edge, not the path edge for the mouse coordinate's origin.
@@ -804,6 +782,11 @@ module powerbi.visuals {
             return !EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) && isScalar;
         }
 
+        private showLabelPerSeries(): boolean {
+            let data = this.data;
+            return !data.hasDynamicSeries && (data.series.length > 1 || !data.categoryMetadata);
+        }
+
         private getLabelSettingsOptions(enumeration: ObjectEnumerationBuilder, labelSettings: LineChartDataLabelsSettings, series?: LineChartSeries, showAll?: boolean): VisualDataLabelsSettingsOptions {
             return {
                 enumeration: enumeration,
@@ -814,7 +797,7 @@ module powerbi.visuals {
                 selector: series && series.identity ? series.identity.getSelector() : null,
                 showAll: showAll,
                 fontSize: true,
-                labelDensity: this.lineChartLabelDensityEnabled,
+                labelDensity: (this.isComboChart ? this.data.series.length > 0 : true) && this.advancedLineLabelsEnabled,
             };
         }
 
@@ -1009,7 +992,7 @@ module powerbi.visuals {
                     .duration(duration)
                     .attr({
                         cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
-                        cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
+                    cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
                         r: LineChart.PointRadius
                     });
                 explicitDots.exit()
@@ -1017,9 +1000,9 @@ module powerbi.visuals {
             }
 
             // Add data labels
-            let labelDataPointsGroups: LabelDataPointsGroup[];
+            let labelDataPointGroups: LabelDataPointGroup[];
             if (data.dataLabelsSettings.show)
-                labelDataPointsGroups = this.createLabelDataPoints();
+                labelDataPointGroups = this.createLabelDataPoints();
 
             if (this.tooltipsEnabled) {
                 if (!this.isComboChart) {
@@ -1081,7 +1064,7 @@ module powerbi.visuals {
                 behaviorOptions: behaviorOptions,
                 labelDataPoints: [],
                 labelsAreNumeric: true,
-                labelDataPointGroups: labelDataPointsGroups,
+                labelDataPointGroups: labelDataPointGroups,
             };
         }
 
@@ -1268,7 +1251,7 @@ module powerbi.visuals {
             // # Code from here is taken from renderNew:
 
             // Add data labels
-            let labelDataPointsGroups: LabelDataPointsGroup[];
+            let labelDataPointsGroups: LabelDataPointGroup[];
             if (data.dataLabelsSettings.show)
                 labelDataPointsGroups = this.createLabelDataPoints();
 
@@ -1293,7 +1276,7 @@ module powerbi.visuals {
             let tooltipinfo: TooltipDataItem[] = [];
             const maxNumberOfItems = 10; // to limit the number of rows we display
             let hasDynamicSeries = !_.isEmpty(pointData) && pointData[0].seriesDisplayName;
-            
+
             // count to the maximum number of rows we can display
             let count = 0;
 
@@ -1312,9 +1295,9 @@ module powerbi.visuals {
                 }
             }
             else {
-                for (let point of pointData) {
-                    if (count >= maxNumberOfItems) break;
-                    if (point.value != null) {
+            for (let point of pointData) {
+                if (count >= maxNumberOfItems) break;
+                if (point.value != null) {
                         // Add series data
                         if (hasDynamicSeries) {
                             tooltipinfo.push({
@@ -1324,12 +1307,12 @@ module powerbi.visuals {
                             });
                         }
                         // Add value data
-                        tooltipinfo.push({
-                            header: point.category,
-                            color: point.color,
+                    tooltipinfo.push({
+                        header: point.category,
+                        color: point.color,
                             displayName: point.measureDisplayName,
-                            value: point.measure
-                        });
+                        value: point.measure
+                    });
                         count += 2;
                         // Add tooltip bucket data for each point for dynamic series
                         if (hasDynamicSeries && !_.isEmpty(point.extraTooltipInfo)) {
@@ -1359,9 +1342,9 @@ module powerbi.visuals {
                             value: extraTooltipInfo.value,
                             opacity: hiddenItemOpacity,
                         });
-                        count++;
-                    }
+                    count++;
                 }
+            }
             }
 
             if (tooltipinfo.length === 0)
@@ -1798,40 +1781,46 @@ module powerbi.visuals {
             };
         }
 
-        private createLabelDataPoints(): LabelDataPointsGroup[] {
+        private createLabelDataPoints(): LabelDataPointGroup[] {
             let xScale = this.xAxisProperties.scale;
             let yScale = this.yAxisProperties.scale;
             let lineshift = this.getXOfFirstCategory();
             let data = this.data;
-            let series = data.series;
+            let series = this.clippedData ? this.clippedData.series : data.series;
+            let baseLabelSettings = data.dataLabelsSettings;
             let formattersCache = NewDataLabelUtils.createColumnFormatterCacheManager();
-            let dataLabelsSettings = data.dataLabelsSettings;
             let isStackedArea = EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea);
-            let labelDataPointsGroups: LabelDataPointsGroup[] = [];
+            let labelDataPointGroups: LabelDataPointGroup[] = [];
             let labelSettings: LineChartDataLabelsSettings;
             let axisFormatter: number;
             let seriesLabelDataPoints: LabelDataPoint[];
             let seriesDataPointsCandidates: LineChartDataPoint[];
-            let seriesIndex;
-            let seriesCount;
+            let seriesIndex: number;
+            let seriesCount: number;
+            let currentSeries: LineChartSeries;
 
             for (seriesIndex = 0, seriesCount = series.length; seriesIndex < seriesCount; seriesIndex++) {
-                let currentSeries = series[seriesIndex];
-                labelSettings = (currentSeries.labelSettings) ? currentSeries.labelSettings : dataLabelsSettings;
-                if (!labelSettings.show)
+                currentSeries = series[seriesIndex];
+                labelSettings = currentSeries.labelSettings || baseLabelSettings;
+                let maxNumberOfLabels = this.advancedLineLabelsEnabled ? LineChart.getNumberOfLabelsToRender(this.currentViewport.width, _.parseInt(labelSettings.labelDensity)) : currentSeries.data.length;
+                if (!labelSettings.show) {
+                    labelDataPointGroups[seriesIndex] = {
+                        labelDataPoints: [],
+                        maxNumberOfLabels: 0,
+                    };
                     continue;
+                }
 
                 axisFormatter = NewDataLabelUtils.getDisplayUnitValueFromAxisFormatter(this.yAxisProperties.formatter, labelSettings);
                 let dataPoints = currentSeries.data;
                 seriesLabelDataPoints = [];
                 seriesDataPointsCandidates = [];
 
-                let createLabelDataPoint: (dataPoint: LineChartDataPoint, seriesIndex) => LabelDataPoint = (dataPoint: LineChartDataPoint) => {
+                let createLabelDataPoint: (dataPoint: LineChartDataPoint, categoryIndex: number) => LabelDataPoint = (dataPoint: LineChartDataPoint, categoryIndex: number) => {
                     if (dataPoint.value == null)
                         return null;
 
-                    let formatString = "";
-                    formatString = dataPoint.labelFormatString;
+                    let formatString = dataPoint.labelFormatString;
                     let formatter = formattersCache.getOrCreate(formatString, labelSettings, axisFormatter);
                     let text = NewDataLabelUtils.getLabelFormattedText(formatter.format(dataPoint.value));
 
@@ -1870,7 +1859,7 @@ module powerbi.visuals {
                                 y: yScale(dataPoint.value),
                             },
                             radius: 0,
-                            validPositions: this.lineChartLabelDensityEnabled ? LineChart.validLabelPositions : [NewPointLabelPosition.Above],
+                            validPositions: this.getValidLabelPositions(currentSeries, categoryIndex),
                         };
                     }
 
@@ -1893,26 +1882,42 @@ module powerbi.visuals {
                 };
 
                 if (!_.isEmpty(dataPoints)) {
-                    let categoryCount = dataPoints.length;
-                    let lastDataPoint = dataPoints[categoryCount - 1];
-                    let lastLabelDataPoint = createLabelDataPoint(lastDataPoint, seriesIndex);
-                    if (lastLabelDataPoint)
-                        seriesLabelDataPoints.push(lastLabelDataPoint);
-                    for (let categoryIndex = 0; categoryIndex < categoryCount - 1; categoryIndex++) {
-                        let labelDataPoint = createLabelDataPoint(dataPoints[categoryIndex], seriesIndex);
+                    for (let categoryIndex = 0, categoryCount = dataPoints.length; categoryIndex < categoryCount; categoryIndex++) {
+                        let labelDataPoint = createLabelDataPoint(dataPoints[categoryIndex], categoryIndex);
                         if (labelDataPoint)
                             seriesLabelDataPoints.push(labelDataPoint);
                     }
                 }
-
-                let maxLabelsToRender = dataPoints.length;
-                labelDataPointsGroups[seriesIndex] = {
+                
+                labelDataPointGroups[seriesIndex] = {
                     labelDataPoints: seriesLabelDataPoints,
-                    maxNumberOfLabels: maxLabelsToRender,
+                    maxNumberOfLabels: maxNumberOfLabels,
                 };
             }
 
-            return labelDataPointsGroups;
+            if (this.advancedLineLabelsEnabled && this.lineType !== LineChartType.stackedArea) {
+                let sorter = new MinMaxLabelDataPointSorter({
+                    unsortedLabelDataPointGroups: labelDataPointGroups,
+                    series: series,
+                    viewport: this.currentViewport,
+                    yAxisProperties: this.yAxisProperties,
+                });
+
+                return sorter.getSortedDataLabels();
+            }
+            return labelDataPointGroups;
+        }
+
+        private static getNumberOfLabelsToRender(viewPortWidth: number, labelDensity: number): number {
+            if (labelDensity == null || labelDensity === 0) {
+                return LineChart.minimumLabelsToRender;
+            }
+            let parsedAndNormalizedDensity = labelDensity / 100;
+            let maxNumberForViewport = Math.ceil(viewPortWidth / MinMaxLabelDataPointSorter.estimatedLabelWidth);
+            if (parsedAndNormalizedDensity === 1) {
+                return maxNumberForViewport;
+            }
+            return LineChart.minimumLabelsToRender + Math.floor(parsedAndNormalizedDensity * (maxNumberForViewport - LineChart.minimumLabelsToRender));
         }
 
         /**
@@ -1943,53 +1948,6 @@ module powerbi.visuals {
             return x;
         }
 
-        //private isMinMax(index: number, dataPoints: LineChartDataPoint[]): boolean {
-        //    // Check if the point is the start/end point
-        //    if (!dataPoints[index - 1] || !dataPoints[index + 1])
-        //        return true;
-
-        //    let currentValue = dataPoints[index].value;
-        //    let prevValue = dataPoints[index - 1].value;
-        //    let nextValue = dataPoints[index + 1].value;
-        //    return (prevValue > currentValue && currentValue < nextValue) // Min point
-        //        || (prevValue < currentValue && currentValue > nextValue); // Max point
-        //}
-
-        //private calculatePointsWeight(labelDataPoints: LabelDataPoint[], dataPointsCandidates: LineChartDataPoint[], minIndex: number, maxIndex: number) {
-        //    let previousMinMaxIndex = 0;
-        //    labelDataPoints[0].weight = dataPointsCandidates[0].weight = 0;
-        //    let previousMinMax: LineChartDataPoint = dataPointsCandidates[0];
-        //    let dataPointCount = labelDataPoints.length;
-        //    let yScale = this.yAxisProperties.scale;
-        //    let totalValueDelta = yScale(dataPointsCandidates[maxIndex].value) - yScale(dataPointsCandidates[minIndex].value);
-
-        //    for (let i = 1; i < dataPointCount; i++) {
-        //        let dataPoint = dataPointsCandidates[i];
-        //        let weight = (Math.abs(yScale(previousMinMax.value) - yScale(dataPoint.value))) / totalValueDelta + (i - previousMinMaxIndex) / dataPointCount;
-        //        labelDataPoints[i].weight = weight;
-        //        if (this.isMinMax(i, dataPointsCandidates)) {
-        //            previousMinMax.weight += weight;
-        //            previousMinMax = dataPoint;
-        //            previousMinMaxIndex = i;
-        //        }
-        //    }
-        //}
-
-        //private sortByWeightAndPreferrance(a: LabelDataPoint, b: LabelDataPoint): number {
-        //    // Compare by prederrance first
-        //    if (!a.isPreferred && b.isPreferred) return 1;
-        //    if (a.isPreferred && !b.isPreferred) return -1;
-        //    // Compare by weight
-        //    if ((!a.weight && b.weight) || (a.weight < b.weight)) return 1;
-        //    if ((a.weight && !b.weight) || (a.weight > b.weight)) return -1;
-        //    return 0;
-        //}
-
-        private showLabelPerSeries(): boolean {
-            let data = this.data;
-            return !data.hasDynamicSeries && (data.series.length > 1 || !data.categoryMetadata);
-        }
-
         /**
          * Obtains the pointLabelPosition for the category index within the given series
          *
@@ -2000,82 +1958,103 @@ module powerbi.visuals {
          *    a. There is no data point to the left and there is one to the right
          *    b. There is an equal data point to the right, but not to the left
          */
-        //private getValidLabelPositions(series: LineChartSeries, categoryIndex: number): NewPointLabelPosition[]{
-        //    let data = series.data;
-        //    let dataLength = data.length;
-        //    let isLastPoint = categoryIndex === (dataLength - 1);
-        //    let isFirstPoint = categoryIndex === 0;
+        private getValidLabelPositions(series: LineChartSeries, categoryIndex: number): NewPointLabelPosition[]{
+            if (!this.advancedLineLabelsEnabled) {
+                return [NewPointLabelPosition.Above];
+            }
 
-        //    let currentValue = data[categoryIndex].value;
-        //    let previousValue = !isFirstPoint ? data[categoryIndex - 1].value : undefined;
-        //    let nextValue = !isLastPoint ? data[categoryIndex + 1].value : undefined;
-        //    let previousRelativePosition = LineChartRelativePosition.equal;
-        //    let nextRelativePosition = LineChartRelativePosition.equal;
-        //    if (previousValue === null || previousValue === undefined) {
-        //        previousRelativePosition = LineChartRelativePosition.none;
-        //    }
-        //    else if (previousValue > currentValue) {
-        //        previousRelativePosition = LineChartRelativePosition.greater;
-        //    }
-        //    else if (previousValue < currentValue) {
-        //        previousRelativePosition = LineChartRelativePosition.lesser;
-        //    }
-        //    if (nextValue === null || nextValue === undefined) {
-        //        nextRelativePosition = LineChartRelativePosition.none;
-        //    }
-        //    else if (nextValue > currentValue) {
-        //        nextRelativePosition = LineChartRelativePosition.greater;
-        //    }
-        //    else if (nextValue < currentValue) {
-        //        nextRelativePosition = LineChartRelativePosition.lesser;
-        //    }
+            let data = series.data;
+            let dataLength = data.length;
+            let isLastPoint = categoryIndex === (dataLength - 1);
+            let isFirstPoint = categoryIndex === 0;
 
-        //    switch (previousRelativePosition) {
-        //        case LineChartRelativePosition.none:
-        //            switch (nextRelativePosition) {
-        //                case LineChartRelativePosition.none:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.equal:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
-        //                case LineChartRelativePosition.greater:
-        //                    return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
-        //                case LineChartRelativePosition.lesser:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
-        //            }
-        //        case LineChartRelativePosition.equal:
-        //            switch (nextRelativePosition) {
-        //                case LineChartRelativePosition.none:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.equal:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.greater:
-        //                    return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.lesser:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //            }
-        //        case LineChartRelativePosition.greater:
-        //            switch (nextRelativePosition) {
-        //                case LineChartRelativePosition.none:
-        //                    return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.equal:
-        //                    return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
-        //                case LineChartRelativePosition.greater:
-        //                    return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.lesser:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //            }
-        //        case LineChartRelativePosition.lesser:
-        //            switch (nextRelativePosition) {
-        //                case LineChartRelativePosition.none:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.equal:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
-        //                case LineChartRelativePosition.greater:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //                case LineChartRelativePosition.lesser:
-        //                    return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
-        //            }
-        //    }
-        //}
+            let currentValue = data[categoryIndex].value;
+            let previousValue = !isFirstPoint ? data[categoryIndex - 1].value : undefined;
+            let nextValue = !isLastPoint ? data[categoryIndex + 1].value : undefined;
+            let previousRelativePosition = LineChartRelativePosition.Equal;
+            let nextRelativePosition = LineChartRelativePosition.Equal;
+            if (previousValue == null) {
+                previousRelativePosition = LineChartRelativePosition.None;
+            }
+            else if (previousValue > currentValue) {
+                previousRelativePosition = LineChartRelativePosition.Greater;
+            }
+            else if (previousValue < currentValue) {
+                previousRelativePosition = LineChartRelativePosition.Lesser;
+            }
+            if (nextValue ===null) {
+                nextRelativePosition = LineChartRelativePosition.None;
+            }
+            else if (nextValue > currentValue) {
+                nextRelativePosition = LineChartRelativePosition.Greater;
+            }
+            else if (nextValue < currentValue) {
+                nextRelativePosition = LineChartRelativePosition.Lesser;
+            }
+
+            if (isFirstPoint) {
+                switch (nextRelativePosition) {
+                    case LineChartRelativePosition.Greater:
+                        return [NewPointLabelPosition.Below, NewPointLabelPosition.Above];
+                    default:
+                        return [NewPointLabelPosition.Above, NewPointLabelPosition.Below];
+                }
+            }
+            if (isLastPoint) {
+                switch (previousRelativePosition) {
+                    case LineChartRelativePosition.Greater:
+                        return [NewPointLabelPosition.Below, NewPointLabelPosition.Above];
+                    default:
+                        return [NewPointLabelPosition.Above, NewPointLabelPosition.Below];
+                }
+            }
+
+            switch (previousRelativePosition) {
+                case LineChartRelativePosition.None:
+                    switch (nextRelativePosition) {
+                        case LineChartRelativePosition.None:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Equal:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+                        case LineChartRelativePosition.Greater:
+                            return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+                        case LineChartRelativePosition.Lesser:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+                    }
+                case LineChartRelativePosition.Equal:
+                    switch (nextRelativePosition) {
+                        case LineChartRelativePosition.None:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Equal:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Greater:
+                            return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Lesser:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                    }
+                case LineChartRelativePosition.Greater:
+                    switch (nextRelativePosition) {
+                        case LineChartRelativePosition.None:
+                            return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Equal:
+                            return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+                        case LineChartRelativePosition.Greater:
+                            return [NewPointLabelPosition.Below, NewPointLabelPosition.Above, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Lesser:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                    }
+                case LineChartRelativePosition.Lesser:
+                    switch (nextRelativePosition) {
+                        case LineChartRelativePosition.None:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Equal:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Left, NewPointLabelPosition.Right];
+                        case LineChartRelativePosition.Greater:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                        case LineChartRelativePosition.Lesser:
+                            return [NewPointLabelPosition.Above, NewPointLabelPosition.Below, NewPointLabelPosition.Right, NewPointLabelPosition.Left];
+                    }
+            }
+        }
     }
 }

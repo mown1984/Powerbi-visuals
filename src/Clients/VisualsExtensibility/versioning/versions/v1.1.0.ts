@@ -27,6 +27,28 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbi.extensibility.v110 {
+
+    let overloadFactory: VisualVersionOverloadFactory = (visual: IVisual) => {
+        return {
+            update: (options: powerbi.VisualUpdateOptions) => {
+                if (visual.update) {
+                    let updateOptions: VisualUpdateOptions = {
+                        viewport: options.viewport,
+                        dataViews: options.dataViews,
+                        type: v100.convertLegacyUpdateType(options)
+                    };
+
+                    let transform: IVisualDataViewTransform = (<IVisualConstructor>(<any>visual.constructor)).__transform__;
+                    if (_.isFunction(transform)) {
+                        visual.update(updateOptions, transform(updateOptions.dataViews));
+                    } else {
+                        visual.update(updateOptions);
+                    }
+                }
+            }
+        };
+    };
+
     let hostAdapter: VisualHostAdapter = (host: powerbi.IVisualHostServices): IVisualHost => {
         return {
             createSelectionIdBuilder: () => new visuals.SelectionIdBuilder(),
@@ -36,6 +58,7 @@ module powerbi.extensibility.v110 {
 
     visualApiVersions.push({
         version: '1.1.0',
+        overloads: overloadFactory,
         hostAdapter: hostAdapter
     });
 }

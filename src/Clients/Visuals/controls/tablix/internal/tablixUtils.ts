@@ -636,9 +636,9 @@ module powerbi.visuals.controls.internal {
         export const CellPaddingLeftMatrixTotal: number = 5;
         export const SortIconPadding: number = 5;
         export const ImageDefaultAspectRatio: number = 1;
-        export const FontFamilyCell: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
-        export const FontFamilyHeader: string = "'Segoe UI','wf_segoe-ui_normal', helvetica, arial, sans-serif";
-        export const FontFamilyTotal: string = "'Segoe UI Bold','wf_segoe-ui_bold', helvetica, arial, sans-serif";
+        export const FontFamilyCell: string = Font.Family.regular.css;
+        export const FontFamilyHeader: string = Font.Family.regular.css;
+        export const FontFamilyTotal: string = Font.Family.bold.css;
         export const FontColorCells: string = "#333";
         export const FontColorHeaders: string = "#666";
 

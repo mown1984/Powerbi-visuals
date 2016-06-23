@@ -28,6 +28,7 @@
 
 module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.ForceGraph;
+    import VisualSettings = powerbi.visuals.samples.ForceGraphSettings;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
     import ForceGraphData = powerbitests.customVisuals.sampleDataViews.ForceGraphData;
 
@@ -35,11 +36,13 @@ module powerbitests.customVisuals {
         let visualBuilder: ForceGraphBuilder;
         let defaultDataViewBuilder: ForceGraphData;
         let dataView: powerbi.DataView;
+        let settings: VisualSettings;
 
         beforeEach(() => {
             visualBuilder = new ForceGraphBuilder(1000,500);
             defaultDataViewBuilder = new ForceGraphData();
             dataView = defaultDataViewBuilder.getDataView();
+            settings = dataView.metadata.objects = <any>new VisualSettings();
         });
 
         describe('capabilities', () => {
@@ -115,6 +118,34 @@ module powerbitests.customVisuals {
                     done();
                 });
             });
+
+            it("links labels on", done => {
+                settings.links.showLabel = true;
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    visualBuilder.linkLabelsTextPath.each((i,e) =>
+                        expect($(e).text()).not.toBeEmpty());
+                    done();
+                });
+            });
+
+            it("links labels format", done => {
+                settings.links.showLabel = true;
+                settings.links.decimalPlaces = 2;
+                settings.links.displayUnits = 1000;
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    visualBuilder.linkLabelsTextPath.each((i,e) => {
+                        var secondPart = $(e).text().split(".")[1].split("");
+                        var filtered = secondPart.filter(x => !_.isNaN(_.parseInt(x)));
+
+                        expect(filtered.length).toBeLessThan(secondPart.length);
+                        expect(filtered.length).toEqual(settings.links.decimalPlaces);
+                    });
+
+                    done();
+                });
+            });
         });
     });
 
@@ -129,6 +160,18 @@ module powerbitests.customVisuals {
 
         public get mainElement() {
             return this.element.children("svg.forceGraph");
+        }
+
+        public get linkLabels() {
+            return this.mainElement.children("g.linklabelholder");
+        }
+
+        public get linkLabelsText() {
+            return this.linkLabels.children("text.linklabel");
+        }
+
+        public get linkLabelsTextPath() {
+            return this.linkLabelsText.children("textpath");
         }
     }
 }

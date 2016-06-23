@@ -86,22 +86,22 @@ module powerbitests.customVisuals {
 
                 helpers.renderTimeout(() => {
                     let countOfDays = visualBuilder.mainElement.children("g.mainArea").children(".cellsArea").children(".cellRect").length;
-					let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children("g").eq(4).children(".label").children().length;
+                    let countOfTextItems = visualBuilder.mainElement.children("g.mainArea").children("g").eq(4).children(".label").children().length;
 
                     expect(countOfDays).toBe(dataView.categorical.categories[0].values.length);
                     expect(countOfTextItems).toBe(dataView.categorical.categories[0].values.length);
-					let cellRects = visualBuilder.mainElement.find(".cellRect");
-					cellRects.last().d3Click(0, 0);
-					let fill = window.getComputedStyle(cellRects[0]).fill;
-					let hexFill = fill;
-					if (_.startsWith(fill, '#')) {
-						var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fill);
-						hexFill = "rgb(" + parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16) + ")";
-					}
-					expect(hexFill).toBe("rgb(255, 255, 255)");
-					let cellHeight = parseInt(cellRects[0].attributes.getNamedItem("height").value.replace("px", ""), 10);
-					expect(cellHeight).toBeLessThan(60.1);
-					expect(cellHeight).toBeGreaterThan(29.9);
+                    let cellRects = visualBuilder.mainElement.find(".cellRect");
+                    cellRects.last().d3Click(0, 0);
+                    let fill = window.getComputedStyle(cellRects[0]).fill;
+                    let hexFill = fill;
+                    if (_.startsWith(fill, '#')) {
+                        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fill);
+                        hexFill = "rgb(" + parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16) + ")";
+                    }
+                    expect(hexFill).toBe("rgb(255, 255, 255)");
+                    let cellHeight = parseInt(cellRects[0].attributes.getNamedItem("height").value.replace("px", ""), 10);
+                    expect(cellHeight).toBeLessThan(60.1);
+                    expect(cellHeight).toBeGreaterThan(29.9);
                     done();
                 });
             });
@@ -269,6 +269,27 @@ module powerbitests.customVisuals {
                 function expectToCallRedrawPeriod(granularity: GranularityType): void {
                     expect(visualBuilder.visualObject.redrawPeriod).toHaveBeenCalledWith(granularity);
                 }
+            });
+        });
+
+        describe('selection', () => {
+            it("persist while update", (done) => {
+                visualBuilder.update(dataView);
+                visualBuilder.currentPeriod = GranularityType.month;
+                let countOfMonth = visualBuilder.mainElement.find(".cellRect").length;
+
+                helpers.renderTimeout(() => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        visualBuilder.currentPeriod = GranularityType.day;
+                        visualBuilder.mainElement.find(".cellRect").last().d3Click(0, 0);
+                        visualBuilder.currentPeriod = GranularityType.month;
+                        visualBuilder.updateRenderTimeout(dataView, () => {
+                            let countMonthOfSelectedDays = visualBuilder.mainElement.find(".cellRect").length;
+                            expect(countMonthOfSelectedDays).toEqual(countOfMonth+1);
+                            done();
+                        });
+                    });
+                });
             });
         });
 

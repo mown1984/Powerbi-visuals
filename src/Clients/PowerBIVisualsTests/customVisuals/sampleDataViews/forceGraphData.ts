@@ -51,9 +51,10 @@ module powerbitests.customVisuals.sampleDataViews {
                 ["Logan", "Brazil"],
                 ["Ella", "Canada"],
             ];
+        public valuesWeight: number[] = helpers.getRandomNumbers(this.valuesSourceTarget.length, 10, 100);
 
         public getDataView(columnNames?: string[]): powerbi.DataView {
-            columnNames = columnNames || [ForceGraphData.ColumnSource, ForceGraphData.ColumnTarget];
+            columnNames = columnNames || [ForceGraphData.ColumnSource, ForceGraphData.ColumnTarget, ForceGraphData.ColumnWeight];
             return this.createCategoricalDataViewBuilder([
                 {
                     source: {
@@ -103,7 +104,7 @@ module powerbitests.customVisuals.sampleDataViews {
                         isMeasure: true,
                         type: ValueType.fromDescriptor({ numeric: true }),
                     },
-                    values: []
+                    values: this.valuesWeight
                 }
                 ], columnNames).build();
         }

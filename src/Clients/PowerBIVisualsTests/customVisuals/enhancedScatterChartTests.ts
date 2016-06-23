@@ -41,6 +41,8 @@ module powerbitests.customVisuals {
     import DataViewObject = powerbi.DataViewObject;
     import DataView = powerbi.DataView;
 
+    type CheckerCallback = (dataPoint: EnhancedScatterChartDataPoint, index?: number) => any;
+
     powerbitests.mocks.setLocale();
 
     describe("EnhancedScatterChart", () => {
@@ -407,27 +409,9 @@ module powerbitests.customVisuals {
                 callConverterAndExpectExceptions(dataView, colorPalette);
             });
 
-            it("color fill", () => {
-                let enhancedScatterChartData: IEnhancedScatterChartData =
-                    callConverterWittAdditionalcolumns([EnhancedScatterChartData.ColumnColorFill]);
-
-                enhancedScatterChartData.dataPoints.forEach((dataPoint: EnhancedScatterChartDataPoint, index: number) => {
-                    expect(dataPoint.colorFill).toBe(defaultDataViewBuilder.colorValues[index]);
-                });
-            });
-
-            it("images", () => {
-                let enhancedScatterChartData: IEnhancedScatterChartData =
-                    callConverterWittAdditionalcolumns([EnhancedScatterChartData.ColumnImage]);
-
-                enhancedScatterChartData.dataPoints.forEach((dataPoint: EnhancedScatterChartDataPoint, index: number) => {
-                    expect(dataPoint.svgurl).toBe(defaultDataViewBuilder.imageValues[index]);
-                });
-            });
-
             it("backdrop", () => {
                 let enhancedScatterChartData: IEnhancedScatterChartData =
-                    callConverterWittAdditionalcolumns([EnhancedScatterChartData.ColumnBackdrop]);
+                    callConverterWithAdditionalcolumns(colorPalette, [EnhancedScatterChartData.ColumnBackdrop]);
 
                 expect(enhancedScatterChartData.backdrop).toBeDefined();
                 expect(enhancedScatterChartData.backdrop).not.toBeNull();
@@ -436,8 +420,56 @@ module powerbitests.customVisuals {
                 expect(enhancedScatterChartData.backdrop.show).toBeTruthy();
             });
 
-            function callConverterWittAdditionalcolumns(columns: string[]): IEnhancedScatterChartData {
-                dataView = defaultDataViewBuilder.getDataView(
+            describe("dataPoints", () => {
+                it("x should be defined", () => {
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint) => {
+                        valueToBeDefinedAndNumber(dataPoint.x);
+                    }, defaultDataViewBuilder, colorPalette);
+                });
+
+                it("y should be defined", () => {
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint) => {
+                        valueToBeDefinedAndNumber(dataPoint.y);
+                    }, defaultDataViewBuilder, colorPalette);
+                });
+
+                it("color fill", () => {
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint, index: number) => {
+                        expect(dataPoint.colorFill).toBe(defaultDataViewBuilder.colorValues[index]);
+                    }, defaultDataViewBuilder, colorPalette, [EnhancedScatterChartData.ColumnColorFill]);
+                });
+
+                it("images", () => {
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint, index: number) => {
+                        expect(dataPoint.svgurl).toBe(defaultDataViewBuilder.imageValues[index]);
+                    }, defaultDataViewBuilder, colorPalette, [EnhancedScatterChartData.ColumnImage]);
+                });
+
+                it("rotate should be defined", () => {
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint, index) => {
+                        valueToBeDefinedAndNumber(dataPoint.rotation);
+                    }, defaultDataViewBuilder, colorPalette, [EnhancedScatterChartData.ColumnRotation]);
+                });
+
+                it("rotate should be 0 when source values are null", () => {
+                    defaultDataViewBuilder.rotationValues = defaultDataViewBuilder.rotationValues.map((rotation) => {
+                        return null;
+                    });
+
+                    checkDataPointProperty((dataPoint: EnhancedScatterChartDataPoint) => {
+                        let rotation: number = dataPoint.rotation;
+
+                        valueToBeDefinedAndNumber(rotation);
+
+                        expect(rotation).toBe(0);
+                    }, defaultDataViewBuilder, colorPalette, [EnhancedScatterChartData.ColumnRotation]);
+                });
+            });
+
+            function callConverterWithAdditionalcolumns(
+                colorPalette: IDataColorPalette, columns: string[]): IEnhancedScatterChartData {
+
+                let dataView: DataView = defaultDataViewBuilder.getDataView(
                     EnhancedScatterChartData.DefaultSetOfColumns.concat(columns));
 
                 return callConverterAndExpectExceptions(dataView, colorPalette); 
@@ -453,7 +485,7 @@ module powerbitests.customVisuals {
                 let enhancedScatterChartData: IEnhancedScatterChartData;
 
                 expect(() => {
-                    enhancedScatterChartData = enhancedScatterChartData = VisualClass.converter(
+                    enhancedScatterChartData = VisualClass.converter(
                         dataView,
                         colorPalette,
                         interactivityService,
@@ -462,6 +494,29 @@ module powerbitests.customVisuals {
                 }).not.toThrow();
 
                 return enhancedScatterChartData;
+            }
+
+            function checkDataPointProperty(
+                checkerCallback: CheckerCallback,
+                dataViewBuilder: EnhancedScatterChartData,
+                colorPalette: IDataColorPalette,
+                columnNames: string[] = []): void {
+
+                let dataView: DataView,
+                    enhancedScatterChartData: IEnhancedScatterChartData;
+
+                dataView = dataViewBuilder.getDataView(
+                    EnhancedScatterChartData.DefaultSetOfColumns.concat(columnNames));
+
+                enhancedScatterChartData = VisualClass.converter(dataView, colorPalette);
+
+                enhancedScatterChartData.dataPoints.forEach(checkerCallback);
+            };
+
+            function valueToBeDefinedAndNumber(value: number): void {
+                expect(value).toBeDefined();
+                expect(value).not.toBeNull();
+                expect(value).not.toBeNaN();
             }
         });
     });

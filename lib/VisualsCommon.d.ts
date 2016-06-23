@@ -204,6 +204,7 @@ declare module powerbi {
         private GeotaggingString_Streets;
         private GeotaggingString_Longitude;
         private GeotaggingString_Longitude_Short;
+        private GeotaggingString_Longitude_Short2;
         private GeotaggingString_Latitude;
         private GeotaggingString_Latitude_Short;
         private GeotaggingString_PostalCode;
@@ -1147,6 +1148,8 @@ declare module jsCommon {
         function equalIgnoreCase(a: string, b: string): boolean;
         function startsWithIgnoreCase(a: string, b: string): boolean;
         function startsWith(a: string, b: string): boolean;
+        /** Determines whether a string contains a specified substring (by case-sensitive comparison). */
+        function contains(source: string, substring: string): boolean;
         /** Determines whether a string contains a specified substring (while ignoring case). */
         function containsIgnoreCase(source: string, substring: string): boolean;
         /**

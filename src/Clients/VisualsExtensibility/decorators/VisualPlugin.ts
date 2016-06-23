@@ -29,7 +29,7 @@
 module powerbi.extensibility {
     export function VisualPlugin(options: IVisualPluginOptions): ClassDecorator {
         return function (constructor: IVisualConstructor): void {
-            constructor.__capabilities__ = options.capabilities;
+            constructor.__transform__ = options.transform;
         };
     }
 }

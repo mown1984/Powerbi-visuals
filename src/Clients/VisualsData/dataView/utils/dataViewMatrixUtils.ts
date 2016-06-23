@@ -154,7 +154,7 @@ module powerbi.data.utils {
             //      { "level": 2, "levelSourceIndex": 1, "isSubtotal": true }
             //    ]
             //  }
-            let isRootNode = _.isUndefined(node.level);
+            let isRootNode = node.level === undefined;
             let shouldInheritCurrentNode = isRootNode || (node.level <= deepestLevelToInherit);
             if (shouldInheritCurrentNode) {
                 let inheritFunc = useInheritSingle ? inheritSingle : inherit;

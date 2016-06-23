@@ -4860,8 +4860,8 @@ declare module _ {
         * The non-chainable wrapper functions are:
         * clone, cloneDeep, contains, escape, every, find, findIndex, findKey, findLast, 
         * findLastIndex, findLastKey, has, identity, indexOf, isArguments, isArray, isBoolean, 
-        * isDate, isElement, isEmpty, isEqual, isFinite, isFunction, isNaN, isNull, isNumber, 
-        * isObject, isPlainObject, isRegExp, isString, isUndefined, join, lastIndexOf, mixin, 
+        * isDate, isElement, isEmpty, isEqual, isFinite, isFunction, isNaN, isNumber, 
+        * isObject, isPlainObject, isRegExp, isString, join, lastIndexOf, mixin, 
         * noConflict, parseInt, pop, random, reduce, reduceRight, result, shift, size, some, 
         * sortedIndex, runInContext, template, unescape, uniqueId, and value
         *
@@ -10429,16 +10429,6 @@ declare module _ {
         isNaN(value: any): boolean;
     }
 
-    //_.isNull
-    interface LoDashStatic {
-        /**
-        * Checks if value is null.
-        * @param value The value to check.
-        * @return True if the value is null, else false.
-        **/
-        isNull(value: any): boolean;
-    }
-
     //_.isNumber
     interface LoDashStatic {
         /**
@@ -10490,16 +10480,6 @@ declare module _ {
         * @return True if the value is a string, else false.
         **/
         isString(value: any): boolean;
-    }
-
-    //_.isUndefined
-    interface LoDashStatic {
-        /**
-        * Checks if value is undefined.
-        * @param value The value to check.
-        * @return True if the value is undefined, else false.
-        **/
-        isUndefined(value: any): boolean;
     }
 
     //_.keys

@@ -706,13 +706,13 @@ module powerbi.visuals {
             return items;
         }
 
-        export function addTooltipBucketItem(reader: data.IDataViewCategoricalReader, tooltipInfo: TooltipDataItem[], categoryIndex: number, seriesIndex?: number): TooltipDataItem[]{
+        export function addTooltipBucketItem(reader: data.IDataViewCategoricalReader, tooltipInfo: TooltipDataItem[], categoryIndex: number, seriesIndex?: number): void{
             let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, seriesIndex);
             let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", seriesIndex);
 
-            if (tooltipValues) {
+            if (tooltipValues && tooltipMetadataColumns) {
                 for (let j = 0; j < tooltipValues.length; j++) {
-                    if (tooltipValues[j] != null) {
+                    if (tooltipValues[j] != null && tooltipMetadataColumns[j]) {
                         tooltipInfo.push({
                             displayName: tooltipMetadataColumns[j].displayName,
                             value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], Gauge.formatStringProp),
@@ -720,8 +720,6 @@ module powerbi.visuals {
                     }
                 }
             }
-
-            return tooltipInfo;
         }
         
         function getFormattedValue(column: DataViewMetadataColumn, formatStringProp: DataViewObjectPropertyIdentifier, value: any) {

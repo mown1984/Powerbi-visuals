@@ -185,6 +185,10 @@ module powerbi.visuals {
                         suppressFormatPainterCopy: true,
                     }),
                     fontSize: StandardObjectProperties.fontSize,
+                    labelDensity: {
+                        displayName: data.createDisplayNameGetter('Visual_LabelDensity'),
+                        type: { formatting: { labelDensity: true } },
+                    },
                 },
             },
             plotArea: {

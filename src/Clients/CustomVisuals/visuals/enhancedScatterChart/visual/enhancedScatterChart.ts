@@ -1222,25 +1222,43 @@ module powerbi.visuals.samples {
                         measureYStart: DataViewValueColumn = ScatterChart.getMeasureValue(indicies.yStart, seriesValues),
                         measureYEnd: DataViewValueColumn = ScatterChart.getMeasureValue(indicies.yEnd, seriesValues);
 
+                    //TODO: need to update (refactor) these lines below.
                     let xVal = measureX && measureX.values && !isNaN(measureX.values[categoryIdx]) ? measureX.values[categoryIdx] : null,
-                        yVal = measureY && measureY.values && !isNaN(measureY.values[categoryIdx]) ? measureY.values[categoryIdx] : 0,
-                        size = measureSize && measureSize.values ? measureSize.values[categoryIdx] : null,
-                        colorFill: string = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureColorFill, categoryIdx),
-                        shapeSymbolType = EnhancedScatterChart.getCustomSymbolType(measureShape && measureShape.values && measureShape.values[categoryIdx]),
-                        image = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureImage, categoryIdx),
-                        rotation = measureRotation && measureRotation.values ? measureRotation.values[categoryIdx] : 0,
-                        backdrop = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureBackdrop, categoryIdx),
-                        xStart = measureXStart && measureXStart.values ? measureXStart.values[categoryIdx] : null,
-                        xEnd = measureXEnd && measureXEnd.values ? measureXEnd.values[categoryIdx] : null,
-                        yStart = measureYStart && measureYStart.values ? measureYStart.values[categoryIdx] : null,
-                        yEnd = measureYEnd && measureYEnd.values ? measureYEnd.values[categoryIdx] : null;
+                        yVal = measureY && measureY.values && !isNaN(measureY.values[categoryIdx]) ? measureY.values[categoryIdx] : 0;
 
                     let hasNullValue = (xVal == null) || (yVal == null);
 
                     if (hasNullValue)
                         continue;
 
-                    let color: string;
+                    let size: number,
+                        colorFill: string,
+                        shapeSymbolType: (number) => string,
+                        image: string,
+                        rotation: number,
+                        backdrop: string,
+                        xStart: number,
+                        xEnd: number,
+                        yStart: number,
+                        yEnd: number,
+                        color: string;
+
+                    size = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureSize, categoryIdx);
+
+                    colorFill = EnhancedScatterChart.getValueFromDataViewValueColumnById(
+                        measureColorFill, categoryIdx);
+
+                    shapeSymbolType = EnhancedScatterChart.getCustomSymbolType(
+                        EnhancedScatterChart.getValueFromDataViewValueColumnById(measureShape, categoryIdx));
+
+                    image = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureImage, categoryIdx);
+                    rotation = EnhancedScatterChart.getNumberFromDataViewValueColumnById(measureRotation, categoryIdx);
+                    backdrop = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureBackdrop, categoryIdx);
+                    xStart = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureXStart, categoryIdx);
+                    xEnd = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureXEnd, categoryIdx);
+                    yStart = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureYStart, categoryIdx);
+                    yEnd = EnhancedScatterChart.getValueFromDataViewValueColumnById(measureYEnd, categoryIdx);
+
                     if (hasDynamicSeries) {
                         color = colorHelper.getColorForSeriesValue(grouping.objects, dataValues.identityFields, grouping.name);
                     } else {
@@ -1257,6 +1275,7 @@ module powerbi.visuals.samples {
                         .withSeries(dataValues, grouping)
                         .createSelectionId();
 
+                    //TODO: need to refactor these lines below.
                     let seriesData: TooltipSeriesDataItem[] = [];
                     if (dataValueSource) {
                         // Dynamic series
@@ -1349,6 +1368,14 @@ module powerbi.visuals.samples {
             }
 
             return dataPoints;
+        }
+
+        private static getNumberFromDataViewValueColumnById(dataViewValueColumn: DataViewCategoricalColumn, index: number): number {
+            let value: number = EnhancedScatterChart.getValueFromDataViewValueColumnById(dataViewValueColumn, index);
+
+            return value && !isNaN(value)
+                ? value
+                : 0;
         }
 
         private static getValueFromDataViewValueColumnById(dataViewValueColumn: DataViewCategoricalColumn, index: number): any {

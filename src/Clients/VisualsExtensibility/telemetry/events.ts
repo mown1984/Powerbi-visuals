@@ -116,7 +116,7 @@ module powerbi.visuals.telemetry {
         };
 
         var event: ITelemetryEventI<IPBIVisualException> = {
-            name: 'PBI.VisualException',
+            name: 'PBI.Visual.Exception',
             category: TelemetryCategory.CriticalError,
             time: Date.now(),
             id: generateGuid(),

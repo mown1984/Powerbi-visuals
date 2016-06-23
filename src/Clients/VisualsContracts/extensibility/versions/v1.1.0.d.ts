@@ -38,6 +38,7 @@ declare module powerbi.extensibility.v110 {
     export interface IVisual extends extensibility.IVisual {
         /** Notifies the IVisual of an update (data, viewmode, size change). */
         update(options: VisualUpdateOptions): void;
+        update<T>(options: VisualUpdateOptions, viewModel: T): void;
 
         /** Notifies the visual that it is being destroyed, and to do any cleanup necessary (such as unsubscribing event handlers). */
         destroy?(): void;
@@ -62,5 +63,4 @@ declare module powerbi.extensibility.v110 {
         element: HTMLElement;
         host: IVisualHost;
     }
-
 }

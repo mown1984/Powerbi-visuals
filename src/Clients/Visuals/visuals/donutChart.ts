@@ -56,10 +56,12 @@ module powerbi.visuals {
 
     export interface DonutDataPoint extends SelectableDataPoint, TooltipEnabledDataPoint {
         measure: number;
+        originalMeasure: number;
         measureFormat?: string;
         percentage: number;
         highlightRatio?: number;
         highlightValue?: number;
+        originalHighlightValue?: number;
         label: string;
         index: number;
         /** Data points that may be drilled into */
@@ -84,6 +86,8 @@ module powerbi.visuals {
         maxValue?: number;
         visibleGeometryCulled?: boolean;
         defaultDataPointColor?: string;
+        hasNegativeValues?: boolean;
+        allValuesAreNegative?: boolean;
     }
 
     interface DonutChartSettings {
@@ -132,7 +136,6 @@ module powerbi.visuals {
         private static ClassName = 'donutChart';
         private static InteractiveLegendClassName = 'donutLegend';
         private static InteractiveLegendArrowClassName = 'donutLegendArrow';
-        private static DrillDownAnimationDuration = 1000;
         private static OuterArcRadiusRatio = 0.9;
         private static InnerArcRadiusRatio = 0.8;
         private static OpaqueOpacity = 1.0;
@@ -235,6 +238,8 @@ module powerbi.visuals {
                 legendObjectProperties: converter.legendObjectProperties,
                 maxValue: converter.maxValue,
                 visibleGeometryCulled: converter.dataPoints.length !== culledDataPoints.length,
+                hasNegativeValues: converter.hasNegativeValues,
+                allValuesAreNegative: converter.allValuesAreNegative,
             };
         }
 
@@ -259,6 +264,8 @@ module powerbi.visuals {
                 legendData: { title: "", dataPoints: [], fontSize: SVGLegend.DefaultFontSizeInPt },
                 hasHighlights: false,
                 dataLabelsSettings: dataLabelUtils.getDefaultDonutLabelSettings(),
+                hasNegativeValues: false,
+                allValuesAreNegative: false,
             };
             this.drilled = false;
             // Leaving this false for now, will depend on the datacategory in the future
@@ -355,6 +362,8 @@ module powerbi.visuals {
                     legendData: { title: "", dataPoints: [] },
                     hasHighlights: false,
                     dataLabelsSettings: dataLabelUtils.getDefaultDonutLabelSettings(),
+                    hasNegativeValues: false,
+                    allValuesAreNegative: false,
                 };
             }
 
@@ -369,6 +378,13 @@ module powerbi.visuals {
                     false /*supportsNaN*/,
                     false /*supportsNegativeInfinity*/,
                     false /*supportsPositiveInfinity*/);
+
+                if (this.data.allValuesAreNegative) {
+                    warnings.push(new AllNegativeValuesWarning());
+                }
+                else if (this.data.hasNegativeValues) {
+                    warnings.push(new NegativeValuesNotSupportedWarning());
+                }
 
                 this.hostService.setWarnings(warnings);
             }
@@ -709,7 +725,7 @@ module powerbi.visuals {
             let tooltip: string = "";
 
             if (labelSettingsStyle === labelStyle.both || labelSettingsStyle === labelStyle.data) {
-                dataLabel = measureFormatter.format(d.data.highlightValue != null ? d.data.highlightValue : d.data.measure);
+                dataLabel = measureFormatter.format(d.data.originalHighlightValue != null ? d.data.originalHighlightValue : d.data.originalMeasure);
                 dataLabelSize = NewDataLabelUtils.getTextSize(dataLabel, fontSize);
             }
 
@@ -844,31 +860,6 @@ module powerbi.visuals {
                 };
 
                 this.interactivityService.bind(dataPoints, this.behavior, behaviorOptions);
-            }
-        }
-
-        public setDrilldown(selection?: DonutDataPoint): void {
-            if (selection) {
-                let d3PieLayout = d3.layout.pie()
-                    .sort(null)
-                    .value((d: DonutDataPoint) => {
-                        return d.percentage;
-                    });
-                // Drill into the current selection.
-                let legendDataPoints: LegendDataPoint[] = [{ label: selection.label, color: selection.color, icon: LegendIcon.Box, identity: selection.identity, selected: selection.selected }];
-                let legendData: LegendData = { title: "", dataPoints: legendDataPoints };
-                let drilledDataPoints = d3PieLayout(selection.internalDataPoints);
-                this.updateInternal({
-                    dataPointsToDeprecate: selection.internalDataPoints,
-                    dataPoints: drilledDataPoints,
-                    unCulledDataPoints: drilledDataPoints.map((value) => value.data),
-                    legendData: legendData,
-                    hasHighlights: false,
-                    dataLabelsSettings: this.data.dataLabelsSettings,
-                }, false /* suppressAnimations */, DonutChart.DrillDownAnimationDuration);
-            } else {
-                // Pop out of drill down to view the "outer" data.
-                this.updateInternal(this.data, false /* suppressAnimations */, DonutChart.DrillDownAnimationDuration);
             }
         }
 
@@ -1369,7 +1360,7 @@ module powerbi.visuals {
 
                 // Add the category, percentage and value
                 let itemCategory = valueFormatter.format(datum.label);
-                let itemValue = valueFormatter.format(datum.measure, datum.measureFormat);
+                let itemValue = valueFormatter.format(datum.originalMeasure, datum.measureFormat);
                 let itemPercentage = valueFormatter.format(datum.percentage, '0.00 %;-0.00 %;0.00 %');
                 let itemColor = datum.color;
 
@@ -1619,8 +1610,8 @@ module powerbi.visuals {
         interface ConvertedDataPoint {
             identity: SelectionId;
             measureFormat: string;
-            measureValue: MeasureAndValue;
-            highlightMeasureValue: MeasureAndValue;
+            measure: number;
+            highlightMeasure: number;
             index: number;
             label: any;
             categoryLabel: string;
@@ -1628,11 +1619,6 @@ module powerbi.visuals {
             categoryIndex?: number;
             seriesIndex?: number;
         };
-
-        interface MeasureAndValue {
-            measure: number;
-            value: number;
-        }
 
         export class DonutChartConverter {
             private reader: IDataViewCategoricalReader;
@@ -1658,6 +1644,8 @@ module powerbi.visuals {
             public dataLabelsSettings: VisualDataLabelsSettings;
             public legendObjectProperties: DataViewObject;
             public maxValue: number;
+            public hasNegativeValues: boolean;
+            public allValuesAreNegative: boolean;
 
             public constructor(dataView: DataView, colors: IDataColorPalette, defaultDataPointColor?: string, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean) {
                 let reader = this.reader = data.createIDataViewCategoricalReader(dataView);
@@ -1668,6 +1656,8 @@ module powerbi.visuals {
                 this.tooltipBucketEnabled = tooltipBucketEnabled;
                 this.colorHelper = new ColorHelper(colors, donutChartProps.dataPoint.fill, defaultDataPointColor);
                 this.maxValue = 0;
+                this.hasNegativeValues = false;
+                this.allValuesAreNegative = false;
 
                 if (dataViewCategorical.categories && dataViewCategorical.categories.length > 0) {
                     let category = dataViewCategorical.categories[0];
@@ -1677,7 +1667,7 @@ module powerbi.visuals {
                     this.categoryColumnRef = <data.SQExpr[]>category.identityFields;
                     this.categoryFormatString = valueFormatter.getFormatString(category.source, donutChartProps.general.formatString);
                 }
-                
+
                 this.isDynamicSeries = reader.hasDynamicSeries();
 
                 this.highlightsOverflow = false;
@@ -1687,28 +1677,69 @@ module powerbi.visuals {
                 this.legendDataPoints = [];
                 this.dataLabelsSettings = null;
 
+                // TODO: this should be shared with TreeMap
                 if (reader.hasValues("Y")) {
                     let seriesCount = this.seriesCount = reader.getSeriesCount("Y");
-                    this.hasHighlights = this.seriesCount > 0 && !_.isEmpty(dataViewCategorical.values) && !!dataViewCategorical.values[0].highlights;
-                    // We iterate over all categories, or if we have no categories, we just iterate over the series (category index = 0 is fine in that case)
-                    for (let categoryIndex = 0, categoryCount = reader.getCategoryCount() || 1; categoryIndex < categoryCount; categoryIndex++) {
+                    this.hasHighlights = reader.hasHighlights("Y");
+                    let categoryCount = reader.getCategoryCount() || 1;
+                    this.allValuesAreNegative = undefined;
+                    
+                    for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                         for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
-                            this.total += Math.abs(reader.getValue("Y", categoryIndex, seriesIndex));
-                            this.highlightTotal += this.hasHighlights ? Math.abs(reader.getHighlight("Y", categoryIndex, seriesIndex)) : 0;
+                            let value = reader.getValue("Y", categoryIndex, seriesIndex);
+                            let highlight: any;
+                            if (this.hasHighlights) {
+                                highlight = reader.getHighlight("Y", categoryIndex, seriesIndex);
+                                if (highlight == null)
+                                    highlight = 0;
+                            }
+                            if (this.allValuesAreNegative === undefined) {
+                                this.allValuesAreNegative = ((this.hasHighlights ? highlight <= 0 : true) && value <= 0) ? true : false;
+                            }
+                            else {
+                                this.allValuesAreNegative = this.allValuesAreNegative && (this.hasHighlights ? highlight <= 0 : true) && value <= 0;
+                            }
+
+                            if (!this.hasNegativeValues)
+                                this.hasNegativeValues = value < 0 || (this.hasHighlights ? highlight < 0 : false);
+                        }
+                    }   
+
+                    this.allValuesAreNegative = !!this.allValuesAreNegative;
+
+                    // We iterate over all categories, or if we have no categories, we just iterate over the series (category index = 0 is fine in that case)
+                    for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                        for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
+                            let value = reader.getValue("Y", categoryIndex, seriesIndex);
+                            value = DonutChartConverter.normalizedValue(value, this.allValuesAreNegative);
+                            this.total += value;
+                            if (this.hasHighlights) {
+                                let highlight = reader.getHighlight("Y", categoryIndex, seriesIndex);
+                                highlight = DonutChartConverter.normalizedValue(highlight, this.allValuesAreNegative);
+                                this.highlightTotal += highlight;
+                                if (!this.highlightsOverflow && highlight > value) {
+                                    this.highlightsOverflow = true;
+                                }
+                            }
                         }
                     }
                 }
-
-                this.total = AxisHelper.normalizeNonFiniteNumber(this.total);
-                this.highlightTotal = AxisHelper.normalizeNonFiniteNumber(this.highlightTotal);
             }
 
-            private static normalizedMeasureAndValue(measureAndValue: MeasureAndValue): MeasureAndValue {
-                let normalized: MeasureAndValue = $.extend(true, {}, measureAndValue);
-                normalized.measure = AxisHelper.normalizeNonFiniteNumber(normalized.measure);
-                normalized.value = AxisHelper.normalizeNonFiniteNumber(normalized.value);
-
-                return normalized;
+            // For public test
+            public static normalizedValue(value: number, allValuesAreNegative: boolean): number {
+                if (value == null || isNaN(value))
+                    return 0;
+                else if (value === Number.POSITIVE_INFINITY)
+                    return Number.MAX_VALUE;
+                else if (value === Number.NEGATIVE_INFINITY)
+                    return -Number.MAX_VALUE;
+                else if (allValuesAreNegative)
+                    return Math.abs(value);
+                else if (value < 0)
+                    return 0;
+                else 
+                    return value;
             }
 
             public convert(): void {
@@ -1732,15 +1763,6 @@ module powerbi.visuals {
                     convertedData = [];
                 }
 
-                // Check if any of the highlight values are > non-highlight values
-                let highlightsOverflow = false;
-                for (let i = 0, dataPointCount = convertedData.length; i < dataPointCount && !highlightsOverflow; i++) {
-                    let point = convertedData[i];
-                    if (Math.abs(point.highlightMeasureValue.measure) > Math.abs(point.measureValue.measure)) {
-                        highlightsOverflow = true;
-                    }
-                }
-
                 // Create data labels settings
                 this.dataLabelsSettings = this.convertDataLabelSettings();
 
@@ -1761,30 +1783,31 @@ module powerbi.visuals {
                 for (let i = 0, dataPointCount = convertedData.length; i < dataPointCount; i++) {
                     let point = convertedData[i];
 
-                    // Normalize the values here and then handle tooltip value as infinity
-                    let normalizedHighlight = DonutChartConverter.normalizedMeasureAndValue(point.highlightMeasureValue);
-                    let normalizedNonHighlight = DonutChartConverter.normalizedMeasureAndValue(point.measureValue);
+                    let originalMeasure = point.measure;
+                    let normalizedMeasure = DonutChartConverter.normalizedValue(point.measure, this.allValuesAreNegative);
+                    let originalHighlight = point.highlightMeasure;
+                    let normalizedHighlight = DonutChartConverter.normalizedValue(point.highlightMeasure, this.allValuesAreNegative);
 
-                    let measure = normalizedNonHighlight.measure;
-                    let percentage = (this.total > 0) ? normalizedNonHighlight.value / this.total : 0.0;
+                    let percentage = (this.total > 0) ? normalizedMeasure / this.total : 0.0;
                     let highlightRatio: number;
                     let highlightPercentage: number;
-                    if (normalizedNonHighlight.value > this.maxValue)
-                        this.maxValue = normalizedNonHighlight.value;
-                    if (normalizedHighlight.value > this.maxValue)
-                        this.maxValue = normalizedHighlight.value;
+                    if (normalizedMeasure > this.maxValue)
+                        this.maxValue = normalizedMeasure;
+                    if (normalizedHighlight  > this.maxValue)
+                        this.maxValue = normalizedHighlight ;
 
                     if (this.hasHighlights) {
                         // When any highlight value is greater than the corresponding non-highlight value
                         // we just render all of the highlight values and discard the non-highlight values.
-                        if (highlightsOverflow) {
-                            measure = normalizedHighlight.measure;
+                        if (this.highlightsOverflow) {
+                            originalMeasure = originalHighlight;
+                            normalizedMeasure = normalizedHighlight;
 
-                            percentage = (this.highlightTotal > 0) ? normalizedHighlight.value / this.highlightTotal : 0.0;
+                            percentage = (this.highlightTotal > 0) ? normalizedHighlight / this.highlightTotal : 0.0;
                             highlightRatio = 1;
                         }
                         else {
-                            highlightRatio = normalizedNonHighlight.value !== 0 ? normalizedHighlight.value / normalizedNonHighlight.value : 0;
+                            highlightRatio = normalizedMeasure !== 0 ? normalizedHighlight / normalizedMeasure : 0;
                         }
 
                         if (!highlightRatio) {
@@ -1805,15 +1828,17 @@ module powerbi.visuals {
                     }
 
                     let valuesMetadata = reader.getValueMetadataColumn("Y", valueIndex);
-                    let value: number = this.hasHighlights && highlightsOverflow ? point.highlightMeasureValue.measure : point.measureValue.measure;
-                    let highlightValue: number = this.hasHighlights && !highlightsOverflow ? point.highlightMeasureValue.measure : undefined;
+                    let value: number = this.hasHighlights && this.highlightsOverflow ? originalHighlight : originalMeasure;
+                    let highlightValue: number = this.hasHighlights && !this.highlightsOverflow ? originalHighlight : undefined;
                     let formatString = valueFormatter.getFormatString(valuesMetadata, formatStringProp);
                     let pct: string = valueFormatter.format(percentage, pctFormatString);
                     let valueAndPct: string;
-                    valueAndPct = valueFormatter.format(value, formatString) + ' (' + pct + ')';
+                    if (value != null && pct != null) {
+                        valueAndPct = valueFormatter.format(value, formatString) + ' (' + pct + ')';
+                    }
 
                     let highlightValueAndPct: string;
-                    if (this.hasHighlights && highlightValue != null && highlightPercentage != null) {
+                    if (highlightValue != null && highlightPercentage != null) {
                         let highlightedPct: string = valueFormatter.format(highlightPercentage, pctFormatString); 
                         highlightValueAndPct = valueFormatter.format(highlightValue, formatString) + ' (' + highlightedPct + ')';
                     }
@@ -1856,32 +1881,22 @@ module powerbi.visuals {
 
                     if (this.tooltipBucketEnabled) {
                         // SeriesIndex is not needed for static series.
-                        let tooltipValues = reader.getAllValuesForRole("Tooltips", this.categoryValues ? point.categoryIndex : 0, this.isDynamicSeries ? point.seriesIndex : undefined);
-                        let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", this.isDynamicSeries ? point.seriesIndex : undefined);
-
-                        if (tooltipValues && tooltipMetadataColumns) {
-                            for (let j = 0; j < tooltipValues.length; j++) {
-                                if (tooltipValues[j] != null) {
-                                    tooltipInfo.push({
-                                        displayName: tooltipMetadataColumns[j].displayName,
-                                        value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
-                                    });
-                                }
-                            }
-                        }
+                        TooltipBuilder.addTooltipBucketItem(reader, tooltipInfo, this.categoryValues ? point.categoryIndex : 0, this.isDynamicSeries ? point.seriesIndex : undefined);
                     }
 
-                    let strokeWidth = prevPointColor === point.color && value && value > 0 ? 1 : 0;
-                    prevPointColor = value && value > 0 ? point.color : prevPointColor;
+                    let strokeWidth = (prevPointColor === point.color && percentage && percentage > 0) ? 1 : 0;
+                    prevPointColor = (percentage && percentage > 0 ) ? point.color : prevPointColor;
                     this.dataPoints.push({
                         identity: point.identity,
-                        measure: measure,
+                        measure: normalizedMeasure,
+                        originalMeasure: originalMeasure,
                         measureFormat: point.measureFormat,
                         percentage: percentage,
                         index: point.index,
                         label: point.label,
                         highlightRatio: highlightRatio,
-                        highlightValue: highlightValue,
+                        highlightValue: (this.hasHighlights && !this.highlightsOverflow) ? normalizedHighlight : undefined,
+                        originalHighlightValue: (this.hasHighlights && !this.highlightsOverflow) ? originalHighlight : undefined,
                         selected: false,
                         tooltipInfo: tooltipInfo,
                         color: point.color,
@@ -1929,17 +1944,14 @@ module powerbi.visuals {
 
                     // Series are either measures in the multi-measure case, or the single series otherwise
                     for (let seriesIndex = 0; seriesIndex < this.seriesCount; seriesIndex++) {
+                        let value = reader.getValue("Y", categoryIndex, seriesIndex);
+                        let highlightValue = this.hasHighlights ? reader.getHighlight("Y", categoryIndex, seriesIndex) : undefined;
+
                         let valueColumn = reader.getValueColumn("Y", seriesIndex);
 
                         let label = categoryLabel;
                         if (this.isDynamicSeries || reader.getSeriesCount("Y") > 1) {
                             label = converterHelper.getFormattedLegendLabel(valueColumn.source, dataViewCategorical.values, formatStringProp);
-                        }
-
-                        let nonHighlight = reader.getValue("Y", categoryIndex, seriesIndex) || 0;
-                        let highlight: number;
-                        if (this.hasHighlights) {
-                            highlight = reader.getHighlight("Y", categoryIndex, seriesIndex);
                         }
 
                         let measure: string = valueColumn.source.queryName;
@@ -1952,14 +1964,8 @@ module powerbi.visuals {
                         let dataPoint: ConvertedDataPoint = {
                             identity: identity,
                             measureFormat: valueFormatter.getFormatString(valueColumn.source, formatStringProp, true),
-                            measureValue: <MeasureAndValue> {
-                                measure: nonHighlight,
-                                value: Math.abs(nonHighlight),
-                            },
-                            highlightMeasureValue: <MeasureAndValue> {
-                                measure: highlight,
-                                value: highlight != null ? Math.abs(highlight) : null,
-                            },
+                            measure: value,
+                            highlightMeasure: highlightValue,
                             index: categoryIndex * this.seriesCount + seriesIndex,
                             label: label,
                             categoryLabel: categoryLabel,
@@ -1988,27 +1994,21 @@ module powerbi.visuals {
                 let formatStringProp = donutChartProps.general.formatString;
 
                 for (let measureIndex = 0; measureIndex < this.seriesCount; measureIndex++) {
+                    let value = reader.getValue("Y", 0, measureIndex);
+                    let highlightValue = this.hasHighlights ? reader.getHighlight("Y", 0, measureIndex) : undefined;
+
                     let valueColumn = reader.getValueColumn("Y", measureIndex);
                     let measureFormat = valueFormatter.getFormatString(valueColumn.source, formatStringProp, true);
                     let measureLabel = valueColumn.source.displayName;
                     let identity = SelectionId.createWithMeasure(valueColumn.source.queryName);
-
-                    let nonHighlight = reader.getValue("Y", 0, measureIndex) || 0;
-                    let highlight = this.hasHighlights ? reader.getHighlight("Y", 0, measureIndex) : 0;
 
                     let color = this.colorHelper.getColorForMeasure(valueColumn.source.objects, valueColumn.source.queryName);
 
                     let dataPoint: ConvertedDataPoint = {
                         identity: identity,
                         measureFormat: measureFormat,
-                        measureValue: <MeasureAndValue> {
-                            measure: nonHighlight,
-                            value: Math.abs(nonHighlight),
-                        },
-                        highlightMeasureValue: <MeasureAndValue> {
-                            measure: highlight,
-                            value: Math.abs(highlight),
-                        },
+                        measure: value,
+                        highlightMeasure: highlightValue,
                         index: measureIndex,
                         label: measureLabel,
                         categoryLabel: measureLabel,
@@ -2035,6 +2035,9 @@ module powerbi.visuals {
                 let formatStringProp = donutChartProps.general.formatString;
 
                 for (let seriesIndex = 0; seriesIndex < this.seriesCount; seriesIndex++) {
+                    let value = reader.getValue("Y", 0, seriesIndex);
+                    let highlightValue = this.hasHighlights ? reader.getHighlight("Y", 0, seriesIndex) : undefined;
+
                     let valueColumn = reader.getValueColumn("Y", seriesIndex);
                     let seriesFormat = valueFormatter.getFormatString(valueColumn.source, formatStringProp, true);
                     let label = converterHelper.getFormattedLegendLabel(valueColumn.source, dataViewCategorical.values, formatStringProp);
@@ -2045,22 +2048,13 @@ module powerbi.visuals {
                     let seriesName = converterHelper.getSeriesName(valueColumn.source);
                     let objects = reader.getSeriesObjects(seriesIndex);
                     
-                    let nonHighlight = reader.getValue("Y", 0, seriesIndex) || 0;
-                    let highlight = this.hasHighlights ? reader.getHighlight("Y", 0, seriesIndex) || 0 : 0;
-
                     let color = this.colorHelper.getColorForSeriesValue(objects, dataViewCategorical.values.identityFields, seriesName);
 
                     let dataPoint: ConvertedDataPoint = {
                         identity: identity,
                         measureFormat: seriesFormat,
-                        measureValue: <MeasureAndValue> {
-                            measure: nonHighlight,
-                            value: Math.abs(nonHighlight),
-                        },
-                        highlightMeasureValue: <MeasureAndValue> {
-                            measure: highlight,
-                            value: Math.abs(highlight),
-                        },
+                        measure: value,
+                        highlightMeasure: highlightValue,
                         index: seriesIndex,
                         label: label,
                         categoryLabel: label,

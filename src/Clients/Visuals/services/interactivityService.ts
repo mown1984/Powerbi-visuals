@@ -464,7 +464,7 @@ module powerbi.visuals {
             let host = this.hostService;
             if (host.onSelect) {
                 let selectArgs: SelectEventArgs = {
-                    data: this.selectedIds.filter((value: SelectionId) => value.hasIdentity()).map((value: SelectionId) => value.getSelector())
+                    data: this.selectedIds.map((value: SelectionId) => value.getSelector())
                 };
 
                 let data2 = this.getSelectorsByColumn(this.selectedIds);

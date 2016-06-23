@@ -47,7 +47,6 @@ module powerbitests {
     import TrendLineHelper = powerbi.visuals.TrendLineHelper;
 
     let labelColor = powerbi.visuals.dataLabelUtils.defaultLabelColor;
-    let labelDensityMax = powerbi.visuals.NewDataLabelUtils.LabelDensityMax;
 
     powerbitests.mocks.setLocale();
 
@@ -4116,7 +4115,7 @@ module powerbitests {
             let measureColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col2' });
 
             beforeEach(() => {
-                element = powerbitests.helpers.testDom('500', '500');
+                element = powerbitests.helpers.testDom('1000', '1000');
                 v = new LineChartVisualBuilder().areaChart(/* isStacked */ true).build();
                 v.init({
                     element: element,
@@ -4168,8 +4167,7 @@ module powerbitests {
 
                         let visibleDots = dots.filter('[r^="4"]');
                         expect(visibleDots.length).toBe(2);
-                        expect(Math.round(+$(visibleDots[0]).attr('cy'))).toEqual(234);//scale(66+10) - done have access to scale function
-                        expect(Helpers.isInRange(+$(visibleDots[1]).attr('cy'), 201, 205)).toBe(true);
+                        expect(Math.round(+$(visibleDots[0]).attr('cy'))).toEqual(498);//scale(66+10) - done have access to scale function
                     }
                     done();
                 }, DefaultWaitForRender);
@@ -4390,7 +4388,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     },
                     categoryAxis: {
                         show: true,
@@ -4447,7 +4445,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 };
                 let valueColumns = DataViewTransform.createValueColumns([
@@ -4479,13 +4477,12 @@ module powerbitests {
                 });
 
                 let labelDataPoints = callCreateLabelDataPoints(v);
-
-                // Important labels (last, first) should be first
-                expect(labelDataPoints[0].text).toEqual("90");
-                expect(labelDataPoints[1].text).toEqual("20");
-                expect(labelDataPoints[2].text).toEqual("40");
-                expect(labelDataPoints[3].text).toEqual("50");
-                expect(labelDataPoints[4].text).toEqual("0");
+                
+                expect(labelDataPoints[0].text).toEqual("20");
+                expect(labelDataPoints[1].text).toEqual("40");
+                expect(labelDataPoints[2].text).toEqual("50");
+                expect(labelDataPoints[3].text).toEqual("0");
+                expect(labelDataPoints[4].text).toEqual("90");
             });
 
             it('trend lines not enabled', (done) => {
@@ -6322,7 +6319,7 @@ module powerbitests {
         let v: powerbi.IVisual, element: JQuery;
 
         beforeEach(() => {
-            element = powerbitests.helpers.testDom('150', '75');
+            element = powerbitests.helpers.testDom('1000', '1000');
             v = new LineChartVisualBuilder().withLabelDensity().build();
 
             v.init({
@@ -6361,7 +6358,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6385,10 +6382,80 @@ module powerbitests {
             let labelDataPoints = callCreateLabelDataPoints(v);
 
             // Important labels (last, first) should be first
-            expect(labelDataPoints[0].text).toEqual("100.00");
-            expect(labelDataPoints[1].text).toEqual("500.00");
-            expect(labelDataPoints[2].text).toEqual("300.00");
-            expect(labelDataPoints[3].text).toEqual("700.00");
+            expect(labelDataPoints[0].text).toEqual("500.00");
+            expect(labelDataPoints[1].text).toEqual("100.00");
+            expect(labelDataPoints[2].text).toEqual("700.00");
+            expect(labelDataPoints[3].text).toEqual("300.00");
+            expect(labelDataPoints[4].text).toEqual("400.00");
+        });
+
+        it("Label data points respect show at the series level", () => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    {
+                        displayName: 'col1',
+                        queryName: 'col1',
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text),
+                        roles: { Category: true },
+                    }, {
+                        displayName: 'col2',
+                        queryName: 'col2',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        format: '0.##;-0.##;0',
+                        roles: { Y: true },
+                    }, {
+                        displayName: 'col3',
+                        queryName: 'col3',
+                        isMeasure: true,
+                        type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double),
+                        format: '0.##;-0.##;0',
+                        roles: { Y: true },
+                        objects: {
+                            labels: {
+                                show: false,
+                            }
+                        },
+                    }],
+                objects: {
+                    labels: {
+                        show: true,
+                        color: undefined,
+                        labelDisplayUnits: undefined,
+                        labelPosition: undefined,
+                        labelPrecision: undefined,
+                        labelDensity: undefined,
+                    }
+                }
+            };
+            v.onDataChanged({
+                dataViews: [{
+                    metadata: dataViewMetadata,
+                    categorical: {
+                        categories: [{
+                            source: dataViewMetadata.columns[0],
+                            values: ['a', 'b', 'c', 'd', 'e']
+                        }],
+                        values: DataViewTransform.createValueColumns([{
+                            source: dataViewMetadata.columns[1],
+                            values: [500, 300, 700, 400, 100],
+                            subtotal: 2000
+                        }, {
+                                source: dataViewMetadata.columns[1],
+                                values: [200, 300, 200, 300, 100],
+                                subtotal: 1100
+                            }])
+                    }
+                }]
+            });
+
+            let labelDataPoints = callCreateLabelDataPoints(v);
+
+            // Important labels (last, first) should be first
+            expect(labelDataPoints[0].text).toEqual("500.00");
+            expect(labelDataPoints[1].text).toEqual("100.00");
+            expect(labelDataPoints[2].text).toEqual("700.00");
+            expect(labelDataPoints[3].text).toEqual("300.00");
             expect(labelDataPoints[4].text).toEqual("400.00");
         });
 
@@ -6414,7 +6481,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6471,7 +6538,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6527,7 +6594,7 @@ module powerbitests {
                         labelDisplayUnits: 1000,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6552,10 +6619,10 @@ module powerbitests {
 
             // When we don't have labelPrecision the format comes from the model but the trailing zeros are not being forced
             // Important labels (last, first) should be first
-            expect(labelDataPoints[0].text).toEqual("1K");
-            expect(labelDataPoints[1].text).toEqual("5K");
-            expect(labelDataPoints[2].text).toEqual("3K");
-            expect(labelDataPoints[3].text).toEqual("7K");
+            expect(labelDataPoints[0].text).toEqual("5K");
+            expect(labelDataPoints[1].text).toEqual("1K");
+            expect(labelDataPoints[2].text).toEqual("7K");
+            expect(labelDataPoints[3].text).toEqual("3K");
             expect(labelDataPoints[4].text).toEqual("4K");
         });
 
@@ -6581,7 +6648,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: 0,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6605,10 +6672,10 @@ module powerbitests {
             let labelDataPoints = callCreateLabelDataPoints(v);
 
             // Important labels (last, first) should be first
-            expect(labelDataPoints[0].text).toEqual("100");
-            expect(labelDataPoints[1].text).toEqual("500");
-            expect(labelDataPoints[2].text).toEqual("300");
-            expect(labelDataPoints[3].text).toEqual("700");
+            expect(labelDataPoints[0].text).toEqual("500");
+            expect(labelDataPoints[1].text).toEqual("100");
+            expect(labelDataPoints[2].text).toEqual("700");
+            expect(labelDataPoints[3].text).toEqual("300");
             expect(labelDataPoints[4].text).toEqual("400");
         });
 
@@ -6636,7 +6703,7 @@ module powerbitests {
                         labelPosition: undefined,
                         labelPrecision: 0,
                         fontSize: fontSize,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6688,7 +6755,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     }
                 }
             };
@@ -6720,10 +6787,10 @@ module powerbitests {
             let labelDataPoints = callCreateLabelDataPoints(v);
 
             // Important labels (last, first) should be first
-            expect(labelDataPoints[0].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[4].key }));
-            expect(labelDataPoints[1].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[0].key }));
-            expect(labelDataPoints[2].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[1].key }));
-            expect(labelDataPoints[3].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[2].key }));
+            expect(labelDataPoints[0].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[0].key }));
+            expect(labelDataPoints[1].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[4].key }));
+            expect(labelDataPoints[2].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[2].key }));
+            expect(labelDataPoints[3].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[1].key }));
             expect(labelDataPoints[4].key).toEqual(JSON.stringify({ series: JSON.stringify({ selector: '{"metadata":"col2"}', highlight: false }), category: categoryIdentities[3].key }));
         });
 
@@ -6733,8 +6800,7 @@ module powerbitests {
                 isScrollable: true,
                 tooltipsEnabled: true,
                 animator: new powerbi.visuals.BaseAnimator(),
-                behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.LineChartWebBehavior()]),
-                lineChartLabelDensityEnabled: true
+                behavior: new powerbi.visuals.CartesianChartBehavior([new powerbi.visuals.LineChartWebBehavior()])
             });
 
             areaChart.init({
@@ -6771,7 +6837,7 @@ module powerbitests {
                         labelDisplayUnits: undefined,
                         labelPosition: undefined,
                         labelPrecision: undefined,
-                        labelDensity: labelDensityMax,
+                        labelDensity: undefined,
                     },
                     categoryAxis: {
                         scalar: true,
@@ -6813,305 +6879,7 @@ module powerbitests {
             expect((<LabelParentRect>labelDataPoints[4].parentShape).rect.width).toBeGreaterThan(0);
         });
     });
-
-    //describe("label data point density single series validation", () => {
-    //    let hostServices = powerbitests.mocks.createVisualHostServices();
-    //    let v: powerbi.IVisual, element: JQuery;
-    //    let numberOfPreferredLabels = 4;
-
-    //    beforeEach(() => {
-    //        element = powerbitests.helpers.testDom('500', '500');
-    //        v = powerbi.visuals.visualPluginFactory.createMinerva({ lineChartLabelDensityEnabled: true, }).getPlugin('lineChart').create();
-
-    //        v.init({
-    //            element: element,
-    //            host: hostServices,
-    //            style: powerbi.visuals.visualStyles.create(),
-    //            viewport: {
-    //                height: element.height(),
-    //                width: element.width()
-    //            },
-    //            animation: { transitionImmediate: true },
-    //            interactivity: {},
-    //        });
-    //    });
-
-    //    function oneSeriesVisualDataOptions(labelDensity?: number): powerbi.VisualDataChangedOptions {
-    //        let dataViewMetadata: powerbi.DataViewMetadata = {
-    //            columns: [
-    //                {
-    //                    displayName: 'col1',
-    //                    queryName: 'col1',
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-    //                }, {
-    //                    displayName: 'col2',
-    //                    queryName: 'col2',
-    //                    isMeasure: true,
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-    //                }],
-    //            objects: {
-    //                labels: {
-    //                    show: true,
-    //                    labelFill: labelColor,
-    //                    labelDensity: labelDensity !== undefined ? labelDensity : labelDensityMax,
-    //                }
-    //            }
-    //        };
-
-    //        return {
-    //            dataViews: [{
-    //                metadata: dataViewMetadata,
-    //                categorical: {
-    //                    categories: [{
-    //                        source: dataViewMetadata.columns[0],
-    //                        values: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-    //                    }],
-    //                    values: DataViewTransform.createValueColumns([{
-    //                        source: dataViewMetadata.columns[1],
-    //                        values: [500, 300, 700, 400, 100, 200, 600, 350, 250],
-    //                        subtotal: 3400
-    //                    }])
-    //                }
-    //            }]
-    //        };
-    //    }
-
-    //    it("Label data points have correct weight", () => {
-    //        v.onDataChanged(oneSeriesVisualDataOptions());
-    //        let i = 0;
-    //        let labelDataPoints = callCreateLabelDataPoints(v);
-
-    //        // First labels are preffered
-    //        for (; i < numberOfPreferredLabels; i++) {
-    //            if (!labelDataPoints[i].isPreferred)
-    //                break;
-    //        }
-
-    //        for (let ilen = labelDataPoints.length - 1; i < ilen; i++)
-    //            expect(labelDataPoints[i].weight).toBeGreaterThan(labelDataPoints[i + 1].weight);
-    //    });
-
-    //    it("Label data points density change", () => {
-
-    //        for (let i = 0; i < labelDensityMax; i++) {
-    //            v.onDataChanged(oneSeriesVisualDataOptions(i));
-
-    //            let labelDataPoints = callCreateLabelDataPointsObj(v);
-    //            let numberOfLabelsToRender = labelDataPoints[0].maxNumberOfLabels;
-    //            expect($(".labelGraphicsContext")).toBeInDOM();
-    //            expect($(".labelGraphicsContext .label").length).toBe(numberOfLabelsToRender);
-    //        }
-    //    });
-
-    //    it("Label data points important labels validation", () => {
-    //        v.onDataChanged(oneSeriesVisualDataOptions());
-    //        let labelDataPoints = callCreateLabelDataPoints(v);
-
-    //        // 100 is the lowest label
-    //        expect(labelDataPoints[0].isPreferred).toBe(true);
-    //        expect(labelDataPoints[0].text).toBe('500');
-
-    //        // 250 is the last label
-    //        expect(labelDataPoints[1].isPreferred).toBe(true);
-    //        expect(labelDataPoints[1].text).toBe('250');
-
-    //        // 700 is the highest label
-    //        expect(labelDataPoints[2].isPreferred).toBe(true);
-    //        expect(labelDataPoints[2].text).toBe('700');
-
-    //        // 500 is the first label
-    //        expect(labelDataPoints[3].isPreferred).toBe(true);
-    //        expect(labelDataPoints[3].text).toBe('100');
-    //    });
-
-    //    it("Label data points position validation", () => {
-    //        let dataViewMetadata: powerbi.DataViewMetadata = {
-    //            columns: [
-    //                {
-    //                    displayName: 'col1',
-    //                    queryName: 'col1',
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-    //                }, {
-    //                    displayName: 'col2',
-    //                    queryName: 'col2',
-    //                    isMeasure: true,
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-    //                }],
-    //            objects: {
-    //                labels: {
-    //                    show: true,
-    //                    labelPrecision: 10,
-    //                    labelDensity: labelDensityMax,
-    //                }
-    //            }
-    //        };
-    //        v.onDataChanged({
-    //            dataViews: [{
-    //                metadata: dataViewMetadata,
-    //                categorical: {
-    //                    categories: [{
-    //                        source: dataViewMetadata.columns[0],
-    //                        values: ['a', 'b', 'c', 'd']
-    //                    }],
-    //                    values: DataViewTransform.createValueColumns([{
-    //                        source: dataViewMetadata.columns[1],
-    //                        values: [50, 100, 0, 50],
-    //                        subtotal: 200,
-    //                    }])
-    //                }
-    //            }]
-    //        });
-
-    //        // Precision is forced to be 10 so that the label will be large yet all labels
-    //        // should be displayed due to repositioning the label
-    //        expect($(".labelGraphicsContext")).toBeInDOM();
-    //        expect($(".labelGraphicsContext .label").length).toBe(4);
-    //    });
-    //});
-
-    //describe("label data point density multiple series validation", () => {
-    //    let hostServices = powerbitests.mocks.createVisualHostServices();
-    //    let v: powerbi.IVisual, element: JQuery;
-    //    let numberOfPreferredLabels = 4;
-    //    let categoryColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'col1' });
-    //    let seriesIdentities = [
-    //        mocks.dataViewScopeIdentity('col2'),
-    //        mocks.dataViewScopeIdentity('col3'),
-    //    ];
-
-    //    beforeEach(() => {
-    //        element = powerbitests.helpers.testDom('500', '500');
-    //        v = powerbi.visuals.visualPluginFactory.createMinerva({ lineChartLabelDensityEnabled: true, }).getPlugin('lineChart').create();
-
-    //        v.init({
-    //            element: element,
-    //            host: hostServices,
-    //            style: powerbi.visuals.visualStyles.create(),
-    //            viewport: {
-    //                height: element.height(),
-    //                width: element.width()
-    //            },
-    //            animation: { transitionImmediate: true },
-    //            interactivity: {},
-    //        });
-    //    });
-
-    //    function twoSeriesVisualDataOptions(labelDensity?: number): powerbi.VisualDataChangedOptions {
-    //        let metadata: powerbi.DataViewMetadata = {
-    //            columns: [
-    //                {
-    //                    displayName: 'col1',
-    //                    queryName: 'col1',
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Text)
-    //                },
-    //                {
-    //                    displayName: 'col2',
-    //                    queryName: 'col2',
-    //                    isMeasure: true,
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-    //                },
-    //                {
-    //                    displayName: 'col3',
-    //                    queryName: 'col3',
-    //                    isMeasure: true,
-    //                    type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double)
-    //                }],
-    //            objects: {
-    //                labels: {
-    //                    show: true,
-    //                    labelFill: labelColor,
-    //                    labelDensity: labelDensity !== undefined ? labelDensity : labelDensityMax,
-    //                    showAll: true,
-    //                }
-    //            }
-    //        };
-
-    //        let valueColumns = DataViewTransform.createValueColumns([
-    //            {
-    //                source: metadata.columns[1],
-    //                values: [110, 120, 130, 140, 150, 160, 170, 180, 190],
-    //                identity: seriesIdentities[0],
-    //            }, {
-    //                source: metadata.columns[2],
-    //                values: [210, 220, 230, 240, 250, 260, 270, 280, 290],
-    //                identity: seriesIdentities[1],
-    //            }],
-    //            [categoryColumnRef]);
-
-    //        return {
-    //            dataViews: [{
-    //                metadata: metadata,
-    //                categorical: {
-    //                    categories: [{
-    //                        source: metadata.columns[0],
-    //                        values: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
-    //                        identityFields: [categoryColumnRef],
-    //                    }],
-    //                    values: valueColumns
-    //                }
-    //            }]
-    //        };
-    //    }
-
-    //    it('Label data points have correct weight', () => {
-
-    //        v.onDataChanged(twoSeriesVisualDataOptions());
-
-    //        let labelDataPointsGroups = callCreateLabelDataPointsObj(v);
-
-    //        for (let series = 0, slen = labelDataPointsGroups.length; series < slen; series++) {
-    //            let curentSeries = labelDataPointsGroups[series].labelDataPoints,
-    //                i = 0,
-    //                ilen = curentSeries.length;
-
-    //            // First labels are preffered
-    //            for (; i < numberOfPreferredLabels, i < ilen; i++) {
-    //                if (!curentSeries[i].isPreferred)
-    //                    break;
-    //            }
-
-    //            for (; i < ilen - 1; i++)
-    //                expect(curentSeries[i].weight).toBeGreaterThan(curentSeries[i + 1].weight);
-    //        }
-    //    });
-
-    //    it("Label data points density change", () => {
-
-    //        for (let i = 0; i < labelDensityMax; i++) {
-    //            v.onDataChanged(twoSeriesVisualDataOptions(i));
-
-    //            let labelDataPointsGroups = callCreateLabelDataPointsObj(v);
-    //            let totalNumberOfLabels = labelDataPointsGroups[0].maxNumberOfLabels + labelDataPointsGroups[1].maxNumberOfLabels;
-    //            expect($(".labelGraphicsContext")).toBeInDOM();
-    //            expect($(".labelGraphicsContext .label").length).toBe(totalNumberOfLabels);
-    //        }
-    //    });
-
-    //    it("Label data points important labels validation", () => {
-    //        v.onDataChanged(twoSeriesVisualDataOptions());
-    //        let labelDataPointsGroups = callCreateLabelDataPointsObj(v);
-    //        let labelDataPoints = labelDataPointsGroups[0].labelDataPoints;
-
-    //        // 110 is the first and lowest label
-    //        expect(labelDataPoints[0].isPreferred).toBe(true);
-    //        expect(labelDataPoints[0].text).toBe('110');
-
-    //        // 190 is the last and highest label
-    //        expect(labelDataPoints[1].isPreferred).toBe(true);
-    //        expect(labelDataPoints[1].text).toBe('190');
-
-    //        labelDataPoints = labelDataPointsGroups[1].labelDataPoints;
-
-    //        // 210 is the first and lowest label
-    //        expect(labelDataPoints[0].isPreferred).toBe(true);
-    //        expect(labelDataPoints[0].text).toBe('210');
-
-    //        // 290 is the last and highest label
-    //        expect(labelDataPoints[1].isPreferred).toBe(true);
-    //        expect(labelDataPoints[1].text).toBe('290');
-    //    });
-    //});
-
+    
     function callCreateLabelDataPoints(v: powerbi.IVisual): powerbi.LabelDataPoint[] {
         let labelDataPointsGroups = (<any>v).layers[0].createLabelDataPoints();
         return labelDataPointsGroups[0].labelDataPoints;
@@ -7147,7 +6915,6 @@ module powerbitests {
         private isMobile: boolean;
         private isAreaChart: boolean;
         private isStacked: boolean;
-        private lineChartLabelDensityEnabled: boolean;
 
         public areaChart(isStacked: boolean): this {
             this.isAreaChart = true;
@@ -7161,7 +6928,6 @@ module powerbitests {
         }
 
         public withLabelDensity(): this {
-            this.lineChartLabelDensityEnabled = true;
             return this;
         }
 
@@ -7177,7 +6943,7 @@ module powerbitests {
                 chartType: chartType,
                 trimOrdinalDataOnOverflow: this.isMobile ? false : true,
                 isScrollable: this.isMobile ? false : true,
-                lineChartLabelDensityEnabled: this.lineChartLabelDensityEnabled,
+                advancedLineLabelsEnabled: true,
             });
         }
     }

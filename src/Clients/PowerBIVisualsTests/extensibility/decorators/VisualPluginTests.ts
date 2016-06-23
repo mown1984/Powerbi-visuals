@@ -29,17 +29,20 @@
 module powerbitests {
 
     import VisualPlugin = powerbi.extensibility.VisualPlugin;
+    import IVisualConstructor = powerbi.extensibility.IVisualConstructor;
 
     describe("@VisualPlugin Decorator", function () {
-        it("should attach capabilities to the class", function () {
-            let capabilities = {};
+        it("should attach transform to the class", function () {
+            let transform = function(dataviews: powerbi.DataView[]) {
+                return;
+            };
 
             @VisualPlugin({
-                capabilities: capabilities
+                transform: transform
             })
             class MockVisual { }
 
-            expect((<any>MockVisual).__capabilities__).toBe(capabilities);
+            expect((<IVisualConstructor>(<any>MockVisual)).__transform__).toBe(transform);
         });
     });
 }

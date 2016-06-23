@@ -187,8 +187,7 @@ module powerbi.data {
                 .uniq() // Note: _.uniq() does not treat two arrays with same elements as equal
                 .value();
             
-
-            let isSameCategoryRoleNameInAllRoleMappings = uniqueCategoryRoles.length === 1 && !_.isUndefined(uniqueCategoryRoles[0]);
+            let isSameCategoryRoleNameInAllRoleMappings = uniqueCategoryRoles.length === 1 && uniqueCategoryRoles[0] !== undefined;
             if (isSameCategoryRoleNameInAllRoleMappings) {
                 result = uniqueCategoryRoles[0];
             }

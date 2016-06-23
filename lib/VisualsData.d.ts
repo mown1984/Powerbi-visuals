@@ -1937,7 +1937,7 @@ declare module powerbi.data {
         function fromHierarchy(hierarchyPattern: FieldExprHierarchyPattern): SQHierarchyExpr;
     }
     module SQExprConverter {
-        function asFieldPattern(sqExpr: SQExpr): FieldExprPattern;
+        function asFieldPattern(sqExpr: SQExpr, schema?: FederatedConceptualSchema): FieldExprPattern;
     }
     module FieldExprPattern {
         function visit<T>(expr: SQExpr | FieldExprPattern, visitor: IFieldExprPatternVisitor<T>): T;
@@ -2233,6 +2233,7 @@ declare module powerbi.data {
         findProperty(entityName: string, propertyName: string): ConceptualProperty;
         findHierarchy(entityName: string, name: string): ConceptualHierarchy;
         findHierarchyByVariation(variationEntityName: string, variationColumnName: string, variationName: string, hierarchyName: string): ConceptualHierarchy;
+        findTargetEntityOfVariation(variationEntityName: string, variationColumnName: string, variationName: string): ConceptualEntity;
         /**
         * Returns the first property of the entity whose kpi is tied to kpiProperty
         */
@@ -3329,6 +3330,7 @@ declare module powerbi.visuals {
         private dataMap;
         private measure;
         static builder(): SelectionIdBuilder;
+        withCategoryIdentity(categoryColumn: DataViewCategoryColumn, identity: DataViewScopeIdentity): this;
         withCategory(categoryColumn: DataViewCategoryColumn, index: number): this;
         withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this;
         withMeasure(measureId: string): this;

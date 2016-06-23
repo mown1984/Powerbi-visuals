@@ -109,6 +109,8 @@ module powerbi.visuals {
 
         /** Helper class for creating and measuring slicer DOM elements  */
         export class DOMHelper {
+            private static SearchInputHeight = 20;
+
             public createSlicerHeader(hostServices: IVisualHostServices): HTMLElement {
                 let slicerHeaderDiv = document.createElement('div');
                 slicerHeaderDiv.className = Selectors.Header.class;
@@ -129,14 +131,15 @@ module powerbi.visuals {
 
                 slicerSearch.append('input')
                     .attr('type', 'text')
-                    .classed(Selectors.SearchInput.class, true);
+                    .classed(Selectors.SearchInput.class, true)
+                    .attr('drag-resize-disabled', 'true');
                 
                 return slicerHeaderDiv;
             }
 
             public getHeaderTextProperties(settings: SlicerSettings): TextProperties {
                 let headerTextProperties: TextProperties = {
-                    fontFamily: 'wf_segoe-ui_normal',
+                    fontFamily: Font.Family.regular.css,
                     fontSize: '10px'
                 };
                 if (settings.header.show) {
@@ -147,13 +150,15 @@ module powerbi.visuals {
 
             public getSlicerBodyViewport(currentViewport: IViewport, settings: SlicerSettings, headerTextProperties: TextProperties): IViewport {
                 let headerHeight = (settings.header.show) ? this.getHeaderHeight(settings, headerTextProperties) : 0;
-                let slicerBodyHeight = currentViewport.height - (headerHeight + settings.header.borderBottomWidth);
+                let searchHeaderHight = settings.search.enabled ? DOMHelper.SearchInputHeight : 0;
+                let slicerBodyHeight = currentViewport.height - (headerHeight + settings.header.borderBottomWidth + searchHeaderHight);
                 return {
                     height: slicerBodyHeight,
                     width: currentViewport.width
                 };
             }
 
+            // TODO: Slicer body height and width update should be done through less file
             public updateSlicerBodyDimensions(currentViewport: IViewport, slicerBody: D3.Selection, settings: SlicerSettings): void {
                 let slicerViewport = this.getSlicerBodyViewport(currentViewport, settings, this.getHeaderTextProperties(settings));
                 slicerBody.style({

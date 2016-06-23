@@ -248,7 +248,7 @@ module powerbi.visuals {
             let textProperties = {
                 fontSize: jsCommon.PixelConverter.toString(fontSize),
                 text: frameData[currentFrameIndex].text || "",
-                fontFamily: "wf_segoe-ui_normal",
+                fontFamily: Font.Family.regular.css,
             };
             let textHeight = TextMeasurementService.estimateSvgTextHeight(textProperties) - TextMeasurementService.estimateSvgTextBaselineDelta(textProperties);
 
@@ -923,7 +923,7 @@ module powerbi.visuals {
 
         function getLabelData(keys: PlayChartFrameData[], keyColumn?: DataViewMetadataColumn): PlayAxisTickLabelData {
             let textProperties: TextProperties = {
-                fontFamily: 'wf_segoe-ui_normal',
+                fontFamily: Font.Family.regular.css,
                 fontSize: jsCommon.PixelConverter.toString(14),
             };
 

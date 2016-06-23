@@ -191,7 +191,7 @@ module jasmine {
         if (isJasmine24()) {
             // For handling jasmine.any(aClass: any): if 'actual' and/or 'expected' are created by jasmine.any()...
             let asymmetricResult = asymmetricMatch(actual, expected);
-            if (!_.isUndefined(asymmetricResult)) {
+            if (asymmetricResult !== undefined) {
                 let matchResult: CustomMatcherResult = {
                     pass: asymmetricResult
                 };

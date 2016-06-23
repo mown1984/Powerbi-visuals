@@ -7,6 +7,7 @@
 /// <reference path="../../../src/Clients/Typedefs/common/window.d.ts"/>
 /// <reference path="./common/point.ts"/>
 /// <reference path="./common/rect.ts"/>
+/// <reference path="./common/fontUtils.ts"/>
 /// <reference path="./legend.ts"/>
 /// <reference path="./types/axisScale.ts"/>
 /// <reference path="./types/axisStyle.ts"/>
@@ -82,6 +83,7 @@
 /// <reference path="./common/donutLabelUtils.ts"/>
 /// <reference path="./common/newDataLabelUtils.ts"/>
 /// <reference path="./common/kpiUtil.ts"/>
+/// <reference path="./common/labelDataPointSorter.ts"/>
 /// <reference path="./common/referenceLineHelper.ts"/>
 /// <reference path="./common/interactivityUtils.ts"/>
 /// <reference path="./common/invalidDataValuesChecker.ts"/>

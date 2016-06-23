@@ -35,8 +35,8 @@ module powerbi.visuals {
     import Surround = powerbi.visuals.controls.internal.TablixUtils.Surround;
     import EdgeSettings = powerbi.visuals.controls.internal.TablixUtils.EdgeSettings;
 
-    const TitleFontFamily = 'wf_segoe-ui_semibold';
-    const DefaultFontFamily = 'wf_segoe-ui_normal';
+    const TitleFontFamily = Font.Family.semibold.css;
+    const DefaultFontFamily = Font.Family.regular.css;
     const DefaultCaptionFontSizeInPt = 10;
     const DefaultTitleFontSizeInPt = 13;
     const DefaultDetailFontSizeInPt = 9;
@@ -111,7 +111,6 @@ module powerbi.visuals {
         card?: {
             border?: Surround<EdgeSettings>;
             padding?: Surround<number>;
-            maxRows?: number;
         };
         cardItemContainer?: {
             paddingRight?: number;
@@ -220,9 +219,6 @@ module powerbi.visuals {
             {
                 maxWidth: 250,
                 style: {
-                    card: {
-                        maxRows: 2,
-                    },
                     cardItemContainer: {
                         minWidth: 110,
                     },
@@ -234,9 +230,6 @@ module powerbi.visuals {
             {
                 maxWidth: 490,
                 style: {
-                    card: {
-                        maxRows: 2,
-                    },
                     cardItemContainer: {
                         minWidth: 130,
                     },
@@ -248,9 +241,6 @@ module powerbi.visuals {
             {
                 maxWidth: 750,
                 style: {
-                    card: {
-                        maxRows: 1,
-                    },
                     cardItemContainer: {
                         minWidth: 120,
                     },
@@ -630,10 +620,7 @@ module powerbi.visuals {
                         },
                         'width': (d: CardItemData) => {
                             return this.getColumnWidth(d.columnIndex, this.data.dataColumnCount);
-                        },
-                        'display': (d: CardItemData) => {
-                            return (this.hideColumn(d.columnIndex) ? 'none' : 'inline-block');
-                        },
+                        }
                     });
 
                 setImageStyle(cardSelection.selectAll(MultiRowCard.Caption.selector), style.imageCaption);
@@ -790,15 +777,6 @@ module powerbi.visuals {
                 fontFamily: isTitle ? TitleFontFamily : DefaultFontFamily,
                 fontSize: PixelConverter.fromPoint(fontSizeInPt),
             };
-        }
-
-        private hideColumn(fieldIndex: number): boolean {
-            //calculate the number of items apearing in the same row as the columnIndex
-            let rowIndex = this.getRowIndex(fieldIndex);
-
-            // when interactivity is disabled (pinned tile), don't wrap the row
-            let maxRows = this.getStyle().card.maxRows;
-            return (maxRows && rowIndex >= maxRows);
         }
 
         private getColumnWidth(fieldIndex: number, columnCount: number): string {

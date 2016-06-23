@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -44,6 +44,8 @@ module powerbi.visuals {
         dataLabelsSettings: VisualDataLabelsSettings;
         legendObjectProperties?: DataViewObject;
         dataWasCulled: boolean;
+        hasNegativeValues?: boolean;
+        allValuesAreNegative?: boolean;
     }
 
     /**
@@ -51,8 +53,10 @@ module powerbi.visuals {
      */
     export interface TreemapNode extends D3.Layout.GraphNode, SelectableDataPoint, TooltipEnabledDataPoint, LabelEnabledDataPoint {
         key: any;
+        originalValue: number;
         highlightMultiplier?: number;
         highlightValue?: number;
+        originalHighlightValue?: number;
         color: string;
         highlightedTooltipInfo?: TooltipDataItem[];
     }
@@ -62,6 +66,8 @@ module powerbi.visuals {
         highlights?: number[][];
         highlightsOverflow?: boolean;
         totalValue: number;
+        hasNegativeValues?: boolean;
+        allValuesAreNegative?: boolean;
     }
 
     export interface ITreemapLayout {
@@ -106,6 +112,11 @@ module powerbi.visuals {
         fill: Fill;
     }
 
+    export interface ValueShape {
+        validShape: boolean;
+        dataWasCulled: boolean;
+    }
+
     /**
      * Renders an interactive treemap visual from categorical data.
      */
@@ -128,7 +139,7 @@ module powerbi.visuals {
         private static MajorLabelTextSize = 12;
         private static MinTextWidthForMajorLabel = 22;
         private static MajorLabelTextProperties: TextProperties = {
-            fontFamily: 'wf_segoe-ui_normal',
+            fontFamily: Font.Family.regular.css,
             fontSize: Treemap.MajorLabelTextSize + 'px'
         };
 
@@ -253,16 +264,20 @@ module powerbi.visuals {
          */
         public static converter(dataView: DataView, colors: IDataColorPalette, labelSettings: VisualDataLabelsSettings, interactivityService: IInteractivityService, viewport: IViewport, legendObjectProperties?: DataViewObject, tooltipsEnabled: boolean = true, tooltipBucketEnabled?: boolean): TreemapData {
             let reader = data.createIDataViewCategoricalReader(dataView);
+            let hasNegativeValues: boolean;
+            let allValuesAreNegative: boolean;
 
             let rootNode: TreemapNode = {
                 key: "root",
                 name: "root",
+                originalValue: undefined,
                 children: [],
                 selected: false,
                 highlightMultiplier: 0,
                 identity: SelectionId.createNull(),
                 color: undefined,
             };
+
             let allNodes: TreemapNode[] = [];
             let hasHighlights: boolean;
             let legendDataPoints: LegendDataPoint[] = [];
@@ -279,7 +294,7 @@ module powerbi.visuals {
                 labelSettings.precision = DataViewObjects.getValue(objects, treemapProps.labels.labelPrecision, labelSettings.precision);
                 labelSettings.showCategory = DataViewObjects.getValue(objects, treemapProps.categoryLabels.show, labelSettings.showCategory);
             }
-            
+
             // If we values or a gradient, render the tree map
             if (reader.hasValues(treemapRoles.values) || reader.hasValues(treemapRoles.gradient)) {
                 
@@ -297,12 +312,13 @@ module powerbi.visuals {
                     hasHighlights = false;
                     values = highlights;
                 }
+                hasNegativeValues = result.hasNegativeValues;
+                allValuesAreNegative = result.allValuesAreNegative;
 
                 let cullableValue = Treemap.getCullableValue(totalValue, viewport);
 
                 let hasDynamicSeries = reader.hasDynamicSeries();
                 dataWasCulled = false;
-                let shouldCullValue = undefined;
                 let gradientValueColumn: DataViewValueColumn = reader.getValueColumn(treemapRoles.gradient, 0); // Gradient is only used if we have only one series or series are nondynamic (and therefore don't affect gradient)
                 
                 if ((categorical.categories == null) && !_.isEmpty(values)) {
@@ -312,14 +328,12 @@ module powerbi.visuals {
                         let valueColumn = reader.getValueColumn(valueColumnRoleName, seriesIndex);
 
                         let value = values[0][seriesIndex];
-                        if (!Treemap.checkValueForShape(value)) {
-                            continue;
-                        }
-                        if (value < cullableValue) {
-                            dataWasCulled = dataWasCulled || shouldCullValue;
-                            continue;
-                        }
 
+                        let valueShape = Treemap.checkValueForShape(value, cullableValue, allValuesAreNegative, dataWasCulled);
+                        dataWasCulled = valueShape.dataWasCulled;
+                        if (!valueShape.validShape)
+                            continue;
+                         
                         let nodeName = hasDynamicSeries ? converterHelper.formatFromMetadataColumn(reader.getSeriesValueColumnGroup(seriesIndex).name, reader.getSeriesMetadataColumn(), formatStringProp) : converterHelper.formatFromMetadataColumn(reader.getValueDisplayName(valueColumnRoleName, seriesIndex), valueColumn.source, formatStringProp);
 
                         let identity = new SelectionIdBuilder()
@@ -360,27 +374,17 @@ module powerbi.visuals {
                                     displayName: ToolTipComponent.localizationOptions.highlightedValueDisplayName,
                                     value: converterHelper.formatFromMetadataColumn(highlightedValue, valueColumn.source, formatStringProp),
                                 });
-                        }
+                            }
                             if (tooltipBucketEnabled) {
-                                let tooltipValues = reader.getAllValuesForRole("Tooltips", 0, hasDynamicSeries ? seriesIndex : undefined);
-                                let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", hasDynamicSeries ? seriesIndex : undefined);
-                                if (tooltipValues && tooltipMetadataColumns) {
-                                    for (let j = 0; j < tooltipValues.length; j++) {
-                                        if (tooltipValues[j] != null) {
-                                            tooltipInfo.push({
-                                                displayName: tooltipMetadataColumns[j].displayName,
-                                                value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
-                                            });
-                                        }
-                                    }
-                                }
+                                TooltipBuilder.addTooltipBucketItem(reader, tooltipInfo, 0, hasDynamicSeries ? seriesIndex : undefined);
                             }
                         }
                         
                         let node: TreemapNode = {
                             key: key,
                             name: nodeName,
-                            size: value,
+                            size: allValuesAreNegative ? Math.abs(value) : value,
+                            originalValue: value,
                             color: color,
                             selected: false,
                             identity: identity,
@@ -389,8 +393,9 @@ module powerbi.visuals {
                             labelFormatString: valueFormatter.getFormatString(valueColumn.source, formatStringProp),
                         };
                         if (hasHighlights && highlights) {
-                            node.highlightMultiplier = value !== 0 ? highlights[0][seriesIndex] / value : 0;
-                            node.highlightValue = highlights[0][seriesIndex];
+                            node.highlightMultiplier = value !== 0 ? highlightedValue / value : 0;
+                            node.highlightValue = (allValuesAreNegative && highlightedValue != null) ? Math.abs(highlightedValue) : highlightedValue;
+                            node.originalHighlightValue = highlightedValue;
                         }
                         rootNode.children.push(node);
                         allNodes.push(node);
@@ -493,6 +498,7 @@ module powerbi.visuals {
                         let node: TreemapNode = {
                             key: key,
                             name: categoryValue,
+                            originalValue: undefined,
                             color: color,
                             selected: false,
                             identity: identity,
@@ -502,7 +508,8 @@ module powerbi.visuals {
                         };
                         if (hasHighlights) {
                             node.highlightMultiplier = value !== 0 ? highlightValue / value : 0;
-                            node.highlightValue = highlightValue;
+                            node.highlightValue = (allValuesAreNegative && highlightValue != null) ? Math.abs(highlightValue) : highlightValue;
+                            node.originalHighlightValue = highlightValue;
                         }
 
                         legendDataPoints.push({
@@ -521,13 +528,13 @@ module powerbi.visuals {
                             let valueColumn = reader.getValueColumn(valueColumnRoleName, seriesIndex);
 
                             let value = currentValues[seriesIndex];
+
                             let highlight: number;
 
-                            shouldCullValue = value < cullableValue;
-                            if (!Treemap.checkValueForShape(value) || shouldCullValue) {
-                                dataWasCulled = dataWasCulled || shouldCullValue;
+                            let valueShape = Treemap.checkValueForShape(value, cullableValue, allValuesAreNegative, dataWasCulled);
+                            dataWasCulled = valueShape.dataWasCulled;
+                            if (!valueShape.validShape)
                                 continue;
-                            }
 
                             total += value;
 
@@ -599,8 +606,8 @@ module powerbi.visuals {
                                                         displayName: tooltipMetadataColumns[j].displayName,
                                                         value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
                                                     });
-                                    }
-                                }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -608,7 +615,8 @@ module powerbi.visuals {
                                 let childNode: TreemapNode = {
                                     key: childKey,
                                     name: childName,
-                                    size: value,
+                                    size: allValuesAreNegative ? Math.abs(value) : value,
+                                    originalValue: value,
                                     color: color,
                                     selected: false,
                                     identity: childIdentity,
@@ -618,7 +626,8 @@ module powerbi.visuals {
                                 };
                                 if (hasHighlights) {
                                     childNode.highlightMultiplier = value !== 0 ? highlight / value : 0;
-                                    childNode.highlightValue = highlight;
+                                    childNode.highlightValue = (allValuesAreNegative && highlight != null) ? Math.abs(highlight) : null;
+                                    childNode.originalHighlightValue = highlight;
                                 }
                                 if (node.children == null)
                                     node.children = [];
@@ -628,8 +637,9 @@ module powerbi.visuals {
                             }
                         }
 
-                        if (Treemap.checkValueForShape(total)) {
-                            node.size = total;
+                        if (total) {
+                            node.size = allValuesAreNegative ? Math.abs(total) : total;
+                            node.originalValue = total;
                             rootNode.children.push(node);
                             allNodes.push(node);
                         }
@@ -651,7 +661,24 @@ module powerbi.visuals {
                 dataLabelsSettings: labelSettings,
                 legendObjectProperties: legendObjectProperties,
                 dataWasCulled: dataWasCulled,
+                hasNegativeValues: hasNegativeValues,
+                allValuesAreNegative: allValuesAreNegative,
             };
+        }
+
+        private static normalizedValue(value: number, allValuesAreNegative: boolean): number {
+            if (value == null || isNaN(value))
+                return 0;
+            else if (value === Number.POSITIVE_INFINITY)
+                return Number.MAX_VALUE;
+            else if (value === Number.NEGATIVE_INFINITY)
+                return -Number.MAX_VALUE;
+            else if (allValuesAreNegative)
+                return Math.abs(value);
+            else if (value < 0)
+                return 0;
+            else
+                return value;
         }
 
         private static getValuesFromCategoricalDataView(dataView: DataView, hasHighlights: boolean, valueColumnRoleName: string): TreemapRawData {
@@ -668,19 +695,47 @@ module powerbi.visuals {
                     highlights.push([]);
             }
 
+            let hasNegativeValues: boolean;
+            let allValuesAreNegative: boolean = undefined;
+
             let highlightsOverflow: boolean;
             for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
                 for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
                     let value = reader.getValue(valueColumnRoleName, categoryIndex, seriesIndex);
                     values[categoryIndex].push(value);
-                    totalValue += isNaN(value) ? 0 : value;
+                    let highlight: any;
                     if (hasHighlights) {
-                        let highlight = reader.getHighlight(valueColumnRoleName, categoryIndex, seriesIndex);
+                        highlight = reader.getHighlight(valueColumnRoleName, categoryIndex, seriesIndex);
+                        highlights[categoryIndex].push(highlight);
                         if (highlight == null)
                             highlight = 0;
-                        highlights[categoryIndex].push(highlight);
-                        if (highlight > value)
+                    }
+
+                    if (allValuesAreNegative === undefined) {
+                        allValuesAreNegative = ((hasHighlights ? highlight <= 0 : true) && value <= 0) ? true: false;
+                    }
+                    else {
+                        allValuesAreNegative = allValuesAreNegative && (hasHighlights ? highlight <= 0 : true) && value <= 0;
+                    }
+                    
+                    if (!hasNegativeValues)
+                        hasNegativeValues = value < 0 || (hasHighlights ? highlight < 0 : false);
+                }
+            }
+
+            allValuesAreNegative = !!allValuesAreNegative;
+
+            for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
+                for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) {
+                    let value = values[categoryIndex][seriesIndex];
+                    value = Treemap.normalizedValue(value, allValuesAreNegative);
+                    totalValue += value; 
+                    if (hasHighlights) {
+                        let highlight = highlights[categoryIndex][seriesIndex];
+                        highlight = Treemap.normalizedValue(highlight, allValuesAreNegative);
+                        if (!highlightsOverflow && highlight > value) {
                             highlightsOverflow = true;
+                        }
                     }
                 }
             }
@@ -689,7 +744,9 @@ module powerbi.visuals {
                 values: values,
                 highlights: hasHighlights ? highlights : undefined,
                 highlightsOverflow: hasHighlights ? highlightsOverflow : undefined,
-                totalValue: totalValue,
+                totalValue: allValuesAreNegative ? Math.abs(totalValue) : totalValue,
+                hasNegativeValues: hasNegativeValues,
+                allValuesAreNegative: allValuesAreNegative,
             };
         }
 
@@ -725,6 +782,7 @@ module powerbi.visuals {
                 let rootNode: TreemapNode = {
                     key: "root",
                     name: "root",
+                    originalValue: undefined,
                     children: [],
                     selected: false,
                     highlightMultiplier: 0,
@@ -738,6 +796,8 @@ module powerbi.visuals {
                     legendData: legendData,
                     dataLabelsSettings: labelSettings,
                     dataWasCulled: false,
+                    hasNegativeValues: false,
+                    allValuesAreNegative: false,
                 };
                 this.data = treeMapData;
             }
@@ -751,6 +811,12 @@ module powerbi.visuals {
                     false /*supportsNegativeInfinity*/,
                     false /*supportsPositiveInfinity*/);
 
+                if (this.data.allValuesAreNegative) {
+                    warnings.push(new AllNegativeValuesWarning());
+                }
+                else if (this.data.hasNegativeValues) {
+                    warnings.push(new NegativeValuesNotSupportedWarning());
+                }
                 this.hostService.setWarnings(warnings);
             }
         }
@@ -858,11 +924,32 @@ module powerbi.visuals {
             }];
         }
 
-        private static checkValueForShape(value: any): boolean {
-            if (!value)
-                return false;
+        public static checkValueForShape(value: any, cullableValue: number, allValuesAreNegative: boolean, dataWasCulled: boolean): ValueShape {
+            let shouldCullValue = undefined;
+            if (!value) {
+                return {
+                    validShape: false, 
+                    dataWasCulled: dataWasCulled,
+                };
+            }
+            else {
+                if (!allValuesAreNegative)
+                    shouldCullValue = value < cullableValue;
+                else
+                    shouldCullValue = Math.abs(value) < cullableValue;
 
-            return value > 0;
+                if (shouldCullValue) {
+                    dataWasCulled = dataWasCulled || shouldCullValue;
+                    return {
+                        validShape: false,
+                        dataWasCulled: dataWasCulled,
+                    };
+                }
+                return {
+                    validShape: true,
+                    dataWasCulled: dataWasCulled,
+                };
+            }
         }
 
         private calculateTreemapSize(): IViewport {
@@ -982,7 +1069,7 @@ module powerbi.visuals {
                 let measureFormatter = formattersCache.getOrCreate(node.labelFormatString, labelsSettings, alternativeScale);
                 // Create measure label
                 label = dataLabelUtils.getLabelFormattedText({
-                    label: node.highlightValue != null ? node.highlightValue : node.value, maxWidth:
+                    label: node.originalHighlightValue != null ? node.originalHighlightValue : node.originalValue, maxWidth:
                     spaceAvaliableForLabels, formatter: measureFormatter
                 });
                 // Add category if needed (we're showing category and the node depth is 2)

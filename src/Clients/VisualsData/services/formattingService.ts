@@ -415,7 +415,11 @@ module powerbi {
         const TrailingZerosRegex = /0+$/;
         const DecimalFormatRegex = /\.([0#]*)/g;
         const NumericFormatRegex = /[0#,\.]+[0,#]*/g;
-        const LastNumericPlaceholderRegex = /(0|#)([^(0|#)]*)$/;
+        // (?=...) is a positive lookahead assertion. The RE is asking for the last digit placeholder, [0#],
+        // which is followed by non-digit placeholders and the end of string, [^0#]*$. But it only matches
+        // the last digit placeholder, not anything that follows because the positive lookahead isn't included
+        // in the match - it is only a condition.
+        const LastNumericPlaceholderRegex = /([0#])(?=[^0#]*$)/;
         const DecimalFormatCharacter = '.';
 
         export const NumberFormatComponentsDelimeter = ';';

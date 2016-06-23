@@ -58,6 +58,18 @@ module powerbi.data {
             variationName: string,
             hierarchyName: string): ConceptualHierarchy {
 
+            let targetEntity = this.findTargetEntityOfVariation(variationEntityName, variationColumnName, variationName);
+            if (!targetEntity || _.isEmpty(targetEntity.hierarchies))
+                return;
+
+            return targetEntity.hierarchies.withName(hierarchyName);
+        }
+
+        public findTargetEntityOfVariation(
+            variationEntityName: string,
+            variationColumnName: string,
+            variationName: string): ConceptualEntity {
+
             let variationEntity = this.entities.withName(variationEntityName);
             if (!variationEntity || _.isEmpty(variationEntity.properties))
                 return;
@@ -71,13 +83,8 @@ module powerbi.data {
                 return;
 
             let variation = variationColumn.variations.withName(variationName);
-            if (variation) {
-                let targetEntity = variation.navigationProperty ? variation.navigationProperty.targetEntity : variationEntity;
-                if (!targetEntity || _.isEmpty(targetEntity.hierarchies))
-                    return;
-
-                return targetEntity.hierarchies.withName(hierarchyName);
-            }
+            if (variation)
+                return variation.navigationProperty ? variation.navigationProperty.targetEntity : variationEntity;
         }
 
         /**

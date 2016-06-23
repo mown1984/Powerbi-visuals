@@ -418,7 +418,8 @@ module powerbi.visuals {
         }
 
         function removeQuotes(text: string): string {
-            if (!StringExtensions.startsWith(text, "'"))
+            // If it doesn't start with a quote or contains a comma (multiple fonts), don't remove quotes.
+            if (!StringExtensions.startsWith(text, "'") || StringExtensions.containsIgnoreCase(text, ","))
                 return text;
 
             debug.assert(StringExtensions.endsWith(text, "'"), "mismatched quotes");
@@ -437,11 +438,11 @@ module powerbi.visuals {
          * These fonts are embedded using CSS, or are aliases to other fonts.
          */
         const fontMap = {
-            'Segoe (Bold)': 'wf_segoe-ui_bold',
-            'Segoe UI': 'wf_segoe-ui_normal',
-            'Segoe UI Light': 'wf_segoe-ui_light',
-            'Heading': 'wf_segoe-ui_light',
-            'Body': 'wf_segoe-ui_normal',
+            'Segoe (Bold)': Font.Family.bold.css,
+            'Segoe UI': Font.Family.regular.css,
+            'Segoe UI Light': Font.Family.light.css,
+            'Heading': Font.Family.light.css,
+            'Body': Font.Family.regular.css
         };
 
         const fonts: ListValueOption[] = [
@@ -503,7 +504,7 @@ module powerbi.visuals {
          * Convert built-in font families back into their proper font families (e.g. wf_segoe-ui_normal -> Segoe UI)
          */
         export function getFontFamilyForBuiltInFont(font: string): string {
-            let fontFamily = _.findKey(fontMap, (value) => value === font);
+            let fontFamily = _.findKey(fontMap, (value) => value === font || value.indexOf(font) > 0);
             return fontFamily || font;
         }
 

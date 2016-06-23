@@ -127,7 +127,7 @@ module powerbi.visuals {
                 let slicerData: SlicerDataPoint = {
                     value: label,
                     tooltip: label,
-                    identity: SelectionId.createWithId(scopeId),
+                    identity: SelectionIdBuilder.builder().withCategory(category, i).createSelectionId(),
                     selected: isRetained,
                     count: <number>count,
                     isImage: isImage,
@@ -159,7 +159,7 @@ module powerbi.visuals {
                         let slicerData: SlicerDataPoint = {
                             value: pair.displayName,
                             tooltip: pair.displayName,
-                            identity: SelectionId.createWithId(pair.identity),
+                            identity: SelectionIdBuilder.builder().withCategoryIdentity(category, pair.identity).createSelectionId(),
                             selected: true,
                             count: valueCounts != null ? 0 : undefined,
                         };
@@ -170,19 +170,10 @@ module powerbi.visuals {
                 }
             }
 
+            let searchKey = getSearchKey(dataViewMetadata);
             let defaultSettings = createDefaultSettings(dataViewMetadata);
-            if (defaultSettings.selection.selectAllCheckboxEnabled) {
-                //If selectAllCheckboxEnabled, and all the items are selected and there is no more data to request, then unselect all and toggle the invertedSelectionMode
-                if (numOfSelected > 0 && !dataViewMetadata.segment && numOfSelected === slicerDataPoints.length) {
-                    isInvertedSelectionMode = !isInvertedSelectionMode;
-                    interactivityService.setSelectionModeInverted(isInvertedSelectionMode);
-                    for (let item of slicerDataPoints) {
-                        item.selected = false;
-                    }
-                    hasSelectionOverride = false;
-                    numOfSelected = 0;
-                }
-
+            // When search is on, we hide the SelectAll option.
+            if (defaultSettings.selection.selectAllCheckboxEnabled && _.isEmpty(searchKey)) {
                 slicerDataPoints.unshift({
                     value: localizedSelectAllText,
                     tooltip: localizedSelectAllText,
@@ -199,7 +190,7 @@ module powerbi.visuals {
                 slicerDataPoints: slicerDataPoints,
                 hasSelectionOverride: hasSelectionOverride,
                 defaultValue: analyzer.defaultValue,
-                searchKey: getSearchKey(dataViewMetadata),
+                searchKey: searchKey,
             };
 
             return slicerData;
@@ -207,8 +198,10 @@ module powerbi.visuals {
 
         function getSearchKey(dataViewMetadata: DataViewMetadata): string {
             let selfFilter = DataViewObjects.getValue<SemanticFilter>(dataViewMetadata.objects, slicerProps.selfFilterPropertyIdentifier, undefined);
+            // The searchKey need to be empty string so that the inputbox dom content gets updated after search is removed.
+            // When the search key is undefined, the previous content will not updated while binding data.
             if (!selfFilter)
-                return;
+                return '';
             
             let filterItems = selfFilter.conditions();
             debug.assert(filterItems.length === 1, 'There should be exactly 1 filter expression.');

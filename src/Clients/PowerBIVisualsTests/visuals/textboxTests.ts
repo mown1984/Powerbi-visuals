@@ -252,7 +252,7 @@ module powerbitests {
                             let $divs = getViewModeParagraphDivs($element);
                             let $span = $divs.children("span").eq(0);
 
-                            expect(getFont($span)).toEqual("wf_segoe-ui_light");
+                            expect(getFont($span)).toEqual(powerbi.visuals.Font.Family.light.css);
                         });
 
                         it("\"Body\" should render correctly", () => {
@@ -269,7 +269,7 @@ module powerbitests {
                             let $divs = getViewModeParagraphDivs($element);
                             let $span = $divs.children("span").eq(0);
 
-                            expect(getFont($span)).toEqual("wf_segoe-ui_normal");
+                            expect(getFont($span)).toEqual(powerbi.visuals.Font.Family.regular.css);
                         });
                     });
                 });
@@ -545,7 +545,7 @@ module powerbitests {
                 it("built-in font names should be translated", () => {
                     let changes = saveContents([{
                         textRuns: [
-                            { value: "foo", textStyle: { fontFamily: "wf_segoe-ui_normal" } },
+                            { value: "foo", textStyle: { fontFamily: powerbi.visuals.Font.Family.regular.css } },
                         ]
                     }]);
 
@@ -920,7 +920,7 @@ module powerbitests {
                     });
 
                     describe("changing font (embedded)", () => {
-                        let fontFace = "wf_segoe-ui_normal";
+                        let fontFace = powerbi.visuals.Font.Family.regular.css;
 
                         beforeEach(() => {
                             setSelectValue(fontSelect(getToolbar()), fontFace);
@@ -1171,7 +1171,7 @@ module powerbitests {
             describe('RichText module', () => {
                 describe('getFontFamily', () => {
                     it('uses font map if possible', () => {
-                        expect(RichText.getCssFontFamily('Body')).toEqual("wf_segoe-ui_normal");
+                        expect(RichText.getCssFontFamily('Body')).toEqual(powerbi.visuals.Font.Family.regular.css);
                         expect(RichText.getCssFontFamily('Arial')).toEqual("Arial");  // Not in font map
                     });
                 });

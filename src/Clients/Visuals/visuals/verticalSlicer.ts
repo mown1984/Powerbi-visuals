@@ -51,7 +51,7 @@ module powerbi.visuals {
         private behavior: IInteractiveBehavior;
         private hostServices: IVisualHostServices;
         private textProperties: TextProperties = {
-            'fontFamily': 'wf_segoe-ui_normal, helvetica, arial, sans-serif',
+            'fontFamily': Font.Family.regular.css,
             'fontSize': '14px',
         };
         private domHelper: SlicerUtil.DOMHelper;
@@ -253,8 +253,16 @@ module powerbi.visuals {
                     let slicerClear = this.header.select(SlicerUtil.Selectors.Clear.selector);
                     let searchInput = this.header.select('input');
                     if (!searchInput.empty()) {
-                        searchInput
-                            .property('value', data.searchKey);
+                        let element: HTMLInputElement = <HTMLInputElement>searchInput.node();
+                        let exisingSearchKey: string = element && element.value;
+
+                        // When the existingSearchKey is empty, try set it using the searchKey from data.
+                        // This is to ensure the search key is diplayed in the input box when the input box was first rendered.
+                        // If the search key was reset from exploreUI when search is turned off, then the data.searchkey will be ''
+                        // The input box value need to be reset to ''.
+                        if (_.isEmpty(exisingSearchKey) || _.isEmpty(data.searchKey))
+                            searchInput
+                                .property('value', data.searchKey);
                     }
 
                     let behaviorOptions: VerticalSlicerBehaviorOptions = {
@@ -296,11 +304,5 @@ module powerbi.visuals {
         export const ItemContainer = createClassAndSelector('slicerItemContainer');
         export const Input = createClassAndSelector('slicerCheckbox');
         export const Checkbox = createClassAndSelector('checkbox');
-    }
-
-    module CheckboxSprite {
-        export const MinimumSize = 8;
-        export const Size = 13;
-        export const SizeRange = Size - MinimumSize;
     }
 }

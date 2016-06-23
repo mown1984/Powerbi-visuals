@@ -41,6 +41,7 @@ module powerbitests.customVisuals.sampleDataViews {
         public static ColumnColorFill: string = EnhancedScatterChart.ColumnColorFill;
         public static ColumnImage: string = EnhancedScatterChart.ColumnImage;
         public static ColumnBackdrop: string = EnhancedScatterChart.ColumnBackdrop;
+        public static ColumnRotation: string = EnhancedScatterChart.ColumnRotation;
 
         public static DefaultSetOfColumns: string[] = [
             EnhancedScatterChartData.ColumnCategoryDisplayName,
@@ -69,6 +70,8 @@ module powerbitests.customVisuals.sampleDataViews {
             "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/reports/ImageViewer/Microsoft_OneNote.png",
             "https://raw.githubusercontent.com/Microsoft/PowerBI-visuals/resources/images/reports/ImageViewer/Microsoft_Outlook.png"
         ];
+
+        public rotationValues: number[] = helpers.getRandomUniqueNumbers(this.valuesCategory.length, 100, 1000);
 
         public getDataView(columnNames: string[] = EnhancedScatterChartData.DefaultSetOfColumns): powerbi.DataView {
             return this.createCategoricalDataViewBuilder([
@@ -139,6 +142,15 @@ module powerbitests.customVisuals.sampleDataViews {
                         roles: { [EnhancedScatterChartData.ColumnSize]: true },
                     },
                     values: this.valuesSize
+                },
+                {
+                    source: {
+                        displayName: EnhancedScatterChartData.ColumnRotation,
+                        format: '#,0',
+                        isMeasure: true,
+                        roles: { [EnhancedScatterChartData.ColumnRotation]: true },
+                    },
+                    values: this.rotationValues
                 }
             ], columnNames).build();
         }

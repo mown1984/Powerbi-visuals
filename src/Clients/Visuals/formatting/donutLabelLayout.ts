@@ -138,7 +138,7 @@ module powerbi {
             let resultingLabels: Label[] = [];
             let preferredLabels: DonutLabelDataPoint[] = [];
             let viewport = this.donutChartProperties.viewport;
-            let labelDataPointsGroup: LabelDataPointsGroup = {
+            let labelDataPointsGroup: LabelDataPointGroup = {
                 labelDataPoints: labelDataPoints,
                 maxNumberOfLabels: labelDataPoints.length
             };

@@ -120,7 +120,7 @@ module powerbi.data.segmentation {
                     let sourceCategory = source.categories[categoryIndex];
 
                     debug.assert(DataViewAnalysis.areMetadataColumnsEquivalent(sourceCategory.source, segmentCategory.source), "Source and segment category have different sources.");
-                    debug.assert(_.isUndefined(sourceCategory.values) ? _.isUndefined(sourceCategory.identity) : true, 'Source category is missing values but has identities.');
+                    debug.assert(sourceCategory.values === undefined ? sourceCategory.identity === undefined : true, 'Source category is missing values but has identities.');
 
                     let mergeIndex = segment.lastMergeIndex + 1;
                     if (segmentCategory.values) {

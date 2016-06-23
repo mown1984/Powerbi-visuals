@@ -633,7 +633,7 @@ module powerbi.visuals.controls.internal {
             let startIndex = this.dimension.getDepth();
             for (let i = startIndex; i < otherDimensionItemsCount; i++) {
                 let otherDimensionItem = otherDimensionItems[i];
-                this.updateSpans(otherDimensionItem, otherDimensionItem.getHeaders());
+                this.updateSpans(otherDimensionItem, otherDimensionItem.getHeaders(), false);
             }
         }
 
@@ -642,7 +642,7 @@ module powerbi.visuals.controls.internal {
             let otherRealizedItemsCount = Math.min(this.dimension.getDepth(), otherRealizedItems.length);
             for (let i = 0; i < otherRealizedItemsCount; i++) {
                 let otherRealizedItem = otherRealizedItems[i];
-                this.updateSpans(otherRealizedItem, otherRealizedItem.getOtherDimensionHeaders());
+                this.updateSpans(otherRealizedItem, otherRealizedItem.getOtherDimensionHeaders(), true);
             }
         }
 
@@ -656,7 +656,7 @@ module powerbi.visuals.controls.internal {
             }
         }
 
-        private updateSpans(otherRealizedItem: ITablixGridItem, cells: TablixCell[]): void {
+        private updateSpans(otherRealizedItem: ITablixGridItem, cells: TablixCell[], considerScrolling: boolean): void {
             let realizedItems = this._getRealizedItems();
             let cellCount = cells.length;
             for (let j = 0; j < cellCount; j++) {
@@ -668,7 +668,16 @@ module powerbi.visuals.controls.internal {
                     let startIndex = owner.getIndex(this._grid);
                     for (let k = 0; k < span; k++) {
                         let item = realizedItems[k + startIndex];
-                        totalSizeInSpan += item.getContentContextualWidth();
+
+                        let childWidth = item.getContentContextualWidth();
+
+                        // Considering scroll offset for first column only, as scroll has not been applied to the cells
+                        if (considerScrolling && j === 0 && k === 0) {
+                            childWidth = Math.floor((1 - this.dimension.getFractionScrollOffset()) * childWidth);
+                        }
+
+                        totalSizeInSpan += childWidth;
+
                         if (k === span - 1)
                             this.updateLastChildSize(cell, item, totalSizeInSpan);
                     }

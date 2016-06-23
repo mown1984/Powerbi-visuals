@@ -28,7 +28,7 @@
 
 module powerbitests {
     import DataViewTransform = powerbi.data.DataViewTransform;
-    import SelectionId = powerbi.visuals.SelectionId;
+    import SelectionIdBuilder = powerbi.visuals.SelectionIdBuilder;
     import SlicerOrientation = powerbi.visuals.slicerOrientation.Orientation;
 
     powerbitests.mocks.setLocale();
@@ -168,19 +168,12 @@ module powerbitests {
             });
 
             it("Validate converter", () => {
-                let dataViewIdentities = builder.dataView.categorical.categories[0].identity;
-                let selectionIds = [
-                    SelectionId.createWithId(dataViewIdentities[0]),
-                    SelectionId.createWithId(dataViewIdentities[1]),
-                    SelectionId.createWithId(dataViewIdentities[2]),
-                    SelectionId.createWithId(dataViewIdentities[3]),
-                    SelectionId.createWithId(dataViewIdentities[4])
-                ];
+                let category = builder.dataView.categorical.categories[0];
                 let dataPoints: powerbi.visuals.SlicerDataPoint[] = [
                     {
                         value: slicerHelper.SelectAllTextKey,
                         tooltip: slicerHelper.SelectAllTextKey,
-                        identity: SelectionId.createWithMeasure(slicerHelper.SelectAllTextKey),
+                        identity: SelectionIdBuilder.builder().withMeasure(slicerHelper.SelectAllTextKey).createSelectionId(),
                         selected: false,
                         isSelectAllDataPoint: true,
                         count: undefined,
@@ -188,7 +181,7 @@ module powerbitests {
                     {
                         value: "Apple",
                         tooltip: "Apple",
-                        identity: selectionIds[0],
+                        identity: SelectionIdBuilder.builder().withCategory(category, 0).createSelectionId(),
                         selected: false,
                         count: undefined,
                         isImage: false,
@@ -196,7 +189,7 @@ module powerbitests {
                     {
                         value: "Orange",
                         tooltip: "Orange",
-                        identity: selectionIds[1],
+                        identity: SelectionIdBuilder.builder().withCategory(category, 1).createSelectionId(),
                         selected: false,
                         count: 3,
                         isImage: false,
@@ -204,7 +197,7 @@ module powerbitests {
                     {
                         value: "Kiwi",
                         tooltip: "Kiwi",
-                        identity: selectionIds[2],
+                        identity: SelectionIdBuilder.builder().withCategory(category, 2).createSelectionId(),
                         selected: false,
                         count: 4,
                         isImage: false,
@@ -212,7 +205,7 @@ module powerbitests {
                     {
                         value: "Grapes",
                         tooltip: "Grapes",
-                        identity: selectionIds[3],
+                        identity: SelectionIdBuilder.builder().withCategory(category, 3).createSelectionId(),
                         selected: false,
                         count: 5,
                         isImage: false,
@@ -220,7 +213,7 @@ module powerbitests {
                     {
                         value: "Banana",
                         tooltip: "Banana",
-                        identity: selectionIds[4],
+                        identity: SelectionIdBuilder.builder().withCategory(category, 4).createSelectionId(),
                         selected: false,
                         count: 6,
                         isImage: false,
@@ -232,7 +225,7 @@ module powerbitests {
                     slicerDataPoints: dataPoints,
                     hasSelectionOverride: false,
                     defaultValue: undefined,
-                    searchKey: undefined,
+                    searchKey: '',
                 };
                 expectedSlicerData.slicerSettings.selection.selectAllCheckboxEnabled = true;
                 expectedSlicerData.slicerSettings.selection.singleSelect = false;
@@ -274,6 +267,15 @@ module powerbitests {
                 helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
                 expect($('.searchHeader').length).toBe(1);
                 expect($(".searchHeader").css('display')).not.toBe('none');
+
+                let searchKey = '  search key ';
+                $('.searchInput').val(searchKey);
+                helpers.fireOnDataChanged(builder.visual, { dataViews: [dataView] });
+
+                let searchInput = $('.searchInput');
+                // Since the data view don't have search key specified, this input value should reflect the search value. 
+                // This is for the case when search is turned off when there is a search key. After search is turned on again, we should clear the value.
+                expect(searchInput.val()).toBe('');
             });
 
             it("Search input keyup event", () => {
@@ -425,7 +427,15 @@ module powerbitests {
 
                 slicerHelper.validateSelectionState(SlicerOrientation.Vertical, [1], builder);
 
-                expect(builder.hostServices.onSelect).toHaveBeenCalled();
+                let selectionId = new powerbi.visuals.SelectionIdBuilder().withCategory(builder.interactiveDataViewOptions.dataViews[0].categorical.categories[0], 0).createSelectionId();
+                expect(builder.hostServices.onSelect).toHaveBeenCalledWith({
+                    data: [
+                        selectionId.getSelector()
+                    ],
+                    data2: [
+                        selectionId.getSelectorsByColumn()
+                    ]
+                });
             });
 
             it("Switch slicer orientation", () => {

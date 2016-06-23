@@ -423,14 +423,16 @@ module powerbi.visuals.controls {
             this.determineDimensionToScroll(e,
                 (dimension, delta) => { dimension.scrollbar.onMouseWheel(delta); });
 
-            e.preventDefault();
+            if (this.options.layoutKind === TablixLayoutKind.Canvas)
+                e.preventDefault();
         }
 
         private onFireFoxMouseWheel(e: MouseWheelEvent): void {
             this.determineDimensionToScrollFirefox(e,
                 (dimension, delta) => { dimension.scrollbar.onMouseWheel(delta); });
 
-            e.preventDefault();
+            if (this.options.layoutKind === TablixLayoutKind.Canvas)
+                e.preventDefault();
         }
 
         private determineDimensionToScroll(e: MouseWheelEvent, scrollCallback: (dimension: TablixDimension, delta: number) => void): void {

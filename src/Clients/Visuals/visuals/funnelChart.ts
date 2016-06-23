@@ -178,7 +178,7 @@ module powerbi.visuals {
         public static YAxisPadding = 10;
 
         private static VisualClassName = 'funnelChart';
-        private static DefaultFontFamily = 'wf_standard-font';
+        private static DefaultFontFamily = Font.Family.regularSecondary.css;
         private static BarToSpaceRatio = 0.1;
         private static MaxBarHeight = 40;
         private static MinBarThickness = 12;
@@ -342,19 +342,7 @@ module powerbi.visuals {
                         }      
 
                         if (tooltipBucketEnabled) {
-                            let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, undefined);
-                            let tooltipMetadataColumns = reader.getAllValueMetadataColumnsForRole("Tooltips", undefined);
-
-                            if (tooltipValues && tooltipMetadataColumns) {
-                                for (let j = 0; j < tooltipValues.length; j++) {
-                                    if (tooltipValues[j] != null) {
-                                        tooltipInfo.push({
-                                            displayName: tooltipMetadataColumns[j].displayName,
-                                            value: converterHelper.formatFromMetadataColumn(tooltipValues[j], tooltipMetadataColumns[j], formatStringProp),
-                                        });
-                                    }
-                                }
-                            }
+                            TooltipBuilder.addTooltipBucketItem(reader, tooltipInfo, categoryIndex);
                         }      
                     }
                     
@@ -686,10 +674,10 @@ module powerbi.visuals {
                     false /*supportsPositiveInfinity*/);
 
                 if (this.data.allValuesAreNegative) {
-                    warnings.unshift(new AllNegativeValuesWarning());
+                    warnings.push(new AllNegativeValuesWarning());
                 }
                 else if (this.data.hasNegativeValues) {
-                    warnings.unshift(new NegativeValuesNotSupportedWarning());
+                    warnings.push(new NegativeValuesNotSupportedWarning());
                 }
 
                 this.hostServices.setWarnings(warnings);
@@ -1244,7 +1232,7 @@ module powerbi.visuals {
                         maximumOffset: LabelUtils.maxLabelOffset,
                         startingOffset: LabelUtils.startingLabelOffset
                     });
-                let labelDataPointsGroup: LabelDataPointsGroup = {
+                let labelDataPointsGroup: LabelDataPointGroup = {
                         labelDataPoints: labelDataPoints,
                         maxNumberOfLabels: labelDataPoints.length
                     };
@@ -1298,7 +1286,7 @@ module powerbi.visuals {
             
             for (let dataPoint of dataPoints) {
                 let value = FunnelChart.getValueFromDataPoint(dataPoint, true /* asOriginal */);
-                if(_.isNull(value) || _.isUndefined(value) 
+                if (value == null
                     || (data.hasHighlights && !dataPoint.highlight)) {
                     continue;
                 }

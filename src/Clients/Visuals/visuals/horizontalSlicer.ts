@@ -59,7 +59,7 @@ module powerbi.visuals {
         private dataStartIndex: number;
         private itemsToDisplay: number;
         private textProperties: TextProperties = {
-            fontFamily: 'wf_segoe-ui_normal',
+            fontFamily: Font.Family.regular.css,
             fontSize: '14px'
         };
         private maxItemWidth: number;

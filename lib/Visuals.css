@@ -1841,7 +1841,7 @@ body {
   justify-content: space-between;
   -webkit-align-items: center;
   width: calc(100% - 10px);
-  border: 1px solid;
+  border: 1px solid #212121;
   height: 20px;
 }
 .visual .slicerHeader .searchHeader .search {
@@ -1849,6 +1849,7 @@ body {
   margin: 0 4px;
   flex: 0 0 auto;
   -webkit-flex: 0 0 auto;
+  color: #212121;
 }
 .visual .slicerHeader .searchHeader input {
   color: #333333;
@@ -2663,6 +2664,7 @@ body {
   box-sizing: border-box;
   position: relative;
   vertical-align: top;
+  display: inline-block;
 }
 .visual .multiRowCard .card .cardItemContainer .caption {
   color: #333333;

@@ -4942,7 +4942,7 @@ module powerbitests {
         }
 
         function getLabelDataPointsFromRenderCall(renderSpy: jasmine.Spy): powerbi.LabelDataPoint[] {
-            let labelDataPointGroups: powerbi.LabelDataPointsGroup[] = renderSpy.calls.mostRecent().args[0];
+            let labelDataPointGroups: powerbi.LabelDataPointGroup[] = renderSpy.calls.mostRecent().args[0];
             return labelDataPointGroups[0].labelDataPoints;
         }
     });

@@ -94,7 +94,79 @@ module powerbitests {
                 let callArgs = <any>spy.calls.mostRecent().args[0];
                 expect(callArgs).toBe(testObject);
             });
+        });
 
+        describe('DataView Transform', () => {
+            describe('Transform Undefined', () => {
+                it("update should not include ViewModel if transform is not provided", () => {
+                    let adapter = createVisualAdapter(mocks.MockVisualV100, apiVersion);
+                    adapter.init(createInitOptions());
+                    let spy = spyOn((<any>adapter).visual, 'update');
+                    let dataViews = [];
+                    let viewport = { width: 11, height: 22 };
+                    adapter.update({
+                        viewport: viewport,
+                        dataViews: dataViews
+                    });
+                    expect(spy.calls.count()).toBe(1);
+
+                    let callArgs = <any>spy.calls.mostRecent().args;
+                    expect(callArgs.length).toBe(1);
+                });
+            });
+
+            describe('Transform Defined', () => {
+                let adapter, updateSpy;
+                let myTransformResult = { result: 'mytransformresult' };
+                let transformSpy = jasmine.createSpy('transform').and.returnValue(myTransformResult);
+                @powerbi.extensibility.VisualPlugin({
+                    transform: transformSpy
+                })
+                class MockVisualWithTransform {
+                    constructor() { }
+                    update() { }
+                }
+
+                beforeEach(() => {
+                    adapter = createVisualAdapter(MockVisualWithTransform, apiVersion);
+                    adapter.init(createInitOptions());
+                    updateSpy = spyOn((<any>adapter).visual, 'update');
+                });
+
+                it("update should call transform with dataviews", () => {
+                    let dataViews = [];
+                    let viewport = { width: 11, height: 22 };
+                    let updateOptions = {
+                        viewport: viewport,
+                        dataViews: dataViews,
+                        type: powerbi.VisualUpdateType.Data
+                    };
+                    expect(transformSpy.calls.count()).toBe(0);
+                    adapter.update(updateOptions);
+                    expect(transformSpy.calls.count()).toBe(1);
+
+                    let callArgs = <any>transformSpy.calls.mostRecent().args;
+                    expect(callArgs.length).toBe(1);
+                    expect(callArgs[0]).toBe(dataViews);
+                });
+
+                it("update should include ViewModel from transform", () => {
+                    let dataViews = [];
+                    let viewport = { width: 11, height: 22 };
+                    let updateOptions = {
+                        viewport: viewport,
+                        dataViews: dataViews,
+                        type: powerbi.VisualUpdateType.Data
+                    };
+                    adapter.update(updateOptions);
+                    expect(updateSpy.calls.count()).toBe(1);
+
+                    let callArgs = <any>updateSpy.calls.mostRecent().args;
+                    expect(callArgs.length).toBe(2);
+                    expect(callArgs[0]).toEqual(updateOptions);
+                    expect(callArgs[1]).toBe(myTransformResult);
+                });
+            });
         });
     });
 }

@@ -558,6 +558,36 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
+        it('Negative value in values shows a warning', (done) => {
+            let warningSpy = jasmine.createSpy('warning');
+            hostServices.setWarnings = warningSpy;
+
+            let options = getOptionsForValueWarnings([300, -200, 700]);
+            v.onDataChanged(options);
+
+            setTimeout(() => {
+                expect(warningSpy).toHaveBeenCalled();
+                expect(warningSpy.calls.count()).toBe(1);
+                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('NegativeValuesNotSupported');
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it('All values are negative shows a warning', (done) => {
+            let warningSpy = jasmine.createSpy('warning');
+            hostServices.setWarnings = warningSpy;
+
+            let options = getOptionsForValueWarnings([-300, -200, -700]);
+            v.onDataChanged(options);
+
+            setTimeout(() => {
+                expect(warningSpy).toHaveBeenCalled();
+                expect(warningSpy.calls.count()).toBe(1);
+                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('AllNegativeValuesNotSupported');
+                done();
+            }, DefaultWaitForRender);
+        });
+
         it('Negative Infinity in values shows a warning', (done) => {
             let warningSpy = jasmine.createSpy('warning');
             hostServices.setWarnings = warningSpy;
@@ -583,6 +613,7 @@ module powerbitests {
             setTimeout(() => {
                 expect(warningSpy).toHaveBeenCalled();
                 expect(warningSpy.calls.count()).toBe(1);
+                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('InfinityValuesNotSupported');
                 done();
             }, DefaultWaitForRender);
         });
@@ -597,6 +628,7 @@ module powerbitests {
             setTimeout(() => {
                 expect(warningSpy).toHaveBeenCalled();
                 expect(warningSpy.calls.count()).toBe(1);
+                expect(warningSpy.calls.argsFor(0)[0][0].code).toBe('ValuesOutOfRange');
                 done();
             }, DefaultWaitForRender);
         });
@@ -3850,6 +3882,88 @@ module powerbitests {
             expect(node3.tooltipInfo).toEqual([{ displayName: 'c', value: '3' }]);
         });
 
+        it('treemap non-categorical multi-measure tooltip values test-has negative value', () => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'a', queryName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'b', queryName: 'b', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'c', queryName: 'c', isMeasure: true, roles: { 'Values': true } }
+                ]
+            };
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata.columns[0],
+                            values: [1],
+                        },
+                        {
+                            source: dataViewMetadata.columns[1],
+                            values: [-2],
+                        },
+                        {
+                            source: dataViewMetadata.columns[2],
+                            values: [-3],
+                        }
+                    ])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+
+            let node: TreemapNode = <TreemapNode>rootNode.children[0];
+            let length: number = rootNode.children.length;
+
+            expect(node.tooltipInfo).toEqual([{ displayName: 'a', value: '1' }]);
+            expect(length).toEqual(1);
+        });
+
+        it('treemap non-categorical multi-measure tooltip values test-all negative', () => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'a', queryName: 'a', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'b', queryName: 'b', isMeasure: true, roles: { 'Values': true } },
+                    { displayName: 'c', queryName: 'c', isMeasure: true, roles: { 'Values': true } }
+                ]
+            };
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadata.columns[0],
+                            values: [-1],
+                        },
+                        {
+                            source: dataViewMetadata.columns[1],
+                            values: [-2],
+                        },
+                        {
+                            source: dataViewMetadata.columns[2],
+                            values: [-3],
+                        }
+                    ])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+            let node3: TreemapNode = <TreemapNode>rootNode.children[2];
+
+            expect(node1.tooltipInfo).toEqual([{ displayName: 'a', value: '-1' }]);
+            expect(node2.tooltipInfo).toEqual([{ displayName: 'b', value: '-2' }]);
+            expect(node3.tooltipInfo).toEqual([{ displayName: 'c', value: '-3' }]);
+        });
+
         it('validate tooltip info not being created when tooltips are disabled', () => {
             let dataViewMetadata: powerbi.DataViewMetadata = {
                 columns: [
@@ -4014,6 +4128,122 @@ module powerbitests {
 
             expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
             expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "210" }, { displayName: 'Highlighted', value: '140' }]);
+        });
+
+        it("treemap mutil-measures all negative values with highlights tooltip data test", () => {
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [-110],
+                            highlights: [-60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [-210],
+                            highlights: [-140]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "BugsFiled", value: "-110" }, { displayName: 'Highlighted', value: '-60' }]);
+
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
+            expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "-210" }, { displayName: 'Highlighted', value: '-140' }]);
+        });
+
+        it("treemap mutil-measures all negative values with overflow highlights tooltip data test", () => {
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [-110],
+                            highlights: [-60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [-210],
+                            highlights: [-240]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "BugsFiled", value: "-60" }]);
+
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
+            expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "-240" }]);
+        });
+
+        it("treemap mutil-measures has negative value with highlights tooltip data test", () => {
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [110],
+                            highlights: [-60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [210],
+                            highlights: [140]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+            let node2: TreemapNode = <TreemapNode>rootNode.children[1];
+
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "BugsFiled", value: "110" }, { displayName: 'Highlighted', value: '-60' }]);
+
+            expect(node2.tooltipInfo).toEqual(node2.highlightedTooltipInfo);
+            expect(node2.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "210" }, { displayName: 'Highlighted', value: '140' }]);
+        });
+
+        it("treemap mutil-measures has negative value with overflow highlights tooltip data test", () => {
+            let dataView: DataView = {
+                metadata: dataViewMetadataCategoryAndMeasures,
+                categorical: {
+                    values: DataViewTransform.createValueColumns([
+                        {
+                            source: dataViewMetadataCategoryAndMeasures.columns[1],
+                            values: [110],
+                            highlights: [-60]
+                        }, {
+                            source: dataViewMetadataCategoryAndMeasures.columns[2],
+                            values: [210],
+                            highlights: [240]
+                        }])
+                }
+            };
+
+            let dataLabelSettings = powerbi.visuals.dataLabelUtils.getDefaultLabelSettings();
+            let colors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
+            let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport).root;
+            let node1: TreemapNode = <TreemapNode>rootNode.children[0];
+
+            expect(node1.tooltipInfo).toEqual(node1.highlightedTooltipInfo);
+            expect(node1.highlightedTooltipInfo).toEqual([{ displayName: "BugsFixed", value: "240" }]);
         });
 
         it("treemap categories and measures with highlights tooltip data test", () => {
@@ -4421,6 +4651,43 @@ module powerbitests {
                 let rootNode = Treemap.converter(dataView, colors, dataLabelSettings, null, viewport, null).root;
                 expect(rootNode.children.length).toEqual(dataView.categorical.values.length - 1);
             });
+        });
+
+        it("checkValueForShape function", () => {
+            let values = [10, 0.01, -5, null, NaN, 0];
+            let cullableValue = 0.1;
+
+            // allValuesAreNegative = false;
+            let allValuesAreNegative = false;
+            let expectResults = [true, false, false, false, false, false];
+            let actualResults = [];
+            let expectDataCulled = [false, true, true, false, false, false];
+            let actualDataCulled = [];
+            for (let count = 0; count < values.length; count++) {
+                let dataWasCulled = false;
+                let valueShape = powerbi.visuals.Treemap.checkValueForShape(values[count], cullableValue, allValuesAreNegative, dataWasCulled);
+                actualResults.push(valueShape.validShape);
+                actualDataCulled.push(valueShape.dataWasCulled);
+            }
+
+            expect(actualResults).toEqual(expectResults);
+            expect(actualDataCulled).toEqual(expectDataCulled);
+
+            // allValuesAreNegative = true;
+            allValuesAreNegative = true;
+            expectResults = [true, false, true, false, false, false];
+            actualResults = [];
+            expectDataCulled = [false, true, false, false, false, false];
+            actualDataCulled = [];
+            for (let count = 0; count < values.length; count++) {
+                let dataWasCulled = false;
+                let valueShape = powerbi.visuals.Treemap.checkValueForShape(values[count], cullableValue, allValuesAreNegative, dataWasCulled);
+                actualResults.push(valueShape.validShape);
+                actualDataCulled.push(valueShape.dataWasCulled);
+            }
+
+            expect(actualResults).toEqual(expectResults);
+            expect(actualDataCulled).toEqual(expectDataCulled);
         });
     });
 

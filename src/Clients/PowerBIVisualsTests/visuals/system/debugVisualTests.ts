@@ -55,15 +55,6 @@ module powerbitests {
         };
         let style = powerbi.visuals.visualStyles.create();
 
-        describe("capabilities", () => {
-            it("should register capabilities", () => {
-                let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin("debugVisual");
-
-                expect(plugin).toBeDefined();
-                expect(plugin.capabilities).toBe(powerbi.visuals.system.DebugVisual.capabilities);
-            });
-        });
-
         function buildUpdateOptions(viewport: powerbi.IViewport, object: powerbi.DataView): powerbi.VisualUpdateOptions {
             return {
                 viewport: viewport,
@@ -79,6 +70,7 @@ module powerbitests {
             let getSpy: jasmine.Spy;
             let getScriptSpy: jasmine.Spy;
             let getJSONSpy: jasmine.Spy;
+            let capabilities: powerbi.VisualCapabilities;
 
             beforeEach(() => {
 
@@ -95,13 +87,15 @@ module powerbitests {
                     return d.promise();
                 });
 
+                capabilities = { dataRoles: null };
+
                 getJSONSpy = spyOn($, 'getJSON').and.callFake(url => {
                     let d = $.Deferred();
                     d.resolve({
                         visual: {
                             guid: mockVisualGuid
                         },
-                        capabilities: {}
+                        capabilities: capabilities
                     });
                     return d.promise();
                 });
@@ -122,6 +116,13 @@ module powerbitests {
 
                 debugVisual = new powerbi.visuals.system.DebugVisual();
                 debugVisual.init(initOptions);
+            });
+
+            describe("init", () => {
+                it("Should override capabilities with capabilities in pbiviz.json", () => {
+                    let plugin = window['powerbi']['visuals']['plugins'][mockVisualGuid];
+                    expect(plugin.capabilities).toBe(capabilities);
+                });
             });
 
             describe("update", () => {
@@ -208,10 +209,12 @@ module powerbitests {
             let getScriptSpy: jasmine.Spy;
             let getJSONSpy: jasmine.Spy;
             let statusResponder: () => string;
+            let hostSpy: jasmine.Spy;
 
             beforeEach(() => {
 
                 let host = mocks.createVisualHostServices();
+                hostSpy = spyOn(host, 'visualCapabilitiesChanged').and.callFake(() => { });
                 $element = helpers.testDom("500", "500");
                 statusResponder = () => 'error';
 
@@ -251,6 +254,7 @@ module powerbitests {
                 };
 
                 debugVisual = new powerbi.visuals.system.DebugVisual();
+                powerbi.visuals.plugins.debugVisual.capabilities = { dataRoles: null };
                 debugVisual.init(initOptions);
             });
 
@@ -263,6 +267,11 @@ module powerbitests {
                 it("Should not attempt to contact server for json or scripts", () => {
                     expect(getScriptSpy).not.toHaveBeenCalled();
                     expect(getJSONSpy).not.toHaveBeenCalled();
+                });
+
+                it("Should reset capabilities", () => {
+                    expect(hostSpy).toHaveBeenCalled();
+                    expect(powerbi.visuals.plugins.debugVisual.capabilities).toEqual({});
                 });
             });
 
@@ -312,10 +321,12 @@ module powerbitests {
             let getSpy: jasmine.Spy;
             let getJSONSpy: jasmine.Spy;
             let getScriptSpy: jasmine.Spy;
+            let hostSpy: jasmine.Spy;
 
             beforeEach(() => {
 
                 host = mocks.createVisualHostServices();
+                hostSpy = spyOn(host, 'visualCapabilitiesChanged').and.callFake(() => { });
                 $element = helpers.testDom("500", "500");
 
                 getSpy = spyOn($, 'get').and.callFake(url => {
@@ -344,6 +355,7 @@ module powerbitests {
                 };
 
                 debugVisual = new powerbi.visuals.system.DebugVisual();
+                powerbi.visuals.plugins.debugVisual.capabilities = { dataRoles: null };
                 debugVisual.init(initOptions);
             });
 
@@ -351,6 +363,10 @@ module powerbitests {
                 it("Should display error message", () => {
                     let elem = $element.find('.debugVisualContainer .errorContainer');
                     expect(elem.length).toBe(1);
+                });
+                it("Should reset capabilities", () => {
+                    expect(hostSpy).toHaveBeenCalled();
+                    expect(powerbi.visuals.plugins.debugVisual.capabilities).toEqual({});
                 });
             });
 
@@ -392,11 +408,13 @@ module powerbitests {
             let initOptions: powerbi.VisualInitOptions;
             let debugVisual: powerbi.visuals.system.DebugVisual;
             let getSpy: jasmine.Spy;
+            let hostSpy: jasmine.Spy;
 
             beforeEach(() => {
                 powerbi.localStorageService.setData('DEVELOPER_MODE_ENABLED', undefined);
 
                 host = mocks.createVisualHostServices();
+                hostSpy = spyOn(host, 'visualCapabilitiesChanged').and.callFake(() => { });
                 $element = helpers.testDom("500", "500");
 
                 getSpy = spyOn($, 'get');
@@ -409,6 +427,7 @@ module powerbitests {
                 };
 
                 debugVisual = new powerbi.visuals.system.DebugVisual();
+                powerbi.visuals.plugins.debugVisual.capabilities = { dataRoles: null };
                 debugVisual.init(initOptions);
             });
 
@@ -420,6 +439,11 @@ module powerbitests {
 
                 it("Should not attempt to contact server", () => {
                     expect(getSpy).not.toHaveBeenCalled();
+                });
+
+                it("Should reset capabilities", () => {
+                    expect(hostSpy).toHaveBeenCalled();
+                    expect(powerbi.visuals.plugins.debugVisual.capabilities).toEqual({});
                 });
             });
         });

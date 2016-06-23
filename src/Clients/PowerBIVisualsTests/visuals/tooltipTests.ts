@@ -578,5 +578,42 @@ module powerbitests {
                 { displayName: 'cat', value: 'abc' },
                 { displayName: 'val', value: '123.321' }]);
         });
+
+        it('addTooltipBucketItem', () => {
+            let dataViewMetadata: powerbi.DataViewMetadata = {
+                columns: [
+                    { displayName: 'col1', queryName: 'col1', roles: { Category: true } },
+                    { displayName: 'col2', queryName: 'col2', isMeasure: true, roles: { Y: true } },
+                    { displayName: 'col3', queryName: 'col3', isMeasure: true, roles: { Tooltips: true } }]
+            };
+
+            let dataView: powerbi.DataView = {
+                metadata: dataViewMetadata,
+                categorical: {
+                    categories: [{
+                        source: dataViewMetadata.columns[0],
+                        values: ['a'],
+                        identity: [mocks.dataViewScopeIdentity('a')]
+                    }],
+                    values: powerbi.data.DataViewTransform.createValueColumns([{
+                        source: dataViewMetadata.columns[1],
+                        values: [100],
+                    }, {
+                        source: dataViewMetadata.columns[2],
+                        values: [10],
+                    }])
+                }
+            };
+
+            let extraTooltipInfo = [];
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
+
+            TooltipBuilder.addTooltipBucketItem(reader, extraTooltipInfo, 0, 0);
+
+            expect(extraTooltipInfo).toEqual([
+                { displayName: 'col3', value: '10' }
+            ]);
+        });
+
     });
 }

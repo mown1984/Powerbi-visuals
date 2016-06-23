@@ -64,21 +64,14 @@ module powerbitests.customVisuals {
 
             it("update", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let countOfTaskLabels = visualBuilder.mainElement
-                        .children("g.chart")
-                        .children("g.tasks")
-                        .children("g.task")
+                    let countOfTaskLabels = visualBuilder.tasks
                         .children(".task-resource")
                         .length;
                     let countOfTaskLines = visualBuilder.mainElement
                         .children("g.task-lines")
                         .children("text")
                         .length;
-                    let countOfTasks = visualBuilder.mainElement
-                        .children("g.chart")
-                        .children("g.tasks")
-                        .children("g.task")
-                        .length;
+                    let countOfTasks = visualBuilder.tasks.length;
 
                     expect(countOfTaskLabels).toEqual(dataView.table.rows.length);
                     expect(countOfTaskLines).toEqual(dataView.table.rows.length);
@@ -265,6 +258,23 @@ module powerbitests.customVisuals {
                     });
                 })(dateType));
             }
+
+            it("Verify group tasks enabled", (done) => {
+                dataView.metadata.objects = { general: { groupTasks: true } };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    let countOfTaskLines = visualBuilder.mainElement
+                        .children("g.task-lines")
+                        .children("text")
+                        .length;
+                    let values = dataView.categorical.categories[1].values;
+
+                    expect(values.length).toBeGreaterThan(_.unique(values).length);
+                    expect(countOfTaskLines).toEqual(_.unique(values).length);
+
+                    done();
+                });
+            });
         });
 
         describe("View Model tests", () => {
@@ -307,6 +317,20 @@ module powerbitests.customVisuals {
 
         public get axisTicks() {
             return this.axis.children("g.tick");
+        }
+
+        public get chart() {
+            return this.mainElement.children("g.chart");
+        }
+
+        public get tasksGroups() {
+            return this.chart
+                .children("g.tasks")
+                .children("g.task-group");
+        }
+
+        public get tasks() {
+            return this.tasksGroups.children("g.task");
         }
 
         protected build() {

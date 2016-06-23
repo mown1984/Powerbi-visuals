@@ -47,6 +47,7 @@ module powerbi {
         ViewMode = 1 << 3,
         Style = 1 << 4,
         ResizeEnd = 1 << 5,
+        All = Data | Resize | ViewMode | Style | ResizeEnd
     }
 
     export enum VisualPermissions {
@@ -86,5 +87,10 @@ module powerbi {
     export const enum JoinPredicateBehavior {
         /** Prevent items in this role from acting as join predicates. */
         None,
+    }
+
+    export const enum PromiseResultType {
+        Success,
+        Failure,
     }
 }

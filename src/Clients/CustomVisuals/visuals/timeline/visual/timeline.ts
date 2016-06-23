@@ -800,7 +800,6 @@ module powerbi.visuals.samples {
 
 	export class Timeline implements IVisual {
 		private requiresNoUpdate: boolean = false;
-		private foreignSelection: boolean = false;
 		private timelineProperties: TimelineProperties;
 		private timelineFormat: TimelineFormat;
 		private timelineData: TimelineData;
@@ -834,10 +833,10 @@ module powerbi.visuals.samples {
 		public static calendar: Calendar;
 		public static capabilities: VisualCapabilities = {
 			dataRoles: [{
-                name: 'Time',
-                kind: powerbi.VisualDataRoleKind.Grouping,
-                displayName: 'Time'
-            }],
+				name: 'Time',
+				kind: powerbi.VisualDataRoleKind.Grouping,
+				displayName: 'Time'
+			}],
 			dataViewMappings: [{
 				conditions: [
 					{ 'Time': { max: 1 } }
@@ -1279,7 +1278,6 @@ module powerbi.visuals.samples {
 				let changedSelection = startDate.getTime() >= prevStartDate.getTime() && actualEndDate.getTime() <= prevEndDate.getTime();
 				this.newGranularity = this.timelineData.currentGranularity.getType();
 				if (changedSelection) {
-					this.foreignSelection = true;
 					this.changeGranularity(this.newGranularity, startDate, actualEndDate);
 					this.timelineFormat = Timeline.fillTimelineFormat(this.options.dataViews[0].metadata.objects, this.defaultTimelineProperties);
 				}
@@ -1305,10 +1303,7 @@ module powerbi.visuals.samples {
 			let visualChange: boolean = this.visualChangeOnly(options);
 			this.requiresNoUpdate = this.requiresNoUpdate && !visualChange;
 			if (this.requiresNoUpdate) {
-				if (this.foreignSelection)
-					this.foreignSelection = false;
-				else
-					this.requiresNoUpdate = false;
+				this.requiresNoUpdate = false;
 				return;
 			}
 			this.options = options;
@@ -1670,8 +1665,8 @@ module powerbi.visuals.samples {
 		}
 
 		public renderTimeRangeText(timelineData: TimelineData, timeRangeFormat: LabelFormat): void {
-            let leftMargin = (GranularityNames.length + 2) * this.timelineProperties.elementWidth;
-            let maxWidth = this.svgWidth - leftMargin - this.timelineProperties.leftMargin;
+			let leftMargin = (GranularityNames.length + 2) * this.timelineProperties.elementWidth;
+			let maxWidth = this.svgWidth - leftMargin - this.timelineProperties.leftMargin;
 
 			if (timeRangeFormat.showProperty && maxWidth > 0) {
 				let timeRangeText = Utils.timeRangeText(timelineData);

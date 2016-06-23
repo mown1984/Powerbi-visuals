@@ -104,6 +104,7 @@ module powerbi.visuals.system {
                     type: 'blockedsite'
                 });
                 this.container.html(errorMessage);
+                this.setCapabilities({});
                 return;
             }
 
@@ -127,6 +128,7 @@ module powerbi.visuals.system {
                         type: 'repair'
                     });
                     this.container.html(errorMessage);
+                    this.setCapabilities({});
                     return;
                 }
 
@@ -171,11 +173,12 @@ module powerbi.visuals.system {
                                 adapter.init(this.optionsForVisual);
                             }
                             if (adapter.update && this.lastUpdateOptions) {
-                                adapter.update(this.lastUpdateOptions);
+                                let lastUpdateOptions = Prototype.inherit(this.lastUpdateOptions);
+                                lastUpdateOptions.type = VisualUpdateType.All;
+                                adapter.update(lastUpdateOptions);
                             }
                             //override debugVisual capabilities with user's
-                            powerbi.visuals.plugins.debugVisual.capabilities = powerbi.visuals.plugins[this.visualGuid].capabilities;
-                            this.host.visualCapabilitiesChanged();
+                            this.setCapabilities(powerbi.visuals.plugins[this.visualGuid].capabilities);
                         });
                     });
                 });
@@ -191,6 +194,7 @@ module powerbi.visuals.system {
                     type: 'error'
                 });
                 this.container.html(errorMessage);
+                this.setCapabilities({});
             }).always(() => {
                 this.statusLoading = false;
             });
@@ -268,6 +272,11 @@ module powerbi.visuals.system {
 
         private buildErrorMessage(options: VisualErrorMessageOptions): string {
             return _.template(DebugVisual.errorMessageTemplate)(options);
+        }
+
+        private setCapabilities(capabilities: VisualCapabilities): void {
+            powerbi.visuals.plugins.debugVisual.capabilities = capabilities;
+            this.host.visualCapabilitiesChanged();
         }
 
         public init(options: VisualInitOptions): void {

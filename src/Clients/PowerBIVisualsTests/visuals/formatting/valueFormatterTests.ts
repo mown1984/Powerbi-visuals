@@ -75,6 +75,36 @@ module powerbitests {
                 expect(valueFormatter.format(0, format)).toBe("Zero");
             });
 
+            it("precision", () => {
+                // no decimal places
+                let formatter = powerbi.visuals.valueFormatter.create({ format: "$#,0;($#,0);0", value: 0 });
+                expect(formatter.format(12345.6789)).toBe("$12,346");
+                expect(formatter.format(-12345.6789)).toBe("($12,346)");
+                expect(formatter.format(0)).toBe("0");
+
+                // explicit precision in format string
+                formatter = powerbi.visuals.valueFormatter.create({ format: "$#,0.000;($#,0.000);0.000", value: 0 });
+                expect(formatter.format(12345.6789)).toBe("$12,345.679");
+                expect(formatter.format(-12345.6789)).toBe("($12,345.679)");
+                expect(formatter.format(0)).toBe("0.000");
+
+                // explicit precision from options
+                formatter = powerbi.visuals.valueFormatter.create({ format: "$#,0;($#,0);0", precision: 3, value: 0 });
+                expect(formatter.format(12345.6789)).toBe("$12,345.679");
+                expect(formatter.format(-12345.6789)).toBe("($12,345.679)");
+                expect(formatter.format(0)).toBe("0.000");
+
+                // override format string precision
+                formatter = powerbi.visuals.valueFormatter.create({ format: "$#,0.000;($#,0.000);0.000", precision: 2, value: 0 });
+                expect(formatter.format(12345.678)).toBe("$12,345.68");
+                expect(formatter.format(-12345.678)).toBe("($12,345.68)");
+                expect(formatter.format(0)).toBe("0.00");
+
+                // override precision doesn't wipe out trailing literals
+                formatter = powerbi.visuals.valueFormatter.create({ format: "#,0 USD", precision: 3, value: 0 });
+                expect(formatter.format(12345.6789)).toBe("12,345.679 USD");
+            });
+
             it("special chars in literals", () => {
                 // try to confuse formatter with special characters in a literal
                 let format = "\\#\\,\\0\\.\\0\\0\\% #,0.00% '#,0.00%'";

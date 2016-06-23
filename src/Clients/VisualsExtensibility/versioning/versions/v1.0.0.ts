@@ -27,18 +27,23 @@
 /// <reference path="../../_references.ts"/>
 
 module powerbi.extensibility.v100 {
+
+    export function convertLegacyUpdateType(options: powerbi.VisualUpdateOptions): VisualUpdateType {
+        let type = options.type || VisualUpdateType.Data;
+        if (type & VisualUpdateType.Resize && options.resizeMode === ResizeMode.Resized) {
+            type |= VisualUpdateType.ResizeEnd;
+        }
+        return type;
+    }
+
     let overloadFactory: VisualVersionOverloadFactory = (visual: IVisual) => {
         return {
             update: (options: powerbi.VisualUpdateOptions) => {
                 if (visual.update) {
-                    let type = options.type || VisualUpdateType.Data;
-                    if(type & VisualUpdateType.Resize && options.resizeMode === ResizeMode.Resized) {
-                        type |= VisualUpdateType.ResizeEnd;
-                    } 
                     visual.update({
                         viewport: options.viewport,
                         dataViews: options.dataViews,
-                        type: type
+                        type: convertLegacyUpdateType(options)
                     });
                 }
             },

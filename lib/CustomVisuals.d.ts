@@ -1647,6 +1647,7 @@ declare module powerbi.visuals.samples {
         private static getMetadata(categories, grouped, source);
         static createLazyFormattedCategory(formatter: IValueFormatter, value: string): Lazy<string>;
         private static createDataPoints(dataValues, metadata, categories, categoryValues, categoryFormatter, categoryIdentities, categoryObjects, colorPalette, hasDynamicSeries, labelSettings, defaultDataPointColor?, categoryQueryName?);
+        private static getNumberFromDataViewValueColumnById(dataViewValueColumn, index);
         private static getValueFromDataViewValueColumnById(dataViewValueColumn, index);
         private static getDefaultData();
         setData(dataViews: DataView[]): void;
@@ -2209,70 +2210,101 @@ declare module powerbi.visuals.samples {
 }
 
 declare module powerbi.visuals.samples {
-    interface ForceGraphOptions {
-        showDataLabels: boolean;
-        labelColor: string;
-        fontSize: number;
-        showArrow: boolean;
-        showLabel: boolean;
-        colorLink: string;
-        thickenLink: boolean;
-        displayImage: boolean;
-        defaultImage: string;
-        imageUrl: string;
-        imageExt: string;
-        nameMaxLength: number;
-        highlightReachableLinks: boolean;
-        charge: number;
-        defaultLinkColor: string;
-        defaultLinkHighlightColor: string;
-        defaultLinkThickness: string;
+    enum LinkColorType {
+        ByWeight,
+        ByLinkType,
+        Interactive,
     }
-    var forceProps: {
-        general: {
-            formatString: DataViewObjectPropertyIdentifier;
+    class ForceGraphSettings {
+        static Default: ForceGraphSettings;
+        static parse(dataView: DataView, capabilities: VisualCapabilities): ForceGraphSettings;
+        static getProperties(capabilities: VisualCapabilities): {
+            [i: string]: {
+                [i: string]: DataViewObjectPropertyIdentifier;
+            };
         };
+        static createEnumTypeFromEnum(type: any): IEnumType;
+        private static getValueFnByType(type);
         labels: {
-            show: DataViewObjectPropertyIdentifier;
-            color: DataViewObjectPropertyIdentifier;
-            fontSize: DataViewObjectPropertyIdentifier;
+            show: boolean;
+            color: string;
+            fontSize: number;
         };
         links: {
-            showArrow: DataViewObjectPropertyIdentifier;
-            showLabel: DataViewObjectPropertyIdentifier;
-            colorLink: DataViewObjectPropertyIdentifier;
-            thickenLink: DataViewObjectPropertyIdentifier;
+            showArrow: boolean;
+            showLabel: boolean;
+            colorLink: LinkColorType;
+            thickenLink: boolean;
+            displayUnits: number;
+            decimalPlaces: number;
         };
         nodes: {
-            displayImage: DataViewObjectPropertyIdentifier;
-            defaultImage: DataViewObjectPropertyIdentifier;
-            imageUrl: DataViewObjectPropertyIdentifier;
-            imageExt: DataViewObjectPropertyIdentifier;
-            nameMaxLength: DataViewObjectPropertyIdentifier;
-            highlightReachableLinks: DataViewObjectPropertyIdentifier;
+            displayImage: boolean;
+            defaultImage: string;
+            imageUrl: string;
+            imageExt: string;
+            nameMaxLength: number;
+            highlightReachableLinks: boolean;
         };
         size: {
-            charge: DataViewObjectPropertyIdentifier;
+            charge: number;
         };
-    };
+    }
+    class ForceGraphColumns<T> {
+        static Roles: ForceGraphColumns<string>;
+        static getMetadataColumns(dataView: DataView): ForceGraphColumns<DataViewMetadataColumn>;
+        static getTableValues(dataView: DataView): ForceGraphColumns<any[]>;
+        static getTableRows(dataView: DataView): ForceGraphColumns<any>[];
+        Source: T;
+        Target: T;
+        Weight: T;
+        LinkType: T;
+        SourceType: T;
+        TargetType: T;
+    }
+    interface ForceGraphLink {
+        source: ForceGraphNode;
+        target: ForceGraphNode;
+        weight: number;
+        formattedWeight: string;
+        type: string;
+        tooltipInfo: TooltipDataItem[];
+    }
+    interface ForceGraphNode {
+        name: string;
+        image: string;
+        adj: {
+            [i: string]: number;
+        };
+        x?: number;
+        y?: number;
+    }
+    interface ForceGraphNodes {
+        [i: string]: ForceGraphNode;
+    }
     interface ForceGraphData {
-        nodes: {};
-        links: any[];
+        nodes: ForceGraphNodes;
+        links: ForceGraphLink[];
         minFiles: number;
         maxFiles: number;
         linkedByName: {};
         linkTypes: {};
+        settings: ForceGraphSettings;
     }
     class ForceGraph implements IVisual {
         static VisualClassName: string;
+        private static Count;
+        private static DefaultValues;
+        private static Href;
+        private data;
+        private settings;
         private root;
         private paths;
         private nodes;
         private forceLayout;
         private dataView;
         private colors;
-        private options;
-        private data;
+        private uniqieId;
         private marginValue;
         private margin;
         private viewportValue;
@@ -2282,8 +2314,6 @@ declare module powerbi.visuals.samples {
         private static substractMargin(viewport, margin);
         private scale1to10(d);
         private getLinkColor(d);
-        private getDefaultOptions();
-        private updateOptions(objects);
         static capabilities: VisualCapabilities;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
         private enumerateLabels(enumeration);
@@ -2291,6 +2321,7 @@ declare module powerbi.visuals.samples {
         private enumerateNodes(enumeration);
         private enumerateSize(enumeration);
         static converter(dataView: DataView, colors: IDataColorPalette): ForceGraphData;
+        private static parseSettings(dataView);
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
         private updateNodes();
@@ -2323,28 +2354,23 @@ declare module powerbi.visuals.samples {
         color: string;
         tooltipInfo: TooltipDataItem[];
     }
+    interface GroupedTask {
+        id: number;
+        name: string;
+        tasks: Task[];
+    }
     interface GanttChartFormatters {
         startDateFormatter: IValueFormatter;
         completionFormatter: IValueFormatter;
         durationFormatter: IValueFormatter;
     }
-    interface GanttChartData {
-        legendData: LegendData;
-        series: GanttSeries[];
-        showLegend: boolean;
-    }
     interface GanttViewModel {
-        taskLabelsShow: boolean;
-        taskLabelsColor: string;
-        taskLabelsFontSize: number;
-        taskLabelsWidth: number;
-        taskProgressColor: string;
-        taskResourceShow: boolean;
-        taskResourceColor: string;
-        taskResourceFontSize: number;
+        dataView: DataView;
+        settings: GanttSettings<any>;
+        tasks: Task[];
+        series: GanttSeries[];
         legendData: LegendData;
         taskTypes: TaskTypes;
-        dateType: string;
     }
     interface GanttDataPoint extends SelectableDataPoint {
         color: string;
@@ -2359,30 +2385,51 @@ declare module powerbi.visuals.samples {
         types: string[];
         typeName: string;
     }
+    interface GanttSettings<T> {
+        general: {
+            groupTasks: T;
+        };
+        legend: {
+            show: T;
+            position: T;
+            showTitle: T;
+            titleText: T;
+            labelColor: T;
+            fontSize: T;
+        };
+        taskLabels: {
+            show: T;
+            fill: T;
+            fontSize: T;
+            width: T;
+        };
+        taskCompletion: {
+            show: T;
+            fill: T;
+        };
+        taskResource: {
+            show: T;
+            fill: T;
+            fontSize: T;
+        };
+        dateType: {
+            type: T;
+        };
+    }
     class Gantt implements IVisual {
-        private data;
-        private dataView;
         private viewport;
         private colors;
         private legend;
-        private legendObjectProperties;
         private textProperties;
+        static DefaultSettings: GanttSettings<any>;
         static DefaultValues: {
             AxisTickSize: number;
-            LabelFontSize: number;
-            LegendFontSize: number;
-            LegendLabelColor: string;
             MaxTaskOpacity: number;
             MinTaskOpacity: number;
             ProgressBarHeight: number;
-            ProgressColor: string;
-            ResourceFontSize: number;
             ResourceWidth: number;
             TaskColor: string;
-            TaskLabelColor: string;
-            TaskLabelWidth: number;
             TaskLineWidth: number;
-            TaskResourceColor: string;
             DefaultDateType: string;
             DateFormatStrings: {
                 Day: string;
@@ -2393,7 +2440,8 @@ declare module powerbi.visuals.samples {
         };
         static capabilities: VisualCapabilities;
         private static Properties;
-        static getProperties(capabilities: VisualCapabilities): any;
+        private static getProperties(capabilities);
+        private static DefaultMargin;
         private margin;
         private style;
         private body;
@@ -2411,8 +2459,6 @@ declare module powerbi.visuals.samples {
         private interactivityService;
         private hostServices;
         private isInteractiveChart;
-        static getMaxTaskOpacity(): number;
-        static getMinTaskOpacity(): number;
         init(options: VisualInitOptions): void;
         /**
          * Create the vieport area of the gantt chart
@@ -2426,66 +2472,65 @@ declare module powerbi.visuals.samples {
          * Update div container size to the whole viewport area
          * @param viewport The vieport to change it size
          */
-        private updateChartSize(viewport);
-        /**
-       * Create the gantt tasks series based on all task types
-       * @param taskTypes All unique types from the tasks array.
-       */
-        private createSeries(objects, tasks);
-        /**
-        * Convert the dataView to view model
-        * @param dataView The data Model
-        */
-        static converter(dataView: DataView, colorPalette: IDataColorPalette): GanttViewModel;
-        /**
-         * Returns the chart formatters
-         * @param dataView The data Model
-         */
-        private parseSettings(dataView);
-        private isValidDate(date);
-        private convertToDecimal(number);
-        /**
-        * Create task objects dataView
-        * @param dataView The data Model.
-        * @param formatters task attributes represented format.
-        * @param series An array that holds the color data of different task groups.
-        */
-        private createTasks(dataView, formatters);
-        /**
-        * Gets all unique types from the tasks array
-        * @param dataView The data model.
-        */
-        private static getAllTasksTypes(dataView);
-        /**
-        * Get the tooltip info (data display names & formated values)
-        * @param task All task attributes.
-        * @param formatters Formatting options for gantt attributes.
-        */
-        private getTooltipInfo(task, formatters, timeInterval?);
+        private updateChartSize();
         /**
          * Get task property from the data view
          * @param columnSource
          * @param child
          * @param propertyName The property to get
          */
-        private getTaskProperty<T>(columnSource, child, propertyName);
+        private static getTaskProperty<T>(columnSource, child, propertyName);
         /**
          * Check if dataView has a given role
          * @param column The dataView headers
          * @param name The role to find
          */
-        private hasRole(column, name);
+        private static hasRole(column, name);
         /**
-         * Check if task has data for task
-         * @param dataView
+        * Get the tooltip info (data display names & formated values)
+        * @param task All task attributes.
+        * @param formatters Formatting options for gantt attributes.
+        */
+        private static getTooltipInfo(task, formatters, timeInterval?);
+        /**
+        * Check if task has data for task
+        * @param dataView
+        */
+        private static isChartHasTask(dataView);
+        /**
+         * Returns the chart formatters
+         * @param dataView The data Model
          */
-        private isChartHasTask(dataView);
+        private static getFormatters(dataView);
+        /**
+        * Create task objects dataView
+        * @param dataView The data Model.
+        * @param formatters task attributes represented format.
+        * @param series An array that holds the color data of different task groups.
+        */
+        private static createTasks(dataView, formatters, colors);
+        /**
+       * Create the gantt tasks series based on all task types
+       * @param taskTypes All unique types from the tasks array.
+       */
+        private static createSeries(objects, tasks, dataView, colors);
+        /**
+        * Convert the dataView to view model
+        * @param dataView The data Model
+        */
+        static converter(dataView: DataView, colors: IDataColorPalette): GanttViewModel;
+        private static parseSettings(dataView, colors);
+        private static isValidDate(date);
+        private static convertToDecimal(number);
+        /**
+        * Gets all unique types from the tasks array
+        * @param dataView The data model.
+        */
+        private static getAllTasksTypes(dataView);
         /**
          * Get legend data, calculate position and draw it
-         * @param ganttChartData Data for series and legend
          */
-        private renderLegend(legendData);
-        private parseLegendProperties(dataView);
+        private renderLegend();
         /**
         * Called on data change or resizing
         * @param options The visual option that contains the dataview and the viewport
@@ -2494,6 +2539,7 @@ declare module powerbi.visuals.samples {
         private getDateType();
         private calculateAxes(viewportIn, textProperties, startDate, endDate, axisLength, ticksCount, scrollbarVisible);
         private calculateAxesProperties(viewportIn, options, axisLength, metaDataColumn);
+        private groupTasks(tasks);
         private renderAxis(xAxisProperties, duration);
         /**
         * Update task labels and add its tooltips
@@ -2501,7 +2547,7 @@ declare module powerbi.visuals.samples {
         * @param width The task label width
         */
         private updateTaskLabels(tasks, width);
-        private renderTasks(tasks);
+        private renderTasks(groupedTasks);
         onClearSelection(): void;
         /**
          * Returns the matching Y coordinate for a given task index
@@ -2532,47 +2578,14 @@ declare module powerbi.visuals.samples {
         */
         private createMilestoneLine(tasks, milestoneTitle?, timestamp?);
         private updateElementsPositions(viewport, margin);
-        /**
-         * Returns the width of the now line based on num of tasks
-         * @param numOfTasks Number of tasks
-         */
         private getMilestoneLineLength(numOfTasks);
-        private getTaskLabelFontSize();
-        /**
-         * handle "Legend" card
-         * @param enumeration The instance to be pushed into "Legend" card
-         * @param objects Dataview objects
-         */
-        private enumerateLegendOptions(enumeration, objects);
-        /**
-        * handle "Data Colors" card
-        * @param enumeration The instance to be pushed into "Data Colors" card
-        * @param objects Dataview objects
-        */
-        private enumerateDataPoints(enumeration, objects);
-        /**
-        * handle "Task Completion" card
-        * @param enumeration The instance to be pushed into "Task Completion" card
-        * @param objects Dataview objects
-        */
-        private enumerateTaskCompletion(enumeration, objects);
-        /**
-        * handle "Labels" card
-        * @param enumeration The instance to be pushed into "Data Labels" card
-        * @param objects Dataview objects
-        */
-        private enumerateTaskLabels(enumeration, objects);
-        /**
-        * handle "Data Labels" card
-        * @param enumeration The instance to be pushed into "Task Resource" card
-        * @param objects Dataview objects
-        */
-        private enumerateDataLabels(enumeration, objects);
-        private enumerateDateType(enumeration, objects);
-        /**
-        * handle the property pane options
-        * @param objects Dataview enumerate objects
-        */
+        private enumerateGeneral(settings);
+        private enumerateLegend(settings);
+        private enumerateDataPoints(settings);
+        private enumerateTaskCompletion(settings);
+        private enumerateTaskLabels(settings);
+        private enumerateTaskResources(settings);
+        private enumerateDateType(settings);
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
     }
     interface GanttBehaviorOptions {
@@ -2938,7 +2951,6 @@ declare module powerbi.visuals.samples {
     }
     class Timeline implements IVisual {
         private requiresNoUpdate;
-        private foreignSelection;
         private timelineProperties;
         private timelineFormat;
         private timelineData;

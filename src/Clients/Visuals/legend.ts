@@ -209,8 +209,8 @@ module powerbi.visuals {
         private static LegendArrowHeight = 15;
         private static LegendArrowWidth = 7.5;
 
-        private static DefaultFontFamily = 'wf_segoe-ui_normal';
-        private static DefaultTitleFontFamily = 'wf_segoe-ui_Semibold';
+        private static DefaultFontFamily: string = Font.Family.regular.css;
+        private static DefaultTitleFontFamily: string = Font.Family.semibold.css;
 
         private static LegendItem: ClassAndSelector = createClassAndSelector('legendItem');
         private static LegendText: ClassAndSelector = createClassAndSelector('legendText');
@@ -407,11 +407,6 @@ module powerbi.visuals {
             itemsEnter
                 .append('title')
                 .text((d: LegendDataPoint) => d.tooltip);
-
-            itemsEnter
-                .style({
-                    'font-family': SVGLegend.DefaultFontFamily
-                });
 
             legendItems
                 .select(SVGLegend.LegendIcon.selector)

@@ -255,7 +255,7 @@ module powerbitests {
     describe("ComboChart DOM validation", () => {
         let visualBuilder: VisualBuilder;
         let element: JQuery;
-        let labelDensityMax = powerbi.visuals.NewDataLabelUtils.LabelDensityMax;
+        let labelDensityMax: number = undefined;
 
         beforeEach((done) => {
             element = powerbitests.helpers.testDom('500', '500');

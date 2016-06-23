@@ -87,12 +87,20 @@ module jsCommon {
             return a.indexOf(b) === 0;
         }
 
+        /** Determines whether a string contains a specified substring (by case-sensitive comparison). */
+        export function contains(source: string, substring: string): boolean {
+            if (source == null)
+                return false;
+
+            return source.indexOf(substring) !== -1;
+        }
+
         /** Determines whether a string contains a specified substring (while ignoring case). */
         export function containsIgnoreCase(source: string, substring: string): boolean {
             if (source == null)
                 return false;
 
-            return source.toLowerCase().indexOf(substring.toLowerCase().toString()) !== -1;
+            return contains(normalizeCase(source), normalizeCase(substring));
         }
 
         /** 

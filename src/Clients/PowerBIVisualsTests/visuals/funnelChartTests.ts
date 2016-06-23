@@ -997,7 +997,7 @@ module powerbitests {
             let warningSpy: Spy = jasmine.createSpy('warning');
             visualBuilder.host.setWarnings = warningSpy;
 
-            let options = getOptionsForValues([110, -120, 1e301]);
+            let options = getOptionsForValues([110, -120, 130]);
             visualBuilder.visual.onDataChanged(options);
 
             setTimeout(() => {
@@ -1012,7 +1012,7 @@ module powerbitests {
             let warningSpy: Spy = jasmine.createSpy('warning');
             visualBuilder.host.setWarnings = warningSpy;
 
-            let options = getOptionsForValues([-110, -120, -1e301]);
+            let options = getOptionsForValues([-110, -120, -130]);
             visualBuilder.visual.onDataChanged(options);
 
             setTimeout(() => {

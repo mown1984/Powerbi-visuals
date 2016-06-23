@@ -110,8 +110,8 @@ module powerbi.visuals {
                     instance.properties[referenceLineProps.dataLabelColor] = dataLabelColor;
                     instance.properties[referenceLineProps.dataLabelHorizontalPosition] = dataLabelHorizontalPosition;
                     instance.properties[referenceLineProps.dataLabelVerticalPosition] = dataLabelVerticalPosition;
-                    instance.properties[referenceLineProps.dataLabelDecimalPoints] = dataLabelDecimalPoints;
                     instance.properties[referenceLineProps.dataLabelDisplayUnits] = dataLabelDisplayUnits;
+                    instance.properties[referenceLineProps.dataLabelDecimalPoints] = dataLabelDecimalPoints;
                 }
 
                 enumeration.pushInstance(instance);

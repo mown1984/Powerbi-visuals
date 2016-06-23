@@ -115,7 +115,7 @@ module powerbitests.customVisuals.sampleDataViews {
         }
 
         static getValuesTable(categories?: powerbi.DataViewCategoryColumn[], values?: powerbi.DataViewValueColumn[]): any[][] {
-            let columns = (categories || []).concat(<powerbi.DataViewCategoricalColumn[]>values || []);
+            let columns = _.sortBy((categories || []).concat(<powerbi.DataViewCategoricalColumn[]>values || []), x => x.source.index);
             let maxLength: number = _.max(columns.map(x => x.values.length));
             return _.range(maxLength).map(i => columns.map(x => x.values[i]));
         }
@@ -134,6 +134,9 @@ module powerbitests.customVisuals.sampleDataViews {
 
             let resultValuesColumns = _.isEmpty(valuesColumns) ? [] : (<DataViewBuilderValuesColumnOptions[]>_
                 .flatten(valuesColumns)).filter(filterColumns);
+
+            let allColumns = (resultCategoriesColumns || []).concat(<powerbi.DataViewCategoricalColumn[]>resultValuesColumns || []);
+            allColumns.forEach((x: powerbi.DataViewCategoricalColumn,i) => x.source.index = i);
 
             return { 
                     categories: resultCategoriesColumns.filter(x => !x.isGroup),

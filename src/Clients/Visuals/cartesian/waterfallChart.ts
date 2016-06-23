@@ -245,7 +245,7 @@ module powerbi.visuals {
                                 });
                             }
                             if (tooltipBucketEnabled) {
-                                let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex, undefined);
+                                let tooltipValues = reader.getAllValuesForRole("Tooltips", categoryIndex);
                                 if (tooltipValues && tooltipMetadataColumns) {
                                     for (let i = 0; i < tooltipValues.length; i++) {
                                         totalTooltips[i] += tooltipValues[i];

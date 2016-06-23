@@ -212,8 +212,11 @@ module powerbi.data {
     }
 
     export module SQExprConverter {
-        export function asFieldPattern(sqExpr: SQExpr): FieldExprPattern {
-            return sqExpr.accept(FieldExprPatternBuilder.instance);
+        // VSTS 7381488: schema is temporarily optional.  The schema should be a required parameter to this method and used
+        // by FieldExprPatternBuilder.  However, due to VSTS 7381488, the schema is not always available.  As such, for
+        // the moment, the builder returns wrong results for variations
+        export function asFieldPattern(sqExpr: SQExpr, schema?: FederatedConceptualSchema): FieldExprPattern {
+            return sqExpr.accept(new FieldExprPatternBuilder(schema));
         }
     }
 
@@ -236,7 +239,13 @@ module powerbi.data {
     }
 
     class FieldExprPatternBuilder extends DefaultSQExprVisitor<FieldExprPattern> {
-        public static instance: FieldExprPatternBuilder = new FieldExprPatternBuilder();
+
+        private schema: FederatedConceptualSchema;
+
+        constructor(schema: FederatedConceptualSchema) {
+            super();
+            this.schema = schema;
+        }
 
         public visitColumnRef(expr: SQColumnRefExpr): FieldExprPattern {
             let sourceRef = expr.source.accept(SourceExprPatternBuilder.instance);
@@ -336,6 +345,18 @@ module powerbi.data {
             }
 
             if (hierarchySourceExprPattern.variation) {
+                // Find the entity that holds the hierarchy definition.  This requires a lookup in the conceptual schema
+                // for the variation name.  If the schema is not available, this method returns wrong results, see VSTS 7381488.  When
+                // that issue is fixed, schema should be treated as required and the check for it removed.
+                if (this.schema) {
+                    let variation = hierarchySourceExprPattern.variation;
+                    let conceptualEntity = this.schema
+                        .schema(hierarchySourceExprPattern.variation.column.schema)
+                        .findTargetEntityOfVariation(hierarchyLevel.entity, variation.column.name, variation.variationName);
+                    if (conceptualEntity)
+                        hierarchyLevel.entity = conceptualEntity.name;
+                }
+
                 return {
                     columnHierarchyLevelVariation: {
                         source: {

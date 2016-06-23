@@ -37,14 +37,12 @@ module powerbi.visuals {
         export const MapPolylineOpacity = 0.5;
         export const LabelDensityBufferFactor = 3;
         export const LabelDensityPadding = 6;
-        export const LabelDensityMin = 0;
-        export const LabelDensityMax = 6;
         export let startingLabelOffset = 8;
         export let maxLabelOffset = 8;
         export let maxLabelWidth: number = 50;
         export let hundredPercentFormat = '0.00 %;-0.00 %;0.00 %';
         export let LabelTextProperties: TextProperties = {
-            fontFamily: 'wf_standard-font',
+            fontFamily: Font.Family.regularSecondary.css,
             fontSize: PixelConverter.fromPoint(DefaultLabelFontSizeInPt),
             fontWeight: 'normal',
         };

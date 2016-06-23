@@ -169,6 +169,7 @@ module powerbi.visuals {
             'GeotaggingString_Streets': 'streets',
             'GeotaggingString_Longitude': 'longitude',
             'GeotaggingString_Longitude_Short': 'lon',
+            'GeotaggingString_Longitude_Short2': 'long',
             'GeotaggingString_Latitude': 'latitude',
             'GeotaggingString_Latitude_Short': 'lat',
             'GeotaggingString_PostalCode': 'postal code',
