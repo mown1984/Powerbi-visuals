@@ -61,7 +61,9 @@ module powerbi.visuals {
             "timeline",
             "owlGauge",
             "debugVisual",
-            "lineDotChart"
+            "lineDotChart",
+            "chordChart",
+            "pulseChart"
         ];
 
         private static mobileInteractiveVisuals: string[] = [

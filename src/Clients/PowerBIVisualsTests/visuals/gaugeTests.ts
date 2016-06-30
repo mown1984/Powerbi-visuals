@@ -783,7 +783,7 @@ module powerbitests {
         });
 
         it("Gauge registered capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("gauge").capabilities).toBe(gaugeVisualCapabilities);
+            expect(powerbi.visuals.plugins.gauge.capabilities).toBe(gaugeVisualCapabilities);
         });
 
         it("FormatString property should match calculated", () => {

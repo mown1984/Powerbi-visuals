@@ -214,7 +214,7 @@ module powerbitests {
         }
 
         it("VisualFactory.getVisuals - categorical - various dataViews", () => {
-            let allVisuals = powerbi.visuals.visualPluginFactory.create().getVisuals();
+            let allVisuals = _.values(powerbi.visuals.plugins);
 
             for (let i = 0; i < allVisuals.length; i++) {
                 let exception = null,

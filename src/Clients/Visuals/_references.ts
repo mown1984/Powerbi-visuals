@@ -23,6 +23,7 @@
 /// <reference path="./types/referenceLinePosition.ts"/>
 /// <reference path="./types/slicerOrientation.ts"/>
 /// <reference path="./types/yAxisPosition.ts"/>
+/// <reference path="./types/sliderMode.ts"/>
 /// <reference path="./animators/animatorCommon.ts"/>
 /// <reference path="./animators/columnChartAnimator.ts"/>
 /// <reference path="./animators/donutChartAnimator.ts"/>
@@ -83,6 +84,7 @@
 /// <reference path="./common/donutLabelUtils.ts"/>
 /// <reference path="./common/newDataLabelUtils.ts"/>
 /// <reference path="./common/kpiUtil.ts"/>
+/// <reference path="./common/dateUtil.ts"/>
 /// <reference path="./common/labelDataPointSorter.ts"/>
 /// <reference path="./common/referenceLineHelper.ts"/>
 /// <reference path="./common/interactivityUtils.ts"/>
@@ -114,7 +116,6 @@
 /// <reference path="./services/geocoder.ts"/>
 /// <reference path="./services/geocodingCache.ts"/>
 /// <reference path="./services/geolocationService.ts"/>
-/// <reference path="./services/visualPluginService.ts"/>
 /// <reference path="./controls/scrollbar/scrollbar.ts"/>
 /// <reference path="./controls/tablix/internal/tablixGridPresenter.ts"/>
 /// <reference path="./controls/tablix/internal/tablixRealizationManager.ts"/>
@@ -169,3 +170,4 @@
 /// <reference path="./visuals/system/debugVisual.ts"/>
 /// <reference path="./plugins.ts"/>
 /// <reference path="./common/canvasBackgroundHelper.ts"/>
+/// <reference path="./common/scaleRange.ts"/>

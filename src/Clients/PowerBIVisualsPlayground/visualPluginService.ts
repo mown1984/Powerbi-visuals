@@ -27,9 +27,71 @@
 /// <reference path="./_references.ts"/>
 
 module powerbi.visuals {
+    
+    export interface MinervaVisualFeatureSwitches {
+        /**
+         * This feature switch enables the data-dot & column combo charts.
+         */
+        dataDotChartEnabled?: boolean;
 
-    import createPlugin = visualPluginFactory.createPlugin;
+        /**
+         * Visual should prefer to request a higher volume of data.
+         */
+        preferHigherDataVolume?: boolean;
 
+        sandboxVisualsEnabled?: boolean;
+
+        /**
+        * R visual is enabled for consumption.
+        * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
+        * When turned off, R script will not be executed and the visual is treated as a static image visual.
+        */
+        scriptVisualEnabled?: boolean;
+
+        /**
+        * R visual is enabled for authoring.
+        * When turned on, R visual will appear in the visual gallery.
+        */
+        scriptVisualAuthoringEnabled?: boolean;
+
+        isLabelInteractivityEnabled?: boolean;
+
+        sunburstVisualEnabled?: boolean;
+
+        filledMapDataLabelsEnabled?: boolean;
+
+        /**
+         * Enables button to center map to the current location
+         */
+        mapCurrentLocationEnabled?: boolean;
+        
+        tooltipBucketEnabled?: boolean;
+        
+        /**
+         * Load more data for Cartesian charts (column, bar, line, and combo). 
+         */
+        cartesianLoadMoreEnabled?: boolean;
+
+        /**
+         * Advanced logic for line chart labels
+         */
+        advancedLineLabelsEnabled?: boolean;
+    }
+    
+    function createPlugin(
+        visualPlugins: jsCommon.IStringDictionary<IVisualPlugin>,
+        base: IVisualPlugin,
+        create: IVisualFactoryMethod,
+        modifyPluginFn?: (plugin: IVisualPlugin) => void): void {
+
+        let visualPlugin = Prototype.inherit(base);
+        visualPlugin.create = create;
+        if (modifyPluginFn) {
+            modifyPluginFn(visualPlugin);
+        }
+        visualPlugins[base.name] = visualPlugin;
+    }
+    
     function createMinervaPlugins(plugins: jsCommon.IStringDictionary<IVisualPlugin>, featureSwitches?: MinervaVisualFeatureSwitches) {
         let scriptVisualEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualEnabled : false;
         let scriptVisualAuthoringEnabled: boolean = featureSwitches ? featureSwitches.scriptVisualAuthoringEnabled : false;
@@ -430,10 +492,6 @@ module powerbi.visuals {
                 return this.visualPlugins[type];
 
             return powerbi.visuals.plugins[type];
-        }
-
-        public requireSandbox(plugin: IVisualPlugin): boolean {
-            return !plugin || plugin.custom;
         }
 
         // Windows phone webView chokes when zooming on heavy maps,

@@ -270,16 +270,16 @@ module powerbi.data {
 
         export function getActiveTablesNames(queryDefn: data.SemanticQuery): string[] {
             let tables: string[] = [];
+            let entitiesVisitor = new data.SQFromEntitiesVisitor();
+
             if (queryDefn) {
                 let selectedItems = queryDefn.from();
                 if (selectedItems !== undefined) {
-                    for (let key of selectedItems.keys()) {
-                        let entityObj = selectedItems.entity(key);
-                        if (tables.indexOf(entityObj.entity) < 0)
-                            tables.push(entityObj.entity);
-                    }
+                    for (let key of selectedItems.keys()) 
+                        selectedItems.source(key).accept(entitiesVisitor, /*arg*/null);
                 }
             }
+            tables = _.map(entitiesVisitor.entities, (value: SQEntityExpr) => value.entity);
             return tables;
         }
 
@@ -431,6 +431,13 @@ module powerbi.data {
 
             public visitConstant(expr: SQConstantExpr): string {
                 return 'const';
+            }
+
+            public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr, fallback: string): string {
+                let name = expr.role;
+                if (expr.transform)
+                    name += '.' + expr.transform;
+                return name;
             }
 
             public visitDefault(expr: SQExpr, fallback: string): string {

@@ -59,6 +59,7 @@ module powerbi.visuals {
         defaultSeriesColor?: string;
         categoryData?: LineChartCategoriesData[];
         seriesDisplayName?: string;
+        hasValues?: boolean;
     }
 
     export interface LineChartSeries extends CartesianSeries, SelectableDataPoint {
@@ -132,7 +133,6 @@ module powerbi.visuals {
         private static RectOverlayName = 'rect';
         private static ScalarOuterPadding = 10;
         private static interactivityStrokeWidth = 10;
-        private static pathXAdjustment = 5; // Based on half the stroke width for taking stroke into account in coordinate transforms
         private static minimumLabelsToRender = 4;
         public static AreaFillOpacity = 0.4;
         public static DimmedAreaFillOpacity = 0.2;
@@ -172,11 +172,11 @@ module powerbi.visuals {
         private animator: IGenericAnimator;
 
         private previousCategoryCount: number;
-        private shouldAdjustMouseCoordsOnPathsForStroke: boolean;
+        private pathXAdjustment: number = 0;
 
         private tooltipBucketEnabled: boolean;
         private advancedLineLabelsEnabled: boolean;
-        
+
         private static validStackedLabelPositions = [RectLabelPosition.InsideCenter, RectLabelPosition.InsideEnd, RectLabelPosition.InsideBase];
 
         private overlayRect: D3.Selection;
@@ -204,7 +204,7 @@ module powerbi.visuals {
             }
             else {
                 CartesianChart.applyLoadMoreEnabledToMapping(options.cartesianLoadMoreEnabled, dataViewMapping);
-        }
+            }
         }
 
         public static getSortableRoles(options: VisualSortableOptions): string[] {
@@ -342,7 +342,7 @@ module powerbi.visuals {
                                 displayName: category.source.displayName,
                                 value: converterHelper.formatFromMetadataColumn(categoryValue, category.source, formatStringProp),
                             });
-                    }
+                        }
 
                         // This dynamicSeries tooltip is only using in mobile tooltip.
                         if (hasDynamicSeries) {
@@ -450,6 +450,7 @@ module powerbi.visuals {
                 categories: categoryValues,
                 categoryData: categoryData,
                 seriesDisplayName: hasDynamicSeries ? converterHelper.formatFromMetadataColumn(reader.getSeriesDisplayName(), reader.getSeriesMetadataColumn(), formatStringProp) : undefined,
+                hasValues: reader.hasValues(valueRoleName),
             };
         }
 
@@ -570,14 +571,19 @@ module powerbi.visuals {
                     .origin(Object)
                     .on("drag", dragMove);
                 d3.select(rootSvg)
-                 .style('touch-action', 'none')
-                 .call(drag)
-                 .on('click', dragMove);
+                    .style('touch-action', 'none')
+                    .call(drag)
+                    .on('click', dragMove);
             }
 
             // Internet Explorer and Edge use the stroke edge, not the path edge for the mouse coordinate's origin.
             //   We need to adjust mouse events on the interactivity lines to account for this.
-            this.shouldAdjustMouseCoordsOnPathsForStroke = !jsCommon.BrowserUtils.isChrome();
+            if (jsCommon.BrowserUtils.isInternetExplorerOrEdge()) {
+                this.pathXAdjustment = 5;
+            }
+            else if (jsCommon.BrowserUtils.isFirefox()) {
+                this.pathXAdjustment = LineChart.interactivityStrokeWidth * 2;
+            }
         }
 
         public setData(dataViews: DataView[]): void {
@@ -779,7 +785,7 @@ module powerbi.visuals {
 
         public supportsTrendLine(): boolean {
             let isScalar = this.data ? this.data.isScalar : false;
-            return !EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) && isScalar;
+            return !EnumExtensions.hasFlag(this.lineType, LineChartType.stackedArea) && isScalar && this.data.hasValues;
         }
 
         private showLabelPerSeries(): boolean {
@@ -797,7 +803,7 @@ module powerbi.visuals {
                 selector: series && series.identity ? series.identity.getSelector() : null,
                 showAll: showAll,
                 fontSize: true,
-                labelDensity: (this.isComboChart ? this.data.series.length > 0 : true) && this.advancedLineLabelsEnabled,
+                labelDensity: (this.isComboChart ? this.data.series.length > 0 : true) && this.advancedLineLabelsEnabled && this.data.isScalar,
             };
         }
 
@@ -992,7 +998,7 @@ module powerbi.visuals {
                     .duration(duration)
                     .attr({
                         cx: (d: LineChartDataPoint) => xScale(this.getXValue(d)),
-                    cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
+                        cy: (d: LineChartDataPoint) => yScale(isStackedArea ? d.stackedValue : d.value),
                         r: LineChart.PointRadius
                     });
                 explicitDots.exit()
@@ -1295,9 +1301,9 @@ module powerbi.visuals {
                 }
             }
             else {
-            for (let point of pointData) {
-                if (count >= maxNumberOfItems) break;
-                if (point.value != null) {
+                for (let point of pointData) {
+                    if (count >= maxNumberOfItems) break;
+                    if (point.value != null) {
                         // Add series data
                         if (hasDynamicSeries) {
                             tooltipinfo.push({
@@ -1307,12 +1313,12 @@ module powerbi.visuals {
                             });
                         }
                         // Add value data
-                    tooltipinfo.push({
-                        header: point.category,
-                        color: point.color,
+                        tooltipinfo.push({
+                            header: point.category,
+                            color: point.color,
                             displayName: point.measureDisplayName,
-                        value: point.measure
-                    });
+                            value: point.measure
+                        });
                         count += 2;
                         // Add tooltip bucket data for each point for dynamic series
                         if (hasDynamicSeries && !_.isEmpty(point.extraTooltipInfo)) {
@@ -1342,9 +1348,9 @@ module powerbi.visuals {
                             value: extraTooltipInfo.value,
                             opacity: hiddenItemOpacity,
                         });
-                    count++;
+                        count++;
+                    }
                 }
-            }
             }
 
             if (tooltipinfo.length === 0)
@@ -1798,11 +1804,13 @@ module powerbi.visuals {
             let seriesIndex: number;
             let seriesCount: number;
             let currentSeries: LineChartSeries;
+            let densityAtMax: boolean;
 
             for (seriesIndex = 0, seriesCount = series.length; seriesIndex < seriesCount; seriesIndex++) {
                 currentSeries = series[seriesIndex];
                 labelSettings = currentSeries.labelSettings || baseLabelSettings;
-                let maxNumberOfLabels = this.advancedLineLabelsEnabled ? LineChart.getNumberOfLabelsToRender(this.currentViewport.width, _.parseInt(labelSettings.labelDensity)) : currentSeries.data.length;
+                densityAtMax = labelSettings.labelDensity === "100";
+                let maxNumberOfLabels = this.advancedLineLabelsEnabled && !densityAtMax && data.isScalar ? LineChart.getNumberOfLabelsToRender(this.currentViewport.width, _.parseInt(labelSettings.labelDensity)) : currentSeries.data.length;
                 if (!labelSettings.show) {
                     labelDataPointGroups[seriesIndex] = {
                         labelDataPoints: [],
@@ -1859,7 +1867,7 @@ module powerbi.visuals {
                                 y: yScale(dataPoint.value),
                             },
                             radius: 0,
-                            validPositions: this.getValidLabelPositions(currentSeries, categoryIndex),
+                            validPositions: densityAtMax ? [NewPointLabelPosition.Above] : this.getValidLabelPositions(currentSeries, categoryIndex),
                         };
                     }
 
@@ -1888,7 +1896,7 @@ module powerbi.visuals {
                             seriesLabelDataPoints.push(labelDataPoint);
                     }
                 }
-                
+
                 labelDataPointGroups[seriesIndex] = {
                     labelDataPoints: seriesLabelDataPoints,
                     maxNumberOfLabels: maxNumberOfLabels,
@@ -1930,21 +1938,17 @@ module powerbi.visuals {
          * edge of the stroke is -(strokeWidth / 2).  We adjust coordinates
          * to match Chrome.
          *
-         * TODO: Firefox is similar to IE, but does a very poor job at it, so
-         * the edge is inacurate.
-         *
          * @param value The x coordinate to be adjusted
          */
         private adjustPathXCoordinate(x: number): number {
-            if (this.shouldAdjustMouseCoordsOnPathsForStroke) {
-                let xScale = this.scaleDetector.getScale().x;
-                if (!Double.equalWithPrecision(xScale, 1.0, 0.00001)) {
-                    x -= LineChart.pathXAdjustment * xScale;
-                }
-                else {
-                    x -= LineChart.pathXAdjustment;
-                }
+            let xScale = this.scaleDetector.getScale().x;
+            if (!Double.equalWithPrecision(xScale, 1.0, 0.00001)) {
+                x -= this.pathXAdjustment * xScale;
             }
+            else {
+                x -= this.pathXAdjustment;
+            }
+            
             return x;
         }
 
@@ -1958,7 +1962,7 @@ module powerbi.visuals {
          *    a. There is no data point to the left and there is one to the right
          *    b. There is an equal data point to the right, but not to the left
          */
-        private getValidLabelPositions(series: LineChartSeries, categoryIndex: number): NewPointLabelPosition[]{
+        private getValidLabelPositions(series: LineChartSeries, categoryIndex: number): NewPointLabelPosition[] {
             if (!this.advancedLineLabelsEnabled) {
                 return [NewPointLabelPosition.Above];
             }
@@ -1982,7 +1986,7 @@ module powerbi.visuals {
             else if (previousValue < currentValue) {
                 previousRelativePosition = LineChartRelativePosition.Lesser;
             }
-            if (nextValue ===null) {
+            if (nextValue === null) {
                 nextRelativePosition = LineChartRelativePosition.None;
             }
             else if (nextValue > currentValue) {

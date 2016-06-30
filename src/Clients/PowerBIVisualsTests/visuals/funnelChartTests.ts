@@ -48,7 +48,6 @@ module powerbitests {
     import SelectionId = powerbi.visuals.SelectionId;
     import SVGUtil = powerbi.visuals.SVGUtil;
     import WebFunnelAnimator = powerbi.visuals.WebFunnelAnimator;
-    import visualPluginFactory = powerbi.visuals.visualPluginFactory;
     import visualStyles = powerbi.visuals.visualStyles;
     import buildSelector = powerbitests.helpers.buildSelectorForColumn;
     import DataViewBuilder = powerbitests.helpers.DataViewBuilder;
@@ -79,7 +78,7 @@ module powerbitests {
     describe("FunnelChart", () => {
 
         it("FunnelChart registered capabilities", () => {
-            expect(visualPluginFactory.create().getPlugin("funnel").capabilities).toBe(funnelChartCapabilities);
+            expect(powerbi.visuals.plugins.funnel.capabilities).toBe(funnelChartCapabilities);
         });
 
         it("Capabilities should include dataViewMappings", () => {

@@ -36,7 +36,6 @@ module powerbitests {
     }
     let mockVisualPlugin: powerbi.IVisualPlugin = {
         name: mockVisualGuid,
-        class: mockVisualGuid,
         capabilities: {},
         create: () => new MockVisual(),
         custom: true
@@ -164,10 +163,33 @@ module powerbitests {
                 it("update should be called upon refesh if previously updated", () => {
                     let adapterUpdateSpy = spyOn((<any>debugVisual).adapter, 'update');
 
-                    debugVisual.update(buildUpdateOptions(viewport, null));
+                    debugVisual.update(buildUpdateOptions(viewport, { metadata: null }));
+                    expect(adapterUpdateSpy).toHaveBeenCalled();
+
+                    //new spy because adapter is re-created on reloadAdapter()
+                    let visual = new MockVisual();
+                    spyOn(powerbi.extensibility, 'createVisualAdapter').and.returnValue(visual);
+                    let adapterUpdateSpy2 = spyOn(visual, 'update');
+
+                    (<any>debugVisual).reloadAdapter();
+                    expect(adapterUpdateSpy2).toHaveBeenCalled();
+                });
+
+                it("update should include previous update options with type set to all", () => {
+                    let data: powerbi.DataView = { metadata: null };
+                    debugVisual.update(buildUpdateOptions(viewport, data));
+
+                    //new spy because adapter is re-created on reloadAdapter()
+                    let visual = new MockVisual();
+                    spyOn(powerbi.extensibility, 'createVisualAdapter').and.returnValue(visual);
+                    let adapterUpdateSpy = spyOn(visual, 'update');
+
                     (<any>debugVisual).reloadAdapter();
 
-                    expect(adapterUpdateSpy).toHaveBeenCalled();
+                    let updateOptions: powerbi.VisualUpdateOptions = adapterUpdateSpy.calls.mostRecent().args[0];
+                    expect(updateOptions.dataViews[0]).toBe(data);
+                    expect(updateOptions.viewport).toBe(viewport);
+                    expect(updateOptions.type).toBe(powerbi.VisualUpdateType.All);
                 });
             });
 
@@ -198,6 +220,68 @@ module powerbitests {
                         expect(reloadSpy).toHaveBeenCalled();
                         done();
                     }, (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime);
+                });
+            });
+
+            describe("data viewer toggle", () => {
+
+                beforeEach(() => {
+                    let mockDataViewPlugin = powerbi.Prototype.inherit(mockVisualPlugin);
+                    mockDataViewPlugin.name = 'dataViewer';
+                    window['powerbi']['visuals']['plugins']['dataViewer'] = mockDataViewPlugin;
+                });
+
+                it("should default to hidden", () => {
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+                });
+
+                it("should toggle dataViewShowing", () => {
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+
+                    (<any>debugVisual).toggleDataview();
+                    expect((<any>debugVisual).dataViewShowing).toBe(true);
+
+                    (<any>debugVisual).toggleDataview();
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+                });
+
+                it("should load / unload dataViewer visual", () => {
+                    let debugElem, dataViewerElem;
+
+                    debugElem = $element.find('.debugVisualContainer').find('.visual-' + mockVisualGuid);
+                    dataViewerElem = $element.find('.debugVisualContainer').find('.visual-dataViewer');
+                    expect(debugElem.length).toBe(1);
+                    expect(dataViewerElem.length).toBe(0);
+
+                    (<any>debugVisual).toggleDataview();
+
+                    debugElem = $element.find('.debugVisualContainer').find('.visual-' + mockVisualGuid);
+                    dataViewerElem = $element.find('.debugVisualContainer').find('.visual-dataViewer');
+                    expect(debugElem.length).toBe(0);
+                    expect(dataViewerElem.length).toBe(1);
+
+                    (<any>debugVisual).toggleDataview();
+
+                    debugElem = $element.find('.debugVisualContainer').find('.visual-' + mockVisualGuid);
+                    dataViewerElem = $element.find('.debugVisualContainer').find('.visual-dataViewer');
+                    expect(debugElem.length).toBe(1);
+                    expect(dataViewerElem.length).toBe(0);
+                });
+
+                it("should pass last update options with type set to all", () => {
+                    let data: powerbi.DataView = { metadata: null };
+                    debugVisual.update(buildUpdateOptions(viewport, data));
+
+                    let visual = new MockVisual();
+                    spyOn(powerbi.extensibility, 'createVisualAdapter').and.returnValue(visual);
+                    let adapterUpdateSpy = spyOn(visual, 'update');
+                    (<any>debugVisual).toggleDataview();
+
+                    let updateOptions: powerbi.VisualUpdateOptions = adapterUpdateSpy.calls.mostRecent().args[0];
+                    expect(adapterUpdateSpy).toHaveBeenCalled();
+                    expect(updateOptions.dataViews[0]).toBe(data);
+                    expect(updateOptions.viewport).toBe(viewport);
+                    expect(updateOptions.type).toBe(powerbi.VisualUpdateType.All);
                 });
             });
         });

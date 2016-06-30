@@ -34,9 +34,13 @@ module powerbitests {
     import SVGUtil = powerbi.visuals.SVGUtil;
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
+    const cardSmallViewportWidth: number = 97; // Matches powerbi.visualHost.DashboardVisualPluginService.cardSmallViewportWidth
+    const cardSmallViewport: number = cardSmallViewportWidth - 1; 
+    const cardSmallViewportString: string = cardSmallViewport.toString(); 
+
     describe("Card", () => {
         it("Card_registered_capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("card").capabilities).toBe(cardCapabilities);
+            expect(powerbi.visuals.plugins.card.capabilities).toBe(cardCapabilities);
         });
 
         it("Capabilities should include dataViewMappings", () => {
@@ -84,7 +88,7 @@ module powerbitests {
                 }
             };
 
-            let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin("card");
+            let plugin = powerbi.visuals.plugins.card;
             expect(powerbi.DataViewAnalysis.supports(dataViewWithTwoRows, plugin.capabilities.dataViewMappings[0], true)).toBe(false);
         });
 
@@ -100,7 +104,7 @@ module powerbitests {
                 single: { value: 123.456 }
             };
 
-            let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin("card");
+            let plugin = powerbi.visuals.plugins.card;
             expect(powerbi.DataViewAnalysis.supports(data, plugin.capabilities.dataViewMappings[0], true)).toBe(true);
         });
     });
@@ -221,6 +225,21 @@ module powerbitests {
                 }
             }
         };
+
+        let dataViewMetadaWithCurrency: powerbi.DataViewMetadata = {
+            columns: [{ displayName: "col1", isMeasure: true, objects: { "general": { formatString: "\$#,0;(\$#,0);\$#,0" } } }],
+            objects: {
+                labels: {
+                    labelPrecision: 2,
+                    labelDisplayUnits: 1,
+                    fontSize: 19
+                },
+                categoryLabels: {
+                    show: true
+                }
+            }
+        };
+
         let cardStyles = Card.DefaultStyle.card;
 
         beforeEach(() => {
@@ -787,36 +806,55 @@ module powerbitests {
             }, DefaultWaitForRender);
         });
 
-        it('card label off with word wrapping does not call wordBreak', () => {
-            cardBuilder = new CardBuilder(null, true);
+        describe('wordBreak tests', () => {
+            let metadata: powerbi.DataViewMetadata;
+            let wordBreakSpy: jasmine.Spy;
 
-            let metadata: powerbi.DataViewMetadata = {
-                columns: [{
-                    displayName: 'very very very very long category label',
-                    isMeasure: true,
-                    objects: { 'general': { formatString: '#0' } }
-                }],
-                objects: {
-                    labels: {
-                        show: true
-                    },
-                    categoryLabels: {
+            beforeEach(() => {
+                metadata = {
+                    columns: [{
+                        displayName: 'very very very very long category label',
+                        isMeasure: true,
+                        objects: { 'general': { formatString: '#0' } }
+                    }],
+                    objects: {
+                        labels: {
+                            show: true
+                        }
+                    }
+                };
+
+                cardBuilder = new CardBuilder(null, true);
+                cardBuilder.metadata = metadata;
+                cardBuilder.singleValue = "7";
+
+                wordBreakSpy = spyOn(powerbi.TextMeasurementService, 'wordBreak');
+                wordBreakSpy.and.callThrough();
+            });
+
+            describe('with wordBreak on', () => {
+                beforeEach(() => {
+                    metadata.objects['wordWrap'] = { show: true };
+                });
+
+                it('with the category label should call wordBreak for the value and category label', () => {
+                    cardBuilder.onDataChanged();
+                    expect(wordBreakSpy.calls.count()).toBe(2); // Once for the value and once for the category label
+                });
+
+                it('without the category label should call wordBreak for the only the value', () => {
+                    metadata.objects['categoryLabels'] = {
                         show: false
-                    },
-                    wordWrap: {
-                        show: true
-                    },
-                }
-            };
-
-            let spy = spyOn(powerbi.TextMeasurementService, 'wordBreak');
-            spy.and.callThrough();
-
-            cardBuilder.metadata = metadata;
-            cardBuilder.singleValue = "7";
-            cardBuilder.onDataChanged();
-
-            expect(spy.calls.count()).toBe(0);
+                    };
+                    cardBuilder.onDataChanged();
+                    expect(wordBreakSpy.calls.count()).toBe(1); // Once for the value only
+                });
+            });
+            
+            it('with wordBreak off should not call wordBreak', () => {
+                cardBuilder.onDataChanged();
+                expect(wordBreakSpy).not.toHaveBeenCalled();
+            });
         });
 
         it("does not change string values", (done) => {
@@ -850,6 +888,33 @@ module powerbitests {
 
                 expect(helpers.findElementText($(".card .value").first())).toBe("$9,999");
                 expect(helpers.findElementTitle($(".card .value").first())).toBe("$9,999");
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("in small viewport state -  the labelPrecision,labelDisplayUnits are default", (done) => {
+            cardBuilder = new CardBuilder(null, true, cardSmallViewportString, cardSmallViewportString, false, true);
+            cardBuilder.metadata = dataViewMetadaWithCurrency;
+
+            cardBuilder.singleValue = 23132601.339999925;
+            cardBuilder.onDataChanged();
+
+            setTimeout(() => {
+                expect(helpers.findElementText($(".card .value").first())).toBe("$23M");
+                done();
+            }, DefaultWaitForRender);
+        });
+
+        it("not in small viewport state -  the labelPrecision,labelDisplayUnits are as defined by the user", (done) => {
+            cardBuilder = new CardBuilder(null, true);
+            cardBuilder.metadata = dataViewMetadaWithCurrency;
+
+            cardBuilder.singleValue = 23132601.339999925;
+            cardBuilder.setCurrentViewport(500, 500);
+            cardBuilder.onDataChanged();
+
+            setTimeout(() => {
+                expect(helpers.findElementText($(".card .value").first())).toBe("$23,132,601.34");
                 done();
             }, DefaultWaitForRender);
         });
@@ -1116,6 +1181,8 @@ module powerbitests {
 
         private isMinervaVisualPlugin: boolean = false;
 
+        private isSmallViewport: boolean = false;
+
         private cardVisual: Card;
 
         public get card(): Card {
@@ -1131,11 +1198,13 @@ module powerbitests {
             isScrollable?: boolean,
             height: string = "200",
             width: string = "300",
-            isMinervaVisualPlugin: boolean = false) {
+            isMinervaVisualPlugin: boolean = false,
+            isSmallViewport: boolean = false) {
 
             this.isScrollable = isScrollable;
             this.displayUnitSystemType = displayUnitSystemType;
             this.isMinervaVisualPlugin = isMinervaVisualPlugin;
+            this.isSmallViewport = isSmallViewport;
 
             this.element = powerbitests.helpers.testDom(height, width);
             this.host = mocks.createVisualHostServices();
@@ -1150,7 +1219,11 @@ module powerbitests {
             if (this.isMinervaVisualPlugin) {
                 this.buildMinervaCard();
             } else {
-                this.buildPlainCard();
+                if (this.isSmallViewport) {
+                    this.buildSmallViewportCard();
+                } else {
+                    this.buildPlainCard();
+                }
             }
         }
 
@@ -1165,6 +1238,14 @@ module powerbitests {
             this.cardVisual = <Card>new Card({
                 displayUnitSystemType: this.displayUnitSystemType,
                 isScrollable: this.isScrollable
+            });
+        }
+
+        private buildSmallViewportCard(): void {
+            this.cardVisual = <Card>new Card({
+                displayUnitSystemType: this.displayUnitSystemType,
+                isScrollable: this.isScrollable,
+                cardSmallViewportProperties: { cardSmallViewportWidth: cardSmallViewportWidth }
             });
         }
 

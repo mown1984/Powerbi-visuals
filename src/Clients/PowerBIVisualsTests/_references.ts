@@ -20,6 +20,7 @@
 /// <reference path="./jasmineMatchers/toEqualDeep.ts"/>
 /// <reference path="./jasmineMatchers/toEqualSQExpr.ts"/>
 /// <reference path="./sqFieldDef.ts"/>
+/// <reference path="./utils/scaleRangeTests.ts"/>
 /// <reference path="./common/arrayExtensionsTests.ts"/>
 /// <reference path="./common/colorTests.ts"/>
 /// <reference path="./common/doubleTests.ts"/>
@@ -37,6 +38,7 @@
 /// <reference path="./data/contracts/queryProjectionTests.ts"/>
 /// <reference path="./data/dataView/dataViewCategoricalReaderTests.ts"/>
 /// <reference path="./utils/kpiUtilTests.ts"/>
+/// <reference path="./common/dateUtilTests.ts"/>
 /// <reference path="./utils/newDataLabelUtilsTests.ts"/>
 /// <reference path="./visuals/animatedNumberTests.ts"/>
 /// <reference path="./visuals/animatedTextTests.ts"/>
@@ -96,14 +98,12 @@
 /// <reference path="./visuals/services/interactivityServiceTests.ts"/>
 /// <reference path="./visuals/services/storageServiceTests.ts"/>
 /// <reference path="./visuals/services/textMeasurementServiceTests.ts"/>
-/// <reference path="./visuals/services/visualPluginServiceTests.ts"/>
 /// <reference path="./visuals/slicerTests.ts"/>
 /// <reference path="./visuals/tableTests.ts"/>
 /// <reference path="./visuals/textboxTests.ts"/>
 /// <reference path="./visuals/tooltipTests.ts"/>
 /// <reference path="./visuals/treemapTests.ts"/>
 /// <reference path="./visuals/verticalSlicerTests.ts"/>
-/// <reference path="./visuals/visualFactoryTests.ts"/>
 /// <reference path="./visuals/waterfallChartTests.ts"/>
 /// <reference path="./visuals/system/debugVisualTests.ts"/>
 /// <reference path="./extensibility/extensibilityMocks.ts"/>
@@ -123,6 +123,7 @@
 /// <reference path="./customVisuals/sampleDataViews/MekkoChartData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/BulletChartData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/CarLogosData.ts"/>
+/// <reference path="./customVisuals/sampleDataViews/ChordChartData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/CountriesData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/ValueByNameGroupData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/SalesByDayOfWeekData.ts"/>
@@ -132,6 +133,7 @@
 /// <reference path="./customVisuals/sampleDataViews/TimelineData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/valueByAgeData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/ProductSalesByDateData.ts"/>
+/// <reference path="./customVisuals/sampleDataViews/PulseChartData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/ValueByNameData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/LineDotChartData.ts"/>
 /// <reference path="./customVisuals/VisualBuilderBase.ts"/>
@@ -151,5 +153,5 @@
 /// <reference path="./customVisuals/ganttTests.ts"/>
 /// <reference path="./customVisuals/chicletSlicerTests.ts"/>
 /// <reference path="./customVisuals/streamGraphTests.ts"/>
+/// <reference path="./customVisuals/pulseChartTests.ts"/>
 /// <reference path="./customVisuals/lineDotChartTests.ts"/>
-/// <reference path="./customVisuals/sunburstTests.ts"/>

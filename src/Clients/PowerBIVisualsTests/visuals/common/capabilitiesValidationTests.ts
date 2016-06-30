@@ -31,9 +31,7 @@ module powerbitests {
 
     describe("Capbalities Validation", () => {
         it("VisualFactory.getVisuals - categorical - various dataViews", () => {
-            let visualPluginService = powerbi.visuals.visualPluginFactory.create();
-            visualPluginService.removeAnyCustomVisuals();
-            let allVisualPlugins = visualPluginService.getVisuals();
+            let allVisualPlugins = _.filter(_.values(powerbi.visuals.plugins), plugin => !plugin.custom);
             let failures = 0;
 
             for (let i = 0; i < allVisualPlugins.length; i++) {

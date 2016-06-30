@@ -368,7 +368,7 @@ module powerbi.visuals {
         private moveToFrameAndRender(frameIndex: number): void {
             let playData = this.playData;
 
-            this.isPlaying = false;
+            this.isPlaying = true;
 
             if (playData && frameIndex >= 0 && frameIndex < playData.allViewModels.length && frameIndex !== playData.currentFrameIndex) {
                 playData.currentFrameIndex = frameIndex;
@@ -376,6 +376,8 @@ module powerbi.visuals {
                 playData.currentViewModel = data;
                 this.renderDelegate(data);
             }
+
+            this.isPlaying = false;
         }
 
         public isCurrentlyPlaying(): boolean {

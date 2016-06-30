@@ -56,18 +56,18 @@ module powerbitests.customVisuals {
             dataView = defaultDataViewBuilder.getDataView();
         });
 
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             it("Should be registered", () => expect(VisualClass.capabilities).toBeDefined());
 
-            it('Should include dataViewMappings', () => {
+            it("Should include dataViewMappings", () => {
                 expect(VisualClass.capabilities.dataViewMappings).toBeDefined();
             });
 
-            it('Should include dataRoles', () => {
+            it("Should include dataRoles", () => {
                 expect(VisualClass.capabilities.dataRoles).toBeDefined();
             });
 
-            it('Should not suppressDefaultTitle', () => {
+            it("Should not suppressDefaultTitle", () => {
                 expect(VisualClass.capabilities.suppressDefaultTitle).toBeUndefined();
             });
         });
@@ -89,16 +89,16 @@ module powerbitests.customVisuals {
                 });
             });
 
-            it('Should contain axis tick', done => {
+            it("Should contain axis tick", done => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let selector: string = '.enhancedScatterChart .axisGraphicsContext .x.axis .tick';
+                    let selector: string = ".enhancedScatterChart .axisGraphicsContext .x.axis .tick";
                     expect($(selector).length).toBeGreaterThan(0);
-                    expect(Helpers.findElementText($(selector).find('text').first())).toBeDefined();
+                    expect(Helpers.findElementText($(selector).find("text").first())).toBeDefined();
                     done();
                 });
             });
 
-            it('Should use selected font size for data labels', done => {
+            it("Should use selected font size for data labels", done => {
                 defaultDataViewBuilder.valuesX = [100, 450, 800];
                 defaultDataViewBuilder.valuesY = [100, 450, 800];
                 dataView = defaultDataViewBuilder.getDataView();
@@ -115,28 +115,28 @@ module powerbitests.customVisuals {
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     let labels = visualBuilder.dataLabelsText;
                     expect(labels.length).toBeGreaterThan(0);
-                    let firstDataLabelFontSize: string = labels.first().css('font-size');
+                    let firstDataLabelFontSize: string = labels.first().css("font-size");
                     expect(firstDataLabelFontSize).toBe(labelFonSizeInPixels);
                     done();
                 });
             });
 
-            it('Should color dots with selected color', done => {
+            it("Should color dots with selected color", done => {
                 let hexCustomColor = "#00ff00"; // intentionally different from default red
                 dataView.metadata.objects = {
                     dataPoint: { defaultColor: { solid: { color: hexCustomColor } } }
                 };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
+                    let selector: string = ".enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot";
                     expect($(selector).length).toBeGreaterThan(0);
-                    let itemColor: string = $(selector).first().css('fill');
+                    let itemColor: string = $(selector).first().css("fill");
                     Helpers.assertColorsMatch(itemColor, hexCustomColor);
                     done();
                 });
             });
 
-            it('Fill color should be false when category labels = on && fill point = off', done => {
+            it("Fill color should be false when category labels = on && fill point = off", done => {
                 dataView = defaultDataViewBuilder.getDataView([
                     EnhancedScatterChartData.ColumnCategoryDisplayName, 
                     EnhancedScatterChartData.ColumnSeriesDisplayName,
@@ -149,22 +149,21 @@ module powerbitests.customVisuals {
                 };
 
                 visualBuilder.updateRenderTimeout(dataView, () => { 
-                    let selector: string = '.enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot';
+                    let selector: string = ".enhancedScatterChart .mainGraphicsContext .ScatterMarkers .dot";
                     $(selector).each((index, elem) => {
-                        let opacity = $(elem).css('fill-opacity');
+                        let opacity = $(elem).css("fill-opacity");
                         expect(opacity).toBe("0");
                     });
                     done();
                 });
             });
 
-            xit("data labels position validation", done => {
-
+            it("data labels position validation", done => {
                 defaultDataViewBuilder.valuesCategory = [
                     "2015-12-31T21:00:00.000Z",
                     "2016-12-31T21:00:00.000Z",
                     "2017-12-31T21:00:00.000Z"
-                ].map(x => new Date(x));
+                ].map((x: string) => new Date(x));
 
                 defaultDataViewBuilder.valuesSeries = ["Canada", "United States", "Russia"];
                 defaultDataViewBuilder.valuesX = [850, 145, 114.25];
@@ -180,13 +179,24 @@ module powerbitests.customVisuals {
                 };
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    let labels = visualBuilder.dataLabelsText;
+                    let labels: Element[] = visualBuilder.dataLabelsText.get();
 
-                    // Verify that the first and last labels are not drawn on the axis
-                    expect(labels.first().attr('x')).toBeGreaterThan(5);
-                    expect(labels.last().attr('x') + labels.last().width())
-                        .toBeLessThan(visualBuilder.viewport.width-5);
-                    done();
+                    labels.forEach((label: Element) => {
+                        let jqueryLabel: JQuery = $(label),
+                            x: number,
+                            y: number;
+
+                        x = Number(jqueryLabel.attr("x"));
+                        y = Number(jqueryLabel.attr("y"));
+
+                        expect(x).toBeGreaterThan(0);
+                        expect(y).toBeGreaterThan(0);
+
+                        expect(x).toBeLessThan(visualBuilder.viewport.width);
+                        expect(y).toBeLessThan(visualBuilder.viewport.height);
+
+                        done();
+                    });
                 });
             });
 
@@ -198,7 +208,7 @@ module powerbitests.customVisuals {
                 beforeEach(done => {
                     dataView.metadata.objects = {
                         legend: {
-                            titleText: 'my title text',
+                            titleText: "my title text",
                             show: true,
                             showTitle: true,
                             labelColor: { solid: { color: labelColor } },
@@ -227,23 +237,23 @@ module powerbitests.customVisuals {
 
                     let legendTitleText: string = Helpers.findElementText(legendTitle);
                     let legendTitleTitle: string = Helpers.findElementTitle(legendTitle);
-                    expect(legendTitleText).toEqual('my title text');
-                    expect(legendTitleTitle).toEqual('my title text');
+                    expect(legendTitleText).toEqual("my title text");
+                    expect(legendTitleTitle).toEqual("my title text");
                 });
 
-                it('Should color legend title & items with selected color', () => {
+                it("Should color legend title & items with selected color", () => {
                     let legendGroup: JQuery = visualBuilder.legendGroupElement;
-                    let legendTitle: JQuery = legendGroup.children('.legendTitle');
+                    let legendTitle: JQuery = legendGroup.children(".legendTitle");
                     let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    Helpers.assertColorsMatch(legendTitle.css('fill'), labelColor);
-                    Helpers.assertColorsMatch(firstLegendItemText.css('fill'), labelColor);
+                    Helpers.assertColorsMatch(legendTitle.css("fill"), labelColor);
+                    Helpers.assertColorsMatch(firstLegendItemText.css("fill"), labelColor);
                 });
 
-                it('Should use selected font size for legend title and legend items', done => {
+                it("Should use selected font size for legend title and legend items", done => {
                     let legendTitleFontSize: number =
-                        Math.round(parseFloat(visualBuilder.legendGroupElement.find('.legendTitle').css('font-size')));
+                        Math.round(parseFloat(visualBuilder.legendGroupElement.find(".legendTitle").css("font-size")));
                     let firstLegendItemTextFontSize: number =
-                        Math.round(parseFloat(getLegendTextOfFirstLegendItem(visualBuilder.legendGroupElement).css('font-size')));
+                        Math.round(parseFloat(getLegendTextOfFirstLegendItem(visualBuilder.legendGroupElement).css("font-size")));
 
                     expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
                     expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
@@ -390,6 +400,115 @@ module powerbitests.customVisuals {
             });
         });
 
+        describe("optimizeTranslateValues", () => {
+            let enhancedScatterInstance: VisualClass;
+
+            beforeEach(() => {
+                enhancedScatterInstance = visualBuilder.instance;
+            });
+
+            it("result should be null", () => {
+                let result: number[];
+
+                result = enhancedScatterInstance.optimizeTranslateValues(null);
+
+                expect(result).toBeNull();
+            });
+
+            it("result should be undefined", () => {
+                let result: number[];
+
+                result = enhancedScatterInstance.optimizeTranslateValues(undefined);
+
+                expect(result).not.toBeDefined();
+            });
+
+            it("result should be defined", () => {
+                let result: number[];
+
+                result = enhancedScatterInstance.optimizeTranslateValues([]);
+
+                expect(result).toBeDefined();
+            });
+
+            it("result should be correct", () => {
+                let result: number[];
+
+                result = enhancedScatterInstance.optimizeTranslateValues([
+                    Number.MAX_VALUE,
+                    Number.MIN_VALUE
+                ]);
+
+                expect(result[0]).toBe(VisualClass.MaxTranslateValue);
+                expect(result[1]).toBe(VisualClass.MinTranslateValue);
+            });
+        });
+
+        describe("optimizeTranslateValue", () => {
+            let enhancedScatterInstance: VisualClass;
+
+            beforeEach(() => {
+                enhancedScatterInstance = visualBuilder.instance;
+            });
+
+            it("result should be null", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(null);
+
+                expect(result).toBeNull();
+            });
+
+            it("result should be null", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(undefined);
+
+                expect(result).not.toBeDefined();
+            });
+
+            it("result should be MaxTranslateValue", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(Number.MAX_VALUE);
+
+                expect(result).toBe(VisualClass.MaxTranslateValue);
+            });
+
+            it("result should be -MaxTranslateValue", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(-Number.MAX_VALUE);
+
+                expect(result).toBe(-VisualClass.MaxTranslateValue);
+            });
+
+            it("result should be MinTranslateValue", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(Number.MIN_VALUE);
+
+                expect(result).toBe(VisualClass.MinTranslateValue);
+            });
+
+            it("result should be -MinTranslateValue", () => {
+                let result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(-Number.MIN_VALUE);
+
+                expect(result).toBe(-VisualClass.MinTranslateValue);
+            });
+
+            it("input value and result should be the same", () => {
+                let inputValue: number = 255,
+                    result: number;
+
+                result = enhancedScatterInstance.optimizeTranslateValue(inputValue);
+
+                expect(result).toBe(inputValue);
+            });
+        });
+
         describe("converter", () => {
             let colorPalette: IDataColorPalette;
 
@@ -522,7 +641,10 @@ module powerbitests.customVisuals {
     });
 
     function getLegendTextOfFirstLegendItem(legendGroup: JQuery) {
-        return legendGroup.children('.legendItem').first().children('.legendText');
+        return legendGroup
+            .children(".legendItem")
+            .first()
+            .children(".legendText");
     }
 
     class EnhancedScatterChartBuilder extends VisualBuilderBase<VisualClass> {
@@ -539,35 +661,45 @@ module powerbitests.customVisuals {
         }
 
         public get mainElement(): JQuery {
-            return this.element.children("svg").children("g.axisGraphicsContext").parent();
+            return this.element
+                .children("svg")
+                .children("g.axisGraphicsContext")
+                .parent();
         }
 
         public get svgScrollableAxisGraphicsContext(): JQuery {
-            return this.mainElement.children("svg.svgScrollable").children("g.axisGraphicsContext");
+            return this.mainElement
+                .children("svg.svgScrollable")
+                .children("g.axisGraphicsContext");
         }
 
         public get mainGraphicsContext(): JQuery {
-            return this.svgScrollableAxisGraphicsContext.children("g.mainGraphicsContext");
+            return this.svgScrollableAxisGraphicsContext
+                .children("g.mainGraphicsContext");
         }
 
         public get dataLabels(): JQuery {
-            return this.mainGraphicsContext.children("g.labels");
+            return this.mainGraphicsContext
+                .children("g.labels");
         }
 
         public get dataLabelsText(): JQuery {
-            return this.dataLabels.children("text.data-labels");
+            return this.dataLabels
+                .children("text.data-labels");
         }
 
         public get legend(): JQuery {
-            return this.element.children(".legend");
+            return this.element
+                .children(".legend");
         }
 
         public get legendGroupElement(): JQuery {
-            return this.legend.children('#legendGroup');
+            return this.legend
+                .children("#legendGroup");
         }
 
         public getMarkers(): JQuery {
-            return $('.scatterChart .mainGraphicsContext circle.dot');
+            return $(".scatterChart .mainGraphicsContext circle.dot");
         }
     }
 }

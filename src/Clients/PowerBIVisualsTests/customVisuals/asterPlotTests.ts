@@ -401,7 +401,7 @@ module powerbitests.customVisuals {
 
         protected build() {
             if (this.isMinervaVisualPlugin) {
-                return <any>powerbi.visuals.visualPluginFactory.create().getPlugin("asterPlot");
+                return <any>powerbi.visuals.plugins.asterPlot;
             } else {
                 return new VisualClass();
             }

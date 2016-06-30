@@ -1095,7 +1095,7 @@ This must be run when you have at least 2 sprites.
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1104,14 +1104,14 @@ This must be run when you have at least 2 sprites.
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -1156,7 +1156,7 @@ This must be run when you have at least 2 sprites.
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1165,14 +1165,14 @@ This must be run when you have at least 2 sprites.
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -2614,12 +2614,8 @@ body {
   vertical-align: middle;
   margin-right: auto;
 }
-.visual .labelGraphicsContext .label {
-  font-size: 12px;
-  text-anchor: middle;
-  font-family: 'wf_standard-font', helvetica, arial, sans-serif;
-  pointer-events: none;
-}
+.visual .labelGraphicsContext .label,
+.visual .labelGraphicsContext .label-second-line,
 .visual .labelGraphicsContext .catagorylabel {
   font-size: 12px;
   text-anchor: middle;
@@ -2829,6 +2825,10 @@ div.debugVisual-controlsContainer .controlBtn {
   color: white;
   cursor: pointer;
 }
+div.debugVisual-controlsContainer .controlBtn.active {
+  background: #F2C811;
+  color: #000000;
+}
 div.ql-toolbar {
   white-space: nowrap;
   overflow-x: hidden;
@@ -2966,14 +2966,21 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   user-select: none;
   cursor: default;
   position: absolute;
-  font-size: 11px;
-  background-color: #333333;
   pointer-events: none;
   z-index: 999;
+  display: flex;
+}
+.tooltip-container.left {
+  flex-direction: row;
+}
+.tooltip-container.right {
+  flex-direction: row-reverse;
 }
 .tooltip-container .tooltip-content-container {
   padding: 12px;
   max-width: 520px;
+  font-size: 11px;
+  background-color: #333333;
 }
 .tooltip-container div.tooltip-header {
   word-wrap: break-word;
@@ -3017,24 +3024,23 @@ div.ql-toolbar.darkToolbar select.ql-picker {
   letter-spacing: 1px;
 }
 .tooltip-container .arrow {
-  position: absolute;
   width: 0;
   height: 0;
 }
 .tooltip-container .arrow.top {
-  top: 7px;
+  margin-top: 7px;
+  align-self: flex-start;
 }
 .tooltip-container .arrow.bottom {
-  bottom: 7px;
+  margin-bottom: 7px;
+  align-self: flex-end;
 }
 .tooltip-container .arrow.left {
-  right: -7px;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
   border-left: 7px solid #333333;
 }
 .tooltip-container .arrow.right {
-  left: -7px;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
   border-right: 7px solid #333333;

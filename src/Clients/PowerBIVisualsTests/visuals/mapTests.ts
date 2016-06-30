@@ -62,7 +62,7 @@ module powerbitests {
         describe('capabilities', () => {
 
             it('Map registered capabilities', () => {
-                expect(powerbi.visuals.visualPluginFactory.create().getPlugin('map').capabilities).toBe(powerbi.visuals.mapCapabilities);
+                expect(powerbi.visuals.plugins.map.capabilities).toBe(powerbi.visuals.mapCapabilities);
             });
 
             it('Capabilities should include dataViewMappings', () => {

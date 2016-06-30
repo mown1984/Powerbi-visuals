@@ -91,12 +91,12 @@ module powerbitests.customVisuals {
         public updateEnumerateObjectInstancesRenderTimeout(
             dataViews: powerbi.DataView[] | powerbi.DataView,
             options: powerbi.EnumerateVisualObjectInstancesOptions,
-            fn: (enumeration: powerbi.VisualObjectInstanceEnumeration) => void,
+            fn: (enumeration: powerbi.VisualObjectInstanceEnumeration & powerbi.VisualObjectInstanceEnumerationObject) => void,
             timeout?: number): number {
 
             this.update(dataViews);
             let enumeration = this.enumerateObjectInstances(options);
-            return helpers.renderTimeout(() => fn(enumeration), timeout);
+            return helpers.renderTimeout(() => fn(<any>enumeration), timeout);
         }
 
         public updateflushAllD3Transitions(dataViews: powerbi.DataView[] | powerbi.DataView): void {

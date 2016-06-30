@@ -32,9 +32,9 @@ module powerbitests {
     import createInitOptions = helpers.createInitOptions;
 
     describe('VisualAdapter', () => {
-        
-        let visualApiVersionsBackup = powerbi.extensibility.visualApiVersions; 
-        
+
+        let visualApiVersionsBackup = powerbi.extensibility.visualApiVersions;
+
         beforeAll(() => {
             powerbi.extensibility.visualApiVersions = mocks.MockVisualVersions;
         });
@@ -42,13 +42,13 @@ module powerbitests {
         afterAll(() => {
             powerbi.extensibility.visualApiVersions = visualApiVersionsBackup;
         });
-        
+
         describe('Deprecated Visual Methods', () => {
             let adapter: powerbi.IVisual & powerbi.extensibility.WrappedVisual;
             let spyData: jasmine.Spy;
             let spyResize: jasmine.Spy;
             let spyViewmode: jasmine.Spy;
-            
+
             beforeEach(() => {
                 adapter = <powerbi.IVisual & powerbi.extensibility.WrappedVisual>createVisualAdapter(mocks.MockVisualDeprecated);
                 adapter.init(createInitOptions());
@@ -120,6 +120,25 @@ module powerbitests {
                 expect(spyResize.calls.count()).toBe(1);
                 expect(adapter.onResizing).toHaveBeenCalledWith(viewport, powerbi.ResizeMode.Resized);
             });
+
+            it("Resize Update should trigger onResizing AND update for custom visuals", () => {
+                let customAdapter = <powerbi.IVisual & powerbi.extensibility.WrappedVisual>createVisualAdapter(mocks.MockVisualDeprecated, undefined, true);
+                customAdapter.init(createInitOptions());
+
+                let visual = customAdapter.unwrap();
+                visual.update = () => { };
+                let spyUpdate = spyOn(visual, 'update');
+                let spyResize = spyOn(visual, 'onResizing');
+                let viewport: powerbi.IViewport = { width: 11, height: 22 };
+                customAdapter.update({
+                    dataViews: [],
+                    viewport: viewport,
+                    type: powerbi.VisualUpdateType.Resize,
+                    resizeMode: powerbi.ResizeMode.Resized,
+                });
+                expect(spyUpdate.calls.count()).toBe(1);
+                expect(spyResize.calls.count()).toBe(1);
+            });
         });
 
         describe('Legacy Visual', () => {
@@ -139,8 +158,8 @@ module powerbitests {
                 let constructorOptions, initOptions;
 
                 let mockHost = powerbitests.mocks.createVisualHostServices();
-                let MockVisual = function(options) { constructorOptions = options; };
-                MockVisual.prototype.init = function(options) { initOptions = options; };
+                let MockVisual = function (options) { constructorOptions = options; };
+                MockVisual.prototype.init = function (options) { initOptions = options; };
 
                 let adapter = createVisualAdapter(MockVisual);
                 adapter.init(createInitOptions(mockHost));
@@ -172,8 +191,8 @@ module powerbitests {
                 let constructorOptions, initOptions;
 
                 let mockHost = powerbitests.mocks.createVisualHostServices();
-                let MockVisual = function(options) { constructorOptions = options; };
-                MockVisual.prototype.init = function(options) { initOptions = options; };
+                let MockVisual = function (options) { constructorOptions = options; };
+                MockVisual.prototype.init = function (options) { initOptions = options; };
 
                 let adapter = createVisualAdapter(MockVisual, '1.0.0');
                 adapter.init(createInitOptions(mockHost));
@@ -186,8 +205,8 @@ module powerbitests {
                 let constructorOptions, initOptions;
 
                 let mockInitOptions = createInitOptions();
-                let MockVisual = function(options) { constructorOptions = options; };
-                MockVisual.prototype.init = function(options) { initOptions = options; };
+                let MockVisual = function (options) { constructorOptions = options; };
+                MockVisual.prototype.init = function (options) { initOptions = options; };
 
                 let adapter = createVisualAdapter(MockVisual, '1.0.0');
                 adapter.init(mockInitOptions);
@@ -208,8 +227,8 @@ module powerbitests {
                 let constructorOptions, initOptions;
 
                 let mockHost = powerbitests.mocks.createVisualHostServices();
-                let MockVisual = function(options) { constructorOptions = options; };
-                MockVisual.prototype.init = function(options) { initOptions = options; };
+                let MockVisual = function (options) { constructorOptions = options; };
+                MockVisual.prototype.init = function (options) { initOptions = options; };
 
                 let adapter = createVisualAdapter(MockVisual, '999.1.0');
                 adapter.init(createInitOptions(mockHost));
@@ -230,8 +249,8 @@ module powerbitests {
                 let constructorOptions, initOptions;
 
                 let mockHost = powerbitests.mocks.createVisualHostServices();
-                let MockVisual = function(options) { constructorOptions = options; };
-                MockVisual.prototype.init = function(options) { initOptions = options; };
+                let MockVisual = function (options) { constructorOptions = options; };
+                MockVisual.prototype.init = function (options) { initOptions = options; };
 
                 let adapter = createVisualAdapter(MockVisual, '999.2.0');
                 adapter.init(createInitOptions(mockHost));

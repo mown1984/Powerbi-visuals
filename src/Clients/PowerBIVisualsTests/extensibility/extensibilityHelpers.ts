@@ -28,11 +28,12 @@
 
 module powerbitests.helpers {
 
-    export function createVisualAdapter(visualConstructor, version?) {
+    export function createVisualAdapter(visualConstructor, version?, custom?) {
         let plugin: powerbi.IVisualPlugin = {
             name: 'MyVisual1234',
             capabilities: null,
-            create: (options) => new visualConstructor(options)
+            create: (options) => new visualConstructor(options),
+            custom: custom
         };
         if (version) {
             plugin.apiVersion = version;

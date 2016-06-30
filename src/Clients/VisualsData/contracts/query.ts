@@ -47,6 +47,7 @@ module powerbi.data {
     export enum EntitySourceType {
         Table = 0,
         Pod = 1,
+        Expression = 2,
     }
 
     export interface EntitySource {
@@ -54,6 +55,7 @@ module powerbi.data {
         EntitySet?: string; // TODO: Remove this when Q&A Silverlight is removed and make Entity required
         Entity?: string;
         Schema?: string;
+        Expression?: QueryExpressionContainer;
         Type?: EntitySourceType;
     }
 
@@ -78,6 +80,7 @@ module powerbi.data {
         Hierarchy?: QueryHierarchyExpression;
         HierarchyLevel?: QueryHierarchyLevelExpression;
         PropertyVariationSource?: QueryPropertyVariationSourceExpression;
+        Subquery?: QuerySubqueryExpression;
 
         // Logical
         And?: QueryBinaryExpression;
@@ -127,7 +130,7 @@ module powerbi.data {
         ResourcePackageItem?: QueryResourcePackageItem;
         SelectRef?: QuerySelectRefExpression;
     }
-
+    
     export interface QueryPropertyExpression {
         Expression: QueryExpressionContainer;
         Property: string;
@@ -172,6 +175,10 @@ module powerbi.data {
         Expression: QueryExpressionContainer;
         Name: string;
         Property: string;
+    }
+
+    export interface QuerySubqueryExpression {
+        Query: QueryDefinition;
     }
 
     export interface QueryBinaryExpression {

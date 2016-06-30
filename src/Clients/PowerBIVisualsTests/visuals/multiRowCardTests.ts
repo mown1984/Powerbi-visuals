@@ -194,7 +194,7 @@ module powerbitests {
         });
 
         it("MultiRowCard_registered_capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("multiRowCard").capabilities).toBe(multiRowCardCapabilities);
+            expect(powerbi.visuals.plugins.multiRowCard.capabilities).toBe(multiRowCardCapabilities);
         });
 
         it("Capabilities should include dataViewMappings", () => {
@@ -239,7 +239,7 @@ module powerbitests {
 
             beforeEach(() => {
                 let element = helpers.testDom("200", "300");
-                visual = <MultiRowCard>powerbi.visuals.visualPluginFactory.create().getPlugin("multiRowCard").create();
+                visual = <MultiRowCard>powerbi.visuals.plugins.multiRowCard.create();
                 visual.init(getVisualInitOptions(element));
             });
 
@@ -322,7 +322,7 @@ module powerbitests {
             let visualInitOptions: powerbi.VisualInitOptions;
 
             beforeEach(() => {
-                v = <MultiRowCard>powerbi.visuals.visualPluginFactory.create().getPlugin("multiRowCard").create();
+                v = <MultiRowCard>powerbi.visuals.plugins.multiRowCard.create();
                 element = helpers.testDom("200", "300");
                 visualInitOptions = getVisualInitOptions(element);
                 v.init(visualInitOptions);

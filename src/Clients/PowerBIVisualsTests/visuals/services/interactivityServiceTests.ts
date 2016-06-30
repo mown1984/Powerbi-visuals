@@ -261,6 +261,15 @@ module powerbitests {
             expect(behavior.verifyCleared()).toBeTruthy();
         });
 
+        it('Single select null identity does not crash', () => {
+            interactivityService.bind(selectableDataPoints, behavior, null);
+            behavior.select({
+                identity: new SelectionId(null, false),
+                selected: false,
+            });
+            expect(behavior.verifyCleared()).toBeTruthy();
+        });
+
         it('Basic multiselect', () => {
             interactivityService.bind(selectableDataPoints, behavior, null);
             behavior.selectIndex(1, true);

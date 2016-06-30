@@ -187,8 +187,10 @@ module jsCommon {
                 usedWidth += wordWidth;
             }
 
-            // Push remaining words onto result
-            result.push(truncate(wordsInLine.join(SPACE), properties, truncator, maxWidth));
+            // Push remaining words onto result (if any)
+            if (!_.isEmpty(wordsInLine)) {
+                result.push(truncate(wordsInLine.join(SPACE), properties, truncator, maxWidth));
+            }
 
             return result;
         }

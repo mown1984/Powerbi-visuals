@@ -1114,8 +1114,8 @@ module powerbi.data {
             return new SQTransformTableRefExpr(source);
         }
 
-        export function transformOutputRoleRef(source: string, transform?: string) {
-            return new SQTransformOutputRoleRefExpr(source, transform);
+        export function transformOutputRoleRef(role: string, transform?: string) {
+            return new SQTransformOutputRoleRefExpr(role, transform);
         }
 
         export function and(left: SQExpr, right: SQExpr): SQExpr {

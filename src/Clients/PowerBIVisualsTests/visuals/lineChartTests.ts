@@ -103,11 +103,11 @@ module powerbitests {
         };
 
         it('LineChart registered capabilities', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').capabilities).toBe(powerbi.visuals.lineChartCapabilities);
+            expect(powerbi.visuals.plugins.lineChart.capabilities).toBe(powerbi.visuals.lineChartCapabilities);
         });
 
         it('LineChart registered customizeQuery', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('lineChart').customizeQuery).toBe(LineChart.customizeQuery);
+            expect(powerbi.visuals.plugins.lineChart.customizeQuery).toBe(LineChart.customizeQuery);
         });
 
         it('Capabilities should include dataViewMappings', () => {
@@ -6441,10 +6441,10 @@ module powerbitests {
                             values: [500, 300, 700, 400, 100],
                             subtotal: 2000
                         }, {
-                                source: dataViewMetadata.columns[1],
-                                values: [200, 300, 200, 300, 100],
-                                subtotal: 1100
-                            }])
+                            source: dataViewMetadata.columns[1],
+                            values: [200, 300, 200, 300, 100],
+                            subtotal: 1100
+                        }])
                     }
                 }]
             });

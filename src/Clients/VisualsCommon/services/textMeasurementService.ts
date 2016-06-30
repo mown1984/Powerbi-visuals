@@ -406,11 +406,6 @@ module powerbi {
 
             // Append a span for each word broken section
             let words = jsCommon.WordBreaker.splitByWidth(labelText, properties, measureSvgTextWidth, maxWidth, maxNumLines);
-
-            // splitByWidth() occasionally returns unnecessary empty strings, so get rid of them.
-            // TODO: Fix splitByWidth.
-            words = _.compact(words);
-
             let spanItem = d3.select(textElement)
                 .selectAll(OverflowingText.selector)
                 .data(words, (d: String) => $.inArray(d, words));

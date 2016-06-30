@@ -178,6 +178,10 @@ module powerbi.data {
                 visitRole: (roleName: string) => { addGroupingRole(roleName, categoryGroups); }
             });
 
+            DataViewMapping.visitGrouped(<DataViewGroupedRoleMapping>categoricalMapping.values, {
+                visitRole: (roleName: string) => { addGroupingRole(roleName, valueGroups); }
+            });
+            
             DataViewMapping.visitCategoricalValues(categoricalMapping.values, {
                 visitRole: (roleName: string) => { addGroupingRole(roleName, valueGroups); }
             });

@@ -179,10 +179,13 @@ declare module powerbi {
         supported?: NumberRange;
     }
 
+    export interface ValueRange<T> {
+        min?: T;
+        max?: T;
+    }
+
     /** Defines the acceptable values of a number. */
-    export interface NumberRange {
-        min?: number;
-        max?: number;
+    export interface NumberRange extends ValueRange<number> {
     }
 
     export interface DataViewMappingScriptDefinition {

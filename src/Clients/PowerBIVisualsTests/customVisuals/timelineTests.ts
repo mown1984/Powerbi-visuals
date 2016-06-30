@@ -39,11 +39,13 @@ module powerbitests.customVisuals {
         let visualBuilder: TimelineBuilder;
         let defaultDataViewBuilder: TimelineData;
         let dataView: powerbi.DataView;
+        let unWorkableDataView: powerbi.DataView;
 
         beforeEach(() => {
             visualBuilder = new TimelineBuilder(1000,500);
             defaultDataViewBuilder = new TimelineData();
             dataView = defaultDataViewBuilder.getDataView();
+            unWorkableDataView = defaultDataViewBuilder.getUnWorkableDataView();
         });
 
         describe('capabilities', () => {
@@ -324,6 +326,24 @@ module powerbitests.customVisuals {
                     expect(cursorOverElement.index).toEqual(expectedIndex);
                     expect(cursorOverElement.datapoint).not.toBeNull();
                     expect(cursorOverElement.datapoint).not.toBeUndefined();
+                }
+            });
+
+            describe("datasetsChanged", () => {
+                it("workable", (done) => {
+                    expectToCallDatasetsChanged(false);
+                    done();
+                });
+                it("unworkable", (done) => {
+                    visualBuilder.update(unWorkableDataView);
+                    helpers.renderTimeout(() => {
+                        expectToCallDatasetsChanged(true);
+                        done();
+                    });
+                });
+                function expectToCallDatasetsChanged(expectedResult): void {
+                    let state = visualBuilder.visualObject['datasetsChangedState'];
+                    expect(state).toEqual(expectedResult);
                 }
             });
         });

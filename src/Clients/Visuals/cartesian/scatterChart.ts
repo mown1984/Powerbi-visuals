@@ -912,8 +912,9 @@ module powerbi.visuals {
             let data = this.data;
             if (!data)
                 return false;
-
-            return !this.hasSizeMeasure() && data.dataPointSeries.length > 0;
+            let dataView = this.dataView;
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
+            return !this.hasSizeMeasure() && data.dataPointSeries.length > 0 && reader.hasValues("X") && reader.hasValues("Y");
         }
 
         private static getExtents(data: ScatterChartData): CartesianExtents {

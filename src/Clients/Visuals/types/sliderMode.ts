@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -26,32 +26,16 @@
 
 /// <reference path="../_references.ts"/>
 
-module powerbitests {
+module powerbi.visuals {
+    export module sliderMode {
+        export const before: string = 'Before';
+        export const after: string = 'After';
+        export const between: string = 'Between';
 
-    describe("VisualFactory", () => {
-        let mockVisualKey = "mock";
-
-        beforeEach(() => {
-            let plugin: powerbi.IVisualPlugin = {
-                name: mockVisualKey,
-                capabilities: {},
-                create: () => { return <powerbi.IVisual>{}; }
-            };
-
-            powerbi.visuals.plugins[mockVisualKey] = plugin;
-        });
-
-        it("getPlugin finds mock", () => {
-            let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin(mockVisualKey);
-
-            expect(plugin).toBe(powerbi.visuals.plugins[mockVisualKey]);
-        });
-
-        it("getRegisteredVisuals includes test", () => {
-            let registered = powerbi.visuals.visualPluginFactory.create().getVisuals()
-                .filter(v => v.name === mockVisualKey);
-
-            expect(registered).toEqual([powerbi.visuals.plugins[mockVisualKey]]);
-        });
-    });
+        export const type: IEnumType = createEnumType([
+            { value: between, displayName: resources => resources.get('Visual_SliderMode_Between') },
+            { value: before, displayName: resources => resources.get('Visual_SliderMode_Before') },
+            { value: after, displayName: resources => resources.get('Visual_SliderMode_After') }
+        ]);
+    }
 }

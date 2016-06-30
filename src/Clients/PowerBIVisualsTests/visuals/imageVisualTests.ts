@@ -53,11 +53,11 @@ module powerbitests {
         });
 
         it("ImageVisual registered capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("image").capabilities).toBe(imageVisualCapabilities);
+            expect(powerbi.visuals.plugins.image.capabilities).toBe(imageVisualCapabilities);
         });
 
         it("ImageVisual registered capabilities: objects", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("image").capabilities.objects).toBeDefined();
+            expect(powerbi.visuals.plugins.image.capabilities.objects).toBeDefined();
         });
 
         it("Image no visual configuration", () => {

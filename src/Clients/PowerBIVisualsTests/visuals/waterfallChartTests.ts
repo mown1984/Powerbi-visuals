@@ -39,8 +39,7 @@ module powerbitests {
 
         describe("capabilities", () => {
             it("should register capabilities", () => {
-                let pluginFactory = powerbi.visuals.visualPluginFactory.create();
-                let plugin = pluginFactory.getPlugin("waterfallChart");
+                let plugin = powerbi.visuals.plugins.waterfallChart;
                 expect(plugin).toBeDefined();
                 expect(plugin.capabilities).toBe(powerbi.visuals.waterfallChartCapabilities);
             });
@@ -1103,7 +1102,7 @@ module powerbitests {
                 });
             }
             else {
-                this._visual = powerbi.visuals.visualPluginFactory.create().getPlugin("waterfallChart").create();
+                this._visual = powerbi.visuals.plugins.waterfallChart.create();
             }
 
             this._visual.init(this.buildInitOptions());

@@ -44,7 +44,22 @@ module powerbitests.customVisuals.sampleDataViews {
                     },
                     values: this.valuesCategory
                 }
+                
                 ], null, columnNames).build();
+        }
+
+        public getUnWorkableDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: "Country",
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { Category: true }
+                    },
+                    values: ["Australia", "Canada", "France", "Germany", "United Kingdom", "United States"]
+                }
+            ], null, null).build();
         }
     }
 }
+

@@ -212,6 +212,13 @@ module powerbi.data {
                     value = null;
                 }
             }
+            else if (valueTypeDescriptor.dateTime) {
+                if (value) {
+                    value = SQExprBuilder.dateTime(<Date>value);
+                } else {
+                    value = null;
+                }
+            }
             else if ((<StructuralTypeDescriptor>valueTypeDescriptor).image) {
                 if (value) {
                     let imageValue = <ImageValue>value;

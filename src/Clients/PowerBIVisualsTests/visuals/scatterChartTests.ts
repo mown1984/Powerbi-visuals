@@ -420,7 +420,7 @@ module powerbitests {
         });
 
         it('ScatterChart registered capabilities', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('scatterChart').capabilities).toBe(powerbi.visuals.scatterChartCapabilities);
+            expect(powerbi.visuals.plugins.scatterChart.capabilities).toBe(powerbi.visuals.scatterChartCapabilities);
         });
 
         it('Capabilities should include dataViewMappings', () => {
@@ -1763,9 +1763,9 @@ module powerbitests {
                                 source: metadata.columns[1],
                                 values: [110, 120, 130, 140, 150]
                             }, {
-                                    source: metadata.columns[2],
-                                    values: [.21, .22, .23, .24, .25]
-                                }])
+                                source: metadata.columns[2],
+                                values: [.21, .22, .23, .24, .25]
+                            }])
                         }
                     }]
                 });
@@ -2058,6 +2058,94 @@ module powerbitests {
                         done();
                     }, DefaultWaitForRender);
                 });
+
+                it('Not support trend line without both X and Y', (done) => {
+                    let metadata: powerbi.DataViewMetadata = {
+                        columns: dataViewMetadataFourColumn.columns,
+                        objects: {
+                            categoryLabels: {
+                                show: true,
+                                fontSize: 12,
+                            }
+                        }
+                    };
+
+                    let categoryValues = ['a', 'b', 'c', 'd', 'e'];
+                    let categoryIdentities = _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v));
+
+                    let dataViews = [{
+                        metadata: metadata,
+                        categorical: {
+                            categories: [{
+                                source: metadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e'],
+                                identity: categoryIdentities,
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                // X but no Y
+                                source: metadata.columns[1],
+                                values: [110, 120, 130, 140, 150]
+                            }])
+                        }
+                    }];
+
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+
+                    setTimeout(() => {
+                        let supportsTrendLine = callSupportsTrendLine(v);
+                        expect(supportsTrendLine).toBe(false);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                it('Support trend line with both X and Y', (done) => {
+                    let metadata: powerbi.DataViewMetadata = {
+                        columns: dataViewMetadataFourColumn.columns,
+                        objects: {
+                            categoryLabels: {
+                                show: true,
+                                fontSize: 12,
+                            }
+                        }
+                    };
+
+                    let categoryValues = ['a', 'b', 'c', 'd', 'e'];
+                    let categoryIdentities = _.map(categoryValues, (v) => mocks.dataViewScopeIdentity(v));
+
+                    let dataViews = [{
+                        metadata: metadata,
+                        categorical: {
+                            categories: [{
+                                source: metadata.columns[0],
+                                values: ['a', 'b', 'c', 'd', 'e'],
+                                identity: categoryIdentities,
+                            }],
+                            values: DataViewTransform.createValueColumns([{
+                                source: metadata.columns[1],
+                                values: [110, 120, 130, 140, 150]
+                            }, {
+                                source: metadata.columns[2],
+                                values: [10, 20, 30, 40, 50]
+                            }])
+                        }
+                    }];
+
+                    v.onDataChanged({
+                        dataViews: dataViews,
+                    });
+
+                    setTimeout(() => {
+                        let supportsTrendLine = callSupportsTrendLine(v);
+                        expect(supportsTrendLine).toBe(true);
+                        done();
+                    }, DefaultWaitForRender);
+                });
+
+                function callSupportsTrendLine(v: powerbi.IVisual): boolean {
+                    return (<any>v).layers[0].supportsTrendLine();
+                }
             });
 
             it('background image', (done) => {

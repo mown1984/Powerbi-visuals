@@ -28,7 +28,6 @@
 
 module powerbitests {
     import VisualPlugin = powerbi.IVisualPlugin;
-    import VisualPluginFactory = powerbi.visuals.visualPluginFactory;
     import Helpers = performanceTestsHelpers;
     import VisualStyles = powerbi.visuals.visualStyles;
     import Timer = Helpers.Timer;
@@ -46,12 +45,11 @@ module powerbitests {
     describe("Performance measuring", () => {
         let visual: powerbi.IVisual, element: JQuery;
 
-        let pluginService = VisualPluginFactory.create();
         let hostServices = mocks.createVisualHostServices();
 
-        let measurePlugin = pluginService.getPlugin(MEASURE_PLUGIN_NAME);
-        let estimationPlugin = pluginService.getPlugin(ESTIMATE_FOR_MEASURE_PLUGIN_NAME);
-        let plugins = pluginService.getVisuals().filter((plugin) => !EXCLUDED_VISUALS.some((item) => plugin.name === item));
+        let measurePlugin = powerbi.visuals.plugins[MEASURE_PLUGIN_NAME];
+        let estimationPlugin = powerbi.visuals.plugins[ESTIMATE_FOR_MEASURE_PLUGIN_NAME];
+        let plugins = _.values(powerbi.visuals.plugins).filter((plugin) => !EXCLUDED_VISUALS.some((item) => plugin.name === item));
 
         let baseline: number = 0;
         let estimationPluginTime: number = 0;
@@ -78,7 +76,8 @@ module powerbitests {
         function runPerformanceTest(plugin: VisualPlugin, iterations: number = DEFAULT_ITERATIONS_COUNT, expectedTime: number = DEFAULT_MAX_TIME_FOR_RENDER): number {
             let timer = new Timer();
 
-            visual = VisualPluginFactory.create().getPlugin(plugin.name).create();
+            visual = powerbi.extensibility.createVisualAdapter(plugin);
+
             visual.init({
                 element: element,
                 host: hostServices,

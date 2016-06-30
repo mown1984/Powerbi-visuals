@@ -399,7 +399,7 @@ module powerbitests {
         }
 
         private createVisual() {
-            this.visual = powerbi.visuals.visualPluginFactory.create().getPlugin(this._pluginName).create();
+            this.visual = powerbi.visuals.plugins[this._pluginName].create();
 
             this.visual.init(this.createInitOptions());
         }

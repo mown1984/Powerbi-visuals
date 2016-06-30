@@ -1335,8 +1335,10 @@ module powerbi.visuals {
         }
 
         public supportsTrendLine(): boolean {
+            let dataView = this.dataView;
+            let reader = powerbi.data.createIDataViewCategoricalReader(dataView);
             let isScalar = this.data ? this.data.scalarCategoryAxis : false;
-            return this.chartType === ColumnChartType.clusteredColumn && isScalar;
+            return this.chartType === ColumnChartType.clusteredColumn && isScalar && reader.hasValues("Y");
         }
 
         public static isBar(chartType: ColumnChartType): boolean {

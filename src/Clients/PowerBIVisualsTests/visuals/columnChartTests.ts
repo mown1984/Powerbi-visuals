@@ -75,11 +75,11 @@ module powerbitests {
         let measureColumnDynamic1RefExpr = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'sales' });
 
         it('ColumnChart registered capabilities', () => {
-            expect(JSON.stringify(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').capabilities)).toBe(JSON.stringify(powerbi.visuals.getColumnChartCapabilities()));
+            expect(JSON.stringify(powerbi.visuals.plugins.columnChart.capabilities)).toBe(JSON.stringify(powerbi.visuals.getColumnChartCapabilities()));
         });
 
         it('ColumnChart registered customizeQuery', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('columnChart').customizeQuery).toBe(ColumnChart.customizeQuery);
+            expect(powerbi.visuals.plugins.columnChart.customizeQuery).toBe(ColumnChart.customizeQuery);
         });
 
         it('Capabilities should include dataViewMappings', () => {

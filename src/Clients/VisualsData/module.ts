@@ -80,6 +80,7 @@ require("./semanticQuery/sqExprGroupUtils.ts");
 require("./semanticQuery/sqExpr.ts");
 require("./semanticQuery/sqExprUtils.ts");
 require("./semanticQuery/semanticQueryRewriter.ts");
+require("./semanticQuery/sqFrom.ts");
 require("./semanticQuery/semanticQuery.ts");
 require("./semanticQuery/SQFilter.ts");
 require("./dataView/dataViewBuilder.ts");

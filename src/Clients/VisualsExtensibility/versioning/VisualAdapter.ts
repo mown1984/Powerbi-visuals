@@ -105,7 +105,12 @@ module powerbi.extensibility {
         }
 
         public update(options: powerbi.VisualUpdateOptions): void {
-            if (options.type & VisualUpdateType.Resize && this.visualHasMethod('onResizing')) {
+            if ((options.type & VisualUpdateType.Resize) === VisualUpdateType.Resize && this.visualHasMethod('onResizing')) {
+                //a couple custom visuals depend on both onResizing and Update being called
+                //TODO: remove this once enough custom visuals are ported to new api
+                if (this.plugin.custom && this.visualHasMethod('update')) {
+                    this.visualLegacy.update(options);
+                }
                 this.onResizing(options.viewport, options.resizeMode);
             } else if (this.visualHasMethod('update')) {
                 this.visualLegacy.update(options);

@@ -248,13 +248,13 @@ gulp.task("postBuild", postBuildTaskInfo, function (cb) {
 });
 
 /**
- * Produce rtl css and minify all css files in lib folder; 
+ * Produce rtl css and minify all css files in lib folder;
  */
 function processCss() {
 
     var dest = "./lib/";
 
-    // pick up all css files except min and rtl 
+    // pick up all css files except min and rtl
     var cssStream = gulp.src(["./lib/*.css", "!./lib/*.rtl.css", "!./lib/*.min.css"])
         // workaround to produce pausable stream (new mode)
         .pipe(gutil.noop());
@@ -407,8 +407,8 @@ function webPackWatcherCallback(err, stats) {
         return stats.compilation.assets[assetkey].emitted === true && path.extname(assetkey) === ".css";
     });
 
-    // produce css related artifacts - rtl.css, min.css, min.rtl,css  
-    // TODO: get rid of such logic when main projects will use only one visual asset/bundle.  
+    // produce css related artifacts - rtl.css, min.css, min.rtl,css
+    // TODO: get rid of such logic when main projects will use only one visual asset/bundle.
     if (needUpdCss) {
         processCss();
     }
@@ -422,7 +422,7 @@ function traceBuildStats(stats, isWatch) {
 
     // trace could be empty if there is no errors/warnings and assets=false
     if (traceLine) {
-        // there is new line sign so as to keep webpack message formatting 
+        // there is new line sign so as to keep webpack message formatting
         gutil.log("[webpack]\n", traceLine);
     }
 
@@ -439,14 +439,18 @@ function traceBuildStats(stats, isWatch) {
 
 var packageTaskInfo = gutil.colors.green("Generate pbviz packages for CustomVisuals");
 
+gulp.task("package:createApprovedVisualsList", function(callback) {
+    packageBuilder.createApprovedVisualsList(callback);
+});
+
 gulp.task("package", packageTaskInfo, function (callback) {
 
     gulp.task("package:all", function (callback) {
-        packageBuilder.buildAllPackages(callback);
+        packageBuilder.buildAllPackages(false, callback);
     });
 
     gulp.task("package:all:addToDrop", function (callback) {
-        packageBuilder.copyPackagesToDrop(callback);
+        packageBuilder.buildAllPackages(true, callback);
     });
 
     var packageName = options.visual,
@@ -454,9 +458,9 @@ gulp.task("package", packageTaskInfo, function (callback) {
 
     if (packageName) {
         var pb = new packageBuilder(packageName);
-        pb.build(callback);
+        pb.build(addToDrop, callback);
     } else if (addToDrop) {
-        runSequence("package:all", "package:all:addToDrop", callback);
+        runSequence("package:all:addToDrop", callback);
     } else {
         runSequence("package:all", callback);
     }
@@ -467,13 +471,13 @@ var tslintTaskInfo = gutil.colors.green("Performs linting for all .ts files in P
 gulp.task("tslint", tslintTaskInfo, function () {
     var tslint = require("./build/tsLint/tslint.js");
 
-    // some paths to exclude from linting 
+    // some paths to exclude from linting
     var exclude = [
         "!./**/*.d.ts",
         "!./CustomVisuals/visuals/*/package/**/*.*"
     ];
 
-    // pick up all ts in src/Clients dir to lint if `paths` argument is not passed 
+    // pick up all ts in src/Clients dir to lint if `paths` argument is not passed
     var pathsToLint = [].concat(options.paths || "./**/*.ts").concat(exclude);
 
     return tslint(path.join(__dirname, "src/Clients"), pathsToLint);

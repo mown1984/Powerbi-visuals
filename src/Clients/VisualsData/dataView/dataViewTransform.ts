@@ -460,20 +460,25 @@ module powerbi.data {
                 }
             }
 
+            // apply metadata column rewrites to categories
             let categories = Prototype.overrideArray(prototype.categories, override);
-            if (categories)
+            if (categories) {
                 categorical.categories = categories;
+            }
 
-            let valueColumns = Prototype.overrideArray(prototype.values, override);
-            if (valueColumns) {
+            // apply metadata column rewrites to both series and measure
+            // If there is no measure, prototype.values will be an empty array, but it can still have a dynamic series.
+            if (prototype.values) {
+                let valueColumns = Prototype.overrideArray(prototype.values, override) || inheritSingle(prototype.values);
+
                 categorical.values = valueColumns;
-                
+            
                 if (valueColumns.source) {
-                        let rewrittenValuesSource = findOverride(valueColumns.source, columnRewrites);
-                        if (rewrittenValuesSource)
-                            valueColumns.source = rewrittenValuesSource;
-                    }
+                    let rewrittenValuesSource = findOverride(valueColumns.source, columnRewrites);
+                    if (rewrittenValuesSource)
+                        valueColumns.source = rewrittenValuesSource;
                 }
+            }
 
             DataViewCategoricalEvalGrouped.apply(categorical);
 

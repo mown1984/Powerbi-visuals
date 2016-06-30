@@ -142,5 +142,13 @@ declare module powerbi.data {
         //changed to descriptor to not need to depend on ValueType class
         type?: ValueTypeDescriptor;
         joinPredicate?: JoinPredicateBehavior;
+
+        // Indication from the compiler to the visual that the role item has a scalar key available
+        hasScalarKey?: boolean;
+
+        // Indication from the visual to the query generator that a scalar key should be added to the query
+        // for this role item.  The property indicates where the key should be attached to the objects
+        // collection in the resulting data view.
+        scalarKeyMinProperty?: DataViewObjectPropertyIdentifier;
     }
 }

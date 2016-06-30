@@ -29,10 +29,10 @@ require("./visuals/forceGraph/visual/forceGraph.ts");
 require("./visuals/gantt/visual/gantt.ts");
 require("./visuals/timeline/visual/timeline.ts");
 require("./visuals/streamGraph/visual/streamGraph.ts");
+require("./visuals/pulseChart/visual/pulseChart.ts");
 require("./visuals/lineDotChart/visual/lineDotChart.ts");
 require("./visuals/sunburst/visual/sunburst.ts");
 require("./plugins.ts");
-require("./services/customVisualPluginService.ts");
 
 function requireAll(requireContext) {
   return requireContext.keys().map(requireContext);

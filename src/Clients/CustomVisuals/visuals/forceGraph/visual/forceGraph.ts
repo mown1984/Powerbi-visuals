@@ -73,7 +73,10 @@ module powerbi.visuals.samples {
     }
 
     export class ForceGraphSettings {
-        public static Default = new ForceGraphSettings();
+        public static get Default() { 
+            return new this();
+        }
+
         public static parse(dataView: DataView, capabilities: VisualCapabilities) {
             var settings = new this();
             if(!dataView || !dataView.metadata || !dataView.metadata.objects) {
@@ -119,7 +122,7 @@ module powerbi.visuals.samples {
             var even: any = false;
             return createEnumType(Object.keys(type)
                 .filter((key,i) => ((!!(i % 2)) === even && type[key] === key
-                    && !void(even === !even)) || (!!(i % 2)) !== even)
+                    && !void(even = !even)) || (!!(i % 2)) !== even)
                 .map(x => <IEnumMember>{ value: x, displayName: x }));
         }
 
@@ -130,6 +133,33 @@ module powerbi.visuals.samples {
                 default:
                     return DataViewObjects.getValue;
             }
+        }
+
+        public static enumerateObjectInstances(
+            settings: any,
+            options: EnumerateVisualObjectInstancesOptions,
+            capabilities: VisualCapabilities): VisualObjectInstanceEnumeration {
+
+            var enumeration = new ObjectEnumerationBuilder();
+            var object = settings && settings[options.objectName];
+            if(!object) {
+                return enumeration.complete();
+            }
+
+            var instance = <VisualObjectInstance>{
+                objectName: options.objectName,
+                selector: null,
+                properties: {}
+            };
+
+            for(var key in object) {
+                if(_.has(object,key)) {
+                    instance.properties[key] = object[key];
+                }
+            }
+
+            enumeration.pushInstance(instance);
+            return enumeration.complete();
         }
 
         public labels = {
@@ -207,6 +237,8 @@ module powerbi.visuals.samples {
 
         x?: number;
         y?: number;
+        isDrag?: boolean;
+        isOver?: boolean;
     }
 
     export interface ForceGraphNodes { 
@@ -461,66 +493,7 @@ module powerbi.visuals.samples {
         };
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            var enumeration = new ObjectEnumerationBuilder();
-
-            switch (this.settings && options.objectName) {
-                case 'labels':
-                    this.enumerateLabels(enumeration);
-                    break;
-                case 'links':
-                    this.enumerateLinks(enumeration);
-                    break;
-                case 'nodes':
-                    this.enumerateNodes(enumeration);
-                    break;
-                case 'size':
-                    this.enumerateSize(enumeration);
-                    break;
-                default:
-                    break;
-            }
-
-            return enumeration.complete();
-        }
-
-        private enumerateLabels(enumeration: ObjectEnumerationBuilder): void {
-            var labels = <VisualObjectInstance>{
-                objectName: 'labels',
-                selector: null,
-                properties: <any>this.settings.labels
-            };
-
-            enumeration.pushInstance(labels);
-        }
-
-        private enumerateLinks(enumeration: ObjectEnumerationBuilder): void {
-            var links = <VisualObjectInstance>{
-                objectName: 'links',
-                selector: null,
-                properties: <any>this.settings.links
-            };
-
-            enumeration.pushInstance(links);
-        }
-
-        private enumerateNodes(enumeration: ObjectEnumerationBuilder): void {
-            var nodes = <VisualObjectInstance>{
-                objectName: 'nodes',
-                selector: null,
-                properties: <any>this.settings.nodes
-            };
-
-            enumeration.pushInstance(nodes);
-        }
-
-        private enumerateSize(enumeration: ObjectEnumerationBuilder): void {
-            var size = <VisualObjectInstance>{
-                objectName: 'size',
-                selector: null,
-                properties: <any>this.settings.size
-            };
-
-            enumeration.pushInstance(size);
+            return ForceGraphSettings.enumerateObjectInstances(this.settings, options, ForceGraph.capabilities);
         }
 
         public static converter(dataView: DataView, colors: IDataColorPalette): ForceGraphData {
@@ -616,6 +589,10 @@ module powerbi.visuals.samples {
         public init(options: VisualInitOptions): void {
             this.root = d3.select(options.element.get(0));
             this.forceLayout = d3.layout.force();
+            this.forceLayout.drag()
+                .on("dragstart", <any>((d: ForceGraphNode) => { d.isDrag = true; this.fadeNode(d); }))
+                .on("dragend", <any>((d: ForceGraphNode) => { d.isDrag = false; this.fadeNode(d); }))
+                .on("drag", <any>((d: ForceGraphNode) => this.fadeNode(d)));
             this.colors = options.style.colorPalette.dataColors;
         }
 
@@ -711,8 +688,8 @@ module powerbi.visuals.samples {
                 .enter().append("g")
                 .attr("class", "node")
                 .call(this.forceLayout.drag)
-                .on("mouseover", this.fadeNode(.3, ForceGraph.DefaultValues.defaultLinkHighlightColor))
-                .on("mouseout", this.fadeNode(1, ForceGraph.DefaultValues.defaultLinkColor))
+                .on("mouseover", (d: ForceGraphNode) => { d.isOver = true; this.fadeNode(d); })
+                .on("mouseout", (d: ForceGraphNode) => { d.isOver = false; this.fadeNode(d); })
                 .on("mousedown", () => d3.event.stopPropagation())
                 .attr("drag-resize-disabled", true);
 
@@ -872,26 +849,33 @@ module powerbi.visuals.samples {
             return false;
         }
 
-        private fadeNode(opacity: number, highlight: string) {
-            if (this.settings.links.colorLink !== LinkColorType.Interactive) return;
+        private fadeNode(node: ForceGraphNode) {
+            if (this.settings.links.colorLink !== LinkColorType.Interactive) {
+                return;
+            }
+
             var isConnected = (a: ForceGraphNode, b: ForceGraphNode) => this.data.linkedByName[a.name + "," + b.name]
                 || this.data.linkedByName[b.name + "," + a.name] || a.name === b.name;
 
-            return (d: ForceGraphNode) => {
-                var that = this;
-                this.nodes.style("stroke-opacity", function(o: ForceGraphNode) {
-                    var thisOpacity = (that.settings.nodes.highlightReachableLinks ? that.isReachable(d, o) : isConnected(d, o)) ? 1 : opacity;
-                    this.setAttribute('fill-opacity', thisOpacity);
-                    return thisOpacity;
-                });
+            var isHighlight = node.isOver || node.isDrag;
+            var opacity: number = isHighlight ? 0.3 : 1;
+            var highlight: string  = isHighlight
+                ? ForceGraph.DefaultValues.defaultLinkHighlightColor
+                : ForceGraph.DefaultValues.defaultLinkColor;
 
-                this.paths.style("stroke-opacity", (o: ForceGraphLink) =>
-                    (this.settings.nodes.highlightReachableLinks ? this.isReachable(d, o.source) :
-                        (o.source === d || o.target === d)) ? 1 : opacity);
-                this.paths.style("stroke", (o: ForceGraphLink) =>
-                    (this.settings.nodes.highlightReachableLinks ? this.isReachable(d, o.source) :
-                        (o.source === d || o.target === d)) ? highlight : ForceGraph.DefaultValues.defaultLinkColor);
-            };
+            var that = this;
+            this.nodes.style("stroke-opacity", function(o: ForceGraphNode) {
+                var thisOpacity = (that.settings.nodes.highlightReachableLinks ? that.isReachable(node, o) : isConnected(node, o)) ? 1 : opacity;
+                this.setAttribute('fill-opacity', thisOpacity);
+                return thisOpacity;
+            });
+
+            this.paths.style("stroke-opacity", (o: ForceGraphLink) =>
+                (this.settings.nodes.highlightReachableLinks ? this.isReachable(node, o.source) :
+                    (o.source === node || o.target === node)) ? 1 : opacity);
+            this.paths.style("stroke", (o: ForceGraphLink) =>
+                (this.settings.nodes.highlightReachableLinks ? this.isReachable(node, o.source) :
+                    (o.source === node || o.target === node)) ? highlight : ForceGraph.DefaultValues.defaultLinkColor);
         }
 
         public destroy(): void {

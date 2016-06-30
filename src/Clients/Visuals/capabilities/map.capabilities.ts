@@ -78,6 +78,7 @@ module powerbi.visuals {
                 displayName: data.createDisplayNameGetter('Role_DisplayName_Gradient'),
                 description: data.createDisplayNameGetter('Role_DisplayName_GradientDescription'),
                 requiredTypes: [{ numeric: true }, { integer: true }],
+                joinPredicate: JoinPredicateBehavior.None,
             }
         ],
         objects: {

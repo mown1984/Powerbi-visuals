@@ -355,6 +355,15 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
+    module sliderMode {
+        const before: string;
+        const after: string;
+        const between: string;
+        const type: IEnumType;
+    }
+}
+
+declare module powerbi.visuals {
     module AnimatorCommon {
         const MinervaAnimationDuration: number;
         const MaxDataPointsToAnimate: number;
@@ -1839,6 +1848,32 @@ declare module powerbi.visuals {
 }
 
 declare module powerbi.visuals {
+    interface IScaledRange<T> {
+        getValue(): ValueRange<T>;
+        setValue(value: ValueRange<T>): any;
+        setScaledValue(value: ValueRange<number>): any;
+        getScaledValue(): ValueRange<number>;
+    }
+    /**
+     * Implements IRange interface for the Date type.
+     */
+    class DateRange implements IScaledRange<Date> {
+        private value;
+        private scaledValue;
+        private scale;
+        constructor(min: Date, max: Date, start?: Date, end?: Date);
+        getScaledValue(): ValueRange<number>;
+        setValue(original: ValueRange<Date>): void;
+        getValue(): ValueRange<Date>;
+        /**
+         * Updates scaled value.
+         * Value should in range [0 .. 100].
+         */
+        setScaledValue(value: ValueRange<number>): void;
+    }
+}
+
+declare module powerbi.visuals {
     module ShapeFactory {
         module ShapeFactoryConsts {
             const PaddingConstRatio: number;
@@ -2156,6 +2191,12 @@ declare module powerbi.visuals {
         }
         function getClassForKpi(kpi: DataViewKpiColumnMetadata, value: string, kpiImageSize?: KpiImageSize): string;
         function getKpiImageMetadata(metaDataColumn: DataViewMetadataColumn, value: string, kpiImageSize?: KpiImageSize): KpiImageMetadata;
+    }
+}
+
+declare module powerbi.visuals {
+    module DateUtil {
+        function isEqual(date1: Date, date2: Date): boolean;
     }
 }
 
@@ -3798,93 +3839,6 @@ declare module powerbi.visuals.services {
 
 declare module powerbi.visuals.services {
     function createGeolocation(): IGeolocation;
-}
-
-declare module powerbi.visuals {
-    interface IHostInformation {
-        name: string;
-    }
-    interface IVisualPluginService {
-        getPlugin(type: string): IVisualPlugin;
-        getVisuals(): IVisualPlugin[];
-        capabilities(type: string): VisualCapabilities;
-        removeAnyCustomVisuals(): void;
-        requireSandbox(plugin: IVisualPlugin): boolean;
-        isCustomVisual(visual: string): boolean;
-        isScriptVisual(type: string): boolean;
-        isScriptVisualQueryable(): boolean;
-        shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
-        getInteractivityOptions(visualType: string): InteractivityOptions;
-        getTelemetryHostInformation: () => IHostInformation;
-    }
-    interface MinervaVisualFeatureSwitches {
-        /**
-         * This feature switch enables the data-dot & column combo charts.
-         */
-        dataDotChartEnabled?: boolean;
-        /**
-         * Visual should prefer to request a higher volume of data.
-         */
-        preferHigherDataVolume?: boolean;
-        sandboxVisualsEnabled?: boolean;
-        /**
-        * R visual is enabled for consumption.
-        * When turned on, R script will be executed against local R (for PBID) or AML (for PBI.com).
-        * When turned off, R script will not be executed and the visual is treated as a static image visual.
-        */
-        scriptVisualEnabled?: boolean;
-        /**
-        * R visual is enabled for authoring.
-        * When turned on, R visual will appear in the visual gallery.
-        */
-        scriptVisualAuthoringEnabled?: boolean;
-        isLabelInteractivityEnabled?: boolean;
-        sunburstVisualEnabled?: boolean;
-        shapeMapVisualEnabled?: boolean;
-        filledMapDataLabelsEnabled?: boolean;
-        /**
-         * Enables button to center map to the current location
-         */
-        mapCurrentLocationEnabled?: boolean;
-        tooltipBucketEnabled?: boolean;
-        /**
-         * Load more data for Cartesian charts (column, bar, line, and combo).
-         */
-        cartesianLoadMoreEnabled?: boolean;
-        advancedLineLabelsEnabled?: boolean;
-    }
-    module visualPluginFactory {
-        class VisualPluginService implements IVisualPluginService {
-            private plugins;
-            protected featureSwitches: MinervaVisualFeatureSwitches;
-            constructor(featureSwitches: MinervaVisualFeatureSwitches);
-            /**
-             * Gets metadata for all registered.
-             */
-            getVisuals(): IVisualPlugin[];
-            getPlugin(type: string): IVisualPlugin;
-            capabilities(type: string): VisualCapabilities;
-            requireSandbox(plugin: IVisualPlugin): boolean;
-            removeAnyCustomVisuals(): void;
-            isCustomVisual(visual: string): boolean;
-            isScriptVisual(type: string): boolean;
-            shouldDisableVisual(type: string, mapDisabled: boolean): boolean;
-            isScriptVisualQueryable(): boolean;
-            getInteractivityOptions(visualType: string): InteractivityOptions;
-            getTelemetryHostInformation(): IHostInformation;
-        }
-        function createPlugin(visualPlugins: jsCommon.IStringDictionary<IVisualPlugin>, base: IVisualPlugin, create: IVisualFactoryMethod, modifyPluginFn?: (plugin: IVisualPlugin) => void): void;
-        class InsightsPluginService extends VisualPluginService {
-            private visualPlugins;
-            constructor(featureSwitches: MinervaVisualFeatureSwitches);
-            getPlugin(type: string): IVisualPlugin;
-            requireSandbox(plugin: IVisualPlugin): boolean;
-            getTelemetryHostInformation(): IHostInformation;
-        }
-        function create(): IVisualPluginService;
-        function createVisualPluginService(featureSwitch: MinervaVisualFeatureSwitches): IVisualPluginService;
-        function createInsights(featureSwitches: MinervaVisualFeatureSwitches): IVisualPluginService;
-    }
 }
 
 declare module powerbi.visuals.controls {
@@ -7816,6 +7770,7 @@ declare module powerbi.visuals {
         defaultSeriesColor?: string;
         categoryData?: LineChartCategoriesData[];
         seriesDisplayName?: string;
+        hasValues?: boolean;
     }
     interface LineChartSeries extends CartesianSeries, SelectableDataPoint {
         displayName: string;
@@ -7877,7 +7832,6 @@ declare module powerbi.visuals {
         private static RectOverlayName;
         private static ScalarOuterPadding;
         private static interactivityStrokeWidth;
-        private static pathXAdjustment;
         private static minimumLabelsToRender;
         static AreaFillOpacity: number;
         static DimmedAreaFillOpacity: number;
@@ -7910,7 +7864,7 @@ declare module powerbi.visuals {
         private interactivityService;
         private animator;
         private previousCategoryCount;
-        private shouldAdjustMouseCoordsOnPathsForStroke;
+        private pathXAdjustment;
         private tooltipBucketEnabled;
         private advancedLineLabelsEnabled;
         private static validStackedLabelPositions;
@@ -8002,9 +7956,6 @@ declare module powerbi.visuals {
          * is zero.  Chrome places the 0 on the edge of the path so that the
          * edge of the stroke is -(strokeWidth / 2).  We adjust coordinates
          * to match Chrome.
-         *
-         * TODO: Firefox is similar to IE, but does a very poor job at it, so
-         * the edge is inacurate.
          *
          * @param value The x coordinate to be adjusted
          */
@@ -9596,10 +9547,14 @@ declare module powerbi.visuals {
         label: CardStyleText;
         value: CardStyleValue;
     }
+    interface CardSmallViewportProperties {
+        cardSmallViewportWidth: number;
+    }
     interface CardConstructorOptions {
         isScrollable?: boolean;
         displayUnitSystemType?: DisplayUnitSystemType;
         animator?: IGenericAnimator;
+        cardSmallViewportProperties?: CardSmallViewportProperties;
     }
     interface CardFormatSetting {
         textSize: number;
@@ -9620,6 +9575,7 @@ declare module powerbi.visuals {
         private labelContext;
         private cardFormatSetting;
         private kpiImage;
+        private cardSmallViewportProperties;
         constructor(options?: CardConstructorOptions);
         init(options: VisualInitOptions): void;
         onDataChanged(options: VisualDataChangedOptions): void;
@@ -9627,6 +9583,9 @@ declare module powerbi.visuals {
         private updateViewportProperties();
         private setTextProperties(text, fontSize);
         private getCardFormatTextSize();
+        private isSmallViewport();
+        private getCardPrecision(isSmallViewport?);
+        private getCardDisplayUnits(isSmallViewport?);
         getAdjustedFontHeight(availableWidth: number, textToMeasure: string, seedFontHeight: number): number;
         clear(valueOnly?: boolean): void;
         private updateInternal(target, suppressAnimations, forceUpdate?);
@@ -9869,7 +9828,8 @@ declare module powerbi.visuals {
         private setTooltipContent(tooltipData);
         private getTooltipPosition(clickedArea, clickedScreenArea);
         private setPosition(clickedArea);
-        private setArrowPosition(clickedArea, clickedScreenArea);
+        private setTooltipContainerClass(clickedScreenArea);
+        private setArrowPosition(clickedScreenArea);
         private getArrowElement();
         private getClickedScreenArea(clickedArea);
     }
@@ -10104,18 +10064,21 @@ declare module powerbi.visuals.system {
         private host;
         private autoRefreshBtn;
         private refreshBtn;
+        private dataBtn;
         private lastUpdateOptions;
         private lastUpdateStatus;
         private visualGuid;
         private autoReloadInterval;
         private statusLoading;
+        private dataViewShowing;
         private reloadAdapter(auto?);
+        private loadVisual(guid);
         /**
          * Toggles auto reload
          * if value is set it sets it to true = on / false = off
          */
         private toggleAutoReload(value?);
-        private showDataview();
+        private toggleDataview();
         private createRefreshBtn();
         private createAutoRefreshBtn();
         private createDataBtn();
@@ -11720,6 +11683,7 @@ declare module jsCommon {
          * @returns The version of Internet Explorer or a 0 (indicating the use of another browser).
          */
         function getInternetExplorerVersion(): number;
+        function isFirefox(): boolean;
     }
 }
 
@@ -12673,6 +12637,14 @@ declare module powerbi.data {
         //changed to descriptor to not need to depend on ValueType class
         type?: ValueTypeDescriptor;
         joinPredicate?: JoinPredicateBehavior;
+
+        // Indication from the compiler to the visual that the role item has a scalar key available
+        hasScalarKey?: boolean;
+
+        // Indication from the visual to the query generator that a scalar key should be added to the query
+        // for this role item.  The property indicates where the key should be attached to the objects
+        // collection in the resulting data view.
+        scalarKeyMinProperty?: DataViewObjectPropertyIdentifier;
     }
 }﻿/*
  *  Power BI Visualizations
@@ -13218,10 +13190,13 @@ declare module powerbi {
         supported?: NumberRange;
     }
 
+    export interface ValueRange<T> {
+        min?: T;
+        max?: T;
+    }
+
     /** Defines the acceptable values of a number. */
-    export interface NumberRange {
-        min?: number;
-        max?: number;
+    export interface NumberRange extends ValueRange<number> {
     }
 
     export interface DataViewMappingScriptDefinition {
@@ -16004,12 +15979,14 @@ declare module powerbi.data {
     enum EntitySourceType {
         Table = 0,
         Pod = 1,
+        Expression = 2,
     }
     interface EntitySource {
         Name: string;
         EntitySet?: string;
         Entity?: string;
         Schema?: string;
+        Expression?: QueryExpressionContainer;
         Type?: EntitySourceType;
     }
     interface QueryFilter {
@@ -16030,6 +16007,7 @@ declare module powerbi.data {
         Hierarchy?: QueryHierarchyExpression;
         HierarchyLevel?: QueryHierarchyLevelExpression;
         PropertyVariationSource?: QueryPropertyVariationSourceExpression;
+        Subquery?: QuerySubqueryExpression;
         And?: QueryBinaryExpression;
         Between?: QueryBetweenExpression;
         In?: QueryInExpression;
@@ -16098,6 +16076,9 @@ declare module powerbi.data {
         Expression: QueryExpressionContainer;
         Name: string;
         Property: string;
+    }
+    interface QuerySubqueryExpression {
+        Query: QueryDefinition;
     }
     interface QueryBinaryExpression {
         Left: QueryExpressionContainer;
@@ -18299,7 +18280,7 @@ declare module powerbi.data {
         function propertyVariationSource(source: SQExpr, name: string, property: string): SQPropertyVariationSourceExpr;
         function hierarchyLevel(source: SQExpr, level: string): SQHierarchyLevelExpr;
         function transformTableRef(source: string): SQTransformTableRefExpr;
-        function transformOutputRoleRef(source: string, transform?: string): SQTransformOutputRoleRefExpr;
+        function transformOutputRoleRef(role: string, transform?: string): SQTransformOutputRoleRefExpr;
         function and(left: SQExpr, right: SQExpr): SQExpr;
         function between(arg: SQExpr, lower: SQExpr, upper: SQExpr): SQBetweenExpr;
         function inExpr(args: SQExpr[], values: SQExpr[][]): SQInExpr;
@@ -18433,6 +18414,58 @@ declare module powerbi.data {
 }
 
 declare module powerbi.data {
+    type SQFromSource = SQFromEntitySource | SQFromSubquerySource;
+    /** Represents an entity reference in SemanticQuery from. */
+    class SQFromEntitySource {
+        schema: string;
+        entity: string;
+        constructor(schema: string, entity: string);
+        accept<T, TArg>(visitor: ISQFromSourceVisitor<T, TArg>, arg: TArg): T;
+        equals(source: SQFromEntitySource): boolean;
+    }
+    /** Represents a subquery reference in SemanticQuery from.
+        for subquery use SQExpr instead of SemanticQuery when we have one for QuerySubqueryExpression
+     */
+    class SQFromSubquerySource {
+        subquery: SemanticQuery;
+        constructor(subquery: SemanticQuery);
+        accept<T, TArg>(visitor: ISQFromSourceVisitor<T, TArg>, arg: TArg): T;
+        equals(source: SQFromSubquerySource): boolean;
+    }
+    /** Represents a SemanticQuery/SemanticFilter from clause. */
+    class SQFrom {
+        private items;
+        constructor(items?: {
+            [name: string]: SQFromSource;
+        });
+        keys(): string[];
+        source(key: string): SQFromSource;
+        ensureSource(source: SQFromSource, desiredVariableName?: string): QueryFromEnsureEntityResult;
+        remove(key: string): void;
+        private getSourceKeyFromItems(source);
+        private addSource(source, desiredVariableName);
+        clone(): SQFrom;
+    }
+    function isSQFromEntitySource(source: SQFromSource): source is SQFromEntitySource;
+    function isSQFromSubquerySource(source: SQFromSource): source is SQFromSubquerySource;
+    interface ISQFromSourceVisitor<T, Targ> {
+        visitEntity(source: SQFromEntitySource, arg: Targ): T;
+        visitSubquery(source: SQFromSubquerySource, arg: Targ): T;
+    }
+    class SQFromSourceCandidateNameVisitor implements ISQFromSourceVisitor<string, void> {
+        /** Converts the entity name into a short reference name.  Follows the Semantic Query convention of a short name. */
+        visitEntity(source: SQFromEntitySource): string;
+        visitSubquery(source: SQFromSubquerySource): string;
+    }
+    class SQFromEntitiesVisitor implements ISQFromSourceVisitor<void, string> {
+        entities: SQEntityExpr[];
+        constructor();
+        visitEntity(source: SQFromEntitySource, key: string): void;
+        visitSubquery(source: SQFromSubquerySource, key: string): void;
+    }
+}
+
+declare module powerbi.data {
     import ArrayNamedItems = jsCommon.ArrayNamedItems;
     interface NamedSQExpr {
         name: string;
@@ -18441,11 +18474,6 @@ declare module powerbi.data {
     interface SQFilter {
         target?: SQExpr[];
         condition: SQExpr;
-    }
-    /** Represents an entity reference in SemanticQuery from. */
-    interface SQFromEntitySource {
-        entity: string;
-        schema: string;
     }
     /** Represents a sort over an expression. */
     interface SQSortDefinition {
@@ -18541,6 +18569,7 @@ declare module powerbi.data {
         private getTransforms();
         private setTransforms(transforms);
         rewrite(exprRewriter: ISQExprVisitor<SQExpr>): SemanticQuery;
+        equals(query: SemanticQuery): boolean;
     }
     /** Represents a semantic filter condition.  Round-trippable with a JSON FilterDefinition.  Instances of this class are immutable. */
     class SemanticFilter implements ISemanticFilter {
@@ -18562,20 +18591,6 @@ declare module powerbi.data {
         static isAnyFilter(filter: SemanticFilter): boolean;
         static isSameFilter(leftFilter: SemanticFilter, rightFilter: SemanticFilter): boolean;
         private static applyFilter(filter, from, where);
-    }
-    /** Represents a SemanticQuery/SemanticFilter from clause. */
-    class SQFrom {
-        private items;
-        constructor(items?: {
-            [name: string]: SQFromEntitySource;
-        });
-        keys(): string[];
-        entity(key: string): SQFromEntitySource;
-        ensureEntity(entity: SQFromEntitySource, desiredVariableName?: string): QueryFromEnsureEntityResult;
-        remove(key: string): void;
-        /** Converts the entity name into a short reference name.  Follows the Semantic Query convention of a short name. */
-        private candidateName(ref);
-        clone(): SQFrom;
     }
     class SQExprRewriterWithSourceRenames extends SQExprRewriter {
         private renames;

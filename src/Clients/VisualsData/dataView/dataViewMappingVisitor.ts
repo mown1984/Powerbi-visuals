@@ -69,7 +69,9 @@ module powerbi {
 
             visitCategoricalCategories(mapping.categories, visitor);
 
-            visitCategoricalValues(mapping.values, visitor);
+            let values = mapping.values;
+            visitCategoricalValues(values, visitor);
+            visitGrouped(<DataViewGroupedRoleMapping>values, visitor);
         }
 
         export function visitCategoricalCategories(mapping: DataViewRoleMappingWithReduction | DataViewListRoleMappingWithReduction, visitor: IDataViewMappingVisitor): void {
@@ -94,10 +96,7 @@ module powerbi {
                 visitFor(<DataViewRoleForMapping>mapping, visitor, RoleItemContext.CategoricalValue);
                 visitList(<DataViewListRoleMapping>mapping, visitor, RoleItemContext.CategoricalValue);
 
-                let groupedRoleMapping = <DataViewGroupedRoleMapping>mapping;
-                visitGrouped(groupedRoleMapping, visitor);
-
-                let group = groupedRoleMapping.group;
+                let group = (<DataViewGroupedRoleMapping>mapping).group;
                 if (group) {
                     for (let item of group.select) {
                         visitBind(<DataViewRoleBindMapping>item, visitor, RoleItemContext.CategoricalValueGroup);

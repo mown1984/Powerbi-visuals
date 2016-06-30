@@ -41,7 +41,7 @@ module powerbitests {
 
     describe("Slicer", () => {
         it("Slicer_registered_capabilities", () => {
-            expect(visuals.visualPluginFactory.create().getPlugin("slicer").capabilities).toBe(visuals.slicerCapabilities);
+            expect(visuals.plugins.slicer.capabilities).toBe(visuals.slicerCapabilities);
         });
 
         it("Capabilities should include dataViewMapping", () => {

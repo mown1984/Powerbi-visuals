@@ -60,6 +60,8 @@ module powerbi.visuals {
         preferHigherDataVolume?: boolean;
 
         sandboxVisualsEnabled?: boolean;
+        
+        dateSlicerVisualEnabled?: boolean;
 
         /**
         * R visual is enabled for consumption.
@@ -82,6 +84,8 @@ module powerbi.visuals {
 
         filledMapDataLabelsEnabled?: boolean;
 
+        lineChartLabelDensityEnabled?: boolean;
+
         /**
          * Enables button to center map to the current location
          */
@@ -93,8 +97,6 @@ module powerbi.visuals {
          * Load more data for Cartesian charts (column, bar, line, and combo).
          */
         cartesianLoadMoreEnabled?: boolean;
-
-        advancedLineLabelsEnabled?: boolean;
     }
 
     export module visualPluginFactory {

@@ -55,7 +55,7 @@ module powerbitests {
     describe("basicShape Tests", () => {
 
         it('registered capabilities', () => {
-            let pluginCapabilities = powerbi.visuals.visualPluginFactory.create().getPlugin('basicShape').capabilities;
+            let pluginCapabilities = powerbi.visuals.plugins.basicShape.capabilities;
             expect(pluginCapabilities.toString()).toBe(basicShapeCapabilities.toString());
         });
 
@@ -64,7 +64,7 @@ module powerbitests {
         });
 
         it('registered capabilities: objects', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('basicShape').capabilities.objects).toBeDefined();
+            expect(powerbi.visuals.plugins.basicShape.capabilities.objects).toBeDefined();
         });
 
         it('capabilities should suppressDefaultPadding', () => {

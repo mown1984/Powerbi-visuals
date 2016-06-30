@@ -40,7 +40,7 @@ module powerbitests {
     describe("Check DataDotChart capabilities", () => {
 
         it("DataDotChart registered capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("dataDotChart").capabilities).toBe(dataDotChartCapabilities);
+            expect(powerbi.visuals.plugins.dataDotChart.capabilities).toBe(dataDotChartCapabilities);
         });
 
         it("DataDotChart capabilities should include dataRoles", () => {

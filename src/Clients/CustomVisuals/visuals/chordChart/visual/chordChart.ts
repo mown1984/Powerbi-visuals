@@ -28,24 +28,23 @@
 
 module powerbi.visuals.samples {
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
+    import PixelConverter = jsCommon.PixelConverter;
 
     export interface ChordChartData {
+        settings: ChordChartSettings;
+        dataView: DataView;
         dataMatrix: number[][];
         labelDataPoints: ChordArcDescriptor[];
         legendData?: LegendData;
-        labelFontSize: number;
         tooltipData: ChordTooltipData[][];
         sliceTooltipData: ChordTooltipData[];
         tickUnit: number;
         differentFromTo: boolean;
         defaultDataPointColor?: string;
         prevAxisVisible: boolean;
-        showAllDataPoints?: boolean;
-        showLabels: boolean;
-        showAxis: boolean;
     }
 
-    export interface ChordArcDescriptor extends D3.Layout.ArcDescriptor {
+    export interface ChordArcDescriptor extends D3.Layout.ArcDescriptor, IDataLabelInfo {
         data: ChordArcLabelData;
     }
 
@@ -60,19 +59,277 @@ module powerbi.visuals.samples {
         tooltipInfo: TooltipDataItem[];
     }
 
+    class VisualLayout {
+        private marginValue: IMargin;
+        private viewportValue: IViewport;
+        private viewportInValue: IViewport;
+        private minViewportValue: IViewport;
+
+        public defaultMargin: IMargin;
+        public defaultViewport: IViewport;
+
+        constructor(defaultViewport?: IViewport, defaultMargin?: IMargin) {
+            this.defaultViewport = defaultViewport || { width: 0, height: 0 };
+            this.defaultMargin = defaultMargin || { top: 0, bottom: 0, right: 0, left: 0 };
+        }
+
+        public get margin(): IMargin {
+            return this.marginValue || (this.margin = this.defaultMargin);
+        }
+
+        public set margin(value: IMargin) {
+            this.marginValue = VisualLayout.restrictToMinMax(value);
+            this.update();
+        }
+
+        public get viewport(): IViewport {
+            return this.viewportValue || (this.viewportValue = this.defaultViewport);
+        }
+
+        public set viewport(value: IViewport) {
+            this.viewportValue = VisualLayout.restrictToMinMax(value, this.minViewport);
+            this.update();
+        }
+
+        public get viewportIn(): IViewport {
+            return this.viewportInValue || this.viewport;
+        }
+
+        public get minViewport(): IViewport {
+            return this.minViewportValue;
+        }
+
+        public set minViewport(value: IViewport) {
+            this.minViewportValue = value;
+        }
+
+        public get viewportInIsZero(): boolean {
+            return this.viewportIn.width === 0 || this.viewportIn.height === 0;
+        }
+
+        public resetMargin(): void {
+            this.margin = this.defaultMargin;
+        }
+
+        private update(): void {
+            this.viewportInValue = VisualLayout.restrictToMinMax({
+                width: this.viewport.width - (this.margin.left + this.margin.right),
+                height: this.viewport.height - (this.margin.top + this.margin.bottom)
+            }, this.minViewportValue);
+        }
+
+        private static restrictToMinMax<T>(value: T, minValue?: T): T {
+            var result = $.extend({}, value);
+            _.keys(value).forEach(x => result[x] = Math.max(minValue && minValue[x] || 0, value[x]));
+            return result;
+        }
+    }
+
+    class ChordChartHelpers {
+        public static interpolateArc(arc: D3.Svg.Arc) {
+            return function (data) {
+                if (!this.oldData) {
+                    this.oldData = data;
+                    return () => arc(data);
+                }
+
+                var interpolation = d3.interpolate(this.oldData, data);
+                this.oldData = interpolation(0);
+                return (x) => arc(interpolation(x));
+            };
+        }
+
+        public static addContext(context: any, fn: Function): any {
+            return <any>function() {
+                return fn.apply(context, [this].concat(_.toArray(arguments)));
+            };
+        }
+    }
+
+    export class ChordChartSettings {
+        public static get Default() { 
+            return new this();
+        }
+
+        public static parse(dataView: DataView, capabilities: VisualCapabilities) {
+            var settings = new this();
+            if(!dataView || !dataView.metadata || !dataView.metadata.objects) {
+                return settings;
+            }
+
+            var properties = this.getProperties(capabilities);
+            for(var objectKey in capabilities.objects) {
+                for(var propKey in capabilities.objects[objectKey].properties) {
+                    if(!settings[objectKey] || !_.has(settings[objectKey], propKey)) {
+                        continue;
+                    }
+
+                    var type = capabilities.objects[objectKey].properties[propKey].type;
+                    var getValueFn = this.getValueFnByType(type);
+                    settings[objectKey][propKey] = getValueFn(
+                        dataView.metadata.objects,
+                        properties[objectKey][propKey],
+                        settings[objectKey][propKey]);
+                }
+            }
+
+            return settings;
+        }
+
+        public static getProperties(capabilities: VisualCapabilities)
+            : { [i: string]: { [i: string]: DataViewObjectPropertyIdentifier } } & { 
+                general: { formatString: DataViewObjectPropertyIdentifier },
+                dataPoint: { fill: DataViewObjectPropertyIdentifier } } {
+            var objects  = _.merge({ 
+                general: { properties: { formatString: {} } } 
+            }, capabilities.objects);
+            var properties = <any>{};
+            for(var objectKey in objects) {
+                properties[objectKey] = {};
+                for(var propKey in objects[objectKey].properties) {
+                    properties[objectKey][propKey] = <DataViewObjectPropertyIdentifier> {
+                        objectName: objectKey,
+                        propertyName: propKey
+                    };
+                }
+            }
+
+            return properties;
+        }
+
+        public static createEnumTypeFromEnum(type: any): IEnumType {
+            var even: any = false;
+            return createEnumType(Object.keys(type)
+                .filter((key,i) => ((!!(i % 2)) === even && type[key] === key
+                    && !void(even = !even)) || (!!(i % 2)) !== even)
+                .map(x => <IEnumMember>{ value: x, displayName: x }));
+        }
+
+        private static getValueFnByType(type: powerbi.data.DataViewObjectPropertyTypeDescriptor) {
+            switch(_.keys(type)[0]) {
+                case 'fill': 
+                    return DataViewObjects.getFillColor;
+                default:
+                    return DataViewObjects.getValue;
+            }
+        }
+
+        public static enumerateObjectInstances(
+            settings: any,
+            options: EnumerateVisualObjectInstancesOptions,
+            capabilities: VisualCapabilities): ObjectEnumerationBuilder {
+
+            var enumeration = new ObjectEnumerationBuilder();
+            var object = settings && settings[options.objectName];
+            if(!object) {
+                return enumeration;
+            }
+
+            var instance = <VisualObjectInstance>{
+                objectName: options.objectName,
+                selector: null,
+                properties: {}
+            };
+
+            for(var key in object) {
+                if(_.has(object,key)) {
+                    instance.properties[key] = object[key];
+                }
+            }
+
+            enumeration.pushInstance(instance);
+            return enumeration;
+        }
+
+        //Default Settings
+        public dataPoint = {
+            defaultColor: null,
+            showAllDataPoints: false
+        };
+        public axis = {
+            show: true
+        };
+        public labels = {
+            show: true,
+            color: dataLabelUtils.defaultLabelColor,
+            fontSize: dataLabelUtils.DefaultFontSizeInPt
+        };
+    }
+
+    export class ChordChartColumns<T> {
+        public static Roles = Object.freeze(
+            _.mapValues(new ChordChartColumns<string>(), (x, i) => i));
+
+        public static getColumnSources(dataView: DataView) {
+            return this.getColumnSourcesT<DataViewMetadataColumn>(dataView);
+        }
+
+        public static getTableValues(dataView: DataView) {
+            var table = dataView && dataView.table;
+            var columns = this.getColumnSourcesT<any[]>(dataView);
+            return columns && table && _.mapValues(
+                columns, (n: DataViewMetadataColumn, i) => n && table.rows.map(row => row[n.index]));
+        }
+
+        public static getTableRows(dataView: DataView) {
+            var table = dataView && dataView.table;
+            var columns = this.getColumnSourcesT<any[]>(dataView);
+            return columns && table && table.rows.map(row =>
+                _.mapValues(columns, (n: DataViewMetadataColumn, i) => n && row[n.index]));
+        }
+
+        public static getCategoricalValues(dataView: DataView) {
+            var categorical = dataView && dataView.categorical;
+            var categories = categorical && categorical.categories || [];
+            var values = categorical && categorical.values || <DataViewValueColumns>[];
+            var series: string[] = categorical && values.source && this.getSeriesValues(dataView);
+            return categorical && _.mapValues(new this<any[]>(), (n, i) =>
+                (<DataViewCategoricalColumn[]>_.toArray(categories)).concat(_.toArray(values))
+                    .filter(x => x.source.roles && x.source.roles[i]).map(x => x.values)[0]
+                || values.source && values.source.roles && values.source.roles[i] && series);
+        }
+
+        public static getSeriesValues(dataView: DataView) {
+            return dataView && dataView.categorical && dataView.categorical.values
+                && dataView.categorical.values.map(x => converterHelper.getSeriesName(x.source));
+        }
+
+        public static getCategoricalColumns(dataView: DataView) {
+            var categorical = dataView && dataView.categorical;
+            var categories = categorical && categorical.categories || [];
+            var values = categorical && categorical.values || <DataViewValueColumns>[];
+            return categorical && _.mapValues(
+                new this<DataViewCategoryColumn & DataViewValueColumn[] & DataViewValueColumns>(),
+                (n, i) => categories.filter(x => x.source.roles && x.source.roles[i])[0]
+                    || values.source && values.source.roles && values.source.roles[i]
+                    || values.filter(x => x.source.roles && x.source.roles[i]));
+        }
+
+        private static getColumnSourcesT<T>(dataView: DataView) {
+            var columns = dataView && dataView.metadata && dataView.metadata.columns;
+            return columns && _.mapValues(
+                new this<T>(), (n, i) => columns.filter(x => x.roles && x.roles[i])[0]);
+        }
+
+        //Data Roles
+        public Category: T = null;
+        public Series: T = null;
+        public Y: T = null;
+    }
+
     export class ChordChart implements IVisual {
         public static capabilities: VisualCapabilities = {
             dataRoles: [
                 {
-                    name: 'Category',
+                    name: ChordChartColumns.Roles.Category,
                     kind: VisualDataRoleKind.Grouping,
                     displayName: 'From',
                 }, {
-                    name: 'Series',
+                    name: ChordChartColumns.Roles.Series,
                     kind: VisualDataRoleKind.Grouping,
                     displayName: 'To',
                 }, {
-                    name: 'Y',
+                    name: ChordChartColumns.Roles.Y,
                     kind: VisualDataRoleKind.Measure,
                     displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
                 }
@@ -144,32 +401,12 @@ module powerbi.visuals.samples {
             }
         };
 
-        public static chordChartProps = {
-            general: {
-                formatString: <DataViewObjectPropertyIdentifier>{ objectName: 'general', propertyName: 'formatString' },
-            },
-            dataPoint: {
-                defaultColor: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'defaultColor' },
-                fill: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'fill' },
-                showAllDataPoints: <DataViewObjectPropertyIdentifier>{ objectName: 'dataPoint', propertyName: 'showAllDataPoints' },
-            },
-            axis: {
-                show: <DataViewObjectPropertyIdentifier>{ objectName: 'axis', propertyName: 'show' },
-            },
-            labels: {
-                show: <DataViewObjectPropertyIdentifier>{ objectName: 'labels', propertyName: 'show' },
-                color: <DataViewObjectPropertyIdentifier>{ objectName: 'labels', propertyName: 'color' },
-                fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'labels', propertyName: 'fontSize' },
-            },
-        };
-
         public static PolylineOpacity = 0.5;
 
         private static OuterArcRadiusRatio = 0.9;
         private static InnerArcRadiusRatio = 0.8;
-        private static DefaultLabelColor = "#777777";
-        private static DefaultLabelsFontSize = 12;
-
+        private static LabelMargin = 10;
+        private static DefaultMargin: IMargin = { left: 10, right: 10, top: 10, bottom: 10 };
         private static VisualClassName = 'chordChart';
 
         private static sliceClass: ClassAndSelector = {
@@ -227,208 +464,189 @@ module powerbi.visuals.samples {
 
         private svg: D3.Selection;
         private mainGraphicsContext: D3.Selection;
+        private slices: D3.Selection;
+        private labels: D3.Selection;
+        private lines: D3.Selection;
 
         private data: ChordChartData;
+        private get settings(): ChordChartSettings {
+            return this.data && this.data.settings;
+        }
+        private layout: VisualLayout;
+        private duration: number;
         private colors: IDataColorPalette;
         private selectionManager: utility.SelectionManager;
-        private dataView: DataView;
-        
+
+        private radius: number;
+        private get innerRadius(): number {
+            return this.radius * ChordChart.InnerArcRadiusRatio;
+        }
+        private get outerRadius(): number {
+            return this.radius * ChordChart.OuterArcRadiusRatio;
+        }
+
         /* Convert a DataView into a view model */
         public static converter(dataView: DataView, colors: IDataColorPalette, prevAxisVisible: boolean): ChordChartData {
-            let catDv: DataViewCategorical = dataView.categorical;
+            var properties = ChordChartSettings.getProperties(ChordChart.capabilities);
+            var settings = ChordChart.parseSettings(dataView);
+            var columns = ChordChartColumns.getCategoricalColumns(dataView);
+            var sources = ChordChartColumns.getColumnSources(dataView);
+            var catValues = ChordChartColumns.getCategoricalValues(dataView);
 
-            let defaultDataPointColor: string = ChordChart.getDefaultDataPointColor(dataView).solid.color;
-            let labelColor = ChordChart.getLabelsColor(dataView);
-            let labelFontSize = ChordChart.getLabelsFontSize(dataView);
-
-            if (catDv && catDv.categories && catDv.categories.length > 0 && catDv.values && catDv.categories[0].values && catDv.categories[0].values[0]) {
-
-                let cat: DataViewCategoryColumn = catDv.categories[0];
-                let catValues = cat.values;
-                let values = catDv.values;
-                let dataMatrix: number[][] = [];
-
-                let legendData: LegendData = {
-                    dataPoints: [],
-                    title: values[0] && values[0].source ? values[0].source.displayName : "",
-                };
-
-                let toolTipData: ChordTooltipData[][] = [];
-                let sliceTooltipData: ChordTooltipData[] = [];
-
-                let max: number = 1000;
-
-                let seriesName: string[] = [];  /* series name array */
-                let seriesIndex: number[] = []; /* series index array */
-
-                let catIndex: number[] = [];    /* index array for category names */
-
-                let isDiffFromTo: boolean = false;  /* boolean variable indicates that From and To are different */
-
-                let labelData: ChordArcLabelData[] = [];    /* label data: !important */
-
-                let colorHelper = new ColorHelper(colors,
-                    ChordChart.chordChartProps.dataPoint.fill,
-                    defaultDataPointColor);
-
-                for (let i: number = 0, iLen = catValues.length; i < iLen; i++) {
-                    catIndex[catValues[i]] = i;
-                }
-
-                for (let i: number = 0, iLen = values.length; i < iLen; i++) {
-                    let seriesNameStr: string = converterHelper.getSeriesName(values[i].source);
-
-                    seriesName.push(seriesNameStr);
-                    seriesIndex[seriesNameStr] = i;
-                }
-
-                let totalFields: any[] = this.union_arrays(catValues, seriesName);
-                totalFields.reverse();
-
-                if (ChordChart.getValidArrayLength(totalFields) ===
-                    ChordChart.getValidArrayLength(catValues) + ChordChart.getValidArrayLength(seriesName)) {
-                    isDiffFromTo = true;
-                }
-
-                let formatStringProp = ChordChart.chordChartProps.general.formatString;
-                let categorySourceFormatString = valueFormatter.getFormatString(cat.source, formatStringProp);
-
-                for (let i: number = 0, iLen = totalFields.length; i < iLen; i++) {
-                    let id: SelectionId = null;
-                    let color: string = '';
-                    let isCategory: boolean = false;
-
-                    if (catIndex[totalFields[i]] !== undefined) {
-                        let index = catIndex[totalFields[i]];
-                        id = SelectionIdBuilder
-                            .builder()
-                            .withCategory(cat, catIndex[totalFields[i]])
-                            .createSelectionId();
-                        isCategory = true;
-                        let thisCategoryObjects = cat.objects ? cat.objects[index] : undefined;
-
-                        color = colorHelper.getColorForSeriesValue(thisCategoryObjects, /* cat.identityFields */ undefined, catValues[index]);
-
-                    } else if (seriesIndex[totalFields[i]] !== undefined) {
-                        let index = seriesIndex[totalFields[i]];
-
-                        let seriesData = values[index];
-                        let seriesObjects = seriesData && seriesData.objects && seriesData.objects[0];
-                        let seriesNameStr = converterHelper.getSeriesName(seriesData.source);
-
-                        id = SelectionId.createWithId(seriesData.identity);
-                        isCategory = false;
-
-                        color = colorHelper.getColorForSeriesValue(seriesObjects, /* values.identityFields */ undefined, seriesNameStr);
-                    }
-
-                    labelData.push({
-                        label: totalFields[i],
-                        labelColor: labelColor,
-                        barColor: color,
-                        isCategory: isCategory,
-                        identity: id,
-                        selected: false
-                    });
-
-                    dataMatrix.push([]);
-                    toolTipData.push([]);
-
-                    let formattedCategoryValue = valueFormatter.format(catValues[i], categorySourceFormatString);
-
-                    for (let j = 0, jLen = totalFields.length; j < jLen; j++) {
-                        let elementValue: number = 0;
-                        let tooltipInfo: TooltipDataItem[] = [];
-
-                        if (catIndex[totalFields[i]] !== undefined &&
-                            seriesIndex[totalFields[j]] !== undefined) {
-                            let row: number = catIndex[totalFields[i]];
-                            let col: number = seriesIndex[totalFields[j]];
-                            if (values[col].values[row] !== null) {
-                                elementValue = values[col].values[row];
-
-                                if (elementValue > max)
-                                    max = elementValue;
-
-                                tooltipInfo = TooltipBuilder.createTooltipInfo(
-                                    formatStringProp,
-                                    catDv,
-                                    formattedCategoryValue,
-                                    elementValue,
-                                    null,
-                                    null,
-                                    col,
-                                    row);
-                            }
-                        } else if (isDiffFromTo && catIndex[totalFields[j]] !== undefined &&
-                            seriesIndex[totalFields[i]] !== undefined) {
-                            let row: number = catIndex[totalFields[j]];
-                            let col: number = seriesIndex[totalFields[i]];
-                            if (values[col].values[row] !== null) {
-                                elementValue = values[col].values[row];
-                            }
-                        }
-
-                        dataMatrix[i].push(elementValue);
-                        toolTipData[i].push({
-                            tooltipInfo: tooltipInfo
-                        });
-                    }
-
-                    let totalSum = d3.sum(dataMatrix[i]);
-
-                    sliceTooltipData.push({
-                        tooltipInfo: [{
-                            displayName: totalFields[i],
-                            value: (ChordChart.isInt(totalSum)) ? totalSum.toFixed(0) : totalSum.toFixed(2)
-                        }]
-                    });
-                }
-
-                let chordLayout = d3.layout.chord()
-                    .padding(0.1)
-                    .matrix(dataMatrix);
-
-                let unitLength: number = Math.round(max / 5).toString().length - 1;
-
-                return {
-                    dataMatrix: dataMatrix,
-                    labelDataPoints: ChordChart.convertToChordArcDescriptor(chordLayout.groups(), labelData),
-                    legendData: legendData,
-                    tooltipData: toolTipData,
-                    sliceTooltipData: sliceTooltipData,
-                    tickUnit: Math.pow(10, unitLength),
-                    differentFromTo: isDiffFromTo,
-                    defaultDataPointColor: defaultDataPointColor,
-                    prevAxisVisible: prevAxisVisible,
-                    showAllDataPoints: ChordChart.getShowAllDataPoints(dataView),
-                    showLabels: ChordChart.getLabelsShow(dataView),
-                    showAxis: ChordChart.getAxisShow(dataView),
-                    labelFontSize: labelFontSize,
-                };
-            } else {
-                return {
-                    dataMatrix: [],
-                    labelDataPoints: [],
-                    legendData: null,
-                    tooltipData: [],
-                    sliceTooltipData: [],
-                    tickUnit: 1000,
-                    differentFromTo: false,
-                    defaultDataPointColor: defaultDataPointColor,
-                    prevAxisVisible: prevAxisVisible,
-                    showAllDataPoints: ChordChart.getShowAllDataPoints(dataView),
-                    showLabels: ChordChart.getLabelsShow(dataView),
-                    showAxis: ChordChart.getAxisShow(dataView),
-                    labelFontSize: labelFontSize,
-                };
+            if (!catValues || _.isEmpty(catValues.Category) || _.isEmpty(catValues.Y)) {
+                return null;
             }
+
+            catValues.Series = catValues.Series || ChordChartColumns.getSeriesValues(dataView);
+
+            var dataMatrix: number[][] = [];
+            var legendData: LegendData = {
+                dataPoints: [],
+                title: sources.Y.displayName || "",
+            };
+            var toolTipData: ChordTooltipData[][] = [];
+            var sliceTooltipData: ChordTooltipData[] = [];
+            var max: number = 1000;
+            var seriesIndex: number[] = _.mapValues(_.invert(catValues.Series), parseFloat); /* series index array */
+            var catIndex: number[] = _.mapValues(_.invert(catValues.Category), parseFloat);    /* index array for category names */
+            var isDiffFromTo: boolean = false;  /* boolean variable indicates that From and To are different */
+            var labelData: ChordArcLabelData[] = [];    /* label data: !important */
+            var colorHelper = new ColorHelper(colors, properties.dataPoint.fill, settings.dataPoint.defaultColor);
+            var totalFields: any[] = this.union_arrays(catValues.Category, catValues.Series).reverse();
+
+            if (ChordChart.getValidArrayLength(totalFields) ===
+                ChordChart.getValidArrayLength(catValues.Category) + ChordChart.getValidArrayLength(catValues.Series)) {
+                isDiffFromTo = true;
+            }
+
+            var categoryColumnFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatString(sources.Category, properties.general.formatString, true)
+                    || sources.Category.format
+            });
+            var valueColumnFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatString(sources.Y, properties.general.formatString, true)
+                    || sources.Y.format
+            });
+
+            for (var i: number = 0, iLen = totalFields.length; i < iLen; i++) {
+                var id: SelectionId = null;
+                var color: string = '';
+                var isCategory: boolean = false;
+
+                if (catIndex[totalFields[i]] !== undefined) {
+                    var index = catIndex[totalFields[i]];
+                    id = SelectionIdBuilder
+                        .builder()
+                        .withCategory(columns.Category, catIndex[totalFields[i]])
+                        .createSelectionId();
+                    isCategory = true;
+                    var thisCategoryObjects = columns.Category.objects ? columns.Category.objects[index] : undefined;
+
+                    color = colorHelper.getColorForSeriesValue(thisCategoryObjects, /* cat.identityFields */ undefined, catValues.Category[index]);
+
+                } else if (seriesIndex[totalFields[i]] !== undefined) {
+                    var index = seriesIndex[totalFields[i]];
+
+                    var seriesData = columns.Y[index];
+                    var seriesObjects = seriesData && seriesData.objects && seriesData.objects[0];
+                    var seriesNameStr = converterHelper.getSeriesName(seriesData.source);
+
+                    id = SelectionId.createWithId(seriesData.identity);
+                    isCategory = false;
+
+                    color = colorHelper.getColorForSeriesValue(seriesObjects, /* values.identityFields */ undefined, seriesNameStr);
+                }
+
+                labelData.push({
+                    label: totalFields[i],
+                    labelColor: settings.labels.color,
+                    barColor: color,
+                    isCategory: isCategory,
+                    identity: id,
+                    selected: false,
+                    labelFontSize: PixelConverter.fromPointToPixel(settings.labels.fontSize)
+                });
+
+                dataMatrix.push([]);
+                toolTipData.push([]);
+
+                for (var j = 0, jLen = totalFields.length; j < jLen; j++) {
+                    var elementValue: number = 0;
+                    var tooltipInfo: TooltipDataItem[] = [];
+
+                    if (catIndex[totalFields[i]] !== undefined &&
+                        seriesIndex[totalFields[j]] !== undefined) {
+                        var row: number = catIndex[totalFields[i]];
+                        var col: number = seriesIndex[totalFields[j]];
+                        if (columns.Y[col].values[row] !== null) {
+                            elementValue = columns.Y[col].values[row];
+
+                            if (elementValue > max)
+                                max = elementValue;
+
+                            tooltipInfo = TooltipBuilder.createTooltipInfo(
+                                properties.general.formatString,
+                                dataView.categorical,
+                                categoryColumnFormatter.format(catValues.Category[i]),
+                                valueColumnFormatter.format(elementValue),
+                                null,
+                                null,
+                                col,
+                                row);
+                        }
+                    } else if (isDiffFromTo && catIndex[totalFields[j]] !== undefined &&
+                        seriesIndex[totalFields[i]] !== undefined) {
+                        var row: number = catIndex[totalFields[j]];
+                        var col: number = seriesIndex[totalFields[i]];
+                        if (columns.Y[col].values[row] !== null) {
+                            elementValue = columns.Y[col].values[row];
+                        }
+                    }
+
+                    dataMatrix[i].push(elementValue);
+                    toolTipData[i].push({
+                        tooltipInfo: tooltipInfo
+                    });
+                }
+
+                var totalSum = d3.sum(dataMatrix[i]);
+
+                sliceTooltipData.push({
+                    tooltipInfo: [{
+                        displayName: totalFields[i],
+                        value: valueColumnFormatter.format(totalSum)
+                    }]
+                });
+            }
+
+            var chordLayout = d3.layout.chord()
+                .padding(0.1)
+                .matrix(dataMatrix);
+
+            var unitLength: number = Math.round(max / 5).toString().length - 1;
+
+            return {
+                dataMatrix: dataMatrix,
+                dataView: dataView,
+                settings: settings,
+                labelDataPoints: ChordChart.getChordArcDescriptors(chordLayout.groups(), labelData),
+                legendData: legendData,
+                tooltipData: toolTipData,
+                sliceTooltipData: sliceTooltipData,
+                tickUnit: Math.pow(10, unitLength),
+                differentFromTo: isDiffFromTo,
+                prevAxisVisible: prevAxisVisible === undefined ? settings.axis.show : prevAxisVisible,
+            };
+        }
+
+        private static parseSettings(dataView: DataView): ChordChartSettings {
+            return ChordChartSettings.parse(dataView, ChordChart.capabilities);
         }
 
         /* Check every element of the array and returns the count of elements which are valid(not undefined) */
         public static getValidArrayLength(array: any[]): number {
-            let len = 0;
-            for (let i: number = 0, iLen = array.length; i < iLen; i++) {
+            var len = 0;
+            for (var i: number = 0, iLen = array.length; i < iLen; i++) {
                 if (array[i] !== undefined) {
                     len++;
                 }
@@ -436,11 +654,10 @@ module powerbi.visuals.samples {
             return len;
         }
 
-        /* Convert ChordLayout to ChordArcDescriptor */
-        public static convertToChordArcDescriptor(groups: D3.Layout.ArcDescriptor[], datum: ChordArcLabelData[]): ChordArcDescriptor[] {
-            let labelDataPoints: ChordArcDescriptor[] = [];
-            for (let i: number = 0, iLen = groups.length; i < iLen; i++) {
-                let labelDataPoint: ChordArcDescriptor = groups[i];
+        public static getChordArcDescriptors(groups: D3.Layout.ArcDescriptor[], datum: ChordArcLabelData[]): ChordArcDescriptor[] {
+            var labelDataPoints: ChordArcDescriptor[] = [];
+            for (var i: number = 0, iLen = groups.length; i < iLen; i++) {
+                var labelDataPoint: ChordArcDescriptor = groups[i];
                 labelDataPoint.data = datum[i];
                 labelDataPoints.push(labelDataPoint);
             }
@@ -448,47 +665,11 @@ module powerbi.visuals.samples {
             return labelDataPoints;
         }
 
-        /* Calculate radius */
-        private calculateRadius(viewport: IViewport): number {
-            if (this.data && this.data.showLabels) {
-                // if we have category or data labels, use a sigmoid to blend the desired denominator from 2 to 3.
-                // if we are taller than we are wide, we need to use a larger denominator to leave horizontal room for the labels.
-                let hw = viewport.height / viewport.width;
-                let denom = 2 + (1 / (1 + Math.exp(-5 * (hw - 1))));
-                return Math.min(viewport.height, viewport.width) / denom;
-            }
-
-            // no labels
-            return Math.min(viewport.height, viewport.width) / 2;
-        }
-        
-        /* Draw category labels */
-        public static drawDefaultCategoryLabels(graphicsContext: D3.Selection, chordData: ChordChartData, radius: number, viewport: IViewport): void {
-            /** Multiplier to place the end point of the reference line at 0.05 * radius away from the outer edge of the chord/pie. */
-
-            let arc: D3.Svg.Arc = d3.svg.arc()
-                .innerRadius(0)
-                .outerRadius(radius * ChordChart.InnerArcRadiusRatio);
-
-            let outerArc: D3.Svg.Arc = d3.svg.arc()
-                .innerRadius(radius * ChordChart.OuterArcRadiusRatio)
-                .outerRadius(radius * ChordChart.OuterArcRadiusRatio);
-
-            if (chordData.showLabels) {
-                let labelLayout = ChordChart.getChordChartLabelLayout(radius, outerArc, viewport, chordData.labelFontSize);
-                ChordChart.drawDefaultLabelsForChordChart(chordData.labelDataPoints,
-                    graphicsContext,
-                    labelLayout, viewport,
-                    radius, arc, outerArc);
-            }
-            else
-                dataLabelUtils.cleanDataLabels(graphicsContext, true);
-        }
-
-        /* One time setup*/
         public init(options: VisualInitOptions): void {
-            let element = this.element = options.element;
+            var element = this.element = options.element;
             this.selectionManager = new utility.SelectionManager({ hostServices: options.host });
+            this.layout = new VisualLayout(options.viewport, ChordChart.DefaultMargin);
+            this.layout.minViewport = { width: 150, height:150 };
 
             this.svg = d3.select(element.get(0))
                 .append('svg')
@@ -500,117 +681,222 @@ module powerbi.visuals.samples {
 
             this.mainGraphicsContext
                 .append('g')
-                .classed('ticks', true);
-
-            this.mainGraphicsContext
-                .append('g')
                 .classed('chords', true);
 
-            this.mainGraphicsContext
+            this.slices = this.mainGraphicsContext
                 .append('g')
                 .classed('slices', true);
 
+            this.mainGraphicsContext
+                .append('g')
+                .classed('ticks', true);
+
+            this.labels = this.mainGraphicsContext
+                .append('g')
+                .classed(ChordChart.labelGraphicsContextClass.class, true);
+
+            this.lines = this.mainGraphicsContext
+                .append('g')
+                .classed(ChordChart.linesGraphicsContextClass.class, true);
+
             this.colors = options.style.colorPalette.dataColors;
         }
-    
+
         /* Called for data, size, formatting changes*/
         public update(options: VisualUpdateOptions) {
-            // assert dataView           
-            if (!options.dataViews || !options.dataViews[0]) return;
-            
-            // get animation duration
-            let duration = options.suppressAnimations ? 0 : AnimatorCommon.MinervaAnimationDuration;
+            // assert dataView
+            if (!options.dataViews || !options.dataViews[0]) {
+                return;
+            }
 
-            let dataView = this.dataView = options.dataViews[0];
-            let prevAxisShow: boolean = (this.data) ? this.data.showAxis : !ChordChart.getAxisShow(dataView);
+            this.layout.viewport = options.viewport;
+            this.duration = options.suppressAnimations ? 0 : AnimatorCommon.MinervaAnimationDuration;
+            this.data = ChordChart.converter(options.dataViews[0], this.colors, this.settings && this.settings.axis.show);
+            if(!this.data) {
+                this.clear();
+                return;
+            }
 
-            let data = this.data = ChordChart.converter(dataView, this.colors, prevAxisShow);
+            this.layout.resetMargin();
+            this.layout.margin.top = this.layout.margin.bottom = PixelConverter.fromPointToPixel(this.settings.labels.fontSize) / 2;
 
-            let viewport = options.viewport;
+            this.render();
+        }
 
-            let chordLayout = this.chordLayout = d3.layout.chord()
+        /* Enumerate format values */
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions) {
+            var instances = ChordChartSettings.enumerateObjectInstances(this.settings, options, ChordChart.capabilities);
+
+            if (this.settings 
+                && options.objectName === "dataPoint"
+                && !_.isEmpty(this.data.labelDataPoints)
+                && this.settings.dataPoint.showAllDataPoints) {
+
+                for (var i: number = 0, length = this.data.labelDataPoints.length; i < length; i++) {
+                    var labelDataPoint: ChordArcLabelData = this.data.labelDataPoints[i].data;
+
+                    if (labelDataPoint.isCategory) {
+                        var colorInstance: VisualObjectInstance = {
+                            objectName: 'dataPoint',
+                            displayName: labelDataPoint.label,
+                            selector: ColorHelper.normalizeSelector(labelDataPoint.identity.getSelector()),
+                            properties: {
+                                fill: { solid: { color: labelDataPoint.barColor } }
+                            }
+                        };
+
+                        instances.pushInstance(colorInstance);
+                    }
+                }
+            }
+
+            return instances.complete();
+        }
+
+        /* Calculate radius */
+        private calculateRadius(): number {
+            if (this.settings.labels.show) {
+                // if we have category or data labels, use a sigmoid to blend the desired denominator from 2 to 3.
+                // if we are taller than we are wide, we need to use a larger denominator to leave horizontal room for the labels.
+                var hw = this.layout.viewportIn.height / this.layout.viewportIn.width;
+                var denom = 2 + (1 / (1 + Math.exp(-5 * (hw - 1))));
+                return Math.min(this.layout.viewportIn.height, this.layout.viewportIn.width) / denom;
+            }
+
+            // no labels
+            return Math.min(this.layout.viewportIn.height, this.layout.viewportIn.width) / 2;
+        }
+
+        private drawCategoryLabels(): void {
+            /** Multiplier to place the end point of the reference line at 0.05 * radius away from the outer edge of the chord/pie. */
+
+            var arc: D3.Svg.Arc = d3.svg.arc()
+                .innerRadius(0)
+                .outerRadius(this.innerRadius);
+
+            var outerArc: D3.Svg.Arc = d3.svg.arc()
+                .innerRadius(this.outerRadius)
+                .outerRadius(this.outerRadius);
+
+            if (this.settings.labels.show) {
+                var labelLayout = this.getChordChartLabelLayout(outerArc);
+                var filteredData = this.getDataLabelManager().hideCollidedLabels(
+                    this.layout.viewportIn,
+                    this.data.labelDataPoints,
+                    labelLayout,
+                    /* addTransform */ true);
+
+                this.renderLabels(filteredData, labelLayout, true);
+                this.renderLines(filteredData, arc, outerArc);
+            }
+            else {
+                dataLabelUtils.cleanDataLabels(this.labels);
+                dataLabelUtils.cleanDataLabels(this.lines, true);
+            }
+        }
+
+        private getDataLabelManager(): DataLabelManager {
+            var dataLabelManager = new DataLabelManager();
+            (<any>dataLabelManager).hasCollisions = hasCollisions.bind(dataLabelManager);
+            return dataLabelManager;
+
+            function hasCollisions(arrangeGrid: DataLabelArrangeGrid, info: IDataLabelInfo, position: IRect, size: shapes.ISize) {
+                if (arrangeGrid.hasConflict(position)) {
+                    return true;
+                }
+
+                var intersection = { left: 0, top: position.height / 2, width: size.width, height: size.height };
+                intersection = shapes.Rect.inflate(intersection, {
+                    left: DataLabelManager.InflateAmount,
+                    top: 0,
+                    right: DataLabelManager.InflateAmount,
+                    bottom: 0 });
+                intersection = shapes.Rect.intersect(intersection, position);
+
+                if (shapes.Rect.isEmpty(intersection)) {
+                    return true;
+                }
+
+                return powerbi.Double.lessWithPrecision(intersection.height, position.height / 2);
+            }
+        }
+
+        private render(): void {
+            this.chordLayout = d3.layout.chord()
                 .padding(0.1)
                 //.sortGroups(d3.descending)
-                .matrix(data.dataMatrix);
+                .matrix(this.data.dataMatrix);
 
-            let width = viewport.width;
-            let height = viewport.height;
+            this.radius = this.calculateRadius();
 
-            let radius = this.calculateRadius(viewport);
-            let sm = this.selectionManager;
-
-            let innerRadius: number = radius;
-            let outerRadius: number = radius * ChordChart.InnerArcRadiusRatio;
-
-            let arc: D3.Svg.Arc = d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+            var arc: D3.Svg.Arc = d3.svg.arc().innerRadius(this.radius).outerRadius(this.innerRadius);
 
             this.svg
                 .attr({
-                    'width': width,
-                    'height': height
+                    'width': this.layout.viewport.width,
+                    'height': this.layout.viewport.height
                 });
 
-            let mainGraphicsContext = this.mainGraphicsContext
-                .attr('transform', SVGUtil.translate(width / 2, height / 2));
+            this.mainGraphicsContext
+                .attr('transform', SVGUtil.translate(this.layout.viewport.width / 2, this.layout.viewport.height / 2));
 
-            let sliceShapes = this.svg.select('.slices')
+            var sliceShapes = this.slices
                 .selectAll('path' + ChordChart.sliceClass.selector)
-                .data(chordLayout.groups);
+                .data(this.chordLayout.groups);
 
             sliceShapes.enter()
                 .insert("path")
                 .classed(ChordChart.sliceClass.class, true);
 
-            sliceShapes.style('fill', (d, i) => data.labelDataPoints[i].data.barColor)
-                .style("stroke", (d, i) => data.labelDataPoints[i].data.barColor)
-                .on('click', function(d, i) {
-                    sm.select(data.labelDataPoints[i].data.identity).then(ids=> {
+            sliceShapes.style('fill', (d, i) => this.data.labelDataPoints[i].data.barColor)
+                .style("stroke", (d, i) => this.data.labelDataPoints[i].data.barColor)
+                .on('click', ChordChartHelpers.addContext(this, (context, d, i) => {
+                   this.selectionManager.select(this.data.labelDataPoints[i].data.identity).then(ids=> {
                         if (ids.length > 0) {
-                            mainGraphicsContext.selectAll(".chords path.chord")
+                            this.mainGraphicsContext.selectAll(".chords path.chord")
                                 .style("opacity", 1);
 
-                            mainGraphicsContext.selectAll(".slices path.slice")
+                            this.slices.selectAll("path.slice")
                                 .style('opacity', 0.3);
 
-                            mainGraphicsContext.selectAll(".chords path.chord")
-                                .filter(function(d) { return d.source.index !== i && d.target.index !== i; })
+                            this.mainGraphicsContext.selectAll(".chords path.chord")
+                                .filter(d => d.source.index !== i && d.target.index !== i)
                                 .style("opacity", 0.3);
 
-                            d3.select(this).style('opacity', 1);
+                            d3.select(context).style('opacity', 1);
                         } else {
                             sliceShapes.style('opacity', 1);
-                            mainGraphicsContext.selectAll(".chords path.chord")
-                                .filter(function(d) { return d.source.index !== i && d.target.index !== i; })
+                            this.mainGraphicsContext.selectAll(".chords path.chord")
+                                .filter(d => d.source.index !== i && d.target.index !== i)
                                 .style("opacity", 1);
                         }
                     });
 
                     d3.event.stopPropagation();
-                })
+                }))
                 .transition()
-                .duration(duration)
-                .attr("d", arc);
+                .duration(this.duration)
+                .attrTween('d', ChordChartHelpers.interpolateArc(arc));
 
             sliceShapes.exit()
                 .remove();
 
-            TooltipManager.addTooltip(sliceShapes, (tooltipEvent: TooltipEvent) => {
-                return data.sliceTooltipData[tooltipEvent.data.index].tooltipInfo;
-            });
+            TooltipManager.addTooltip(sliceShapes, (tooltipEvent: TooltipEvent) =>
+                this.data.sliceTooltipData[tooltipEvent.data.index].tooltipInfo);
 
-            let chordShapes = this.svg.select('.chords')
+            var chordShapes = this.svg.select('.chords')
                 .selectAll('path' + ChordChart.chordClass.selector)
-                .data(chordLayout.chords);
+                .data(this.chordLayout.chords);
 
             chordShapes
                 .enter().insert("path")
                 .classed(ChordChart.chordClass.class, true);
 
-            chordShapes.style("fill", (d, i) => data.labelDataPoints[d.target.index].data.barColor)
+            chordShapes.style("fill", (d, i) => this.data.labelDataPoints[d.target.index].data.barColor)
                 .style("opacity", 1)
                 .transition()
-                .duration(duration)
-                .attr("d", d3.svg.chord().radius(innerRadius));
+                .duration(this.duration)
+                .attr("d", d3.svg.chord().radius(this.radius));
 
             chordShapes.exit()
                 .remove();
@@ -621,26 +907,26 @@ module powerbi.visuals.samples {
                     chordShapes.style('opacity', 1);
                 }));
 
-            ChordChart.drawTicks(this.mainGraphicsContext, data, chordLayout, outerRadius, duration, viewport);
-            ChordChart.drawDefaultCategoryLabels(this.mainGraphicsContext, data, radius, viewport);
+            this.drawTicks();
+            this.drawCategoryLabels();
 
             TooltipManager.addTooltip(chordShapes, (tooltipEvent: TooltipEvent) => {
-                let tooltipInfo: TooltipDataItem[] = [];
-                if (data.differentFromTo) {
-                    tooltipInfo = data.tooltipData[tooltipEvent.data.source.index]
+                var tooltipInfo: TooltipDataItem[] = [];
+                if (this.data.differentFromTo) {
+                    tooltipInfo = this.data.tooltipData[tooltipEvent.data.source.index]
                     [tooltipEvent.data.source.subindex]
                         .tooltipInfo;
                 } else {
                     tooltipInfo.push({
-                        displayName: data.labelDataPoints[tooltipEvent.data.source.index].data.label
-                        + '->' + data.labelDataPoints[tooltipEvent.data.source.subindex].data.label,
-                        value: data.dataMatrix[tooltipEvent.data.source.index]
+                        displayName: this.data.labelDataPoints[tooltipEvent.data.source.index].data.label
+                        + '->' + this.data.labelDataPoints[tooltipEvent.data.source.subindex].data.label,
+                        value: this.data.dataMatrix[tooltipEvent.data.source.index]
                         [tooltipEvent.data.source.subindex].toString()
                     });
                     tooltipInfo.push({
-                        displayName: data.labelDataPoints[tooltipEvent.data.target.index].data.label
-                        + '->' + data.labelDataPoints[tooltipEvent.data.target.subindex].data.label,
-                        value: data.dataMatrix[tooltipEvent.data.target.index]
+                        displayName: this.data.labelDataPoints[tooltipEvent.data.target.index].data.label
+                        + '->' + this.data.labelDataPoints[tooltipEvent.data.target.subindex].data.label,
+                        value: this.data.dataMatrix[tooltipEvent.data.target.index]
                         [tooltipEvent.data.target.subindex].toString()
                     });
                 }
@@ -648,57 +934,58 @@ module powerbi.visuals.samples {
             });
         }
 
-        /*About to remove your visual, do clean up here */
-        public destroy() {
-
+        private clear() {
+            this.mainGraphicsContext.selectAll(ChordChart.sliceClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.sliceTicksClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.chordClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.labelsClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.lineClass.selector).remove();
         }
 
-        /* Clean ticks */
-        public static cleanTicks(context: D3.Selection) {
-            let empty = [];
-            let tickLines = context.selectAll(ChordChart.tickLineClass.selector).data(empty);
+        private clearTicks() {
+            var empty = [];
+            var tickLines = this.mainGraphicsContext.selectAll(ChordChart.tickLineClass.selector).data(empty);
             tickLines.exit().remove();
 
-            let tickTexts = context.selectAll(ChordChart.tickTextClass.selector).data(empty);
+            var tickTexts = this.mainGraphicsContext.selectAll(ChordChart.tickTextClass.selector).data(empty);
             tickTexts.exit().remove();
 
-            context.selectAll(ChordChart.tickPairClass.selector).remove();
-            context.selectAll(ChordChart.sliceTicksClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.tickPairClass.selector).remove();
+            this.mainGraphicsContext.selectAll(ChordChart.sliceTicksClass.selector).remove();
         }
-        
-        /* Draw axis(ticks) around the arc */
-        public static drawTicks(graphicsContext: D3.Selection, chordData: ChordChartData, chordLayout: D3.Layout.ChordLayout, outerRadius: number, duration: number, viewport: IViewport): void {
 
-            if (chordData.showAxis) {
-                let tickShapes = graphicsContext.select('.ticks')
+        /* Draw axis(ticks) around the arc */
+        private drawTicks(): void {
+            if (this.settings.axis.show) {
+                var tickShapes = this.mainGraphicsContext.select('.ticks')
                     .selectAll('g' + ChordChart.sliceTicksClass.selector)
-                    .data(chordLayout.groups);
-                let animDuration = (chordData.prevAxisVisible === chordData.showAxis) ? duration : 0;
+                    .data(this.chordLayout.groups);
+                var animDuration = (this.data.prevAxisVisible === this.settings.axis.show) ? this.duration : 0;
 
                 tickShapes.enter().insert('g')
                     .classed(ChordChart.sliceTicksClass.class, true);
 
-                let tickPairs = tickShapes.selectAll('g' + ChordChart.tickPairClass.selector)
-                    .data(function(d) {
-                        let k = (d.endAngle - d.startAngle) / d.value;
-                        let range = d3.range(0, d.value, d.value - 1 < 0.15 ? 0.15 : d.value - 1);
-                        let retval =
-                            range.map(function(v, i) {
-                                let divider: number = 1000;
-                                let unitStr: string = 'k';
+                var tickPairs = tickShapes.selectAll('g' + ChordChart.tickPairClass.selector)
+                    .data((d) => {
+                        var k = (d.endAngle - d.startAngle) / d.value;
+                        var range = d3.range(0, d.value, d.value - 1 < 0.15 ? 0.15 : d.value - 1);
+                        var retval =
+                            range.map((v, i) => {
+                                var divider: number = 1000;
+                                var unitStr: string = 'k';
 
-                                if (chordData.tickUnit >= 1000 * 1000) {
+                                if (this.data.tickUnit >= 1000 * 1000) {
                                     divider = 1000 * 1000;
                                     unitStr = 'm';
                                 }
-                                else if (chordData.tickUnit >= 1000) {
+                                else if (this.data.tickUnit >= 1000) {
                                     divider = 1000;
                                     unitStr = 'k';
                                 } else {
                                     divider = 1;
                                     unitStr = '';
                                 }
-                                let retv =
+                                var retv =
                                     {
                                         angle: v * k + d.startAngle,
                                         label: Math.floor(v / divider) + unitStr
@@ -714,10 +1001,8 @@ module powerbi.visuals.samples {
 
                 tickPairs.transition()
                     .duration(animDuration)
-                    .attr('transform', function(d) {
-                        return 'rotate(' + (d.angle * 180 / Math.PI - 90) + ')'
-                            + 'translate(' + outerRadius + ',0)';
-                    });
+                    .attr('transform', (d) =>
+                        'rotate(' + (d.angle * 180 / Math.PI - 90) + ')' + 'translate(' + this.innerRadius + ',0)');
 
                 tickPairs.selectAll('line' + ChordChart.tickLineClass.selector)
                     .data((d) => [d])
@@ -733,9 +1018,9 @@ module powerbi.visuals.samples {
                     .data((d) => [d])
                     .enter().insert('text')
                     .classed(ChordChart.tickTextClass.class, true)
-                    .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
-                    .text(function(d) { return d.label; })
-                    .attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-16)" : null; })
+                    .style("text-anchor", d => d.angle > Math.PI ? "end" : null)
+                    .text(d => d.label)
+                    .attr("transform", d => d.angle > Math.PI ? "rotate(180)translate(-16)" : null)
                     .attr("x", 8)
                     .attr("dy", ".35em");
 
@@ -746,145 +1031,70 @@ module powerbi.visuals.samples {
                     .remove();
 
             } else {
-                ChordChart.cleanTicks(graphicsContext);
+                this.clearTicks();
             }
 
         }
 
-        /* Get format parameter axis whether it determines show ticks or not. Default value is true */
-        private static getAxisShow(dataView: DataView): boolean {
-            if (dataView && dataView.metadata) {
-                let objects = dataView.metadata.objects;
-                if (objects) {
-                    let axis = objects['axis'];
-                    if (axis && axis.hasOwnProperty('show')) {
-                        return <boolean>axis['show'];
-                    }
-                }
-            }
-            return true;
-        }
-        
-        /* Get format parameter labels whether it determines show labels or not. Default value is true */
-        private static getLabelsShow(dataView: DataView): boolean {
-            if (dataView && dataView.metadata) {
-                let objects = dataView.metadata.objects;
-                if (objects) {
-                    let labels = objects['labels'];
-                    if (labels && labels.hasOwnProperty('show')) {
-                        return <boolean>labels['show'];
-                    }
-                }
-            }
-            return true;
-        }
-
-        /* Get format parameter labels whether it determines show labels or not. Default value is true */
-        private static getLabelsColor(dataView: DataView): string {
-            if (dataView && dataView.metadata) {
-                let objects = dataView.metadata.objects;
-                if (objects) {
-                    let labels = objects['labels'];
-                    if (labels && labels.hasOwnProperty('color'))
-                        return labels['color'].solid.color;
-                }
-            }
-            return ChordChart.DefaultLabelColor;
-        }
-
-        private static getLabelsFontSize(dataView: DataView): number {
-            if (dataView && dataView.metadata) {
-                let objects = dataView.metadata.objects;
-                if (objects) {
-                    let labels = objects['labels'];
-                    if (labels && labels.hasOwnProperty('fontSize'))
-                        return labels['fontSize'];
-                }
-            }
-            return ChordChart.DefaultLabelsFontSize;
-        }
-       
-        /* Select labels */
-        public static selectLabels(filteredData: LabelEnabledDataPoint[], context: D3.Selection, isDonut: boolean = false, forAnimation: boolean = false): D3.UpdateSelection {
+        private renderLabels(
+            filteredData: LabelEnabledDataPoint[],
+            layout: ILabelLayout,
+            isDonut: boolean = false,
+            forAnimation: boolean = false): void {
 
             // Check for a case where resizing leaves no labels - then we need to remove the labels 'g'
             if (filteredData.length === 0) {
-                dataLabelUtils.cleanDataLabels(context, true);
+                dataLabelUtils.cleanDataLabels(this.labels, true);
                 return null;
             }
 
-            if (context.select(ChordChart.labelGraphicsContextClass.selector).empty())
-                context.append('g').classed(ChordChart.labelGraphicsContextClass.class, true);
-
             // line chart ViewModel has a special 'key' property for point identification since the 'identity' field is set to the series identity
-            let hasKey: boolean = (<any>filteredData)[0].key !== null;
-            let hasDataPointIdentity: boolean = (<any>filteredData)[0].identity !== null;
-            let getIdentifier = hasKey ?
-                (d: any) => d.key
-                : hasDataPointIdentity ?
-                    (d: SelectableDataPoint) => d.identity.getKey()
-                    : undefined;
+            var hasKey: boolean = (<any>filteredData)[0].key !== null;
+            var hasDataPointIdentity: boolean = (<any>filteredData)[0].identity !== null;
+            var getIdentifier = hasKey
+                ? (d: any) => d.key
+                : hasDataPointIdentity ? (d: SelectableDataPoint) => d.identity.getKey() : undefined;
 
-            let labels = isDonut ?
-                context.select(ChordChart.labelGraphicsContextClass.selector).selectAll(ChordChart.labelsClass.selector).data(filteredData, (d: DonutArcDescriptor) => d.data.identity.getKey())
-                : getIdentifier !== null ?
-                    context.select(ChordChart.labelGraphicsContextClass.selector).selectAll(ChordChart.labelsClass.selector).data(filteredData, getIdentifier)
-                    : context.select(ChordChart.labelGraphicsContextClass.selector).selectAll(ChordChart.labelsClass.selector).data(filteredData);
+            var dataLabels = isDonut
+                ? this.labels.selectAll(ChordChart.labelsClass.selector)
+                    .data(filteredData, (d: DonutArcDescriptor) => d.data.identity.getKey())
+                : getIdentifier !== null
+                    ? this.labels.selectAll(ChordChart.labelsClass.selector).data(filteredData, getIdentifier)
+                    : this.labels.selectAll(ChordChart.labelsClass.selector).data(filteredData);
 
-            let newLabels = labels.enter()
+            var newLabels = dataLabels.enter()
                 .append('text')
                 .classed(ChordChart.labelsClass.class, true);
             if (forAnimation)
                 newLabels.style('opacity', 0);
 
-            return labels;
-        }
-        
-        /* Draw labels */
-        public static drawDefaultLabelsForChordChart(data: any[], context: D3.Selection, layout: ILabelLayout, viewport: IViewport, radius: number, arc: D3.Svg.Arc, outerArc: D3.Svg.Arc) {
-            // Hide and reposition labels that overlap
-            let dataLabelManager = new DataLabelManager();
-            let filteredData = dataLabelManager.hideCollidedLabels(viewport, data, layout,/* addTransform */ true);
-
-            let labels: D3.UpdateSelection = ChordChart.selectLabels(filteredData, context, true);
-
-            if (!labels) {
-                return;
-            }
-
-            labels
+            dataLabels
                 .attr({ x: (d: LabelEnabledDataPoint) => d.labelX, y: (d: LabelEnabledDataPoint) => d.labelY, dy: '.35em' })
                 .text((d: LabelEnabledDataPoint) => d.labeltext)
                 .style(layout.style);
 
-            labels
+            dataLabels
                 .exit()
                 .remove();
+        }
 
-            if (context.select(ChordChart.linesGraphicsContextClass.selector).empty()) {
-                context
-                    .append('g')
-                    .classed(ChordChart.linesGraphicsContextClass.class, true);
-            }
-
-            let lines = context.select(ChordChart.linesGraphicsContextClass.selector).selectAll('polyline')
+        private renderLines(filteredData: LabelEnabledDataPoint[], arc: D3.Svg.Arc, outerArc: D3.Svg.Arc): void {
+            var lines = this.lines.selectAll('polyline')
                 .data(filteredData, (d: ChordArcDescriptor) => d.data.identity.getKey());
-            let innerLinePointMultiplier = 2.05;
+            var innerLinePointMultiplier = 2.05;
 
-            let midAngle = function(d: ChordArcDescriptor) {
-                return d.startAngle + (d.endAngle - d.startAngle) / 2;
-            };
+            var midAngle = (d: ChordArcDescriptor) => d.startAngle + (d.endAngle - d.startAngle) / 2;
 
             lines.enter()
                 .append('polyline')
                 .classed(ChordChart.lineClass.class, true);
 
             lines
-                .attr('points', function(d) {
-                    let textPoint = outerArc.centroid(d);
-                    textPoint[0] = radius * 0.95 * (midAngle(d) < Math.PI ? 1 : -1);
-                    let midPoint = outerArc.centroid(d);
-                    let chartPoint = arc.centroid(d);
+                .attr('points', d => {
+                    var textPoint = outerArc.centroid(d);
+                    textPoint[0] = (this.radius + ChordChart.LabelMargin/2) * (midAngle(d) < Math.PI ? 1 : -1);
+                    var midPoint = outerArc.centroid(d);
+                    var chartPoint = arc.centroid(d);
                     chartPoint[0] *= innerLinePointMultiplier;
                     chartPoint[1] *= innerLinePointMultiplier;
                     return [chartPoint, midPoint, textPoint];
@@ -898,32 +1108,26 @@ module powerbi.visuals.samples {
                 .exit()
                 .remove();
         }
-        
-        /* Get label layout */
-        public static getChordChartLabelLayout(radius: number, outerArc: D3.Svg.Arc, viewport: IViewport, labelFontSize: number): ILabelLayout {
-            let midAngle = function(d: ChordArcDescriptor) {
-                return d.startAngle + (d.endAngle - d.startAngle) / 2;
-            };
 
-            // Width of the container - the max available width + the labelfont size(sometimes come back as string) * 2.2 (should be 2) - radius * 2 (2 rad in a circle)
-            let minAvailableSpace: number = viewport.width - ((dataLabelUtils.maxLabelWidth + +labelFontSize) * 2.2) - radius * 2;
-            var PixelConverter = jsCommon.PixelConverter;
+        /* Get label layout */
+        private getChordChartLabelLayout(outerArc: D3.Svg.Arc): ILabelLayout {
+            var midAngle = (d: ChordArcDescriptor) => d.startAngle + (d.endAngle - d.startAngle) / 2;
+            var maxLabelWidth: number = (this.layout.viewportIn.width - this.radius * 2 - ChordChart.LabelMargin * 2)/1.6;
 
             return {
                 labelText: (d: DonutArcDescriptor) => {
                     // show only category label
                     return dataLabelUtils.getLabelFormattedText({
                         label: d.data.label,
-                        maxWidth: minAvailableSpace,
-                        fontSize: labelFontSize,
+                        maxWidth: maxLabelWidth,
+                        fontSize: PixelConverter.fromPointToPixel(this.settings.labels.fontSize),
                     });
                 },
                 labelLayout: {
-                    x: (d: ChordArcDescriptor) => {
-                        return radius * (midAngle(d) < Math.PI ? 1 : -1);
-                    },
+                    x: (d: ChordArcDescriptor) =>
+                        (this.radius + ChordChart.LabelMargin) * (midAngle(d) < Math.PI ? 1 : -1),
                     y: (d: ChordArcDescriptor) => {
-                        let pos = outerArc.centroid(d);
+                        var pos = outerArc.centroid(d);
                         return pos[1];
                     },
                 },
@@ -931,139 +1135,26 @@ module powerbi.visuals.samples {
                 style: {
                     'fill': (d: ChordArcDescriptor) => d.data.labelColor,
                     'text-anchor': (d: ChordArcDescriptor) => midAngle(d) < Math.PI ? 'start' : 'end',
-                    'font-size': (d: ChordArcDescriptor) => PixelConverter.fromPoint(labelFontSize),
+                    'font-size': (d: ChordArcDescriptor) => PixelConverter.fromPoint(this.settings.labels.fontSize),
                 },
             };
         }
-        
-        /* Get Default Datapoint color */
-        private static getDefaultDataPointColor(dataView: DataView, defaultValue?: string): Fill {
-            if (dataView && dataView.metadata) {
-                let objects = dataView.metadata.objects;
-                if (objects) {
-                    let dataPoint = objects['dataPoint'];
-                    if (dataPoint && dataPoint.hasOwnProperty('defaultColor')) {
-                        let defaultColor = <Fill>dataPoint['defaultColor'];
-                        if (defaultColor) {
-                            return defaultColor;
-                        }
-                    }
-                }
-            }
 
-            return { solid: { color: defaultValue } };
-        }
-
-        /* Get format paramter value (showAllDataPoints)  */
-        private static getShowAllDataPoints(dataView: DataView): boolean {
-            if (!dataView || !dataView.metadata || !dataView.metadata.objects)
-                return false;
-
-            let objects: DataViewObjects = dataView.metadata.objects;
-            let dataPoint = objects['dataPoint'];
-            if (dataPoint && dataPoint.hasOwnProperty('showAllDataPoints')) {
-                return <boolean>dataPoint['showAllDataPoints'];
-            }
-            return false;
-        }
-
-        /* Enumerate format values */
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            let instances: VisualObjectInstance[] = [];
-            let axis: VisualObjectInstance;
-
-            switch (options.objectName) {
-                case 'axis':
-                    axis = {
-                        objectName: 'axis',
-                        displayName: 'Axis',
-                        selector: null,
-                        properties: {
-                            show: ChordChart.getAxisShow(this.dataView)
-                        }
-                    };
-
-                    instances.push(axis);
-                    break;
-                case 'labels':
-                    axis = {
-                        objectName: 'labels',
-                        displayName: 'Labels',
-                        selector: null,
-                        properties: {
-                            show: ChordChart.getLabelsShow(this.dataView),
-                            color: ChordChart.getLabelsColor(this.dataView),
-                            fontSize: ChordChart.getLabelsFontSize(this.dataView),
-                        }
-                    };
-                    instances.push(axis);
-                    break;
-                case 'dataPoint':
-                    let defaultColor: VisualObjectInstance = {
-                        objectName: 'dataPoint',
-                        selector: null,
-                        properties: {
-                            defaultColor: {
-                                solid: { color: (this.data && this.data.defaultDataPointColor) ? this.data.defaultDataPointColor : this.colors.getColorByIndex(0).value }
-                            }
-                        }
-                    };
-
-                    instances.push(defaultColor);
-
-                    let showAllDataPoints: VisualObjectInstance = {
-                        objectName: 'dataPoint',
-                        selector: null,
-                        properties: {
-                            showAllDataPoints: this.data ? !!this.data.showAllDataPoints : false,
-                        }
-                    };
-
-                    instances.push(showAllDataPoints);
-
-                    if (this.data && this.data.labelDataPoints && !!this.data.showAllDataPoints) {
-                        for (let i: number = 0, iLen = this.data.labelDataPoints.length; i < iLen; i++) {
-                            let labelDataPoint: ChordArcLabelData = this.data.labelDataPoints[i].data;
-
-                            if (labelDataPoint.isCategory) {
-                                let colorInstance: VisualObjectInstance = {
-                                    objectName: 'dataPoint',
-                                    displayName: labelDataPoint.label,
-                                    selector: ColorHelper.normalizeSelector(labelDataPoint.identity.getSelector()),
-                                    properties: {
-                                        fill: { solid: { color: labelDataPoint.barColor } }
-                                    }
-                                };
-
-                                instances.push(colorInstance);
-                            }
-                        }
-                    }
-                    break;
-            }
-            return instances;
-        }
-
-        /* Utility function for checking if it is integer or float */
-        public static isInt(n: number): boolean {
-            return n % 1 === 0;
-        }
-        
         /* Utility function for union two arrays without duplicates */
-        public static union_arrays(x: any[], y: any[]): any[] {
-            let obj: Object = {};
+        private static union_arrays(x: any[], y: any[]): any[] {
+            var obj: Object = {};
 
-            for (let i: number = 0; i < x.length; i++) {
+            for (var i: number = 0; i < x.length; i++) {
                 obj[x[i]] = x[i];
             }
 
-            for (let i: number = 0; i < y.length; i++) {
+            for (var i: number = 0; i < y.length; i++) {
                 obj[y[i]] = y[i];
             }
 
-            let res: string[] = [];
+            var res: string[] = [];
 
-            for (let k in obj) {
+            for (var k in obj) {
                 if (obj.hasOwnProperty(k)) {  // <-- optional
                     res.push(obj[k]);
                 }

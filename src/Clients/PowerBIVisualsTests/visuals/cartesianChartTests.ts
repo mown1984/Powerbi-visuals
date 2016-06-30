@@ -394,7 +394,7 @@ module powerbitests {
         public build(chartType: string, interactiveChart: boolean = false): CartesianChart {
             this.element = powerbitests.helpers.testDom(this.viewport.width.toString(), this.viewport.height.toString());
 
-            this.visual = <CartesianChart>powerbi.visuals.visualPluginFactory.create().getPlugin(chartType).create();
+            this.visual = <CartesianChart>powerbi.visuals.plugins[chartType].create();
             this.visual.init({
                 element: this.element,
                 host: this.hostServices,

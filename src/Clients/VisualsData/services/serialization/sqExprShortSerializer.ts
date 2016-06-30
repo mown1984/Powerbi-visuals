@@ -185,12 +185,16 @@ module powerbi.data {
             public visitTransformOutputRoleRef(expr: SQTransformOutputRoleRefExpr): {} {
                 debug.assertValue(expr, 'expr');
 
-                return {
+                let ref = {
                     transformOutputRoleRef: {
-                        role: expr.role,
-                        transform: expr.transform
+                        role: expr.role
                     }
                 };
+                
+                if (expr.transform)
+                    ref.transformOutputRoleRef['transform'] = expr.transform;
+
+                return ref;
             }
 
             public visitDefault(expr: SQExpr): {} {

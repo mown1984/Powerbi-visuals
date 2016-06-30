@@ -89,7 +89,7 @@ module powerbitests {
         let measureColumn: powerbi.DataViewMetadataColumn = { displayName: 'sales', queryName: 'select1', isMeasure: true, type: ValueType.fromPrimitiveTypeAndCategory(PrimitiveType.Double) };
 
         it('Treemap registered capabilities',() => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('treemap').capabilities).toBe(powerbi.visuals.treemapCapabilities);
+            expect(powerbi.visuals.plugins.treemap.capabilities).toBe(powerbi.visuals.treemapCapabilities);
         });
 
         it('Capabilities should include dataViewMappings',() => {
@@ -378,7 +378,7 @@ module powerbitests {
         beforeEach(() => {
             hostServices = powerbitests.mocks.createVisualHostServices();
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('treemap').create();
+            v = powerbi.visuals.plugins.treemap.create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -1335,7 +1335,7 @@ module powerbitests {
         
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('treemap').create();
+            v = powerbi.visuals.plugins.treemap.create();
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -1420,7 +1420,7 @@ module powerbitests {
         beforeEach(() => {
             hostServices = mocks.createVisualHostServices();
             element = powerbitests.helpers.testDom('500', '500');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('treemap').create();
+            v = powerbi.visuals.plugins.treemap.create();
             v.init({
                 element: element,
                 host: hostServices,

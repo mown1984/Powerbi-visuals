@@ -1536,6 +1536,7 @@ declare module jsCommon {
          * @returns The version of Internet Explorer or a 0 (indicating the use of another browser).
          */
         function getInternetExplorerVersion(): number;
+        function isFirefox(): boolean;
     }
 }
 

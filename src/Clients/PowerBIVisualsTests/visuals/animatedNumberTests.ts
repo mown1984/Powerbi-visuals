@@ -33,7 +33,7 @@ module powerbitests {
     describe("AnimatedNumber", () => {
 
         it("AnimatedNumber registered capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("animatedNumber").capabilities).toBe(animatedNumberCapabilities);
+            expect(powerbi.visuals.plugins.animatedNumber.capabilities).toBe(animatedNumberCapabilities);
         });
 
         it("FormatString property should match calculated", () => {

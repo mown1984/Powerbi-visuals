@@ -116,13 +116,20 @@ module powerbitests.customVisuals.helpers {
         return strings.join('');
     }
 
+    export function getRandomWords(
+        wordCount: number,
+        minLength: number,
+        maxLength: number,
+        alphabet: string|string[] = EnglishAlphabetLowerCase + EnglishAlphabetUpperCase): string[] {
+        return _.range(wordCount).map(x => getRandomWord(minLength, maxLength, alphabet));
+    }
+
     export function getRandomText(
         wordCount: number,
         minLength: number,
         maxLength: number,
         alphabet: string|string[] = EnglishAlphabetLowerCase + EnglishAlphabetUpperCase): string {
-        let words = <string[]>_.range(alphabet.length).map(x => getRandomWord(minLength, maxLength, alphabet));
-        return words.join(' ');
+        return getRandomWords(wordCount, minLength, maxLength, alphabet).join(' ');
     }
 
     export function getRandomBoolean(trueProbability: number = 0): boolean {

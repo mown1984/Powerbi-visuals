@@ -21,7 +21,7 @@
 /// <reference path="./visuals/gantt/visual/gantt.ts"/>
 /// <reference path="./visuals/timeline/visual/timeline.ts"/>
 /// <reference path="./visuals/streamGraph/visual/streamGraph.ts"/>
+/// <reference path="./visuals/pulseChart/visual/pulseChart.ts"/>
 /// <reference path="./visuals/lineDotChart/visual/lineDotChart.ts"/>
 /// <reference path="./visuals/sunburst/visual/sunburst.ts"/>
 /// <reference path="./plugins.ts"/>
-/// <reference path="./services/customVisualPluginService.ts"/>

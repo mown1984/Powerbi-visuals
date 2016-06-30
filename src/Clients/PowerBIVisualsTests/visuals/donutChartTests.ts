@@ -39,7 +39,6 @@ module powerbitests {
     import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
     import PixelConverter = jsCommon.PixelConverter;
     import LabelStyle = powerbi.visuals.labelStyle;
-    import visualPluginFactory = powerbi.visuals.visualPluginFactory;
 
     let donutColors = powerbi.visuals.visualStyles.create().colorPalette.dataColors;
 
@@ -112,7 +111,7 @@ module powerbitests {
         let seriesColumnRef = powerbi.data.SQExprBuilder.fieldDef({ schema: 's', entity: 'e', column: 'series' });
 
         it('DonutChart registered capabilities', () => {
-            expect(visualPluginFactory.create().getPlugin('donutChart').capabilities).toBe(powerbi.visuals.donutChartCapabilities);
+            expect(powerbi.visuals.plugins.donutChart.capabilities).toBe(powerbi.visuals.donutChartCapabilities);
         });
 
         it('Capabilities should not suppressDefaultTitle', () => {
@@ -152,7 +151,7 @@ module powerbitests {
                 }
             };
 
-            let plugin = visualPluginFactory.create().getPlugin('donutChart');
+            let plugin = powerbi.visuals.plugins.donutChart;
             expect(powerbi.DataViewAnalysis.supports(dataViewWithSingleRow, plugin.capabilities.dataViewMappings[0], true)).toBe(false);
             expect(powerbi.DataViewAnalysis.supports(dataViewWithTwoRows, plugin.capabilities.dataViewMappings[0])).toBe(true);
         });
@@ -5050,7 +5049,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = visualPluginFactory.create().getPlugin('pieChart').create();
+            v = powerbi.visuals.plugins.pieChart.create();
             v.init({
                 element: element,
                 host: hostServices,
@@ -5239,7 +5238,7 @@ module powerbitests {
 
         beforeEach(() => {
             element = powerbitests.helpers.testDom('500', '500');
-            v = visualPluginFactory.create().getPlugin('donutChart').create();
+            v = powerbi.visuals.plugins.donutChart.create();
 
             v.init({
                 element: element,

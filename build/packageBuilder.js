@@ -2,7 +2,7 @@
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
+ *  All rights reserved.
  *  MIT License
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,14 +11,14 @@
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
+ *
+ *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ *
+ *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
@@ -31,7 +31,7 @@ var gulp = require("gulp"),
     gulpLess = require("gulp-less"),
     insert = require('gulp-insert'),
     template = require('gulp-template'),
-    fs = require('fs'),
+    fs = require('fs-extra'),
     path = require('path'),
     zip = require('gulp-zip'),
     runSequence = require("run-sequence").use(gulp),
@@ -42,8 +42,9 @@ var gulp = require("gulp"),
 var PACKAGE_BUNDLE_NAME = "bundle.json";
 var CUSTOM_VISUALS_PATH = "src/Clients/CustomVisuals/visuals";
 var CUSTOM_VISUALS_PACKAGES_PATH = "lib/packages";
+var CUSTOM_VISUALS_PACKAGES_APPROVED = "approvedVisuals.json";
 var PACKAGE_EXTENSION = ".pbiviz";
-var PACKAGE_SKIPLIST = ["sandDance"];
+var PACKAGE_SKIPLIST = ["sunburst"];
 
 function PackageBuilder(packageName) {
     if (!packageName) {
@@ -54,7 +55,6 @@ function PackageBuilder(packageName) {
     this._path = path.join(CUSTOM_VISUALS_PATH, packageName);
     this._config = this.parseBundleConfig();
 }
-
 
 PackageBuilder.prototype.parseBundleConfig = function () {
     var filepath = path.join(this._path, PACKAGE_BUNDLE_NAME);
@@ -79,9 +79,11 @@ PackageBuilder.prototype.createTasks = function () {
         visualPath = pathModule.join("src/Clients/CustomVisuals/visuals", this._packageName),
         packageResourcesPath = pathModule.join(visualPath, "package/resources"),
         packageName = this._config.package.name,
+        packagFileName = this.getPackageName(),
         guid = this._config.package.guid,
         regexString = new RegExp(this._config.package.name + "[0-9]+", "g"),
         regexSamples = new RegExp("samples", "g"),
+        cssFileName = this._config.package.code.css,
         jsFileName = this._config.package.code.javaScript,
         typeScriptFileName = this._config.package.code.typeScript;
 
@@ -132,7 +134,20 @@ PackageBuilder.prototype.createTasks = function () {
             .pipe(gulp.dest(pathModule.join(visualPath, "package/resources")));
     });
 
-    var cssFileName = this._config.package.code.css;
+    gulp.task(this.getTaskName("addToDrop:copyResources"), function () {
+        return gulp
+            .src([
+                pathModule.join(visualPath, "package/resources", jsFileName),
+                pathModule.join(visualPath, "package/resources", cssFileName),
+                pathModule.join(visualPath, "package/package.json"),
+                pathModule.join(visualPath, "release", packagFileName)
+            ])
+            .pipe(gulpRename({
+                basename: guid
+            }))
+            .pipe(gulp.dest(pathModule.join(CUSTOM_VISUALS_PACKAGES_PATH, guid)));
+    });
+
     var iconFileName = pathModule.join(visualPath, "package/resources", this._config.package.images.icon);
 
     gulp.task(this.getTaskName("buildCSS"), function () {
@@ -161,7 +176,6 @@ PackageBuilder.prototype.createTasks = function () {
         return lessResult;
     });
 
-
     var packageConfig = JSON.stringify(this.getPackageConfig(), null, '\t');
     var packagePath = this.resolvePath("package/package.json");
 
@@ -169,9 +183,7 @@ PackageBuilder.prototype.createTasks = function () {
         fs.writeFile(packagePath, packageConfig, cb);
     });
 
-
     var resourcesPath = this.resolvePath("package/**");
-    var packagFileName = this.getPackageName();
 
     gulp.task(this.getTaskName("generatePackage"), function () {
         return gulp.src(resourcesPath)
@@ -180,16 +192,23 @@ PackageBuilder.prototype.createTasks = function () {
     });
 }
 
-PackageBuilder.prototype.build = function (callback) {
+PackageBuilder.prototype.build = function (addToDrop, callback) {
     this.createTasks();
     var tasks = [
-            "buildTS",
-            "buildCSS",
-            "copyTS",
-            "savePackageConfig",
-            "generatePackage",
-        ]
-        .map(function(task) {
+        "buildTS",
+        "buildCSS",
+        "copyTS",
+        "savePackageConfig",
+        "generatePackage",
+    ];
+
+    if (addToDrop) {
+        tasks.push(
+            "addToDrop:copyResources"
+        );
+    }
+
+    tasks = tasks.map(function(task) {
                 return this.getTaskName(task);
             }.bind(this));
 
@@ -211,6 +230,11 @@ PackageBuilder.prototype.incrementVersion = function () {
 PackageBuilder.prototype.getPackageName = function () {
     var config = this.getVisualConfig()
     return config.guid + PACKAGE_EXTENSION;
+}
+
+PackageBuilder.prototype.getPackageGuid = function () {
+    var config = this.getVisualConfig()
+    return config.guid;
 }
 
 PackageBuilder.prototype.getVersion = function () {
@@ -334,7 +358,7 @@ function getFolders(dir) {
         });
 }
 
-PackageBuilder.buildAllPackages = function (callback) {
+PackageBuilder.buildAllPackages = function (addToDrop, callback) {
     var customVisuals = getFolders(CUSTOM_VISUALS_PATH);
     var tasks = customVisuals
         .filter(function (packageName) {
@@ -344,7 +368,7 @@ PackageBuilder.buildAllPackages = function (callback) {
             var taskName = "package:customVisuals:" + packageName;
             gulp.task(taskName, function (cb) {
                 var pb = new PackageBuilder(packageName);
-                pb.build(cb);
+                pb.build(addToDrop, cb);
             });
             return taskName;
         });
@@ -353,14 +377,23 @@ PackageBuilder.buildAllPackages = function (callback) {
     runSequence.apply(null, tasks);
 }
 
-PackageBuilder.copyPackagesToDrop = function (callback) {
-    gulp.src(path.join(CUSTOM_VISUALS_PATH, "*/release/*.pbiviz"))
-        .pipe(gulpRename({
-            dirname: "./",
-        }))
-        .pipe(gulp.dest(CUSTOM_VISUALS_PACKAGES_PATH));
+PackageBuilder.createApprovedVisualsList = function(callback) {
+    var customVisuals = getFolders(CUSTOM_VISUALS_PATH);
+    var approvedResources = [];
 
-    callback && callback();
+    for(var customVisual of customVisuals) {
+        if(PACKAGE_SKIPLIST.indexOf(customVisual) < 0 ) {
+            var pb = new PackageBuilder(customVisual);
+            approvedResources.push(pb.getPackageGuid());
+        }
+    }
+
+    fs.ensureDir(CUSTOM_VISUALS_PACKAGES_PATH, function(err) {
+        fs.writeFile(path.join(CUSTOM_VISUALS_PACKAGES_PATH,
+                        CUSTOM_VISUALS_PACKAGES_APPROVED),
+                        JSON.stringify({approvedResources: approvedResources}),
+                        callback);
+    });
 }
 
 PackageBuilder.portalExports = "var powerbi;\n\

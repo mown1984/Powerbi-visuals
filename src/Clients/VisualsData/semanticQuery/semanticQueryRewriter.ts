@@ -41,19 +41,22 @@ module powerbi.data {
                 originalFromKeys = originalFrom.keys();
             for (let i = 0, len = originalFromKeys.length; i < len; i++) {
                 let keyName = originalFromKeys[i],
-                    originalEntityRef = originalFrom.entity(keyName),
-                    originalEntityExpr = SQExprBuilder.entity(originalEntityRef.schema, originalEntityRef.entity, keyName),
-                    updatedEntityExpr = <SQEntityExpr>originalEntityExpr.accept(this.exprRewriter);
-                
-                fromContents[keyName] = {
-                    schema: updatedEntityExpr.schema,
-                    entity: updatedEntityExpr.entity,
-                };
+                    originalSource = originalFrom.source(keyName);
+                if (isSQFromEntitySource(originalSource)) {
+                    let originalEntityExpr = SQExprBuilder.entity(originalSource.schema, originalSource.entity, keyName),
+                        updatedEntityExpr = <SQEntityExpr>originalEntityExpr.accept(this.exprRewriter);
+
+                    fromContents[keyName] = new SQFromEntitySource(updatedEntityExpr.schema, updatedEntityExpr.entity);
+                } else if (isSQFromSubquerySource(originalSource))
+                    // Note: Add a visitor when adding the rewrites for subqueries
+                    debug.assert(false, "rewrite subqueries");
+                else
+                    debug.assertFail("unknown source type");
             }
             return new SQFrom(fromContents);
         }
 
-        public rewriteSelect(selectItems: NamedSQExpr[], from: SQFrom): NamedSQExpr[]{
+        public rewriteSelect(selectItems: NamedSQExpr[], from: SQFrom): NamedSQExpr[] {
             debug.assertValue(selectItems, 'selectItems');
             debug.assertValue(from, 'from');
 
@@ -81,7 +84,7 @@ module powerbi.data {
             });
         }
 
-        public rewriteOrderBy(orderByItems: SQSortDefinition[], from: SQFrom): SQSortDefinition[]{
+        public rewriteOrderBy(orderByItems: SQSortDefinition[], from: SQFrom): SQSortDefinition[] {
             debug.assertAnyValue(orderByItems, 'orderByItems');
             debug.assertValue(from, 'from');
 
@@ -93,15 +96,15 @@ module powerbi.data {
                 let item = orderByItems[i],
                     updatedExpr = SQExprRewriterWithSourceRenames.rewrite(item.expr.accept(this.exprRewriter), from);
                 orderBy.push({
-                        direction: item.direction,
-                        expr: updatedExpr,
-                    });
+                    direction: item.direction,
+                    expr: updatedExpr,
+                });
             }
 
             return orderBy;
         }
 
-        public rewriteWhere(whereItems: SQFilter[], from: SQFrom): SQFilter[]{
+        public rewriteWhere(whereItems: SQFilter[], from: SQFrom): SQFilter[] {
             debug.assertAnyValue(whereItems, 'whereItems');
             debug.assertValue(from, 'from');
 

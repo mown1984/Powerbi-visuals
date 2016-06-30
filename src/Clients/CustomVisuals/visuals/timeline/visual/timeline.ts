@@ -800,6 +800,7 @@ module powerbi.visuals.samples {
 
 	export class Timeline implements IVisual {
 		private requiresNoUpdate: boolean = false;
+		private datasetsChangedState: boolean = false;
 		private timelineProperties: TimelineProperties;
 		private timelineFormat: TimelineFormat;
 		private timelineData: TimelineData;
@@ -1044,6 +1045,11 @@ module powerbi.visuals.samples {
 			this.body = d3.select(element.get(0));
 			this.timelineDiv = this.body.append('div');
 			this.svg = this.timelineDiv.append('svg').attr('width', px(options.viewport.width)).classed(this.timelineSelectors.TimelineVisual.class, true);
+
+			this.addWrappElements();
+		}
+
+		private addWrappElements(): void {
 			this.clearCatcher = appendClearCatcher(this.svg);
 
 			this.clearCatcher.data([this])
@@ -1062,20 +1068,22 @@ module powerbi.visuals.samples {
 		}
 
 		private clear(): void {
-			this.selectionManager.clear();
+			if (this.initialized) {
+				this.selectionManager.clear();
 
-			if (this.timelineData) {
-				this.timelineData.selectionStartIndex = 0;
-				this.timelineData.selectionEndIndex = this.timelineData.currentGranularity.getDatePeriods().length - 1;
-				if (_.any(this.timelineData.timelineDatapoints, (x) => x.index % 1 !== 0))
-					this.selectPeriod(this.timelineData.currentGranularity.getType());
-				else {
-					Timeline.updateCursors(this.timelineData, this.timelineProperties.cellWidth);
-					this.fillCells(this.timelineFormat.cellFormat);
-					this.renderCursors(this.timelineData, this.timelineFormat, this.timelineProperties.cellHeight, this.timelineProperties.cellsYPosition);
-					this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
+				if (this.timelineData) {
+					this.timelineData.selectionStartIndex = 0;
+					this.timelineData.selectionEndIndex = this.timelineData.currentGranularity.getDatePeriods().length - 1;
+					if (_.any(this.timelineData.timelineDatapoints, (x) => x.index % 1 !== 0))
+						this.selectPeriod(this.timelineData.currentGranularity.getType());
+					else {
+						Timeline.updateCursors(this.timelineData, this.timelineProperties.cellWidth);
+						this.fillCells(this.timelineFormat.cellFormat);
+						this.renderCursors(this.timelineData, this.timelineFormat, this.timelineProperties.cellHeight, this.timelineProperties.cellsYPosition);
+						this.renderTimeRangeText(this.timelineData, this.timelineFormat.rangeTextFormat);
+					}
+					this.setSelection(this.timelineData);
 				}
-				this.setSelection(this.timelineData);
 			}
 		}
 
@@ -1211,6 +1219,25 @@ module powerbi.visuals.samples {
 			return false;
 		}
 
+		/**
+		 * Note: Public for testability.
+		 */
+		public datasetsChanged(options: VisualUpdateOptions): boolean {
+			if (options && options.dataViews && options.dataViews[0] && options.dataViews[0].categorical &&
+				options.dataViews[0].categorical.categories && options.dataViews[0].categorical.categories[0] &&
+				options.dataViews[0].categorical.categories[0].source &&
+				this.options && this.options.dataViews && this.options.dataViews[0] && this.options.dataViews[0].categorical && 
+				this.options.dataViews[0].categorical.categories && this.options.dataViews[0].categorical.categories[0] && 
+				this.options.dataViews[0].categorical.categories[0].source){
+
+				var newObjects = options.dataViews[0].categorical.categories[0].source.displayName;
+				var oldObjects = this.options.dataViews[0].categorical.categories[0].source.displayName;
+				if (!_.isEqual(newObjects, oldObjects))
+					return true;
+			}
+			return false;
+		}
+
 		private unavailableType(dataViewCategorical: DataViewCategorical): boolean {
 			return !dataViewCategorical.categories
 				|| dataViewCategorical.categories.length !== 1
@@ -1301,22 +1328,27 @@ module powerbi.visuals.samples {
 
 		public update(options: VisualUpdateOptions): void {
 			let visualChange: boolean = this.visualChangeOnly(options);
-			this.requiresNoUpdate = this.requiresNoUpdate && !visualChange;
+			this.datasetsChangedState = this.datasetsChanged(options);
+
+			this.requiresNoUpdate = this.requiresNoUpdate && !this.datasetsChangedState && !visualChange;
 			if (this.requiresNoUpdate) {
 				this.requiresNoUpdate = false;
 				return;
 			}
+
 			this.options = options;
 			if (!options.dataViews || !options.dataViews[0])
 				return;
+
 			let validOptions: boolean = this.createTimelineOptions(options.dataViews[0]);
 			if (!validOptions) {
 				this.clearData();
 				return;
 			}
+
 			this.newGranularity = this.defaultTimelineProperties.DefaultGranularity;
-			if (!visualChange)
-				this.createTimelineData();
+			if (!visualChange) this.createTimelineData();
+
 			this.timelineFormat = Timeline.converter(this.timelineData, this.timelineProperties, this.defaultTimelineProperties, this.timelineGranularityData, options.dataViews[0], this.initialized, this.newGranularity, options.viewport, this.timelineMargins);
 			this.render(this.timelineData, this.timelineFormat, this.timelineProperties, options);
 			this.initialized = true;
@@ -1463,6 +1495,7 @@ module powerbi.visuals.samples {
 			this.rangeText.text("");
 			this.cursorGroupElement.selectAll(this.timelineSelectors.SelectionCursor.selector).remove();
 			this.svg.select(this.timelineSelectors.TimelineSlicer.selector).remove();
+			this.mainGroupElement.selectAll(this.timelineSelectors.textLabel.selector);
 		}
 
 		private static updateCursors(timelineData: TimelineData, cellWidth: number): void {

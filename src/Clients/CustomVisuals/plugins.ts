@@ -133,6 +133,12 @@ module powerbi.visuals.plugins {
         create: () => new samples.StreamGraph()
     };
 
+    export let pulseChart: IVisualPlugin = {
+        name: "pulseChart",
+        capabilities: samples.PulseChart.capabilities,
+        create: () => new samples.PulseChart()
+    };
+
     export var lineDotChart: IVisualPlugin = {
         name: "lineDotChart",
         capabilities: samples.LineDotChart.capabilities,

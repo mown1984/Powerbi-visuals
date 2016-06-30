@@ -44,18 +44,13 @@ module powerbitests {
 
     describe("ComboChart", () => {
         it("registered capabilities", () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("comboChart").capabilities)
-                .toBe(ComboChart.capabilities);
-
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("lineClusteredColumnComboChart").capabilities)
-                .toBe(ComboChart.capabilities);
-
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin("lineStackedColumnComboChart").capabilities)
-                .toBe(ComboChart.capabilities);
+            expect(powerbi.visuals.plugins.comboChart.capabilities).toBe(ComboChart.capabilities);
+            expect(powerbi.visuals.plugins.lineClusteredColumnComboChart.capabilities).toBe(ComboChart.capabilities);
+            expect(powerbi.visuals.plugins.lineStackedColumnComboChart.capabilities).toBe(ComboChart.capabilities);
         });
 
         it('ColumnChart registered customizeQuery', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('comboChart').customizeQuery).toBe(ComboChart.customizeQuery);
+            expect(powerbi.visuals.plugins.comboChart.customizeQuery).toBe(ComboChart.customizeQuery);
         });
 
         it("capabilities should include dataViewMappings", () => {
@@ -358,7 +353,7 @@ module powerbitests {
         });
 
         it('background image', (done) => {
-            let v = powerbi.visuals.visualPluginFactory.create().getPlugin('comboChart').create();
+            let v = powerbi.visuals.plugins.comboChart.create();
             let element = powerbitests.helpers.testDom('400', '300');
             var hostServices = mocks.createVisualHostServices();
             v.init({
@@ -1599,7 +1594,7 @@ module powerbitests {
             dataColors = new powerbi.visuals.DataColorPalette(colors);
             sharedPalette = new powerbi.visuals.SharedColorPalette(dataColors);
             element = powerbitests.helpers.testDom('400', '300');
-            v = powerbi.visuals.visualPluginFactory.create().getPlugin('comboChart').create();
+            v = powerbi.visuals.plugins.comboChart.create();
         });
 
         it('check color for legend title and legend items combo chart', (done) => {

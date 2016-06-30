@@ -324,7 +324,7 @@ module powerbi.visuals {
             }
 
             // For highlight data points we actually want to select the non-highlight data point
-            if (d.identity.highlight) {
+            if (d.identity && d.identity.highlight) {
                 d = _.find(this.selectableDataPoints, (dp: SelectableDataPoint) => !dp.identity.highlight && d.identity.includes(dp.identity, /* ignoreHighlight */ true));
                 debug.assertValue(d, 'Expected to find a non-highlight data point');
             }

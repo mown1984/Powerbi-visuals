@@ -150,8 +150,14 @@ module powerbi.visuals {
             slicerSearch.on(DOMConstants.keyDownEventName, () => {
                 if (d3.event.ctrlKey && KeyUtils.isCtrlDefaultKey(d3.event.keyCode))
                     d3.event.stopPropagation();
-                else if (KeyUtils.isArrowKey(d3.event.keyCode))
+                else if (KeyUtils.isArrowKey(d3.event.keyCode) || d3.event.keyCode === DOMConstants.deleteKeyCode)
                     d3.event.stopPropagation();
+                else if (d3.event.keyCode === DOMConstants.escKeyCode) {
+
+                    // Clear search when ESC key is pressed
+                    selectionHandler.persistSelfFilter(slicerProps.selfFilterPropertyIdentifier, null);
+                    d3.event.stopPropagation();
+                }
                 else if (d3.event.keyCode === DOMConstants.enterKeyCode) {
                     SlicerWebBehavior.startSearch(slicerSearch, selectionHandler, slicerValueHandler);
                     d3.event.stopPropagation();

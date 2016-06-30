@@ -759,6 +759,14 @@ declare module powerbi.data {
         //changed to descriptor to not need to depend on ValueType class
         type?: ValueTypeDescriptor;
         joinPredicate?: JoinPredicateBehavior;
+
+        // Indication from the compiler to the visual that the role item has a scalar key available
+        hasScalarKey?: boolean;
+
+        // Indication from the visual to the query generator that a scalar key should be added to the query
+        // for this role item.  The property indicates where the key should be attached to the objects
+        // collection in the resulting data view.
+        scalarKeyMinProperty?: DataViewObjectPropertyIdentifier;
     }
 }﻿/*
  *  Power BI Visualizations
@@ -1304,10 +1312,13 @@ declare module powerbi {
         supported?: NumberRange;
     }
 
+    export interface ValueRange<T> {
+        min?: T;
+        max?: T;
+    }
+
     /** Defines the acceptable values of a number. */
-    export interface NumberRange {
-        min?: number;
-        max?: number;
+    export interface NumberRange extends ValueRange<number> {
     }
 
     export interface DataViewMappingScriptDefinition {

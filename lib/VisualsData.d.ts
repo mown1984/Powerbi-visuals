@@ -559,12 +559,14 @@ declare module powerbi.data {
     enum EntitySourceType {
         Table = 0,
         Pod = 1,
+        Expression = 2,
     }
     interface EntitySource {
         Name: string;
         EntitySet?: string;
         Entity?: string;
         Schema?: string;
+        Expression?: QueryExpressionContainer;
         Type?: EntitySourceType;
     }
     interface QueryFilter {
@@ -585,6 +587,7 @@ declare module powerbi.data {
         Hierarchy?: QueryHierarchyExpression;
         HierarchyLevel?: QueryHierarchyLevelExpression;
         PropertyVariationSource?: QueryPropertyVariationSourceExpression;
+        Subquery?: QuerySubqueryExpression;
         And?: QueryBinaryExpression;
         Between?: QueryBetweenExpression;
         In?: QueryInExpression;
@@ -653,6 +656,9 @@ declare module powerbi.data {
         Expression: QueryExpressionContainer;
         Name: string;
         Property: string;
+    }
+    interface QuerySubqueryExpression {
+        Query: QueryDefinition;
     }
     interface QueryBinaryExpression {
         Left: QueryExpressionContainer;
@@ -2854,7 +2860,7 @@ declare module powerbi.data {
         function propertyVariationSource(source: SQExpr, name: string, property: string): SQPropertyVariationSourceExpr;
         function hierarchyLevel(source: SQExpr, level: string): SQHierarchyLevelExpr;
         function transformTableRef(source: string): SQTransformTableRefExpr;
-        function transformOutputRoleRef(source: string, transform?: string): SQTransformOutputRoleRefExpr;
+        function transformOutputRoleRef(role: string, transform?: string): SQTransformOutputRoleRefExpr;
         function and(left: SQExpr, right: SQExpr): SQExpr;
         function between(arg: SQExpr, lower: SQExpr, upper: SQExpr): SQBetweenExpr;
         function inExpr(args: SQExpr[], values: SQExpr[][]): SQInExpr;
@@ -2988,6 +2994,58 @@ declare module powerbi.data {
 }
 
 declare module powerbi.data {
+    type SQFromSource = SQFromEntitySource | SQFromSubquerySource;
+    /** Represents an entity reference in SemanticQuery from. */
+    class SQFromEntitySource {
+        schema: string;
+        entity: string;
+        constructor(schema: string, entity: string);
+        accept<T, TArg>(visitor: ISQFromSourceVisitor<T, TArg>, arg: TArg): T;
+        equals(source: SQFromEntitySource): boolean;
+    }
+    /** Represents a subquery reference in SemanticQuery from.
+        for subquery use SQExpr instead of SemanticQuery when we have one for QuerySubqueryExpression
+     */
+    class SQFromSubquerySource {
+        subquery: SemanticQuery;
+        constructor(subquery: SemanticQuery);
+        accept<T, TArg>(visitor: ISQFromSourceVisitor<T, TArg>, arg: TArg): T;
+        equals(source: SQFromSubquerySource): boolean;
+    }
+    /** Represents a SemanticQuery/SemanticFilter from clause. */
+    class SQFrom {
+        private items;
+        constructor(items?: {
+            [name: string]: SQFromSource;
+        });
+        keys(): string[];
+        source(key: string): SQFromSource;
+        ensureSource(source: SQFromSource, desiredVariableName?: string): QueryFromEnsureEntityResult;
+        remove(key: string): void;
+        private getSourceKeyFromItems(source);
+        private addSource(source, desiredVariableName);
+        clone(): SQFrom;
+    }
+    function isSQFromEntitySource(source: SQFromSource): source is SQFromEntitySource;
+    function isSQFromSubquerySource(source: SQFromSource): source is SQFromSubquerySource;
+    interface ISQFromSourceVisitor<T, Targ> {
+        visitEntity(source: SQFromEntitySource, arg: Targ): T;
+        visitSubquery(source: SQFromSubquerySource, arg: Targ): T;
+    }
+    class SQFromSourceCandidateNameVisitor implements ISQFromSourceVisitor<string, void> {
+        /** Converts the entity name into a short reference name.  Follows the Semantic Query convention of a short name. */
+        visitEntity(source: SQFromEntitySource): string;
+        visitSubquery(source: SQFromSubquerySource): string;
+    }
+    class SQFromEntitiesVisitor implements ISQFromSourceVisitor<void, string> {
+        entities: SQEntityExpr[];
+        constructor();
+        visitEntity(source: SQFromEntitySource, key: string): void;
+        visitSubquery(source: SQFromSubquerySource, key: string): void;
+    }
+}
+
+declare module powerbi.data {
     import ArrayNamedItems = jsCommon.ArrayNamedItems;
     interface NamedSQExpr {
         name: string;
@@ -2996,11 +3054,6 @@ declare module powerbi.data {
     interface SQFilter {
         target?: SQExpr[];
         condition: SQExpr;
-    }
-    /** Represents an entity reference in SemanticQuery from. */
-    interface SQFromEntitySource {
-        entity: string;
-        schema: string;
     }
     /** Represents a sort over an expression. */
     interface SQSortDefinition {
@@ -3096,6 +3149,7 @@ declare module powerbi.data {
         private getTransforms();
         private setTransforms(transforms);
         rewrite(exprRewriter: ISQExprVisitor<SQExpr>): SemanticQuery;
+        equals(query: SemanticQuery): boolean;
     }
     /** Represents a semantic filter condition.  Round-trippable with a JSON FilterDefinition.  Instances of this class are immutable. */
     class SemanticFilter implements ISemanticFilter {
@@ -3117,20 +3171,6 @@ declare module powerbi.data {
         static isAnyFilter(filter: SemanticFilter): boolean;
         static isSameFilter(leftFilter: SemanticFilter, rightFilter: SemanticFilter): boolean;
         private static applyFilter(filter, from, where);
-    }
-    /** Represents a SemanticQuery/SemanticFilter from clause. */
-    class SQFrom {
-        private items;
-        constructor(items?: {
-            [name: string]: SQFromEntitySource;
-        });
-        keys(): string[];
-        entity(key: string): SQFromEntitySource;
-        ensureEntity(entity: SQFromEntitySource, desiredVariableName?: string): QueryFromEnsureEntityResult;
-        remove(key: string): void;
-        /** Converts the entity name into a short reference name.  Follows the Semantic Query convention of a short name. */
-        private candidateName(ref);
-        clone(): SQFrom;
     }
     class SQExprRewriterWithSourceRenames extends SQExprRewriter {
         private renames;

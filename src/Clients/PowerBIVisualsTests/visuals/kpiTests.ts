@@ -41,7 +41,7 @@ module powerbitests {
         describe("capabilities", () => {
 
             it("should register capabilities", () => {
-                let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin("kpi");
+                let plugin = powerbi.visuals.plugins.kpi;
 
                 expect(plugin).toBeDefined();
                 expect(plugin.capabilities).toBe(kpiCapabilities);

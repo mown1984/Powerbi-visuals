@@ -69,7 +69,7 @@ module powerbitests {
     describe("scriptVisual Tests", () => {
 
         it('registered capabilities', () => {
-            let pluginCapabilities = powerbi.visuals.visualPluginFactory.create().getPlugin('scriptVisual').capabilities;
+            let pluginCapabilities = powerbi.visuals.plugins.scriptVisual.capabilities;
             expect(pluginCapabilities.toString()).toBe(scriptVisualCapabilities.toString());
         });
 
@@ -91,7 +91,7 @@ module powerbitests {
         });
 
         it('registered capabilities: objects', () => {
-            expect(powerbi.visuals.visualPluginFactory.create().getPlugin('scriptVisual').capabilities.objects).toBeDefined();
+            expect(powerbi.visuals.plugins.scriptVisual.capabilities.objects).toBeDefined();
         });
 
         describe('rendering', () => {

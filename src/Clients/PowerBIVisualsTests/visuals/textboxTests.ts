@@ -47,7 +47,7 @@ module powerbitests {
             });
 
             it("should register capabilities", () => {
-                let plugin = powerbi.visuals.visualPluginFactory.create().getPlugin("textbox");
+                let plugin = powerbi.visuals.plugins.textbox;
 
                 expect(plugin).toBeDefined();
                 expect(plugin.capabilities).toBe(textboxCapabilities);

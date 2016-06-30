@@ -40,12 +40,6 @@ module powerbi.data {
         condition: SQExpr;
     }
 
-    /** Represents an entity reference in SemanticQuery from. */
-    export interface SQFromEntitySource {
-        entity: string;
-        schema: string;
-    }
-
     /** Represents a sort over an expression. */
     export interface SQSortDefinition {
         expr: SQExpr;
@@ -229,7 +223,7 @@ module powerbi.data {
             }
 
             return items;
-        } 
+        }
 
         /** Removes the given expression from the select. */
         public removeSelect(expr: SQExpr): SemanticQuery {
@@ -306,12 +300,12 @@ module powerbi.data {
             return SemanticQuery.createWithTrimmedFrom(from, this.whereItems, this.transformItems, this.orderByItems, selectItems, this.groupByItems);
         }
 
-        private createNamedExpr(currentNames: ArrayNamedItems<NamedSQExpr>, from: SQFrom, expr: SQExpr, exprName?: string): NamedSQExpr{
+        private createNamedExpr(currentNames: ArrayNamedItems<NamedSQExpr>, from: SQFrom, expr: SQExpr, exprName?: string): NamedSQExpr {
             return {
                 name: SQExprUtils.uniqueName(currentNames, expr, exprName),
                 expr: SQExprRewriterWithSourceRenames.rewrite(expr, from)
             };
-        } 
+        }
 
         /** Returns a query equivalent to this, with the specified groupBy items. */
         groupBy(values: NamedSQExpr[]): SemanticQuery;
@@ -533,6 +527,11 @@ module powerbi.data {
 
             return SemanticQuery.createWithTrimmedFrom(from, where, transform, orderBy, select, groupBy);
         }
+
+        public equals(query: SemanticQuery): boolean {
+            // NOTE: Implement deep comparison
+            return this === query;
+        }
     }
 
     /** Represents a semantic filter condition.  Round-trippable with a JSON FilterDefinition.  Instances of this class are immutable. */
@@ -661,7 +660,7 @@ module powerbi.data {
             }
             return false;
         }
-        
+
         private static applyFilter(filter: SemanticFilter, from: SQFrom, where: SQFilter[]): void {
             debug.assertValue(filter, 'filter');
             debug.assertValue(from, 'from');
@@ -681,72 +680,6 @@ module powerbi.data {
 
                 where.push(updatedWhereItem);
             }
-        }
-    }
-
-    /** Represents a SemanticQuery/SemanticFilter from clause. */
-    export class SQFrom {
-        private items: { [name: string]: SQFromEntitySource };
-
-        constructor(items?: { [name: string]: SQFromEntitySource }) {
-            this.items = items || {};
-        }
-
-        public keys(): string[] {
-            return Object.keys(this.items);
-        }
-
-        public entity(key: string): SQFromEntitySource {
-            return this.items[key];
-        }
-
-        public ensureEntity(entity: SQFromEntitySource, desiredVariableName?: string): QueryFromEnsureEntityResult {
-            debug.assertValue(entity, 'entity');
-
-            // 1) Reuse a reference to the entity among the already referenced
-            let keys = this.keys();
-            for (let i = 0, len = keys.length; i < len; i++) {
-                let key = keys[i],
-                    item = this.items[key];
-                if (item && entity.entity === item.entity && entity.schema === item.schema)
-                    return { name: key };
-            }
-
-            // 2) Add a reference to the entity
-            let candidateName = desiredVariableName || this.candidateName(entity.entity),
-                uniqueName: string = candidateName,
-                i = 2;
-            while (this.items[uniqueName]) {
-                uniqueName = candidateName + i++;
-            }
-
-            this.items[uniqueName] = entity;
-            return { name: uniqueName, new: true };
-        }
-
-        public remove(key: string): void {
-            delete this.items[key];
-        }
-
-        /** Converts the entity name into a short reference name.  Follows the Semantic Query convention of a short name. */
-        private candidateName(ref: string): string {
-            debug.assertValue(ref, 'ref');
-
-            let idx = ref.lastIndexOf('.');
-            if (idx >= 0 && (idx !== ref.length - 1))
-                ref = ref.substr(idx + 1);
-
-            return ref.substring(0, 1).toLowerCase();
-        }
-
-        public clone(): SQFrom {
-            // NOTE: consider deprecating this method and instead making QueryFrom be CopyOnWrite (currently we proactively clone).
-            let cloned = new SQFrom();
-
-            // NOTE: we use extend rather than prototypical inheritance on items because we use Object.keys.
-            $.extend(cloned.items, this.items);
-
-            return cloned;
         }
     }
 
@@ -842,15 +775,12 @@ module powerbi.data {
 
         public visitEntity(expr: SQEntityExpr): void {
             // TODO: Renames must take the schema into account, not just entity set name.
-            let existingEntity = this.from.entity(expr.variable);
-            if (existingEntity && existingEntity.schema === expr.schema && existingEntity.entity === expr.entity)
+            let existingEntity = this.from.source(expr.variable);
+            if (existingEntity && isSQFromEntitySource(existingEntity) && existingEntity.schema === expr.schema && existingEntity.entity === expr.entity)
                 return;
 
-            let actualEntity = this.from.ensureEntity(
-                {
-                    schema: expr.schema,
-                    entity: expr.entity,
-                },
+            let actualEntity = this.from.ensureSource(
+                new SQFromEntitySource(expr.schema, expr.entity),
                 expr.variable);
 
             this.renames[expr.entity] = actualEntity.name;

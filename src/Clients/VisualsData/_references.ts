@@ -74,6 +74,7 @@
 /// <reference path="./semanticQuery/sqExpr.ts"/>
 /// <reference path="./semanticQuery/sqExprUtils.ts"/>
 /// <reference path="./semanticQuery/semanticQueryRewriter.ts"/>
+/// <reference path="./semanticQuery/sqFrom.ts"/>
 /// <reference path="./semanticQuery/semanticQuery.ts"/>
 /// <reference path="./semanticQuery/SQFilter.ts"/>
 /// <reference path="./dataView/dataViewBuilder.ts"/>
