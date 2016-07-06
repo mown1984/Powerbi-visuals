@@ -7188,6 +7188,13 @@ declare module powerbi.visuals {
         getDomain(): any[];
         static createFromColors(colors: IColorInfo[]): D3ColorScale;
     }
+    class ThemeManager {
+        private static colorSectorCount;
+        private static defaultBaseColors;
+        private static defaultTheme;
+        static defaultSentimentColors: IColorInfo[];
+        static getDefaultTheme(): IColorInfo[];
+    }
 }
 
 /**
@@ -9100,9 +9107,6 @@ declare module powerbi.visuals {
         hasRowGroups(): boolean;
         private sortIconsEnabled();
     }
-    interface TableConstructorOptions {
-        isTouchEnabled?: boolean;
-    }
     class Table implements IVisual {
         private static preferredLoadMoreThreshold;
         private element;
@@ -9110,7 +9114,6 @@ declare module powerbi.visuals {
         private style;
         private formatter;
         private isInteractive;
-        private isTouchEnabled;
         private getLocalizedString;
         private hostServices;
         private tablixControl;
@@ -9124,7 +9127,7 @@ declare module powerbi.visuals {
         * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
         */
         persistingObjects: boolean;
-        constructor(options?: TableConstructorOptions);
+        constructor();
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(): string[];
         init(options: VisualInitOptions): void;
@@ -9315,9 +9318,6 @@ declare module powerbi.visuals {
          */
         private getSortableHeaderColumnMetadata(item);
     }
-    interface MatrixConstructorOptions {
-        isTouchEnabled?: boolean;
-    }
     class Matrix implements IVisual {
         private static preferredLoadMoreThreshold;
         /**
@@ -9330,7 +9330,6 @@ declare module powerbi.visuals {
         private dataView;
         private formatter;
         private isInteractive;
-        private isTouchEnabled;
         private hostServices;
         private hierarchyNavigator;
         private waitingForData;
@@ -9342,7 +9341,7 @@ declare module powerbi.visuals {
         * Flag indicating that we are persisting objects, so that next onDataChanged can be safely ignored.
         */
         persistingObjects: boolean;
-        constructor(options?: MatrixConstructorOptions);
+        constructor();
         static customizeQuery(options: CustomizeQueryOptions): void;
         static getSortableRoles(): string[];
         init(options: VisualInitOptions): void;
@@ -9899,6 +9898,7 @@ declare module powerbi.visuals {
         dataPointsToEnumerate?: LegendDataPoint[];
         legendData: LegendData;
         hasHighlights: boolean;
+        highlightsOverflow: boolean;
         dataLabelsSettings: VisualDataLabelsSettings;
         legendObjectProperties?: DataViewObject;
         maxValue?: number;
@@ -10078,7 +10078,11 @@ declare module powerbi.visuals.system {
          * if value is set it sets it to true = on / false = off
          */
         private toggleAutoReload(value?);
-        private toggleDataview();
+        /**
+         * Toggles dataViewer
+         * if value is set it sets it to true = on / false = off
+         */
+        private toggleDataview(value?);
         private createRefreshBtn();
         private createAutoRefreshBtn();
         private createDataBtn();

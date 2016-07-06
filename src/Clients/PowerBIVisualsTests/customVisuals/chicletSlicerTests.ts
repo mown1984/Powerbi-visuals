@@ -436,6 +436,15 @@ module powerbitests.customVisuals {
 
             });
 
+            it("search header is visible", done => {
+                dataView.metadata.objects = { general: { selfFilterEnabled: true } };
+                visualBuilder.update(dataView);
+                var searchHeader = visualBuilder.searchHeader[0];
+                expect(searchHeader.getBoundingClientRect().width).toBeGreaterThan(0);
+                expect(searchHeader.getBoundingClientRect().height).toBeGreaterThan(0);
+                done();
+            });
+
             describe('selection', () => {
                 let selectionId = [{
                     "selectior":{"data":[]}
@@ -501,6 +510,10 @@ module powerbitests.customVisuals {
 
         public get mainElement() {
             return this.element.children("div.chicletSlicer");
+        }
+
+        public get searchHeader() {
+            return this.mainElement.children("div.searchHeader");
         }
 
         public get visibleGroup() {

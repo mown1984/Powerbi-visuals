@@ -25,7 +25,6 @@
  */
 
 @import (reference) "../../../../styles/styles.less";
-
 .chicletSlicer {
     font-family: @regularFontFamily;
 
@@ -136,5 +135,48 @@
     }
     .slicerHeader {
         margin-bottom: 5px;
+    }
+
+    .searchHeader {
+        overflow: hidden;
+
+        &.collapsed {
+            display: none;
+        }
+
+        &.show {
+            display: -webkit-box; // IOS 6-, Safari
+            display: flex; // Opera, Firefox
+            justify-content: space-between;
+            -webkit-align-items: center;
+            width: ~"calc(100% - 10px)";
+            border: 1px solid @neutralDarkColor;
+            height: 20px;
+        }
+
+        .search {
+            cursor: pointer;
+            margin: 1px 4px;
+            color: @neutralDarkColor;
+            width: 17px;
+            height: 17px;
+            background-size: cover;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAEjSURBVDhPpZIhc4MwFMffpipx4FLH3OpWx1wtjjkkErmPUJmPMEkdneocyLlsirriOpc46t6SJex6NKR39HcHl8fL/UKSP6ATjk25xjR6QgKAIB8/TJBWR9PXjEs6hnRFMMoLZLzrP+KRFZhHBFeUyUozIjlgkRBMioOph+h+tuN/lVXSVa9I8up/JSu8xPSRIpPDe7nPC/ZfHxDHS5iZ2or3DC/LGvYtgFVyOn1DMHMqJB5483dof0YkQRBBK4SpxhAg5F8orJL5IobPTS2nORA1bLYZLB7kWJ/SEI677Prt9H3nFRNymRNucpK8Na6cnK/SJzZEXyXWDzFK11g2Oh89A8m1kNk5k0wTKIxkukAhJbcJFMBoeJNAcadeOj1TAfgFYPT85BI1AkcAAAAASUVORK5CYII=');
+        }
+
+        input {
+            color: @neutralPrimaryColor;
+            cursor: auto;
+            align-self: center;
+            flex: 1 1 0px;
+            -webkit-flex: 1 1 0px;
+            border-style:none;
+            min-width: 0px;
+            padding: 0; // Override parent style
+
+            &:focus {
+                outline-width: 0;
+            }
+        }
     }
 }

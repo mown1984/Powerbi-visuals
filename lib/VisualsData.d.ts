@@ -1387,6 +1387,12 @@ declare module powerbi {
         function visitGrouped(mapping: DataViewGroupedRoleMapping, visitor: IDataViewMappingVisitor): void;
     }
 }
+declare module powerbi.data {
+    import DataViewMatrix = powerbi.DataViewMatrix;
+    module DataViewMatrixProjectionOrder {
+        function apply(prototype: DataViewMatrix, matrixMapping: DataViewMatrixMapping, projectionOrdering: DataViewProjectionOrdering, context: MatrixTransformationContext): DataViewMatrix;
+    }
+}
 
 declare module powerbi.data {
     interface DataViewNormalizeValuesApplyOptions {
@@ -1641,7 +1647,6 @@ declare module powerbi.data {
     }
     module DataViewTransform {
         function apply(options: DataViewTransformApplyOptions): DataView[];
-        function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void;
         function transformObjects(dataView: DataView, targetDataViewKinds: StandardDataViewKinds, objectDescriptors: DataViewObjectDescriptors, objectDefinitions: DataViewObjectDefinitions, selectTransforms: DataViewSelectTransform[], colorAllocatorFactory: IColorAllocatorFactory): void;
         function createValueColumns(values?: DataViewValueColumn[], valueIdentityFields?: SQExpr[], source?: DataViewMetadataColumn): DataViewValueColumns;
         function setGrouped(values: DataViewValueColumns, groupedResult?: DataViewValueColumnGroup[]): void;
@@ -2146,23 +2151,57 @@ declare module powerbi.data {
     }
 }
 
-declare module powerbi.data.utils {
+declare module powerbi.data {
     module DataViewMatrixUtils {
+        const enum DepthFirstTraversalCallbackResult {
+            stop = 0,
+            continueToChildNodes = 1,
+            skipDescendantNodes = 2,
+        }
+        function isLeafNode(node: DataViewMatrixNode): boolean;
         /**
-         * Invokes the specified callback once per leaf nodes (including root-level leaves and descendent leaves) of the
+         * Invokes the specified callback once per node in the node tree starting from the specified rootNodes in depth-first order.
+         *
+         * If rootNodes is null or undefined or empty, the specified callback will not get invoked.
+         *
+         * The traversalPath parameter in the callback is an ordered set of nodes that form the path from the specified
+         * rootNodes down to the callback node argument itself.  If callback node is one of the specified rootNodes,
+         * then traversalPath will be an array of length 1 containing that very node.
+         *
+         * IMPORTANT: The traversalPath array passed to the callback will be modified after the callback function returns!
+         * If your callback needs to retain a copy of the traversalPath, please clone the array before returning.
+         */
+        function forEachNodeDepthFirst(rootNodes: DataViewMatrixNode | DataViewMatrixNode[], callback: (node: DataViewMatrixNode, traversalPath?: DataViewMatrixNode[]) => DepthFirstTraversalCallbackResult): void;
+        /**
+         * Invokes the specified callback once per leaf node (including root-level leaves and descendent leaves) of the
          * specified rootNodes, with an optional index parameter in the callback that is the 0-based index of the
          * particular leaf node in the context of this forEachLeafNode(...) invocation.
          *
          * If rootNodes is null or undefined or empty, the specified callback will not get invoked.
          *
-         * The treePath parameter in the callback is an ordered set of nodes that form the path from the specified
+         * The traversalPath parameter in the callback is an ordered set of nodes that form the path from the specified
          * rootNodes down to the leafNode argument itself.  If callback leafNode is one of the specified rootNodes,
-         * then treePath will be an array of length 1 containing that very node.
+         * then traversalPath will be an array of length 1 containing that very node.
          *
-         * IMPORTANT: The treePath array passed to the callback will be modified after the callback function returns!
-         * If your callback needs to retain a copy of the treePath, please clone the array before returning.
+         * IMPORTANT: The traversalPath array passed to the callback will be modified after the callback function returns!
+         * If your callback needs to retain a copy of the traversalPath, please clone the array before returning.
          */
-        function forEachLeafNode(rootNodes: DataViewMatrixNode | DataViewMatrixNode[], callback: (leafNode: DataViewMatrixNode, index?: number, treePath?: DataViewMatrixNode[]) => void): void;
+        function forEachLeafNode(rootNodes: DataViewMatrixNode | DataViewMatrixNode[], callback: (leafNode: DataViewMatrixNode, index?: number, traversalPath?: DataViewMatrixNode[]) => void): void;
+        /**
+         * Invokes the specified callback once for each node at the specified targetLevel in the node tree.
+         *
+         * Note: Be aware that in a matrix with multiple column grouping fields and multiple value fields, the DataViewMatrixNode
+         * for the Grand Total column in the column hierarchy can have children nodes where level > (parent.level + 1):
+         *  {
+         *      "level": 0,
+         *      "isSubtotal": true,
+         *      "children": [
+         *          { "level": 2, "isSubtotal": true },
+         *          { "level": 2, "levelSourceIndex": 1, "isSubtotal": true }
+         *      ]
+         *  }
+         */
+        function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void;
         /**
          * Returned an object tree where each node and its children property are inherited from the specified node
          * hierarchy, from the root down to the nodes at the specified deepestLevelToInherit, inclusively.
@@ -2191,7 +2230,7 @@ declare module powerbi.data.utils {
     }
 }
 
-declare module powerbi.data.utils {
+declare module powerbi.data {
     module DataViewMetadataColumnUtils {
         interface MetadataColumnAndProjectionIndex {
             /**
@@ -2207,25 +2246,40 @@ declare module powerbi.data.utils {
             sourceIndex: number;
             /**
             * The index of this.metadataColumn in the projection ordering of a given role.
+            * This property is undefined if the column is not projected.
             */
-            projectionOrderIndex: number;
+            projectionOrderIndex?: number;
         }
         /**
          * Returns true iff the specified metadataColumn is assigned to the specified targetRole.
          */
         function isForRole(metadataColumn: DataViewMetadataColumn, targetRole: string): boolean;
         /**
-         * Joins each column in the specified columnSources with projection ordering index into a wrapper object.
+         * Returns true iff the specified metadataColumn is assigned to any one of the specified targetRoles.
+         */
+        function isForAnyRole(metadataColumn: DataViewMetadataColumn, targetRoles: string[]): boolean;
+        /**
+         * Left-joins each metadata column of the specified target roles in the specified columnSources
+         * with projection ordering index into a wrapper object.
+         *
+         * If a metadata column is for one of the target roles but its select index is not projected, the projectionOrderIndex property
+         * in that MetadataColumnAndProjectionIndex object will be undefined.
+         *
+         * If a metadata column is for one of the target roles and its select index is projected more than once, that metadata column
+         * will be included in multiple MetadataColumnAndProjectionIndex objects, once per occurrence in projection.
+         *
+         * If the specified projectionOrdering does not contain duplicate values, then the returned objects will be in the same order
+         * as their corresponding metadata column object appears in the specified columnSources.
          *
          * Note: In order for this function to reliably calculate the "source index" of a particular column, the
          * specified columnSources must be a non-filtered array of column sources from the DataView, such as
          * the DataViewHierarchyLevel.sources and DataViewMatrix.valueSources array properties.
          *
          * @param columnSources E.g. DataViewHierarchyLevel.sources, DataViewMatrix.valueSources...
-         * @param projection The projection ordering.  It must contain an ordering for the specified role.
-         * @param role The role for getting the relevant projection ordering, as well as for filtering out the irrevalent columns in columnSources.
+         * @param projectionOrdering The select indices in projection ordering.  It should be the ordering for the specified target roles.
+         * @param roles The roles for filtering out the irrevalent columns in columnSources.
          */
-        function joinMetadataColumnsAndProjectionOrder(columnSources: DataViewMetadataColumn[], projection: DataViewProjectionOrdering, role: string): MetadataColumnAndProjectionIndex[];
+        function leftJoinMetadataColumnsAndProjectionOrder(columnSources: DataViewMetadataColumn[], projectionOrdering: number[], roles: string[]): MetadataColumnAndProjectionIndex[];
     }
 }
 
@@ -2310,6 +2364,17 @@ declare module powerbi.data {
         defaultValue?: SQConstantExpr;
         variations?: ArrayNamedItems<ConceptualVariationSource>;
         aggregateBehavior?: ConceptualAggregateBehavior;
+        groupingDefinition?: ConceptualGroupingDefinition;
+    }
+    interface ConceptualGroupingDefinition {
+        binningDefinition?: ConceptualBinningDefinition;
+    }
+    interface ConceptualBinningDefinition {
+        binSize?: ConceptualBinSize;
+    }
+    interface ConceptualBinSize {
+        value: number;
+        unit: ConceptualBinUnit;
     }
     interface ConceptualMeasure {
         kpi?: ConceptualPropertyKpi;
@@ -2330,6 +2395,17 @@ declare module powerbi.data {
     const enum ConceptualQueryableState {
         Queryable = 0,
         Error = 1,
+    }
+    const enum ConceptualBinUnit {
+        Number = 0,
+        Percent = 1,
+        Log = 2,
+        Percentile = 3,
+        Year = 4,
+        Quarter = 5,
+        Month = 6,
+        Week = 7,
+        Day = 8,
     }
     const enum ConceptualMultiplicity {
         ZeroOrOne = 0,

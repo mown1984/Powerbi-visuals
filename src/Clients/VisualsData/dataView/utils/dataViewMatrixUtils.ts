@@ -26,30 +26,40 @@
 
 /// <reference path="../../_references.ts"/>
 
-module powerbi.data.utils {
+module powerbi.data {
     import inherit = Prototype.inherit;
     import inheritSingle = Prototype.inheritSingle;
     import ArrayExtensions = jsCommon.ArrayExtensions;
 
     export module DataViewMatrixUtils {
+        export const enum DepthFirstTraversalCallbackResult
+        {
+            stop = 0, // stop the traversal; default behavior if callback returns undefined or null.
+            continueToChildNodes = 1, // follow the normal course of DFS 
+            skipDescendantNodes = 2, // skip the child nodes of the current visiting node in the callback, and continue onto sibling nodes
+        }
+
+        export function isLeafNode(node: DataViewMatrixNode): boolean {
+            debug.assertValue(node, 'node');
+
+            return _.isEmpty(node.children);
+        }
 
         /**
-         * Invokes the specified callback once per leaf nodes (including root-level leaves and descendent leaves) of the 
-         * specified rootNodes, with an optional index parameter in the callback that is the 0-based index of the 
-         * particular leaf node in the context of this forEachLeafNode(...) invocation.
+         * Invokes the specified callback once per node in the node tree starting from the specified rootNodes in depth-first order.
          *
          * If rootNodes is null or undefined or empty, the specified callback will not get invoked.
          *
-         * The treePath parameter in the callback is an ordered set of nodes that form the path from the specified 
-         * rootNodes down to the leafNode argument itself.  If callback leafNode is one of the specified rootNodes,
-         * then treePath will be an array of length 1 containing that very node.
+         * The traversalPath parameter in the callback is an ordered set of nodes that form the path from the specified 
+         * rootNodes down to the callback node argument itself.  If callback node is one of the specified rootNodes,
+         * then traversalPath will be an array of length 1 containing that very node.
          *
-         * IMPORTANT: The treePath array passed to the callback will be modified after the callback function returns!
-         * If your callback needs to retain a copy of the treePath, please clone the array before returning.
+         * IMPORTANT: The traversalPath array passed to the callback will be modified after the callback function returns!
+         * If your callback needs to retain a copy of the traversalPath, please clone the array before returning.
          */
-        export function forEachLeafNode(
+        export function forEachNodeDepthFirst(
             rootNodes: DataViewMatrixNode | DataViewMatrixNode[],
-            callback: (leafNode: DataViewMatrixNode, index?: number, treePath?: DataViewMatrixNode[]) => void): void {
+            callback: (node: DataViewMatrixNode, traversalPath?: DataViewMatrixNode[]) => DepthFirstTraversalCallbackResult): void {
             debug.assertAnyValue(rootNodes, 'rootNodes');
             debug.assertValue(callback, 'callback');
 
@@ -58,17 +68,90 @@ module powerbi.data.utils {
             // for the fact that all the properties on DataViewMatrixNode are optional...
             if (rootNodes) {
                 if (isNodeArray(rootNodes)) {
-                    let index = 0;
                     for (let rootNode of rootNodes) {
                         if (rootNode) {
-                            index = forEachLeafNodeRecursive(rootNode, index, [], callback);
+                            forEachNodeDepthFirstRecursive(rootNode, [], callback);
                         }
                     }
                 }
                 else {
-                    forEachLeafNodeRecursive(rootNodes, 0, [], callback);
+                    forEachNodeDepthFirstRecursive(rootNodes, [], callback);
                 }
             }
+        }
+
+        /**
+         * @traversalPath an array that contains the path from the specified rootNodes in forEachLeafNode() down to the parent of the argument matrixNode (i.e. treePath does not contain the matrixNode argument yet).
+         */
+        function forEachNodeDepthFirstRecursive(
+            matrixNode: DataViewMatrixNode,
+            traversalPath: DataViewMatrixNode[],
+            callback: (node: DataViewMatrixNode, traversalPath?: DataViewMatrixNode[]) => DepthFirstTraversalCallbackResult): boolean {
+            debug.assertValue(matrixNode, 'matrixNode');
+            debug.assertValue(traversalPath, 'traversalPath');
+            debug.assertValue(callback, 'callback');
+
+            // If traversalPath already contains matrixNode, then either one of the following errors has happened:
+            // 1. the caller code mistakenly added matrixNode to traversalPath, or
+            // 2. the callback modified traversalPath by adding a node to it, or
+            // 3. the matrix hierarchy contains a cyclical node reference.
+            debug.assert(!_.contains(traversalPath, matrixNode),
+                'pre-condition: traversalPath must not already contain matrixNode');
+
+            traversalPath.push(matrixNode);
+
+            let traversalResult = callback(matrixNode, traversalPath);
+            let shouldContinue = !!traversalResult &&
+                traversalResult !== DepthFirstTraversalCallbackResult.stop;
+
+            if (traversalResult === DepthFirstTraversalCallbackResult.continueToChildNodes) {
+                let childNodes = matrixNode.children;
+                if (!_.isEmpty(childNodes)) {
+                    for (let nextChild of childNodes) {
+                        if (nextChild) {
+                            shouldContinue = forEachNodeDepthFirstRecursive(nextChild, traversalPath, callback);
+                            if (!shouldContinue) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            debug.assert(_.last(traversalPath) === matrixNode, 'pre-condition: the callback given to forEachNodeDepthFirst() is not supposed to modify the traversalPath argument array.');
+            traversalPath.pop();
+
+            return shouldContinue;
+        }
+
+        /**
+         * Invokes the specified callback once per leaf node (including root-level leaves and descendent leaves) of the 
+         * specified rootNodes, with an optional index parameter in the callback that is the 0-based index of the 
+         * particular leaf node in the context of this forEachLeafNode(...) invocation.
+         *
+         * If rootNodes is null or undefined or empty, the specified callback will not get invoked.
+         *
+         * The traversalPath parameter in the callback is an ordered set of nodes that form the path from the specified 
+         * rootNodes down to the leafNode argument itself.  If callback leafNode is one of the specified rootNodes,
+         * then traversalPath will be an array of length 1 containing that very node.
+         *
+         * IMPORTANT: The traversalPath array passed to the callback will be modified after the callback function returns!
+         * If your callback needs to retain a copy of the traversalPath, please clone the array before returning.
+         */
+        export function forEachLeafNode(
+            rootNodes: DataViewMatrixNode | DataViewMatrixNode[],
+            callback: (leafNode: DataViewMatrixNode, index?: number, traversalPath?: DataViewMatrixNode[]) => void): void {
+            debug.assertAnyValue(rootNodes, 'rootNodes');
+            debug.assertValue(callback, 'callback');
+
+            let nextLeafNodeIndex = 0;
+            forEachNodeDepthFirst(rootNodes, (node, traversalPath) => {
+                if (isLeafNode(node)) {
+                    callback(node, nextLeafNodeIndex, traversalPath);
+                    nextLeafNodeIndex++;
+                }
+                return DepthFirstTraversalCallbackResult.continueToChildNodes;
+            });
         }
 
         function isNodeArray(nodeOrNodeArray: DataViewMatrixNode | DataViewMatrixNode[]): nodeOrNodeArray is DataViewMatrixNode[] {
@@ -76,46 +159,34 @@ module powerbi.data.utils {
         }
 
         /**
-         * Recursively traverses to each leaf node of the specified matrixNode and invokes callback with each of them.
-         * Returns the index for the next node after the last node that this function invokes callback with.
-         *
-         * @treePath an array that contains the path from the specified rootNodes in forEachLeafNode() down to the parent of the argument matrixNode (i.e. treePath does not contain the matrixNode argument yet).
+         * Invokes the specified callback once for each node at the specified targetLevel in the node tree.
+         * 
+         * Note: Be aware that in a matrix with multiple column grouping fields and multiple value fields, the DataViewMatrixNode
+         * for the Grand Total column in the column hierarchy can have children nodes where level > (parent.level + 1):
+         *  {
+         *      "level": 0,
+         *      "isSubtotal": true,
+         *      "children": [
+         *          { "level": 2, "isSubtotal": true },
+         *          { "level": 2, "levelSourceIndex": 1, "isSubtotal": true }
+         *      ]
+         *  }
          */
-        function forEachLeafNodeRecursive(
-            matrixNode: DataViewMatrixNode,
-            nextIndex: number,
-            treePath: DataViewMatrixNode[],
-            callback: (leafNode: DataViewMatrixNode, index?: number, treePath?: DataViewMatrixNode[]) => void): number {
-            debug.assertValue(matrixNode, 'matrixNode');
-            debug.assertValue(treePath, 'treePath');
+        export function forEachNodeAtLevel(node: DataViewMatrixNode, targetLevel: number, callback: (node: DataViewMatrixNode) => void): void {
+            debug.assertValue(node, 'node');
+            debug.assert(targetLevel >= 0, 'targetLevel >= 0');
             debug.assertValue(callback, 'callback');
 
-            // If treePath already contains matrixNode, then either one of the following errors has happened:
-            // 1. the caller code mistakenly added matrixNode to treePath, or
-            // 2. the callback modified treePath by adding a node to it, or
-            // 3. the matrix hierarchy contains a cyclical node reference.');
-            debug.assert(!_.contains(treePath, matrixNode),
-                'pre-condition: treePath must not already contain matrixNode');
-
-            treePath.push(matrixNode);
-
-            if (_.isEmpty(matrixNode.children)) { // if it is a leaf node
-                callback(matrixNode, nextIndex, treePath);
-                nextIndex++;
-            }
-            else {
-                let children = matrixNode.children;
-                for (let nextChild of children) {
-                    if (nextChild) {
-                        nextIndex = forEachLeafNodeRecursive(nextChild, nextIndex, treePath, callback);
-                    }
-                }
+            if (node.level === targetLevel) {
+                callback(node);
+                return;
             }
 
-            debug.assert(_.last(treePath) === matrixNode, 'pre-condition: the callback given to forEachLeafNode() is not supposed to modify the treePath argument array.');
-            treePath.pop();
-
-            return nextIndex;
+            let children = node.children;
+            if (children && children.length > 0) {
+                for (let i = 0, ilen = children.length; i < ilen; i++)
+                    forEachNodeAtLevel(children[i], targetLevel, callback);
+            }
         }
 
         /**
@@ -200,7 +271,7 @@ module powerbi.data.utils {
                             // it takes at least 2 columns at the same hierarchy level to form a composite group...
                             if (level.sources && (level.sources.length >= 2)) {
 
-                                debug.assert(_.all(level.sources, sourceColumn => sourceColumn.isMeasure === level.sources[0].isMeasure),
+                                debug.assert(_.every(level.sources, sourceColumn => sourceColumn.isMeasure === level.sources[0].isMeasure),
                                     'pre-condition: in a valid DataViewMatrix, the source columns in each of its hierarchy levels must either be all non-measure columns (i.e. a grouping level) or all measure columns (i.e. a measure headers level)');
 
                                 // Measure headers are not group

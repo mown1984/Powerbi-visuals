@@ -201,12 +201,24 @@ module powerbitests {
                 it("calling auto reload should set and clear the interval", () => {
                     expect((<any>debugVisual).autoReloadInterval).toBeFalsy();
 
+                    //test for implicit toggling
                     (<any>debugVisual).toggleAutoReload();
-
                     expect((<any>debugVisual).autoReloadInterval).toBeTruthy();
 
                     (<any>debugVisual).toggleAutoReload();
+                    expect((<any>debugVisual).autoReloadInterval).toBeFalsy();
 
+                    //test for explicitly setting
+                    (<any>debugVisual).toggleAutoReload(false);
+                    expect((<any>debugVisual).autoReloadInterval).toBeFalsy();
+
+                    (<any>debugVisual).toggleAutoReload(true);
+                    expect((<any>debugVisual).autoReloadInterval).toBeTruthy();
+
+                    (<any>debugVisual).toggleAutoReload(true);
+                    expect((<any>debugVisual).autoReloadInterval).toBeTruthy();
+
+                    (<any>debugVisual).toggleAutoReload(false);
                     expect((<any>debugVisual).autoReloadInterval).toBeFalsy();
                 });
 
@@ -238,10 +250,39 @@ module powerbitests {
                 it("should toggle dataViewShowing", () => {
                     expect((<any>debugVisual).dataViewShowing).toBe(false);
 
+                    //test for implicit toggling
                     (<any>debugVisual).toggleDataview();
                     expect((<any>debugVisual).dataViewShowing).toBe(true);
 
                     (<any>debugVisual).toggleDataview();
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+
+                    //test for explicitly setting
+                    (<any>debugVisual).toggleDataview(false);
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+
+                    (<any>debugVisual).toggleDataview(true);
+                    expect((<any>debugVisual).dataViewShowing).toBe(true);
+
+                    (<any>debugVisual).toggleDataview(true);
+                    expect((<any>debugVisual).dataViewShowing).toBe(true);
+
+                    (<any>debugVisual).toggleDataview(false);
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+                });
+
+                it("should hide dataview on manual refresh", () => {
+                    expect((<any>debugVisual).dataViewShowing).toBe(false);
+
+                    (<any>debugVisual).toggleDataview();
+                    expect((<any>debugVisual).dataViewShowing).toBe(true);
+
+                    //auto reload doesn't hide dataview
+                    (<any>debugVisual).reloadAdapter(true);
+                    expect((<any>debugVisual).dataViewShowing).toBe(true);
+
+                    //manual reload does
+                    (<any>debugVisual).reloadAdapter();
                     expect((<any>debugVisual).dataViewShowing).toBe(false);
                 });
 
@@ -393,6 +434,20 @@ module powerbitests {
                         expect(getJSONSpy).toHaveBeenCalled();
                         done();
                     }, (<any>powerbi.visuals.system.DebugVisual).autoReloadPollTime);
+                });
+
+                it("Should only load error message and reset capabilities once", () => {
+                    let buildErrorMessage = spyOn(debugVisual, 'buildErrorMessage');
+
+                    expect(hostSpy.calls.count()).toBe(1);
+
+                    (<any>debugVisual).reloadAdapter();
+                    expect(hostSpy.calls.count()).toBe(2);
+                    expect(buildErrorMessage.calls.count()).toBe(1);
+
+                    (<any>debugVisual).reloadAdapter(true);
+                    expect(hostSpy.calls.count()).toBe(2);
+                    expect(buildErrorMessage.calls.count()).toBe(1);
                 });
             });
         });

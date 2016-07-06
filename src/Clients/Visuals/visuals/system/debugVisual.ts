@@ -71,10 +71,16 @@ module powerbi.visuals.system {
         private dataViewShowing: boolean;
 
         private reloadAdapter(auto: boolean = false): void {
-            if(this.dataViewShowing) return;
-            let developerMode = localStorageService.getData('DEVELOPER_MODE_ENABLED');
+            if (this.dataViewShowing) {
+                if (auto) {
+                    return;
+                }
+                this.toggleDataview(false);
+            }
 
+            let developerMode = localStorageService.getData('DEVELOPER_MODE_ENABLED');
             if (!developerMode) {
+                this.toggleAutoReload(false);
                 let errorMessage = this.buildErrorMessage({
                     message: this.host.getLocalizedString('DebugVisual_Enabled_Error_Message'),
                     moreMessage: this.host.getLocalizedString('DebugVisual_Enabled_Error_Learn_More'),
@@ -98,6 +104,11 @@ module powerbi.visuals.system {
                     return;
                 }
 
+                if (auto && this.lastUpdateStatus === status) {
+                    return;
+                }
+                this.lastUpdateStatus = status;
+
                 if (status === 'error') {
                     let errorMessage = this.buildErrorMessage({
                         message: this.host.getLocalizedString('DebugVisual_Compile_Error_Message'),
@@ -110,11 +121,6 @@ module powerbi.visuals.system {
                     this.setCapabilities({});
                     return;
                 }
-
-                if (auto && this.lastUpdateStatus === status) {
-                    return;
-                }
-                this.lastUpdateStatus = status;
 
                 $.getJSON(baseUrl + 'pbiviz.json').done((pbivizJson) => {
                     debug.assertValue(pbivizJson.capabilities, "DebugVisual - pbiviz capabilities missing");
@@ -153,9 +159,7 @@ module powerbi.visuals.system {
                     });
                 });
             }).fail(() => {
-                if (this.autoReloadInterval) {
-                    this.toggleAutoReload(false);
-                }
+                this.toggleAutoReload(false);
                 let errorMessage = this.buildErrorMessage({
                     message: this.host.getLocalizedString('DebugVisual_Server_Error_Message'),
                     moreMessage: this.host.getLocalizedString('DebugVisual_Server_Error_Learn_More'),
@@ -204,13 +208,19 @@ module powerbi.visuals.system {
             }
         }
 
-        private toggleDataview(): void {
-            this.dataViewShowing = !this.dataViewShowing;
-            this.dataBtn.toggleClass('active', this.dataViewShowing);
-            if(this.dataViewShowing) {
-                this.loadVisual('dataViewer');
-            } else {
+        /**
+         * Toggles dataViewer
+         * if value is set it sets it to true = on / false = off
+         */
+        private toggleDataview(value?: boolean): void {
+            if (this.dataViewShowing && value !== true) {
+                this.dataViewShowing = false;
+                this.dataBtn.toggleClass('active', false);
                 this.reloadAdapter();
+            } else if (!this.dataViewShowing && value !== false) {
+                this.dataViewShowing = true;
+                this.dataBtn.toggleClass('active', true);
+                this.loadVisual('dataViewer');
             }
         }
 

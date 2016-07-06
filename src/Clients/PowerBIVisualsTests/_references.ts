@@ -130,6 +130,7 @@
 /// <reference path="./customVisuals/sampleDataViews/EnhancedScatterChartData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/forceGraphData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/GanttData.ts"/>
+/// <reference path="./customVisuals/sampleDataViews/AsterPlotData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/TimelineData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/valueByAgeData.ts"/>
 /// <reference path="./customVisuals/sampleDataViews/ProductSalesByDateData.ts"/>

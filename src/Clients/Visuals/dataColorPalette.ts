@@ -125,7 +125,7 @@ module powerbi.visuals {
     }
 
     // TODO: When theming support is added, this should be changed into a fully fledged service. For now though we will
-    class ThemeManager {
+    export class ThemeManager {
         private static colorSectorCount = 12;
       
         // declare the Theme code as a private implementation detail inside the DataColorPalette so that the code stays hidden

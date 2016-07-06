@@ -5415,6 +5415,72 @@ declare module _ {
             whereValue: W): string;
     }
 
+    //_.forOwn
+    interface LoDashStatic {
+        /**
+        * Iterates over own enumerable properties of an object, executing the callback for each 
+        * property. The callback is bound to thisArg and invoked with three arguments; (value, key, 
+        * object). Callbacks may exit iteration early by explicitly returning false.
+        * @param object The object to iterate over.
+        * @param callback The function called per iteration.
+        * @param thisArg The this binding of callback.
+        * @return object
+        **/
+        forOwn<T extends {}>(
+            object: Dictionary<T>,
+            callback?: ObjectIterator<T, void>,
+            thisArg?: any): Dictionary<T>;
+
+        /**
+        * @see _.forOwn
+        **/
+        forOwn<T extends {}>(
+            object: T,
+            callback?: ObjectIterator<any, void>,
+            thisArg?: any): T;
+    }
+
+    interface LoDashObjectWrapper<T> {
+        /**
+        * @see _.forOwn
+        **/
+        forOwn<T extends {}>(
+            callback: ObjectIterator<T, void>,
+            thisArg?: any): _.LoDashObjectWrapper<T>;
+    }
+
+    //_.forOwnRight
+    interface LoDashStatic {
+        /**
+        * This method is like _.forOwn except that it iterates over elements of a collection in the 
+        * opposite order.
+        * @param object The object to iterate over.
+        * @param callback The function called per iteration.
+        * @param thisArg The this binding of callback.
+        * @return object
+        **/
+        forOwnRight<T extends {}>(
+            object: Dictionary<T>,
+            callback?: ObjectIterator<T, void>,
+            thisArg?: any): Dictionary<T>;
+        /**
+        * @see _.forOwnRight
+        **/
+        forOwnRight<T extends {}>(
+            object: T,
+            callback?: ObjectIterator<any, void>,
+            thisArg?: any): T;
+    }
+
+    interface LoDashObjectWrapper<T> {
+        /**
+        * @see _.forOwnRight
+        **/
+        forOwnRight<T extends {}>(
+            callback: ObjectIterator<T, void>,
+            thisArg?: any): _.LoDashObjectWrapper<T>;
+    }
+
     //_.functions
     interface LoDashStatic {
         /**

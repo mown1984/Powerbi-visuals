@@ -184,6 +184,20 @@ module powerbi.data {
         defaultValue?: SQConstantExpr;
         variations?: ArrayNamedItems<ConceptualVariationSource>;
         aggregateBehavior?: ConceptualAggregateBehavior;
+        groupingDefinition?: ConceptualGroupingDefinition;
+    }
+        
+    export interface ConceptualGroupingDefinition {
+        binningDefinition?: ConceptualBinningDefinition;
+    }
+
+    export interface ConceptualBinningDefinition {
+        binSize?: ConceptualBinSize;
+    }
+
+    export interface ConceptualBinSize {
+        value: number;
+        unit: ConceptualBinUnit;
     }
 
     export interface ConceptualMeasure {
@@ -208,6 +222,18 @@ module powerbi.data {
     export const enum ConceptualQueryableState {
         Queryable = 0,
         Error = 1,
+    }
+
+    export const enum ConceptualBinUnit {
+        Number = 0,
+        Percent = 1,
+        Log = 2,
+        Percentile = 3,
+        Year = 4,
+        Quarter = 5,
+        Month = 6,
+        Week = 7,
+        Day = 8,
     }
 
     export const enum ConceptualMultiplicity {

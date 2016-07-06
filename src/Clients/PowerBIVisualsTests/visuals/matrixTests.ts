@@ -4369,7 +4369,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("1500", "1500");
             element["visible"] = () => { return true; };
-            v = new Matrix({});
+            v = new Matrix();
             v.init({
                 element: element,
                 host: mocks.createVisualHostServices(),
@@ -5834,7 +5834,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("700", "700");
             element["visible"] = () => { return true; };
-            v = new powerbi.visuals.Matrix({});
+            v = new powerbi.visuals.Matrix();
             v.init({
                 element: element,
                 host: mocks.createVisualHostServices(),

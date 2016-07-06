@@ -35,6 +35,7 @@ require("./dataView/dataRoleHelper.ts");
 require("./dataView/dataViewCategoricalReader.ts");
 require("./dataView/dataViewConcatenateCategoricalColumns.ts");
 require("./dataView/dataViewMappingVisitor.ts");
+require("./dataView/dataViewMatrixProjectionOrder.ts");
 require("./dataView/dataViewNormalizeValues.ts");
 require("./dataView/dataViewObject.ts");
 require("./dataView/dataViewObjectDefinition.ts");

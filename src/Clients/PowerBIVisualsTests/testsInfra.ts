@@ -52,6 +52,7 @@ require("./customVisuals/sampleDataViews/SalesByDayOfWeekData.ts");
 require("./customVisuals/sampleDataViews/EnhancedScatterChartData.ts");
 require("./customVisuals/sampleDataViews/forceGraphData.ts");
 require("./customVisuals/sampleDataViews/GanttData.ts");
+require("./customVisuals/sampleDataViews/AsterPlotData.ts");
 require("./customVisuals/sampleDataViews/TimelineData.ts");
 require("./customVisuals/sampleDataViews/valueByAgeData.ts");
 require("./customVisuals/sampleDataViews/ProductSalesByDateData.ts");

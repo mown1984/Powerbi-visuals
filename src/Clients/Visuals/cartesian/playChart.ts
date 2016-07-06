@@ -30,7 +30,7 @@ module powerbi.visuals {
     import createClassAndSelector = jsCommon.CssConstants.createClassAndSelector;
     import createDataViewScopeIdentity = powerbi.data.createDataViewScopeIdentity;
     import DataViewConcatenateCategoricalColumns = powerbi.data.DataViewConcatenateCategoricalColumns;
-    import DataViewMatrixUtils = powerbi.data.utils.DataViewMatrixUtils;
+    import DataViewMatrixUtils = powerbi.data.DataViewMatrixUtils;
     import SQExpr = powerbi.data.SQExpr;
     import SQExprBuilder = powerbi.data.SQExprBuilder;
 

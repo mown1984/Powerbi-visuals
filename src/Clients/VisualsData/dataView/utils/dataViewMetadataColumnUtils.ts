@@ -26,7 +26,9 @@
 
 /// <reference path="../../_references.ts"/>
 
-module powerbi.data.utils {
+module powerbi.data {
+    import INumberDictionary = jsCommon.INumberDictionary;
+
     export module DataViewMetadataColumnUtils {
 
         export interface MetadataColumnAndProjectionIndex {
@@ -45,8 +47,9 @@ module powerbi.data.utils {
 
             /**
             * The index of this.metadataColumn in the projection ordering of a given role.
+            * This property is undefined if the column is not projected.
             */
-            projectionOrderIndex: number;
+            projectionOrderIndex?: number;
         }
 
         /**
@@ -57,56 +60,101 @@ module powerbi.data.utils {
             debug.assertValue(targetRole, 'targetRole');
 
             let roles = metadataColumn.roles;
-            return roles && roles[targetRole];
+            return !!roles && !!roles[targetRole];
         }
 
         /**
-         * Joins each column in the specified columnSources with projection ordering index into a wrapper object.
+         * Returns true iff the specified metadataColumn is assigned to any one of the specified targetRoles.
+         */
+        export function isForAnyRole(metadataColumn: DataViewMetadataColumn, targetRoles: string[]): boolean {
+            debug.assertValue(metadataColumn, 'metadataColumn');
+            debug.assertValue(targetRoles, 'targetRoles');
+
+            let roles = metadataColumn.roles;
+            return !!roles && _.any(targetRoles, (targetRole) => roles[targetRole]);
+        }
+
+        /**
+         * Left-joins each metadata column of the specified target roles in the specified columnSources 
+         * with projection ordering index into a wrapper object.
+         * 
+         * If a metadata column is for one of the target roles but its select index is not projected, the projectionOrderIndex property
+         * in that MetadataColumnAndProjectionIndex object will be undefined.
+         * 
+         * If a metadata column is for one of the target roles and its select index is projected more than once, that metadata column
+         * will be included in multiple MetadataColumnAndProjectionIndex objects, once per occurrence in projection.
          *
+         * If the specified projectionOrdering does not contain duplicate values, then the returned objects will be in the same order 
+         * as their corresponding metadata column object appears in the specified columnSources.
+         * 
          * Note: In order for this function to reliably calculate the "source index" of a particular column, the 
          * specified columnSources must be a non-filtered array of column sources from the DataView, such as
          * the DataViewHierarchyLevel.sources and DataViewMatrix.valueSources array properties.
          *
          * @param columnSources E.g. DataViewHierarchyLevel.sources, DataViewMatrix.valueSources...
-         * @param projection The projection ordering.  It must contain an ordering for the specified role.
-         * @param role The role for getting the relevant projection ordering, as well as for filtering out the irrevalent columns in columnSources.
+         * @param projectionOrdering The select indices in projection ordering.  It should be the ordering for the specified target roles.
+         * @param roles The roles for filtering out the irrevalent columns in columnSources.
          */
-        export function joinMetadataColumnsAndProjectionOrder(
+        export function leftJoinMetadataColumnsAndProjectionOrder(
             columnSources: DataViewMetadataColumn[],
-            projection: DataViewProjectionOrdering,
-            role: string): MetadataColumnAndProjectionIndex[] {
+            projectionOrdering: number[],
+            roles: string[]): MetadataColumnAndProjectionIndex[] {
             debug.assertAnyValue(columnSources, 'columnSources');
-            debug.assert(_.all(columnSources, column => _.isNumber(column.index)),
+            debug.assert(_.every(columnSources, column => _.isNumber(column.index)),
                 'pre-condition: Every value in columnSources must already have its Select Index property initialized.');
-            debug.assertNonEmpty(projection[role], 'projection[role]');
-            debug.assert(_.all(columnSources, column => !isForRole(column, role) || _.contains(projection[role], column.index)),
-                'pre-condition: The projection order for the specified role must contain the Select Index of every column with matching role in the specified columnSources.');
+            debug.assertValue(projectionOrdering, 'projectionOrdering');
+            debug.assertNonEmpty(roles, 'roles');
 
             let jointResult: MetadataColumnAndProjectionIndex[] = [];
 
             if (!_.isEmpty(columnSources)) {
-                let projectionOrderSelectIndices = projection[role];
-                let selectIndexToProjectionIndexMap: { [selectIndex: number]: number } = {};
-                for (let i = 0, ilen = projectionOrderSelectIndices.length; i < ilen; i++) {
-                    let selectIndex = projectionOrderSelectIndices[i];
-                    selectIndexToProjectionIndexMap[selectIndex] = i;
-                }
+                let selectIndexToProjectionIndicesMap = createSelectIndexToProjectionOrderIndicesMapping(projectionOrdering);
 
                 for (let j = 0, jlen = columnSources.length; j < jlen; j++) {
                     var column = columnSources[j];
-                    if (isForRole(column, role)) {
-                        let jointColumnInfo: MetadataColumnAndProjectionIndex = {
-                            metadataColumn: column,
-                            sourceIndex: j,
-                            projectionOrderIndex: selectIndexToProjectionIndexMap[column.index]
-                        };
+                    if (isForAnyRole(column, roles)) {
+                        let projectionIndices: number[] = selectIndexToProjectionIndicesMap[column.index];
+                        if (!_.isEmpty(projectionIndices)) {
+                            for (let projectionIndex of projectionIndices) {
+                                let jointColumnInfo: MetadataColumnAndProjectionIndex = {
+                                    metadataColumn: column,
+                                    sourceIndex: j,
+                                    projectionOrderIndex: projectionIndex, 
+                                };
 
-                        jointResult.push(jointColumnInfo);
+                                jointResult.push(jointColumnInfo);
+                            }
+                        } else { // if select index not in projection ordering
+                            let jointColumnInfo: MetadataColumnAndProjectionIndex = {
+                                metadataColumn: column,
+                                sourceIndex: j,
+                                projectionOrderIndex: undefined, 
+                            };
+
+                            jointResult.push(jointColumnInfo);
+                        }
                     }
                 }
             }
 
             return jointResult;
+        }
+
+        function createSelectIndexToProjectionOrderIndicesMapping(selectIndicesByProjectionOrder: number[]): INumberDictionary<number[]> {
+            debug.assertValue(selectIndicesByProjectionOrder, 'selectIndicesByProjectionOrder');
+
+            let selectIndexToProjectionIndicesMap: INumberDictionary<number[]> = {};
+            for (let i = 0, ilen = selectIndicesByProjectionOrder.length; i < ilen; i++) {
+                let selectIndex = selectIndicesByProjectionOrder[i];
+                let projectionOrders = selectIndexToProjectionIndicesMap[selectIndex];
+                if (!projectionOrders) {
+                    projectionOrders = selectIndexToProjectionIndicesMap[selectIndex] = [];
+                }
+
+                projectionOrders.push(i);
+            }
+
+            return selectIndexToProjectionIndicesMap;
         }
     }
 } 

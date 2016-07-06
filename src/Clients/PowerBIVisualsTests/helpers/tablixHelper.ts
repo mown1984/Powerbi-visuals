@@ -93,8 +93,8 @@ module powerbitests.tablixHelper {
 
         var v: powerbi.IVisual;
         switch (options.visualType) {
-            case powerbi.visuals.plugins.matrix.name: v = new powerbi.visuals.Matrix({}); break;
-            case powerbi.visuals.plugins.table.name: v = new powerbi.visuals.Table({}); break;
+            case powerbi.visuals.plugins.matrix.name: v = new powerbi.visuals.Matrix(); break;
+            case powerbi.visuals.plugins.table.name: v = new powerbi.visuals.Table(); break;
         }
         v.init({
             element: element,

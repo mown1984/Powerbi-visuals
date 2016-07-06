@@ -182,7 +182,8 @@ module powerbi.visuals {
 
         private onEnterSelection(rowSelection: D3.Selection): void {
             let settings = this.settings;
-            let listItemElement = rowSelection.append('li')
+            let listItemElement = rowSelection.append('ul')
+                .append('li')
                 .classed(Selectors.ItemContainer.class, true);
 
             let labelElement = listItemElement.append('div')

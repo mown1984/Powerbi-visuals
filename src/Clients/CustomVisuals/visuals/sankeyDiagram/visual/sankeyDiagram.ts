@@ -30,6 +30,7 @@ module powerbi.visuals.samples {
     import SelectionManager = utility.SelectionManager;
     import ClassAndSelector = jsCommon.CssConstants.ClassAndSelector;
     import ValueFormatter = powerbi.visuals.valueFormatter;
+    import pixelConverterFromPoint = jsCommon.PixelConverter.fromPoint;
 
     export interface SankeyDiagramConstructorOptions {
         svg?: D3.Selection;
@@ -85,9 +86,15 @@ module powerbi.visuals.samples {
         selectionId: SelectionId;
     }
 
+    export interface SankeyDiagramColumn {
+        countOfNodes: number;
+        sumValueOfNodes: number;
+    }
+
     export interface SankeyDiagramDataView {
         nodes: SankeyDiagramNode[];
         links: SankeyDiagramLink[];
+        columns: SankeyDiagramColumn[];
         settings: SankeyDiagramSettings;
     }
 
@@ -156,8 +163,10 @@ module powerbi.visuals.samples {
 
         private static MinWidthOfLabel: number = 35;
 
-        private static NodePadding: number = 5;
-        private static LabelPadding: number = 4;
+        private static NodeBottomMargin: number = 5; // 5%
+
+        private static NodeMargin: number = 5;
+        private static LabelMargin: number = 4;
 
         public static RoleNames: SankeyDiagramRoleNames = {
             rows: "Source",
@@ -234,11 +243,14 @@ module powerbi.visuals.samples {
         };
 
         private static Properties: SankeyDiagramProperties = SankeyDiagram.getProperties(SankeyDiagram.capabilities);
+
         public static getProperties(capabilities: VisualCapabilities): any {
             var result = {};
-            for(var objectKey in capabilities.objects) {
+
+            for (var objectKey in capabilities.objects) {
                 result[objectKey] = {};
-                for(var propKey in capabilities.objects[objectKey].properties) {
+
+                for (var propKey in capabilities.objects[objectKey].properties) {
                     result[objectKey][propKey] = <DataViewObjectPropertyIdentifier> { 
                         objectName: objectKey,
                         propertyName: propKey
@@ -272,7 +284,9 @@ module powerbi.visuals.samples {
         private get textProperties(): TextProperties{
             return {
                 fontFamily: this.root.style("font-family"),
-                fontSize: jsCommon.PixelConverter.fromPoint(this.dataView ? this.dataView.settings.fontSize : SankeyDiagram.DefaultSettings.fontSize)
+                fontSize: pixelConverterFromPoint(this.dataView
+                    ? this.dataView.settings.fontSize
+                    : SankeyDiagram.DefaultSettings.fontSize)
             };
         }
 
@@ -330,7 +344,7 @@ module powerbi.visuals.samples {
 
             sankeyDiagramDataView = this.converter(dataView);
 
-            this.findNodePosition(sankeyDiagramDataView);
+            this.computePositions(sankeyDiagramDataView);
 
             this.dataView = sankeyDiagramDataView;
 
@@ -352,8 +366,11 @@ module powerbi.visuals.samples {
             this.updateElements(height, width);
         }
 
-        private getPositiveNumber(value: number): number {
-            return value < 0 || isNaN(value) || value === Infinity || value === -Infinity
+        /**
+         * Public for testability.
+         */
+        public getPositiveNumber(value: number): number {
+            return value < 0 || isNaN(value) || value === null || value === Infinity || value === -Infinity
                 ? 0
                 : value;
         }
@@ -378,6 +395,7 @@ module powerbi.visuals.samples {
                 return {
                     nodes: [],
                     links: [],
+                    columns: [],
                     settings: {
                         scale: { x: 1, y: 1 },
                         colourOfLabels: SankeyDiagram.DefaultSettings.colourOfLabels,
@@ -392,7 +410,7 @@ module powerbi.visuals.samples {
                 categories: any[] = dataView.categorical.categories[0].values,
                 secondCategories: any[] = dataView.categorical.categories[1].values,
                 valuesColumn: DataViewValueColumn = dataView.categorical.values && dataView.categorical.values[0],
-                weightValues: number[] = valuesColumn && valuesColumn.values && valuesColumn.values.map(x=> x || 0) || [],
+                weightValues: number[] = [],
                 allCategories: any[],
                 valueFormatterForCategories: IValueFormatter,
                 formatOfWeigth: string = "g",
@@ -403,6 +421,12 @@ module powerbi.visuals.samples {
                 settings: SankeyDiagramSettings,
                 shiftOfColour: number,
                 identities: DataViewScopeIdentity[] = [];
+
+            if (valuesColumn && valuesColumn.values && valuesColumn.values.map) {
+                weightValues = valuesColumn.values.map((x: any)=> {
+                    return x ? x : 0;
+                });
+            }
 
             if (dataView.categorical.categories[0].identity) {
                 identities = identities.concat(dataView.categorical.categories[0].identity);
@@ -562,7 +586,8 @@ module powerbi.visuals.samples {
             return {
                 nodes: nodes,
                 links: links,
-                settings: settings
+                settings: settings,
+                columns: []
             };
         }
 
@@ -664,12 +689,33 @@ module powerbi.visuals.samples {
             };
         }
 
-        private findNodePosition(sankeyDiagramDataView: SankeyDiagramDataView): void {
-            this.findNodePositionByX(sankeyDiagramDataView);
-            this.findNodePositionByY(sankeyDiagramDataView);
+        private computePositions(sankeyDiagramDataView: SankeyDiagramDataView): void {
+            var maxXPosition: number,
+                maxColumn: SankeyDiagramColumn,
+                columns: SankeyDiagramColumn[];
+
+            maxXPosition = this.computeXPositions(sankeyDiagramDataView);
+
+            this.sortNodesByX(sankeyDiagramDataView.nodes);
+
+            columns = this.getColumns(sankeyDiagramDataView.nodes);
+            maxColumn = this.getMaxColumn(columns);
+
+            sankeyDiagramDataView.settings.scale.x = this.getScaleByAxisX(maxXPosition);
+            sankeyDiagramDataView.settings.scale.y = this.getScaleByAxisY(maxColumn.sumValueOfNodes);
+
+            this.scalePositionsByAxes(
+                sankeyDiagramDataView.nodes,
+                columns,
+                sankeyDiagramDataView.settings.scale,
+                this.viewport.height);
+
+            this.computeYPosition(
+                sankeyDiagramDataView.nodes,
+                sankeyDiagramDataView.settings.scale.y);
         }
 
-        private findNodePositionByX(sankeyDiagramDataView: SankeyDiagramDataView): void {
+        private computeXPositions(sankeyDiagramDataView: SankeyDiagramDataView): number {
             var nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
                 nextNodes: SankeyDiagramNode[] = [],
                 previousNodes: SankeyDiagramNode[] = [],
@@ -717,88 +763,115 @@ module powerbi.visuals.samples {
                 }
             }
 
-            sankeyDiagramDataView.settings.scale.x = this.getScaleByAxisX(x - 1);
-
-            this.scaleByAxisX(sankeyDiagramDataView.nodes, sankeyDiagramDataView.settings.scale.x);
-        }
-
-        private scaleByAxisX(nodes: SankeyDiagramNode[], scale: number): void {
-            nodes.forEach((node: SankeyDiagramNode) => {
-                node.x *= scale;
-            });
+            return x - 1;
         }
 
         private getScaleByAxisX(numberOfColumns: number = 1): number {
             return this.getPositiveNumber((this.viewport.width - this.nodeWidth) / numberOfColumns);
         }
 
-        private findNodePositionByY(sankeyDiagramDataView: SankeyDiagramDataView): void {
-            var nodes: SankeyDiagramNode[] = sankeyDiagramDataView.nodes,
-                links: SankeyDiagramLink[] = sankeyDiagramDataView.links,
-                currentX: number = 0,
-                index: number = 0,
-                maxIndex: number = 0,
-                sumValueOfNodes: number = 0,
-                maxValueOfNodes: number = 0;
- 
-            nodes = nodes.sort((firstNode: SankeyDiagramNode, secondNode: SankeyDiagramNode) => {
+        /**
+         * Public for testability.
+         */
+        public sortNodesByX(nodes: SankeyDiagramNode[]): SankeyDiagramNode[] {
+            return nodes.sort((firstNode: SankeyDiagramNode, secondNode: SankeyDiagramNode) => {
                 return firstNode.x - secondNode.x;
             });
+        }
 
-            nodes.forEach((node: SankeyDiagramNode) => {
+        /**
+         * Public for testability.
+         */
+        public getColumns(nodes: SankeyDiagramNode[]): SankeyDiagramColumn[] {
+            var columns: SankeyDiagramColumn[] = [],
+                currentX: number = -Number.MAX_VALUE;
+
+            nodes.forEach((node: SankeyDiagramNode, index: number) => {
                 if (currentX !== node.x) {
-                    index = 0;
+                    columns.push({
+                        countOfNodes: 0,
+                        sumValueOfNodes: 0
+                    });
+
                     currentX = node.x;
-                    sumValueOfNodes = 0;
                 }
 
-                sumValueOfNodes += Math.max(node.inputWeight, node.outputWeight);
-
-                if (sumValueOfNodes > maxValueOfNodes) {
-                    maxValueOfNodes = sumValueOfNodes;
+                if (columns[node.x]) {
+                    columns[node.x].sumValueOfNodes += Math.max(node.inputWeight, node.outputWeight);
+                    columns[node.x].countOfNodes++;
                 }
-
-                if (index > maxIndex) {
-                    maxIndex = index;
-                }
-
-                index++;
             });
 
-            sankeyDiagramDataView.settings.scale.y = this.getScaleByAxisY(maxIndex + 1, maxValueOfNodes);
-
-            this.scaleByAxisY(nodes, links, sankeyDiagramDataView.settings.scale.y);
+            return columns;
         }
 
-        private getScaleByAxisY(numberOfRows: number, sumValueOfNodes: number): number {
-            return this.getPositiveNumber((this.viewport.height - numberOfRows * SankeyDiagram.NodePadding) / sumValueOfNodes);
+        /**
+         * Public for testability.
+         */
+        public getMaxColumn(columns: SankeyDiagramColumn[] = []): SankeyDiagramColumn {
+            var currentMaxColumn: SankeyDiagramColumn = { sumValueOfNodes: 0, countOfNodes: 0 };
+
+            columns.forEach((column: SankeyDiagramColumn) => {
+                if (column && column.sumValueOfNodes > currentMaxColumn.sumValueOfNodes) {
+                    currentMaxColumn = column;
+                }
+            });
+
+            return currentMaxColumn;
         }
 
-        private scaleByAxisY(
+        private getScaleByAxisY(sumValueOfNodes: number): number {
+            return this.getPositiveNumber((this.viewport.height - this.getAvailableSumNodeMarginByY()) / sumValueOfNodes);
+        }
+
+        private getAvailableSumNodeMarginByY(): number {
+            return this.viewport
+                ? this.viewport.height * SankeyDiagram.NodeBottomMargin / 100
+                : 0;
+        }
+
+        private scalePositionsByAxes(
             nodes: SankeyDiagramNode[],
-            links: SankeyDiagramLink[],
-            scale: number): void {
+            columns: SankeyDiagramColumn[],
+            scale: SankeyDiagramScale,
+            viewportHeight: number): void {
 
             var shiftByAxisY: number = 0,
                 currentX: number = 0,
                 index: number = 0;
 
             nodes.forEach((node: SankeyDiagramNode) => {
+                var offsetByY: number = 0,
+                    availableHeight: number = 0;
+
                 if (currentX !== node.x) {
                     currentX = node.x;
                     shiftByAxisY = 0;
                     index = 0;
                 }
 
-                node.height = Math.max(node.inputWeight, node.outputWeight) * scale;
+                if (columns[currentX]) {
+                    availableHeight = viewportHeight - columns[currentX].sumValueOfNodes * scale.y;
 
-                node.y = shiftByAxisY + SankeyDiagram.NodePadding * index;
+                    offsetByY = availableHeight / columns[currentX].countOfNodes;
+                }
+
+                node.x *= scale.x;
+
+                node.height = Math.max(node.inputWeight, node.outputWeight) * scale.y;
+
+                node.y = shiftByAxisY + offsetByY * index;
 
                 shiftByAxisY += node.height;
 
                 index++;
             });
+        }
 
+        // TODO: Update this method to improve a distribution by height.
+        private computeYPosition(
+            nodes: SankeyDiagramNode[],
+            scale: number): void {
             nodes.forEach((node: SankeyDiagramNode) => {
                 node.links = node.links.sort((firstLink: SankeyDiagramLink, secondLink: SankeyDiagramLink) => {
                     var firstY: number,
@@ -847,7 +920,12 @@ module powerbi.visuals.samples {
                 linksSelection: D3.UpdateSelection;
 
             linksSelection = this.renderLinks(sankeyDiagramDataView);
+
+            this.renderTooltip(linksSelection);
+
             nodesSelection = this.renderNodes(sankeyDiagramDataView);
+
+            this.renderTooltip(nodesSelection);
 
             this.bindSelectionHandler(sankeyDiagramDataView, nodesSelection, linksSelection);
         }
@@ -910,7 +988,7 @@ module powerbi.visuals.samples {
                     isNotVisibleLabel = 
                         labelPositionByAxisX >= this.viewport.width ||
                         labelPositionByAxisX <= 0 ||
-                        (node.height + SankeyDiagram.NodePadding) < node.label.height;
+                        (node.height + SankeyDiagram.NodeMargin) < node.label.height;
 
                     if (isNotVisibleLabel || !sankeyDiagramDataView.settings.isVisibleLabels
                         || sankeyDiagramDataView.settings.scale.x / 2 <  SankeyDiagram.MinWidthOfLabel) {
@@ -920,14 +998,14 @@ module powerbi.visuals.samples {
                     return null;
                 })
                 .style("text-anchor", (node: SankeyDiagramNode) => {
-                    if (this.isLabelLargerWidth(node)) {
+                    if (this.isLabelLargerThanWidth(node)) {
                         return "end";
                     }
 
                     return null;
                 })
                 .text((node: SankeyDiagramNode) => {
-                    var maxWidth: number = sankeyDiagramDataView.settings.scale.x / 2 - node.width - SankeyDiagram.NodePadding;
+                    var maxWidth: number = sankeyDiagramDataView.settings.scale.x / 2 - node.width - SankeyDiagram.NodeMargin;
 
                     if (this.getCurrentPositionOfLabelByAxisX(node) > maxWidth) {
                         return TextMeasurementService.getTailoredTextOrDefault({
@@ -944,21 +1022,19 @@ module powerbi.visuals.samples {
                 .exit()
                 .remove();
 
-            this.renderTooltip(nodesSelection);
-
             return nodesSelection;
         }
 
         private getLabelPositionByAxisX(node: SankeyDiagramNode): number {
-            if (this.isLabelLargerWidth(node)) {
-                return -(SankeyDiagram.LabelPadding);
+            if (this.isLabelLargerThanWidth(node)) {
+                return -(SankeyDiagram.LabelMargin);
             }
 
-            return node.width + SankeyDiagram.LabelPadding;
+            return node.width + SankeyDiagram.LabelMargin;
         }
 
-        private isLabelLargerWidth(node: SankeyDiagramNode): boolean {
-            var shiftByAxisX: number = node.x + node.width + SankeyDiagram.LabelPadding;
+        private isLabelLargerThanWidth(node: SankeyDiagramNode): boolean {
+            var shiftByAxisX: number = node.x + node.width + SankeyDiagram.LabelMargin;
 
             return shiftByAxisX + node.label.width > this.viewport.width;
         }
@@ -1000,8 +1076,6 @@ module powerbi.visuals.samples {
             linksSelection
                 .exit()
                 .remove();
-
-            this.renderTooltip(linksSelection);
 
             return linksSelection;
         }

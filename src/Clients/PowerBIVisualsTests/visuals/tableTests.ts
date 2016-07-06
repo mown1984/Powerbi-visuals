@@ -1075,7 +1075,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return true; };
-            v = new Table({});
+            v = new Table();
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -1332,7 +1332,7 @@ module powerbitests {
         });
 
         it("enumerateObjectRepetition - conditional formatting", () => {
-            v = new Table({});
+            v = new Table();
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -1782,7 +1782,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return true; };
-            v = new Table({});
+            v = new Table();
             v.init({
                 element: element,
                 host: powerbitests.mocks.createVisualHostServices(),
@@ -2765,7 +2765,7 @@ module powerbitests {
         beforeEach(() => {
             element = powerbitests.helpers.testDom("500", "500");
             element["visible"] = () => { return false; };
-            v = new powerbi.visuals.Table({});
+            v = new powerbi.visuals.Table();
             v.init({
                 element: element,
                 host: host,

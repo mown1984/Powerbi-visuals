@@ -233,6 +233,7 @@ module powerbi.data {
             debug.assertAnyValue(objectDescriptors, 'objectDescriptors');
             debug.assertValue(roleName, 'roleName');
             debug.assert(columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2, 'columnsSortedByProjectionOrdering && columnsSortedByProjectionOrdering.length >= 2');
+            debug.assert(_.every(columnsSortedByProjectionOrdering, (column) => _.contains(dataView.categorical.categories, column)), 'every column in columnsSortedByProjectionOrdering should exist in dataView.categorical.categories');
 
             let formatStringPropId: DataViewObjectPropertyIdentifier = DataViewObjectDescriptors.findFormatString(objectDescriptors);
             let concatenatedValues: string[] = concatenateValues(columnsSortedByProjectionOrdering, queryRefsToIgnore, formatStringPropId);
@@ -242,12 +243,16 @@ module powerbi.data {
             let transformedDataView = inheritSingle(dataView);
             addToMetadata(transformedDataView, concatenatedColumnMetadata);
 
+            let dataViewCategorical: DataViewCategorical = dataView.categorical;
+
+            // It is correct to take the objects from the first column as it is the one that is being set by DataViewTransform.findSelectedCategoricalColumn(...)
+            let dataViewObjects = dataViewCategorical.categories[0].objects;
+
             let concatenatedCategoryColumn: DataViewCategoryColumn = createConcatenatedCategoryColumn(
                 columnsSortedByProjectionOrdering,
                 concatenatedColumnMetadata,
-                concatenatedValues);
-
-            let dataViewCategorical: DataViewCategorical = dataView.categorical;
+                concatenatedValues,
+                dataViewObjects);
 
             let transformedCategoricalCategories: DataViewCategoryColumn[] = _.difference(dataViewCategorical.categories, columnsSortedByProjectionOrdering);
             transformedCategoricalCategories.push(concatenatedCategoryColumn);
@@ -371,8 +376,12 @@ module powerbi.data {
         function createConcatenatedCategoryColumn(
             sourceColumnsSortedByProjectionOrdering: DataViewCategoryColumn[],
             columnMetadata: DataViewMetadataColumn,
-            concatenatedValues: string[]): DataViewCategoryColumn {
+            concatenatedValues: string[],
+            dataViewObjects: DataViewObjects[]): DataViewCategoryColumn {
             debug.assert(sourceColumnsSortedByProjectionOrdering && sourceColumnsSortedByProjectionOrdering.length >= 2, 'sourceColumnsSortedByProjectionOrdering && sourceColumnsSortedByProjectionOrdering.length >= 2');
+            debug.assertValue(columnMetadata, 'columnMetadata');
+            debug.assertValue(concatenatedValues, 'concatenatedValues');
+            debug.assertAnyValue(dataViewObjects, 'dataViewObjects');
 
             let newCategoryColumn: DataViewCategoryColumn = {
                 source: columnMetadata,
@@ -391,9 +400,8 @@ module powerbi.data {
                 newCategoryColumn.identityFields = firstColumn.identityFields;
             }
 
-            // It is safe to look at the first column as it is the one that is being set by findSelectedCategoricalColumn
-            if (firstColumn.objects) {
-                newCategoryColumn.objects = firstColumn.objects;
+            if (dataViewObjects) {
+                newCategoryColumn.objects = dataViewObjects;
             }
 
             return newCategoryColumn;

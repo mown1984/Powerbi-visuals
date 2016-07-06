@@ -1552,11 +1552,13 @@ module powerbi.visuals.samples {
             this.currentViewport = options.viewport;
 
             if (!dataViews) {
+                this.clearViewport();
                 return;
             }
 
             if ((this.currentViewport.width < MekkoChart.MinWidth) ||
                 (this.currentViewport.height < MekkoChart.MinHeight)) {
+                this.clearViewport();
                 return;
             }
 
@@ -1597,6 +1599,19 @@ module powerbi.visuals.samples {
             }
             this.render(!this.hasSetData || options.suppressAnimations);
             this.hasSetData = this.hasSetData || (dataViews && dataViews.length > 0);
+        }
+
+        /**
+         * Clear the viewport area
+         */
+        private clearViewport(): void {
+            this.legend.reset();
+            this.setVisibility(false);
+        }
+
+        private setVisibility(status: boolean = true): void {
+            this.svg.style('display', status ? 'block' : 'none');
+            this.element.find('.legend').toggle(status);
         }
 
         public static parseLabelSettings(objects: DataViewObjects): VisualDataLabelsSettings {
@@ -2021,6 +2036,8 @@ module powerbi.visuals.samples {
         }
 
         private render(suppressAnimations: boolean): void {
+            this.setVisibility(true);
+
             var legendMargins: IViewport = this.legendMargins = this.legend.getMargins();
             var viewport: IViewport = {
                 height: this.currentViewport.height - legendMargins.height,
@@ -2031,8 +2048,8 @@ module powerbi.visuals.samples {
             var leftRightMarginLimit = this.leftRightMarginLimit = viewport.width * maxMarginFactor;
             this.bottomMarginLimit = Math.max(MekkoChart.MinBottomMargin, Math.ceil(viewport.height * maxMarginFactor));
 
-            var xAxisTextProperties = MekkoChart.getTextProperties(parseFloat(<any>this.categoryAxisProperties['fontSize']) || undefined);
-            var y1AxisTextProperties = MekkoChart.getTextProperties(parseFloat(<any>this.valueAxisProperties['fontSize']) || undefined);
+            var xAxisTextProperties = MekkoChart.getTextProperties(this.categoryAxisProperties && parseFloat(<any>this.categoryAxisProperties['fontSize']) || undefined);
+            var y1AxisTextProperties = MekkoChart.getTextProperties(this.valueAxisProperties && parseFloat(<any>this.valueAxisProperties['fontSize']) || undefined);
 
             var margin = this.margin;
             // reset defaults

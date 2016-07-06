@@ -69,7 +69,7 @@ module powerbi.data {
                         for (let i = 0; i < measureCount; i++)
                             pivotedRowNode.values[index++] = node.values[i];
 
-                        delete node.values;
+                        node.values = undefined;
                     }
 
                     // Create measure headers if there are more than one measures

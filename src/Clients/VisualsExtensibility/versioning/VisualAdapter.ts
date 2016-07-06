@@ -27,21 +27,19 @@
 /// <reference path="../_references.ts"/>
 
 module powerbi.extensibility {
-
     import ITelemetryService = visuals.telemetry.ITelemetryService;
-    import ExtensibilityVisualApiUsage = visuals.telemetry.ExtensibilityVisualApiUsage;
-    import VisualTelemetryInfo = visuals.telemetry.VisualTelemetryInfo;
 
-    //TODO: refactor this into a service
+    // TODO: refactor this into a service
     export let visualApiVersions: VisualVersion[] = [];
 
-    export function createVisualAdapter(visualPlugin: IVisualPlugin, telemetryService?: powerbi.ITelemetryService | ITelemetryService): powerbi.IVisual {
-        let visualTelemetryInfo: VisualTelemetryInfo = {
-            name: visualPlugin.name,
-            apiVersion: visualPlugin.apiVersion,
-            custom: !!visualPlugin.custom
-        };
-        return new VisualSafeExecutionWrapper(new VisualAdapter(visualPlugin, <ITelemetryService>telemetryService), visualTelemetryInfo, <ITelemetryService>telemetryService);
+    export function createVisualAdapter(visualPlugin: IVisualPlugin, telemetryService?: powerbi.ITelemetryService | ITelemetryService): powerbi.IVisual {     
+        let visualAdapter: VisualAdapter = new VisualAdapter(visualPlugin, <ITelemetryService> telemetryService);
+
+        return new VisualSafeExecutionWrapper(
+            visualAdapter, 
+            visualPlugin,
+            <ITelemetryService> telemetryService,
+            visualAdapter.isPluginInError);
     }
 
     export class VisualAdapter implements powerbi.IVisual, WrappedVisual {
@@ -50,6 +48,7 @@ module powerbi.extensibility {
         private plugin: powerbi.IVisualPlugin;
         private telemetryService: ITelemetryService;
         private legacy: boolean;
+        public isPluginInError: boolean = false;
 
         constructor(visualPlugin: IVisualPlugin, telemetryService?: ITelemetryService) {
             this.telemetryService = telemetryService;
@@ -57,7 +56,6 @@ module powerbi.extensibility {
 
             let version = visualPlugin.apiVersion;
             let versionIndex = this.getVersionIndex(version);
-            let isError = false;
 
             if (!version) {
                 this.legacy = true;
@@ -68,19 +66,7 @@ module powerbi.extensibility {
             }
             else {
                 debug.assertFail("The API version '" + version + "' is invalid.");
-                isError = true;
-            }
-
-            if (this.telemetryService && this.plugin.custom) {
-                this.telemetryService.logEvent(
-                    ExtensibilityVisualApiUsage,
-                    this.plugin.name,
-                    this.plugin.apiVersion,
-                    !!this.plugin.custom,
-                    undefined,
-                    isError,
-                    visuals.telemetry.ErrorSource.User
-                );
+                this.isPluginInError = true;
             }
         }
 

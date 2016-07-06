@@ -98,6 +98,26 @@ module powerbitests.customVisuals {
                     done();
                 });
             });
+
+            it("visual is hidden when chart height is less than minimum height", done => {
+                visualBuilder.viewport = { height: 49, width: 350 };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect(visualBuilder.element.children('.legend')).toHaveCss({ display: "none"});
+                    expect(visualBuilder.mainElement[0]).toHaveCss({ display: "none"});
+                    done();
+                });
+            });
+
+            it("visual is hidden when chart width is less than minimum width", done => {
+                visualBuilder.viewport = { height: 350, width: 49 };
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    expect($(visualBuilder.mainElement[0])).toHaveCss({ display: "none" });
+                    expect(visualBuilder.element.children('.legend')).toHaveCss({ display: "none" });
+                    done();
+                });
+            });
         });
 
         describe("MekkoColumnChartData", () => {

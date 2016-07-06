@@ -1247,6 +1247,7 @@ module powerbitests {
                     unCulledDataPoints: [],
                     legendData: { title: "", dataPoints: [], labelColor: powerbi.visuals.LegendData.DefaultLegendLabelFillColor, fontSize: powerbi.visuals.SVGLegend.DefaultFontSizeInPt },
                     hasHighlights: false,
+                    highlightsOverflow: false,
                     dataLabelsSettings: powerbi.visuals.dataLabelUtils.getDefaultDonutLabelSettings(),
                     legendObjectProperties: undefined,
                     maxValue: 0,

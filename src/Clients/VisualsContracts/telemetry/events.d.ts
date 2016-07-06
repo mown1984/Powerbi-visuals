@@ -56,12 +56,5 @@ declare module powerbi.visuals.telemetry {
     	name: string;
     	apiVersion: string;
     	custom: boolean;
-    }
-    
-    export interface VisualTelemetryInfo {
-        name: string;
-        apiVersion: string;
-        custom: boolean;
-    }
-    
+    }    
 }

@@ -292,11 +292,9 @@ module powerbi.visuals {
             behavior: new SlicerWebBehavior(),
         }));
         // Matrix
-        createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix({
-        }));
+        createPlugin(plugins, powerbi.visuals.plugins.matrix, () => new Matrix());
         // Table
-        createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table({
-        }));;
+        createPlugin(plugins, powerbi.visuals.plugins.table, () => new Table());
 
         if (scriptVisualEnabled && scriptVisualAuthoringEnabled) {
             // R visual
@@ -468,13 +466,9 @@ module powerbi.visuals {
                     smallViewPortProperties: this.smallViewPortProperties.DonutSmallViewPortProperties
                 }));
             createPlugin(this.visualPlugins, powerbi.visuals.plugins.matrix,
-                () => new Matrix({
-                    isTouchEnabled: true
-                }));
+                () => new Matrix());
             createPlugin(this.visualPlugins, powerbi.visuals.plugins.table,
-                () => new Table({
-                    isTouchEnabled: true
-                }));
+                () => new Table());
             createPlugin(this.visualPlugins, powerbi.visuals.plugins.map,
                 () => new Map({
                     viewChangeThrottleInterval: mapThrottleInterval,

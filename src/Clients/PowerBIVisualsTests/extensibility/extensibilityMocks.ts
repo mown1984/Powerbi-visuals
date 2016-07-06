@@ -40,6 +40,12 @@ module powerbitests.mocks {
         public enumerateObjectRepetition(): powerbi.VisualObjectRepetition[] { return; }
     }
 
+    export class MockVisualPlugin implements powerbi.IVisualPlugin {
+        constructor() { }
+        public name: string = "MockVisualPlugin";
+        public create(): powerbi.IVisual { return; }
+    }    
+
     export class MockVisualDeprecated implements powerbi.IVisual {
         constructor() { }
         public init(options: powerbi.VisualInitOptions): void { }

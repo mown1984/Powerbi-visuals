@@ -1804,12 +1804,11 @@ module powerbi.visuals {
             let seriesIndex: number;
             let seriesCount: number;
             let currentSeries: LineChartSeries;
-            let densityAtMax: boolean;
 
             for (seriesIndex = 0, seriesCount = series.length; seriesIndex < seriesCount; seriesIndex++) {
                 currentSeries = series[seriesIndex];
                 labelSettings = currentSeries.labelSettings || baseLabelSettings;
-                densityAtMax = labelSettings.labelDensity === "100";
+                let densityAtMax = labelSettings.labelDensity === "100";
                 let maxNumberOfLabels = this.advancedLineLabelsEnabled && !densityAtMax && data.isScalar ? LineChart.getNumberOfLabelsToRender(this.currentViewport.width, _.parseInt(labelSettings.labelDensity)) : currentSeries.data.length;
                 if (!labelSettings.show) {
                     labelDataPointGroups[seriesIndex] = {

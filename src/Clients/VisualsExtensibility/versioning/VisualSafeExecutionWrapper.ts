@@ -29,7 +29,6 @@
 module powerbi.extensibility {
 
     import ITelemetryService = visuals.telemetry.ITelemetryService;
-    import VisualTelemetryInfo = visuals.telemetry.VisualTelemetryInfo;
     import VisualException = powerbi.visuals.telemetry.VisualException;
 
     export class VisualSafeExecutionWrapper implements powerbi.IVisual, WrappedVisual {
@@ -37,14 +36,22 @@ module powerbi.extensibility {
         
         constructor(
             private wrappedVisual: powerbi.IVisual,
-            private visualInfo: VisualTelemetryInfo,
+            private visualPlugin: IVisualPlugin,
             private telemetryService: ITelemetryService,
+            private isPluginInError: boolean,
             private silent?: boolean) 
-        { 
+        {
             if (this.telemetryService) {
                 this.perfLoadEvent = this.telemetryService.startEvent(
-                    powerbi.visuals.telemetry.ExtensibilityVisualApiUsage,
-                    visualInfo.apiVersion, visualInfo.name, visualInfo.custom);
+                    powerbi.visuals.telemetry.VisualApiUsage,
+                    visualPlugin.name,                          // name
+                    visualPlugin.apiVersion,                    // apiVersion
+                    !!visualPlugin.custom,                      // is this a custom visual?
+                    undefined,                                  // parentId
+                    isPluginInError,                            // isError
+                    visuals.telemetry.ErrorSource.User,         // errorSource
+                    undefined                                   // errorCode
+                 );
             }
         }
 
@@ -119,8 +126,9 @@ module powerbi.extensibility {
         }
 
         public isCustomVisual(): boolean {
-            return this.visualInfo.custom;
+            return this.visualPlugin.custom;
         }
+
         private executeSafely(callback: () => any): any {
             try {
                 return callback();
@@ -132,9 +140,9 @@ module powerbi.extensibility {
                 if (this.telemetryService) {
                     this.telemetryService.logEvent(
                         VisualException,
-                        this.visualInfo.name,
-                        this.visualInfo.custom,
-                        this.visualInfo.apiVersion,
+                        this.visualPlugin.name,
+                        !!this.visualPlugin.custom,
+                        this.visualPlugin.apiVersion,
                         exception.fileName,
                         exception.lineNumber,
                         exception.columnNumber,

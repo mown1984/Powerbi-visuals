@@ -153,6 +153,8 @@ declare module powerbi {
 
 declare module powerbi {
     let build: any;
+    let buildDetails: any;
+    let customVisualsUrl: any;
 }
 
 declare module powerbi {

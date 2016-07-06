@@ -30,20 +30,189 @@ module powerbitests.customVisuals {
     import VisualClass = powerbi.visuals.samples.SankeyDiagram;
     import colorAssert = powerbitests.helpers.assertColorsMatch;
     import SankeyDiagramData = powerbitests.customVisuals.sampleDataViews.SankeyDiagramData;
+    import DataView = powerbi.DataView;
+    import SankeyDiagramNode = powerbi.visuals.samples.SankeyDiagramNode;
+    import SankeyDiagramColumn = powerbi.visuals.samples.SankeyDiagramColumn;
+
+    interface SankeyDiagramTestsNode {
+        x: number;
+        inputWeight: number;
+        outputWeight: number;
+    }
 
     describe("SankeyDiagram", () => {
-        let visualBuilder: SankeyDiagramBuilder;
-        let defaultDataViewBuilder: SankeyDiagramData;
-        let dataView: powerbi.DataView;
+        let visualBuilder: SankeyDiagramBuilder,
+            visualInstance: VisualClass,
+            defaultDataViewBuilder: SankeyDiagramData,
+            dataView: DataView;
 
         beforeEach(() => {
-            visualBuilder = new SankeyDiagramBuilder(1000,500);
+            visualBuilder = new SankeyDiagramBuilder(1000, 500);
+
             defaultDataViewBuilder = new SankeyDiagramData();
             dataView = defaultDataViewBuilder.getDataView();
+
+            visualInstance = visualBuilder.instance;
         });
 
         describe('capabilities', () => {
             it("registered capabilities", () => expect(VisualClass.capabilities).toBeDefined());
+        });
+
+        describe("getPositiveNumber", () => {
+            it("positive value should be positive value", () => {
+                let positiveValue: number = 42;
+
+                expect(visualInstance.getPositiveNumber(positiveValue)).toBe(positiveValue);
+            });
+
+            it("negative value should be 0", () => {
+                expect(visualInstance.getPositiveNumber(-42)).toBe(0);
+            });
+
+            it("Infinity value should be 0", () => {
+                expect(visualInstance.getPositiveNumber(Infinity)).toBe(0);
+            });
+
+            it("-Infinity should be 0", () => {
+                expect(visualInstance.getPositiveNumber(-Infinity)).toBe(0);
+            });
+
+            it("NaN should be 0", () => {
+                expect(visualInstance.getPositiveNumber(NaN)).toBe(0);
+            });
+
+            it("undefined should be 0", () => {
+                expect(visualInstance.getPositiveNumber(undefined)).toBe(0);
+            });
+
+            it("null should be 0", () => {
+                expect(visualInstance.getPositiveNumber(null)).toBe(0);
+            });
+        });
+
+        describe("sortNodesByX", () => {
+            it("nodes should be sorted correctly", () => {
+                let xValues: number[],
+                    nodes: SankeyDiagramNode[];
+
+                xValues = [42, 13, 52, 182, 1e25, 1, 6, 3, 4];
+
+                nodes = createNodes(xValues);
+
+                xValues.sort((x: number, y: number) => {
+                    return x - y;
+                });
+
+                visualInstance.sortNodesByX(nodes).forEach((node: SankeyDiagramNode, index: number) => {
+                    expect(node.x).toBe(xValues[index]);
+                });
+            });
+
+            function createNodes(xValues: number[]): SankeyDiagramNode[] {
+                return xValues.map((xValue: number) => {
+                    return {
+                        label: {
+                            name: "",
+                            formattedName: "",
+                            width: 0,
+                            height: 0,
+                            colour: ""
+                        },
+                        inputWeight: 0,
+                        outputWeight: 0,
+                        links: [],
+                        x: xValue,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        colour: "",
+                        selectionIds: [],
+                        tooltipData: []
+                    };
+                });
+            }
+        });
+
+        describe("getColumns", () => {
+            it("getColumns", () => {
+                let testNodes: SankeyDiagramTestsNode[];
+
+                testNodes = [
+                    { x: 0, inputWeight: 15, outputWeight: 14 },
+                    { x: 1, inputWeight: 10, outputWeight: 5 },
+                    { x: 2, inputWeight: 15, outputWeight: 13 },
+                    { x: 3, inputWeight: 42, outputWeight: 28 }
+                ];
+
+                visualInstance.getColumns(createNodes(testNodes)).forEach((column: SankeyDiagramColumn, index: number) => {
+                    expect(column.countOfNodes).toBe(1);
+
+                    expect(column.sumValueOfNodes).toBe(testNodes[index].inputWeight);
+                });
+            });
+
+            function createNodes(testNodes: SankeyDiagramTestsNode[]): SankeyDiagramNode[] {
+                return testNodes.map((testNode: SankeyDiagramTestsNode) => {
+                    return {
+                        label: {
+                            name: "",
+                            formattedName: "",
+                            width: 0,
+                            height: 0,
+                            colour: ""
+                        },
+                        inputWeight: testNode.inputWeight,
+                        outputWeight: testNode.outputWeight,
+                        links: [],
+                        x: testNode.x,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        colour: "",
+                        selectionIds: [],
+                        tooltipData: []
+                    };
+                });
+            }
+        });
+
+        describe("getMaxColumn", () => {
+            it("getMaxColumn should return { sumValueOfNodes: 0, countOfNodes: 0 }", () => {
+                let maxColumn: SankeyDiagramColumn;
+
+                maxColumn = visualInstance.getMaxColumn([]);
+
+                expect(maxColumn.countOfNodes).toBe(0);
+                expect(maxColumn.sumValueOfNodes).toBe(0);
+            });
+
+            it("getMaxColumn should return { sumValueOfNodes: 0, countOfNodes: 0 } when columns are null", () => {
+                let maxColumn: SankeyDiagramColumn;
+
+                maxColumn = visualInstance.getMaxColumn([
+                    undefined,
+                    null
+                ]);
+
+                expect(maxColumn.countOfNodes).toBe(0);
+                expect(maxColumn.sumValueOfNodes).toBe(0);
+            });
+
+            it("getMaxColumn should return max column", () => {
+                let maxColumn: SankeyDiagramColumn,
+                    columns: SankeyDiagramColumn[];
+
+                maxColumn = { countOfNodes: 35, sumValueOfNodes: 21321 };
+
+                columns = [
+                    { countOfNodes: 15, sumValueOfNodes: 500 },
+                    { countOfNodes: 25, sumValueOfNodes: 42 },
+                    maxColumn
+                ];
+
+                expect(visualInstance.getMaxColumn(columns)).toBe(maxColumn);
+            });
         });
 
         describe("DOM tests", () => {
@@ -164,7 +333,7 @@ module powerbitests.customVisuals {
             describe("data rendering", () => {
                 it("negative and zero values", done => {
                     let dataLength: number = defaultDataViewBuilder.valuesSourceDestination.length;
-                    let groupLength = Math.floor(dataLength/3) - 2;
+                    let groupLength = Math.floor(dataLength / 3) - 2;
                     let negativeValues = helpers.getRandomNumbers(groupLength, -100, 0);
                     let zeroValues = _.range(0, groupLength, 0);
                     let positiveValues = helpers.getRandomNumbers(dataLength - negativeValues.length - zeroValues.length, 1, 100);
@@ -188,6 +357,10 @@ module powerbitests.customVisuals {
 
         protected build() {
             return new VisualClass();
+        }
+
+        public get instance(): VisualClass {
+            return this.visual;
         }
 
         public get mainElement(): JQuery {

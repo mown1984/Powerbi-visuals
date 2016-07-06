@@ -63,20 +63,26 @@ module powerbi.visuals {
 
             let viewModel = options.viewModel;
             let previousViewModel = this.previousViewModel;
+            if (viewModel.highlightsOverflow || (previousViewModel && previousViewModel.highlightsOverflow)) {
+                // Do not animate when we have highlights but they are overflowing
+                this.previousViewModel = viewModel;
+                return result;
+            }
+            let previousHasHighlights = previousViewModel && previousViewModel.hasHighlights;
+            let currentHasHighlights = viewModel.hasHighlights;
 
             if (!previousViewModel) {
                 // This is the initial drawing of the chart, which has no special animation for now.
             }
-            else if (viewModel.hasHighlights && !previousViewModel.hasHighlights) {
+            else if (currentHasHighlights && !previousHasHighlights) {
                 result = this.animateNormalToHighlighted(options);
             }
-            else if (viewModel.hasHighlights && previousViewModel.hasHighlights) {
+            else if (currentHasHighlights && previousHasHighlights) {
                 result = this.animateHighlightedToHighlighted(options);
             }
-            else if (!viewModel.hasHighlights && previousViewModel.hasHighlights) {
+            else if (!currentHasHighlights && previousHasHighlights) {
                 result = this.animateHighlightedToNormal(options);
             }
-
             this.previousViewModel = viewModel;
             return result;
         }

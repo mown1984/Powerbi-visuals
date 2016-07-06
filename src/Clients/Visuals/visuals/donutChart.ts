@@ -81,6 +81,7 @@ module powerbi.visuals {
         dataPointsToEnumerate?: LegendDataPoint[];
         legendData: LegendData;
         hasHighlights: boolean;
+        highlightsOverflow: boolean;
         dataLabelsSettings: VisualDataLabelsSettings;
         legendObjectProperties?: DataViewObject;
         maxValue?: number;
@@ -234,6 +235,7 @@ module powerbi.visuals {
                 dataPointsToEnumerate: converter.legendData.dataPoints,
                 legendData: converter.legendData,
                 hasHighlights: converter.hasHighlights,
+                highlightsOverflow: converter.highlightsOverflow,
                 dataLabelsSettings: converter.dataLabelsSettings,
                 legendObjectProperties: converter.legendObjectProperties,
                 maxValue: converter.maxValue,
@@ -263,6 +265,7 @@ module powerbi.visuals {
                 unCulledDataPoints: [],
                 legendData: { title: "", dataPoints: [], fontSize: SVGLegend.DefaultFontSizeInPt },
                 hasHighlights: false,
+                highlightsOverflow: false,
                 dataLabelsSettings: dataLabelUtils.getDefaultDonutLabelSettings(),
                 hasNegativeValues: false,
                 allValuesAreNegative: false,
@@ -352,7 +355,6 @@ module powerbi.visuals {
                 if (!(this.options.interactivity && this.options.interactivity.isInteractiveLegend))
                     this.renderLegend();
             }
-
             else {
                 this.data = {
                     dataPointsToDeprecate: [],
@@ -361,6 +363,7 @@ module powerbi.visuals {
                     unCulledDataPoints: [],
                     legendData: { title: "", dataPoints: [] },
                     hasHighlights: false,
+                    highlightsOverflow: false,
                     dataLabelsSettings: dataLabelUtils.getDefaultDonutLabelSettings(),
                     hasNegativeValues: false,
                     allValuesAreNegative: false,
@@ -1624,7 +1627,6 @@ module powerbi.visuals {
             private reader: IDataViewCategoricalReader;
             private dataViewCategorical: DataViewCategorical;
             private dataViewMetadata: DataViewMetadata;
-            private highlightsOverflow: boolean;
             private total: number;
             private highlightTotal: number;
             private isDynamicSeries: boolean;
@@ -1639,6 +1641,7 @@ module powerbi.visuals {
             private tooltipsEnabled: boolean;
             private tooltipBucketEnabled: boolean;
             public hasHighlights: boolean;
+            public highlightsOverflow: boolean;
             public dataPoints: DonutDataPoint[];
             public legendData: LegendData;
             public dataLabelsSettings: VisualDataLabelsSettings;

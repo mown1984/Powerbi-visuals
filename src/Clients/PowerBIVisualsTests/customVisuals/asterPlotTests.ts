@@ -31,25 +31,28 @@ module powerbitests.customVisuals {
     import IDataColorPalette = powerbi.IDataColorPalette;
     import LegendData = powerbi.visuals.LegendData;
     import VisualClass = powerbi.visuals.samples.AsterPlot;
-    import AsterData = powerbi.visuals.samples.AsterData;
+    import AsterPlotVisualData = powerbi.visuals.samples.AsterPlotData;
     import PixelConverter = jsCommon.PixelConverter;
     import Helpers = powerbitests.helpers;
-    import SalesByDayOfWeekData = powerbitests.customVisuals.sampleDataViews.SalesByDayOfWeekData;
+    import AsterPlotData = powerbitests.customVisuals.sampleDataViews.AsterPlotData;
+    import VisualSettings = powerbi.visuals.samples.AsterPlotSettings;
 
     powerbitests.mocks.setLocale();
 
     describe("AsterPlot", () => {
         let visualBuilder: AsterPlotBuilder;
-        let defaultDataViewBuilder: SalesByDayOfWeekData;
+        let defaultDataViewBuilder: AsterPlotData;
         let dataView: DataView;
+        let settings: VisualSettings;
 
         beforeEach(() => {
             visualBuilder = new AsterPlotBuilder(1000,500);
-            defaultDataViewBuilder = new SalesByDayOfWeekData();
+            defaultDataViewBuilder = new AsterPlotData();
             dataView = defaultDataViewBuilder.getDataView();
+            settings = dataView.metadata.objects = <any>new VisualSettings();
         });
 
-        describe('capabilities', () => {
+        describe("capabilities", () => {
             let asterPlotCapabilities = VisualClass.capabilities;
 
             it("Should register capabilities", () => expect(asterPlotCapabilities).toBeDefined());
@@ -67,10 +70,8 @@ module powerbitests.customVisuals {
 
             it("Should draw right amount of slices", () => {
                 visualBuilder.updateflushAllD3Transitions(dataView);
-
-                expect(visualBuilder.mainElement.find('.asterSlice').length)
+                expect(visualBuilder.mainElement.find(".asterSlice").length)
                     .toBe(dataView.categorical.categories[0].values.length);
-
             });
 
             it("Should add center label", () => {
@@ -89,11 +90,7 @@ module powerbitests.customVisuals {
 
             describe("Data Labels", () => {
                 beforeEach(() => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true
-                        }
-                    };
+                    settings.labels.show = true;
                 });
 
                 it("Default Data Labels", () => {
@@ -124,14 +121,14 @@ module powerbitests.customVisuals {
                     expect(labelsAfterResize.length).toBe(numOfLabels);
                     expect(linesAfterResize.length).toBe(numOfLabels);
 
-                    let firsrtLabelX = $(labels).first().attr('x');
-                    let firsrtLabelY = $(labels).first().attr('y');
-                    //let lastLabelX = $(labels).last().attr('x');
-                    let lastLabelY = $(labels).last().attr('y');
-                    let firsrtResizeLabelX = $(labelsAfterResize).first().attr('x');
-                    let firsrtResizeLabelY = $(labelsAfterResize).first().attr('y');
-                    //let lastResizeLabelX = $(labelsAfterResize).last().attr('x');
-                    let lastResizeLabelY = $(labelsAfterResize).last().attr('y');
+                    let firsrtLabelX = $(labels).first().attr("x");
+                    let firsrtLabelY = $(labels).first().attr("y");
+                    //let lastLabelX = $(labels).last().attr("x");
+                    let lastLabelY = $(labels).last().attr("y");
+                    let firsrtResizeLabelX = $(labelsAfterResize).first().attr("x");
+                    let firsrtResizeLabelY = $(labelsAfterResize).first().attr("y");
+                    //let lastResizeLabelX = $(labelsAfterResize).last().attr("x");
+                    let lastResizeLabelY = $(labelsAfterResize).last().attr("y");
 
                     expect(firsrtLabelX).toBeGreaterThan(parseFloat(firsrtResizeLabelX));
                     expect(firsrtLabelY).toBeLessThan(parseFloat(firsrtResizeLabelY));
@@ -142,12 +139,8 @@ module powerbitests.customVisuals {
                 });
 
                 it("Data Labels - Decimal value for Labels should have a limit to 17", () => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true,
-                            labelPrecision: 5666
-                        }
-                    };
+                    settings.labels.show = true;
+                    settings.labels.precision = 5666;
 
                     visualBuilder.updateflushAllD3Transitions(dataView);
 
@@ -159,26 +152,17 @@ module powerbitests.customVisuals {
                 });
 
                 it("Data Labels - Change font size", () => {
-                    let fontSize: number = 15;
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true,
-                            fontSize: fontSize,
-                        }
-                    };
+                    settings.labels.show = true;
+                    settings.labels.fontSize = 15;
 
                     visualBuilder.updateflushAllD3Transitions(dataView);
 
                     let labels: JQuery = $(".asterPlot .labels .data-labels");
-                    expect(labels.first().css('font-size')).toBe(fontSize * 4 / 3 + 'px');
+                    expect(labels.first().css("font-size")).toBe(settings.labels.fontSize * 4 / 3 + "px");
                 });
 
                 it("Data Labels should be clear when removing data", () => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true
-                        }
-                    };
+                    settings.labels.show = true;
 
                     visualBuilder.updateflushAllD3Transitions(dataView);
 
@@ -196,14 +180,10 @@ module powerbitests.customVisuals {
                 });
 
                 it("Data Labels should be displayed correctly when using dates as category values", () => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true
-                        }
-                    };
+                    settings.labels.show = true;
 
                     // Manually change the category format to be a date format
-                    dataView.categorical.categories[0].source.format = 'dddd\, MMMM %d\, yyyy';
+                    dataView.categorical.categories[0].source.format = "dddd\, MMMM %d\, yyyy";
 
                     visualBuilder.updateflushAllD3Transitions(dataView);
 
@@ -217,11 +197,7 @@ module powerbitests.customVisuals {
                 });
 
                 it("Data Labels should not display lines for null and zero labels", () => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true
-                        }
-                    };
+                    settings.labels.show = true;
 
                     visualBuilder.updateflushAllD3Transitions(dataView);
 
@@ -240,35 +216,37 @@ module powerbitests.customVisuals {
                     // Verify label lines are not generated for null and zero
                     expect(newLines).toBeLessThan(originalLines);
                 });
+
+                it("Data labels shouldn't be displayed for non highlighted values", () => {
+                    settings.labels.show = true;
+                    var length = Math.round(dataView.categorical.values[0].values.length / 2);
+                    dataView.categorical.values.forEach(x =>
+                        x.highlights = x.values.map((v,i) => i >= length ? null : v));
+                    visualBuilder.updateflushAllD3Transitions(dataView);
+                    expect(visualBuilder.lineLabel.length).toEqual(length);
+                });
             });
 
             describe("Default Legend", () => {
                 let defaultLegendLabelFontSize = 8;
 
                 beforeEach(() => {
-                    dataView.metadata.objects = {
-                        legend: {
-                            show: true
-                        }
-                    };
+                    settings.legend.show = true;
                     visualBuilder.update(dataView);
                 });
 
                 it("Should add legend", () => {
-                    let legend: JQuery = $(".legend");
-                    expect(legend).toBeInDOM();
+                    expect(visualBuilder.legendGroup).toBeInDOM();
                 });
 
                 it("Should color legend title & items with default color", () => {
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
-                    let legendTitle: JQuery = legendGroup.children('.legendTitle');
-                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    Helpers.assertColorsMatch(legendTitle.css('fill'), LegendData.DefaultLegendLabelFillColor);
-                    Helpers.assertColorsMatch(firstLegendItemText.css('fill'), LegendData.DefaultLegendLabelFillColor);
+                    let legendTitle: JQuery = visualBuilder.legendGroup.children(".legendTitle");
+                    Helpers.assertColorsMatch(legendTitle.css("fill"), LegendData.DefaultLegendLabelFillColor);
+                    Helpers.assertColorsMatch(visualBuilder.firstLegendText.css("fill"), LegendData.DefaultLegendLabelFillColor);
                 });
 
                 it("Should set legend title & tooltip to text from dataview", () => {
-                    let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
+                    let legendTitle: JQuery = visualBuilder.legendGroup.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
 
                     let legendTitleText: string = Helpers.findElementText(legendTitle);
@@ -280,11 +258,9 @@ module powerbitests.customVisuals {
 
                 it("Should set legend title and legend items with default font size", () => {
                     let defaultLabelFontSizeInPixels: number = Math.round(PixelConverter.fromPointToPixel(defaultLegendLabelFontSize));
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
-                    let legendTitle: JQuery = legendGroup.find('.legendTitle');
-                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    let legendTitleFontSize: number = Math.round(parseFloat(legendTitle.css('font-size')));
-                    let firstLegendItemTextFontSize: number = Math.round(parseFloat(firstLegendItemText.css('font-size')));
+                    let legendTitle: JQuery = visualBuilder.legendGroup.find(".legendTitle");
+                    let legendTitleFontSize: number = Math.round(parseFloat(legendTitle.css("font-size")));
+                    let firstLegendItemTextFontSize: number = Math.round(parseFloat(visualBuilder.firstLegendText.css("font-size")));
 
                     expect(legendTitleFontSize).toBe(defaultLabelFontSizeInPixels);
                     expect(firstLegendItemTextFontSize).toBe(defaultLabelFontSizeInPixels);
@@ -298,23 +274,14 @@ module powerbitests.customVisuals {
                 let customLegendTitle = "My title";
 
                 beforeEach(() => {
-                    dataView.metadata.objects = {
-                        legend: {
+                    settings.legend = {
                             titleText: customLegendTitle,
                             show: true,
                             showTitle: true,
-                            labelColor: { solid: { color: labelColor } },
+                            labelColor: <any>{ solid: { color: labelColor } },
                             fontSize: labelFontSizeInPoints,
                             position: "LeftCenter",
-                        }
-                    };
-                });
-
-                it("Should add legend", () => {
-                    visualBuilder.update(dataView);
-
-                    let legend: JQuery = $(".legend");
-                    expect(legend).toBeInDOM();
+                        };
                 });
 
                 it("Should add right amount of legend items", () => {
@@ -327,7 +294,7 @@ module powerbitests.customVisuals {
                 it("Should set legend title & tooltip to user configured text", () => {
                     visualBuilder.update(dataView);
 
-                    let legendTitle: JQuery = visualBuilder.LegendGroupElement.children(".legendTitle");
+                    let legendTitle: JQuery = visualBuilder.legendGroup.children(".legendTitle");
                     expect(legendTitle.length).toEqual(1);
 
                     let legendTitleText: string = Helpers.findElementText(legendTitle);
@@ -336,32 +303,50 @@ module powerbitests.customVisuals {
                     expect(legendTitleTitle).toEqual(customLegendTitle);
                 });
 
-                it('Should color legend title & items with user configured color', () => {
+                it("Should color legend title & items with user configured color", () => {
                     visualBuilder.update(dataView);
-
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
-                    let legendTitle: JQuery = legendGroup.children('.legendTitle');
-                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    Helpers.assertColorsMatch(legendTitle.css('fill'), labelColor);
-                    Helpers.assertColorsMatch(firstLegendItemText.css('fill'), labelColor);
+                    let legendTitle: JQuery = visualBuilder.legendGroup.children(".legendTitle");
+                    Helpers.assertColorsMatch(legendTitle.css("fill"), labelColor);
+                    Helpers.assertColorsMatch(visualBuilder.firstLegendText.css("fill"), labelColor);
                 });
 
-                it('Should set legend title and legend items with user configured font size', () => {
+                it("Should set legend title and legend items with user configured font size", () => {
                     visualBuilder.update(dataView);
 
-                    let legendGroup: JQuery = visualBuilder.LegendGroupElement;
-                    let legendTitle: JQuery = legendGroup.find('.legendTitle');
-                    let firstLegendItemText: JQuery = getLegendTextOfFirstLegendItem(legendGroup);
-                    let legendTitleFontSize = Math.round(parseFloat(legendTitle.css('font-size')));
-                    let firstLegendItemTextFontSize = Math.round(parseFloat(firstLegendItemText.css('font-size')));
+                    let legendTitle: JQuery = visualBuilder.legendGroup.find(".legendTitle");
+                    let legendTitleFontSize = Math.round(parseFloat(legendTitle.css("font-size")));
+                    let firstLegendItemTextFontSize = Math.round(parseFloat(visualBuilder.firstLegendText.css("font-size")));
 
                     expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
                     expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
                 });
+
+                it("Should set legend title and legend items with user configured font size", () => {
+                    visualBuilder.update(dataView);
+
+                    let legendTitle: JQuery = visualBuilder.legendGroup.find(".legendTitle");
+                    let legendTitleFontSize = Math.round(parseFloat(legendTitle.css("font-size")));
+                    let firstLegendItemTextFontSize = Math.round(parseFloat(visualBuilder.firstLegendText.css("font-size")));
+
+                    expect(legendTitleFontSize).toBe(labelFonSizeInPixels);
+                    expect(firstLegendItemTextFontSize).toBe(labelFonSizeInPixels);
+                });
+
+                it("if required fields are missing then visual shouldn't be rendered", () => {
+                    dataView = defaultDataViewBuilder.getDataView([AsterPlotData.ColumnCategory]);
+                    visualBuilder.update(dataView);
+                    expect(visualBuilder.lineLabel[0]).not.toBeInDOM();
+                    expect(visualBuilder.dataLabels[0]).not.toBeInDOM();
+
+                    dataView = defaultDataViewBuilder.getDataView([AsterPlotData.ColumnY1]);
+                    visualBuilder.update(dataView);
+                    expect(visualBuilder.lineLabel[0]).not.toBeInDOM();
+                    expect(visualBuilder.dataLabels[0]).not.toBeInDOM();
+                });
             });
 
             describe("Converter", () => {
-                let asterData: AsterData;
+                let asterData: AsterPlotVisualData;
 
                 it("Should convert all data when there is a limit to colors", () => {
 
@@ -382,10 +367,6 @@ module powerbitests.customVisuals {
         });
     });
 
-    function getLegendTextOfFirstLegendItem(legendGroup: JQuery) {
-        return legendGroup.children('.legendItem').first().children('.legendText');
-    }
-
     class AsterPlotBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
             super(width, height, isMinervaVisualPlugin);
@@ -395,8 +376,26 @@ module powerbitests.customVisuals {
             return this.element.children("svg");
         }
 
-        public get LegendGroupElement(): JQuery {
-            return this.element.children(".legend").children('#legendGroup');
+        public get legendGroup(): JQuery {
+            return this.element.children(".legend").children("#legendGroup");
+        }
+
+        public get firstLegendText(): JQuery {
+            return this.legendGroup.children(".legendItem").first().children(".legendText");
+        }
+
+        public get dataLabels(): JQuery {
+            return this.mainElement
+                .children("g")
+                .children("g.labels")
+                .children("text.data-labels");
+        }
+
+        public get lineLabel(): JQuery {
+            return this.mainElement
+                .children("g")
+                .children("g.lines")
+                .children("polyline.line-label");
         }
 
         protected build() {
@@ -407,8 +406,8 @@ module powerbitests.customVisuals {
             }
         }
 
-        public converter(dataView: DataView, colors: IDataColorPalette): AsterData {
-            return this.visual.converter(dataView, colors);
+        public converter(dataView: DataView, colors: IDataColorPalette): AsterPlotVisualData {
+            return VisualClass.converter(dataView, colors);
         }
     }
 }

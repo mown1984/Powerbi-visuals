@@ -28,4 +28,6 @@
 
 module powerbi {
     export declare let build;
+    export declare let buildDetails;
+    export declare let customVisualsUrl;
 } 

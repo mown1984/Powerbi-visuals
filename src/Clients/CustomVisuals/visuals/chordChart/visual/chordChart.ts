@@ -48,6 +48,10 @@ module powerbi.visuals.samples {
         data: ChordArcLabelData;
     }
 
+    export interface ChordTicksArcDescriptor extends D3.Layout.ArcDescriptor {
+        angleLabels: { angle: number, label: string }[];
+    }
+
     export interface ChordArcLabelData extends LabelEnabledDataPoint, SelectableDataPoint {
         label: string;
         labelColor: string;
@@ -331,7 +335,7 @@ module powerbi.visuals.samples {
                 }, {
                     name: ChordChartColumns.Roles.Y,
                     kind: VisualDataRoleKind.Measure,
-                    displayName: data.createDisplayNameGetter('Role_DisplayName_Values'),
+                    displayName: "Values",
                 }
             ],
             dataViewMappings: [{
@@ -408,6 +412,7 @@ module powerbi.visuals.samples {
         private static LabelMargin = 10;
         private static DefaultMargin: IMargin = { left: 10, right: 10, top: 10, bottom: 10 };
         private static VisualClassName = 'chordChart';
+        private static TicksFontSize = 12;
 
         private static sliceClass: ClassAndSelector = {
             class: 'slice',
@@ -603,7 +608,7 @@ module powerbi.visuals.samples {
                         }
                     }
 
-                    dataMatrix[i].push(elementValue);
+                    dataMatrix[i].push(elementValue || 0);
                     toolTipData[i].push({
                         tooltipInfo: tooltipInfo
                     });
@@ -644,7 +649,7 @@ module powerbi.visuals.samples {
         }
 
         /* Check every element of the array and returns the count of elements which are valid(not undefined) */
-        public static getValidArrayLength(array: any[]): number {
+        private static getValidArrayLength(array: any[]): number {
             var len = 0;
             for (var i: number = 0, iLen = array.length; i < iLen; i++) {
                 if (array[i] !== undefined) {
@@ -654,14 +659,9 @@ module powerbi.visuals.samples {
             return len;
         }
 
-        public static getChordArcDescriptors(groups: D3.Layout.ArcDescriptor[], datum: ChordArcLabelData[]): ChordArcDescriptor[] {
-            var labelDataPoints: ChordArcDescriptor[] = [];
-            for (var i: number = 0, iLen = groups.length; i < iLen; i++) {
-                var labelDataPoint: ChordArcDescriptor = groups[i];
-                labelDataPoint.data = datum[i];
-                labelDataPoints.push(labelDataPoint);
-            }
-
+        private static getChordArcDescriptors(groups: D3.Layout.ArcDescriptor[], datum: ChordArcLabelData[]): ChordArcDescriptor[] {
+            var labelDataPoints: ChordArcDescriptor[] = groups;
+            labelDataPoints.forEach((x,i) => x.data = datum[i]);
             return labelDataPoints;
         }
 
@@ -842,7 +842,7 @@ module powerbi.visuals.samples {
 
             var sliceShapes = this.slices
                 .selectAll('path' + ChordChart.sliceClass.selector)
-                .data(this.chordLayout.groups);
+                .data(this.getChordTicksArcDescriptors());
 
             sliceShapes.enter()
                 .insert("path")
@@ -954,6 +954,40 @@ module powerbi.visuals.samples {
             this.mainGraphicsContext.selectAll(ChordChart.sliceTicksClass.selector).remove();
         }
 
+        private getChordTicksArcDescriptors(): ChordTicksArcDescriptor[] {
+            var groups = this.chordLayout.groups();
+            var maxValue = !_.isEmpty(groups) && _.max(groups, x => x.value).value || 0;
+            var minValue = !_.isEmpty(groups) && _.min(groups, x => x.value).value || 0;
+            var radiusCoeff = this.radius/Math.abs(maxValue - minValue)*1.25;
+
+            var formatter = valueFormatter.create({
+                format: "0.##",
+                value: maxValue
+            });
+            groups.forEach((x: ChordTicksArcDescriptor) => {
+                var k = (x.endAngle - x.startAngle) / x.value;
+                var absValue = Math.abs(x.value);
+                var range = d3.range(0, absValue, absValue - 1 < 0.15 ? 0.15 : absValue - 1);
+                if(x.value < 0) {
+                    range = range.map(x => x * -1).reverse();
+                }
+
+                for(var i = 1; i < range.length; i++) {
+                    var gapSize = Math.abs(range[i] - range[i - 1]) * radiusCoeff;
+                    if(gapSize < ChordChart.TicksFontSize) {
+                        if(range.length > 2 && i === range.length - 1) {
+                            range.splice(--i, 1);
+                        } else {
+                            range.splice(i--, 1);
+                        }
+                    }
+                }
+
+                x.angleLabels = range.map((v, i) => <any>{ angle: v * k + x.startAngle, label: formatter.format(v) });
+            });
+            return <ChordTicksArcDescriptor[]>groups;
+        }
+
         /* Draw axis(ticks) around the arc */
         private drawTicks(): void {
             if (this.settings.axis.show) {
@@ -966,35 +1000,7 @@ module powerbi.visuals.samples {
                     .classed(ChordChart.sliceTicksClass.class, true);
 
                 var tickPairs = tickShapes.selectAll('g' + ChordChart.tickPairClass.selector)
-                    .data((d) => {
-                        var k = (d.endAngle - d.startAngle) / d.value;
-                        var range = d3.range(0, d.value, d.value - 1 < 0.15 ? 0.15 : d.value - 1);
-                        var retval =
-                            range.map((v, i) => {
-                                var divider: number = 1000;
-                                var unitStr: string = 'k';
-
-                                if (this.data.tickUnit >= 1000 * 1000) {
-                                    divider = 1000 * 1000;
-                                    unitStr = 'm';
-                                }
-                                else if (this.data.tickUnit >= 1000) {
-                                    divider = 1000;
-                                    unitStr = 'k';
-                                } else {
-                                    divider = 1;
-                                    unitStr = '';
-                                }
-                                var retv =
-                                    {
-                                        angle: v * k + d.startAngle,
-                                        label: Math.floor(v / divider) + unitStr
-                                    };
-                                return retv;
-
-                            });
-                        return retval;
-                    });
+                    .data((d: ChordTicksArcDescriptor) => d.angleLabels);
 
                 tickPairs.enter().insert('g')
                     .classed(ChordChart.tickPairClass.class, true);
@@ -1018,11 +1024,15 @@ module powerbi.visuals.samples {
                     .data((d) => [d])
                     .enter().insert('text')
                     .classed(ChordChart.tickTextClass.class, true)
-                    .style("text-anchor", d => d.angle > Math.PI ? "end" : null)
-                    .text(d => d.label)
-                    .attr("transform", d => d.angle > Math.PI ? "rotate(180)translate(-16)" : null)
+                    .style('pointer-events', "none")
                     .attr("x", 8)
                     .attr("dy", ".35em");
+
+                tickPairs
+                    .selectAll('text' + ChordChart.tickTextClass.selector)
+                    .text(d => d.label)
+                    .style("text-anchor", d => d.angle > Math.PI ? "end" : null)
+                    .attr("transform", d => d.angle > Math.PI ? "rotate(180)translate(-16)" : null);
 
                 tickPairs.exit()
                     .remove();
@@ -1102,6 +1112,7 @@ module powerbi.visuals.samples {
                 style({
                     'opacity': (d: ChordArcDescriptor) => ChordChart.PolylineOpacity,
                     'stroke': (d: ChordArcDescriptor) => d.data.labelColor,
+                    'pointer-events': "none"
                 });
 
             lines

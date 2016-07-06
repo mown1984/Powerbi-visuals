@@ -3,26 +3,18 @@ declare function requireAll(requireContext: any): any;
 
 declare module powerbi.visuals.samples {
     import ArcDescriptor = D3.Layout.ArcDescriptor;
-    interface AsterData {
+    interface AsterPlotData {
         dataPoints: AsterDataPoint[];
         highlightedDataPoints?: AsterDataPoint[];
+        settings: AsterPlotSettings;
+        hasHighlights: boolean;
         legendData: LegendData;
-        valueFormatter: IValueFormatter;
-        legendSettings: AsterPlotLegendSettings;
-        labelSettings: VisualDataLabelsSettings;
-        showOuterLine: boolean;
-        outerLineThickness: number;
-    }
-    interface AsterPlotLegendSettings {
-        show: boolean;
-        position: string;
-        showTitle: boolean;
-        labelColor: string;
-        titleText: string;
-        fontSize: number;
+        labelFormatter: IValueFormatter;
+        centerText: string;
     }
     interface AsterArcDescriptor extends ArcDescriptor {
         isLabelHasConflict?: boolean;
+        data: AsterDataPoint;
     }
     interface AsterDataPoint extends SelectableDataPoint {
         color: string;
@@ -35,9 +27,9 @@ declare module powerbi.visuals.samples {
     }
     interface AsterPlotBehaviorOptions {
         selection: D3.Selection;
-        highlightedSelection: D3.Selection;
         clearCatcher: D3.Selection;
         interactivityService: IInteractivityService;
+        hasHighlights: boolean;
     }
     class AsterPlotWarning implements IVisualWarning {
         private message;
@@ -45,9 +37,61 @@ declare module powerbi.visuals.samples {
         code: string;
         getMessages(resourceProvider: jsCommon.IStringResourceProvider): IVisualErrorMessage;
     }
+    class AsterPlotSettings {
+        static Default: AsterPlotSettings;
+        static parse(dataView: DataView, capabilities: VisualCapabilities): AsterPlotSettings;
+        static getProperties(capabilities: VisualCapabilities): {
+            [i: string]: {
+                [i: string]: DataViewObjectPropertyIdentifier;
+            };
+        } & {
+            general: {
+                formatString: DataViewObjectPropertyIdentifier;
+            };
+            dataPoint: {
+                fill: DataViewObjectPropertyIdentifier;
+            };
+        };
+        static createEnumTypeFromEnum(type: any): IEnumType;
+        private static getValueFnByType(type);
+        static enumerateObjectInstances(settings: AsterPlotSettings, options: EnumerateVisualObjectInstancesOptions, capabilities: VisualCapabilities): ObjectEnumerationBuilder;
+        originalSettings: AsterPlotSettings;
+        createOriginalSettings(): void;
+        legend: {
+            show: boolean;
+            position: string;
+            showTitle: boolean;
+            titleText: string;
+            labelColor: string;
+            fontSize: number;
+        };
+        labels: {
+            show: boolean;
+            color: string;
+            displayUnits: number;
+            precision: number;
+            fontSize: number;
+        };
+        outerLine: {
+            show: boolean;
+            thickness: number;
+        };
+    }
+    class AsterPlotColumns<T> {
+        static Roles: AsterPlotColumns<string>;
+        static getColumnSources(dataView: DataView): AsterPlotColumns<DataViewMetadataColumn>;
+        static getTableValues(dataView: DataView): AsterPlotColumns<any[]>;
+        static getTableRows(dataView: DataView): AsterPlotColumns<any[]>[];
+        static getCategoricalValues(dataView: DataView): AsterPlotColumns<any[]>;
+        static getSeriesValues(dataView: DataView): string[];
+        static getCategoricalColumns(dataView: DataView): AsterPlotColumns<DataViewCategoryColumn & DataViewValueColumn[] & DataViewValueColumns>;
+        private static getColumnSourcesT<T>(dataView);
+        Category: T;
+        Y: T;
+    }
     class AsterPlot implements IVisual {
         static capabilities: VisualCapabilities;
-        private static Properties;
+        private static AsterSlices;
         private static AsterSlice;
         private static AsterHighlightedSlice;
         private static OuterLine;
@@ -56,43 +100,34 @@ declare module powerbi.visuals.samples {
         private static CenterLabelClass;
         private static CenterTextFontHeightCoefficient;
         private static CenterTextFontWidthCoefficient;
-        private margin;
+        static converter(dataView: DataView, colors: IDataColorPalette): AsterPlotData;
+        private static parseSettings(dataView, categorySource);
+        private layout;
         private svg;
         private mainGroupElement;
         private mainLabelsElement;
+        private slicesElement;
         private centerText;
         private clearCatcher;
         private colors;
-        private dataView;
-        private hostService;
+        private hostServices;
         private interactivityService;
         private legend;
         private data;
-        private currentViewport;
+        private settings;
         private behavior;
-        private hasHighlights;
-        private getDefaultAsterData();
-        converter(dataView: DataView, colors: IDataColorPalette): AsterData;
-        private dataViewContainsCategory(dataView);
-        private getLabelSettings(objects, labelSettings);
-        private updateLegendSettings(objects, catSource, legendSettings);
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
-        private renderArcsAndLabels(dataPoints, duration, labelSettings, isHighlight?);
-        private getLabelLayout(labelSettings, arc, viewport);
+        private renderArcsAndLabels(duration, isHighlight?);
+        private getLabelLayout(arc, viewport);
         private drawLabels(data, context, layout, viewport, outlineArc, labelArc);
-        private renderLegend(asterPlotData);
+        private renderLegend();
         private updateViewPortAccordingToLegend();
         private drawOuterLine(innerRadius, radius, data);
-        private getCenterText(dataView);
         private drawCenterText(innerRadius);
-        private getLabelFill(dataView);
-        private dataViewContainsObjects(dataView);
-        private enumerateLegend(instances);
-        private clearData();
+        private clear();
         onClearSelection(): void;
-        private enumerateLabels(instances);
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[];
+        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumerationObject;
     }
 }
 
@@ -557,6 +592,11 @@ declare module powerbi.visuals.samples {
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueType): boolean;
         private populateObjectProperties(dataViews);
         update(options: VisualUpdateOptions): void;
+        /**
+         * Clear the viewport area
+         */
+        private clearViewport();
+        private setVisibility(status?);
         static parseLabelSettings(objects: DataViewObjects): VisualDataLabelsSettings;
         static parseBorderSettings(objects: DataViewObjects): MekkoBorderSettings;
         private enumerateBorder(enumeration);
@@ -740,9 +780,14 @@ declare module powerbi.visuals.samples {
         colour: string;
         selectionId: SelectionId;
     }
+    interface SankeyDiagramColumn {
+        countOfNodes: number;
+        sumValueOfNodes: number;
+    }
     interface SankeyDiagramDataView {
         nodes: SankeyDiagramNode[];
         links: SankeyDiagramLink[];
+        columns: SankeyDiagramColumn[];
         settings: SankeyDiagramSettings;
     }
     interface SankeyDiagramRoleNames {
@@ -762,8 +807,9 @@ declare module powerbi.visuals.samples {
         private static DefaultColourOfLink;
         private static DefaultSettings;
         private static MinWidthOfLabel;
-        private static NodePadding;
-        private static LabelPadding;
+        private static NodeBottomMargin;
+        private static NodeMargin;
+        private static LabelMargin;
         static RoleNames: SankeyDiagramRoleNames;
         static capabilities: VisualCapabilities;
         private static Properties;
@@ -785,7 +831,10 @@ declare module powerbi.visuals.samples {
         init(visualsInitOptions: VisualInitOptions): void;
         update(visualUpdateOptions: VisualUpdateOptions): void;
         private updateViewport(viewport);
-        private getPositiveNumber(value);
+        /**
+         * Public for testability.
+         */
+        getPositiveNumber(value: number): number;
         private updateElements(height, width);
         converter(dataView: DataView): SankeyDiagramDataView;
         private getObjectsFromDataView(dataView);
@@ -794,17 +843,29 @@ declare module powerbi.visuals.samples {
         private updateValueOfNode(node);
         private getTooltipForNode(valueFormatter, nodeName, nodeWeight);
         private parseSettings(objects);
-        private findNodePosition(sankeyDiagramDataView);
-        private findNodePositionByX(sankeyDiagramDataView);
-        private scaleByAxisX(nodes, scale);
+        private computePositions(sankeyDiagramDataView);
+        private computeXPositions(sankeyDiagramDataView);
         private getScaleByAxisX(numberOfColumns?);
-        private findNodePositionByY(sankeyDiagramDataView);
-        private getScaleByAxisY(numberOfRows, sumValueOfNodes);
-        private scaleByAxisY(nodes, links, scale);
+        /**
+         * Public for testability.
+         */
+        sortNodesByX(nodes: SankeyDiagramNode[]): SankeyDiagramNode[];
+        /**
+         * Public for testability.
+         */
+        getColumns(nodes: SankeyDiagramNode[]): SankeyDiagramColumn[];
+        /**
+         * Public for testability.
+         */
+        getMaxColumn(columns?: SankeyDiagramColumn[]): SankeyDiagramColumn;
+        private getScaleByAxisY(sumValueOfNodes);
+        private getAvailableSumNodeMarginByY();
+        private scalePositionsByAxes(nodes, columns, scale, viewportHeight);
+        private computeYPosition(nodes, scale);
         private render(sankeyDiagramDataView);
         private renderNodes(sankeyDiagramDataView);
         private getLabelPositionByAxisX(node);
-        private isLabelLargerWidth(node);
+        private isLabelLargerThanWidth(node);
         private getCurrentPositionOfLabelByAxisX(node);
         private renderLinks(sankeyDiagramDataView);
         private getSvgPath(link);
@@ -1195,6 +1256,7 @@ declare module powerbi.visuals.samples {
             showDisabled: DataViewObjectPropertyIdentifier;
             multiselect: DataViewObjectPropertyIdentifier;
             selection: DataViewObjectPropertyIdentifier;
+            selfFilterEnabled: DataViewObjectPropertyIdentifier;
         };
         header: {
             show: DataViewObjectPropertyIdentifier;
@@ -1250,6 +1312,7 @@ declare module powerbi.visuals.samples {
         isSelectAllDataPoint?: boolean;
         imageURL?: string;
         selectable?: boolean;
+        filtered?: boolean;
     }
     interface ChicletSlicerSettings {
         general: {
@@ -1259,6 +1322,7 @@ declare module powerbi.visuals.samples {
             multiselect: boolean;
             showDisabled: string;
             selection: string;
+            selfFilterEnabled: boolean;
             getSavedSelection?: () => string[];
             setSavedSelection?: (filter: SemanticFilter, selectionIds: string[]) => void;
         };
@@ -1308,6 +1372,8 @@ declare module powerbi.visuals.samples {
     class ChicletSlicer implements IVisual {
         static capabilities: VisualCapabilities;
         private element;
+        private searchHeader;
+        private searchInput;
         private currentViewport;
         private dataView;
         private slicerHeader;
@@ -1336,7 +1402,7 @@ declare module powerbi.visuals.samples {
         private static Body;
         static DefaultStyleProperties(): ChicletSlicerSettings;
         constructor(options?: ChicletSlicerConstructorOptions);
-        static converter(dataView: DataView, localizedSelectAllText: string, interactivityService: IInteractivityService): ChicletSlicerData;
+        static converter(dataView: DataView, localizedSelectAllText: string, searchText: string, interactivityService: IInteractivityService): ChicletSlicerData;
         init(options: VisualInitOptions): void;
         private static canSelect(args);
         update(options: VisualUpdateOptions): void;
@@ -1348,6 +1414,8 @@ declare module powerbi.visuals.samples {
         private enumerateImages(data);
         private updateInternal(resetScrollbarPosition);
         private initContainer();
+        private createSearchHeader(container);
+        private updateSearchHeader();
         private onLoadMoreData();
         private getSlicerBodyViewport(currentViewport);
         private updateSlicerBodyDimensions();
@@ -1405,6 +1473,12 @@ declare module powerbi.visuals.samples {
     }
     interface ChordArcDescriptor extends D3.Layout.ArcDescriptor, IDataLabelInfo {
         data: ChordArcLabelData;
+    }
+    interface ChordTicksArcDescriptor extends D3.Layout.ArcDescriptor {
+        angleLabels: {
+            angle: number;
+            label: string;
+        }[];
     }
     interface ChordArcLabelData extends LabelEnabledDataPoint, SelectableDataPoint {
         label: string;
@@ -1467,6 +1541,7 @@ declare module powerbi.visuals.samples {
         private static LabelMargin;
         private static DefaultMargin;
         private static VisualClassName;
+        private static TicksFontSize;
         private static sliceClass;
         private static chordClass;
         private static sliceTicksClass;
@@ -1495,8 +1570,8 @@ declare module powerbi.visuals.samples {
         private outerRadius;
         static converter(dataView: DataView, colors: IDataColorPalette, prevAxisVisible: boolean): ChordChartData;
         private static parseSettings(dataView);
-        static getValidArrayLength(array: any[]): number;
-        static getChordArcDescriptors(groups: D3.Layout.ArcDescriptor[], datum: ChordArcLabelData[]): ChordArcDescriptor[];
+        private static getValidArrayLength(array);
+        private static getChordArcDescriptors(groups, datum);
         init(options: VisualInitOptions): void;
         update(options: VisualUpdateOptions): void;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumerationObject;
@@ -1506,6 +1581,7 @@ declare module powerbi.visuals.samples {
         private render();
         private clear();
         private clearTicks();
+        private getChordTicksArcDescriptors();
         private drawTicks();
         private renderLabels(filteredData, layout, isDonut?, forAnimation?);
         private renderLines(filteredData, arc, outerArc);

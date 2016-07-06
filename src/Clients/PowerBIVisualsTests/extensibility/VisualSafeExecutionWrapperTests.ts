@@ -32,6 +32,7 @@ module powerbitests {
     describe('VisualSafeExecutionWrapper', () => {
 
         let visual: powerbi.IVisual,
+            visualPlugin: powerbi.IVisualPlugin,
             wrapper: powerbi.IVisual,
             telemetryService: ITelemetryService;
 
@@ -39,8 +40,9 @@ module powerbitests {
 
         beforeEach(() => {
             visual = new mocks.MockVisualLegacy();
+            visualPlugin = new mocks.MockVisualPlugin();  
             telemetryService = mocks.createMockTelemetryService();
-            wrapper = new powerbi.extensibility.VisualSafeExecutionWrapper(visual, { name: 'test', apiVersion: '99.99.99', custom: true }, telemetryService, true);
+            wrapper = new powerbi.extensibility.VisualSafeExecutionWrapper(visual, visualPlugin, telemetryService, true);
         });
 
         it("Should create instance of visual", () => {
@@ -51,9 +53,7 @@ module powerbitests {
         visualMethods.forEach((name) => {
             it("Should relay " + name + " method", () => {
                 let spy = spyOn((<any>wrapper).wrappedVisual, name);
-                let logEventSpy = spyOn(telemetryService, 'logEvent');
                 wrapper[name]();
-                expect(logEventSpy.calls.count()).toBe(0);
                 expect(spy.calls.count()).toBe(1);
             });
         });
@@ -63,7 +63,7 @@ module powerbitests {
                 spyOn((<any>wrapper).wrappedVisual, name).and.throwError("Fake error");
                 let logEventSpy = spyOn(telemetryService, 'logEvent');
                 wrapper[name]();
-                expect(logEventSpy.calls.count()).toBe(1);
+                expect(logEventSpy.calls.count()).toBe(1);                
             });
         });
     });

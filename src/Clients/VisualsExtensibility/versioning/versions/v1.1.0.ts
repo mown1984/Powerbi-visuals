@@ -52,7 +52,8 @@ module powerbi.extensibility.v110 {
     let hostAdapter: VisualHostAdapter = (host: powerbi.IVisualHostServices): IVisualHost => {
         return {
             createSelectionIdBuilder: () => new visuals.SelectionIdBuilder(),
-            createSelectionManager: () => new SelectionManager({ hostServices: host })
+            createSelectionManager: () => new SelectionManager({ hostServices: host }),
+            colors: powerbi.visuals.ThemeManager.getDefaultTheme(),
         };
     };
 

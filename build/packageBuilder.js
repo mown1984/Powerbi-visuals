@@ -285,7 +285,6 @@ PackageBuilder.prototype.getVisualConfig = function () {
     };
 }
 
-
 PackageBuilder.prototype.getResourcesConfig = function () {
     return [
         {

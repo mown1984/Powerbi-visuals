@@ -23,6 +23,8 @@
 /// <reference path="./formatting/numericSequence.ts"/>
 /// <reference path="./formatting/numericSequenceRange.ts"/>
 /// <reference path="./formatting/valueFormatter.ts"/>
+/// <reference path="./dataView/utils/dataViewMatrixUtils.ts"/>
+/// <reference path="./dataView/utils/dataViewMetadataColumnUtils.ts"/>
 /// <reference path="./dataView/colorAllocator.ts"/>
 /// <reference path="./dataView/compiledDataViewMapping.ts"/>
 /// <reference path="./dataView/dataRoleHelper.ts"/>
@@ -36,6 +38,7 @@
 /// <reference path="./dataView/dataViewObjectEvaluationUtils.ts"/>
 /// <reference path="./dataView/dataViewObjectEvaluator.ts"/>
 /// <reference path="./dataView/dataViewCategoricalEvalGrouped.ts"/>
+/// <reference path="./dataView/dataViewMatrixProjectionOrder.ts"/>
 /// <reference path="./dataView/dataViewPivotCategorical.ts"/>
 /// <reference path="./dataView/dataViewPivotMatrix.ts"/>
 /// <reference path="./dataView/dataViewSelfCrossJoin.ts"/>
@@ -58,8 +61,6 @@
 /// <reference path="./dataView/rules/tableEvalContext.ts"/>
 /// <reference path="./dataView/rules/ruleEvaluation.ts"/>
 /// <reference path="./dataView/rules/colorRuleEvaluation.ts"/>
-/// <reference path="./dataView/utils/dataViewMatrixUtils.ts"/>
-/// <reference path="./dataView/utils/dataViewMetadataColumnUtils.ts"/>
 /// <reference path="./contracts/conceptualSchema.ts"/>
 /// <reference path="./dataView/scriptResultUtil.ts"/>
 /// <reference path="./segmentation/dataViewMerger.ts"/>
